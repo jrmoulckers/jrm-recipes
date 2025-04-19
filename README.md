@@ -13,6 +13,7 @@
 - [x] Use Next Image
 - [x] Add error management (Sentry)
 - [x] Routing and image page (parallel route)
+- [ ] Analytics with PostHog
 - [ ] Delete button (Server actions)
 - [ ] Analytics (posthog)
 - [ ] Rate limiting (upstash)
