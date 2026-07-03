@@ -1,0 +1,93 @@
+/* =============================================================================
+ * Accessibility preferences (the third axis).
+ *
+ * Driven by <html> data-attributes set by A11yScript / A11yProvider:
+ *   [data-text="large|xl"]   — larger base font (multiplies theme --text-scale)
+ *   [data-contrast="high"]   — maximum ink/border contrast, keeps brand hues
+ *   [data-motion="reduced"]  — force-stop animation + transition
+ *   [data-reading="readable"]— dyslexia-friendly spacing + legible type
+ *
+ * Imported AFTER themes.css so contrast overrides win ties against theme tokens.
+ * ========================================================================== */
+
+:root {
+  /* Multiplier applied on top of each theme's own --text-scale (see globals). */
+  --a11y-text-mult: 1;
+}
+
+[data-text="large"] {
+  --a11y-text-mult: 1.15;
+}
+[data-text="xl"] {
+  --a11y-text-mult: 1.32;
+}
+
+/* ---------------------------------------------------------------------------
+ * High contrast — push neutrals to the extremes, strengthen borders + rings.
+ * Brand primary/accent are preserved on purpose (identity stays intact).
+ * ------------------------------------------------------------------------- */
+[data-contrast="high"] {
+  --ring-width: 3px;
+}
+
+[data-contrast="high"]:not(.dark) {
+  --foreground: 0 0% 4%;
+  --surface-foreground: 0 0% 4%;
+  --card-foreground: 0 0% 4%;
+  --popover-foreground: 0 0% 4%;
+  --muted-foreground: 0 0% 20%;
+  --border: 0 0% 28%;
+  --input: 0 0% 28%;
+  --ring: 0 0% 0%;
+}
+
+[data-contrast="high"].dark {
+  --foreground: 0 0% 100%;
+  --surface-foreground: 0 0% 100%;
+  --card-foreground: 0 0% 100%;
+  --popover-foreground: 0 0% 100%;
+  --muted-foreground: 0 0% 86%;
+  --border: 0 0% 74%;
+  --input: 0 0% 74%;
+  --ring: 0 0% 100%;
+}
+
+/* Make the (now stronger) border token actually show on every bordered box. */
+[data-contrast="high"] :where([class*="border"]) {
+  border-color: hsl(var(--border));
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion — user-forced, on top of the OS-level media query.
+ * ------------------------------------------------------------------------- */
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Readable / dyslexia-friendly — roomier rhythm and the most legible type
+ * available. Atkinson Hyperlegible if the reader has it; otherwise the spacing
+ * and line-height do the heavy lifting on a clean system sans.
+ * ------------------------------------------------------------------------- */
+[data-reading="readable"] {
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-display: "Atkinson Hyperlegible", "Segoe UI", ui-sans-serif, system-ui,
+    sans-serif;
+}
+
+[data-reading="readable"] body {
+  letter-spacing: 0.012em;
+  word-spacing: 0.08em;
+  line-height: 1.75;
+}
+
+[data-reading="readable"] p,
+[data-reading="readable"] li {
+  max-width: 68ch;
+}

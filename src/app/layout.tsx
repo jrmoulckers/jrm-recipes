@@ -21,10 +21,12 @@ import {
   isColorScheme,
   isUITheme,
 } from "~/config/themes";
+import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
 import { isAuthConfigured } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
 import { ThemeScript } from "~/components/theme/theme-script";
+import { A11yScript } from "~/components/a11y/a11y-script";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -100,11 +102,13 @@ export default async function RootLayout({
   const scheme = isColorScheme(schemeCookie)
     ? schemeCookie
     : DEFAULT_COLOR_SCHEME;
+  const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
 
   const tree = (
     <html
       lang="en"
       data-theme={theme}
+      {...a11yAttributes(a11y)}
       className={cn(
         fraunces.variable,
         nunito.variable,
@@ -117,9 +121,14 @@ export default async function RootLayout({
     >
       <head>
         <ThemeScript />
+        <A11yScript />
       </head>
       <body className="min-h-dvh bg-background">
-        <Providers initialTheme={theme} initialScheme={scheme}>
+        <Providers
+          initialTheme={theme}
+          initialScheme={scheme}
+          initialA11y={a11y}
+        >
           {children}
         </Providers>
       </body>
