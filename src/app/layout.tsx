@@ -1,58 +1,131 @@
 import "~/styles/globals.css";
-import "@uploadthing/react/styles.css";
 
-import { GeistSans } from "geist/font/sans";
-import { type Metadata } from "next";
-
+import { type Metadata, type Viewport } from "next";
+import { cookies } from "next/headers";
+import { ClerkProvider } from "@clerk/nextjs";
 import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
-import { TopNav } from "./_components/topnav";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { extractRouterConfig } from "uploadthing/server";
-import { ourFileRouter } from "./api/uploadthing/core";
-import { Toaster } from "sonner";
-import { PostHogProvider } from "../components/PostHogProvider";
+  Fraunces,
+  Nunito,
+  Inter,
+  Baloo_2,
+  JetBrains_Mono,
+} from "next/font/google";
+
+import { brand } from "~/config/brand";
+import { env } from "~/env";
+import {
+  DEFAULT_COLOR_SCHEME,
+  DEFAULT_UI_THEME,
+  SCHEME_COOKIE,
+  THEME_COOKIE,
+  isColorScheme,
+  isUITheme,
+} from "~/config/themes";
+import { isAuthConfigured } from "~/server/auth";
+import { cn } from "~/lib/utils";
+import { Providers } from "~/app/providers";
+import { ThemeScript } from "~/components/theme/theme-script";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+  display: "swap",
+});
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+const baloo = Baloo_2({
+  subsets: ["latin"],
+  variable: "--font-baloo",
+  display: "swap",
+});
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "JRM Recipes",
-  description: "A Recipes App",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  applicationName: brand.name,
+  title: {
+    default: `${brand.name} — ${brand.tagline}`,
+    template: `%s · ${brand.name}`,
+  },
+  description: brand.description,
+  manifest: "/manifest.webmanifest",
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: brand.name,
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icons/icon-192.png",
+  },
+  openGraph: {
+    type: "website",
+    title: `${brand.name} — ${brand.tagline}`,
+    description: brand.description,
+    siteName: brand.name,
+  },
 };
 
-export default function RootLayout({
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: brand.backgroundColor },
+    { media: "(prefers-color-scheme: dark)", color: "#161310" },
+  ],
+};
+
+export default async function RootLayout({
   children,
-  modal,
-}: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
-  return (
-    <ClerkProvider>
-      <PostHogProvider>
-        <html lang="en" suppressHydrationWarning>
-          <NextSSRPlugin
-            /**
-             * The `extractRouterConfig` will extract **only** the route configs
-             * from the router to prevent additional information from being
-             * leaked to the client. The data passed to the client is the same
-             * as if you were to fetch `/api/uploadthing` directly.
-             */
-            routerConfig={extractRouterConfig(ourFileRouter)}
-          />
-          <body className={`font-sans ${GeistSans.variable} dark`}>
-            <div className="grid h-screen grid-rows-[auto,1fr]">
-              <TopNav />
-              <main className="overflow-y-scroll">{children}</main>
-            </div>
-            {modal}
-            <div id="modal-root" />
-            <Toaster />
-          </body>
-        </html>
-      </PostHogProvider>
-    </ClerkProvider>
+}: {
+  children: React.ReactNode;
+}) {
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get(THEME_COOKIE)?.value;
+  const schemeCookie = cookieStore.get(SCHEME_COOKIE)?.value;
+  const theme = isUITheme(themeCookie) ? themeCookie : DEFAULT_UI_THEME;
+  const scheme = isColorScheme(schemeCookie)
+    ? schemeCookie
+    : DEFAULT_COLOR_SCHEME;
+
+  const tree = (
+    <html
+      lang="en"
+      data-theme={theme}
+      className={cn(
+        fraunces.variable,
+        nunito.variable,
+        inter.variable,
+        baloo.variable,
+        jetbrains.variable,
+        scheme === "dark" && "dark",
+      )}
+      suppressHydrationWarning
+    >
+      <head>
+        <ThemeScript />
+      </head>
+      <body className="min-h-dvh bg-background">
+        <Providers initialTheme={theme} initialScheme={scheme}>
+          {children}
+        </Providers>
+      </body>
+    </html>
   );
+
+  // Only mount ClerkProvider when auth is actually configured.
+  return isAuthConfigured() ? <ClerkProvider>{tree}</ClerkProvider> : tree;
 }
