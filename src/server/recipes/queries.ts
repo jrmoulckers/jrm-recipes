@@ -22,6 +22,18 @@ export function ratingSummary(values: { value: number }[]) {
   return { average: Math.round((sum / values.length) * 10) / 10, count: values.length };
 }
 
+/** Groups a user belongs to (for the editor's visibility picker). */
+export async function listUserGroups(
+  userId: string,
+): Promise<{ id: string; name: string }[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+    with: { group: { columns: { id: true, name: true } } },
+  });
+  return rows.map((r) => ({ id: r.group.id, name: r.group.name }));
+}
+
 async function viewerGroupIds(viewer: User | null): Promise<string[]> {
   if (!viewer) return [];
   const rows = await db.query.groupMembers.findMany({
@@ -54,7 +66,7 @@ export async function listPublicRecipes(limit = 48) {
 
 function canView(recipe: { authorId: string; visibility: string; groupId: string | null }, viewer: User | null, groupIds: string[]) {
   if (recipe.visibility === "public" || recipe.visibility === "unlisted") return true;
-  if (viewer && recipe.authorId === viewer.id) return true;
+  if (recipe.authorId === viewer?.id) return true;
   if (recipe.visibility === "group" && recipe.groupId && groupIds.includes(recipe.groupId)) return true;
   return false;
 }

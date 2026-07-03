@@ -103,7 +103,8 @@ export function convertUnit(
 ): number | null {
   const a = UNIT_INDEX.get(from.trim().toLowerCase());
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
-  if (!a || !b || a.dimension !== b.dimension) return null;
+  if (!a || !b) return null;
+  if (a.dimension !== b.dimension) return null;
   return roundNice((quantity * a.base) / b.base);
 }
 

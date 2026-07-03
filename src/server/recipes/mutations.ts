@@ -150,7 +150,7 @@ export async function updateRecipe(id: string, input: RecipeInput, author: User)
   return db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
-      columns: { id: true, publishedAt: true, status: true },
+      columns: { id: true, slug: true, publishedAt: true, status: true },
     });
     if (!current) throw new Error("NOT_FOUND");
 
@@ -168,7 +168,7 @@ export async function updateRecipe(id: string, input: RecipeInput, author: User)
     await insertChildren(tx, id, input);
     await syncTags(tx, id, input.tags);
     await journal(tx, id, author.id, input, "Edited");
-    return { id, slug: null as string | null };
+    return { id, slug: current.slug };
   });
 }
 

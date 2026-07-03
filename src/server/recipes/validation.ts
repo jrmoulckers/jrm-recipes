@@ -13,7 +13,7 @@ const optionalString = (max: number) =>
     .trim()
     .max(max)
     .optional()
-    .transform((v) => (v ? v : undefined));
+    .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
 const optionalUrl = z
   .string()

@@ -24,7 +24,7 @@ export async function createRecipeAction(
     return {
       ok: false,
       error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
@@ -44,7 +44,7 @@ export async function updateRecipeAction(
     return {
       ok: false,
       error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
   const user = await requireUser();
