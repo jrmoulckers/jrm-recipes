@@ -24,6 +24,16 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
+  fallbacks: {
+    entries: [
+      {
+        // Precached in next.config.js via `additionalPrecacheEntries`. Served
+        // whenever a page navigation can't be fulfilled from network or cache.
+        url: "/~offline",
+        matcher: ({ request }) => request.destination === "document",
+      },
+    ],
+  },
 });
 
 serwist.addEventListeners();
