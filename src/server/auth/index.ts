@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
 import { users, type User } from "~/server/db/schema";
+import { DEV_USER } from "~/server/auth/dev-user";
 
 /**
  * Heirloom auth module.
@@ -14,16 +15,7 @@ import { users, type User } from "~/server/db/schema";
  * fall back to a stable local "dev" user, so the app + tests run with no keys.
  */
 
-export const DEV_USER: User = {
-  id: "dev_local_user_00000000",
-  clerkId: null,
-  email: "cook@heirloom.local",
-  name: "Home Cook",
-  handle: "home-cook",
-  avatarUrl: null,
-  createdAt: new Date(0),
-  updatedAt: new Date(0),
-};
+export { DEV_USER };
 
 /** True when real Clerk auth should be used. */
 export function isAuthConfigured(): boolean {
