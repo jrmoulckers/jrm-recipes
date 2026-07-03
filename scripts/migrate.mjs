@@ -1,0 +1,36 @@
+// @ts-check
+/**
+ * Deploy-time database migration runner.
+ *
+ * Runs the generated Drizzle SQL migrations (./drizzle) against DATABASE_URL.
+ * Wired into the `vercel-build` script so a production deploy brings the
+ * database schema up to date automatically — the human only has to paste
+ * DATABASE_URL into Vercel once.
+ *
+ * Safe by design: if DATABASE_URL is not set (e.g. a preview build with no DB),
+ * it logs and exits 0 so the build still succeeds. The app boots without a DB.
+ */
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
+
+const url = process.env.DATABASE_URL;
+
+if (!url) {
+  console.log("[migrate] DATABASE_URL not set — skipping migrations.");
+  process.exit(0);
+}
+
+const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
+
+try {
+  console.log("[migrate] Applying migrations from ./drizzle …");
+  await migrate(drizzle(sql), { migrationsFolder: "./drizzle" });
+  console.log("[migrate] Database is up to date.");
+  await sql.end();
+  process.exit(0);
+} catch (error) {
+  console.error("[migrate] Migration failed:", error);
+  await sql.end({ timeout: 5 }).catch(() => {});
+  process.exit(1);
+}
