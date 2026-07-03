@@ -1,0 +1,150 @@
+﻿import { describe, expect, it } from "vitest";
+
+import {
+  ingredientInput,
+  recipeInput,
+  recipeSlug,
+  stepInput,
+} from "./validation";
+
+describe("recipeInput", () => {
+  it("trims titles and fills recipe defaults", () => {
+    expect(recipeInput.parse({ title: "  Sunday Sauce  " })).toMatchObject({
+      title: "Sunday Sauce",
+      visibility: "private",
+      status: "draft",
+      ingredients: [],
+      steps: [],
+      tags: [],
+    });
+  });
+
+  it("coerces numeric form strings", () => {
+    expect(
+      recipeInput.parse({
+        title: "Pancakes",
+        servings: "4",
+        prepMinutes: "10",
+        cookMinutes: "20",
+        totalMinutes: "30",
+        ingredients: [{ item: "Flour", quantity: "1.5", quantityMax: "2" }],
+        steps: [{ instruction: "Rest batter", timerSeconds: "120" }],
+      }),
+    ).toMatchObject({
+      servings: 4,
+      prepMinutes: 10,
+      cookMinutes: 20,
+      totalMinutes: 30,
+      ingredients: [{ item: "Flour", quantity: 1.5, quantityMax: 2 }],
+      steps: [{ instruction: "Rest batter", timerSeconds: 120 }],
+    });
+  });
+
+  it("coerces empty optional form fields to undefined", () => {
+    expect(
+      recipeInput.parse({
+        title: "Pie",
+        description: "",
+        coverImageUrl: "",
+        servingsNoun: "",
+        sourceUrl: "",
+        groupId: "",
+        ingredients: [
+          {
+            section: "",
+            quantity: "",
+            unit: "",
+            item: " Apples ",
+            note: "",
+          },
+        ],
+        steps: [
+          {
+            section: "",
+            instruction: " Mix filling ",
+            imageUrl: "",
+            videoUrl: "",
+            timerSeconds: "",
+          },
+        ],
+      }),
+    ).toMatchObject({
+      title: "Pie",
+      description: undefined,
+      coverImageUrl: undefined,
+      servingsNoun: undefined,
+      sourceUrl: undefined,
+      groupId: undefined,
+      ingredients: [
+        {
+          section: undefined,
+          quantity: undefined,
+          unit: undefined,
+          item: "Apples",
+          note: undefined,
+          optional: false,
+        },
+      ],
+      steps: [
+        {
+          section: undefined,
+          instruction: "Mix filling",
+          imageUrl: undefined,
+          videoUrl: undefined,
+          timerSeconds: undefined,
+          techniques: [],
+        },
+      ],
+    });
+  });
+
+  it("rejects empty titles and out-of-range numbers", () => {
+    expect(() => recipeInput.parse({ title: " " })).toThrow(
+      /Give your recipe a title/,
+    );
+    expect(() =>
+      recipeInput.parse({ title: "Too Much", servings: "1001" }),
+    ).toThrow();
+  });
+});
+
+describe("ingredientInput", () => {
+  it("fills ingredient defaults", () => {
+    expect(ingredientInput.parse({ item: " Salt " })).toMatchObject({
+      item: "Salt",
+      optional: false,
+    });
+  });
+
+  it("rejects empty item text and invalid quantities", () => {
+    expect(() => ingredientInput.parse({ item: " " })).toThrow(
+      /Ingredient is required/,
+    );
+    expect(() => ingredientInput.parse({ item: "Salt", quantity: "100001" })).toThrow();
+  });
+});
+
+describe("stepInput", () => {
+  it("trims instructions and defaults techniques", () => {
+    expect(stepInput.parse({ instruction: " Fold gently " })).toMatchObject({
+      instruction: "Fold gently",
+      techniques: [],
+    });
+  });
+
+  it("rejects empty instructions and out-of-range timers", () => {
+    expect(() => stepInput.parse({ instruction: " " })).toThrow(
+      /Step text is required/,
+    );
+    expect(() =>
+      stepInput.parse({ instruction: "Wait", timerSeconds: "86401" }),
+    ).toThrow();
+  });
+});
+
+describe("recipeSlug", () => {
+  it("builds a sensible recipe slug", () => {
+    expect(recipeSlug("Grandma's Pie!")).toBe("grandmas-pie");
+    expect(recipeSlug("!!!")).toBe("recipe");
+  });
+});
