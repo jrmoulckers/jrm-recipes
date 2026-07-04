@@ -7,17 +7,25 @@
  * database schema up to date automatically — the human only has to paste
  * DATABASE_URL into Vercel once.
  *
- * Safe by design: if DATABASE_URL is not set (e.g. a preview build with no DB),
+ * Safe by design: if no database URL is set (e.g. a preview build with no DB),
  * it logs and exits 0 so the build still succeeds. The app boots without a DB.
+ *
+ * Connection choice: migrations run DDL, which can misbehave through a
+ * transaction pooler (e.g. Neon/PgBouncer). We therefore prefer a direct
+ * (non-pooled) connection when one is available, falling back to DATABASE_URL.
+ * The app runtime still uses the pooled DATABASE_URL for serverless scale.
  */
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
-const url = process.env.DATABASE_URL;
+const url =
+  process.env.DATABASE_URL_UNPOOLED ??
+  process.env.POSTGRES_URL_NON_POOLING ??
+  process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[migrate] DATABASE_URL not set — skipping migrations.");
+  console.log("[migrate] No database URL set — skipping migrations.");
   process.exit(0);
 }
 
