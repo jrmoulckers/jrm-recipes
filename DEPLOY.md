@@ -12,8 +12,10 @@ into Vercel, and connect the repo. Budget ~20 minutes.
 - [Vercel](https://vercel.com) — hosting + CI/CD
 
 > You can go live with **just Neon** if you like. Without Clerk, the app runs in
-> its guarded dev-bypass auth mode; without UploadThing, image uploads are
-> disabled. Add them whenever you're ready — no code changes required.
+> its guarded dev-bypass auth mode. Images are added today by pasting an image
+> URL, so UploadThing is optional at launch — native in-app photo/video uploads
+> are the next media enhancement (the SDK is already installed). Add Clerk and
+> UploadThing whenever you're ready — no code changes required to go live.
 
 ---
 
@@ -43,9 +45,9 @@ into Vercel, and connect the repo. Budget ~20 minutes.
    - **Secret key** → `CLERK_SECRET_KEY`
 3. (Optional) If you host at a custom domain, add it to Clerk's allowed origins.
 
-The sign-in / sign-up URLs default to `/sign-in` and `/sign-up`; leave the
-`NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `..._SIGN_UP_URL` vars unset unless you change
-them.
+Heirloom uses Clerk's **modal** sign-in and sign-up (a popup — there is no
+dedicated `/sign-in` page), so you can leave `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
+`..._SIGN_UP_URL` unset. The two keys above are all you need.
 
 ---
 
@@ -53,6 +55,11 @@ them.
 
 1. Create an UploadThing account and a new **App**.
 2. From the app's **API Keys**, copy the token → **`UPLOADTHING_TOKEN`**.
+
+> Optional for launch. Recipe and step images are currently added by URL; wiring
+> native drag-and-drop uploads (photos/video per step) is the next media pass,
+> and the `uploadthing` SDK is already installed for it. Setting the token now
+> means zero extra config when that ships.
 
 ---
 
@@ -102,6 +109,53 @@ Once the deploy is green, open your site and confirm:
 - [ ] **Cook mode** opens and timers/scaling work.
 - [ ] On mobile, you can **install** the app (Add to Home Screen) and it shows
       the offline page when you go offline after visiting once.
+
+---
+
+## 6. Going further (optional)
+
+Nice-to-haves you can do any time after you're live. None are required.
+
+### Point a custom domain at the site
+
+1. Vercel → your project → **Settings → Domains** → add your domain
+   (a subdomain like `heirloom.yourdomain.com` is simplest; the apex
+   `yourdomain.com` also works).
+2. Vercel shows the **exact** DNS records to create. Because this domain's DNS is
+   at your registrar (not Vercel), add them there — always use the values Vercel
+   displays, but they're typically:
+   - **Subdomain** → a **CNAME** to `cname.vercel-dns.com`.
+   - **Apex/root** → an **A** record to the IP Vercel lists (e.g. `76.76.21.21`).
+3. Wait for Vercel to verify (minutes; DNS propagation can take longer).
+4. Update **`NEXT_PUBLIC_APP_URL`** to the new URL and redeploy so share links,
+   Open Graph tags, and PWA metadata are correct.
+5. If Clerk is enabled, also add the domain under Clerk → **Domains**.
+
+### Promote Clerk from development to production
+
+Clerk's `pk_test_…` / `sk_test_…` keys are a **development** instance — fine for
+family testing, but they show a dev banner and have lower limits.
+
+1. In Clerk, create a **Production** instance for the app (Clerk walks you
+   through it). Production requires a domain.
+2. Add your custom domain and create the DNS records Clerk lists (typically a
+   `CNAME clerk.yourdomain.com → …`, plus DKIM/email records if you send mail
+   from your domain).
+3. Copy the new **production** keys (`pk_live_…`, `sk_live_…`).
+4. In Vercel, replace `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+   (Production environment) with the live keys and redeploy.
+
+### Seed a little demo content (optional)
+
+Want the site to feel alive before anyone adds recipes? Point `DATABASE_URL` at
+your database and run the seed once:
+
+```
+pnpm db:seed
+```
+
+It creates a demo cook, a "family" group, and three sample recipes (all
+idempotent — safe to run twice; delete them from the UI any time).
 
 ---
 

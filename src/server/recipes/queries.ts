@@ -7,19 +7,27 @@ import {
   groupMembers,
   recipeIngredients,
   recipeSteps,
+  recipeVersions,
   recipes,
   type User,
 } from "~/server/db/schema";
+import { recipeInput, type RecipeInput } from "./validation";
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
 export type RecipeListItem = Awaited<ReturnType<typeof listMyRecipes>>[number];
+export type VersionListItem = Awaited<
+  ReturnType<typeof getRecipeVersions>
+>[number];
 
 /** Aggregate 1–5 ratings into an average + count. */
 export function ratingSummary(values: { value: number }[]) {
   if (values.length === 0) return { average: 0, count: 0 };
   const sum = values.reduce((acc, r) => acc + r.value, 0);
-  return { average: Math.round((sum / values.length) * 10) / 10, count: values.length };
+  return {
+    average: Math.round((sum / values.length) * 10) / 10,
+    count: values.length,
+  };
 }
 
 /** Groups a user belongs to (for the editor's visibility picker). */
@@ -57,17 +65,30 @@ export async function listMyRecipes(userId: string) {
 export async function listPublicRecipes(limit = 48) {
   if (!isDbConfigured()) return [];
   return db.query.recipes.findMany({
-    where: and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
+    where: and(
+      eq(recipes.visibility, "public"),
+      eq(recipes.status, "published"),
+    ),
     orderBy: [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
 }
 
-function canView(recipe: { authorId: string; visibility: string; groupId: string | null }, viewer: User | null, groupIds: string[]) {
-  if (recipe.visibility === "public" || recipe.visibility === "unlisted") return true;
+function canView(
+  recipe: { authorId: string; visibility: string; groupId: string | null },
+  viewer: User | null,
+  groupIds: string[],
+) {
+  if (recipe.visibility === "public" || recipe.visibility === "unlisted")
+    return true;
   if (recipe.authorId === viewer?.id) return true;
-  if (recipe.visibility === "group" && recipe.groupId && groupIds.includes(recipe.groupId)) return true;
+  if (
+    recipe.visibility === "group" &&
+    recipe.groupId &&
+    groupIds.includes(recipe.groupId)
+  )
+    return true;
   return false;
 }
 
@@ -124,4 +145,76 @@ export async function listLibrary(viewer: User | null) {
     orderBy: [desc(recipes.updatedAt)],
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
+}
+
+/** Validate a persisted version snapshot before using it. */
+export function parseSnapshot(snapshot: string): RecipeInput | null {
+  try {
+    const parsed = recipeInput.safeParse(JSON.parse(snapshot) as unknown);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Version history for a recipe, newest first. */
+export async function getRecipeVersions(recipeId: string) {
+  if (!isDbConfigured()) return [];
+  return db.query.recipeVersions.findMany({
+    where: eq(recipeVersions.recipeId, recipeId),
+    orderBy: [desc(recipeVersions.versionNumber)],
+    with: {
+      author: {
+        columns: { id: true, name: true, handle: true, avatarUrl: true },
+      },
+    },
+  });
+}
+
+/** A single saved recipe version, usually for previewing a snapshot. */
+export async function getRecipeVersion(
+  recipeId: string,
+  versionNumber: number,
+) {
+  if (!isDbConfigured()) return null;
+  return (
+    (await db.query.recipeVersions.findFirst({
+      where: and(
+        eq(recipeVersions.recipeId, recipeId),
+        eq(recipeVersions.versionNumber, versionNumber),
+      ),
+      with: {
+        author: {
+          columns: { id: true, name: true, handle: true, avatarUrl: true },
+        },
+      },
+    })) ?? null
+  );
+}
+
+/** Parent recipe plus recipes adapted from this one. */
+export async function getRecipeLineage(recipeId: string) {
+  if (!isDbConfigured()) return { parent: null, adaptations: [] };
+
+  const recipe = await db.query.recipes.findFirst({
+    where: eq(recipes.id, recipeId),
+    columns: { forkedFromId: true },
+  });
+
+  const parent = recipe?.forkedFromId
+    ? ((await db.query.recipes.findFirst({
+        where: eq(recipes.id, recipe.forkedFromId),
+        columns: { id: true, slug: true, title: true },
+        with: { author: { columns: { name: true } } },
+      })) ?? null)
+    : null;
+
+  const adaptations = await db.query.recipes.findMany({
+    where: eq(recipes.forkedFromId, recipeId),
+    orderBy: [desc(recipes.updatedAt)],
+    columns: { id: true, slug: true, title: true, visibility: true },
+    with: { author: { columns: { name: true } } },
+  });
+
+  return { parent, adaptations };
 }

@@ -5,9 +5,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
+  BookOpen,
   ChefHat,
   Clock3,
   Flame,
+  History,
+  MessageCircle,
   Pencil,
   Play,
   Printer,
@@ -16,14 +19,30 @@ import {
 } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
-import { getRecipe, ratingSummary } from "~/server/recipes/queries";
+import {
+  getRecipe,
+  getRecipeLineage,
+  getRecipeVersions,
+  ratingSummary,
+} from "~/server/recipes/queries";
+import {
+  getRecipeComments,
+  getViewerRating,
+  type ThreadedComment,
+} from "~/server/engagement/queries";
 import { formatMinutes } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import { ShareButton } from "~/components/recipe/share-button";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
+import { AdaptButton } from "~/components/recipe/adapt-button";
+import { RecipeLineage } from "~/components/recipe/lineage";
+import { RecipeTimeline } from "~/components/recipe/timeline";
+import { RatingControl } from "~/components/engagement/rating-control";
+import { CommentsSection } from "~/components/engagement/comments-section";
 
 const load = cache(async (idOrSlug: string) => {
   const user = await getCurrentUser();
@@ -53,6 +72,10 @@ function formatTimer(seconds: number): string {
   return `${seconds}s`;
 }
 
+function countComments(list: ThreadedComment[]): number {
+  return list.reduce((total, c) => total + 1 + countComments(c.replies), 0);
+}
+
 export default async function RecipePage({
   params,
 }: {
@@ -64,6 +87,15 @@ export default async function RecipePage({
 
   const isOwner = Boolean(user?.id === recipe.authorId);
   const { average, count } = ratingSummary(recipe.ratings);
+
+  const [versions, lineage, comments, viewerRating] = await Promise.all([
+    getRecipeVersions(recipe.id),
+    getRecipeLineage(recipe.id),
+    getRecipeComments(recipe.id),
+    getViewerRating(recipe.id, user?.id ?? null),
+  ]);
+  const commentCount = countComments(comments);
+
   const meta = [
     recipe.totalMinutes != null && {
       icon: Clock3,
@@ -114,7 +146,17 @@ export default async function RecipePage({
                 {recipe.visibility}
               </Badge>
             )}
-            {recipe.cuisine && <Badge variant="outline">{recipe.cuisine}</Badge>}
+            {recipe.cuisine && (
+              <Badge variant="outline">{recipe.cuisine}</Badge>
+            )}
+            {recipe.group && (
+              <Link
+                href={`/groups/${recipe.group.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <Users className="size-3.5" /> {recipe.group.name}
+              </Link>
+            )}
           </div>
 
           <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
@@ -136,7 +178,10 @@ export default async function RecipePage({
               </span>
             )}
             {meta.map((m, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 capitalize">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 capitalize"
+              >
                 <m.icon className="size-4" /> {m.label}
               </span>
             ))}
@@ -160,6 +205,11 @@ export default async function RecipePage({
               </Link>
             </Button>
             <ShareButton title={recipe.title} />
+            <AdaptButton
+              sourceId={recipe.id}
+              sourceTitle={recipe.title}
+              canAdapt={Boolean(user)}
+            />
             {isOwner && (
               <Button asChild size="lg" variant="outline">
                 <Link href={`/recipes/${recipe.slug}/edit`}>
@@ -173,130 +223,194 @@ export default async function RecipePage({
 
         <Separator />
 
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-          {/* Ingredients */}
-          <div className="lg:sticky lg:top-20 lg:self-start">
-            <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
-              Ingredients
-            </h2>
-            {recipe.ingredients.length > 0 ? (
-              <IngredientsPanel
-                ingredients={recipe.ingredients}
-                baseServings={recipe.servings}
-                servingsNoun={recipe.servingsNoun}
-              />
-            ) : (
-              <p className="text-muted-foreground">No ingredients listed.</p>
-            )}
-          </div>
+        <RecipeLineage
+          parent={lineage.parent}
+          adaptations={lineage.adaptations}
+        />
 
-          {/* Steps */}
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl font-bold tracking-tight">
-                Method
-              </h2>
-              <Button asChild variant="ghost" size="sm">
-                <Link href={`/recipes/${recipe.slug}/cook`}>
-                  <ChefHat /> Cook mode
-                </Link>
-              </Button>
-            </div>
+        <Tabs defaultValue="recipe" className="flex flex-col gap-2">
+          <TabsList className="self-start">
+            <TabsTrigger value="recipe">
+              <BookOpen className="size-4" /> Recipe
+            </TabsTrigger>
+            <TabsTrigger value="timeline">
+              <History className="size-4" /> Timeline
+              {versions.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {versions.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="discussion">
+              <MessageCircle className="size-4" /> Discussion
+              {commentCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {commentCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-            {recipe.steps.length > 0 ? (
-              <ol className="flex flex-col gap-5">
-                {recipe.steps.map((step, i) => (
-                  <li key={step.id} className="flex gap-4">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/12 font-display text-lg font-semibold text-primary">
-                      {i + 1}
-                    </span>
-                    <div className="flex flex-1 flex-col gap-2 pt-1">
-                      {step.section && (
-                        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          {step.section}
+          <TabsContent value="recipe" className="mt-6">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+              {/* Ingredients */}
+              <div className="lg:sticky lg:top-20 lg:self-start">
+                <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
+                  Ingredients
+                </h2>
+                {recipe.ingredients.length > 0 ? (
+                  <IngredientsPanel
+                    ingredients={recipe.ingredients}
+                    baseServings={recipe.servings}
+                    servingsNoun={recipe.servingsNoun}
+                  />
+                ) : (
+                  <p className="text-muted-foreground">
+                    No ingredients listed.
+                  </p>
+                )}
+              </div>
+
+              {/* Steps */}
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-2xl font-bold tracking-tight">
+                    Method
+                  </h2>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/recipes/${recipe.slug}/cook`}>
+                      <ChefHat /> Cook mode
+                    </Link>
+                  </Button>
+                </div>
+
+                {recipe.steps.length > 0 ? (
+                  <ol className="flex flex-col gap-5">
+                    {recipe.steps.map((step, i) => (
+                      <li key={step.id} className="flex gap-4">
+                        <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
+                          {i + 1}
                         </span>
-                      )}
-                      <p className="text-[1.02rem] leading-relaxed">
-                        {step.instruction}
-                      </p>
-                      {step.imageUrl && (
-                        <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
-                          <Image
-                            src={step.imageUrl}
-                            alt={`Step ${i + 1}`}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 28rem"
-                            className="object-cover"
-                          />
+                        <div className="flex flex-1 flex-col gap-2 pt-1">
+                          {step.section && (
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {step.section}
+                            </span>
+                          )}
+                          <p className="text-[1.02rem] leading-relaxed">
+                            {step.instruction}
+                          </p>
+                          {step.imageUrl && (
+                            <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
+                              <Image
+                                src={step.imageUrl}
+                                alt={`Step ${i + 1}`}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 28rem"
+                                className="object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {step.timerSeconds != null && (
+                              <Badge variant="secondary" className="gap-1">
+                                <Timer className="size-3" />
+                                {formatTimer(step.timerSeconds)}
+                              </Badge>
+                            )}
+                            {step.techniques?.map((t) => (
+                              <Badge key={t} variant="outline">
+                                {t}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-muted-foreground">No steps yet.</p>
+                )}
+
+                {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (
+                  <>
+                    <Separator />
+                    <div className="flex flex-col gap-3">
+                      {recipe.notes && (
+                        <div>
+                          <h3 className="font-display text-lg font-semibold">
+                            Notes
+                          </h3>
+                          <p className="mt-1 whitespace-pre-line text-muted-foreground">
+                            {recipe.notes}
+                          </p>
                         </div>
                       )}
-                      <div className="flex flex-wrap gap-2">
-                        {step.timerSeconds != null && (
-                          <Badge variant="secondary" className="gap-1">
-                            <Timer className="size-3" />
-                            {formatTimer(step.timerSeconds)}
-                          </Badge>
-                        )}
-                        {step.techniques?.map((t) => (
-                          <Badge key={t} variant="outline">
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-muted-foreground">No steps yet.</p>
-            )}
-
-            {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (
-              <>
-                <Separator />
-                <div className="flex flex-col gap-3">
-                  {recipe.notes && (
-                    <div>
-                      <h3 className="font-display text-lg font-semibold">
-                        Notes
-                      </h3>
-                      <p className="mt-1 whitespace-pre-line text-muted-foreground">
-                        {recipe.notes}
-                      </p>
-                    </div>
-                  )}
-                  {(recipe.sourceName ?? recipe.sourceUrl) && (
-                    <p className="text-sm text-muted-foreground">
-                      Source:{" "}
-                      {recipe.sourceUrl ? (
-                        <a
-                          href={recipe.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary underline-offset-4 hover:underline"
-                        >
-                          {recipe.sourceName ?? recipe.sourceUrl}
-                        </a>
-                      ) : (
-                        recipe.sourceName
+                      {(recipe.sourceName ?? recipe.sourceUrl) && (
+                        <p className="text-sm text-muted-foreground">
+                          Source:{" "}
+                          {recipe.sourceUrl ? (
+                            <a
+                              href={recipe.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary underline-offset-4 hover:underline"
+                            >
+                              {recipe.sourceName ?? recipe.sourceUrl}
+                            </a>
+                          ) : (
+                            recipe.sourceName
+                          )}
+                        </p>
                       )}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
+                    </div>
+                  </>
+                )}
 
-            {recipe.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {recipe.tags.map(({ tag }) => (
-                  <Badge key={tag.id} variant="muted">
-                    #{tag.name}
-                  </Badge>
-                ))}
+                {recipe.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {recipe.tags.map(({ tag }) => (
+                      <Badge key={tag.id} variant="muted">
+                        #{tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="timeline" className="mt-6">
+            <div className="mx-auto max-w-3xl">
+              <RecipeTimeline
+                versions={versions}
+                recipeSlug={recipe.slug}
+                recipeId={recipe.id}
+                canRevert={isOwner}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="discussion" className="mt-6">
+            <div className="mx-auto flex max-w-3xl flex-col gap-6">
+              <RatingControl
+                recipeId={recipe.id}
+                recipeSlug={recipe.slug}
+                summary={{ average, count }}
+                viewerRating={viewerRating}
+                canRate={Boolean(user)}
+              />
+              <CommentsSection
+                recipeId={recipe.id}
+                recipeSlug={recipe.slug}
+                initialComments={comments}
+                currentUserId={user?.id ?? null}
+                isRecipeOwner={isOwner}
+                canPost={Boolean(user)}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </article>
   );

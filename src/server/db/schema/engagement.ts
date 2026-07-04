@@ -2,9 +2,11 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
+  timestamp,
   unique,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -53,6 +55,12 @@ export const ratings = pgTable(
   ],
 );
 
+/**
+ * The kind of a thread entry: a plain `comment`, or a `suggestion` — a proposed
+ * change the recipe owner can mark resolved (Phase 2 suggestions/reviews).
+ */
+export const commentKind = pgEnum("comment_kind", ["comment", "suggestion"]);
+
 /** Threaded comments / suggestions on a recipe. */
 export const comments = pgTable(
   "comments",
@@ -65,7 +73,10 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     parentId: fk(),
+    kind: commentKind().notNull().default("comment"),
     body: text().notNull(),
+    // Set when a suggestion has been addressed/closed by the recipe owner.
+    resolvedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
   (t) => [
@@ -121,3 +132,4 @@ export type Tag = typeof tags.$inferSelect;
 export type Rating = typeof ratings.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+export type CommentKind = (typeof commentKind.enumValues)[number];
