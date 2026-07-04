@@ -8,15 +8,18 @@
 # testing
 /coverage
 
-# database
-/prisma/db.sqlite
-/prisma/db.sqlite-journal
+# database (Drizzle + local Postgres runs in Docker)
 db.sqlite
 
 # next.js
 /.next/
 /out/
 next-env.d.ts
+
+# PWA / Serwist service worker build output (regenerated on each build)
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
 
 # production
 /build
@@ -47,9 +50,10 @@ yarn-error.log*
 # clerk configuration (can include secrets)
 /.clerk/
 
-.vercel
+# impeccable skill cache
+/.impeccable/
 
-# Sentry Config File
-.env.sentry-build-plugin
-
-.env.local
+# testing / e2e
+/test-results/
+/playwright-report/
+/playwright/.cache/

@@ -1,0 +1,148 @@
+"use client";
+
+import * as React from "react";
+import { Download, X } from "lucide-react";
+
+import { cn } from "~/lib/utils";
+import { brand } from "~/config/brand";
+import { Button } from "~/components/ui/button";
+import { LogoMark } from "~/components/layout/logo";
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+    platform: string;
+  }>;
+  prompt: () => Promise<void>;
+}
+
+const DISMISS_KEY = "heirloom:pwa-install-dismissed";
+// Don't nag: once dismissed, stay quiet for two weeks.
+const DISMISS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
+
+function recentlyDismissed() {
+  try {
+    const raw = window.localStorage.getItem(DISMISS_KEY);
+    if (!raw) return false;
+    return Date.now() - Number(raw) < DISMISS_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function isStandalone() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    // iOS Safari
+    (window.navigator as { standalone?: boolean }).standalone === true
+  );
+}
+
+/**
+ * Add-to-home-screen banner. Waits for the browser's `beforeinstallprompt`,
+ * then offers a friendly install nudge. Dismissible (remembered for two weeks),
+ * hidden once installed or running standalone. Mounted in the main app chrome
+ * only — never in immersive cook/print views.
+ */
+export function InstallPrompt() {
+  const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
+  const [visible, setVisible] = React.useState(false);
+  const [entered, setEntered] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isStandalone() || recentlyDismissed()) return;
+
+    const onPrompt = (event: Event) => {
+      event.preventDefault();
+      promptRef.current = event as BeforeInstallPromptEvent;
+      setVisible(true);
+    };
+    const onInstalled = () => {
+      setVisible(false);
+      promptRef.current = null;
+    };
+
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    // Next frame so the enter transition actually animates.
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, [visible]);
+
+  const dismiss = React.useCallback(() => {
+    setEntered(false);
+    try {
+      window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    } catch {
+      // Storage unavailable (private mode) — fine, just hide for this session.
+    }
+    window.setTimeout(() => setVisible(false), 200);
+  }, []);
+
+  const install = React.useCallback(async () => {
+    const deferred = promptRef.current;
+    if (!deferred) return;
+    await deferred.prompt();
+    await deferred.userChoice;
+    promptRef.current = null;
+    setEntered(false);
+    window.setTimeout(() => setVisible(false), 200);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-label={`Install ${brand.name}`}
+      className={cn(
+        "no-print fixed inset-x-4 z-40 mx-auto max-w-sm",
+        "bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 pr-2 shadow-lg backdrop-blur",
+          "transition-all duration-300 ease-out motion-reduce:transition-none",
+          entered
+            ? "translate-y-0 opacity-100"
+            : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
+        )}
+      >
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12">
+          <LogoMark className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-tight">
+            Install {brand.name}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            Add to your home screen for one-tap cook mode.
+          </p>
+        </div>
+        <Button size="sm" onClick={install} className="shrink-0">
+          <Download className="size-4" />
+          Install
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={dismiss}
+          aria-label="Dismiss install prompt"
+          className="size-9 shrink-0"
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}

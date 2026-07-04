@@ -1,0 +1,379 @@
+/* =============================================================================
+ * Heirloom design tokens.
+ *
+ * Two orthogonal axes:
+ *   • UI mode   -> [data-theme="kitchen|whimsy|professional|kids|barebones"]
+ *   • Scheme    -> .dark (added to <html> for dark; absent for light)
+ *
+ * Components ONLY ever reference the semantic tokens below (via Tailwind:
+ * bg-primary, text-muted-foreground, rounded-lg, shadow-token, font-display…).
+ * To add a new mode: copy one theme block (light + dark) and add it to
+ * src/config/themes.ts. Nothing else changes.
+ *
+ * Color values are stored as bare HSL channels ("H S% L%") so Tailwind can do
+ * `hsl(var(--token) / <alpha-value>)`.
+ * ========================================================================== */
+
+:root {
+  /* Structural defaults (overridden per-mode below). */
+  --radius: 0.75rem;
+  --font-display: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --shadow: 0 1px 2px hsl(24 30% 20% / 0.06), 0 8px 24px -12px hsl(24 40% 20% / 0.18);
+  --shadow-lg: 0 14px 44px -14px hsl(24 40% 20% / 0.26);
+  --ring-width: 2px;
+  --text-scale: 1;
+  --tap-min: 2.5rem;
+  --motion-scale: 1;
+
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  /* Dark shadows are essentially black glows across every mode. */
+  --shadow: 0 2px 4px hsl(0 0% 0% / 0.35), 0 12px 32px -12px hsl(0 0% 0% / 0.55);
+  --shadow-lg: 0 20px 52px -14px hsl(0 0% 0% / 0.62);
+}
+
+/* ---------------------------------------------------------------------------
+ * KITCHEN — warm, cozy, home-baked. (Also the safe default palette.)
+ * ------------------------------------------------------------------------- */
+:root,
+[data-theme="kitchen"] {
+  --radius: 0.9rem;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+
+  --background: 40 44% 97%;
+  --foreground: 22 20% 18%;
+  --surface: 39 46% 95%;
+  --surface-foreground: 22 20% 18%;
+  --surface-muted: 38 34% 90%;
+  --card: 40 55% 98%;
+  --card-foreground: 22 20% 18%;
+  --popover: 40 55% 98%;
+  --popover-foreground: 22 20% 18%;
+  --primary: 18 60% 44%;
+  --primary-foreground: 40 44% 98%;
+  --secondary: 95 22% 42%;
+  --secondary-foreground: 60 30% 97%;
+  --muted: 38 30% 91%;
+  --muted-foreground: 26 14% 40%;
+  --accent: 32 82% 52%;
+  --accent-foreground: 24 45% 14%;
+  --destructive: 4 65% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 130 38% 38%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 30 45% 12%;
+  --border: 34 26% 84%;
+  --input: 34 26% 84%;
+  --ring: 18 60% 44%;
+}
+
+[data-theme="kitchen"].dark {
+  --background: 24 22% 9%;
+  --foreground: 40 30% 92%;
+  --surface: 24 18% 13%;
+  --surface-foreground: 40 30% 92%;
+  --surface-muted: 24 14% 18%;
+  --card: 24 20% 12%;
+  --card-foreground: 40 30% 92%;
+  --popover: 24 20% 12%;
+  --popover-foreground: 40 30% 92%;
+  --primary: 20 72% 54%;
+  --primary-foreground: 24 30% 10%;
+  --secondary: 95 20% 50%;
+  --secondary-foreground: 60 20% 10%;
+  --muted: 24 12% 20%;
+  --muted-foreground: 38 18% 68%;
+  --accent: 32 80% 56%;
+  --accent-foreground: 24 45% 10%;
+  --destructive: 4 62% 52%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 130 36% 46%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 88% 56%;
+  --warning-foreground: 30 45% 10%;
+  --border: 26 14% 22%;
+  --input: 26 14% 24%;
+  --ring: 20 72% 54%;
+}
+
+/* ---------------------------------------------------------------------------
+ * WHIMSY — playful, colorful, bubbly.
+ * ------------------------------------------------------------------------- */
+[data-theme="whimsy"] {
+  --radius: 1.4rem;
+  --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --shadow: 0 2px 4px hsl(280 40% 40% / 0.08), 0 12px 32px -12px hsl(280 60% 50% / 0.22);
+  --shadow-lg: 0 20px 48px -14px hsl(300 60% 50% / 0.3);
+
+  --background: 300 60% 99%;
+  --foreground: 280 30% 20%;
+  --surface: 300 50% 97%;
+  --surface-foreground: 280 30% 20%;
+  --surface-muted: 290 40% 93%;
+  --card: 0 0% 100%;
+  --card-foreground: 280 30% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 280 30% 20%;
+  --primary: 280 68% 58%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 190 78% 46%;
+  --secondary-foreground: 200 60% 10%;
+  --muted: 290 30% 94%;
+  --muted-foreground: 280 15% 45%;
+  --accent: 336 84% 62%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 356 75% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 160 65% 40%;
+  --success-foreground: 0 0% 100%;
+  --warning: 40 95% 52%;
+  --warning-foreground: 30 60% 12%;
+  --border: 290 30% 88%;
+  --input: 290 30% 88%;
+  --ring: 280 68% 58%;
+}
+
+[data-theme="whimsy"].dark {
+  --background: 275 30% 10%;
+  --foreground: 300 40% 94%;
+  --surface: 275 26% 14%;
+  --surface-foreground: 300 40% 94%;
+  --surface-muted: 275 22% 20%;
+  --card: 275 28% 13%;
+  --card-foreground: 300 40% 94%;
+  --popover: 275 28% 13%;
+  --popover-foreground: 300 40% 94%;
+  --primary: 280 75% 68%;
+  --primary-foreground: 280 40% 8%;
+  --secondary: 190 75% 55%;
+  --secondary-foreground: 200 60% 8%;
+  --muted: 275 18% 22%;
+  --muted-foreground: 290 25% 72%;
+  --accent: 336 85% 68%;
+  --accent-foreground: 336 40% 10%;
+  --destructive: 356 72% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 160 60% 50%;
+  --success-foreground: 0 0% 100%;
+  --warning: 40 92% 60%;
+  --warning-foreground: 30 60% 10%;
+  --border: 280 20% 26%;
+  --input: 280 20% 28%;
+  --ring: 280 75% 68%;
+}
+
+/* ---------------------------------------------------------------------------
+ * PROFESSIONAL — clean, editorial, magazine-grade.
+ * ------------------------------------------------------------------------- */
+[data-theme="professional"] {
+  --radius: 0.4rem;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --shadow: 0 1px 2px hsl(220 20% 20% / 0.08), 0 6px 20px -12px hsl(220 20% 20% / 0.18);
+  --shadow-lg: 0 16px 40px -16px hsl(220 20% 20% / 0.22);
+
+  --background: 0 0% 100%;
+  --foreground: 220 18% 16%;
+  --surface: 220 20% 98%;
+  --surface-foreground: 220 18% 16%;
+  --surface-muted: 220 16% 94%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 18% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 18% 16%;
+  --primary: 210 30% 22%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 16% 90%;
+  --secondary-foreground: 220 25% 20%;
+  --muted: 220 16% 95%;
+  --muted-foreground: 220 10% 42%;
+  --accent: 14 60% 46%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62% 46%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 150 45% 34%;
+  --success-foreground: 0 0% 100%;
+  --warning: 36 85% 46%;
+  --warning-foreground: 30 60% 12%;
+  --border: 220 16% 88%;
+  --input: 220 16% 88%;
+  --ring: 210 30% 22%;
+}
+
+[data-theme="professional"].dark {
+  --background: 220 20% 9%;
+  --foreground: 210 20% 92%;
+  --surface: 220 18% 12%;
+  --surface-foreground: 210 20% 92%;
+  --surface-muted: 220 14% 17%;
+  --card: 220 18% 11%;
+  --card-foreground: 210 20% 92%;
+  --popover: 220 18% 11%;
+  --popover-foreground: 210 20% 92%;
+  --primary: 210 24% 82%;
+  --primary-foreground: 220 28% 12%;
+  --secondary: 220 14% 20%;
+  --secondary-foreground: 210 20% 90%;
+  --muted: 220 14% 18%;
+  --muted-foreground: 215 14% 65%;
+  --accent: 14 65% 55%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 60% 54%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 150 42% 46%;
+  --success-foreground: 0 0% 100%;
+  --warning: 36 82% 56%;
+  --warning-foreground: 30 60% 10%;
+  --border: 220 12% 22%;
+  --input: 220 12% 24%;
+  --ring: 210 24% 82%;
+}
+
+/* ---------------------------------------------------------------------------
+ * KIDS — big, bright, friendly, safe. Larger targets + text.
+ * ------------------------------------------------------------------------- */
+[data-theme="kids"] {
+  --radius: 1.5rem;
+  --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --shadow: 0 3px 0 hsl(212 60% 40% / 0.14), 0 12px 28px -12px hsl(212 80% 40% / 0.28);
+  --shadow-lg: 0 6px 0 hsl(212 60% 40% / 0.14), 0 22px 44px -14px hsl(212 80% 40% / 0.34);
+  --text-scale: 1.075;
+  --tap-min: 3rem;
+  --ring-width: 3px;
+
+  --background: 48 100% 97%;
+  --foreground: 222 40% 20%;
+  --surface: 48 90% 95%;
+  --surface-foreground: 222 40% 20%;
+  --surface-muted: 45 80% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 40% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 40% 20%;
+  --primary: 212 90% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 145 62% 42%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 45 60% 92%;
+  --muted-foreground: 222 20% 40%;
+  --accent: 38 100% 52%;
+  --accent-foreground: 28 60% 14%;
+  --destructive: 0 78% 56%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 145 62% 40%;
+  --success-foreground: 0 0% 100%;
+  --warning: 42 100% 50%;
+  --warning-foreground: 30 70% 12%;
+  --border: 42 50% 84%;
+  --input: 42 50% 84%;
+  --ring: 212 90% 52%;
+}
+
+[data-theme="kids"].dark {
+  --background: 224 40% 12%;
+  --foreground: 48 90% 94%;
+  --surface: 224 34% 16%;
+  --surface-foreground: 48 90% 94%;
+  --surface-muted: 224 28% 22%;
+  --card: 224 36% 15%;
+  --card-foreground: 48 90% 94%;
+  --popover: 224 36% 15%;
+  --popover-foreground: 48 90% 94%;
+  --primary: 212 92% 62%;
+  --primary-foreground: 224 40% 10%;
+  --secondary: 145 60% 50%;
+  --secondary-foreground: 224 40% 8%;
+  --muted: 224 24% 22%;
+  --muted-foreground: 48 40% 78%;
+  --accent: 38 100% 58%;
+  --accent-foreground: 28 60% 10%;
+  --destructive: 0 78% 62%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 145 58% 50%;
+  --success-foreground: 0 0% 100%;
+  --warning: 42 100% 58%;
+  --warning-foreground: 30 70% 10%;
+  --border: 224 24% 26%;
+  --input: 224 24% 28%;
+  --ring: 212 92% 62%;
+}
+
+/* ---------------------------------------------------------------------------
+ * BAREBONES (Simple) — ultra-simple, high-contrast, minimal chrome.
+ * ------------------------------------------------------------------------- */
+[data-theme="barebones"] {
+  --radius: 0.25rem;
+  --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-body: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 2px 6px hsl(0 0% 0% / 0.14);
+  --text-scale: 1.03;
+  --tap-min: 2.75rem;
+  --ring-width: 3px;
+  --motion-scale: 0;
+
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%;
+  --surface: 0 0% 98%;
+  --surface-foreground: 0 0% 10%;
+  --surface-muted: 0 0% 94%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 222 80% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 12%;
+  --muted: 0 0% 95%;
+  --muted-foreground: 0 0% 32%;
+  --accent: 222 80% 44%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 40%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 140 60% 28%;
+  --success-foreground: 0 0% 100%;
+  --warning: 40 90% 38%;
+  --warning-foreground: 0 0% 100%;
+  --border: 0 0% 78%;
+  --input: 0 0% 62%;
+  --ring: 222 80% 44%;
+}
+
+[data-theme="barebones"].dark {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 96%;
+  --surface: 0 0% 11%;
+  --surface-foreground: 0 0% 96%;
+  --surface-muted: 0 0% 16%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 214 90% 62%;
+  --primary-foreground: 0 0% 6%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 68%;
+  --accent: 214 90% 62%;
+  --accent-foreground: 0 0% 6%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 140 55% 45%;
+  --success-foreground: 0 0% 6%;
+  --warning: 40 90% 55%;
+  --warning-foreground: 0 0% 6%;
+  --border: 0 0% 30%;
+  --input: 0 0% 40%;
+  --ring: 214 90% 62%;
+}
