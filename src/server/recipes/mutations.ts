@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
+  groupMembers,
   recipeIngredients,
   recipeSteps,
   recipeTags,
@@ -14,10 +15,15 @@ import {
 } from "~/server/db/schema";
 import { slugify } from "~/lib/utils";
 import { recipeSlug, type RecipeInput } from "./validation";
+import { parseSnapshot } from "./queries";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-async function uniqueSlug(tx: Tx, base: string, ignoreId?: string): Promise<string> {
+async function uniqueSlug(
+  tx: Tx,
+  base: string,
+  ignoreId?: string,
+): Promise<string> {
   let candidate = base;
   for (let i = 0; i < 50; i++) {
     const existing = await tx.query.recipes.findFirst({
@@ -94,14 +100,20 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
   const unique = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
   if (unique.length === 0) return;
 
-  const slugs = unique.map((n) => ({ name: n, slug: slugify(n).slice(0, 60) || n.toLowerCase() }));
+  const slugs = unique.map((n) => ({
+    name: n,
+    slug: slugify(n).slice(0, 60) || n.toLowerCase(),
+  }));
   await tx
     .insert(tags)
     .values(slugs.map((s) => ({ slug: s.slug, name: s.name })))
     .onConflictDoNothing({ target: tags.slug });
 
   const rows = await tx.query.tags.findMany({
-    where: inArray(tags.slug, slugs.map((s) => s.slug)),
+    where: inArray(
+      tags.slug,
+      slugs.map((s) => s.slug),
+    ),
     columns: { id: true },
   });
   if (rows.length > 0) {
@@ -112,9 +124,17 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
   }
 }
 
-async function journal(tx: Tx, recipeId: string, authorId: string, input: RecipeInput, label?: string) {
+async function journal(
+  tx: Tx,
+  recipeId: string,
+  authorId: string,
+  input: RecipeInput,
+  label?: string,
+) {
   const [{ next } = { next: 1 }] = await tx
-    .select({ next: sql<number>`coalesce(max(${recipeVersions.versionNumber}), 0) + 1` })
+    .select({
+      next: sql<number>`coalesce(max(${recipeVersions.versionNumber}), 0) + 1`,
+    })
     .from(recipeVersions)
     .where(eq(recipeVersions.recipeId, recipeId));
   await tx.insert(recipeVersions).values({
@@ -124,6 +144,54 @@ async function journal(tx: Tx, recipeId: string, authorId: string, input: Recipe
     label: label ?? null,
     snapshot: JSON.stringify(input),
   });
+}
+
+async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {
+  const rows = await tx.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+    columns: { groupId: true },
+  });
+  return rows.map((r) => r.groupId);
+}
+
+function canForkSource(
+  source: { authorId: string; visibility: string; groupId: string | null },
+  author: User,
+  groupIds: string[],
+) {
+  if (source.visibility === "public" || source.visibility === "unlisted")
+    return true;
+  if (source.authorId === author.id) return true;
+  return (
+    source.visibility === "group" &&
+    source.groupId != null &&
+    groupIds.includes(source.groupId)
+  );
+}
+
+async function applyRecipeInput(
+  tx: Tx,
+  id: string,
+  input: RecipeInput,
+  author: User,
+  label: string,
+  current: { slug: string; publishedAt: Date | null },
+) {
+  const nowPublished = input.status === "published";
+  const publishedAt =
+    nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
+
+  await tx
+    .update(recipes)
+    .set({ ...scalarFields(input), publishedAt })
+    .where(eq(recipes.id, id));
+
+  await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
+  await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
+  await insertChildren(tx, id, input);
+  await syncTags(tx, id, input.tags);
+  await journal(tx, id, author.id, input, label);
+  return { id, slug: current.slug };
 }
 
 export async function createRecipe(input: RecipeInput, author: User) {
@@ -146,7 +214,11 @@ export async function createRecipe(input: RecipeInput, author: User) {
   });
 }
 
-export async function updateRecipe(id: string, input: RecipeInput, author: User) {
+export async function updateRecipe(
+  id: string,
+  input: RecipeInput,
+  author: User,
+) {
   return db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
@@ -154,21 +226,131 @@ export async function updateRecipe(id: string, input: RecipeInput, author: User)
     });
     if (!current) throw new Error("NOT_FOUND");
 
-    const nowPublished = input.status === "published";
-    const publishedAt =
-      nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
+    return applyRecipeInput(tx, id, input, author, "Edited", current);
+  });
+}
 
-    await tx
-      .update(recipes)
-      .set({ ...scalarFields(input), publishedAt })
-      .where(eq(recipes.id, id));
+export async function forkRecipe(
+  sourceIdOrSlug: string,
+  author: User,
+  forkNote?: string,
+) {
+  return db.transaction(async (tx) => {
+    const source = await tx.query.recipes.findFirst({
+      where: or(
+        eq(recipes.id, sourceIdOrSlug),
+        eq(recipes.slug, sourceIdOrSlug),
+      ),
+      with: {
+        ingredients: { orderBy: [recipeIngredients.position] },
+        steps: { orderBy: [recipeSteps.position] },
+        tags: { with: { tag: true } },
+      },
+    });
 
-    await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
-    await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
-    await insertChildren(tx, id, input);
-    await syncTags(tx, id, input.tags);
-    await journal(tx, id, author.id, input, "Edited");
-    return { id, slug: current.slug };
+    if (!source) throw new Error("NOT_FOUND");
+
+    const groupIds =
+      source.visibility === "group" ? await viewerGroupIds(tx, author.id) : [];
+    if (!canForkSource(source, author, groupIds)) throw new Error("NOT_FOUND");
+
+    const input: RecipeInput = {
+      title: source.title,
+      description: source.description ?? undefined,
+      coverImageUrl: source.coverImageUrl ?? undefined,
+      servings: source.servings ?? undefined,
+      servingsNoun: source.servingsNoun ?? undefined,
+      prepMinutes: source.prepMinutes ?? undefined,
+      cookMinutes: source.cookMinutes ?? undefined,
+      totalMinutes: source.totalMinutes ?? undefined,
+      difficulty: source.difficulty ?? undefined,
+      cuisine: source.cuisine ?? undefined,
+      sourceName: source.sourceName ?? undefined,
+      sourceUrl: source.sourceUrl ?? undefined,
+      notes: source.notes ?? undefined,
+      visibility: "private",
+      status: "draft",
+      groupId: undefined,
+      ingredients: source.ingredients.map((ing) => ({
+        section: ing.section ?? undefined,
+        quantity: ing.quantity ?? undefined,
+        quantityMax: ing.quantityMax ?? undefined,
+        unit: ing.unit ?? undefined,
+        item: ing.item,
+        note: ing.note ?? undefined,
+        optional: ing.optional,
+      })),
+      steps: source.steps.map((step) => ({
+        section: step.section ?? undefined,
+        instruction: step.instruction,
+        imageUrl: step.imageUrl ?? undefined,
+        videoUrl: step.videoUrl ?? undefined,
+        timerSeconds: step.timerSeconds ?? undefined,
+        techniques: step.techniques ?? [],
+      })),
+      tags: source.tags.map((recipeTag) => recipeTag.tag.name),
+    };
+
+    const slug = await uniqueSlug(tx, recipeSlug(input.title));
+    const note = forkNote?.trim();
+    const [row] = await tx
+      .insert(recipes)
+      .values({
+        ...scalarFields(input),
+        slug,
+        authorId: author.id,
+        forkedFromId: source.id,
+        forkNote: note ? note.slice(0, 300) : null,
+        publishedAt: input.status === "published" ? new Date() : null,
+      })
+      .returning({ id: recipes.id, slug: recipes.slug });
+
+    const recipe = row!;
+    await insertChildren(tx, recipe.id, input);
+    await syncTags(tx, recipe.id, input.tags);
+    await journal(
+      tx,
+      recipe.id,
+      author.id,
+      input,
+      `Adapted from "${source.title}"`,
+    );
+    return recipe;
+  });
+}
+
+export async function revertRecipe(
+  id: string,
+  versionNumber: number,
+  author: User,
+) {
+  return db.transaction(async (tx) => {
+    const current = await tx.query.recipes.findFirst({
+      where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
+      columns: { id: true, slug: true, publishedAt: true, status: true },
+    });
+    if (!current) throw new Error("NOT_FOUND");
+
+    const version = await tx.query.recipeVersions.findFirst({
+      where: and(
+        eq(recipeVersions.recipeId, id),
+        eq(recipeVersions.versionNumber, versionNumber),
+      ),
+      columns: { snapshot: true },
+    });
+    if (!version) throw new Error("NOT_FOUND");
+
+    const input = parseSnapshot(version.snapshot);
+    if (!input) throw new Error("BAD_SNAPSHOT");
+
+    return applyRecipeInput(
+      tx,
+      id,
+      input,
+      author,
+      `Reverted to v${versionNumber}`,
+      current,
+    );
   });
 }
 

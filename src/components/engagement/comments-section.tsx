@@ -1,0 +1,487 @@
+"use client";
+
+import * as React from "react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  Check,
+  CornerDownRight,
+  Lightbulb,
+  MessageCircle,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+import {
+  addCommentAction,
+  deleteCommentAction,
+  resolveCommentAction,
+} from "~/server/engagement/actions";
+import type { ThreadedComment } from "~/server/engagement/queries";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
+import { Textarea } from "~/components/ui/textarea";
+import { cn } from "~/lib/utils";
+
+type CommentKind = "comment" | "suggestion";
+
+type PostComment = (
+  body: string,
+  kind: CommentKind,
+  parentId: string | null,
+  onSuccess?: () => void,
+) => void;
+
+function displayName(author: ThreadedComment["author"]) {
+  return author?.name ?? author?.handle ?? "Family cook";
+}
+
+function initials(author: ThreadedComment["author"]) {
+  return displayName(author)
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function relativeTime(date: Date) {
+  return formatDistanceToNow(new Date(date), { addSuffix: true });
+}
+
+export function CommentsSection(props: {
+  recipeId: string;
+  recipeSlug: string;
+  initialComments: ThreadedComment[];
+  currentUserId: string | null;
+  isRecipeOwner: boolean;
+  canPost: boolean;
+}) {
+  const {
+    recipeId,
+    recipeSlug,
+    initialComments,
+    currentUserId,
+    isRecipeOwner,
+    canPost,
+  } = props;
+  const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
+  const [comments, setComments] = React.useState(initialComments);
+  const [kind, setKind] = React.useState<CommentKind>("comment");
+  const [body, setBody] = React.useState("");
+
+  React.useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
+
+  const postComment: PostComment = (nextBody, nextKind, parentId, onSuccess) => {
+    const trimmed = nextBody.trim();
+    if (!trimmed) {
+      toast.error("Write something before posting.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await addCommentAction({
+        recipeId,
+        recipeSlug,
+        parentId: parentId ?? undefined,
+        kind: nextKind,
+        body: trimmed,
+      });
+
+      if (result.ok) {
+        toast.success(
+          parentId
+            ? "Reply posted."
+            : nextKind === "suggestion"
+              ? "Suggestion shared."
+              : "Comment posted.",
+        );
+        onSuccess?.();
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
+
+  function deleteComment(commentId: string) {
+    startTransition(async () => {
+      const result = await deleteCommentAction({ commentId, recipeSlug });
+      if (result.ok) {
+        toast.success("Comment deleted.");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function resolveSuggestion(commentId: string, resolved: boolean) {
+    startTransition(async () => {
+      const result = await resolveCommentAction({
+        commentId,
+        recipeSlug,
+        resolved,
+      });
+      if (result.ok) {
+        toast.success(resolved ? "Suggestion resolved." : "Suggestion reopened.");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function submitTopLevel(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    postComment(body, kind, null, () => setBody(""));
+  }
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="rounded-full bg-primary/12 p-2 text-primary">
+          <MessageCircle className="size-5" />
+        </span>
+        <div>
+          <h2 className="font-display text-xl font-semibold text-foreground">
+            Conversation
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Ask questions, share how it turned out, or suggest a family tweak.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        {canPost ? (
+          <form onSubmit={submitTopLevel} className="rounded-xl bg-muted/45 p-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={kind === "comment" ? "secondary" : "ghost"}
+                aria-pressed={kind === "comment"}
+                onClick={() => setKind("comment")}
+              >
+                <MessageCircle /> Comment
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-pressed={kind === "suggestion"}
+                onClick={() => setKind("suggestion")}
+                className={cn(
+                  kind === "suggestion" &&
+                    "bg-warning/20 text-warning-foreground hover:bg-warning/25",
+                )}
+              >
+                <Lightbulb /> Suggestion
+              </Button>
+            </div>
+
+            <Label htmlFor="comment-body" className="sr-only">
+              Comment body
+            </Label>
+            <Textarea
+              id="comment-body"
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder={
+                kind === "suggestion"
+                  ? "Suggest a change the recipe owner can resolve…"
+                  : "Leave a note for the family table…"
+              }
+              className="min-h-28 resize-y bg-background"
+              maxLength={4000}
+              disabled={pending}
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                {kind === "suggestion"
+                  ? "Suggestions stay open until the recipe owner resolves them."
+                  : "Comments support replies for side conversations."}
+              </p>
+              <Button type="submit" size="sm" disabled={pending || !body.trim()}>
+                {pending ? "Posting…" : "Post"}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm text-muted-foreground">
+            Sign in to add a comment, reply, or suggest a recipe change.
+          </div>
+        )}
+      </div>
+
+      <Separator className="my-5" />
+
+      {comments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
+          <MessageCircle className="mx-auto mb-3 size-8 text-muted-foreground" />
+          <h3 className="font-display text-lg font-semibold text-foreground">
+            Start the conversation
+          </h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Be the first to ask a question, celebrate a successful bake, or leave
+            a helpful suggestion for the recipe owner.
+          </p>
+        </div>
+      ) : (
+        <ul className="space-y-4">
+          {comments.map((comment) => (
+            <li key={comment.id}>
+              <CommentItem
+                comment={comment}
+                currentUserId={currentUserId}
+                isRecipeOwner={isRecipeOwner}
+                canPost={canPost}
+                pending={pending}
+                onPostReply={postComment}
+                onDelete={deleteComment}
+                onResolve={resolveSuggestion}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function CommentItem({
+  comment,
+  currentUserId,
+  isRecipeOwner,
+  canPost,
+  pending,
+  onPostReply,
+  onDelete,
+  onResolve,
+  depth = 0,
+}: {
+  comment: ThreadedComment;
+  currentUserId: string | null;
+  isRecipeOwner: boolean;
+  canPost: boolean;
+  pending: boolean;
+  onPostReply: PostComment;
+  onDelete: (commentId: string) => void;
+  onResolve: (commentId: string, resolved: boolean) => void;
+  depth?: number;
+}) {
+  const [replyOpen, setReplyOpen] = React.useState(false);
+  const [replyBody, setReplyBody] = React.useState("");
+  const authorName = displayName(comment.author);
+  const isSuggestion = comment.kind === "suggestion";
+  const isResolved = Boolean(comment.resolvedAt);
+  const canDelete =
+    (currentUserId != null && currentUserId === comment.author?.id) ||
+    isRecipeOwner;
+
+  function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onPostReply(replyBody, "comment", comment.id, () => {
+      setReplyBody("");
+      setReplyOpen(false);
+    });
+  }
+
+  return (
+    <article
+      className={cn(
+        "rounded-xl border border-border bg-background p-4 transition-colors duration-150",
+        isSuggestion && "border-warning/40 bg-warning/10",
+        isResolved && "border-border bg-muted/45",
+      )}
+    >
+      <div className="flex gap-3">
+        <Avatar className="size-9">
+          {comment.author?.avatarUrl ? (
+            <AvatarImage src={comment.author.avatarUrl} alt={authorName} />
+          ) : null}
+          <AvatarFallback>{initials(comment.author)}</AvatarFallback>
+        </Avatar>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-medium text-foreground">{authorName}</span>
+            {comment.author?.handle ? (
+              <span className="text-xs text-muted-foreground">
+                @{comment.author.handle}
+              </span>
+            ) : null}
+            <time
+              dateTime={new Date(comment.createdAt).toISOString()}
+              className="text-xs text-muted-foreground"
+            >
+              {relativeTime(comment.createdAt)}
+            </time>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {isSuggestion ? (
+              <Badge
+                variant="warning"
+                className="bg-warning/25 text-warning-foreground"
+              >
+                <Lightbulb className="size-3" />
+                Suggestion
+              </Badge>
+            ) : null}
+            {isResolved ? (
+              <Badge variant="success">
+                <Check className="size-3" />
+                Resolved
+              </Badge>
+            ) : null}
+          </div>
+
+          <p
+            className={cn(
+              "mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-foreground",
+              isResolved && "text-muted-foreground",
+            )}
+          >
+            {comment.body}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1">
+            {canPost ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={pending}
+                onClick={() => setReplyOpen((open) => !open)}
+                className="h-8 px-2 text-muted-foreground"
+              >
+                <CornerDownRight /> Reply
+              </Button>
+            ) : null}
+
+            {isSuggestion && isRecipeOwner ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={pending}
+                onClick={() => onResolve(comment.id, !isResolved)}
+                className="h-8 px-2 text-muted-foreground"
+              >
+                <Check /> {isResolved ? "Reopen" : "Resolve"}
+              </Button>
+            ) : null}
+
+            {canDelete ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={pending}
+                    aria-label="Comment actions"
+                    className="ml-auto size-8 text-muted-foreground"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => onDelete(comment.id)}
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  >
+                    <Trash2 /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+
+          {replyOpen ? (
+            <form
+              onSubmit={submitReply}
+              className="mt-3 rounded-lg bg-muted/45 p-3"
+            >
+              <Label htmlFor={`reply-${comment.id}`} className="sr-only">
+                Reply
+              </Label>
+              <Textarea
+                id={`reply-${comment.id}`}
+                value={replyBody}
+                onChange={(event) => setReplyBody(event.target.value)}
+                placeholder="Write a reply…"
+                className="min-h-20 bg-background"
+                maxLength={4000}
+                disabled={pending}
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setReplyBody("");
+                    setReplyOpen(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={pending || !replyBody.trim()}
+                >
+                  {pending ? "Replying…" : "Reply"}
+                </Button>
+              </div>
+            </form>
+          ) : null}
+        </div>
+      </div>
+
+      {comment.replies.length > 0 ? (
+        <div
+          className={cn(
+            "mt-4 space-y-3 border-l border-border pl-4",
+            depth > 1 && "pl-3",
+          )}
+        >
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              isRecipeOwner={isRecipeOwner}
+              canPost={canPost}
+              pending={pending}
+              onPostReply={onPostReply}
+              onDelete={onDelete}
+              onResolve={onResolve}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      ) : null}
+    </article>
+  );
+}
