@@ -50,6 +50,7 @@ export default async function EditRecipePage({
     })),
     steps: recipe.steps.map((step) => ({
       instruction: step.instruction,
+      imageUrl: step.imageUrl ?? "",
       timerMinutes:
         step.timerSeconds != null
           ? String(Math.round((step.timerSeconds / 60) * 100) / 100)

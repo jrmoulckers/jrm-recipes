@@ -47,18 +47,18 @@ collaboration, import, and social.
 
 ## Tech stack
 
-| Area | Choice |
-| --- | --- |
-| Framework | **Next.js 15** (App Router) + **React 19** + **TypeScript** (strict) |
-| Styling | **Tailwind CSS** + CSS-variable design tokens |
-| UI | **Radix UI** primitives + a custom component library |
-| Database | **Postgres** (Neon in prod / Docker locally) + **Drizzle ORM** |
-| Auth | **Clerk**, wrapped in our own module with a guarded **dev-bypass** |
-| File storage | **UploadThing** (recipe + step images/video) |
-| PWA / offline | **Serwist** service worker |
-| Validation | **Zod** |
-| Testing | **Vitest** (unit) + **Playwright** (e2e) |
-| CI/CD | **GitHub Actions** + **Vercel** (auto-deploy on merge to `main`) |
+| Area          | Choice                                                               |
+| ------------- | -------------------------------------------------------------------- |
+| Framework     | **Next.js 15** (App Router) + **React 19** + **TypeScript** (strict) |
+| Styling       | **Tailwind CSS** + CSS-variable design tokens                        |
+| UI            | **Radix UI** primitives + a custom component library                 |
+| Database      | **Postgres** (Neon in prod / Docker locally) + **Drizzle ORM**       |
+| Auth          | **Clerk**, wrapped in our own module with a guarded **dev-bypass**   |
+| File storage  | **Cloudinary** (recipe + step images/video)                          |
+| PWA / offline | **Serwist** service worker                                           |
+| Validation    | **Zod**                                                              |
+| Testing       | **Vitest** (unit) + **Playwright** (e2e)                             |
+| CI/CD         | **GitHub Actions** + **Vercel** (auto-deploy on merge to `main`)     |
 
 **Design principle:** the app **boots, builds, and is fully clickable with zero
 configuration.** Every external service (DB, auth, uploads) degrades gracefully
@@ -147,18 +147,18 @@ wrong theme on load.
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `pnpm dev` | Start the dev server |
-| `pnpm build` | Production build |
-| `pnpm preview` | Build **and** start — the way to test PWA/offline |
-| `pnpm start` | Start a production server (after `build`) |
-| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript checks |
-| `pnpm test` / `pnpm test:e2e` | Vitest unit tests / Playwright e2e |
-| `pnpm db:generate` | Generate a migration from schema changes |
-| `pnpm db:migrate` | Apply migrations |
-| `pnpm db:seed` | Seed sample data |
-| `pnpm db:studio` | Open Drizzle Studio |
+| Command                        | What it does                                      |
+| ------------------------------ | ------------------------------------------------- |
+| `pnpm dev`                     | Start the dev server                              |
+| `pnpm build`                   | Production build                                  |
+| `pnpm preview`                 | Build **and** start — the way to test PWA/offline |
+| `pnpm start`                   | Start a production server (after `build`)         |
+| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript checks                        |
+| `pnpm test` / `pnpm test:e2e`  | Vitest unit tests / Playwright e2e                |
+| `pnpm db:generate`             | Generate a migration from schema changes          |
+| `pnpm db:migrate`              | Apply migrations                                  |
+| `pnpm db:seed`                 | Seed sample data                                  |
+| `pnpm db:studio`               | Open Drizzle Studio                               |
 
 ---
 
@@ -172,7 +172,7 @@ never have to touch the database by hand.
 👉 **Follow the step-by-step checklist in [`DEPLOY.md`](./DEPLOY.md).**
 
 At a glance, you'll provision three free-tier services — **Neon** (Postgres),
-**Clerk** (auth), **UploadThing** (file storage) — paste their keys into Vercel,
+**Clerk** (auth), **Cloudinary** (file storage) — paste their keys into Vercel,
 connect the repo, and deploy.
 
 ---
