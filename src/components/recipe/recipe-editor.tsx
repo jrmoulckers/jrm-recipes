@@ -23,6 +23,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
+import { ImageUploadField } from "~/components/ui/image-upload";
 
 type IngRow = {
   key: string;
@@ -36,6 +37,7 @@ type IngRow = {
 type StepRow = {
   key: string;
   instruction: string;
+  imageUrl: string;
   timerMinutes: string;
   techniques: string;
 };
@@ -74,6 +76,7 @@ const EMPTY_ING: Omit<IngRow, "key"> = {
 };
 const EMPTY_STEP: Omit<StepRow, "key"> = {
   instruction: "",
+  imageUrl: "",
   timerMinutes: "",
   techniques: "",
 };
@@ -186,7 +189,7 @@ export function RecipeEditor({
         .map((r) => ({
           section: undefined,
           instruction: r.instruction.trim(),
-          imageUrl: undefined,
+          imageUrl: r.imageUrl.trim() || undefined,
           videoUrl: undefined,
           timerSeconds: r.timerMinutes.trim()
             ? Math.round(Number(r.timerMinutes) * 60)
@@ -414,6 +417,18 @@ export function RecipeEditor({
                         placeholder="Techniques (comma sep.)"
                       />
                     </div>
+                    <ImageUploadField
+                      size="compact"
+                      label={`Step ${i + 1} photo`}
+                      value={row.imageUrl}
+                      onChange={(url) =>
+                        setSteps((l) =>
+                          l.map((r) =>
+                            r.key === row.key ? { ...r, imageUrl: url } : r,
+                          ),
+                        )
+                      }
+                    />
                   </div>
                   <RowControls
                     onUp={() => setSteps((l) => move(l, i, -1))}
@@ -501,13 +516,12 @@ export function RecipeEditor({
             />
           </Field>
 
-          <Field label="Cover image URL">
-            <Input
-              value={form.coverImageUrl}
-              onChange={(e) => set("coverImageUrl", e.target.value)}
-              placeholder="https://…"
-            />
-          </Field>
+          <ImageUploadField
+            label="Cover photo"
+            hint="Upload a photo or paste an image URL."
+            value={form.coverImageUrl}
+            onChange={(url) => set("coverImageUrl", url)}
+          />
 
           <div className="h-px bg-border" />
 

@@ -17,7 +17,7 @@ export const env = createEnv({
       .default("development"),
     DATABASE_URL: z.string().url().optional(),
     CLERK_SECRET_KEY: z.string().optional(),
-    UPLOADTHING_TOKEN: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
   },
 
   client: {
@@ -26,19 +26,24 @@ export const env = createEnv({
     NEXT_PUBLIC_CLERK_SIGN_IN_URL: z.string().optional(),
     NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().optional(),
     NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    NEXT_PUBLIC_CLOUDINARY_API_KEY: z.string().optional(),
   },
 
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_CLERK_SIGN_IN_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
     NEXT_PUBLIC_CLERK_SIGN_UP_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL,
     NEXT_PUBLIC_DEV_AUTH_BYPASS: process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS,
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    NEXT_PUBLIC_CLOUDINARY_API_KEY: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
   },
 
   skipValidation:

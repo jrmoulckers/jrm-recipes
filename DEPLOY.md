@@ -8,14 +8,14 @@ into Vercel, and connect the repo. Budget ~20 minutes.
 
 - [Neon](https://neon.tech) — serverless Postgres database
 - [Clerk](https://clerk.com) — authentication
-- [UploadThing](https://uploadthing.com) — image/video storage
+- [Cloudinary](https://cloudinary.com) — image/video storage & delivery
 - [Vercel](https://vercel.com) — hosting + CI/CD
 
 > You can go live with **just Neon** if you like. Without Clerk, the app runs in
-> its guarded dev-bypass auth mode. Images are added today by pasting an image
-> URL, so UploadThing is optional at launch — native in-app photo/video uploads
-> are the next media enhancement (the SDK is already installed). Add Clerk and
-> UploadThing whenever you're ready — no code changes required to go live.
+> its guarded dev-bypass auth mode. Without Cloudinary, photo fields fall back to
+> pasting an image URL, so Cloudinary is optional at launch — add it whenever you
+> want native drag-and-drop / camera uploads. Add Clerk and Cloudinary whenever
+> you're ready — no code changes required to go live.
 
 ---
 
@@ -51,15 +51,21 @@ dedicated `/sign-in` page), so you can leave `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
 
 ---
 
-## 3. File storage — UploadThing
+## 3. File storage — Cloudinary
 
-1. Create an UploadThing account and a new **App**.
-2. From the app's **API Keys**, copy the token → **`UPLOADTHING_TOKEN`**.
+1. Create a [Cloudinary](https://cloudinary.com) account. Your **Cloud name** is
+   shown on the dashboard.
+2. Open **Settings → API Keys** and copy the **API Key** and **API Secret**.
+3. You'll set three env vars in step 4:
+   - **`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`** — your cloud name
+   - **`NEXT_PUBLIC_CLOUDINARY_API_KEY`** — the API key (public, client-safe)
+   - **`CLOUDINARY_API_SECRET`** — the API secret (server-only; used to sign
+     uploads so the browser never sees it)
 
-> Optional for launch. Recipe and step images are currently added by URL; wiring
-> native drag-and-drop uploads (photos/video per step) is the next media pass,
-> and the `uploadthing` SDK is already installed for it. Setting the token now
-> means zero extra config when that ships.
+> Optional for launch. When these are unset, every photo field (recipe cover +
+> each step) shows a plain "paste an image URL" input. Set all three and the same
+> fields upgrade to drag-and-drop, camera, and direct-URL uploads — no code
+> changes, no redeploy of the app needed beyond adding the vars.
 
 ---
 
@@ -81,16 +87,18 @@ against Neon and build the app.
 
 ### Environment variables
 
-| Variable | Required? | Value |
-| --- | --- | --- |
-| `DATABASE_URL` | **Yes** | Neon **pooled** connection string (step 1) |
-| `NEXT_PUBLIC_APP_URL` | **Yes** | Your public site URL, e.g. `https://heirloom.yourdomain.com` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | For auth | Clerk publishable key |
-| `CLERK_SECRET_KEY` | For auth | Clerk secret key |
-| `UPLOADTHING_TOKEN` | For uploads | UploadThing token |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Optional | Defaults to `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Optional | Defaults to `/sign-up` |
-| `NEXT_PUBLIC_DEV_AUTH_BYPASS` | Optional | Set to `1` to force dev-bypass auth even if Clerk keys exist. **Leave unset in production.** |
+| Variable                            | Required?   | Value                                                                                        |
+| ----------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                      | **Yes**     | Neon **pooled** connection string (step 1)                                                   |
+| `NEXT_PUBLIC_APP_URL`               | **Yes**     | Your public site URL, e.g. `https://heirloom.yourdomain.com`                                 |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | For auth    | Clerk publishable key                                                                        |
+| `CLERK_SECRET_KEY`                  | For auth    | Clerk secret key                                                                             |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | For uploads | Cloudinary cloud name                                                                        |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY`    | For uploads | Cloudinary API key (public)                                                                  |
+| `CLOUDINARY_API_SECRET`             | For uploads | Cloudinary API secret (server-only)                                                          |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`     | Optional    | Defaults to `/sign-in`                                                                       |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`     | Optional    | Defaults to `/sign-up`                                                                       |
+| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Optional    | Set to `1` to force dev-bypass auth even if Clerk keys exist. **Leave unset in production.** |
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.
@@ -175,7 +183,8 @@ idempotent — safe to run twice; delete them from the UI any time).
   **pooled** string and includes `?sslmode=require`.
 - **Auth errors** — confirm both Clerk keys are set and that your domain is
   allowed in the Clerk dashboard.
-- **Uploads fail** — confirm `UPLOADTHING_TOKEN` is set for the environment
-  you're testing.
+- **Uploads fail** — confirm all three Cloudinary vars
+  (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_API_KEY`,
+  `CLOUDINARY_API_SECRET`) are set for the environment you're testing.
 - **Wrong share URLs / PWA name** — set `NEXT_PUBLIC_APP_URL` to your real domain
   and redeploy.

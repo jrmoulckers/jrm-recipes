@@ -34,8 +34,7 @@ const config = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
-      { hostname: "*.ufs.sh" },
-      { hostname: "utfs.io" },
+      { hostname: "res.cloudinary.com" },
       { hostname: "img.clerk.com" },
     ],
   },
