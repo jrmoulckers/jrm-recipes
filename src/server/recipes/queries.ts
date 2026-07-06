@@ -1,6 +1,19 @@
 import "server-only";
 
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  isNotNull,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
@@ -12,12 +25,19 @@ import {
   groupMembers,
   recipeIngredients,
   recipeSteps,
+  recipeTags,
   recipeVersions,
   recipes,
+  tags,
   type User,
 } from "~/server/db/schema";
 import { recipeInput, type RecipeInput } from "./validation";
 import { DISCOVER_PAGE_SIZE, nextPageOffset } from "./pagination";
+import {
+  tagFilterSlug,
+  type RecipeSearch,
+  type RecipeSort,
+} from "./search";
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
@@ -25,6 +45,10 @@ export type RecipeListItem = Awaited<ReturnType<typeof listMyRecipes>>[number];
 export type PublicRecipeListItem = Awaited<
   ReturnType<typeof listPublicRecipes>
 >["items"][number];
+export type RecipeSearchResult = Awaited<
+  ReturnType<typeof searchRecipes>
+>[number];
+export type RecipeFacets = Awaited<ReturnType<typeof listRecipeFacets>>;
 export type VersionListItem = Awaited<
   ReturnType<typeof getRecipeVersions>
 >[number];
@@ -183,6 +207,168 @@ export async function listLibrary(
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
   return applyRatingSort(rows, sort);
+}
+
+/**
+ * SQL predicate limiting recipes to what a viewer may browse: publicly
+ * published, their own, or their groups'. Mirrors the union the browse page
+ * shows today (library + discover) so search never widens visibility.
+ */
+function visibleRecipesScope(viewer: User | null, groupIds: string[]): SQL {
+  return or(
+    and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
+    viewer ? eq(recipes.authorId, viewer.id) : undefined,
+    groupIds.length > 0
+      ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
+      : undefined,
+  )!;
+}
+
+/** Escape LIKE wildcards so user input like `50%` matches literally. */
+function escapeLike(term: string): string {
+  return term.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+/** ORDER BY clause for a sort option. NULL times/omissions sort last. */
+function recipeOrderBy(sort: RecipeSort): SQL[] {
+  switch (sort) {
+    case "quickest":
+      // Postgres sorts NULLs last for ASC, so timeless recipes trail.
+      return [asc(recipes.totalMinutes), asc(sql`lower(${recipes.title})`)];
+    case "az":
+      return [asc(sql`lower(${recipes.title})`)];
+    // "top-rated" is re-sorted in-memory (applyRatingSort); use the newest
+    // base ordering for the SQL fetch.
+    case "top-rated":
+    case "newest":
+    default:
+      return [
+        desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
+        desc(recipes.createdAt),
+      ];
+  }
+}
+
+const RECIPE_SEARCH_LIMIT = 60;
+
+/**
+ * Search, filter, and sort recipes a viewer may see. All narrowing runs in SQL
+ * against existing indexes; returns [] when the DB is off. The free-text query
+ * matches title, description, cuisine, tag names, and ingredient item text.
+ */
+export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
+  if (!isDbConfigured()) return [];
+  const groupIds = await viewerGroupIds(viewer);
+
+  const conditions: (SQL | undefined)[] = [
+    visibleRecipesScope(viewer, groupIds),
+  ];
+
+  if (search.q) {
+    const like = `%${escapeLike(search.q)}%`;
+    conditions.push(
+      or(
+        ilike(recipes.title, like),
+        ilike(recipes.description, like),
+        ilike(recipes.cuisine, like),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(recipeIngredients)
+            .where(
+              and(
+                eq(recipeIngredients.recipeId, recipes.id),
+                ilike(recipeIngredients.item, like),
+              ),
+            ),
+        ),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(recipeTags)
+            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+            .where(
+              and(
+                eq(recipeTags.recipeId, recipes.id),
+                ilike(tags.name, like),
+              ),
+            ),
+        ),
+      ),
+    );
+  }
+
+  if (search.cuisine) conditions.push(ilike(recipes.cuisine, search.cuisine));
+  if (search.difficulty)
+    conditions.push(eq(recipes.difficulty, search.difficulty));
+  if (search.maxTime != null)
+    conditions.push(lte(recipes.totalMinutes, search.maxTime));
+
+  if (search.tag) {
+    const slug = tagFilterSlug(search.tag);
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(recipeTags)
+          .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+          .where(
+            and(
+              eq(recipeTags.recipeId, recipes.id),
+              or(eq(tags.slug, slug), ilike(tags.name, search.tag)),
+            ),
+          ),
+      ),
+    );
+  }
+
+  const rows = await db.query.recipes.findMany({
+    where: and(...conditions),
+    orderBy: recipeOrderBy(search.sort),
+    limit: RECIPE_SEARCH_LIMIT,
+    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+  });
+
+  // "top-rated" ordering is owned by the ratings module; reuse its comparator
+  // in-memory so both sort systems stay consistent across the app.
+  return applyRatingSort(
+    rows,
+    search.sort === "top-rated" ? "top-rated" : "recent",
+  );
+}
+
+/**
+ * Distinct cuisines + tags present in a viewer's visible recipes, used to
+ * populate the filter menus. Empty when the DB is off.
+ */
+export async function listRecipeFacets(
+  viewer: User | null,
+): Promise<{ cuisines: string[]; tags: { slug: string; name: string }[] }> {
+  if (!isDbConfigured()) return { cuisines: [], tags: [] };
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  const [cuisineRows, tagRows] = await Promise.all([
+    db
+      .selectDistinct({ cuisine: recipes.cuisine })
+      .from(recipes)
+      .where(and(scope, isNotNull(recipes.cuisine)))
+      .orderBy(asc(recipes.cuisine)),
+    db
+      .selectDistinct({ slug: tags.slug, name: tags.name })
+      .from(tags)
+      .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+      .innerJoin(recipes, eq(recipes.id, recipeTags.recipeId))
+      .where(scope)
+      .orderBy(asc(tags.name)),
+  ]);
+
+  return {
+    cuisines: cuisineRows
+      .map((r) => r.cuisine)
+      .filter((c): c is string => Boolean(c)),
+    tags: tagRows,
+  };
 }
 
 /** Validate a persisted version snapshot before using it. */
