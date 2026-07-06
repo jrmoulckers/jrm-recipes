@@ -3,6 +3,7 @@ import {
   ChefHat,
   CookingPot,
   Home,
+  ShoppingCart,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +29,12 @@ export const primaryNav: NavItem[] = [
     label: "Journal",
     icon: CookingPot,
     match: (p) => p.startsWith("/journal"),
+  },
+  {
+    href: "/shopping",
+    label: "Shopping",
+    icon: ShoppingCart,
+    match: (p) => p.startsWith("/shopping"),
   },
   {
     href: "/groups",

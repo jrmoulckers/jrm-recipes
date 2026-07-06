@@ -42,6 +42,7 @@ import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import { ShareButton } from "~/components/recipe/share-button";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
+import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
 import { RecipeTimeline } from "~/components/recipe/timeline";
 import { RatingControl } from "~/components/engagement/rating-control";
@@ -90,6 +91,7 @@ export default async function RecipePage({
   if (!recipe) notFound();
 
   const isOwner = Boolean(user?.id === recipe.authorId);
+  const dbEnabled = isDbConfigured();
   const { average, count } = ratingSummary(recipe.ratings);
 
   const [versions, lineage, comments, viewerRating, cookLog, cookCount] =
@@ -212,6 +214,22 @@ export default async function RecipePage({
               </Link>
             </Button>
             <ShareButton title={recipe.title} />
+            <AddToShoppingList
+              dbEnabled={dbEnabled}
+              recipe={{
+                id: recipe.id,
+                title: recipe.title,
+                servings: recipe.servings,
+                servingsNoun: recipe.servingsNoun,
+                ingredients: recipe.ingredients.map((ing) => ({
+                  item: ing.item,
+                  quantity: ing.quantity,
+                  quantityMax: ing.quantityMax,
+                  unit: ing.unit,
+                  optional: ing.optional,
+                })),
+              }}
+            />
             <AdaptButton
               sourceId={recipe.id}
               sourceTitle={recipe.title}
