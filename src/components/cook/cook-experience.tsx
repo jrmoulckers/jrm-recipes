@@ -36,6 +36,7 @@ import { Separator } from "~/components/ui/separator";
 import { cn, formatMinutes } from "~/lib/utils";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
+import { TechniqueChips } from "./technique-chips";
 import type { CookRecipe, CookStep } from "./types";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 
@@ -394,11 +395,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                   {currentStep.section}
                 </Badge>
               )}
-              {currentStep.techniques?.map((technique) => (
-                <Badge key={technique} variant="outline" className="text-sm">
-                  {technique}
-                </Badge>
-              ))}
+              <TechniqueChips
+                techniques={currentStep.techniques}
+                className="text-sm"
+              />
               {currentStep.timerSeconds != null && (
                 <Badge variant="accent" className="gap-1 text-sm">
                   <Timer className="size-3.5" />
