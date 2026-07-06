@@ -53,7 +53,11 @@ export async function addCommentAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    if (errorCode(error) === "NOT_FOUND") {
+    const code = errorCode(error);
+    if (code === "FORBIDDEN") {
+      return { ok: false, error: "You don't have access to this recipe." };
+    }
+    if (code === "NOT_FOUND") {
       return { ok: false, error: "We couldn't find that recipe thread." };
     }
     return { ok: false, error: "We couldn't post that." };
@@ -155,7 +159,11 @@ export async function setRatingAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    if (errorCode(error) === "NOT_FOUND") {
+    const code = errorCode(error);
+    if (code === "FORBIDDEN") {
+      return { ok: false, error: "You don't have access to this recipe." };
+    }
+    if (code === "NOT_FOUND") {
       return { ok: false, error: "We couldn't find that recipe." };
     }
     return { ok: false, error: "We couldn't save your rating." };

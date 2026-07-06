@@ -150,6 +150,19 @@ function canView(
   return false;
 }
 
+/**
+ * Whether `viewer` may see `recipe`, using the same visibility rule as
+ * {@link getRecipe}. Exposed so write paths (rating, commenting) can gate on
+ * *view* access without re-fetching the whole recipe graph.
+ */
+export async function canViewRecipe(
+  recipe: { authorId: string; visibility: string; groupId: string | null },
+  viewer: User | null,
+): Promise<boolean> {
+  const groupIds = await viewerGroupIds(viewer);
+  return canView(recipe, viewer, groupIds);
+}
+
 /** Fetch a full recipe by id or slug, enforcing visibility for the viewer. */
 export async function getRecipe(idOrSlug: string, viewer: User | null) {
   if (!isDbConfigured()) return null;
