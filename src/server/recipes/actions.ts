@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
 import {
   createRecipe,
@@ -100,6 +101,14 @@ export async function revertRecipeAction(
         : "We couldn't restore that recipe version.";
     return { ok: false, error: message };
   }
+}
+
+export async function importRecipeFromUrlAction(
+  url: string,
+): Promise<ImportResult> {
+  // Tie the fetch to an authenticated session so it isn't an open proxy.
+  await requireUser();
+  return importRecipeFromUrl(url);
 }
 
 export async function deleteRecipeAction(id: string): Promise<void> {

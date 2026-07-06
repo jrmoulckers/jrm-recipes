@@ -1,0 +1,611 @@
+/**
+ * Recipe importer: fetch a public web page and pull a structured recipe out of
+ * its schema.org JSON-LD (`<script type="application/ld+json">`). This is the
+ * free, no-API-key path — the overwhelming majority of recipe sites publish
+ * this data for Google, so we can reuse it to pre-fill the editor.
+ *
+ * Everything below the fetch layer is pure and unit-tested: the mapping from
+ * schema.org's loose shapes to our editor's string-based rows lives in
+ * `parseRecipeFromHtml` and its helpers.
+ */
+
+import { normalizeUnit, roundNice, unitDimension } from "~/lib/units";
+
+export type ImportedIngredient = {
+  section: string;
+  quantity: string;
+  unit: string;
+  item: string;
+  note: string;
+  optional: boolean;
+};
+
+export type ImportedStep = {
+  instruction: string;
+  imageUrl: string;
+  timerMinutes: string;
+  techniques: string;
+};
+
+/** Mirrors the editor's row/field shapes so it can be applied with no mapping. */
+export type ImportedRecipe = {
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  servings: string;
+  servingsNoun: string;
+  prepMinutes: string;
+  cookMinutes: string;
+  cuisine: string;
+  sourceName: string;
+  sourceUrl: string;
+  tags: string;
+  ingredients: ImportedIngredient[];
+  steps: ImportedStep[];
+};
+
+export type ImportResult =
+  | { ok: true; recipe: ImportedRecipe }
+  | { ok: false; error: string };
+
+// --- small typed helpers over unknown JSON ------------------------------
+
+function asArray(v: unknown): unknown[] {
+  return Array.isArray(v) ? (v as unknown[]) : [];
+}
+
+function typeArray(t: unknown): string[] {
+  if (typeof t === "string") return [t];
+  return asArray(t).filter((x): x is string => typeof x === "string");
+}
+
+function safeCodePoint(cp: number): string {
+  try {
+    return String.fromCodePoint(cp);
+  } catch {
+    return "";
+  }
+}
+
+function decodeEntities(input: string): string {
+  return input
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&#x0*27;|&apos;/gi, "'")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => safeCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_m, d: string) => safeCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/gi, "&");
+}
+
+/** Strip tags, decode entities, collapse whitespace. */
+function htmlToText(input: unknown): string {
+  if (typeof input !== "string") return "";
+  return decodeEntities(input)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function textFrom(v: unknown): string {
+  if (typeof v === "string") return htmlToText(v);
+  for (const x of asArray(v)) {
+    const t = textFrom(x);
+    if (t) return t;
+  }
+  if (v && typeof v === "object") {
+    const name = (v as Record<string, unknown>).name;
+    if (typeof name === "string") return htmlToText(name);
+  }
+  return "";
+}
+
+function joinList(v: unknown): string {
+  if (typeof v === "string") return v;
+  return asArray(v)
+    .filter((x): x is string => typeof x === "string")
+    .join(", ");
+}
+
+// --- durations ----------------------------------------------------------
+
+function num(x: string | undefined): number {
+  return x ? Number(x) : 0;
+}
+
+/** ISO-8601 duration (e.g. "PT1H30M") → whole minutes. */
+const ISO_DURATION_RE =
+  /^P(?:\d+(?:\.\d+)?Y)?(?:\d+(?:\.\d+)?M)?(?:(\d+(?:\.\d+)?)W)?(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i;
+
+export function parseIsoDuration(value: string): number | undefined {
+  const m = ISO_DURATION_RE.exec(value.trim());
+  if (!m) return undefined;
+  const total =
+    num(m[1]) * 7 * 24 * 60 +
+    num(m[2]) * 24 * 60 +
+    num(m[3]) * 60 +
+    num(m[4]) +
+    num(m[5]) / 60;
+  return total > 0 ? Math.round(total) : undefined;
+}
+
+function parseDurationText(value: string): number | undefined {
+  const s = value.toLowerCase();
+  let total = 0;
+  let found = false;
+  const h = /(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/.exec(s);
+  if (h) {
+    total += num(h[1]) * 60;
+    found = true;
+  }
+  const min = /(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|m)\b/.exec(s);
+  if (min) {
+    total += num(min[1]);
+    found = true;
+  }
+  if (!found) {
+    const bare = /^\s*(\d+(?:\.\d+)?)\s*$/.exec(s);
+    if (bare) {
+      total = num(bare[1]);
+      found = true;
+    }
+  }
+  return found && total > 0 ? Math.round(total) : undefined;
+}
+
+/** Coerce a schema.org duration (ISO string, plain text, or number) to minutes. */
+export function parseDurationToMinutes(value: unknown): number | undefined {
+  if (typeof value === "number")
+    return value > 0 ? Math.round(value) : undefined;
+  for (const v of asArray(value)) {
+    const r = parseDurationToMinutes(v);
+    if (r) return r;
+  }
+  if (typeof value !== "string") return undefined;
+  const s = value.trim();
+  if (!s) return undefined;
+  if (/^p/i.test(s)) return parseIsoDuration(s) ?? parseDurationText(s);
+  return parseDurationText(s);
+}
+
+// --- yield / servings ---------------------------------------------------
+
+export function parseYield(value: unknown): { servings: string; noun: string } {
+  const pick = (v: unknown): string => {
+    if (typeof v === "number") return String(v);
+    if (typeof v === "string") return v;
+    for (const x of asArray(v)) {
+      const p = pick(x);
+      if (p) return p;
+    }
+    return "";
+  };
+  const raw = pick(value).trim();
+  if (!raw) return { servings: "", noun: "" };
+  const m = /(\d+)/.exec(raw);
+  const servings = m ? (m[1] ?? "") : "";
+  const noun = raw
+    .replace(/\d+(?:\s*[-–]\s*\d+)?/g, " ")
+    .replace(/\b(?:serves?|serving|yields?|makes?|about|approximately|roughly)\b/gi, " ")
+    .replace(/[^a-z ]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+  return { servings, noun };
+}
+
+// --- images / source ----------------------------------------------------
+
+function firstImageUrl(v: unknown): string {
+  if (typeof v === "string") return /^https?:\/\//i.test(v.trim()) ? v.trim() : "";
+  for (const x of asArray(v)) {
+    const u = firstImageUrl(x);
+    if (u) return u;
+  }
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (typeof o.url === "string" && /^https?:\/\//i.test(o.url)) return o.url;
+    if (typeof o.contentUrl === "string" && /^https?:\/\//i.test(o.contentUrl))
+      return o.contentUrl;
+  }
+  return "";
+}
+
+function mainEntityUrl(v: unknown): string {
+  if (typeof v === "string") return /^https?:/i.test(v) ? v : "";
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    const id = o["@id"];
+    if (typeof id === "string" && /^https?:/i.test(id)) return id;
+    if (typeof o.url === "string" && /^https?:/i.test(o.url)) return o.url;
+  }
+  return "";
+}
+
+function normalizeTags(v: unknown): string {
+  const joined = joinList(v);
+  if (!joined) return "";
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of joined.split(",")) {
+    const tag = htmlToText(part).trim();
+    const key = tag.toLowerCase();
+    if (tag && tag.length <= 60 && !seen.has(key)) {
+      seen.add(key);
+      out.push(tag);
+      if (out.length >= 30) break;
+    }
+  }
+  return out.join(", ");
+}
+
+// --- ingredient line parsing -------------------------------------------
+
+const GLYPHS = "¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒";
+const VULGAR: Record<string, number> = {
+  "¼": 0.25, "½": 0.5, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3,
+  "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8, "⅙": 1 / 6, "⅚": 5 / 6,
+  "⅐": 1 / 7, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
+  "⅑": 1 / 9, "⅒": 0.1,
+};
+
+/** Units the app can't convert but should still recognize as a unit word. */
+const EXTRA_UNITS = new Set([
+  "pinch", "pinches", "dash", "dashes", "clove", "cloves", "can", "cans",
+  "package", "packages", "pkg", "slice", "slices", "stick", "sticks",
+  "sprig", "sprigs", "stalk", "stalks", "handful", "handfuls", "bunch",
+  "bunches", "head", "heads", "piece", "pieces", "strip", "strips",
+  "fillet", "fillets", "jar", "jars", "bottle", "bottles", "container",
+  "containers", "cube", "cubes", "drop", "drops", "scoop", "scoops",
+  "packet", "packets", "sheet", "sheets", "ear", "ears", "wedge", "wedges",
+]);
+
+function parseQuantityToken(raw: string): number | undefined {
+  const s = raw.trim();
+  if (!s) return undefined;
+  const combo = new RegExp(`^(\\d+)\\s*([${GLYPHS}])$`).exec(s);
+  if (combo) return num(combo[1]) + (VULGAR[combo[2] ?? ""] ?? 0);
+  if (VULGAR[s] != null) return VULGAR[s];
+  const mixed = /^(\d+)\s+(\d+)\/(\d+)$/.exec(s);
+  if (mixed) {
+    const d = num(mixed[3]);
+    return d ? num(mixed[1]) + num(mixed[2]) / d : undefined;
+  }
+  const frac = /^(\d+)\/(\d+)$/.exec(s);
+  if (frac) {
+    const d = num(frac[2]);
+    return d ? num(frac[1]) / d : undefined;
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function splitLeadingQuantity(line: string): { quantity?: number; rest: string } {
+  const t = line.trim();
+  const token = `\\d+\\s+\\d+/\\d+|\\d+/\\d+|\\d+(?:\\.\\d+)?\\s*[${GLYPHS}]|\\d+(?:\\.\\d+)?|[${GLYPHS}]`;
+  const re = new RegExp(
+    `^(${token})(?:\\s*(?:-|–|—|to)\\s*(?:${token}))?\\s+(.*)$`,
+  );
+  const m = re.exec(t);
+  if (!m) return { rest: t };
+  const q = parseQuantityToken(m[1] ?? "");
+  if (q == null) return { rest: t };
+  return { quantity: q, rest: (m[2] ?? "").trim() };
+}
+
+function knownUnit(word: string): string | null {
+  const w = word.toLowerCase().replace(/\.$/, "").trim();
+  if (!w) return null;
+  if (unitDimension(w) != null) return normalizeUnit(w);
+  if (EXTRA_UNITS.has(w)) return w;
+  return null;
+}
+
+function splitUnit(rest: string): { unit: string; item: string } {
+  const trimmed = rest.trim();
+  if (!trimmed) return { unit: "", item: "" };
+  const spaceIdx = trimmed.indexOf(" ");
+  const firstWord = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
+  const remainder = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1).trim();
+  const u = knownUnit(firstWord);
+  if (u) return { unit: u, item: remainder.replace(/^of\s+/i, "").trim() };
+  return { unit: "", item: trimmed };
+}
+
+export function parseIngredientLine(raw: string): ImportedIngredient {
+  let line = htmlToText(raw);
+  let optional = false;
+  if (/\(\s*optional\s*\)/i.test(line) || /\boptional\b/i.test(line)) {
+    optional = true;
+    line = line
+      .replace(/\(\s*optional\s*\)/i, "")
+      .replace(/,?\s*\boptional\b/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  let note = "";
+  const paren = /\(([^)]*)\)/.exec(line);
+  if (paren) {
+    note = (paren[1] ?? "").trim();
+    line = (line.slice(0, paren.index) + line.slice(paren.index + paren[0].length))
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  const { quantity, rest } = splitLeadingQuantity(line);
+  const { unit, item } = splitUnit(rest);
+  return {
+    section: "",
+    quantity: quantity != null ? String(roundNice(quantity)) : "",
+    unit,
+    item: (item || rest || line).trim(),
+    note,
+    optional,
+  };
+}
+
+function mapIngredients(value: unknown): ImportedIngredient[] {
+  const lines: string[] = [];
+  const walk = (n: unknown): void => {
+    if (typeof n === "string") {
+      const t = htmlToText(n);
+      if (t) lines.push(t);
+      return;
+    }
+    const arr = asArray(n);
+    if (arr.length) {
+      arr.forEach(walk);
+      return;
+    }
+    if (n && typeof n === "object") {
+      const name = (n as Record<string, unknown>).name;
+      if (typeof name === "string") {
+        const t = htmlToText(name);
+        if (t) lines.push(t);
+      }
+    }
+  };
+  walk(value);
+  return lines.map(parseIngredientLine).filter((r) => r.item);
+}
+
+// --- instruction parsing ------------------------------------------------
+
+function cleanStep(text: string): string {
+  return htmlToText(text)
+    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, "")
+    .replace(/^\s*\d+\s*[.)]\s+/, "")
+    .trim();
+}
+
+function mapInstructions(value: unknown): ImportedStep[] {
+  const steps: ImportedStep[] = [];
+  const push = (text: string, image = ""): void => {
+    const instruction = cleanStep(text);
+    if (instruction)
+      steps.push({
+        instruction,
+        imageUrl: /^https?:\/\//i.test(image) ? image : "",
+        timerMinutes: "",
+        techniques: "",
+      });
+  };
+  const walk = (node: unknown): void => {
+    if (typeof node === "string") {
+      const parts = node.split(/\r?\n+/).map((s) => s.trim()).filter(Boolean);
+      if (parts.length > 1) parts.forEach((p) => push(p));
+      else push(node);
+      return;
+    }
+    const arr = asArray(node);
+    if (arr.length) {
+      arr.forEach(walk);
+      return;
+    }
+    if (node && typeof node === "object") {
+      const o = node as Record<string, unknown>;
+      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "howtosection")) {
+        walk(o.itemListElement);
+        return;
+      }
+      const text =
+        (typeof o.text === "string" && o.text) ||
+        (typeof o.name === "string" && o.name) ||
+        "";
+      if (text) {
+        push(text, firstImageUrl(o.image));
+        return;
+      }
+      if (o.itemListElement) walk(o.itemListElement);
+    }
+  };
+  walk(value);
+  return steps;
+}
+
+// --- recipe node discovery + mapping -----------------------------------
+
+function findRecipeNode(data: unknown): Record<string, unknown> | null {
+  const queue: unknown[] = [data];
+  let guard = 0;
+  while (queue.length && guard++ < 10000) {
+    const cur = queue.shift();
+    if (Array.isArray(cur)) {
+      queue.push(...asArray(cur));
+      continue;
+    }
+    if (cur && typeof cur === "object") {
+      const o = cur as Record<string, unknown>;
+      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "recipe")) return o;
+      if (o["@graph"]) queue.push(o["@graph"]);
+      if (o.mainEntity) queue.push(o.mainEntity);
+    }
+  }
+  return null;
+}
+
+function mapRecipe(node: Record<string, unknown>, sourceUrl: string): ImportedRecipe {
+  const { servings, noun } = parseYield(node.recipeYield ?? node.yield);
+  const prep = parseDurationToMinutes(node.prepTime);
+  const cook = parseDurationToMinutes(node.cookTime);
+  const canonical =
+    (typeof node.url === "string" && /^https?:/i.test(node.url) && node.url) ||
+    mainEntityUrl(node.mainEntityOfPage) ||
+    sourceUrl;
+  return {
+    title: textFrom(node.name).slice(0, 200),
+    description: htmlToText(node.description).slice(0, 2000),
+    coverImageUrl: firstImageUrl(node.image),
+    servings,
+    servingsNoun: noun,
+    prepMinutes: prep ? String(prep) : "",
+    cookMinutes: cook ? String(cook) : "",
+    cuisine: (joinList(node.recipeCuisine).split(",")[0] ?? "").trim().slice(0, 80),
+    sourceName: textFrom(node.author).slice(0, 200),
+    sourceUrl: canonical.slice(0, 2048),
+    tags: normalizeTags(node.keywords),
+    ingredients: mapIngredients(node.recipeIngredient ?? node.ingredients),
+    steps: mapInstructions(node.recipeInstructions),
+  };
+}
+
+// --- JSON-LD extraction -------------------------------------------------
+
+function tryParseJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    const cleaned = raw
+      .replace(/^\s*<!\[CDATA\[/i, "")
+      .replace(/\]\]>\s*$/i, "")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&");
+    try {
+      return JSON.parse(cleaned) as unknown;
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function extractJsonLdBlocks(html: string): unknown[] {
+  const re =
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const blocks: unknown[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const raw = (m[1] ?? "").trim();
+    if (!raw) continue;
+    const parsed = tryParseJson(raw);
+    if (parsed !== undefined) blocks.push(parsed);
+  }
+  return blocks;
+}
+
+/**
+ * Pure core: given page HTML, return the first usable recipe found in its
+ * JSON-LD, or null. Exported for unit testing.
+ */
+export function parseRecipeFromHtml(
+  html: string,
+  sourceUrl: string,
+): ImportedRecipe | null {
+  for (const block of extractJsonLdBlocks(html)) {
+    const node = findRecipeNode(block);
+    if (!node) continue;
+    const mapped = mapRecipe(node, sourceUrl);
+    if (mapped.title || mapped.ingredients.length || mapped.steps.length)
+      return mapped;
+  }
+  return null;
+}
+
+// --- fetch orchestration ------------------------------------------------
+
+function normalizeInputUrl(raw: string): URL | null {
+  let s = raw.trim();
+  if (!s) return null;
+  if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:" ? u : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Defense-in-depth against SSRF: reject obvious internal/loopback hosts. */
+function isPublicHost(host: string): boolean {
+  const h = host.toLowerCase();
+  if (
+    h === "localhost" ||
+    h.endsWith(".localhost") ||
+    h.endsWith(".local") ||
+    h === "0.0.0.0"
+  )
+    return false;
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  if (v4) {
+    const a = num(v4[1]);
+    const b = num(v4[2]);
+    if (
+      a === 0 || a === 10 || a === 127 || a >= 224 ||
+      (a === 192 && b === 168) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 169 && b === 254)
+    )
+      return false;
+  }
+  if (h.includes(":")) {
+    if (h === "::1" || h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80"))
+      return false;
+  }
+  return true;
+}
+
+/** Fetch a URL and extract a recipe. Returns friendly errors, never throws. */
+export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult> {
+  const url = normalizeInputUrl(rawUrl);
+  if (!url) return { ok: false, error: "That doesn't look like a valid web address." };
+  if (!isPublicHost(url.hostname))
+    return { ok: false, error: "That address can't be imported." };
+
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      redirect: "follow",
+      signal: AbortSignal.timeout(12000),
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; HeirloomRecipeImporter/1.0; +https://heirloom.jrmoulckers.com)",
+        Accept:
+          "text/html,application/xhtml+xml,application/ld+json;q=0.9,*/*;q=0.8",
+      },
+    });
+  } catch (e) {
+    const timedOut =
+      e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+    return {
+      ok: false,
+      error: timedOut
+        ? "That site took too long to respond. Try again or paste it in manually."
+        : "We couldn't reach that site.",
+    };
+  }
+
+  if (!res.ok)
+    return {
+      ok: false,
+      error: `That site returned an error (${res.status}). Try a different link.`,
+    };
+
+  const html = (await res.text()).slice(0, 3_000_000);
+  const recipe = parseRecipeFromHtml(html, url.toString());
+  if (!recipe)
+    return {
+      ok: false,
+      error:
+        "We couldn't find a recipe on that page — it may not publish structured recipe data. You can still add it by hand.",
+    };
+  return { ok: true, recipe };
+}
