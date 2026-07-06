@@ -190,7 +190,10 @@ export async function removeRatingAction(
     await removeRating(parsed.data.recipeId, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
-  } catch {
+  } catch (error) {
+    if (errorCode(error) === "FORBIDDEN") {
+      return { ok: false, error: "You don't have access to this recipe." };
+    }
     return { ok: false, error: "We couldn't remove your rating." };
   }
 }

@@ -8,6 +8,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": fileURLToPath(new URL("./src", import.meta.url)),
+      // The real `server-only` guard throws outside an RSC; stub it so server
+      // modules can be unit-tested in jsdom.
+      "server-only": fileURLToPath(
+        new URL("./src/test/server-only.ts", import.meta.url),
+      ),
     },
   },
   test: {

@@ -89,12 +89,19 @@ export async function deleteComment(
       columns: { id: true, userId: true },
       with: {
         recipe: {
-          columns: { authorId: true },
+          columns: {
+            authorId: true,
+            visibility: true,
+            groupId: true,
+          },
         },
       },
     });
 
     if (!comment) throw new Error("NOT_FOUND");
+    if (!(await canViewRecipe(comment.recipe, user))) {
+      throw new Error("FORBIDDEN");
+    }
     if (comment.userId !== user.id && comment.recipe.authorId !== user.id) {
       throw new Error("FORBIDDEN");
     }
@@ -118,12 +125,19 @@ export async function resolveComment(
       columns: { id: true, kind: true },
       with: {
         recipe: {
-          columns: { authorId: true },
+          columns: {
+            authorId: true,
+            visibility: true,
+            groupId: true,
+          },
         },
       },
     });
 
     if (!comment) throw new Error("NOT_FOUND");
+    if (!(await canViewRecipe(comment.recipe, user))) {
+      throw new Error("FORBIDDEN");
+    }
     if (comment.kind !== "suggestion" || comment.recipe.authorId !== user.id) {
       throw new Error("FORBIDDEN");
     }
@@ -171,6 +185,19 @@ export async function setRating(
 
 export async function removeRating(recipeId: string, user: User): Promise<void> {
   await db.transaction(async (tx) => {
+    const recipe = await tx.query.recipes.findFirst({
+      where: eq(recipes.id, recipeId),
+      columns: {
+        id: true,
+        authorId: true,
+        visibility: true,
+        groupId: true,
+      },
+    });
+    if (recipe && !(await canViewRecipe(recipe, user))) {
+      throw new Error("FORBIDDEN");
+    }
+
     await tx
       .delete(ratings)
       .where(and(eq(ratings.recipeId, recipeId), eq(ratings.userId, user.id)));
