@@ -38,6 +38,11 @@ import {
   isFavorited,
 } from "~/server/collections/queries";
 import { formatMinutes } from "~/lib/utils";
+import {
+  buildRecipeJsonLd,
+  buildRecipeMetadata,
+  serializeJsonLd,
+} from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
@@ -68,25 +73,17 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const { recipe } = await load(id);
-  if (!recipe) return { title: "Recipe not found" };
-  const description = recipe.description ?? undefined;
-  return {
-    title: recipe.title,
-    description,
-    // The image itself is supplied automatically from the sibling
-    // `opengraph-image` route (Next injects it into og:image + twitter:image).
-    openGraph: {
-      title: recipe.title,
-      description,
-      type: "article",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: recipe.title,
-      description,
-    },
-  };
+  // Load as an anonymous viewer so crawler-facing metadata reflects exactly
+  // what the public can see — private/group recipes resolve to `null` and get
+  // generic, non-indexed metadata. Wrapped so the metadata pass never throws
+  // during build/SSR (e.g. a transient DB error).
+  let recipe: Awaited<ReturnType<typeof getRecipe>> = null;
+  try {
+    recipe = await getRecipe(id, null);
+  } catch {
+    recipe = null;
+  }
+  return buildRecipeMetadata(recipe);
 }
 
 function formatTimer(seconds: number): string {
@@ -136,6 +133,11 @@ export default async function RecipePage({
     ]);
   const commentCount = countComments(comments);
 
+  // schema.org structured data — public recipes only, so we never expose the
+  // details of private/group/unlisted recipes to crawlers.
+  const jsonLd =
+    recipe.visibility === "public" ? buildRecipeJsonLd(recipe) : null;
+
   const meta = [
     recipe.totalMinutes != null && {
       icon: Clock3,
@@ -154,6 +156,12 @@ export default async function RecipePage({
 
   return (
     <article className="pb-16">
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
+      )}
       {/* Hero */}
       <div className="relative">
         {recipe.coverImageUrl ? (
