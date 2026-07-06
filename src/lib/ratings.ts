@@ -1,14 +1,25 @@
 /**
- * Pure, framework-agnostic helpers for presenting and ordering recipe ratings.
+ * Pure, framework-agnostic helpers for aggregating, presenting, and ordering
+ * recipe ratings.
  *
- * Aggregation of raw star values lives in `ratingSummary` (server queries); this
- * module only turns an already-computed `{ average, count }` summary into
- * display-ready data and provides the "top rated" ordering rule. Keeping it pure
- * makes both concerns trivially unit-testable and reusable on the client.
+ * `ratingSummary` aggregates raw star values; the rest turn an already-computed
+ * `{ average, count }` summary into display-ready data and provide the "top
+ * rated" ordering rule. Keeping it all pure makes these concerns trivially
+ * unit-testable and reusable on the server and the client.
  */
 
 /** An aggregated rating: average (1–5, one decimal) and how many ratings. */
 export type RatingSummary = { average: number; count: number };
+
+/** Aggregate 1–5 ratings into an average + count. */
+export function ratingSummary(values: { value: number }[]): RatingSummary {
+  if (values.length === 0) return { average: 0, count: 0 };
+  const sum = values.reduce((acc, r) => acc + r.value, 0);
+  return {
+    average: Math.round((sum / values.length) * 10) / 10,
+    count: values.length,
+  };
+}
 
 /** Ways the recipe lists can be ordered. */
 export type RatingSort = "recent" | "top-rated";
