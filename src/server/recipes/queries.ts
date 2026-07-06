@@ -135,7 +135,13 @@ export async function listPublicRecipes({
   };
 }
 
-function canView(
+/**
+ * Pure visibility predicate shared by every read/write access check. A recipe
+ * is viewable when it's public/unlisted, authored by the viewer, or a group
+ * recipe the viewer belongs to. Exported so the rule can be unit-tested and
+ * reused without re-deriving it.
+ */
+export function canView(
   recipe: { authorId: string; visibility: string; groupId: string | null },
   viewer: User | null,
   groupIds: string[],
