@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { fk, pk, timestamps } from "./_shared";
@@ -29,6 +30,17 @@ export const recipeDifficulty = pgEnum("recipe_difficulty", [
   "easy",
   "medium",
   "hard",
+]);
+
+/**
+ * Kinds of milestone recorded on a recipe's timeline. `adapted` marks both
+ * sides of a fork (the new recipe's origin and the source's new descendant).
+ */
+export const recipeEventType = pgEnum("recipe_event_type", [
+  "created",
+  "adapted",
+  "updated",
+  "published",
 ]);
 
 /** The core recipe record. */
@@ -61,8 +73,11 @@ export const recipes = pgTable(
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),
 
-    // Adaptations / timelines (Phase 2). Present now so history is never lost.
-    forkedFromId: fk(),
+    // Adaptations / timelines. Nullable self-reference to the recipe this was
+    // forked from; on parent deletion the fork survives as an original.
+    forkedFromId: fk().references((): AnyPgColumn => recipes.id, {
+      onDelete: "set null",
+    }),
     forkNote: varchar({ length: 300 }),
 
     publishedAt: timestamp({ withTimezone: true }),
@@ -138,6 +153,30 @@ export const recipeVersions = pgTable(
   (t) => [index("recipe_versions_recipe_idx").on(t.recipeId, t.versionNumber)],
 );
 
+/**
+ * Append-only log of milestones in a recipe's life (created, adapted, edited,
+ * published). Powers the "family history" timeline. `relatedRecipeId` links the
+ * two halves of a fork: on the new recipe it points back to the source; on the
+ * source it points forward to the adaptation.
+ */
+export const recipeEvents = pgTable(
+  "recipe_events",
+  {
+    id: pk(),
+    recipeId: fk()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    actorId: fk().references(() => users.id, { onDelete: "set null" }),
+    type: recipeEventType().notNull(),
+    note: text(),
+    relatedRecipeId: fk().references((): AnyPgColumn => recipes.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("recipe_events_recipe_idx").on(t.recipeId, t.createdAt)],
+);
+
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(users, {
     fields: [recipes.authorId],
@@ -156,6 +195,8 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   ingredients: many(recipeIngredients),
   steps: many(recipeSteps),
   versions: many(recipeVersions),
+  events: many(recipeEvents, { relationName: "recipeEvents" }),
+  eventsAbout: many(recipeEvents, { relationName: "relatedRecipeEvents" }),
   tags: many(recipeTags),
   ratings: many(ratings),
   comments: many(comments),
@@ -189,12 +230,32 @@ export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
   }),
 }));
 
+export const recipeEventsRelations = relations(recipeEvents, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeEvents.recipeId],
+    references: [recipes.id],
+    relationName: "recipeEvents",
+  }),
+  related: one(recipes, {
+    fields: [recipeEvents.relatedRecipeId],
+    references: [recipes.id],
+    relationName: "relatedRecipeEvents",
+  }),
+  actor: one(users, {
+    fields: [recipeEvents.actorId],
+    references: [users.id],
+  }),
+}));
+
 export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type NewRecipeIngredient = typeof recipeIngredients.$inferInsert;
 export type RecipeStep = typeof recipeSteps.$inferSelect;
 export type NewRecipeStep = typeof recipeSteps.$inferInsert;
+export type RecipeEvent = typeof recipeEvents.$inferSelect;
+export type NewRecipeEvent = typeof recipeEvents.$inferInsert;
+export type RecipeEventType = (typeof recipeEventType.enumValues)[number];
 export type RecipeVisibility = (typeof recipeVisibility.enumValues)[number];
 export type RecipeStatus = (typeof recipeStatus.enumValues)[number];
 export type RecipeDifficulty = (typeof recipeDifficulty.enumValues)[number];

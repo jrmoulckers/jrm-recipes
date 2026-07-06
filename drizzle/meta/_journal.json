@@ -43,6 +43,13 @@
       "when": 1783325931076,
       "tag": "0005_colorful_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783370925278,
+      "tag": "0006_nostalgic_prodigy",
+      "breakpoints": true
     }
   ]
 }
