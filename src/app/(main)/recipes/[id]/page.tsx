@@ -37,12 +37,8 @@ import {
   getCollectionsForRecipe,
   isFavorited,
 } from "~/server/collections/queries";
-import { formatMinutes } from "~/lib/utils";
-import {
-  buildRecipeJsonLd,
-  buildRecipeMetadata,
-  serializeJsonLd,
-} from "~/lib/recipe-seo";
+import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
@@ -73,17 +69,32 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  // Load as an anonymous viewer so crawler-facing metadata reflects exactly
-  // what the public can see — private/group recipes resolve to `null` and get
-  // generic, non-indexed metadata. Wrapped so the metadata pass never throws
-  // during build/SSR (e.g. a transient DB error).
-  let recipe: Awaited<ReturnType<typeof getRecipe>> = null;
-  try {
-    recipe = await getRecipe(id, null);
-  } catch {
-    recipe = null;
-  }
-  return buildRecipeMetadata(recipe);
+  const { recipe } = await load(id);
+  if (!recipe) return { title: "Recipe not found" };
+  const description = recipe.description ?? undefined;
+  const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
+  return {
+    title: recipe.title,
+    description,
+    alternates: { canonical },
+    // Keep private/group/unlisted recipes out of search indexes; only public
+    // recipes should be crawlable.
+    ...(recipe.visibility !== "public"
+      ? { robots: { index: false, follow: false } }
+      : {}),
+    // The image itself is supplied automatically from the sibling
+    // `opengraph-image` route (Next injects it into og:image + twitter:image).
+    openGraph: {
+      title: recipe.title,
+      description,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: recipe.title,
+      description,
+    },
+  };
 }
 
 function formatTimer(seconds: number): string {
