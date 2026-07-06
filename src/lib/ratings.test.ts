@@ -5,7 +5,38 @@ import {
   filledStars,
   parseRatingSort,
   ratingDisplay,
+  ratingSummary,
 } from "./ratings";
+
+describe("ratingSummary", () => {
+  it("returns an empty summary when there are no ratings", () => {
+    expect(ratingSummary([])).toEqual({ average: 0, count: 0 });
+  });
+
+  it("averages the star values and counts them", () => {
+    expect(ratingSummary([{ value: 4 }, { value: 5 }, { value: 3 }])).toEqual({
+      average: 4,
+      count: 3,
+    });
+  });
+
+  it("rounds the average to a single decimal place", () => {
+    // (5 + 4 + 4) / 3 = 4.333… -> 4.3
+    expect(ratingSummary([{ value: 5 }, { value: 4 }, { value: 4 }])).toEqual({
+      average: 4.3,
+      count: 3,
+    });
+    // (5 + 2) / 2 = 3.5
+    expect(ratingSummary([{ value: 5 }, { value: 2 }])).toEqual({
+      average: 3.5,
+      count: 2,
+    });
+  });
+
+  it("handles a single rating", () => {
+    expect(ratingSummary([{ value: 3 }])).toEqual({ average: 3, count: 1 });
+  });
+});
 
 describe("filledStars", () => {
   it("rounds an average to a whole number of stars", () => {
