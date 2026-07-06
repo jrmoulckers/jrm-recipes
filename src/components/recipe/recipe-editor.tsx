@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronUp,
+  Download,
   GripVertical,
+  Link2,
   Loader2,
   Plus,
   Save,
@@ -15,8 +17,10 @@ import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
 import { type RecipeInput } from "~/server/recipes/validation";
+import { type ImportedRecipe } from "~/server/recipes/import";
 import {
   createRecipeAction,
+  importRecipeFromUrlAction,
   updateRecipeAction,
 } from "~/server/recipes/actions";
 import { Button } from "~/components/ui/button";
@@ -105,6 +109,8 @@ export function RecipeEditor({
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [errors, setErrors] = React.useState<Record<string, string[]>>({});
+  const [importUrl, setImportUrl] = React.useState("");
+  const [importing, setImporting] = React.useState(false);
 
   const [form, setForm] = React.useState(() => ({
     title: initial?.title ?? "",
@@ -140,6 +146,51 @@ export function RecipeEditor({
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function applyImported(v: ImportedRecipe) {
+    setForm((f) => ({
+      ...f,
+      title: v.title || f.title,
+      description: v.description || f.description,
+      coverImageUrl: v.coverImageUrl || f.coverImageUrl,
+      servings: v.servings || f.servings,
+      servingsNoun: v.servingsNoun || f.servingsNoun,
+      prepMinutes: v.prepMinutes || f.prepMinutes,
+      cookMinutes: v.cookMinutes || f.cookMinutes,
+      cuisine: v.cuisine || f.cuisine,
+      sourceName: v.sourceName || f.sourceName,
+      sourceUrl: v.sourceUrl || f.sourceUrl,
+      tags: v.tags || f.tags,
+    }));
+    if (v.ingredients.length)
+      setIngredients(v.ingredients.map((r) => ({ ...r, key: nextKey() })));
+    if (v.steps.length)
+      setSteps(v.steps.map((r) => ({ ...r, key: nextKey() })));
+  }
+
+  async function handleImport() {
+    const url = importUrl.trim();
+    if (!url) return;
+    setImporting(true);
+    try {
+      const res = await importRecipeFromUrlAction(url);
+      if (res.ok) {
+        applyImported(res.recipe);
+        toast.success(
+          res.recipe.title
+            ? `Imported “${res.recipe.title}”. Review the details, then save.`
+            : "Imported the recipe. Review the details, then save.",
+        );
+        setImportUrl("");
+      } else {
+        toast.error(res.error);
+      }
+    } catch {
+      toast.error("Something went wrong importing that link.");
+    } finally {
+      setImporting(false);
+    }
   }
 
   function move<T>(list: T[], i: number, dir: -1 | 1): T[] {
@@ -247,6 +298,51 @@ export function RecipeEditor({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         {/* Main column */}
         <div className="flex flex-col gap-8">
+          {mode === "create" ? (
+            <section className="rounded-xl border border-border bg-muted/40 p-4">
+              <div className="flex items-center gap-2">
+                <Link2 className="size-4 text-primary" />
+                <h2 className="font-display text-base font-semibold">
+                  Import from a link
+                </h2>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Paste a recipe URL and we&apos;ll fill in the details for you to
+                review.
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Input
+                  type="url"
+                  inputMode="url"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleImport();
+                    }
+                  }}
+                  placeholder="https://example.com/best-marinara"
+                  disabled={importing}
+                  aria-label="Recipe URL to import"
+                />
+                <Button
+                  type="button"
+                  onClick={() => void handleImport()}
+                  disabled={importing || !importUrl.trim()}
+                  className="shrink-0"
+                >
+                  {importing ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Download />
+                  )}
+                  {importing ? "Importing…" : "Import"}
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
           <section className="flex flex-col gap-4">
             <Field label="Title" error={errors.title} required>
               <Input
