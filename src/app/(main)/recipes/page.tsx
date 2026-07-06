@@ -14,6 +14,7 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
+import { DiscoverFeed } from "~/components/recipe/discover-feed";
 
 export const metadata: Metadata = { title: "Recipes" };
 
@@ -27,10 +28,10 @@ export default async function RecipesPage({
   const user = await getCurrentUser();
   const [mine, discover] = await Promise.all([
     listLibrary(user, sort),
-    listPublicRecipes(48, sort),
+    listPublicRecipes({ sort }),
   ]);
   const mineIds = new Set(mine.map((r) => r.id));
-  const discoverOnly = discover.filter((r) => !mineIds.has(r.id));
+  const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
 
   return (
     <div className="container flex flex-col gap-10 py-10">
@@ -73,11 +74,12 @@ export default async function RecipesPage({
               Discover
             </h2>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {discoverOnly.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+          <DiscoverFeed
+            key={sort}
+            initialItems={discoverOnly}
+            initialNextOffset={discover.nextOffset}
+            sort={sort}
+          />
         </section>
       )}
     </div>

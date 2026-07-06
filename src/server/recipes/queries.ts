@@ -3,7 +3,11 @@ import "server-only";
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
-import { compareByTopRated, type RatingSort } from "~/lib/ratings";
+import {
+  compareByTopRated,
+  ratingSummary,
+  type RatingSort,
+} from "~/lib/ratings";
 import {
   groupMembers,
   recipeIngredients,
@@ -13,23 +17,20 @@ import {
   type User,
 } from "~/server/db/schema";
 import { recipeInput, type RecipeInput } from "./validation";
+import { DISCOVER_PAGE_SIZE, nextPageOffset } from "./pagination";
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
 export type RecipeListItem = Awaited<ReturnType<typeof listMyRecipes>>[number];
+export type PublicRecipeListItem = Awaited<
+  ReturnType<typeof listPublicRecipes>
+>["items"][number];
 export type VersionListItem = Awaited<
   ReturnType<typeof getRecipeVersions>
 >[number];
 
-/** Aggregate 1–5 ratings into an average + count. */
-export function ratingSummary(values: { value: number }[]) {
-  if (values.length === 0) return { average: 0, count: 0 };
-  const sum = values.reduce((acc, r) => acc + r.value, 0);
-  return {
-    average: Math.round((sum / values.length) * 10) / 10,
-    count: values.length,
-  };
-}
+/** Re-exported for recipe detail pages that import it from the query module. */
+export { ratingSummary };
 
 /**
  * Re-order a fetched list so the highest-rated recipes come first. Ordering by
@@ -78,12 +79,20 @@ export async function listMyRecipes(userId: string) {
   });
 }
 
-/** Publicly published recipes, newest first (the discover feed). */
-export async function listPublicRecipes(
-  limit = 48,
-  sort: RatingSort = "recent",
-) {
-  if (!isDbConfigured()) return [];
+/**
+ * Publicly published recipes, newest first (the discover feed).
+ *
+ * Paginated via a simple offset so the base ordering stays exactly
+ * `publishedAt desc, updatedAt desc`; an optional `sort` (e.g. "top-rated")
+ * re-orders the fetched page in memory. Returns the page plus the offset to
+ * fetch next, or `null` once the feed is exhausted.
+ */
+export async function listPublicRecipes({
+  limit = DISCOVER_PAGE_SIZE,
+  offset = 0,
+  sort = "recent",
+}: { limit?: number; offset?: number; sort?: RatingSort } = {}) {
+  if (!isDbConfigured()) return { items: [], nextOffset: null };
   const rows = await db.query.recipes.findMany({
     where: and(
       eq(recipes.visibility, "public"),
@@ -91,9 +100,13 @@ export async function listPublicRecipes(
     ),
     orderBy: [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
+    offset,
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
-  return applyRatingSort(rows, sort);
+  return {
+    items: applyRatingSort(rows, sort),
+    nextOffset: nextPageOffset(offset, rows.length, limit),
+  };
 }
 
 function canView(

@@ -4,9 +4,8 @@ import Image from "next/image";
 import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
-import { ratingDisplay } from "~/lib/ratings";
+import { ratingDisplay, ratingSummary } from "~/lib/ratings";
 import { Badge } from "~/components/ui/badge";
-import { ratingSummary } from "~/server/recipes/queries";
 
 export type CardRecipe = {
   id: string;
