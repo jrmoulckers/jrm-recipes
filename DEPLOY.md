@@ -171,11 +171,24 @@ idempotent — safe to run twice; delete them from the UI any time).
 
 - **Merge to `main` → Vercel deploys automatically.** The `vercel-build` script
   applies any new migrations first, then builds.
-- **CI** (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, and a
-  build on every PR — no secrets needed (it builds with `SKIP_ENV_VALIDATION`).
+- **CI** (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, a build,
+  and a Playwright **e2e** smoke test on every PR and push to `main` — no secrets
+  needed (it builds with `SKIP_ENV_VALIDATION` + dev-bypass auth).
+- **CodeQL** (`.github/workflows/codeql.yml`) runs static security analysis on
+  every PR/push plus weekly. _(Code scanning on a private repo needs GitHub
+  Advanced Security — enable it under Settings → Code security, or remove the
+  workflow.)_
+- **Dependabot** (`.github/dependabot.yml`) opens weekly dependency + Actions
+  update PRs, each gated by CI.
 - **Schema changes:** edit the Drizzle schema in `src/server/db/schema/`, run
   `pnpm db:generate` locally to create a migration, and commit it. It applies on
   the next deploy.
+
+> **Gate the site on green CI (optional but recommended).** Vercel deploys `main`
+> independently of GitHub Actions, so a build that passes Vercel but fails CI can
+> still ship. To require checks first, add a branch-protection rule on `main`
+> (Settings → Branches) requiring the **CI** status checks — then nothing reaches
+> the site until lint, tests, and the build pass.
 
 ## Troubleshooting
 

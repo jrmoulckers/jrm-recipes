@@ -1,0 +1,50 @@
+# CodeQL static analysis (code scanning) for JavaScript/TypeScript.
+#
+# NOTE: On PRIVATE repositories, code scanning requires GitHub Advanced
+# Security. If GHAS is not enabled for jrmoulckers/jrm-recipes, the "analyze"
+# step will fail with an "Advanced Security must be enabled" error — enable it
+# under Settings → Code security, or remove this workflow.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly-published rules also catch issues on untouched code.
+    - cron: "0 3 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          language: ${{ matrix.language }}
+          queries: security-and-quality
+
+      # JS/TS is interpreted, so no build step is needed before analysis.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
