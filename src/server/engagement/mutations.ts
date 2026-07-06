@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "~/server/db";
+import { canViewRecipe } from "~/server/recipes/queries";
 import {
   comments,
   ratings,
@@ -42,9 +43,15 @@ export async function createComment(
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
-      columns: { id: true },
+      columns: {
+        id: true,
+        authorId: true,
+        visibility: true,
+        groupId: true,
+      },
     });
     if (!recipe) throw new Error("NOT_FOUND");
+    if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
 
     if (input.parentId) {
       const parent = await tx.query.comments.findFirst({
@@ -135,9 +142,15 @@ export async function setRating(
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
-      columns: { id: true },
+      columns: {
+        id: true,
+        authorId: true,
+        visibility: true,
+        groupId: true,
+      },
     });
     if (!recipe) throw new Error("NOT_FOUND");
+    if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
 
     const [rating] = await tx
       .insert(ratings)
