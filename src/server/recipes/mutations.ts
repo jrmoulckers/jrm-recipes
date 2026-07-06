@@ -5,19 +5,42 @@ import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
   groupMembers,
+  recipeEvents,
   recipeIngredients,
   recipeSteps,
   recipeTags,
   recipeVersions,
   recipes,
   tags,
+  type RecipeEventType,
   type User,
 } from "~/server/db/schema";
 import { slugify } from "~/lib/utils";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { parseSnapshot } from "./queries";
+import { buildAdaptationInput } from "./timeline";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Append a milestone to a recipe's timeline. Best-effort, never blocks. */
+async function recordEvent(
+  tx: Tx,
+  event: {
+    recipeId: string;
+    actorId: string | null;
+    type: RecipeEventType;
+    note?: string | null;
+    relatedRecipeId?: string | null;
+  },
+): Promise<void> {
+  await tx.insert(recipeEvents).values({
+    recipeId: event.recipeId,
+    actorId: event.actorId,
+    type: event.type,
+    note: event.note ?? null,
+    relatedRecipeId: event.relatedRecipeId ?? null,
+  });
+}
 
 async function uniqueSlug(
   tx: Tx,
@@ -210,6 +233,18 @@ export async function createRecipe(input: RecipeInput, author: User) {
     await insertChildren(tx, recipe.id, input);
     await syncTags(tx, recipe.id, input.tags);
     await journal(tx, recipe.id, author.id, input, "Created");
+    await recordEvent(tx, {
+      recipeId: recipe.id,
+      actorId: author.id,
+      type: "created",
+    });
+    if (input.status === "published") {
+      await recordEvent(tx, {
+        recipeId: recipe.id,
+        actorId: author.id,
+        type: "published",
+      });
+    }
     return recipe;
   });
 }
@@ -226,7 +261,15 @@ export async function updateRecipe(
     });
     if (!current) throw new Error("NOT_FOUND");
 
-    return applyRecipeInput(tx, id, input, author, "Edited", current);
+    const result = await applyRecipeInput(tx, id, input, author, "Edited", current);
+    const newlyPublished =
+      input.status === "published" && current.status !== "published";
+    await recordEvent(tx, {
+      recipeId: id,
+      actorId: author.id,
+      type: newlyPublished ? "published" : "updated",
+    });
+    return result;
   });
 }
 
@@ -254,45 +297,11 @@ export async function forkRecipe(
       source.visibility === "group" ? await viewerGroupIds(tx, author.id) : [];
     if (!canForkSource(source, author, groupIds)) throw new Error("NOT_FOUND");
 
-    const input: RecipeInput = {
-      title: source.title,
-      description: source.description ?? undefined,
-      coverImageUrl: source.coverImageUrl ?? undefined,
-      servings: source.servings ?? undefined,
-      servingsNoun: source.servingsNoun ?? undefined,
-      prepMinutes: source.prepMinutes ?? undefined,
-      cookMinutes: source.cookMinutes ?? undefined,
-      totalMinutes: source.totalMinutes ?? undefined,
-      difficulty: source.difficulty ?? undefined,
-      cuisine: source.cuisine ?? undefined,
-      sourceName: source.sourceName ?? undefined,
-      sourceUrl: source.sourceUrl ?? undefined,
-      notes: source.notes ?? undefined,
-      visibility: "private",
-      status: "draft",
-      groupId: undefined,
-      ingredients: source.ingredients.map((ing) => ({
-        section: ing.section ?? undefined,
-        quantity: ing.quantity ?? undefined,
-        quantityMax: ing.quantityMax ?? undefined,
-        unit: ing.unit ?? undefined,
-        item: ing.item,
-        note: ing.note ?? undefined,
-        optional: ing.optional,
-      })),
-      steps: source.steps.map((step) => ({
-        section: step.section ?? undefined,
-        instruction: step.instruction,
-        imageUrl: step.imageUrl ?? undefined,
-        videoUrl: step.videoUrl ?? undefined,
-        timerSeconds: step.timerSeconds ?? undefined,
-        techniques: step.techniques ?? [],
-      })),
-      tags: source.tags.map((recipeTag) => recipeTag.tag.name),
-    };
+    const input = buildAdaptationInput(source);
 
     const slug = await uniqueSlug(tx, recipeSlug(input.title));
     const note = forkNote?.trim();
+    const trimmedNote = note ? note.slice(0, 300) : null;
     const [row] = await tx
       .insert(recipes)
       .values({
@@ -300,7 +309,7 @@ export async function forkRecipe(
         slug,
         authorId: author.id,
         forkedFromId: source.id,
-        forkNote: note ? note.slice(0, 300) : null,
+        forkNote: trimmedNote,
         publishedAt: input.status === "published" ? new Date() : null,
       })
       .returning({ id: recipes.id, slug: recipes.slug });
@@ -315,6 +324,23 @@ export async function forkRecipe(
       input,
       `Adapted from "${source.title}"`,
     );
+
+    // Record both halves of the fork so it shows on each recipe's timeline: the
+    // adaptation's origin, and a new descendant on the source.
+    await recordEvent(tx, {
+      recipeId: recipe.id,
+      actorId: author.id,
+      type: "adapted",
+      note: trimmedNote ?? `Adapted from "${source.title}"`,
+      relatedRecipeId: source.id,
+    });
+    await recordEvent(tx, {
+      recipeId: source.id,
+      actorId: author.id,
+      type: "adapted",
+      note: trimmedNote,
+      relatedRecipeId: recipe.id,
+    });
     return recipe;
   });
 }
@@ -343,7 +369,7 @@ export async function revertRecipe(
     const input = parseSnapshot(version.snapshot);
     if (!input) throw new Error("BAD_SNAPSHOT");
 
-    return applyRecipeInput(
+    const result = await applyRecipeInput(
       tx,
       id,
       input,
@@ -351,6 +377,13 @@ export async function revertRecipe(
       `Reverted to v${versionNumber}`,
       current,
     );
+    await recordEvent(tx, {
+      recipeId: id,
+      actorId: author.id,
+      type: "updated",
+      note: `Reverted to v${versionNumber}`,
+    });
+    return result;
   });
 }
 

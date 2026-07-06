@@ -74,6 +74,7 @@ export async function forkRecipeAction(
     const user = await requireUser();
     const recipe = await forkRecipe(sourceId, user, forkNote);
     revalidatePath("/recipes");
+    revalidatePath(`/recipes/${sourceId}`);
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch {
     return {
@@ -81,6 +82,17 @@ export async function forkRecipeAction(
       error: "We couldn't find that recipe to adapt.",
     };
   }
+}
+
+/**
+ * Fork a recipe the current user can view into a new adaptation they own.
+ * Named alias for `forkRecipeAction` matching the "create adaptation" UX.
+ */
+export async function createAdaptationAction(
+  recipeId: string,
+  adaptationNote?: string,
+): Promise<ActionResult> {
+  return forkRecipeAction(recipeId, adaptationNote);
 }
 
 export async function revertRecipeAction(
