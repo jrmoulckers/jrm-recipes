@@ -5,13 +5,18 @@ import { AlertTriangle, Clapperboard, Download, Loader2, Share } from "lucide-re
 import { toast } from "sonner";
 
 import { slugify } from "~/lib/utils";
-import { buildReelScenes, type ReelRecipe } from "~/lib/reel/scenes";
 import {
-  canRecordReel,
+  buildReelScenes,
+  type ReelExportMode,
+  type ReelRecipe,
+} from "~/lib/reel/scenes";
+import {
+  detectReelExportMode,
   drawPoster,
   playPreview,
   preloadReelImages,
   recordReel,
+  renderPosterBlob,
   type LoadedImages,
   type PreviewHandle,
 } from "~/components/recipe/reel/renderer";
@@ -57,10 +62,17 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
   const previewRef = React.useRef<PreviewHandle | null>(null);
   const abortRef = React.useRef<AbortController | null>(null);
 
-  const recordingSupported = React.useMemo(() => canRecordReel(), []);
+  const exportMode = React.useMemo<ReelExportMode>(
+    () => detectReelExportMode(),
+    [],
+  );
   const nativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
-  const fileName = `heirloom-reel-${slugify(reel.title || "recipe")}.webm`;
+  const slug = slugify(reel.title || "recipe");
+  const fileName =
+    exportMode === "image"
+      ? `heirloom-reel-${slug}.png`
+      : `heirloom-reel-${slug}.webm`;
 
   const stopPreview = React.useCallback(() => {
     previewRef.current?.stop();
@@ -96,14 +108,14 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     if (!canvas || !images) return;
 
     stopPreview();
-    if (reducedMotion || busy) {
+    if (reducedMotion || busy || exportMode === "image") {
       const ctx = canvas.getContext("2d");
       if (ctx) drawPoster(ctx, scenes, images);
       return;
     }
     previewRef.current = playPreview(canvas, scenes, images);
     return stopPreview;
-  }, [open, state, reducedMotion, busy, scenes, stopPreview]);
+  }, [open, state, reducedMotion, busy, exportMode, scenes, stopPreview]);
 
   React.useEffect(() => {
     return () => {
@@ -124,11 +136,29 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     setOpen(next);
   }
 
+  const noun = exportMode === "image" ? "image" : "video";
+
+  function saveBlob(blob: Blob) {
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  }
+
+  // Produce the export blob: an animated webm on capable browsers, or a branded
+  // still PNG where webm can't be encoded (e.g. Safari/iOS).
   async function render(): Promise<Blob | null> {
     const images = imagesRef.current;
     if (!images) return null;
     stopPreview();
     setProgress(0);
+    if (exportMode === "image") {
+      return renderPosterBlob(scenes, images);
+    }
     const controller = new AbortController();
     abortRef.current = controller;
     try {
@@ -148,18 +178,11 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     try {
       const blob = await render();
       if (!blob) throw new Error("no-blob");
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(href);
-      toast.success("Reel downloaded");
+      saveBlob(blob);
+      toast.success(exportMode === "image" ? "Image downloaded" : "Reel downloaded");
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
-        toast.error("Couldn't create the reel video");
+        toast.error(`Couldn't create the reel ${noun}`);
       }
     } finally {
       setBusy(null);
@@ -185,19 +208,16 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
         });
       } else {
         // Fall back to a download when file-sharing isn't available.
-        const href = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = href;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(href);
-        toast.success("Reel saved — share it from your gallery");
+        saveBlob(blob);
+        toast.success(
+          exportMode === "image"
+            ? "Image saved — share it from your gallery"
+            : "Reel saved — share it from your gallery",
+        );
       }
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
-        toast.error("Couldn't share the reel video");
+        toast.error(`Couldn't share the reel ${noun}`);
       }
     } finally {
       setBusy(null);
@@ -219,7 +239,9 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
           </div>
           <DialogTitle>Share as a Reel</DialogTitle>
           <DialogDescription>
-            A 9:16 video of {reel.title}, ready for Reels, TikTok or Stories.
+            {exportMode === "image"
+              ? `A 9:16 image of ${reel.title}, ready to share to Stories.`
+              : `A 9:16 video of ${reel.title}, ready for Reels, TikTok or Stories.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -244,7 +266,7 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
               className="size-full"
               aria-label={`Reel preview for ${reel.title}`}
             />
-            {busy && (
+            {busy && exportMode === "video" && (
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-foreground/70 p-3">
                 <span className="text-center text-xs font-medium text-background">
                   Rendering video… {Math.round(progress * 100)}%
@@ -256,19 +278,25 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
                   />
                 </div>
               </div>
-            )}
+    )}
           </div>
 
-          {reducedMotion && state === "ready" && (
+          {reducedMotion && exportMode === "video" && state === "ready" && (
             <p className="text-center text-xs text-muted-foreground">
               Showing a still preview to respect your reduced-motion setting. The
               exported video still animates.
             </p>
           )}
-          {!recordingSupported && state === "ready" && (
+          {exportMode === "image" && state === "ready" && (
             <p className="text-center text-xs text-muted-foreground">
-              This browser can&apos;t export video. Try Chrome, Edge or Firefox on
-              desktop.
+              Video export isn&apos;t supported in this browser — download a
+              shareable image instead.
+            </p>
+          )}
+          {exportMode === "none" && state === "ready" && (
+            <p className="text-center text-xs text-muted-foreground">
+              This browser can&apos;t export the reel. Try Chrome, Edge, Firefox
+              or Safari.
             </p>
           )}
         </div>
@@ -284,7 +312,9 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
               type="button"
               variant="outline"
               onClick={() => void onShare()}
-              disabled={Boolean(busy) || state !== "ready" || !recordingSupported}
+              disabled={
+                Boolean(busy) || state !== "ready" || exportMode === "none"
+              }
             >
               {busy === "share" ? (
                 <Loader2 className="animate-spin" />
@@ -297,14 +327,16 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
           <Button
             type="button"
             onClick={() => void onDownload()}
-            disabled={Boolean(busy) || state !== "ready" || !recordingSupported}
+            disabled={
+              Boolean(busy) || state !== "ready" || exportMode === "none"
+            }
           >
             {busy === "download" ? (
               <Loader2 className="animate-spin" />
             ) : (
               <Download />
             )}
-            Download
+            {exportMode === "image" ? "Download image" : "Download"}
           </Button>
         </DialogFooter>
       </DialogContent>

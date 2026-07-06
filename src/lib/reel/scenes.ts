@@ -116,6 +116,42 @@ export type ReelScene =
 /** Site wordmark shown on the outro. */
 export const REEL_SITE_URL = "heirloom.jrmoulckers.com";
 
+/**
+ * Browser capabilities relevant to exporting a reel. Kept as plain booleans so
+ * the *decision* below stays pure and unit-testable; the renderer feeds in the
+ * results of real feature detection.
+ */
+export type ReelExportCapabilities = {
+  /** `HTMLCanvasElement.prototype.captureStream` is available. */
+  canvasCapture: boolean;
+  /** The `MediaRecorder` constructor exists. */
+  mediaRecorder: boolean;
+  /** At least one webm mime type is actually encodable (false on Safari/iOS). */
+  webmMimeType: boolean;
+  /** `HTMLCanvasElement.prototype.toBlob` is available (for the image fallback). */
+  canvasToBlob: boolean;
+};
+
+/**
+ * What kind of export this browser can produce:
+ * - `"video"` — full animated webm (Chromium / Firefox)
+ * - `"image"` — a single branded still PNG (Safari/iOS, where webm won't encode)
+ * - `"none"` — nothing exportable
+ *
+ * Video requires canvas capture + MediaRecorder + a real webm mime; the last is
+ * the crucial check, because Safari exposes `MediaRecorder` but cannot encode
+ * webm, so a naive "is MediaRecorder defined?" test dead-ends the user.
+ */
+export function reelExportMode(caps: ReelExportCapabilities): ReelExportMode {
+  if (caps.canvasCapture && caps.mediaRecorder && caps.webmMimeType) {
+    return "video";
+  }
+  if (caps.canvasToBlob) return "image";
+  return "none";
+}
+
+export type ReelExportMode = "video" | "image" | "none";
+
 /** Scene duration budget (ms). Tuned so the whole reel lands ~8–20s. */
 export const SCENE_MS = {
   cover: 3000,

@@ -10,6 +10,7 @@ import {
   formatMinutesShort,
   mapRecipeToReel,
   metaChips,
+  reelExportMode,
   reelImageUrl,
   sceneAtTime,
   selectKeyIngredients,
@@ -339,3 +340,46 @@ describe("mapRecipeToReel", () => {
     expect(scenes.map((s) => s.kind)).toEqual(["cover", "outro"]);
   });
 });
+
+describe("reelExportMode", () => {
+  const full = {
+    canvasCapture: true,
+    mediaRecorder: true,
+    webmMimeType: true,
+    canvasToBlob: true,
+  };
+
+  it("chooses video when capture + MediaRecorder + a real webm mime are present", () => {
+    expect(reelExportMode(full)).toBe("video");
+  });
+
+  it("falls back to image on Safari/iOS (MediaRecorder but no webm encoding)", () => {
+    expect(
+      reelExportMode({ ...full, webmMimeType: false }),
+    ).toBe("image");
+  });
+
+  it("falls back to image when canvas capture is unavailable", () => {
+    expect(
+      reelExportMode({ ...full, canvasCapture: false }),
+    ).toBe("image");
+  });
+
+  it("falls back to image when MediaRecorder is missing", () => {
+    expect(
+      reelExportMode({ ...full, mediaRecorder: false }),
+    ).toBe("image");
+  });
+
+  it("reports none when even a still image can't be produced", () => {
+    expect(
+      reelExportMode({
+        canvasCapture: false,
+        mediaRecorder: false,
+        webmMimeType: false,
+        canvasToBlob: false,
+      }),
+    ).toBe("none");
+  });
+});
+

@@ -14,10 +14,13 @@ import {
   REEL_COLORS,
   REEL_FPS,
   REEL_SIZE,
+  reelExportMode,
   reelImageUrl,
   sceneAtTime,
   totalDurationMs,
   type ReelChip,
+  type ReelExportCapabilities,
+  type ReelExportMode,
   type ReelScene,
 } from "~/lib/reel/scenes";
 
@@ -630,16 +633,7 @@ export function playPreview(
 // Recording (canvas -> webm via MediaRecorder)
 // ---------------------------------------------------------------------------
 
-/** True when this browser can capture a canvas to a video file. */
-export function canRecordReel(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof MediaRecorder !== "undefined" &&
-    typeof HTMLCanvasElement !== "undefined" &&
-    typeof HTMLCanvasElement.prototype.captureStream === "function"
-  );
-}
-
+/** Detect the webm mime type this browser can actually encode (null if none). */
 function pickMimeType(): string | null {
   const candidates = [
     "video/webm;codecs=vp9",
@@ -651,6 +645,67 @@ function pickMimeType(): string | null {
     if (MediaRecorder.isTypeSupported(type)) return type;
   }
   return null;
+}
+
+/** Probe the current browser for the capabilities the export decision needs. */
+export function detectExportCapabilities(): ReelExportCapabilities {
+  const hasWindow = typeof window !== "undefined";
+  const hasCanvas =
+    hasWindow && typeof HTMLCanvasElement !== "undefined";
+  return {
+    canvasCapture:
+      hasCanvas &&
+      typeof HTMLCanvasElement.prototype.captureStream === "function",
+    mediaRecorder: hasWindow && typeof MediaRecorder !== "undefined",
+    // The decisive check for Safari/iOS: MediaRecorder exists but can't encode webm.
+    webmMimeType: pickMimeType() !== null,
+    canvasToBlob:
+      hasCanvas && typeof HTMLCanvasElement.prototype.toBlob === "function",
+  };
+}
+
+/** Which export this browser can produce: "video" | "image" | "none". */
+export function detectReelExportMode(): ReelExportMode {
+  return reelExportMode(detectExportCapabilities());
+}
+
+/** True when this browser can capture a canvas to an animated webm video. */
+export function canRecordReel(): boolean {
+  return detectReelExportMode() === "video";
+}
+
+/**
+ * Render the branded poster (cover) still to an offscreen 1080x1920 canvas and
+ * return it as a PNG blob. This is the graceful fallback for browsers that can't
+ * encode webm (Safari/iOS) so the user still gets something shareable.
+ */
+export function renderPosterBlob(
+  scenes: ReelScene[],
+  images: LoadedImages,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (
+      typeof document === "undefined" ||
+      typeof HTMLCanvasElement === "undefined" ||
+      typeof HTMLCanvasElement.prototype.toBlob !== "function"
+    ) {
+      reject(new Error("Image export isn't supported in this browser."));
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      reject(new Error("Couldn't get a drawing context."));
+      return;
+    }
+    drawPoster(ctx, scenes, images);
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Couldn't encode the image."));
+    }, "image/png");
+  });
 }
 
 export type RecordResult = { blob: Blob; mimeType: string };
