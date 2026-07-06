@@ -46,6 +46,8 @@ import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import { ShareButton } from "~/components/recipe/share-button";
+import { CreateReelButton } from "~/components/recipe/reel-button";
+import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
@@ -268,6 +270,7 @@ export default async function RecipePage({
               </Link>
             </Button>
             <ShareButton title={recipe.title} />
+            <CreateReelButton reel={mapRecipeToReel(recipe)} />
             <AddToShoppingList
               dbEnabled={dbEnabled}
               recipe={{
