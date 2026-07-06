@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CommentsSection } from "./comments-section";
 import type { ThreadedComment } from "~/server/engagement/queries";
-import { addCommentAction } from "~/server/engagement/actions";
+import {
+  addCommentAction,
+  applySuggestionAction,
+} from "~/server/engagement/actions";
 
 vi.mock("~/server/engagement/actions", () => ({
   addCommentAction: vi.fn(),
   deleteCommentAction: vi.fn(),
   resolveCommentAction: vi.fn(),
+  applySuggestionAction: vi.fn(),
 }));
 
 const refresh = vi.fn();
@@ -22,6 +26,7 @@ vi.mock("sonner", () => ({
 }));
 
 const addComment = vi.mocked(addCommentAction);
+const applySuggestion = vi.mocked(applySuggestionAction);
 
 function makeComment(overrides: Partial<ThreadedComment> = {}): ThreadedComment {
   return {
@@ -29,6 +34,7 @@ function makeComment(overrides: Partial<ThreadedComment> = {}): ThreadedComment 
     kind: "comment",
     body: "Turned out delicious!",
     resolvedAt: null,
+    appliedAt: null,
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
     parentId: null,
     author: {
@@ -50,6 +56,7 @@ const baseProps = {
 beforeEach(() => {
   vi.clearAllMocks();
   addComment.mockResolvedValue({ ok: true });
+  applySuggestion.mockResolvedValue({ ok: true });
 });
 
 afterEach(cleanup);
@@ -202,5 +209,93 @@ describe("CommentsSection", () => {
     expect(
       screen.queryByRole("button", { name: "Comment actions" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("offers Accept & apply to the recipe owner on an open suggestion", () => {
+    render(
+      <CommentsSection
+        {...baseProps}
+        initialComments={[
+          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+        ]}
+        currentUserId="owner_9"
+        isRecipeOwner
+        canPost
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /accept & apply/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides Accept & apply from non-owners", () => {
+    render(
+      <CommentsSection
+        {...baseProps}
+        initialComments={[
+          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+        ]}
+        currentUserId="user_2"
+        isRecipeOwner={false}
+        canPost
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /accept & apply/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Accept & apply once a suggestion is applied and shows an Applied badge", () => {
+    render(
+      <CommentsSection
+        {...baseProps}
+        initialComments={[
+          makeComment({
+            id: "sugg_1",
+            kind: "suggestion",
+            body: "Add a bay leaf",
+            appliedAt: new Date("2024-02-01T00:00:00.000Z"),
+            resolvedAt: new Date("2024-02-01T00:00:00.000Z"),
+          }),
+        ]}
+        currentUserId="owner_9"
+        isRecipeOwner
+        canPost
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /accept & apply/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list")).getByText("Applied"),
+    ).toBeInTheDocument();
+  });
+
+  it("applies a suggestion through applySuggestionAction", async () => {
+    const user = userEvent.setup();
+    render(
+      <CommentsSection
+        {...baseProps}
+        initialComments={[
+          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+        ]}
+        currentUserId="owner_9"
+        isRecipeOwner
+        canPost
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /accept & apply/i }));
+
+    await waitFor(() =>
+      expect(applySuggestion).toHaveBeenCalledWith({
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        suggestionId: "sugg_1",
+      }),
+    );
   });
 });

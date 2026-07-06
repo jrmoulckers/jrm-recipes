@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   GitFork,
   Globe,
+  Lightbulb,
   Pencil,
   Sparkles,
   Sprout,
@@ -38,6 +39,8 @@ function entryStyle(entry: TimelineEntry): EntryStyle {
       };
     case "published":
       return { icon: Globe, title: "Shared with the family", linked: false };
+    case "suggestion_applied":
+      return { icon: Lightbulb, title: "Suggestion applied", linked: false };
     case "updated":
     default:
       return { icon: Pencil, title: "Updated", linked: false };

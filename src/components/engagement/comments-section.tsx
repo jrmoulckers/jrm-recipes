@@ -8,6 +8,7 @@ import {
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 
 import {
   addCommentAction,
+  applySuggestionAction,
   deleteCommentAction,
   resolveCommentAction,
 } from "~/server/engagement/actions";
@@ -149,6 +151,22 @@ export function CommentsSection(props: {
     });
   }
 
+  function applySuggestion(suggestionId: string) {
+    startTransition(async () => {
+      const result = await applySuggestionAction({
+        recipeId,
+        recipeSlug,
+        suggestionId,
+      });
+      if (result.ok) {
+        toast.success("Suggestion applied to the recipe.");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
   function submitTopLevel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     postComment(body, kind, null, () => setBody(""));
@@ -258,6 +276,7 @@ export function CommentsSection(props: {
                 onPostReply={postComment}
                 onDelete={deleteComment}
                 onResolve={resolveSuggestion}
+                onApply={applySuggestion}
               />
             </li>
           ))}
@@ -276,6 +295,7 @@ function CommentItem({
   onPostReply,
   onDelete,
   onResolve,
+  onApply,
   depth = 0,
 }: {
   comment: ThreadedComment;
@@ -286,13 +306,16 @@ function CommentItem({
   onPostReply: PostComment;
   onDelete: (commentId: string) => void;
   onResolve: (commentId: string, resolved: boolean) => void;
+  onApply: (suggestionId: string) => void;
   depth?: number;
 }) {
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [replyBody, setReplyBody] = React.useState("");
   const authorName = displayName(comment.author);
   const isSuggestion = comment.kind === "suggestion";
+  const isApplied = Boolean(comment.appliedAt);
   const isResolved = Boolean(comment.resolvedAt);
+  const canManageSuggestion = isSuggestion && isRecipeOwner && !isApplied;
   const canDelete =
     (currentUserId != null && currentUserId === comment.author?.id) ||
     isRecipeOwner;
@@ -347,7 +370,12 @@ function CommentItem({
                 Suggestion
               </Badge>
             ) : null}
-            {isResolved ? (
+            {isApplied ? (
+              <Badge variant="default">
+                <Sparkles className="size-3" />
+                Applied
+              </Badge>
+            ) : isResolved ? (
               <Badge variant="success">
                 <Check className="size-3" />
                 Resolved
@@ -378,7 +406,20 @@ function CommentItem({
               </Button>
             ) : null}
 
-            {isSuggestion && isRecipeOwner ? (
+            {canManageSuggestion ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={pending}
+                onClick={() => onApply(comment.id)}
+                className="h-8 px-2 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Sparkles /> Accept &amp; apply
+              </Button>
+            ) : null}
+
+            {canManageSuggestion ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -477,6 +518,7 @@ function CommentItem({
               onPostReply={onPostReply}
               onDelete={onDelete}
               onResolve={onResolve}
+              onApply={onApply}
               depth={depth + 1}
             />
           ))}

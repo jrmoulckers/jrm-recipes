@@ -50,6 +50,13 @@
       "when": 1783370925278,
       "tag": "0006_nostalgic_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783378389509,
+      "tag": "0007_regular_midnight",
+      "breakpoints": true
     }
   ]
 }

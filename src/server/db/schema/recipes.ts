@@ -35,12 +35,15 @@ export const recipeDifficulty = pgEnum("recipe_difficulty", [
 /**
  * Kinds of milestone recorded on a recipe's timeline. `adapted` marks both
  * sides of a fork (the new recipe's origin and the source's new descendant).
+ * `suggestion_applied` marks a family suggestion the owner folded in place,
+ * attributed to the contributor who proposed it.
  */
 export const recipeEventType = pgEnum("recipe_event_type", [
   "created",
   "adapted",
   "updated",
   "published",
+  "suggestion_applied",
 ]);
 
 /** The core recipe record. */
