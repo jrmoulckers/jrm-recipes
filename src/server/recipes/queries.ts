@@ -3,6 +3,7 @@ import "server-only";
 import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
+import { compareByTopRated, type RatingSort } from "~/lib/ratings";
 import {
   groupMembers,
   recipeIngredients,
@@ -28,6 +29,22 @@ export function ratingSummary(values: { value: number }[]) {
     average: Math.round((sum / values.length) * 10) / 10,
     count: values.length,
   };
+}
+
+/**
+ * Re-order a fetched list so the highest-rated recipes come first. Ordering by
+ * an aggregate of the related `ratings` rows is awkward in the relational query
+ * builder, so we sort the loaded window in memory (the lists already eager-load
+ * `ratings`). `"recent"` keeps the DB order untouched.
+ */
+function applyRatingSort<T extends { ratings: { value: number }[] }>(
+  rows: T[],
+  sort: RatingSort,
+): T[] {
+  if (sort !== "top-rated") return rows;
+  return [...rows].sort((a, b) =>
+    compareByTopRated(ratingSummary(a.ratings), ratingSummary(b.ratings)),
+  );
 }
 
 /** Groups a user belongs to (for the editor's visibility picker). */
@@ -62,9 +79,12 @@ export async function listMyRecipes(userId: string) {
 }
 
 /** Publicly published recipes, newest first (the discover feed). */
-export async function listPublicRecipes(limit = 48) {
+export async function listPublicRecipes(
+  limit = 48,
+  sort: RatingSort = "recent",
+) {
   if (!isDbConfigured()) return [];
-  return db.query.recipes.findMany({
+  const rows = await db.query.recipes.findMany({
     where: and(
       eq(recipes.visibility, "public"),
       eq(recipes.status, "published"),
@@ -73,6 +93,7 @@ export async function listPublicRecipes(limit = 48) {
     limit,
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
+  return applyRatingSort(rows, sort);
 }
 
 function canView(
@@ -133,18 +154,22 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
 }
 
 /** Recipes visible on a viewer's home/library: their own + their groups'. */
-export async function listLibrary(viewer: User | null) {
+export async function listLibrary(
+  viewer: User | null,
+  sort: RatingSort = "recent",
+) {
   if (!isDbConfigured() || !viewer) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope =
     groupIds.length > 0
       ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
       : eq(recipes.authorId, viewer.id);
-  return db.query.recipes.findMany({
+  const rows = await db.query.recipes.findMany({
     where: scope,
     orderBy: [desc(recipes.updatedAt)],
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
+  return applyRatingSort(rows, sort);
 }
 
 /** Validate a persisted version snapshot before using it. */

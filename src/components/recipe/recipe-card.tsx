@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
+import { ratingDisplay } from "~/lib/ratings";
 import { Badge } from "~/components/ui/badge";
 import { ratingSummary } from "~/server/recipes/queries";
 
@@ -36,7 +37,7 @@ function hashIndex(s: string, mod: number) {
 }
 
 export function RecipeCard({ recipe }: { recipe: CardRecipe }) {
-  const { average, count } = ratingSummary(recipe.ratings ?? []);
+  const rating = ratingDisplay(ratingSummary(recipe.ratings ?? []));
   const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
 
   return (
@@ -92,10 +93,18 @@ export function RecipeCard({ recipe }: { recipe: CardRecipe }) {
               <Users className="size-3.5" /> {recipe.servings}
             </span>
           )}
-          {count > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <Star className="size-3.5 fill-warning text-warning" />
-              {average.toFixed(1)}
+          {rating.unrated ? (
+            <span className="text-muted-foreground/70">Unrated</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <StarRating filled={rating.filled} label={rating.label} />
+              <span className="tabular-nums">
+                {rating.average.toFixed(1)}
+                <span className="text-muted-foreground/70">
+                  {" "}
+                  ({rating.count})
+                </span>
+              </span>
             </span>
           )}
           {recipe.difficulty && (
@@ -104,5 +113,25 @@ export function RecipeCard({ recipe }: { recipe: CardRecipe }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+/** Compact, read-only 5-star row summarising a recipe's average rating. */
+function StarRating({ filled, label }: { filled: number; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={label}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          aria-hidden
+          className={cn(
+            "size-3.5",
+            n <= filled
+              ? "fill-warning text-warning"
+              : "fill-transparent text-muted-foreground/40",
+          )}
+        />
+      ))}
+    </span>
   );
 }
