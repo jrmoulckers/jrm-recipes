@@ -6,6 +6,7 @@ import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
 import { cn, formatMinutes } from "~/lib/utils";
 import { ratingDisplay, ratingSummary } from "~/lib/ratings";
 import { Badge } from "~/components/ui/badge";
+import { FavoriteButton } from "~/components/collections/favorite-button";
 
 export type CardRecipe = {
   id: string;
@@ -35,15 +36,34 @@ function hashIndex(s: string, mod: number) {
   return h % mod;
 }
 
-export function RecipeCard({ recipe }: { recipe: CardRecipe }) {
+export function RecipeCard({
+  recipe,
+  favorited = false,
+  canFavorite = false,
+}: {
+  recipe: CardRecipe;
+  /** Initial favorited state for the heart overlay. */
+  favorited?: boolean;
+  /** Show the favorite (heart) toggle over the cover image. */
+  canFavorite?: boolean;
+}) {
   const rating = ratingDisplay(ratingSummary(recipe.ratings ?? []));
   const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
 
   return (
-    <Link
-      href={`/recipes/${recipe.slug}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-    >
+    <div className="relative">
+      {canFavorite && (
+        <FavoriteButton
+          recipeId={recipe.id}
+          recipeSlug={recipe.slug}
+          initialFavorited={favorited}
+          className="absolute right-2 top-2 z-10"
+        />
+      )}
+      <Link
+        href={`/recipes/${recipe.slug}`}
+        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
       <div className="relative aspect-[16/10] overflow-hidden">
         {recipe.coverImageUrl ? (
           <Image
@@ -112,6 +132,7 @@ export function RecipeCard({ recipe }: { recipe: CardRecipe }) {
         </div>
       </div>
     </Link>
+    </div>
   );
 }
 

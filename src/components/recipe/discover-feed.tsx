@@ -19,16 +19,24 @@ export function DiscoverFeed({
   initialItems,
   initialNextOffset,
   sort = "recent",
+  canFavorite = false,
+  favoritedIds = [],
 }: {
   initialItems: CardRecipe[];
   initialNextOffset: number | null;
   sort?: RatingSort;
+  canFavorite?: boolean;
+  favoritedIds?: string[];
 }) {
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
   const [nextOffset, setNextOffset] = React.useState<number | null>(
     initialNextOffset,
   );
   const [pending, startTransition] = React.useTransition();
+  const favoritedSet = React.useMemo(
+    () => new Set(favoritedIds),
+    [favoritedIds],
+  );
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
@@ -47,7 +55,12 @@ export function DiscoverFeed({
     <>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            canFavorite={canFavorite}
+            favorited={favoritedSet.has(recipe.id)}
+          />
         ))}
       </div>
       {nextOffset != null && (

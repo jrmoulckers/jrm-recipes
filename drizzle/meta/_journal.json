@@ -36,6 +36,13 @@
       "when": 1783325115002,
       "tag": "0004_abandoned_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783325931076,
+      "tag": "0005_colorful_hiroim",
+      "breakpoints": true
     }
   ]
 }

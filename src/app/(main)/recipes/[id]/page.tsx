@@ -33,6 +33,10 @@ import {
   type ThreadedComment,
 } from "~/server/engagement/queries";
 import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
+import {
+  getCollectionsForRecipe,
+  isFavorited,
+} from "~/server/collections/queries";
 import { formatMinutes } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -49,6 +53,8 @@ import { RatingControl } from "~/components/engagement/rating-control";
 import { CommentsSection } from "~/components/engagement/comments-section";
 import { CookLogSection } from "~/components/cooklog/cook-log-section";
 import { TechniqueChips } from "~/components/cook/technique-chips";
+import { FavoriteButton } from "~/components/collections/favorite-button";
+import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
 
 const load = cache(async (idOrSlug: string) => {
   const user = await getCurrentUser();
@@ -95,7 +101,16 @@ export default async function RecipePage({
   const dbEnabled = isDbConfigured();
   const { average, count } = ratingSummary(recipe.ratings);
 
-  const [versions, lineage, comments, viewerRating, cookLog, cookCount] =
+  const [
+    versions,
+    lineage,
+    comments,
+    viewerRating,
+    cookLog,
+    cookCount,
+    favorited,
+    savedCollections,
+  ] =
     await Promise.all([
       getRecipeVersions(recipe.id),
       getRecipeLineage(recipe.id),
@@ -103,6 +118,8 @@ export default async function RecipePage({
       getViewerRating(recipe.id, user?.id ?? null),
       getRecipeCookLog(recipe.id, user?.id ?? null),
       getCookCount(recipe.id, user?.id ?? null),
+      isFavorited(recipe.id, user?.id ?? null),
+      user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
     ]);
   const commentCount = countComments(comments);
 
@@ -235,6 +252,18 @@ export default async function RecipePage({
               sourceId={recipe.id}
               sourceTitle={recipe.title}
               canAdapt={Boolean(user)}
+            />
+            <FavoriteButton
+              recipeId={recipe.id}
+              recipeSlug={recipe.slug}
+              initialFavorited={favorited}
+              variant="button"
+              canFavorite={Boolean(user)}
+            />
+            <SaveToCollectionButton
+              recipeId={recipe.id}
+              collections={savedCollections}
+              canSave={Boolean(user)}
             />
             {isOwner && (
               <Button asChild size="lg" variant="outline">

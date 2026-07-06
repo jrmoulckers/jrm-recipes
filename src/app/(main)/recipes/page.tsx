@@ -16,6 +16,7 @@ import {
   parseRecipeSearch,
   type RecipeSearch,
 } from "~/server/recipes/search";
+import { getFavoriteRecipeIds } from "~/server/collections/queries";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
@@ -71,19 +72,26 @@ export default async function RecipesPage({
 
 /** Default browse view: the viewer's own cookbook plus a paginated discover feed. */
 async function BrowseSections({ user }: { user: User | null }) {
-  const [mine, discover] = await Promise.all([
+  const [mine, discover, favoriteIds] = await Promise.all([
     listLibrary(user),
     listPublicRecipes(),
+    getFavoriteRecipeIds(user?.id),
   ]);
   const mineIds = new Set(mine.map((r) => r.id));
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
+  const canFavorite = Boolean(user);
 
   return (
     <>
       {mine.length > 0 ? (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              canFavorite={canFavorite}
+              favorited={favoriteIds.has(recipe.id)}
+            />
           ))}
         </section>
       ) : (
@@ -101,6 +109,8 @@ async function BrowseSections({ user }: { user: User | null }) {
           <DiscoverFeed
             initialItems={discoverOnly}
             initialNextOffset={discover.nextOffset}
+            canFavorite={canFavorite}
+            favoritedIds={[...favoriteIds]}
           />
         </section>
       )}
@@ -116,7 +126,11 @@ async function SearchResults({
   user: User | null;
   search: RecipeSearch;
 }) {
-  const results = await searchRecipes(user, search);
+  const [results, favoriteIds] = await Promise.all([
+    searchRecipes(user, search),
+    getFavoriteRecipeIds(user?.id),
+  ]);
+  const canFavorite = Boolean(user);
 
   if (results.length === 0) return <NoResults />;
 
@@ -132,7 +146,12 @@ async function SearchResults({
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {results.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            canFavorite={canFavorite}
+            favorited={favoriteIds.has(recipe.id)}
+          />
         ))}
       </div>
     </section>
