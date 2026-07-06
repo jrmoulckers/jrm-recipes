@@ -1,40 +1,42 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ChefHat, Compass, UtensilsCrossed } from "lucide-react";
+import { ChefHat, Compass, SearchX, UtensilsCrossed } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
-import { listLibrary, listPublicRecipes } from "~/server/recipes/queries";
+import { type User } from "~/server/db/schema";
 import {
-  parseRatingSort,
-  RATING_SORT_LABELS,
-  RATING_SORTS,
-  type RatingSort,
-} from "~/lib/ratings";
-import { cn } from "~/lib/utils";
+  listLibrary,
+  listPublicRecipes,
+  listRecipeFacets,
+  searchRecipes,
+} from "~/server/recipes/queries";
+import {
+  isDefaultRecipeView,
+  parseRecipeSearch,
+  type RecipeSearch,
+} from "~/server/recipes/search";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
+import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 
 export const metadata: Metadata = { title: "Recipes" };
 
 export default async function RecipesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string | string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { sort: sortParam } = await searchParams;
-  const sort = parseRatingSort(sortParam);
   const user = await getCurrentUser();
-  const [mine, discover] = await Promise.all([
-    listLibrary(user, sort),
-    listPublicRecipes({ sort }),
-  ]);
-  const mineIds = new Set(mine.map((r) => r.id));
-  const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
+  const search = parseRecipeSearch(await searchParams);
+  const browsing = isDefaultRecipeView(search);
+  const facets = isDbConfigured()
+    ? await listRecipeFacets(user)
+    : { cuisines: [], tags: [] };
 
   return (
-    <div className="container flex flex-col gap-10 py-10">
+    <div className="container flex flex-col gap-8 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
@@ -44,19 +46,41 @@ export default async function RecipesPage({
             Everything you and your family have saved.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {isDbConfigured() && <SortControl current={sort} />}
-          <Button asChild size="lg">
-            <Link href="/recipes/new">
-              <ChefHat /> New recipe
-            </Link>
-          </Button>
-        </div>
+        <Button asChild size="lg">
+          <Link href="/recipes/new">
+            <ChefHat /> New recipe
+          </Link>
+        </Button>
       </div>
 
       {!isDbConfigured() ? (
         <ConnectDbNotice />
-      ) : mine.length > 0 ? (
+      ) : (
+        <>
+          <RecipeSearchControls search={search} facets={facets} />
+          {browsing ? (
+            <BrowseSections user={user} />
+          ) : (
+            <SearchResults user={user} search={search} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Default browse view: the viewer's own cookbook plus a paginated discover feed. */
+async function BrowseSections({ user }: { user: User | null }) {
+  const [mine, discover] = await Promise.all([
+    listLibrary(user),
+    listPublicRecipes(),
+  ]);
+  const mineIds = new Set(mine.map((r) => r.id));
+  const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
+
+  return (
+    <>
+      {mine.length > 0 ? (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} />
@@ -75,42 +99,59 @@ export default async function RecipesPage({
             </h2>
           </div>
           <DiscoverFeed
-            key={sort}
             initialItems={discoverOnly}
             initialNextOffset={discover.nextOffset}
-            sort={sort}
           />
         </section>
       )}
-    </div>
+    </>
   );
 }
 
-function SortControl({ current }: { current: RatingSort }) {
+/** Flat, filtered + sorted results grid shown once a search or filter is set. */
+async function SearchResults({
+  user,
+  search,
+}: {
+  user: User | null;
+  search: RecipeSearch;
+}) {
+  const results = await searchRecipes(user, search);
+
+  if (results.length === 0) return <NoResults />;
+
   return (
-    <div
-      className="inline-flex rounded-lg border border-border bg-card p-0.5 text-sm shadow-token"
-      role="group"
-      aria-label="Sort recipes"
-    >
-      {RATING_SORTS.map((option) => {
-        const active = option === current;
-        return (
-          <Link
-            key={option}
-            href={option === "recent" ? "/recipes" : `/recipes?sort=${option}`}
-            aria-current={active ? "true" : undefined}
-            className={cn(
-              "rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {RATING_SORT_LABELS[option]}
-          </Link>
-        );
-      })}
+    <section className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Results
+        </h2>
+        <span className="text-sm text-muted-foreground">
+          {results.length} recipe{results.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {results.map((recipe) => (
+          <RecipeCard key={recipe.id} recipe={recipe} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NoResults() {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
+      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+        <SearchX className="size-7" />
+      </span>
+      <div>
+        <h2 className="font-display text-xl font-semibold">No matches</h2>
+        <p className="mt-1 max-w-sm text-muted-foreground">
+          Try fewer filters or a different search — your next favorite might be
+          hiding under another name.
+        </p>
+      </div>
     </div>
   );
 }
