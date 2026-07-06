@@ -48,6 +48,7 @@ import { RecipeTimeline } from "~/components/recipe/timeline";
 import { RatingControl } from "~/components/engagement/rating-control";
 import { CommentsSection } from "~/components/engagement/comments-section";
 import { CookLogSection } from "~/components/cooklog/cook-log-section";
+import { TechniqueChips } from "~/components/cook/technique-chips";
 
 const load = cache(async (idOrSlug: string) => {
   const user = await getCurrentUser();
@@ -351,11 +352,7 @@ export default async function RecipePage({
                                 {formatTimer(step.timerSeconds)}
                               </Badge>
                             )}
-                            {step.techniques?.map((t) => (
-                              <Badge key={t} variant="outline">
-                                {t}
-                              </Badge>
-                            ))}
+                            <TechniqueChips techniques={step.techniques} />
                           </div>
                         </div>
                       </li>
