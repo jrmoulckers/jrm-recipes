@@ -8,6 +8,7 @@ import {
   BookOpen,
   ChefHat,
   Clock3,
+  CookingPot,
   Flame,
   History,
   MessageCircle,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
+import { isDbConfigured } from "~/server/db";
 import {
   getRecipe,
   getRecipeLineage,
@@ -30,6 +32,7 @@ import {
   getViewerRating,
   type ThreadedComment,
 } from "~/server/engagement/queries";
+import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
 import { formatMinutes } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -43,6 +46,7 @@ import { RecipeLineage } from "~/components/recipe/lineage";
 import { RecipeTimeline } from "~/components/recipe/timeline";
 import { RatingControl } from "~/components/engagement/rating-control";
 import { CommentsSection } from "~/components/engagement/comments-section";
+import { CookLogSection } from "~/components/cooklog/cook-log-section";
 
 const load = cache(async (idOrSlug: string) => {
   const user = await getCurrentUser();
@@ -88,12 +92,15 @@ export default async function RecipePage({
   const isOwner = Boolean(user?.id === recipe.authorId);
   const { average, count } = ratingSummary(recipe.ratings);
 
-  const [versions, lineage, comments, viewerRating] = await Promise.all([
-    getRecipeVersions(recipe.id),
-    getRecipeLineage(recipe.id),
-    getRecipeComments(recipe.id),
-    getViewerRating(recipe.id, user?.id ?? null),
-  ]);
+  const [versions, lineage, comments, viewerRating, cookLog, cookCount] =
+    await Promise.all([
+      getRecipeVersions(recipe.id),
+      getRecipeLineage(recipe.id),
+      getRecipeComments(recipe.id),
+      getViewerRating(recipe.id, user?.id ?? null),
+      getRecipeCookLog(recipe.id, user?.id ?? null),
+      getCookCount(recipe.id, user?.id ?? null),
+    ]);
   const commentCount = countComments(comments);
 
   const meta = [
@@ -238,6 +245,14 @@ export default async function RecipePage({
               {versions.length > 0 && (
                 <span className="text-xs text-muted-foreground">
                   {versions.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="cooked">
+              <CookingPot className="size-4" /> Cooked it
+              {cookCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {cookCount}
                 </span>
               )}
             </TabsTrigger>
@@ -387,6 +402,20 @@ export default async function RecipePage({
                 recipeSlug={recipe.slug}
                 recipeId={recipe.id}
                 canRevert={isOwner}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="cooked" className="mt-6">
+            <div className="mx-auto max-w-3xl">
+              <CookLogSection
+                recipeId={recipe.id}
+                recipeSlug={recipe.slug}
+                recipeTitle={recipe.title}
+                entries={cookLog}
+                cookCount={cookCount}
+                canLog={Boolean(user)}
+                dbConfigured={isDbConfigured()}
               />
             </div>
           </TabsContent>

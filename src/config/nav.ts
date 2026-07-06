@@ -1,6 +1,7 @@
 import {
   BookOpen,
   ChefHat,
+  CookingPot,
   Home,
   Users,
   type LucideIcon,
@@ -21,6 +22,12 @@ export const primaryNav: NavItem[] = [
     label: "Recipes",
     icon: BookOpen,
     match: (p) => p.startsWith("/recipes"),
+  },
+  {
+    href: "/journal",
+    label: "Journal",
+    icon: CookingPot,
+    match: (p) => p.startsWith("/journal"),
   },
   {
     href: "/groups",
