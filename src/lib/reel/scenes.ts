@@ -150,7 +150,7 @@ export function formatIngredientLine(ing: ReelIngredientInput): string {
       parts.push(min);
     }
   }
-  if (ing.unit && ing.unit.trim()) parts.push(ing.unit.trim());
+  if (ing.unit?.trim()) parts.push(ing.unit.trim());
   parts.push(ing.item.trim());
   return parts.join(" ").replace(/\s+/g, " ").trim();
 }
@@ -182,7 +182,7 @@ export function metaChips(recipe: ReelRecipe): ReelChip[] {
       dot: DIFFICULTY_DOT[d],
     });
   }
-  if (recipe.cuisine && recipe.cuisine.trim()) {
+  if (recipe.cuisine?.trim()) {
     chips.push({ label: recipe.cuisine.trim() });
   }
   return chips;
@@ -204,7 +204,7 @@ export function coverByline(recipe: ReelRecipe): string | null {
  */
 export function selectKeyIngredients(recipe: ReelRecipe): ReelIngredient[] {
   const lines = recipe.ingredients
-    .filter((i) => i.item && i.item.trim())
+    .filter((i) => i.item?.trim())
     .map((i) => ({
       text: formatIngredientLine(i),
       optional: Boolean(i.optional),
@@ -249,7 +249,7 @@ export function evenlySpacedIndices(length: number, count: number): number[] {
 export function selectKeySteps(recipe: ReelRecipe): ReelStep[] {
   const all = recipe.steps
     .map((s, i) => ({ step: s, number: i + 1 }))
-    .filter((s) => s.step.instruction && s.step.instruction.trim());
+    .filter((s) => s.step.instruction?.trim());
   const total = all.length;
   if (total === 0) return [];
 
@@ -349,8 +349,8 @@ export function sceneAtTime(
  */
 export function reelImageUrl(
   url: string | null | undefined,
-  width = REEL_SIZE.width,
-  height = REEL_SIZE.height,
+  width: number = REEL_SIZE.width,
+  height: number = REEL_SIZE.height,
 ): string | null {
   if (!url) return null;
   if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
