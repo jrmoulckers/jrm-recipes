@@ -675,11 +675,21 @@ export function canRecordReel(): boolean {
 }
 
 /**
+ * True only when a webm mime type is genuinely encodable *and* the canvas can be
+ * captured — i.e. an animated reel video can actually be produced. Safari/iOS
+ * expose `MediaRecorder` but fail this check, so callers should fall back to the
+ * poster image instead of dead-ending on an error.
+ */
+export function canEncodeReelVideo(): boolean {
+  return detectReelExportMode() === "video";
+}
+
+/**
  * Render the branded poster (cover) still to an offscreen 1080x1920 canvas and
  * return it as a PNG blob. This is the graceful fallback for browsers that can't
  * encode webm (Safari/iOS) so the user still gets something shareable.
  */
-export function renderPosterBlob(
+export function renderPoster(
   scenes: ReelScene[],
   images: LoadedImages,
 ): Promise<Blob> {

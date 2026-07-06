@@ -12,11 +12,12 @@ import {
 } from "~/lib/reel/scenes";
 import {
   detectReelExportMode,
+  canEncodeReelVideo,
   drawPoster,
   playPreview,
   preloadReelImages,
   recordReel,
-  renderPosterBlob,
+  renderPoster,
   type LoadedImages,
   type PreviewHandle,
 } from "~/components/recipe/reel/renderer";
@@ -66,6 +67,7 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     () => detectReelExportMode(),
     [],
   );
+  const videoSupported = React.useMemo(() => canEncodeReelVideo(), []);
   const nativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
   const slug = slugify(reel.title || "recipe");
@@ -156,8 +158,9 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     if (!images) return null;
     stopPreview();
     setProgress(0);
-    if (exportMode === "image") {
-      return renderPosterBlob(scenes, images);
+    if (!videoSupported) {
+      // Safari/iOS and other browsers that can't encode webm: export the still.
+      return renderPoster(scenes, images);
     }
     const controller = new AbortController();
     abortRef.current = controller;
