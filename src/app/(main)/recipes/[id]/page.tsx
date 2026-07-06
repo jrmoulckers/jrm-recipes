@@ -24,6 +24,7 @@ import { isDbConfigured } from "~/server/db";
 import {
   getRecipe,
   getRecipeLineage,
+  getRecipeTimeline,
   getRecipeVersions,
   ratingSummary,
 } from "~/server/recipes/queries";
@@ -49,6 +50,7 @@ import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
+import { RecipeStory } from "~/components/recipe/story";
 import { RecipeTimeline } from "~/components/recipe/timeline";
 import { RatingControl } from "~/components/engagement/rating-control";
 import { CommentsSection } from "~/components/engagement/comments-section";
@@ -125,6 +127,7 @@ export default async function RecipePage({
   const [
     versions,
     lineage,
+    timeline,
     comments,
     viewerRating,
     cookLog,
@@ -135,6 +138,7 @@ export default async function RecipePage({
     await Promise.all([
       getRecipeVersions(recipe.id),
       getRecipeLineage(recipe.id),
+      getRecipeTimeline(recipe.id),
       getRecipeComments(recipe.id),
       getViewerRating(recipe.id, user?.id ?? null),
       getRecipeCookLog(recipe.id, user?.id ?? null),
@@ -472,13 +476,23 @@ export default async function RecipePage({
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-6">
-            <div className="mx-auto max-w-3xl">
-              <RecipeTimeline
-                versions={versions}
-                recipeSlug={recipe.slug}
-                recipeId={recipe.id}
-                canRevert={isOwner}
+            <div className="mx-auto flex max-w-3xl flex-col gap-8">
+              <RecipeStory
+                entries={timeline.entries}
+                recipeTitle={recipe.title}
               />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                  <History className="size-4" aria-hidden="true" />
+                  Saved versions
+                </div>
+                <RecipeTimeline
+                  versions={versions}
+                  recipeSlug={recipe.slug}
+                  recipeId={recipe.id}
+                  canRevert={isOwner}
+                />
+              </div>
             </div>
           </TabsContent>
 

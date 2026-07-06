@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChefHat, GitFork, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { forkRecipeAction } from "~/server/recipes/actions";
+import { createAdaptationAction } from "~/server/recipes/actions";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -41,7 +41,7 @@ export function AdaptButton({
   function onAdapt() {
     startTransition(async () => {
       const trimmed = note.trim();
-      const result = await forkRecipeAction(
+      const result = await createAdaptationAction(
         sourceId,
         trimmed.length > 0 ? trimmed : undefined,
       );

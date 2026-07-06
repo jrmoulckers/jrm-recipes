@@ -23,6 +23,7 @@ import {
 } from "~/lib/ratings";
 import {
   groupMembers,
+  recipeEvents,
   recipeIngredients,
   recipeSteps,
   recipeTags,
@@ -38,6 +39,7 @@ import {
   type RecipeSearch,
   type RecipeSort,
 } from "./search";
+import { assembleTimeline, type TimelineEntry } from "./timeline";
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
@@ -454,4 +456,112 @@ export async function getRecipeLineage(recipeId: string) {
   });
 
   return { parent, adaptations };
+}
+
+export type RecipeTimeline = Awaited<ReturnType<typeof getRecipeTimeline>>;
+
+/**
+ * Assemble a recipe's family-history timeline: its own milestones (created,
+ * edited, published) plus each fork it originates and, if it is itself an
+ * adaptation, a link back to the recipe it came from — all in chronological
+ * order with authors and dates. Falls back to synthesising milestones from the
+ * recipe + lineage rows so recipes predating the events log still read well.
+ */
+export async function getRecipeTimeline(
+  recipeId: string,
+): Promise<{
+  entries: TimelineEntry[];
+  parent: { slug: string; title: string; author?: { name: string | null } | null } | null;
+}> {
+  if (!isDbConfigured()) return { entries: [], parent: null };
+
+  const recipe = await db.query.recipes.findFirst({
+    where: eq(recipes.id, recipeId),
+    columns: { id: true, forkedFromId: true, createdAt: true },
+  });
+  if (!recipe) return { entries: [], parent: null };
+
+  const [events, children, parentRecipe] = await Promise.all([
+    db.query.recipeEvents.findMany({
+      where: eq(recipeEvents.recipeId, recipeId),
+      orderBy: [asc(recipeEvents.createdAt)],
+      with: {
+        actor: { columns: { name: true, handle: true, avatarUrl: true } },
+        related: { columns: { slug: true, title: true } },
+      },
+    }),
+    db.query.recipes.findMany({
+      where: eq(recipes.forkedFromId, recipeId),
+      columns: { id: true, slug: true, title: true, createdAt: true },
+      with: { author: { columns: { name: true, handle: true, avatarUrl: true } } },
+    }),
+    recipe.forkedFromId
+      ? db.query.recipes.findFirst({
+          where: eq(recipes.id, recipe.forkedFromId),
+          columns: { id: true, slug: true, title: true, createdAt: true },
+          with: {
+            author: { columns: { name: true, handle: true, avatarUrl: true } },
+          },
+        })
+      : Promise.resolve(undefined),
+  ]);
+
+  const entries: TimelineEntry[] = events.map((event) => ({
+    id: event.id,
+    // A source-side `adapted` event points forward to a descendant fork.
+    kind:
+      event.type === "adapted" &&
+      event.relatedRecipeId != null &&
+      event.relatedRecipeId !== recipe.forkedFromId
+        ? "adaptation"
+        : event.type,
+    note: event.note,
+    createdAt: event.createdAt,
+    actor: event.actor ?? null,
+    related: event.related ?? null,
+  }));
+
+  // Back-fill for recipes created before the events log existed.
+  const hasOrigin = entries.some(
+    (e) => e.kind === "created" || e.kind === "adapted",
+  );
+  if (!hasOrigin) {
+    entries.push({
+      id: `synth-origin-${recipe.id}`,
+      kind: parentRecipe ? "adapted" : "created",
+      note: null,
+      createdAt: recipe.createdAt,
+      actor: parentRecipe?.author ?? null,
+      related: parentRecipe
+        ? { slug: parentRecipe.slug, title: parentRecipe.title }
+        : null,
+    });
+  }
+  const linkedChildIds = new Set(
+    entries
+      .filter((e) => e.kind === "adaptation" && e.related)
+      .map((e) => e.related!.slug),
+  );
+  for (const child of children) {
+    if (linkedChildIds.has(child.slug)) continue;
+    entries.push({
+      id: `synth-child-${child.id}`,
+      kind: "adaptation",
+      note: null,
+      createdAt: child.createdAt,
+      actor: child.author ?? null,
+      related: { slug: child.slug, title: child.title },
+    });
+  }
+
+  return {
+    entries: assembleTimeline(entries),
+    parent: parentRecipe
+      ? {
+          slug: parentRecipe.slug,
+          title: parentRecipe.title,
+          author: parentRecipe.author,
+        }
+      : null,
+  };
 }
