@@ -5,16 +5,29 @@ import { ChefHat, Compass, UtensilsCrossed } from "lucide-react";
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { listLibrary, listPublicRecipes } from "~/server/recipes/queries";
+import {
+  parseRatingSort,
+  RATING_SORT_LABELS,
+  RATING_SORTS,
+  type RatingSort,
+} from "~/lib/ratings";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 
 export const metadata: Metadata = { title: "Recipes" };
 
-export default async function RecipesPage() {
+export default async function RecipesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string | string[] }>;
+}) {
+  const { sort: sortParam } = await searchParams;
+  const sort = parseRatingSort(sortParam);
   const user = await getCurrentUser();
   const [mine, discover] = await Promise.all([
-    listLibrary(user),
-    listPublicRecipes(),
+    listLibrary(user, sort),
+    listPublicRecipes(48, sort),
   ]);
   const mineIds = new Set(mine.map((r) => r.id));
   const discoverOnly = discover.filter((r) => !mineIds.has(r.id));
@@ -30,11 +43,14 @@ export default async function RecipesPage() {
             Everything you and your family have saved.
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/recipes/new">
-            <ChefHat /> New recipe
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          {isDbConfigured() && <SortControl current={sort} />}
+          <Button asChild size="lg">
+            <Link href="/recipes/new">
+              <ChefHat /> New recipe
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {!isDbConfigured() ? (
@@ -64,6 +80,35 @@ export default async function RecipesPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function SortControl({ current }: { current: RatingSort }) {
+  return (
+    <div
+      className="inline-flex rounded-lg border border-border bg-card p-0.5 text-sm shadow-token"
+      role="group"
+      aria-label="Sort recipes"
+    >
+      {RATING_SORTS.map((option) => {
+        const active = option === current;
+        return (
+          <Link
+            key={option}
+            href={option === "recent" ? "/recipes" : `/recipes?sort=${option}`}
+            aria-current={active ? "true" : undefined}
+            className={cn(
+              "rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {RATING_SORT_LABELS[option]}
+          </Link>
+        );
+      })}
     </div>
   );
 }
