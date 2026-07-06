@@ -191,11 +191,6 @@ On every PR and push to `main`, GitHub Actions runs:
 - **CI** (`.github/workflows/ci.yml`) — lint, typecheck, unit tests, a production
   build, and a Playwright **e2e** smoke test. No secrets: it builds with
   `SKIP_ENV_VALIDATION` and dev-bypass auth, exactly like a zero-config local run.
-- **CodeQL** (`.github/workflows/codeql.yml`) — static security/quality analysis
-  for JavaScript/TypeScript, on PRs, pushes, and weekly. _(This repo is private,
-  so code scanning needs **GitHub Advanced Security** enabled under Settings →
-  Code security; without it the analyze step fails — enable it or remove the
-  workflow.)_
 
 **Dependabot** (`.github/dependabot.yml`) opens weekly PRs to keep npm packages
 and GitHub Actions current — each one gated by CI.

@@ -174,10 +174,6 @@ idempotent — safe to run twice; delete them from the UI any time).
 - **CI** (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, a build,
   and a Playwright **e2e** smoke test on every PR and push to `main` — no secrets
   needed (it builds with `SKIP_ENV_VALIDATION` + dev-bypass auth).
-- **CodeQL** (`.github/workflows/codeql.yml`) runs static security analysis on
-  every PR/push plus weekly. _(Code scanning on a private repo needs GitHub
-  Advanced Security — enable it under Settings → Code security, or remove the
-  workflow.)_
 - **Dependabot** (`.github/dependabot.yml`) opens weekly dependency + Actions
   update PRs, each gated by CI.
 - **Schema changes:** edit the Drizzle schema in `src/server/db/schema/`, run
