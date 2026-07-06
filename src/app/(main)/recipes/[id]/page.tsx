@@ -70,9 +70,22 @@ export async function generateMetadata({
   const { id } = await params;
   const { recipe } = await load(id);
   if (!recipe) return { title: "Recipe not found" };
+  const description = recipe.description ?? undefined;
   return {
     title: recipe.title,
-    description: recipe.description ?? undefined,
+    description,
+    // The image itself is supplied automatically from the sibling
+    // `opengraph-image` route (Next injects it into og:image + twitter:image).
+    openGraph: {
+      title: recipe.title,
+      description,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: recipe.title,
+      description,
+    },
   };
 }
 
