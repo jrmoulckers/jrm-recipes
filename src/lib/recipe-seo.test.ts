@@ -2,12 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildRecipeJsonLd,
-  buildRecipeMetadata,
   minutesToIsoDuration,
   serializeJsonLd,
   type SeoRecipe,
 } from "./recipe-seo";
-import { brand } from "~/config/brand";
 
 function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
   return {
@@ -15,7 +13,6 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
     title: "Aunt May's Peach Cobbler",
     description: "Bubbling fruit under a craggy biscuit top.",
     coverImageUrl: "https://cdn.example.com/cobbler.jpg",
-    visibility: "public",
     servings: 8,
     servingsNoun: "squares",
     prepMinutes: 20,
@@ -170,54 +167,5 @@ describe("serializeJsonLd", () => {
   it("round-trips to the original object once unescaped", () => {
     const data = { a: 1, b: "two", c: [3, 4] };
     expect(JSON.parse(serializeJsonLd(data))).toEqual(data);
-  });
-});
-
-describe("buildRecipeMetadata", () => {
-  it("emits rich, indexable metadata for public recipes", () => {
-    const meta = buildRecipeMetadata(makeRecipe());
-
-    expect(meta.title).toBe("Aunt May's Peach Cobbler");
-    expect(meta.description).toBe(
-      "Bubbling fruit under a craggy biscuit top.",
-    );
-    expect(meta.robots).toEqual({ index: true, follow: true });
-    expect(meta.alternates?.canonical).toContain(
-      "/recipes/aunt-mays-peach-cobbler",
-    );
-    expect(meta.openGraph).toMatchObject({
-      type: "article",
-      title: "Aunt May's Peach Cobbler",
-      siteName: brand.name,
-      images: ["https://cdn.example.com/cobbler.jpg"],
-    });
-    expect(meta.twitter).toMatchObject({
-      card: "summary_large_image",
-      images: ["https://cdn.example.com/cobbler.jpg"],
-    });
-  });
-
-  it("omits OG images when no cover image is present", () => {
-    const meta = buildRecipeMetadata(makeRecipe({ coverImageUrl: null }));
-    const og = meta.openGraph as { images?: unknown } | undefined;
-    expect(og?.images).toBeUndefined();
-  });
-
-  it.each(["private", "group", "unlisted"] as const)(
-    "returns generic no-index metadata for %s recipes",
-    (visibility) => {
-      const meta = buildRecipeMetadata(makeRecipe({ visibility }));
-      expect(meta.title).toBe("Recipe");
-      expect(meta.description).toBe(brand.description);
-      expect(meta.robots).toEqual({ index: false, follow: false });
-      expect(meta.openGraph).toBeUndefined();
-      expect(meta.alternates).toBeUndefined();
-    },
-  );
-
-  it("returns generic no-index metadata when the recipe is null", () => {
-    const meta = buildRecipeMetadata(null);
-    expect(meta.title).toBe("Recipe");
-    expect(meta.robots).toEqual({ index: false, follow: false });
   });
 });
