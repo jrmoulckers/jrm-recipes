@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Minus, Plus } from "lucide-react";
+import { Info, Minus, Plus } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import {
@@ -10,8 +10,10 @@ import {
   scaleQuantity,
   toSystem,
 } from "~/lib/units";
+import { scalingNudge } from "~/lib/substitutions";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
 
 type PanelIngredient = {
   id: string;
@@ -163,51 +165,68 @@ export function IngredientsPanel({
               {items.map((ing) => {
                 const { number, unit } = amountLabel(ing, factor, system);
                 const isChecked = checked.has(ing.id);
+                const nudge =
+                  ing.quantityMax == null
+                    ? scalingNudge(
+                        scaleQuantity(ing.quantity, factor),
+                        ing.unit,
+                        ing.item,
+                      )
+                    : null;
                 return (
-                  <li key={ing.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggle(ing.id)}
-                      aria-pressed={isChecked}
-                      className="flex w-full items-baseline gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
-                    >
-                      <span
-                        className={cn(
-                          "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 text-[10px] transition-colors",
-                          isChecked
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border",
-                        )}
-                        aria-hidden
+                  <li key={ing.id} className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => toggle(ing.id)}
+                        aria-pressed={isChecked}
+                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
                       >
-                        {isChecked ? "✓" : ""}
-                      </span>
-                      <span
-                        className={cn(
-                          "flex-1 text-[0.95rem]",
-                          isChecked && "text-muted-foreground line-through",
-                        )}
-                      >
-                        {(number || unit) && (
-                          <span className="font-semibold tabular-nums">
-                            {number}
-                            {unit ? ` ${unit}` : ""}{" "}
-                          </span>
-                        )}
-                        {ing.item}
-                        {ing.note && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            — {ing.note}
-                          </span>
-                        )}
-                        {ing.optional && (
-                          <Badge variant="muted" className="ml-2 align-middle">
-                            optional
-                          </Badge>
-                        )}
-                      </span>
-                    </button>
+                        <span
+                          className={cn(
+                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 text-[10px] transition-colors",
+                            isChecked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border",
+                          )}
+                          aria-hidden
+                        >
+                          {isChecked ? "✓" : ""}
+                        </span>
+                        <span
+                          className={cn(
+                            "flex-1 text-[0.95rem]",
+                            isChecked && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {(number || unit) && (
+                            <span className="font-semibold tabular-nums">
+                              {number}
+                              {unit ? ` ${unit}` : ""}{" "}
+                            </span>
+                          )}
+                          {ing.item}
+                          {ing.note && (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {ing.note}
+                            </span>
+                          )}
+                          {ing.optional && (
+                            <Badge variant="muted" className="ml-2 align-middle">
+                              optional
+                            </Badge>
+                          )}
+                        </span>
+                      </button>
+                      <IngredientSubstitutions item={ing.item} />
+                    </div>
+                    {nudge && (
+                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <Info className="mt-0.5 size-3 shrink-0 text-primary" />
+                        {nudge}
+                      </p>
+                    )}
                   </li>
                 );
               })}
