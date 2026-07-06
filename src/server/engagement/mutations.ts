@@ -7,12 +7,14 @@ import { canViewRecipe } from "~/server/recipes/queries";
 import {
   comments,
   ratings,
+  recipeEvents,
   recipes,
   type Comment,
   type Rating,
   type User,
 } from "~/server/db/schema";
 import type { CommentInput, RatingInput } from "./validation";
+import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -146,6 +148,88 @@ export async function resolveComment(
       .update(comments)
       .set({ resolvedAt: resolved ? new Date() : null, updatedAt: new Date() })
       .where(eq(comments.id, commentId));
+  });
+}
+
+/**
+ * Fold a suggestion's change into the recipe itself. Owner-only: mirrors
+ * {@link resolveComment}'s gate (view access via {@link canViewRecipe}, then the
+ * recipe author). Because suggestions are free-text tweaks to an existing
+ * recipe, we apply IN PLACE — merging the suggestion into the recipe's notes,
+ * credited to the contributor — rather than forking a new recipe. A
+ * `suggestion_applied` timeline event attributes the contributor so the applied
+ * tweak shows in the family history, and the suggestion is marked applied (and
+ * resolved) so it isn't offered again.
+ */
+export async function applySuggestion(
+  input: { recipeId: string; suggestionId: string },
+  user: User,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const suggestion = await tx.query.comments.findFirst({
+      where: and(
+        eq(comments.id, input.suggestionId),
+        eq(comments.recipeId, input.recipeId),
+      ),
+      columns: {
+        id: true,
+        kind: true,
+        body: true,
+        userId: true,
+        appliedAt: true,
+      },
+      with: {
+        recipe: {
+          columns: {
+            id: true,
+            authorId: true,
+            visibility: true,
+            groupId: true,
+            notes: true,
+          },
+        },
+        user: { columns: { name: true, handle: true } },
+      },
+    });
+
+    if (!suggestion) throw new Error("NOT_FOUND");
+    if (!(await canViewRecipe(suggestion.recipe, user))) {
+      throw new Error("FORBIDDEN");
+    }
+    if (
+      suggestion.kind !== "suggestion" ||
+      suggestion.recipe.authorId !== user.id
+    ) {
+      throw new Error("FORBIDDEN");
+    }
+    if (suggestion.appliedAt) throw new Error("ALREADY_APPLIED");
+
+    const contributor = contributorLabel(suggestion.user);
+    const mergedNotes = mergeSuggestionIntoNotes(
+      suggestion.recipe.notes,
+      suggestion.body,
+      contributor,
+    );
+
+    const now = new Date();
+    await tx
+      .update(recipes)
+      .set({ notes: mergedNotes, updatedAt: now })
+      .where(eq(recipes.id, suggestion.recipe.id));
+
+    await tx
+      .update(comments)
+      .set({ appliedAt: now, resolvedAt: now, updatedAt: now })
+      .where(eq(comments.id, suggestion.id));
+
+    // Attribute the contributor (not the applying owner) so the timeline credits
+    // whose idea it was; the suggestion text rides along as the event note.
+    await tx.insert(recipeEvents).values({
+      recipeId: suggestion.recipe.id,
+      actorId: suggestion.userId,
+      type: "suggestion_applied",
+      note: suggestion.body,
+    });
   });
 }
 

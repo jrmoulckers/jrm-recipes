@@ -77,6 +77,8 @@ export const comments = pgTable(
     body: text().notNull(),
     // Set when a suggestion has been addressed/closed by the recipe owner.
     resolvedAt: timestamp({ withTimezone: true }),
+    // Set when the owner folded a suggestion's change into the recipe itself.
+    appliedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
   (t) => [

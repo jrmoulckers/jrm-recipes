@@ -10,6 +10,7 @@ export type ThreadedComment = {
   kind: CommentKind;
   body: string;
   resolvedAt: Date | null;
+  appliedAt: Date | null;
   createdAt: Date;
   parentId: string | null;
   author: {
@@ -49,6 +50,7 @@ export async function getRecipeComments(
       kind: row.kind,
       body: row.body,
       resolvedAt: row.resolvedAt,
+      appliedAt: row.appliedAt,
       createdAt: row.createdAt,
       parentId: row.parentId,
       author: row.user

@@ -10,17 +10,20 @@ import {
   ratingInput,
   removeRatingInput,
   resolveCommentInput,
+  applySuggestionInput,
   type CommentInput,
   type DeleteCommentInput,
   type RatingInput,
   type RemoveRatingInput,
   type ResolveCommentInput,
+  type ApplySuggestionInput,
 } from "./validation";
 import {
   createComment,
   deleteComment,
   removeRating,
   resolveComment,
+  applySuggestion,
   setRating,
 } from "./mutations";
 
@@ -135,6 +138,47 @@ export async function resolveCommentAction(
       return { ok: false, error: "We couldn't find that suggestion." };
     }
     return { ok: false, error: "We couldn't update that suggestion." };
+  }
+}
+
+export async function applySuggestionAction(
+  input: ApplySuggestionInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) {
+    return { ok: false, error: "Suggestions need a database." };
+  }
+  const parsed = applySuggestionInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const user = await requireUser();
+  try {
+    await applySuggestion(
+      { recipeId: parsed.data.recipeId, suggestionId: parsed.data.suggestionId },
+      user,
+    );
+    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    return { ok: true };
+  } catch (error) {
+    const code = errorCode(error);
+    if (code === "FORBIDDEN") {
+      return {
+        ok: false,
+        error: "Only the recipe owner can apply suggestions.",
+      };
+    }
+    if (code === "ALREADY_APPLIED") {
+      return { ok: false, error: "That suggestion was already applied." };
+    }
+    if (code === "NOT_FOUND") {
+      return { ok: false, error: "We couldn't find that suggestion." };
+    }
+    return { ok: false, error: "We couldn't apply that suggestion." };
   }
 }
 
