@@ -26,9 +26,18 @@ export function roundNice(n: number): number {
 /**
  * Format a number the way a recipe would: whole numbers plainly, common
  * fractions as vulgar glyphs (1.5 → "1½"), everything else to 2 decimals.
+ *
+ * Pass the ingredient's `unit` so metric weights/volumes (g, ml, kg, l) are
+ * rendered as plain decimals at a measurable precision instead of vulgar
+ * fractions — a cook can't measure "⅓ g" or "½ ml". Omitting `unit` keeps the
+ * imperial/fraction behavior, so existing callers are unaffected.
  */
-export function formatQuantity(value: number | null | undefined): string {
+export function formatQuantity(
+  value: number | null | undefined,
+  unit?: string | null,
+): string {
   if (value == null || Number.isNaN(value)) return "";
+  if (isMetricUnit(unit)) return formatMetricQuantity(value);
   const n = roundNice(value);
   if (n === 0) return "0";
   const whole = Math.floor(n);
@@ -43,6 +52,18 @@ export function formatQuantity(value: number | null | undefined): string {
   if (best) return whole > 0 ? `${whole}${best.glyph}` : best.glyph;
 
   const rounded = Math.round(n * 100) / 100;
+  return String(rounded);
+}
+
+/**
+ * Round a metric quantity to a precision a cook can actually measure and render
+ * it as a decimal (never a vulgar fraction): whole grams/millilitres for
+ * amounts ≥ 10, otherwise a single decimal place.
+ */
+function formatMetricQuantity(value: number): string {
+  const n = roundNice(value);
+  if (n === 0) return "0";
+  const rounded = Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
   return String(rounded);
 }
 
@@ -93,6 +114,12 @@ export function normalizeUnit(raw: string | null | undefined): string | null {
 export function unitDimension(raw: string | null | undefined): Dimension | null {
   if (!raw) return null;
   return UNIT_INDEX.get(raw.trim().toLowerCase())?.dimension ?? null;
+}
+
+/** True when the unit is a metric weight/volume (g, kg, ml, l, and aliases). */
+function isMetricUnit(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  return UNIT_INDEX.get(raw.trim().toLowerCase())?.system === "metric";
 }
 
 /** Convert a quantity between two compatible units; null if not convertible. */
@@ -148,6 +175,35 @@ export function toSystem(
   }
   const chosenDef = UNIT_INDEX.get(chosen)!;
   return { quantity: roundNice(baseAmount / chosenDef.base), unit: chosen };
+}
+
+export type MeasureRange = {
+  quantity: number;
+  quantityMax: number | null;
+  unit: string;
+};
+
+/**
+ * Re-express a *ranged* measure (min…max) in the target system. Both ends are
+ * converted onto a single shared unit — the friendly unit chosen for the low
+ * end — so a range can never mix units (e.g. showing a litre-scaled max value
+ * next to a millilitre label). Returns null when there is no convertible unit;
+ * `quantityMax` is null when there is no real range (missing or ≤ min).
+ */
+export function toSystemRange(
+  min: number,
+  max: number | null | undefined,
+  unit: string | null | undefined,
+  system: "us" | "metric",
+): MeasureRange | null {
+  const low = toSystem(min, unit, system);
+  if (!low) return null;
+  if (max == null || max <= min) {
+    return { quantity: low.quantity, quantityMax: null, unit: low.unit };
+  }
+  const highInUnit = convertUnit(max, unit ?? low.unit, low.unit);
+  const quantityMax = highInUnit ?? roundNice(max);
+  return { quantity: low.quantity, quantityMax, unit: low.unit };
 }
 
 /** Scale a nullable quantity by a factor, preserving null. */

@@ -262,6 +262,11 @@ export function RecipeEditor({
       toast.error("Your recipe needs a title.");
       return;
     }
+    if (payload.visibility === "group" && !payload.groupId) {
+      setErrors({ groupId: ["Choose a group for a group-visibility recipe"] });
+      toast.error("Pick a group, or change the recipe's visibility.");
+      return;
+    }
     startTransition(async () => {
       const res =
         mode === "edit" && recipeId

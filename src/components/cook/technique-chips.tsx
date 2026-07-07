@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, HelpCircle } from "lucide-react";
 
 import { Badge, badgeVariants } from "~/components/ui/badge";
 import {
@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { lookupTechnique } from "~/lib/techniques";
+import { getTechnique, lookupTechnique } from "~/lib/techniques";
 import { cn } from "~/lib/utils";
 
 type TechniqueChipsProps = {
@@ -50,6 +50,38 @@ function TechniqueChip({
   const match = lookupTechnique(rawLabel);
 
   if (!match.known) {
+    if (match.suggestion) {
+      const suggested = getTechnique(match.suggestion.slug);
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Unrecognized technique ${match.label}. Did you mean ${match.suggestion.label}?`}
+              className={cn(
+                badgeVariants({ variant: "outline" }),
+                "cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                className,
+              )}
+            >
+              {match.label}
+              <HelpCircle className="size-3.5" aria-hidden="true" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="flex flex-col gap-2">
+            <p className="text-sm text-foreground">
+              Did you mean{" "}
+              <span className="font-semibold">{match.suggestion.label}</span>?
+            </p>
+            {suggested?.shortTip && (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {suggested.shortTip}
+              </p>
+            )}
+          </PopoverContent>
+        </Popover>
+      );
+    }
     return (
       <Badge variant="outline" className={className}>
         {match.label}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, X } from "lucide-react";
+import { Download, Share, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
@@ -40,6 +40,27 @@ function isStandalone() {
 }
 
 /**
+ * Whether to surface the iOS "Add to Home Screen" tip. iOS Safari never fires
+ * `beforeinstallprompt`, so it's the one platform where we must nudge manually.
+ * Pure and UA-driven so it's unit-testable. We target only real iOS Safari — not
+ * Chrome/Firefox iOS (CriOS/FxiOS), which lack the Share → Add flow — and never
+ * when already installed / running standalone.
+ */
+export function shouldShowIosInstallTip(
+  userAgent: string,
+  isStandaloneMode: boolean,
+): boolean {
+  if (isStandaloneMode) return false;
+  const ua = userAgent.toLowerCase();
+  const isIos = /iphone|ipod|ipad/.test(ua);
+  if (!isIos) return false;
+  // Third-party iOS browsers can't offer Add-to-Home-Screen; only Safari can.
+  const isSafari =
+    ua.includes("safari") && !/(crios|fxios|edgios|opios|mercury)/.test(ua);
+  return isSafari;
+}
+
+/**
  * Add-to-home-screen banner. Waits for the browser's `beforeinstallprompt`,
  * then offers a friendly install nudge. Dismissible (remembered for two weeks),
  * hidden once installed or running standalone. Mounted in the main app chrome
@@ -47,19 +68,25 @@ function isStandalone() {
  */
 export function InstallPrompt() {
   const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
-  const [visible, setVisible] = React.useState(false);
+  const [variant, setVariant] = React.useState<"prompt" | "ios" | null>(null);
   const [entered, setEntered] = React.useState(false);
 
   React.useEffect(() => {
     if (isStandalone() || recentlyDismissed()) return;
 
+    // iOS Safari never fires `beforeinstallprompt`, so nudge with a manual tip.
+    if (shouldShowIosInstallTip(navigator.userAgent, isStandalone())) {
+      setVariant("ios");
+      return;
+    }
+
     const onPrompt = (event: Event) => {
       event.preventDefault();
       promptRef.current = event as BeforeInstallPromptEvent;
-      setVisible(true);
+      setVariant("prompt");
     };
     const onInstalled = () => {
-      setVisible(false);
+      setVariant(null);
       promptRef.current = null;
     };
 
@@ -72,11 +99,11 @@ export function InstallPrompt() {
   }, []);
 
   React.useEffect(() => {
-    if (!visible) return;
+    if (!variant) return;
     // Next frame so the enter transition actually animates.
     const id = requestAnimationFrame(() => setEntered(true));
     return () => cancelAnimationFrame(id);
-  }, [visible]);
+  }, [variant]);
 
   const dismiss = React.useCallback(() => {
     setEntered(false);
@@ -85,7 +112,7 @@ export function InstallPrompt() {
     } catch {
       // Storage unavailable (private mode) — fine, just hide for this session.
     }
-    window.setTimeout(() => setVisible(false), 200);
+    window.setTimeout(() => setVariant(null), 200);
   }, []);
 
   const install = React.useCallback(async () => {
@@ -95,10 +122,12 @@ export function InstallPrompt() {
     await deferred.userChoice;
     promptRef.current = null;
     setEntered(false);
-    window.setTimeout(() => setVisible(false), 200);
+    window.setTimeout(() => setVariant(null), 200);
   }, []);
 
-  if (!visible) return null;
+  if (!variant) return null;
+
+  const isIos = variant === "ios";
 
   return (
     <div
@@ -125,14 +154,25 @@ export function InstallPrompt() {
           <p className="text-sm font-semibold leading-tight">
             Install {brand.name}
           </p>
-          <p className="truncate text-xs text-muted-foreground">
-            Add to your home screen for one-tap cook mode.
-          </p>
+          {isIos ? (
+            <p className="text-xs leading-snug text-muted-foreground">
+              Tap{" "}
+              <Share className="inline-block size-3.5 -translate-y-px" aria-hidden />
+              <span className="sr-only">Share</span> then &ldquo;Add to Home
+              Screen&rdquo;.
+            </p>
+          ) : (
+            <p className="truncate text-xs text-muted-foreground">
+              Add to your home screen for one-tap cook mode.
+            </p>
+          )}
         </div>
-        <Button size="sm" onClick={install} className="shrink-0">
-          <Download className="size-4" />
-          Install
-        </Button>
+        {!isIos && (
+          <Button size="sm" onClick={install} className="shrink-0">
+            <Download className="size-4" />
+            Install
+          </Button>
+        )}
         <Button
           size="icon"
           variant="ghost"

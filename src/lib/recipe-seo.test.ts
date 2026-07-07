@@ -107,6 +107,42 @@ describe("buildRecipeJsonLd", () => {
     ]);
   });
 
+  it("includes step images after the deduped cover image", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        coverImageUrl: "https://cdn.example.com/cobbler.jpg",
+        steps: [
+          {
+            section: "Filling",
+            instruction: "Toss the peaches with sugar.",
+            imageUrl: "https://cdn.example.com/peaches.jpg",
+          },
+          {
+            section: null,
+            instruction: "Bake until the fruit bubbles.",
+            imageUrl: "https://cdn.example.com/cobbler.jpg",
+          },
+          {
+            section: null,
+            instruction: "Cool before serving.",
+            imageUrl: null,
+          },
+          {
+            section: null,
+            instruction: "Spoon into bowls.",
+            imageUrl: "https://cdn.example.com/served.jpg",
+          },
+        ],
+      }),
+    );
+
+    expect(jsonLd.image).toEqual([
+      "https://cdn.example.com/cobbler.jpg",
+      "https://cdn.example.com/peaches.jpg",
+      "https://cdn.example.com/served.jpg",
+    ]);
+  });
+
   it("derives ISO durations and yield", () => {
     const jsonLd = buildRecipeJsonLd(makeRecipe());
 
@@ -123,6 +159,7 @@ describe("buildRecipeJsonLd", () => {
       "@type": "AggregateRating",
       ratingValue: 4.7,
       ratingCount: 3,
+      reviewCount: 3,
       bestRating: 5,
       worstRating: 1,
     });

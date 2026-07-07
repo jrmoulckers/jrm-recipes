@@ -488,8 +488,13 @@ export async function getRecipeVersion(
   );
 }
 
-/** Parent recipe plus recipes adapted from this one. */
-export async function getRecipeLineage(recipeId: string) {
+/**
+ * Parent recipe plus recipes adapted from this one, scoped to what `viewer`
+ * may see. Forks start life private, so the adaptations list is filtered with
+ * the same {@link canView} rule as {@link getRecipe}: an anonymous viewer only
+ * sees public/unlisted forks, never someone else's private or group draft.
+ */
+export async function getRecipeLineage(recipeId: string, viewer: User | null) {
   if (!isDbConfigured()) return { parent: null, adaptations: [] };
 
   const recipe = await db.query.recipes.findFirst({
@@ -505,12 +510,23 @@ export async function getRecipeLineage(recipeId: string) {
       })) ?? null)
     : null;
 
-  const adaptations = await db.query.recipes.findMany({
+  const groupIds = await viewerGroupIds(viewer);
+  const forks = await db.query.recipes.findMany({
     where: eq(recipes.forkedFromId, recipeId),
     orderBy: [desc(recipes.updatedAt)],
-    columns: { id: true, slug: true, title: true, visibility: true },
+    columns: {
+      id: true,
+      slug: true,
+      title: true,
+      visibility: true,
+      authorId: true,
+      groupId: true,
+    },
     with: { author: { columns: { name: true } } },
   });
+  // Hide forks the viewer isn't allowed to see so a public recipe never lists
+  // another member's private (or out-of-group) adaptation.
+  const adaptations = forks.filter((fork) => canView(fork, viewer, groupIds));
 
   return { parent, adaptations };
 }
@@ -523,9 +539,13 @@ export type RecipeTimeline = Awaited<ReturnType<typeof getRecipeTimeline>>;
  * adaptation, a link back to the recipe it came from — all in chronological
  * order with authors and dates. Falls back to synthesising milestones from the
  * recipe + lineage rows so recipes predating the events log still read well.
+ *
+ * Descendant-fork entries (and their fork notes) are gated with {@link canView}
+ * for `viewer`, so a public recipe's timeline never leaks a private adaptation.
  */
 export async function getRecipeTimeline(
   recipeId: string,
+  viewer: User | null,
 ): Promise<{
   entries: TimelineEntry[];
   parent: { slug: string; title: string; author?: { name: string | null } | null } | null;
@@ -538,18 +558,36 @@ export async function getRecipeTimeline(
   });
   if (!recipe) return { entries: [], parent: null };
 
+  const groupIds = await viewerGroupIds(viewer);
+
   const [events, children, parentRecipe] = await Promise.all([
     db.query.recipeEvents.findMany({
       where: eq(recipeEvents.recipeId, recipeId),
       orderBy: [asc(recipeEvents.createdAt)],
       with: {
         actor: { columns: { name: true, handle: true, avatarUrl: true } },
-        related: { columns: { slug: true, title: true } },
+        related: {
+          columns: {
+            slug: true,
+            title: true,
+            authorId: true,
+            visibility: true,
+            groupId: true,
+          },
+        },
       },
     }),
     db.query.recipes.findMany({
       where: eq(recipes.forkedFromId, recipeId),
-      columns: { id: true, slug: true, title: true, createdAt: true },
+      columns: {
+        id: true,
+        slug: true,
+        title: true,
+        createdAt: true,
+        authorId: true,
+        visibility: true,
+        groupId: true,
+      },
       with: { author: { columns: { name: true, handle: true, avatarUrl: true } } },
     }),
     recipe.forkedFromId
@@ -563,20 +601,38 @@ export async function getRecipeTimeline(
       : Promise.resolve(undefined),
   ]);
 
-  const entries: TimelineEntry[] = events.map((event) => ({
-    id: event.id,
+  // Only surface descendant forks the viewer may see; a private adaptation (and
+  // its fork note) must stay hidden on a public recipe's timeline.
+  const visibleChildren = children.filter((child) =>
+    canView(child, viewer, groupIds),
+  );
+
+  const entries: TimelineEntry[] = [];
+  for (const event of events) {
     // A source-side `adapted` event points forward to a descendant fork.
-    kind:
+    const isForwardFork =
       event.type === "adapted" &&
       event.relatedRecipeId != null &&
-      event.relatedRecipeId !== recipe.forkedFromId
-        ? "adaptation"
-        : event.type,
-    note: event.note,
-    createdAt: event.createdAt,
-    actor: event.actor ?? null,
-    related: event.related ?? null,
-  }));
+      event.relatedRecipeId !== recipe.forkedFromId;
+    // Drop forward-fork entries (title, slug, and the forker's note) when the
+    // viewer isn't allowed to see the fork they point at.
+    if (
+      isForwardFork &&
+      !(event.related && canView(event.related, viewer, groupIds))
+    ) {
+      continue;
+    }
+    entries.push({
+      id: event.id,
+      kind: isForwardFork ? "adaptation" : event.type,
+      note: event.note,
+      createdAt: event.createdAt,
+      actor: event.actor ?? null,
+      related: event.related
+        ? { slug: event.related.slug, title: event.related.title }
+        : null,
+    });
+  }
 
   // Back-fill for recipes created before the events log existed.
   const hasOrigin = entries.some(
@@ -599,7 +655,7 @@ export async function getRecipeTimeline(
       .filter((e) => e.kind === "adaptation" && e.related)
       .map((e) => e.related!.slug),
   );
-  for (const child of children) {
+  for (const child of visibleChildren) {
     if (linkedChildIds.has(child.slug)) continue;
     entries.push({
       id: `synth-child-${child.id}`,

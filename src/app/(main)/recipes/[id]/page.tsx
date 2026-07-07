@@ -144,8 +144,8 @@ export default async function RecipePage({
   ] =
     await Promise.all([
       getRecipeVersions(recipe.id),
-      getRecipeLineage(recipe.id),
-      getRecipeTimeline(recipe.id),
+      getRecipeLineage(recipe.id, user),
+      getRecipeTimeline(recipe.id, user),
       getRecipeComments(recipe.id),
       getViewerRating(recipe.id, user?.id ?? null),
       getRecipeCookLog(recipe.id, user?.id ?? null),

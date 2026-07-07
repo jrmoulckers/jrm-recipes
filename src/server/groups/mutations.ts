@@ -7,6 +7,7 @@ import { db } from "~/server/db";
 import {
   groupMembers,
   groups,
+  recipes,
   users,
   type MemberRole,
   type User,
@@ -157,8 +158,12 @@ export async function addMember(
     const group = await findGroup(tx, groupSlugOrId);
     if (!group) throw new Error("NOT_FOUND");
 
-    await requireManager(tx, group.id, actor);
-    if (role === "owner") throw new Error("FORBIDDEN");
+    const actorRole = await requireManager(tx, group.id, actor);
+    // Only an owner may hand out elevated roles. Admins can add regular
+    // members and kids, but must not be able to mint fellow admins (or owners).
+    if (role === "owner" || (role === "admin" && actorRole !== "owner")) {
+      throw new Error("FORBIDDEN");
+    }
 
     const target = await findUserByIdentifier(tx, identifier);
     if (!target) throw new Error("USER_NOT_FOUND");
@@ -263,6 +268,17 @@ export async function deleteGroup(groupSlugOrId: string, user: User) {
     if (!group) throw new Error("NOT_FOUND");
 
     await requireOwner(tx, group.id, user);
+
+    // Group-visibility recipes reference this group. Once it's gone the FK is
+    // nulled and `canView` can never match them again, hiding them from
+    // everyone but their author. Downgrade them to private (and detach the
+    // group) in the same transaction so their owners keep access.
+    await tx
+      .update(recipes)
+      .set({ visibility: "private", groupId: null })
+      .where(
+        and(eq(recipes.groupId, group.id), eq(recipes.visibility, "group")),
+      );
 
     const [deleted] = await tx
       .delete(groups)

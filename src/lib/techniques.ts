@@ -16,6 +16,9 @@ export type Technique = {
   description: string;
 };
 
+/** A fuzzy "did you mean …?" pointer to a known technique. */
+export type TechniqueSuggestion = { slug: string; label: string };
+
 /** Result of resolving a raw label against the knowledge base. */
 export type TechniqueMatch = {
   slug: string;
@@ -24,6 +27,11 @@ export type TechniqueMatch = {
   known: boolean;
   shortTip?: string;
   description?: string;
+  /**
+   * For an unknown label, the closest known technique within a small edit
+   * distance (e.g. "braize" -> "Braise"), so the UI can offer a gentle hint.
+   */
+  suggestion?: TechniqueSuggestion;
 };
 
 type TechniqueSeed = Technique & { aliases?: string[] };
@@ -344,6 +352,7 @@ export function lookupTechnique(rawLabel: string): TechniqueMatch {
     slug: normalized.replace(/\s+/g, "-") || "technique",
     label,
     known: false,
+    suggestion: suggestTechnique(normalized) ?? undefined,
   };
 }
 
@@ -358,4 +367,63 @@ export function getTechnique(slug: string): Technique | undefined {
 /** Every curated technique, sorted alphabetically by name. */
 export function allTechniques(): Technique[] {
   return Object.values(TECHNIQUES).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Levenshtein edit distance between two short strings (two-row DP). */
+function editDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const prev = new Array<number>(n + 1);
+  const curr = new Array<number>(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    const ai = a[i - 1];
+    for (let j = 1; j <= n; j++) {
+      const cost = ai === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        (prev[j] ?? 0) + 1, // deletion
+        (curr[j - 1] ?? 0) + 1, // insertion
+        (prev[j - 1] ?? 0) + cost, // substitution
+      );
+    }
+    for (let j = 0; j <= n; j++) prev[j] = curr[j] ?? 0;
+  }
+  return prev[n] ?? 0;
+}
+
+/** Candidate alias keys long enough to fuzzy-match against without noise. */
+const SUGGESTION_KEYS = [...INDEX.keys()].filter((key) => key.length >= 3);
+
+/**
+ * Best fuzzy "did you mean …?" suggestion for an unrecognized label: the
+ * closest known technique within a small edit distance, or `null`. Powers a
+ * gentle typo hint (e.g. "braize" -> Braise, "sautee" -> Sauté) while staying
+ * conservative so genuinely novel techniques aren't second-guessed.
+ */
+export function suggestTechnique(rawLabel: string): TechniqueSuggestion | null {
+  const normalized = normalize(rawLabel ?? "");
+  if (normalized.length < 3) return null;
+  // Anything the exact/alias index already knows needs no suggestion.
+  if (INDEX.has(normalized)) return null;
+
+  let bestSlug: string | null = null;
+  let bestDist = Infinity;
+  for (const key of SUGGESTION_KEYS) {
+    const dist = editDistance(normalized, key);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestSlug = INDEX.get(key) ?? null;
+    }
+  }
+
+  if (bestSlug === null || bestDist === 0) return null;
+  // Tighter tolerance for short words to avoid spurious matches.
+  const threshold = normalized.length <= 4 ? 1 : 2;
+  if (bestDist > threshold) return null;
+
+  const technique = TECHNIQUES[bestSlug];
+  return technique ? { slug: technique.slug, label: technique.name } : null;
 }

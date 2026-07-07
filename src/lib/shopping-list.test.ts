@@ -9,11 +9,28 @@ import {
   normalizeItemName,
   scaleFactor,
   toShoppingItems,
+  type AggregatedItem,
+  type ShoppingCategory,
   type ShoppingItemInput,
 } from "./shopping-list";
 
 function byItem<T extends { item: string }>(items: T[], name: string) {
   return items.filter((i) => i.item.toLowerCase() === name.toLowerCase());
+}
+
+function makeItem(item: string, category: ShoppingCategory): AggregatedItem {
+  return {
+    key: item.toLowerCase(),
+    item,
+    quantity: 1,
+    quantityMax: null,
+    unit: null,
+    dimension: null,
+    category,
+    optional: false,
+    hasOptional: false,
+    recipeIds: [],
+  };
 }
 
 describe("scaleFactor", () => {
@@ -64,6 +81,42 @@ describe("categorize", () => {
   it("does not match keywords inside longer words", () => {
     // "corn" (Produce) must not swallow "cornstarch" (Pantry).
     expect(categorize("cornstarch")).toBe("Pantry");
+  });
+});
+
+describe("categorize — specificity & word boundaries (sp04)", () => {
+  it.each([
+    // Broad, earlier rules used to win over more specific, later ones.
+    ["coconut milk", "Pantry"], // was Dairy & Eggs via "milk"
+    ["tomato paste", "Pantry"], // was Produce via "tomato"
+    ["stock cube", "Pantry"], // was Beverages via "stock"
+    ["bell pepper", "Produce"], // was Spices & Seasonings via "pepper"
+    ["red bell pepper", "Produce"],
+    ["peanut butter", "Pantry"], // was Dairy & Eggs via "butter"
+  ])("routes %s to %s (most specific keyword wins)", (item, category) => {
+    expect(categorize(item)).toBe(category);
+  });
+
+  it("still resolves single-word collisions by rule priority", () => {
+    // Both keywords are single words, so the broad-aisle-first order decides:
+    // "broth"/"stock" (Beverages) keep winning over "chicken" (Meat).
+    expect(categorize("chicken broth")).toBe("Beverages");
+    expect(categorize("chicken stock")).toBe("Beverages");
+    // Black pepper is a seasoning; only the more specific "bell pepper" is produce.
+    expect(categorize("black pepper")).toBe("Spices & Seasonings");
+  });
+
+  it("matches whole words, not substrings", () => {
+    expect(categorize("cornstarch")).toBe("Pantry"); // not Produce "corn"
+    expect(categorize("peppercorns")).toBe("Spices & Seasonings"); // not Produce "corn"
+    expect(categorize("graham crackers")).toBe("Pantry"); // "ham" must not match
+  });
+
+  it("tolerates simple plurals", () => {
+    expect(categorize("tomatoes")).toBe("Produce"); // was "Other"
+    expect(categorize("potatoes")).toBe("Produce");
+    expect(categorize("carrots")).toBe("Produce");
+    expect(categorize("onions")).toBe("Produce");
   });
 });
 
@@ -170,6 +223,50 @@ describe("mergeShoppingItems", () => {
   });
 });
 
+describe("optional flag preservation (sp05)", () => {
+  it("keeps a fully-optional item flagged optional", () => {
+    const [item] = mergeShoppingItems([
+      { item: "Cilantro", quantity: 1, unit: "tbsp", optional: true },
+    ]);
+    expect(item?.optional).toBe(true);
+    expect(item?.hasOptional).toBe(true);
+  });
+
+  it("preserves the distinction when merging an optional and a required entry", () => {
+    const [item] = mergeShoppingItems([
+      { item: "Cilantro", quantity: 1, unit: "tbsp", optional: false },
+      { item: "Cilantro", quantity: 1, unit: "tbsp", optional: true },
+    ]);
+    // A recipe requires it, so the whole line isn't optional...
+    expect(item?.optional).toBe(false);
+    // ...but the optional contribution is no longer silently dropped.
+    expect(item?.hasOptional).toBe(true);
+  });
+
+  it("marks a fully-required item as neither optional nor partially optional", () => {
+    const [item] = mergeShoppingItems([
+      { item: "Cilantro", quantity: 1, unit: "tbsp" },
+    ]);
+    expect(item?.optional).toBe(false);
+    expect(item?.hasOptional).toBe(false);
+  });
+
+  it("carries the optional flag through the full aggregate pipeline", () => {
+    const result = aggregateShoppingList([
+      {
+        recipeId: "r1",
+        servings: 1,
+        desiredServings: 1,
+        ingredients: [
+          { item: "Cilantro", quantity: 1, unit: "tbsp", optional: true },
+        ],
+      },
+    ]);
+    expect(result.items[0]?.optional).toBe(true);
+    expect(result.items[0]?.hasOptional).toBe(true);
+  });
+});
+
 describe("toShoppingItems", () => {
   it("scales each ingredient by the serving factor", () => {
     const items = toShoppingItems({
@@ -253,6 +350,25 @@ describe("groupByCategory", () => {
     ]);
     const groups = groupByCategory(items);
     expect(groups.map((g) => g.category)).toEqual(["Produce", "Pantry"]);
+  });
+
+  it("buckets non-canonical categories under Other instead of dropping them (sp06)", () => {
+    const items: AggregatedItem[] = [
+      makeItem("Mystery Snack", "Snacks" as ShoppingCategory),
+      makeItem("Flour", "Pantry"),
+    ];
+    const groups = groupByCategory(items);
+    const other = groups.find((g) => g.category === "Other");
+    expect(other?.items.map((i) => i.item)).toContain("Mystery Snack");
+    // Nothing vanishes: every input item is present in some group.
+    const total = groups.reduce((n, g) => n + g.items.length, 0);
+    expect(total).toBe(items.length);
+  });
+
+  it("routes items with a missing category to Other (sp06)", () => {
+    const items = [makeItem("Ghost", undefined as unknown as ShoppingCategory)];
+    const groups = groupByCategory(items);
+    expect(groups.find((g) => g.category === "Other")?.items).toHaveLength(1);
   });
 });
 
