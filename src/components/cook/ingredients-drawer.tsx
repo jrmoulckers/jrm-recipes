@@ -4,6 +4,7 @@ import * as React from "react";
 import { ListChecks, Utensils } from "lucide-react";
 
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
+import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -21,12 +22,15 @@ type IngredientsDrawerProps = {
   recipe: Pick<CookRecipe, "ingredients" | "servings" | "servingsNoun">;
   className?: string;
   label?: string;
+  /** When provided, ingredient scaling/units/checklist are lifted and shared. */
+  controls?: IngredientsPanelControls;
 };
 
 export function IngredientsDrawer({
   recipe,
   className,
   label = "Ingredients",
+  controls,
 }: IngredientsDrawerProps) {
   return (
     <Dialog>
@@ -59,6 +63,7 @@ export function IngredientsDrawer({
               ingredients={recipe.ingredients}
               baseServings={recipe.servings}
               servingsNoun={recipe.servingsNoun}
+              controls={controls}
             />
           ) : (
             <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground">

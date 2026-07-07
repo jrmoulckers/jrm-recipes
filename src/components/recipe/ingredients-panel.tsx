@@ -10,6 +10,7 @@ import {
   scaleQuantity,
   toSystem,
 } from "~/lib/units";
+import { type UnitSystem } from "~/lib/cook-state";
 import { scalingNudge } from "~/lib/substitutions";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -26,7 +27,21 @@ type PanelIngredient = {
   optional: boolean;
 };
 
-type System = "original" | "us" | "metric";
+type System = UnitSystem;
+
+/**
+ * Optional controlled-state hook-up. When provided (e.g. by cook mode) the panel
+ * becomes controlled so scaling, units, and the checklist can be lifted and
+ * persisted; when omitted it manages its own state exactly as before.
+ */
+export type IngredientsPanelControls = {
+  servings: number;
+  onServingsChange: (next: number) => void;
+  system: System;
+  onSystemChange: (next: System) => void;
+  checked: ReadonlySet<string>;
+  onToggleChecked: (id: string) => void;
+};
 
 function measure(q: number | null, unit: string | null, system: System) {
   if (q == null) return { q: null as number | null, unit: unit ?? "" };
@@ -52,15 +67,25 @@ export function IngredientsPanel({
   ingredients,
   baseServings,
   servingsNoun,
+  controls,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
   servingsNoun: string | null;
+  controls?: IngredientsPanelControls;
 }) {
   const canScale = baseServings != null && baseServings > 0;
-  const [servings, setServings] = React.useState(baseServings ?? 1);
-  const [system, setSystem] = React.useState<System>("original");
-  const [checked, setChecked] = React.useState<Set<string>>(new Set());
+  const [servingsInternal, setServingsInternal] = React.useState(
+    baseServings ?? 1,
+  );
+  const [systemInternal, setSystemInternal] = React.useState<System>("original");
+  const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
+    new Set(),
+  );
+
+  const servings = controls ? controls.servings : servingsInternal;
+  const system = controls ? controls.system : systemInternal;
+  const checked = controls ? controls.checked : checkedInternal;
 
   const factor = canScale ? servings / baseServings : 1;
 
@@ -75,8 +100,22 @@ export function IngredientsPanel({
     return [...map.entries()];
   }, [ingredients]);
 
+  function updateServings(next: number) {
+    if (controls) controls.onServingsChange(next);
+    else setServingsInternal(next);
+  }
+
+  function updateSystem(next: System) {
+    if (controls) controls.onSystemChange(next);
+    else setSystemInternal(next);
+  }
+
   function toggle(id: string) {
-    setChecked((prev) => {
+    if (controls) {
+      controls.onToggleChecked(id);
+      return;
+    }
+    setCheckedInternal((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -94,7 +133,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label="Fewer servings"
-              onClick={() => setServings((s) => Math.max(1, s - 1))}
+              onClick={() => updateServings(Math.max(1, servings - 1))}
             >
               <Minus />
             </Button>
@@ -111,7 +150,7 @@ export function IngredientsPanel({
               size="icon"
               variant="outline"
               aria-label="More servings"
-              onClick={() => setServings((s) => Math.min(1000, s + 1))}
+              onClick={() => updateServings(Math.min(1000, servings + 1))}
             >
               <Plus />
             </Button>
@@ -120,7 +159,7 @@ export function IngredientsPanel({
                 type="button"
                 size="sm"
                 variant="ghost"
-                onClick={() => setServings(baseServings)}
+                onClick={() => updateServings(baseServings)}
               >
                 Reset
               </Button>
@@ -139,7 +178,7 @@ export function IngredientsPanel({
             <button
               key={s}
               type="button"
-              onClick={() => setSystem(s)}
+              onClick={() => updateSystem(s)}
               className={cn(
                 "rounded-md px-2.5 py-1 font-medium capitalize transition-colors",
                 system === s
