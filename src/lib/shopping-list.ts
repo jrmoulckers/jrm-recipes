@@ -55,6 +55,12 @@ export type AggregatedItem = {
   category: ShoppingCategory;
   /** True only when every contribution was marked optional. */
   optional: boolean;
+  /**
+   * True when at least one contribution was optional, even if others were
+   * required. Lets the UI surface "partially optional" lines that `optional`
+   * (all-optional) alone would hide.
+   */
+  hasOptional: boolean;
   /** Recipe ids that contributed to this line (deduped, in first-seen order). */
   recipeIds: string[];
 };
@@ -90,10 +96,12 @@ const CATEGORY_INDEX = new Map<ShoppingCategory, number>(
 );
 
 /**
- * Keyword rules, evaluated in order — the first category with a matching
- * keyword wins, so more specific aisles (Frozen, Spices) are checked before
- * broad ones (Pantry). Matching is a whole-word test so "corn" doesn't trip on
- * "cornstarch".
+ * Keyword rules grouped by aisle. Every keyword is compiled into a whole-word
+ * matcher (see `COMPILED_RULES`); when several keywords match an item the most
+ * specific one (longest phrase) wins, with rule order breaking ties. Keeping
+ * the rules ordered broad-aisle-first therefore only affects genuine ties —
+ * "coconut milk" (Pantry) still beats "milk" (Dairy) even though Dairy is
+ * listed first, because its keyword is more specific.
  */
 const CATEGORY_RULES: { category: ShoppingCategory; keywords: string[] }[] = [
   {
@@ -224,6 +232,7 @@ const CATEGORY_RULES: { category: ShoppingCategory; keywords: string[] }[] = [
       "spinach",
       "kale",
       "pepper",
+      "bell pepper",
       "cucumber",
       "zucchini",
       "mushroom",
@@ -291,6 +300,7 @@ const CATEGORY_RULES: { category: ShoppingCategory; keywords: string[] }[] = [
       "almond",
       "walnut",
       "peanut",
+      "peanut butter",
       "raisin",
       "cracker",
       "breadcrumb",
@@ -301,19 +311,65 @@ const CATEGORY_RULES: { category: ShoppingCategory; keywords: string[] }[] = [
   },
 ];
 
+/** Escape a literal string for safe interpolation into a RegExp. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Compile a keyword into a whole-word / whole-phrase matcher. Word boundaries
+ * are any non-alphanumeric character (or a string edge), so "corn" never
+ * matches inside "cornstarch" and "ham" never matches inside "graham". A
+ * trailing "s"/"es" is tolerated so "carrot" also matches "carrots" and
+ * "tomato" also matches "tomatoes".
+ */
+function keywordMatcher(keyword: string): RegExp {
+  const body = escapeRegExp(keyword.trim().toLowerCase()).replace(/\s+/g, "\\s+");
+  return new RegExp(`(?<![a-z0-9])${body}(?:es|s)?(?![a-z0-9])`, "i");
+}
+
+type CompiledRule = {
+  category: ShoppingCategory;
+  /** Owning rule's position; lower wins on ties (broad aisles listed first). */
+  order: number;
+  /** Word count of the keyword; higher = more specific and wins outright. */
+  specificity: number;
+  matcher: RegExp;
+};
+
+/**
+ * Flattened, precompiled rules. `categorize` tests every keyword and keeps the
+ * most specific match (longest phrase), breaking ties by rule order. This lets
+ * a precise multi-word keyword such as "coconut milk" (Pantry) beat a broad
+ * single word like "milk" (Dairy) regardless of declaration order, while
+ * single-word collisions ("broth" vs "chicken") still fall back to priority.
+ */
+const COMPILED_RULES: CompiledRule[] = CATEGORY_RULES.flatMap((rule, order) =>
+  rule.keywords.map((keyword) => ({
+    category: rule.category,
+    order,
+    specificity: keyword.trim().split(/\s+/).length,
+    matcher: keywordMatcher(keyword),
+  })),
+);
+
 /** Categorize a free-text ingredient name into a grocery aisle. */
 export function categorize(item: string): ShoppingCategory {
-  const name = ` ${item.toLowerCase().trim()} `;
-  for (const { category, keywords } of CATEGORY_RULES) {
-    for (const keyword of keywords) {
-      if (name.includes(` ${keyword} `) || name.includes(` ${keyword}s `)) {
-        return category;
-      }
-      // Substring fallback for multi-word / possessive forms.
-      if (keyword.includes(" ") && name.includes(keyword)) return category;
+  const name = item.toLowerCase().trim().replace(/\s+/g, " ");
+  if (!name) return "Other";
+
+  let best: CompiledRule | null = null;
+  for (const rule of COMPILED_RULES) {
+    if (!rule.matcher.test(name)) continue;
+    if (
+      best === null ||
+      rule.specificity > best.specificity ||
+      (rule.specificity === best.specificity && rule.order < best.order)
+    ) {
+      best = rule;
     }
   }
-  return "Other";
+  return best?.category ?? "Other";
 }
 
 // --- Aggregation --------------------------------------------------------
@@ -369,6 +425,7 @@ type Accumulator = {
   max: number;
   hasQuantity: boolean;
   allOptional: boolean;
+  anyOptional: boolean;
   recipeIds: string[];
   order: number;
 };
@@ -401,6 +458,7 @@ export function mergeShoppingItems(
         max: 0,
         hasQuantity: false,
         allOptional: true,
+        anyOptional: false,
         recipeIds: [],
         order: map.size,
       };
@@ -423,6 +481,7 @@ export function mergeShoppingItems(
     }
 
     if (!input.optional) acc.allOptional = false;
+    if (input.optional) acc.anyOptional = true;
     if (input.recipeId && !acc.recipeIds.includes(input.recipeId)) {
       acc.recipeIds.push(input.recipeId);
     }
@@ -467,6 +526,7 @@ function finalize(acc: Accumulator): AggregatedItem {
     dimension: acc.dimension,
     category: categorize(acc.item),
     optional: acc.allOptional,
+    hasOptional: acc.anyOptional,
     recipeIds: acc.recipeIds,
   };
 }
@@ -485,9 +545,12 @@ function sortItems(items: AggregatedItem[]): AggregatedItem[] {
 export function groupByCategory(items: AggregatedItem[]): AggregatedGroup[] {
   const groups = new Map<ShoppingCategory, AggregatedItem[]>();
   for (const item of items) {
-    const list = groups.get(item.category) ?? [];
+    // Any missing or non-canonical category falls back to "Other" so the item
+    // is never silently dropped from the grouped view.
+    const category = CATEGORY_INDEX.has(item.category) ? item.category : "Other";
+    const list = groups.get(category) ?? [];
     list.push(item);
-    groups.set(item.category, list);
+    groups.set(category, list);
   }
   return SHOPPING_CATEGORIES.filter((c) => groups.has(c)).map((category) => ({
     category,
