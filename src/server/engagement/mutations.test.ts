@@ -16,6 +16,7 @@ import {
   createComment,
   deleteComment,
   removeRating,
+  resolveComment,
   setRating,
 } from "./mutations";
 
@@ -274,5 +275,96 @@ describe("applySuggestion folds a suggestion into the recipe (owner-only)", () =
       "NOT_FOUND",
     );
     expect(mockCanView).not.toHaveBeenCalled();
+  });
+});
+
+describe("setRating blocks an author rating their own recipe", () => {
+  it("rejects the recipe owner (SELF_RATING)", async () => {
+    // recipeRow.authorId === ownerUser.id, so this is a self-rating.
+    runWith(fakeTx({ recipe: recipeRow }));
+    mockCanView.mockResolvedValue(true);
+
+    await expect(
+      setRating(
+        { recipeId: "recipe_1", recipeSlug: "sunday-sauce", value: 5 },
+        ownerUser,
+      ),
+    ).rejects.toThrow("SELF_RATING");
+  });
+
+  it("still lets a non-owner viewer rate the recipe", async () => {
+    const tx = fakeTx({ recipe: recipeRow });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await expect(
+      setRating(
+        { recipeId: "recipe_1", recipeSlug: "sunday-sauce", value: 5 },
+        user,
+      ),
+    ).resolves.toBeDefined();
+    expect(
+      (tx as { insert: ReturnType<typeof vi.fn> }).insert,
+    ).toHaveBeenCalled();
+  });
+});
+
+/** An applied suggestion (folded into the recipe) owned by `owner_9`. */
+const appliedSuggestionRow = {
+  id: "sugg_1",
+  kind: "suggestion",
+  appliedAt: new Date(),
+  recipe: { authorId: "owner_9", visibility: "group", groupId: "group_1" },
+};
+
+describe("resolveComment guards an applied suggestion", () => {
+  it("refuses to reopen (resolved=false) a suggestion already applied", async () => {
+    runWith(fakeTx({ comment: appliedSuggestionRow }));
+    mockCanView.mockResolvedValue(true);
+
+    await expect(
+      resolveComment("sugg_1", ownerUser, false),
+    ).rejects.toThrow("ALREADY_APPLIED");
+  });
+
+  it("still allows closing (resolved=true) an applied suggestion", async () => {
+    const tx = fakeTx({ comment: appliedSuggestionRow });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await resolveComment("sugg_1", ownerUser, true);
+    expect(
+      (tx as { update: ReturnType<typeof vi.fn> }).update,
+    ).toHaveBeenCalled();
+  });
+
+  it("allows reopening a suggestion that was never applied", async () => {
+    const tx = fakeTx({
+      comment: { ...appliedSuggestionRow, appliedAt: null },
+    });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await resolveComment("sugg_1", ownerUser, false);
+    expect(
+      (tx as { update: ReturnType<typeof vi.fn> }).update,
+    ).toHaveBeenCalled();
+  });
+
+  it("rejects a non-owner from resolving (FORBIDDEN)", async () => {
+    runWith(
+      fakeTx({
+        comment: {
+          ...appliedSuggestionRow,
+          appliedAt: null,
+          recipe: { ...appliedSuggestionRow.recipe, authorId: "someone_else" },
+        },
+      }),
+    );
+    mockCanView.mockResolvedValue(true);
+
+    await expect(
+      resolveComment("sugg_1", ownerUser, true),
+    ).rejects.toThrow("FORBIDDEN");
   });
 });

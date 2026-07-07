@@ -18,6 +18,7 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
     prepMinutes: 20,
     cookMinutes: 45,
     totalMinutes: null,
+    authorId: "author_1",
     author: { name: "Aunt May" },
     ingredients: [
       {
@@ -43,7 +44,11 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
       },
       { section: null, instruction: "Bake until the fruit bubbles." },
     ],
-    ratings: [{ value: 5 }, { value: 4 }, { value: 5 }],
+    ratings: [
+      { value: 5, userId: "fan_1" },
+      { value: 4, userId: "fan_2" },
+      { value: 5, userId: "fan_3" },
+    ],
     publishedAt: new Date("2024-06-01T12:00:00.000Z"),
     ...overrides,
   };
@@ -124,6 +129,37 @@ describe("buildRecipeJsonLd", () => {
 
     const unrated = buildRecipeJsonLd(makeRecipe({ ratings: [] }));
     expect(unrated.aggregateRating).toBeUndefined();
+  });
+
+  it("excludes the owner's own rating from aggregateRating", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        authorId: "author_1",
+        ratings: [
+          // The author can't rate their own recipe; a stray self-rating here
+          // must not drag the published aggregate down.
+          { value: 1, userId: "author_1" },
+          { value: 5, userId: "fan_1" },
+          { value: 4, userId: "fan_2" },
+        ],
+      }),
+    );
+
+    expect(jsonLd.aggregateRating).toMatchObject({
+      ratingValue: 4.5,
+      ratingCount: 2,
+    });
+  });
+
+  it("omits aggregateRating when only the owner has rated", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        authorId: "author_1",
+        ratings: [{ value: 5, userId: "author_1" }],
+      }),
+    );
+
+    expect(jsonLd.aggregateRating).toBeUndefined();
   });
 
   it("omits optional fields when data is missing", () => {

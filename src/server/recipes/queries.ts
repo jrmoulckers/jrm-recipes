@@ -18,11 +18,15 @@ import {
 import { db, isDbConfigured } from "~/server/db";
 import {
   compareByTopRated,
+  excludeOwnerRatings,
   ratingSummary,
+  TOP_RATED_PRIOR_COUNT,
+  TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from "~/lib/ratings";
 import {
   groupMembers,
+  ratings,
   recipeEvents,
   recipeIngredients,
   recipeSteps,
@@ -56,22 +60,66 @@ export type VersionListItem = Awaited<
 >[number];
 
 /** Re-exported for recipe detail pages that import it from the query module. */
-export { ratingSummary };
+export { excludeOwnerRatings, ratingSummary };
 
 /**
- * Re-order a fetched list so the highest-rated recipes come first. Ordering by
- * an aggregate of the related `ratings` rows is awkward in the relational query
- * builder, so we sort the loaded window in memory (the lists already eager-load
- * `ratings`). `"recent"` keeps the DB order untouched.
+ * Re-order a fetched list so the highest-rated recipes come first, excluding any
+ * owner self-rating from each recipe's summary. Used for lists that are already
+ * fully loaded (e.g. a viewer's library); paged/searched feeds order in SQL via
+ * {@link topRatedOrderBy} instead so the ranking is global rather than
+ * per-window. `"recent"` keeps the DB order untouched.
  */
-function applyRatingSort<T extends { ratings: { value: number }[] }>(
-  rows: T[],
-  sort: RatingSort,
-): T[] {
+function applyRatingSort<
+  T extends { authorId: string; ratings: { value: number; userId: string }[] },
+>(rows: T[], sort: RatingSort): T[] {
   if (sort !== "top-rated") return rows;
   return [...rows].sort((a, b) =>
-    compareByTopRated(ratingSummary(a.ratings), ratingSummary(b.ratings)),
+    compareByTopRated(
+      ratingSummary(excludeOwnerRatings(a.ratings, a.authorId)),
+      ratingSummary(excludeOwnerRatings(b.ratings, b.authorId)),
+    ),
   );
+}
+
+/**
+ * Per-recipe weighted "top rated" score, computed in SQL over the recipe's FULL
+ * set of ratings (excluding the owner's own), so ordering by it ranks globally
+ * rather than within a fetched page. Mirrors `bayesianScore` in `~/lib/ratings`:
+ * `(sum + prMean*prCount) / (count + prCount)`. Exported for unit assertions.
+ */
+export function topRatedScoreSql(): SQL {
+  const priorSum = TOP_RATED_PRIOR_MEAN * TOP_RATED_PRIOR_COUNT;
+  return sql`(
+    select (coalesce(sum(${ratings.value}), 0) + ${priorSum})::float
+         / (count(*) + ${TOP_RATED_PRIOR_COUNT})::float
+    from ${ratings}
+    where ${ratings.recipeId} = ${recipes.id}
+      and ${ratings.userId} <> ${recipes.authorId}
+  )`;
+}
+
+/** Whether a recipe has any non-owner rating, so unrated recipes sort last. */
+function topRatedHasRatingsSql(): SQL {
+  return sql`(
+    select count(*) > 0
+    from ${ratings}
+    where ${ratings.recipeId} = ${recipes.id}
+      and ${ratings.userId} <> ${recipes.authorId}
+  )`;
+}
+
+/**
+ * ORDER BY for the "top rated" feed: rated recipes first, then by the weighted
+ * score, tie-broken by recency for a stable page walk. Because the score is a
+ * SQL aggregate over every rating, `limit`/`offset` slice the true global order.
+ */
+export function topRatedOrderBy(): SQL[] {
+  return [
+    desc(topRatedHasRatingsSql()),
+    desc(topRatedScoreSql()),
+    desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
+    desc(recipes.createdAt),
+  ];
 }
 
 /** Groups a user belongs to (for the editor's visibility picker). */
@@ -106,12 +154,14 @@ export async function listMyRecipes(userId: string) {
 }
 
 /**
- * Publicly published recipes, newest first (the discover feed).
+ * Publicly published recipes for the discover feed.
  *
- * Paginated via a simple offset so the base ordering stays exactly
- * `publishedAt desc, updatedAt desc`; an optional `sort` (e.g. "top-rated")
- * re-orders the fetched page in memory. Returns the page plus the offset to
- * fetch next, or `null` once the feed is exhausted.
+ * `"recent"` keeps the base ordering `publishedAt desc, updatedAt desc`.
+ * `"top-rated"` orders by a weighted, owner-excluded rating score computed in
+ * SQL over the whole feed (see {@link topRatedOrderBy}), so the simple
+ * `offset`/`limit` walks the true global ranking rather than re-sorting a single
+ * page. Returns the page plus the offset to fetch next, or `null` once the feed
+ * is exhausted.
  */
 export async function listPublicRecipes({
   limit = DISCOVER_PAGE_SIZE,
@@ -124,13 +174,16 @@ export async function listPublicRecipes({
       eq(recipes.visibility, "public"),
       eq(recipes.status, "published"),
     ),
-    orderBy: [desc(recipes.publishedAt), desc(recipes.updatedAt)],
+    orderBy:
+      sort === "top-rated"
+        ? topRatedOrderBy()
+        : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
     offset,
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
   return {
-    items: applyRatingSort(rows, sort),
+    items: rows,
     nextOffset: nextPageOffset(offset, rows.length, limit),
   };
 }
@@ -258,8 +311,8 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
       return [asc(recipes.totalMinutes), asc(sql`lower(${recipes.title})`)];
     case "az":
       return [asc(sql`lower(${recipes.title})`)];
-    // "top-rated" is re-sorted in-memory (applyRatingSort); use the newest
-    // base ordering for the SQL fetch.
+    // "top-rated" orders by the SQL weighted score (topRatedOrderBy) in the
+    // caller; fall through to the newest base ordering for every other sort.
     case "top-rated":
     case "newest":
     default:
@@ -345,17 +398,15 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
 
   const rows = await db.query.recipes.findMany({
     where: and(...conditions),
-    orderBy: recipeOrderBy(search.sort),
+    orderBy:
+      search.sort === "top-rated" ? topRatedOrderBy() : recipeOrderBy(search.sort),
     limit: RECIPE_SEARCH_LIMIT,
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
 
-  // "top-rated" ordering is owned by the ratings module; reuse its comparator
-  // in-memory so both sort systems stay consistent across the app.
-  return applyRatingSort(
-    rows,
-    search.sort === "top-rated" ? "top-rated" : "recent",
-  );
+  // "top-rated" ordering (weighted, owner-excluded) is applied in SQL over the
+  // full candidate set above, so the returned rows are already globally ranked.
+  return rows;
 }
 
 /**

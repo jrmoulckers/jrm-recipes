@@ -21,6 +21,43 @@ export function ratingSummary(values: { value: number }[]): RatingSummary {
   };
 }
 
+/**
+ * A recipe author can't rate their own recipe (blocked at the rating mutation),
+ * so drop any owner rating from a set before aggregating. This keeps the average
+ * and rank honest even for pre-existing self-ratings. Returns the list unchanged
+ * when there is no owner to exclude.
+ */
+export function excludeOwnerRatings<T extends { userId: string }>(
+  ratings: T[],
+  ownerId: string | null | undefined,
+): T[] {
+  if (!ownerId) return ratings;
+  return ratings.filter((rating) => rating.userId !== ownerId);
+}
+
+/**
+ * Prior used by the count-aware "top rated" score. A recipe's rank is pulled
+ * toward {@link TOP_RATED_PRIOR_MEAN} until it has gathered enough ratings to
+ * speak for itself, so a single 5-star can't leapfrog a well-reviewed favourite.
+ * {@link TOP_RATED_PRIOR_COUNT} is how many "average" votes of confidence a
+ * recipe must accrue before its own average dominates.
+ */
+export const TOP_RATED_PRIOR_MEAN = 3;
+export const TOP_RATED_PRIOR_COUNT = 5;
+
+/**
+ * Bayesian/weighted rating: blends a recipe's own average with the prior mean,
+ * weighted by how many ratings it has. Few ratings sit near the prior; many
+ * converge on the true average. Kept in sync with the SQL ordering in the
+ * recipes query layer so in-memory and database ranking agree.
+ */
+export function bayesianScore({ average, count }: RatingSummary): number {
+  return (
+    (average * count + TOP_RATED_PRIOR_MEAN * TOP_RATED_PRIOR_COUNT) /
+    (count + TOP_RATED_PRIOR_COUNT)
+  );
+}
+
 /** Ways the recipe lists can be ordered. */
 export type RatingSort = "recent" | "top-rated";
 
@@ -66,16 +103,20 @@ export function ratingDisplay(summary: RatingSummary): RatingDisplay {
 }
 
 /**
- * Comparator for the "top rated" order: highest average first, then the most
- * ratings as a tie-breaker, and unrated recipes always last. Stable enough to
- * feed straight into `Array.prototype.sort`.
+ * Comparator for the "top rated" order: unrated recipes always sort last, then
+ * by a count-aware weighted score (see {@link bayesianScore}) so a lone 5-star
+ * can't outrank a many-rating favourite, tie-broken by the most ratings and
+ * then the raw average. Stable enough to feed straight into
+ * `Array.prototype.sort`.
  */
 export function compareByTopRated(a: RatingSummary, b: RatingSummary): number {
   const aRated = a.count > 0;
   const bRated = b.count > 0;
   if (aRated !== bRated) return aRated ? -1 : 1;
-  if (b.average !== a.average) return b.average - a.average;
-  return b.count - a.count;
+  const scoreDelta = bayesianScore(b) - bayesianScore(a);
+  if (scoreDelta !== 0) return scoreDelta;
+  if (b.count !== a.count) return b.count - a.count;
+  return b.average - a.average;
 }
 
 /** Coerce an untrusted query-string value into a known sort option. */
