@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import {
   ArrowLeft,
@@ -33,315 +34,83 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
+import {
+  formatCountdown,
+  makeTimer,
+  stepShortcutForKey,
+  timerStatusText,
+  type TimerRecord,
+  type TimerStatus,
+} from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
+import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
 import { TechniqueChips } from "./technique-chips";
 import type { CookRecipe, CookStep } from "./types";
+import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
-
-type TimerStatus = "idle" | "running" | "paused" | "complete";
-
-type TimerRecord = {
-  duration: number;
-  remaining: number;
-  status: TimerStatus;
-  endsAt: number | null;
-};
-
-type ActiveTimer = {
-  step: CookStep;
-  stepIndex: number;
-  timer: TimerRecord;
-};
-
-type WindowWithLegacyAudio = Window &
-  typeof globalThis & {
-    webkitAudioContext?: typeof AudioContext;
-  };
-
-function clampStep(index: number, total: number) {
-  if (total <= 0) return 0;
-  return Math.min(Math.max(index, 0), total - 1);
-}
-
-function makeTimer(step: CookStep): TimerRecord {
-  const duration = Math.max(0, step.timerSeconds ?? 0);
-  return {
-    duration,
-    remaining: duration,
-    status: "idle",
-    endsAt: null,
-  };
-}
-
-function timerForStep(timers: Record<string, TimerRecord>, step: CookStep) {
-  return timers[step.id] ?? makeTimer(step);
-}
-
-function formatCountdown(seconds: number) {
-  const safeSeconds = Math.max(0, Math.ceil(seconds));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const remainingSeconds = safeSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(
-      remainingSeconds,
-    ).padStart(2, "0")}`;
-  }
-
-  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
-}
-
-function shortTimerLabel(seconds: number) {
-  if (seconds >= 60) {
-    const minutes = Math.round(seconds / 60);
-    return `${minutes} min`;
-  }
-  return `${seconds}s`;
-}
-
-function timerStatusText(timer: TimerRecord) {
-  if (timer.status === "complete") return "Timer complete";
-  if (timer.status === "running") return `${formatCountdown(timer.remaining)} remaining`;
-  if (timer.status === "paused") return `Paused with ${formatCountdown(timer.remaining)} remaining`;
-  return `${formatCountdown(timer.duration)} ready`;
-}
-
-function playTimerTone() {
-  if (typeof window === "undefined") return;
-
-  const AudioContextConstructor =
-    window.AudioContext ?? (window as WindowWithLegacyAudio).webkitAudioContext;
-  if (!AudioContextConstructor) return;
-
-  let context: AudioContext;
-  try {
-    context = new AudioContextConstructor();
-  } catch {
-    return;
-  }
-
-  const play = () => {
-    const now = context.currentTime;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, now);
-    oscillator.frequency.setValueAtTime(660, now + 0.18);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.2, now + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.55);
-    oscillator.onended = () => {
-      void context.close().catch(() => undefined);
-    };
-  };
-
-  if (context.state === "suspended") {
-    void context
-      .resume()
-      .then(play)
-      .catch(() => {
-        void context.close().catch(() => undefined);
-      });
-    return;
-  }
-
-  play();
-}
-
-function shouldIgnoreShortcutTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return (
-    target.closest(
-      "a,button,input,textarea,select,[role='button'],[role='dialog'],[contenteditable='true']",
-    ) != null
-  );
-}
-
-function useCookTimers(recipe: CookRecipe) {
-  const [timers, setTimers] = React.useState<Record<string, TimerRecord>>({});
-  const announcedTimersRef = React.useRef<Set<string>>(new Set());
-
-  const hasRunningTimers = React.useMemo(
-    () => Object.values(timers).some((timer) => timer.status === "running"),
-    [timers],
-  );
-
-  React.useEffect(() => {
-    if (!hasRunningTimers) return;
-
-    const intervalId = window.setInterval(() => {
-      setTimers((previous) => {
-        let changed = false;
-        const next: Record<string, TimerRecord> = { ...previous };
-        const now = Date.now();
-
-        for (const [stepId, timer] of Object.entries(previous)) {
-          if (timer.status !== "running") continue;
-
-          const endsAt = timer.endsAt ?? now;
-          const remaining = Math.max(0, Math.ceil((endsAt - now) / 1000));
-          if (remaining === timer.remaining && remaining > 0) continue;
-
-          next[stepId] = {
-            ...timer,
-            remaining,
-            status: remaining === 0 ? "complete" : "running",
-            endsAt: remaining === 0 ? null : endsAt,
-          };
-          changed = true;
-        }
-
-        return changed ? next : previous;
-      });
-    }, 250);
-
-    return () => window.clearInterval(intervalId);
-  }, [hasRunningTimers]);
-
-  React.useEffect(() => {
-    recipe.steps.forEach((step, index) => {
-      const timer = timers[step.id];
-      if (timer?.status !== "complete") return;
-      if (announcedTimersRef.current.has(step.id)) return;
-
-      announcedTimersRef.current.add(step.id);
-      playTimerTone();
-      toast.success(`Step ${index + 1} timer is done`, {
-        description: step.section ?? recipe.title,
-      });
-    });
-  }, [recipe.steps, recipe.title, timers]);
-
-  const startTimer = React.useCallback((step: CookStep) => {
-    if (step.timerSeconds == null || step.timerSeconds <= 0) return;
-
-    announcedTimersRef.current.delete(step.id);
-    setTimers((previous) => {
-      const current = timerForStep(previous, step);
-      const remaining =
-        current.status === "complete" || current.remaining <= 0
-          ? current.duration
-          : current.remaining;
-
-      return {
-        ...previous,
-        [step.id]: {
-          ...current,
-          remaining,
-          status: "running",
-          endsAt: Date.now() + remaining * 1000,
-        },
-      };
-    });
-  }, []);
-
-  const pauseTimer = React.useCallback((step: CookStep) => {
-    setTimers((previous) => {
-      const current = previous[step.id];
-      if (current?.status !== "running") return previous;
-
-      const remaining = Math.max(
-        0,
-        Math.ceil(((current.endsAt ?? Date.now()) - Date.now()) / 1000),
-      );
-
-      return {
-        ...previous,
-        [step.id]: {
-          ...current,
-          remaining,
-          status: remaining === 0 ? "complete" : "paused",
-          endsAt: null,
-        },
-      };
-    });
-  }, []);
-
-  const resetTimer = React.useCallback((step: CookStep) => {
-    announcedTimersRef.current.delete(step.id);
-    setTimers((previous) => ({
-      ...previous,
-      [step.id]: makeTimer(step),
-    }));
-  }, []);
-
-  const activeTimers = React.useMemo(() => {
-    const active: ActiveTimer[] = [];
-
-    recipe.steps.forEach((step, stepIndex) => {
-      const timer = timers[step.id];
-      if (!timer || timer.status === "idle") return;
-      active.push({ step, stepIndex, timer });
-    });
-
-    return active;
-  }, [recipe.steps, timers]);
-
-  return {
-    timers,
-    activeTimers,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-  };
-}
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
-  const [stepIndex, setStepIndex] = React.useState(0);
+  const router = useRouter();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
+
   const {
+    stepIndex,
     timers,
     activeTimers,
+    runningTimerCount,
+    servings,
+    system,
+    checked,
+    goToStep,
+    goNext,
+    goPrevious,
     startTimer,
     pauseTimer,
     resetTimer,
-  } = useCookTimers(recipe);
+    setServings,
+    setSystem,
+    toggleChecked,
+    clearSession,
+  } = useCookSession(recipe);
 
-  React.useEffect(() => {
-    setStepIndex((current) => clampStep(current, totalSteps));
-  }, [totalSteps]);
-
-  const goToStep = React.useCallback(
-    (index: number) => {
-      setStepIndex(clampStep(index, totalSteps));
-    },
-    [totalSteps],
+  const ingredientControls = React.useMemo<IngredientsPanelControls>(
+    () => ({
+      servings,
+      onServingsChange: setServings,
+      system,
+      onSystemChange: setSystem,
+      checked,
+      onToggleChecked: toggleChecked,
+    }),
+    [servings, setServings, system, setSystem, checked, toggleChecked],
   );
 
-  const goPrevious = React.useCallback(() => {
-    setStepIndex((current) => clampStep(current - 1, totalSteps));
-  }, [totalSteps]);
-
-  const goNext = React.useCallback(() => {
-    setStepIndex((current) => clampStep(current + 1, totalSteps));
-  }, [totalSteps]);
+  const handleFinish = React.useCallback(() => {
+    clearSession();
+    toast.success("Nicely done — recipe complete!", {
+      description: `Log this cook to add ${recipe.title} to your journal.`,
+      action: {
+        label: "Log this cook",
+        onClick: () => router.push(`/recipes/${recipe.slug}`),
+      },
+    });
+    router.push(`/recipes/${recipe.slug}`);
+  }, [clearSession, recipe.slug, recipe.title, router]);
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (shouldIgnoreShortcutTarget(event.target)) return;
+      const shortcut = stepShortcutForKey(event.key, event.target);
+      if (!shortcut) return;
 
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        goPrevious();
-      }
-
-      if (event.key === "ArrowRight" || event.key === " " || event.key === "Spacebar") {
-        event.preventDefault();
-        goNext();
-      }
+      event.preventDefault();
+      if (shortcut === "previous") goPrevious();
+      else goNext();
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -353,13 +122,16 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       <EmptyCookExperience
         recipe={recipe}
         wakeLockStatus={wakeLockStatus}
+        ingredientControls={ingredientControls}
       />
     );
   }
 
   const currentStep = recipe.steps[stepIndex] ?? firstStep;
   const currentTimer =
-    currentStep.timerSeconds != null ? timerForStep(timers, currentStep) : null;
+    currentStep.timerSeconds != null
+      ? (timers[currentStep.id] ?? makeTimer(currentStep.timerSeconds))
+      : null;
   const progressValue = ((stepIndex + 1) / totalSteps) * 100;
   const canGoPrevious = stepIndex > 0;
   const canGoNext = stepIndex < totalSteps - 1;
@@ -368,12 +140,13 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <CookHeader
         recipe={recipe}
-        activeTimers={activeTimers}
+        runningTimerCount={runningTimerCount}
         currentIndex={stepIndex}
         totalSteps={totalSteps}
         progressValue={progressValue}
         wakeLockStatus={wakeLockStatus}
         onStepSelect={goToStep}
+        ingredientControls={ingredientControls}
       />
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -402,7 +175,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               {currentStep.timerSeconds != null && (
                 <Badge variant="accent" className="gap-1 text-sm">
                   <Timer className="size-3.5" />
-                  {shortTimerLabel(currentStep.timerSeconds)}
+                  {formatCountdown(currentStep.timerSeconds)}
                 </Badge>
               )}
             </div>
@@ -467,17 +240,17 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             recipe={recipe}
             className="hidden h-16 px-6 text-lg sm:inline-flex"
             label="Ingredients"
+            controls={ingredientControls}
           />
 
           <Button
             type="button"
             size="xl"
             className="h-16 justify-end text-lg sm:h-[4.5rem]"
-            onClick={goNext}
-            disabled={!canGoNext}
+            onClick={canGoNext ? goNext : handleFinish}
           >
             {canGoNext ? "Next" : "Done"}
-            <ArrowRight />
+            {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
           </Button>
         </div>
       </footer>
@@ -487,20 +260,22 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
 function CookHeader({
   recipe,
-  activeTimers,
+  runningTimerCount,
   currentIndex,
   totalSteps,
   progressValue,
   wakeLockStatus,
   onStepSelect,
+  ingredientControls,
 }: {
   recipe: CookRecipe;
-  activeTimers: ActiveTimer[];
+  runningTimerCount: number;
   currentIndex: number;
   totalSteps: number;
   progressValue: number;
   wakeLockStatus: string;
   onStepSelect: (index: number) => void;
+  ingredientControls: IngredientsPanelControls;
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
@@ -513,10 +288,10 @@ function CookHeader({
             <span className="font-medium">
               Step {currentIndex + 1} of {totalSteps}
             </span>
-            {activeTimers.length > 0 && (
+            {runningTimerCount > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Timer className="size-3.5" />
-                {activeTimers.length} active
+                {runningTimerCount} active
               </span>
             )}
             {wakeLockStatus === "active" && (
@@ -535,8 +310,16 @@ function CookHeader({
           currentIndex={currentIndex}
           onStepSelect={onStepSelect}
         />
-        <IngredientsDrawer recipe={recipe} className="h-12 px-3 md:hidden" />
-        <IngredientsDrawer recipe={recipe} className="hidden md:inline-flex" />
+        <IngredientsDrawer
+          recipe={recipe}
+          className="h-12 px-3 md:hidden"
+          controls={ingredientControls}
+        />
+        <IngredientsDrawer
+          recipe={recipe}
+          className="hidden md:inline-flex"
+          controls={ingredientControls}
+        />
         <Button asChild variant="ghost" size="icon" aria-label="Exit cook mode">
           <Link href={`/recipes/${recipe.slug}`}>
             <X />
@@ -645,7 +428,8 @@ function StepTimerCard({
 
       <div
         className="mt-5 rounded-2xl bg-muted px-4 py-5 text-center"
-        aria-live="polite"
+        role="timer"
+        aria-live="off"
       >
         <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
           {formatCountdown(timer.remaining)}
@@ -654,6 +438,7 @@ function StepTimerCard({
           {timerStatusText(timer)}
         </p>
       </div>
+      <TimerAnnouncer timer={timer} />
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button
@@ -678,6 +463,36 @@ function StepTimerCard({
         </Button>
       </div>
     </section>
+  );
+}
+
+/**
+ * Screen-reader-only live region for the step timer. The visible countdown is
+ * NOT announced continuously (it uses role="timer" + aria-live="off"); this only
+ * speaks at meaningful transitions — start, pause, and completion.
+ */
+function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
+  const [message, setMessage] = React.useState("");
+  const previousStatusRef = React.useRef<TimerStatus>(timer.status);
+
+  React.useEffect(() => {
+    const previous = previousStatusRef.current;
+    if (previous === timer.status) return;
+    previousStatusRef.current = timer.status;
+
+    if (timer.status === "running") {
+      setMessage(`Timer started, ${formatCountdown(timer.remaining)} remaining`);
+    } else if (timer.status === "paused") {
+      setMessage(`Timer paused, ${formatCountdown(timer.remaining)} remaining`);
+    } else if (timer.status === "complete") {
+      setMessage("Timer complete");
+    }
+  }, [timer.status, timer.remaining]);
+
+  return (
+    <p className="sr-only" role="status">
+      {message}
+    </p>
   );
 }
 
@@ -893,7 +708,7 @@ function OverviewDialog({
                         {step.timerSeconds != null && (
                           <Badge variant="secondary">
                             <Timer className="size-3" />
-                            {shortTimerLabel(step.timerSeconds)}
+                            {formatCountdown(step.timerSeconds)}
                           </Badge>
                         )}
                         {step.techniques?.map((technique) => (
@@ -920,9 +735,11 @@ function OverviewDialog({
 function EmptyCookExperience({
   recipe,
   wakeLockStatus,
+  ingredientControls,
 }: {
   recipe: CookRecipe;
   wakeLockStatus: string;
+  ingredientControls: IngredientsPanelControls;
 }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -941,7 +758,11 @@ function EmptyCookExperience({
               {recipe.title}
             </h1>
           </div>
-          <IngredientsDrawer recipe={recipe} className="hidden sm:inline-flex" />
+          <IngredientsDrawer
+            recipe={recipe}
+            className="hidden sm:inline-flex"
+            controls={ingredientControls}
+          />
           <Button asChild variant="ghost" size="icon" aria-label="Exit cook mode">
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
@@ -970,7 +791,11 @@ function EmptyCookExperience({
               </Link>
             </Button>
             {recipe.ingredients.length > 0 && (
-              <IngredientsDrawer recipe={recipe} className="sm:hidden" />
+              <IngredientsDrawer
+                recipe={recipe}
+                className="sm:hidden"
+                controls={ingredientControls}
+              />
             )}
           </div>
         </section>
