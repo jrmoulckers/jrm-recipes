@@ -98,7 +98,7 @@ against Neon and build the app.
 | `CLOUDINARY_API_SECRET`             | For uploads | Cloudinary API secret (server-only)                                                          |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL`     | Optional    | Defaults to `/sign-in`                                                                       |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL`     | Optional    | Defaults to `/sign-up`                                                                       |
-| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Optional    | Set to `1` to force dev-bypass auth even if Clerk keys exist. **Leave unset in production.** |
+| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Never (prod) | Local/test-only. Forces dev-bypass auth. **A production deploy with this set to `1` (or with Clerk keys missing) fails closed and refuses to build/boot** — leave it unset. |
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.

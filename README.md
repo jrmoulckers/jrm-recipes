@@ -65,6 +65,13 @@ configuration.** Every external service (DB, auth, uploads) degrades gracefully
 to a local dev-bypass when its env vars are absent — so you can run it in one
 command, and wire in real services when you're ready.
 
+> **Security note:** the auth **dev-bypass** (a single shared local user) is
+> strictly a **local/test** affordance. It fails closed on a **production
+> deploy**: a build or boot with `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or missing Clerk
+> keys throws instead of silently serving everyone as one shared account.
+> Detected via Vercel's `VERCEL_ENV=production`; `SKIP_ENV_VALIDATION` (used only
+> by the CI build + e2e, which serve no real users) is the sole escape hatch.
+
 ---
 
 ## Quick start (local development)
