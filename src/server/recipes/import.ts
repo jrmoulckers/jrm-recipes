@@ -535,8 +535,9 @@ function normalizeInputUrl(raw: string): URL | null {
 }
 
 /** Defense-in-depth against SSRF: reject obvious internal/loopback hosts. */
-function isPublicHost(host: string): boolean {
-  const h = host.toLowerCase();
+export function isPublicHost(host: string): boolean {
+  const h = stripIpv6Brackets(host.trim().toLowerCase()).replace(/\.+$/, "");
+  if (!h) return false;
   if (
     h === "localhost" ||
     h.endsWith(".localhost") ||
@@ -544,23 +545,136 @@ function isPublicHost(host: string): boolean {
     h === "0.0.0.0"
   )
     return false;
-  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
-  if (v4) {
-    const a = num(v4[1]);
-    const b = num(v4[2]);
+
+  if (IPV4_DOTTED_QUAD_RE.test(h)) return isPublicIpv4(h);
+
+  if (h.includes(":")) {
+    const mapped = ipv4MappedIpv6Tail(h);
+    if (mapped) return isPublicIpv4(mapped);
     if (
-      a === 0 || a === 10 || a === 127 || a >= 224 ||
-      (a === 192 && b === 168) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 169 && b === 254)
+      h === "::" ||
+      h === "::1" ||
+      h === "0:0:0:0:0:0:0:0" ||
+      h === "0:0:0:0:0:0:0:1" ||
+      h.startsWith("fc") ||
+      h.startsWith("fd") ||
+      /^fe[89ab][0-9a-f]/.test(h)
     )
       return false;
   }
-  if (h.includes(":")) {
-    if (h === "::1" || h.startsWith("fc") || h.startsWith("fd") || h.startsWith("fe80"))
-      return false;
-  }
+
+  if (NUMERIC_HOST_RE.test(h) || NUMERIC_DOTTED_HOST_RE.test(h)) return false;
+
   return true;
+}
+
+const IPV4_DOTTED_QUAD_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+const NUMERIC_HOST_RE = /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)$/i;
+const NUMERIC_DOTTED_HOST_RE = /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)(?:\.(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*))*$/i;
+
+function stripIpv6Brackets(host: string): string {
+  return host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+}
+
+function ipv4MappedIpv6Tail(host: string): string | null {
+  const shorthand = /^::ffff:(.+)$/i.exec(host);
+  const expanded = /^0:0:0:0:0:ffff:(.+)$/i.exec(host);
+  const tail = shorthand?.[1] ?? expanded?.[1] ?? null;
+  if (!tail) return null;
+  if (IPV4_DOTTED_QUAD_RE.test(tail)) return tail;
+  // Node normalizes `::ffff:1.2.3.4` to hex, e.g. `::ffff:0102:0304`.
+  const hex = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(tail);
+  if (hex) {
+    const high = parseInt(hex[1] ?? "", 16);
+    const low = parseInt(hex[2] ?? "", 16);
+    if (Number.isNaN(high) || Number.isNaN(low)) return null;
+    return `${(high >> 8) & 0xff}.${high & 0xff}.${(low >> 8) & 0xff}.${low & 0xff}`;
+  }
+  return null;
+}
+
+function isPublicIpv4(host: string): boolean {
+  const v4 = IPV4_DOTTED_QUAD_RE.exec(host);
+  if (!v4) return false;
+  const octets = v4.slice(1).map((part) => {
+    if (!part || (part.length > 1 && part.startsWith("0"))) return NaN;
+    return Number(part);
+  });
+  if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255))
+    return false;
+
+  const [a = 0, b = 0] = octets;
+  if (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    a >= 224 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 192 && b === 168) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 169 && b === 254)
+  )
+    return false;
+  return true;
+}
+
+const IMPORT_FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (compatible; HeirloomRecipeImporter/1.0; +https://heirloom.jrmoulckers.com)",
+  Accept: "text/html,application/xhtml+xml,application/ld+json;q=0.9,*/*;q=0.8",
+} as const;
+
+const MAX_IMPORT_REDIRECTS = 5;
+
+/** Raised when a redirect points at a non-public or invalid host (SSRF guard). */
+class BlockedRedirectError extends Error {}
+
+function isHttpRedirect(status: number): boolean {
+  return (
+    status === 301 ||
+    status === 302 ||
+    status === 303 ||
+    status === 307 ||
+    status === 308
+  );
+}
+
+/**
+ * Fetch `startUrl`, following redirects manually so every hop's host is
+ * re-validated with {@link isPublicHost}. A public URL that 3xx-redirects to an
+ * internal address (loopback, link-local, cloud metadata) is rejected instead
+ * of being silently followed. Bounded to {@link MAX_IMPORT_REDIRECTS} hops.
+ */
+async function fetchGuardingRedirects(
+  startUrl: URL,
+  signal: AbortSignal,
+): Promise<Response> {
+  let current = startUrl;
+  for (let hop = 0; hop <= MAX_IMPORT_REDIRECTS; hop++) {
+    const res = await fetch(current.toString(), {
+      redirect: "manual",
+      signal,
+      headers: IMPORT_FETCH_HEADERS,
+    });
+    if (!isHttpRedirect(res.status)) return res;
+
+    const location = res.headers.get("location");
+    await res.body?.cancel();
+    if (!location) throw new BlockedRedirectError("redirect without location");
+
+    let next: URL;
+    try {
+      next = new URL(location, current);
+    } catch {
+      throw new BlockedRedirectError("invalid redirect target");
+    }
+    if (next.protocol !== "http:" && next.protocol !== "https:")
+      throw new BlockedRedirectError("unsupported redirect protocol");
+    if (!isPublicHost(next.hostname))
+      throw new BlockedRedirectError("redirect to non-public host");
+    current = next;
+  }
+  throw new BlockedRedirectError("too many redirects");
 }
 
 /** Fetch a URL and extract a recipe. Returns friendly errors, never throws. */
@@ -572,17 +686,10 @@ export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult>
 
   let res: Response;
   try {
-    res = await fetch(url.toString(), {
-      redirect: "follow",
-      signal: AbortSignal.timeout(12000),
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; HeirloomRecipeImporter/1.0; +https://heirloom.jrmoulckers.com)",
-        Accept:
-          "text/html,application/xhtml+xml,application/ld+json;q=0.9,*/*;q=0.8",
-      },
-    });
+    res = await fetchGuardingRedirects(url, AbortSignal.timeout(12000));
   } catch (e) {
+    if (e instanceof BlockedRedirectError)
+      return { ok: false, error: "That address can't be imported." };
     const timedOut =
       e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
     return {
@@ -593,11 +700,15 @@ export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult>
     };
   }
 
-  if (!res.ok)
+  if (!res.ok) {
+    const retryable = res.status === 429 || res.status >= 500;
     return {
       ok: false,
-      error: `That site returned an error (${res.status}). Try a different link.`,
+      error: retryable
+        ? `That site returned an error (${res.status}). Try again shortly.`
+        : `That site returned an error (${res.status}). Try a different link.`,
     };
+  }
 
   const html = (await res.text()).slice(0, 3_000_000);
   const recipe = parseRecipeFromHtml(html, url.toString());

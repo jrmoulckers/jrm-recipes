@@ -895,6 +895,48 @@ const INDEX: IndexedEntry[] = SUBSTITUTIONS.map((entry) => ({
   aliasTokens: entry.aliases.map((alias) => tokenize(normalizeIngredient(alias))),
 }));
 
+export type IngredientMatchConfidence = "high" | "medium" | "low";
+
+export type DetailedIngredientMatch = {
+  entry: SubstitutionEntry;
+  score: number;
+  confidence: IngredientMatchConfidence;
+};
+
+function confidenceForAlias(phrase: string[]): IngredientMatchConfidence {
+  if (phrase.length > 1) return "high";
+  const [onlyToken] = phrase;
+  if (onlyToken && onlyToken.length >= 6) return "medium";
+  return "low";
+}
+
+function hasAllDietaryTags(sub: Substitution, required: DietaryTag[]): boolean {
+  if (required.length === 0) return true;
+  const tags = sub.dietaryTags ?? [];
+  return required.every((tag) => tags.includes(tag));
+}
+
+export function filterSubstitutionsByDiet(
+  subs: Substitution[],
+  required: DietaryTag[],
+): Substitution[] {
+  if (required.length === 0) return subs;
+  return subs.filter((sub) => hasAllDietaryTags(sub, required));
+}
+
+export function orderSubstitutionsByDiet(
+  subs: Substitution[],
+  preferred: DietaryTag[],
+): Substitution[] {
+  if (preferred.length === 0) return subs;
+  return [...subs].sort((a, b) => {
+    const aMatches = hasAllDietaryTags(a, preferred);
+    const bMatches = hasAllDietaryTags(b, preferred);
+    if (aMatches === bMatches) return 0;
+    return aMatches ? -1 : 1;
+  });
+}
+
 /**
  * Match a recipe ingredient's `item` string to a knowledge-base entry, or
  * `null` when nothing sensible matches. Prefers the most specific alias (the
@@ -902,26 +944,42 @@ const INDEX: IndexedEntry[] = SUBSTITUTIONS.map((entry) => ({
  * "self-rising flour" beats "flour". Whole-word matching keeps "buttermilk"
  * from matching "milk".
  */
-export function matchIngredient(
+export function matchIngredientDetailed(
   item: string | null | undefined,
-): SubstitutionEntry | null {
+): DetailedIngredientMatch | null {
   const tokens = tokenize(normalizeIngredient(item));
   if (tokens.length === 0) return null;
 
-  let best: { entry: SubstitutionEntry; score: number } | null = null;
+  let best: DetailedIngredientMatch | null = null;
   for (const { entry, aliasTokens } of INDEX) {
     for (const phrase of aliasTokens) {
       if (!containsPhrase(tokens, phrase)) continue;
       const score = phrase.length * 100 + phrase.join(" ").length;
-      if (!best || score > best.score) best = { entry, score };
+      if (!best || score > best.score) {
+        best = { entry, score, confidence: confidenceForAlias(phrase) };
+      }
     }
   }
-  return best?.entry ?? null;
+  return best;
+}
+
+export function matchIngredient(
+  item: string | null | undefined,
+): SubstitutionEntry | null {
+  return matchIngredientDetailed(item)?.entry ?? null;
 }
 
 /** Convenience: the list of swaps for an ingredient (empty when unmatched). */
-export function getSubstitutions(item: string | null | undefined): Substitution[] {
-  return matchIngredient(item)?.substitutions ?? [];
+export function getSubstitutions(
+  item: string | null | undefined,
+  required: DietaryTag[] = [],
+): Substitution[] {
+  const substitutions = matchIngredient(item)?.substitutions ?? [];
+  if (required.length === 0) return substitutions;
+  return filterSubstitutionsByDiet(
+    orderSubstitutionsByDiet(substitutions, required),
+    required,
+  );
 }
 
 // --- Scaling nudge -------------------------------------------------------

@@ -21,6 +21,7 @@ export type SeoIngredient = {
 export type SeoStep = {
   section: string | null;
   instruction: string;
+  imageUrl?: string | null;
 };
 
 /**
@@ -101,6 +102,17 @@ function ingredientToText(ing: SeoIngredient): string {
   return ing.note ? `${line}, ${ing.note}` : line;
 }
 
+function recipeImages(recipe: SeoRecipe): string[] {
+  return Array.from(
+    new Set(
+      [recipe.coverImageUrl, ...recipe.steps.map((step) => step.imageUrl)]
+        .filter((url): url is string => Boolean(url))
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0),
+    ),
+  );
+}
+
 /**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
  * called for `public` recipes; optional fields are omitted when absent so the
@@ -115,7 +127,8 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   };
 
   if (recipe.description) jsonLd.description = recipe.description;
-  if (recipe.coverImageUrl) jsonLd.image = [recipe.coverImageUrl];
+  const images = recipeImages(recipe);
+  if (images.length > 0) jsonLd.image = images;
   if (recipe.author?.name) {
     jsonLd.author = { "@type": "Person", name: recipe.author.name };
   }
@@ -157,6 +170,7 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
       "@type": "AggregateRating",
       ratingValue: average,
       ratingCount: count,
+      reviewCount: count,
       bestRating: 5,
       worstRating: 1,
     };

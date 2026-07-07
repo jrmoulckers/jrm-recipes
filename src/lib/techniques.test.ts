@@ -4,6 +4,7 @@ import {
   allTechniques,
   getTechnique,
   lookupTechnique,
+  suggestTechnique,
   TECHNIQUES,
 } from "./techniques";
 
@@ -82,6 +83,45 @@ describe("lookupTechnique", () => {
       slug: "sous-vide",
       label: "Sous Vide",
     });
+  });
+});
+
+describe("suggestTechnique", () => {
+  it("suggests the closest known technique for a typo", () => {
+    expect(suggestTechnique("braize")).toEqual({ slug: "braise", label: "Braise" });
+    expect(suggestTechnique("minse")).toEqual({ slug: "mince", label: "Mince" });
+    expect(suggestTechnique("wisk")).toEqual({ slug: "whisk", label: "Whisk" });
+  });
+
+  it("returns null for genuinely novel or far-off techniques", () => {
+    expect(suggestTechnique("spherify")).toBeNull();
+    expect(suggestTechnique("ferment")).toBeNull();
+  });
+
+  it("returns null for very short or empty input", () => {
+    expect(suggestTechnique("")).toBeNull();
+    expect(suggestTechnique("ab")).toBeNull();
+  });
+
+  it("does not second-guess an already-known label", () => {
+    expect(suggestTechnique("braise")).toBeNull();
+    expect(suggestTechnique("dicing")).toBeNull();
+  });
+});
+
+describe("lookupTechnique typo hints", () => {
+  it("attaches a suggestion to an unknown but near-miss label", () => {
+    const match = lookupTechnique("braize");
+    expect(match.known).toBe(false);
+    expect(match.suggestion).toEqual({ slug: "braise", label: "Braise" });
+  });
+
+  it("omits a suggestion when a label is already known", () => {
+    expect(lookupTechnique("braise").suggestion).toBeUndefined();
+  });
+
+  it("omits a suggestion when nothing is close enough", () => {
+    expect(lookupTechnique("spherify").suggestion).toBeUndefined();
   });
 });
 

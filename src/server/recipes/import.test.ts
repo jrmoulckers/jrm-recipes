@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  importRecipeFromUrl,
+  isPublicHost,
   parseDurationToMinutes,
   parseIngredientLine,
   parseIsoDuration,
@@ -165,5 +167,152 @@ describe("parseRecipeFromHtml", () => {
   });
   it("returns null when there is no recipe", () => {
     expect(parseRecipeFromHtml("<html></html>", "https://x.com")).toBeNull();
+  });
+});
+
+describe("isPublicHost", () => {
+  it("rejects private IPv6 forms and bracketed IPv6 hosts", () => {
+    expect(isPublicHost("::")).toBe(false);
+    expect(isPublicHost("::1")).toBe(false);
+    expect(isPublicHost("0:0:0:0:0:0:0:1")).toBe(false);
+    expect(isPublicHost("[::1]")).toBe(false);
+  });
+
+  it("rejects IPv4-mapped IPv6 when the mapped IPv4 is not public", () => {
+    expect(isPublicHost("::ffff:127.0.0.1")).toBe(false);
+    expect(isPublicHost("::ffff:10.0.0.1")).toBe(false);
+    expect(isPublicHost("0:0:0:0:0:ffff:192.168.1.1")).toBe(false);
+  });
+
+  it("rejects CGNAT IPv4 addresses", () => {
+    expect(isPublicHost("100.64.0.0")).toBe(false);
+    expect(isPublicHost("100.127.255.255")).toBe(false);
+  });
+
+  it("rejects numeric IPv4 aliases that are not clean dotted quads", () => {
+    expect(isPublicHost("2130706433")).toBe(false);
+    expect(isPublicHost("0x7f000001")).toBe(false);
+    expect(isPublicHost("7f000001")).toBe(false);
+    expect(isPublicHost("0177.0.0.1")).toBe(false);
+  });
+
+  it("allows normal public hosts", () => {
+    expect(isPublicHost("example.com")).toBe(true);
+    expect(isPublicHost("93.184.216.34")).toBe(true);
+    expect(isPublicHost("100.128.0.1")).toBe(true);
+    expect(isPublicHost("::ffff:93.184.216.34")).toBe(true);
+    expect(isPublicHost("2606:4700::1111")).toBe(true);
+  });
+
+  it("rejects hex-normalized IPv4-mapped IPv6 (as Node emits them)", () => {
+    // Node normalizes `[::ffff:127.0.0.1]` to `[::ffff:7f00:1]`.
+    expect(isPublicHost("::ffff:7f00:1")).toBe(false);
+    expect(isPublicHost("[::ffff:7f00:1]")).toBe(false);
+    // ...and a public one still resolves through the hex form.
+    expect(isPublicHost("::ffff:5db8:d822")).toBe(true);
+  });
+
+  it("rejects trailing-dot (absolute) internal hostnames", () => {
+    expect(isPublicHost("localhost.")).toBe(false);
+    expect(isPublicHost("sub.localhost.")).toBe(false);
+    expect(isPublicHost("printer.local.")).toBe(false);
+  });
+
+  it("rejects the whole fe80::/10 link-local range", () => {
+    expect(isPublicHost("fe80::1")).toBe(false);
+    expect(isPublicHost("fe90::1")).toBe(false);
+    expect(isPublicHost("febf::1")).toBe(false);
+  });
+});
+
+describe("importRecipeFromUrl HTTP errors", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("suggests a different link for non-retryable 4xx responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
+
+    await expect(importRecipeFromUrl("https://example.com/missing")).resolves.toEqual({
+      ok: false,
+      error: "That site returned an error (404). Try a different link.",
+    });
+  });
+
+  it("suggests trying again shortly for 429 and 5xx responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 429 })));
+    await expect(importRecipeFromUrl("https://example.com/rate-limited")).resolves.toEqual({
+      ok: false,
+      error: "That site returned an error (429). Try again shortly.",
+    });
+
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
+    await expect(importRecipeFromUrl("https://example.com/unavailable")).resolves.toEqual({
+      ok: false,
+      error: "That site returned an error (503). Try again shortly.",
+    });
+  });
+});
+
+describe("importRecipeFromUrl redirect SSRF guard", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("refuses to follow a redirect to a private/internal host", async () => {
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const target = String(input);
+      if (target === "https://example.com/recipe")
+        return new Response("", {
+          status: 302,
+          headers: { location: "http://127.0.0.1/latest/meta-data" },
+        });
+      return new Response("INTERNAL-SECRETS", { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(importRecipeFromUrl("https://example.com/recipe")).resolves.toEqual({
+      ok: false,
+      error: "That address can't be imported.",
+    });
+    // The internal address must never be requested.
+    expect(
+      fetchMock.mock.calls.every(([arg]) => !String(arg).includes("127.0.0.1")),
+    ).toBe(true);
+  });
+
+  it("follows a redirect to another public host", async () => {
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const target = String(input);
+      if (target === "https://example.com/old")
+        return new Response("", {
+          status: 301,
+          headers: { location: "https://recipes.example.org/new" },
+        });
+      return new Response(SAMPLE_HTML, { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await importRecipeFromUrl("https://example.com/old");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.recipe.title).toBe("Grandma's Marinara");
+  });
+
+  it("stops after too many redirects", async () => {
+    let n = 0;
+    const fetchMock = vi.fn(async () => {
+      n += 1;
+      return new Response("", {
+        status: 302,
+        headers: { location: `https://example.com/hop/${n}` },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(importRecipeFromUrl("https://example.com/loop")).resolves.toEqual({
+      ok: false,
+      error: "That address can't be imported.",
+    });
+    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(6);
   });
 });
