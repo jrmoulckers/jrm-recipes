@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  bayesianScore,
   compareByTopRated,
+  excludeOwnerRatings,
   filledStars,
   parseRatingSort,
   ratingDisplay,
   ratingSummary,
+  TOP_RATED_PRIOR_MEAN,
 } from "./ratings";
 
 describe("ratingSummary", () => {
@@ -73,15 +76,72 @@ describe("ratingDisplay", () => {
   });
 });
 
+describe("excludeOwnerRatings", () => {
+  it("drops the recipe owner's own rating", () => {
+    const ratings = [
+      { userId: "owner_1", value: 5 },
+      { userId: "fan_1", value: 4 },
+      { userId: "fan_2", value: 3 },
+    ];
+    expect(excludeOwnerRatings(ratings, "owner_1")).toEqual([
+      { userId: "fan_1", value: 4 },
+      { userId: "fan_2", value: 3 },
+    ]);
+  });
+
+  it("returns the list unchanged when there is no owner to exclude", () => {
+    const ratings = [{ userId: "fan_1", value: 4 }];
+    expect(excludeOwnerRatings(ratings, null)).toBe(ratings);
+    expect(excludeOwnerRatings(ratings, undefined)).toBe(ratings);
+  });
+});
+
+describe("bayesianScore", () => {
+  it("shrinks a sparse rating toward the prior mean", () => {
+    // A lone 5-star: (5*1 + 3*5) / (1 + 5) = 20 / 6 ≈ 3.33, far below 5.
+    expect(bayesianScore({ average: 5, count: 1 })).toBeCloseTo(20 / 6, 5);
+  });
+
+  it("converges on the true average as ratings accumulate", () => {
+    const few = bayesianScore({ average: 4.7, count: 3 });
+    const many = bayesianScore({ average: 4.7, count: 400 });
+    expect(many).toBeGreaterThan(few);
+    expect(many).toBeCloseTo(4.7, 1);
+  });
+
+  it("scores an unrated recipe at the prior mean", () => {
+    expect(bayesianScore({ average: 0, count: 0 })).toBe(TOP_RATED_PRIOR_MEAN);
+  });
+});
+
 describe("compareByTopRated", () => {
-  it("orders higher averages first", () => {
+  it("orders higher averages first when the counts match", () => {
     const rows = [
-      { average: 3.2, count: 5 },
-      { average: 4.8, count: 2 },
-      { average: 4.0, count: 9 },
+      { average: 3.2, count: 8 },
+      { average: 4.8, count: 8 },
+      { average: 4.0, count: 8 },
     ];
     expect(rows.sort(compareByTopRated).map((r) => r.average)).toEqual([
       4.8, 4.0, 3.2,
+    ]);
+  });
+
+  it("does not let a lone 5-star outrank a well-reviewed 4.7", () => {
+    const loneFiveStar = { average: 5, count: 1 };
+    const favourite = { average: 4.7, count: 40 };
+    // Count-aware ranking keeps the many-rating favourite on top.
+    expect([loneFiveStar, favourite].sort(compareByTopRated)).toEqual([
+      favourite,
+      loneFiveStar,
+    ]);
+  });
+
+  it("weights rating count so a well-reviewed 4.0 beats a two-rating 4.8", () => {
+    const fewButHigh = { average: 4.8, count: 2 };
+    const manyGood = { average: 4.0, count: 9 };
+    expect([fewButHigh, manyGood].sort(compareByTopRated)).toEqual([
+      manyGood,
+      fewButHigh,
     ]);
   });
 

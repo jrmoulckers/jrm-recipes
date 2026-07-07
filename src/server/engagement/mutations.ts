@@ -124,7 +124,7 @@ export async function resolveComment(
   await db.transaction(async (tx) => {
     const comment = await tx.query.comments.findFirst({
       where: eq(comments.id, commentId),
-      columns: { id: true, kind: true },
+      columns: { id: true, kind: true, appliedAt: true },
       with: {
         recipe: {
           columns: {
@@ -143,6 +143,10 @@ export async function resolveComment(
     if (comment.kind !== "suggestion" || comment.recipe.authorId !== user.id) {
       throw new Error("FORBIDDEN");
     }
+
+    // A suggestion that's already been folded into the recipe can't be reopened
+    // (resolved=false); doing so would leave an applied-but-unresolved entry.
+    if (!resolved && comment.appliedAt) throw new Error("ALREADY_APPLIED");
 
     await tx
       .update(comments)
@@ -249,6 +253,9 @@ export async function setRating(
     });
     if (!recipe) throw new Error("NOT_FOUND");
     if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
+    // Integrity: authors can't rate their own recipe — a self-rating would
+    // inflate both the average and the JSON-LD aggregateRating.
+    if (recipe.authorId === user.id) throw new Error("SELF_RATING");
 
     const [rating] = await tx
       .insert(ratings)

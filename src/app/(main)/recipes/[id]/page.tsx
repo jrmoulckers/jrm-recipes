@@ -26,6 +26,7 @@ import {
   getRecipeLineage,
   getRecipeTimeline,
   getRecipeVersions,
+  excludeOwnerRatings,
   ratingSummary,
 } from "~/server/recipes/queries";
 import {
@@ -124,7 +125,11 @@ export default async function RecipePage({
 
   const isOwner = Boolean(user?.id === recipe.authorId);
   const dbEnabled = isDbConfigured();
-  const { average, count } = ratingSummary(recipe.ratings);
+  // Exclude any owner self-rating so the shown average matches the JSON-LD
+  // aggregateRating (authors can't rate their own recipe).
+  const { average, count } = ratingSummary(
+    excludeOwnerRatings(recipe.ratings, recipe.authorId),
+  );
 
   const [
     versions,

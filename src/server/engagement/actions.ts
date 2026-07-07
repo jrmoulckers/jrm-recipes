@@ -134,6 +134,12 @@ export async function resolveCommentAction(
         error: "Only the recipe owner can resolve suggestions.",
       };
     }
+    if (code === "ALREADY_APPLIED") {
+      return {
+        ok: false,
+        error: "That suggestion was already applied and can't be reopened.",
+      };
+    }
     if (code === "NOT_FOUND") {
       return { ok: false, error: "We couldn't find that suggestion." };
     }
@@ -206,6 +212,9 @@ export async function setRatingAction(
     const code = errorCode(error);
     if (code === "FORBIDDEN") {
       return { ok: false, error: "You don't have access to this recipe." };
+    }
+    if (code === "SELF_RATING") {
+      return { ok: false, error: "You can't rate your own recipe." };
     }
     if (code === "NOT_FOUND") {
       return { ok: false, error: "We couldn't find that recipe." };

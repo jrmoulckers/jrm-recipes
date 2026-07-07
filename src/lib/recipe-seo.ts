@@ -38,10 +38,11 @@ export type SeoRecipe = {
   prepMinutes: number | null;
   cookMinutes: number | null;
   totalMinutes: number | null;
+  authorId: string;
   author: { name: string | null } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
-  ratings: { value: number }[];
+  ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
 };
 
@@ -72,16 +73,24 @@ function resolveTotalMinutes(recipe: SeoRecipe): number | null {
   return sum > 0 ? sum : null;
 }
 
-/** Average (1 decimal) + count, mirroring the app's `ratingSummary`. */
-function aggregateRatings(ratings: { value: number }[]): {
+/**
+ * Average (1 decimal) + count over ratings that aren't the recipe owner's own,
+ * mirroring the app's `ratingSummary`. Authors can't rate their own recipe, so
+ * excluding any owner rating keeps the published aggregateRating honest.
+ */
+function aggregateRatings(
+  ratings: { value: number; userId: string }[],
+  ownerId: string,
+): {
   average: number;
   count: number;
 } {
-  if (ratings.length === 0) return { average: 0, count: 0 };
-  const sum = ratings.reduce((acc, r) => acc + r.value, 0);
+  const external = ratings.filter((r) => r.userId !== ownerId);
+  if (external.length === 0) return { average: 0, count: 0 };
+  const sum = external.reduce((acc, r) => acc + r.value, 0);
   return {
-    average: Math.round((sum / ratings.length) * 10) / 10,
-    count: ratings.length,
+    average: Math.round((sum / external.length) * 10) / 10,
+    count: external.length,
   };
 }
 
@@ -164,7 +173,7 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
     jsonLd.recipeYield = `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`;
   }
 
-  const { average, count } = aggregateRatings(recipe.ratings);
+  const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
