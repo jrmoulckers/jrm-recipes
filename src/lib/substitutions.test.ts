@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   SUBSTITUTIONS,
+  filterSubstitutionsByDiet,
   getSubstitutions,
   matchIngredient,
+  matchIngredientDetailed,
   normalizeIngredient,
+  orderSubstitutionsByDiet,
   scalingNudge,
   type DietaryTag,
+  type Substitution,
 } from "./substitutions";
 
 describe("normalizeIngredient", () => {
@@ -89,6 +93,26 @@ describe("matchIngredient", () => {
   });
 });
 
+describe("matchIngredientDetailed", () => {
+  it("returns the matched entry with a score and confidence", () => {
+    const match = matchIngredientDetailed("sour cream");
+
+    expect(match?.entry.name).toBe("Sour cream");
+    expect(match?.score).toBeGreaterThan(0);
+    expect(match?.confidence).toBe("high");
+  });
+
+  it("derives confidence from alias specificity", () => {
+    expect(matchIngredientDetailed("buttermilk")?.confidence).toBe("medium");
+    expect(matchIngredientDetailed("oil")?.confidence).toBe("low");
+    expect(matchIngredientDetailed("self-rising flour")?.confidence).toBe("high");
+  });
+
+  it("returns null for unmatched ingredients", () => {
+    expect(matchIngredientDetailed("boneless chicken thighs")).toBeNull();
+  });
+});
+
 describe("getSubstitutions", () => {
   it("returns the swap list for a matched ingredient", () => {
     const subs = getSubstitutions("buttermilk");
@@ -115,6 +139,88 @@ describe("getSubstitutions", () => {
   it("returns an empty array for an unmatched ingredient", () => {
     expect(getSubstitutions("boneless chicken thighs")).toEqual([]);
     expect(getSubstitutions(null)).toEqual([]);
+  });
+
+  it("filters substitutions by required dietary tags", () => {
+    const veganButterSwaps = getSubstitutions("butter", ["vegan"]);
+
+    expect(veganButterSwaps.length).toBeGreaterThan(0);
+    expect(
+      veganButterSwaps.every((sub) => sub.dietaryTags?.includes("vegan")),
+    ).toBe(true);
+  });
+});
+
+describe("filterSubstitutionsByDiet", () => {
+  const sampleSubs: Substitution[] = [
+    {
+      substitute: "Dairy swap",
+      ratioOrNotes: "Use 1:1.",
+      dietaryTags: ["vegetarian"],
+    },
+    {
+      substitute: "Plant swap",
+      ratioOrNotes: "Use 1:1.",
+      dietaryTags: ["vegan", "dairy-free"],
+    },
+    {
+      substitute: "Pantry swap",
+      ratioOrNotes: "Use as needed.",
+    },
+  ];
+
+  it("returns all substitutions when no tags are required", () => {
+    expect(filterSubstitutionsByDiet(sampleSubs, [])).toEqual(sampleSubs);
+  });
+
+  it("keeps only substitutions with all required tags", () => {
+    expect(
+      filterSubstitutionsByDiet(sampleSubs, ["vegan", "dairy-free"]),
+    ).toEqual([sampleSubs[1]]);
+  });
+});
+
+describe("orderSubstitutionsByDiet", () => {
+  it("stably moves substitutions matching all preferred tags first", () => {
+    const sampleSubs: Substitution[] = [
+      {
+        substitute: "First non-match",
+        ratioOrNotes: "Use 1:1.",
+        dietaryTags: ["vegetarian"],
+      },
+      {
+        substitute: "First match",
+        ratioOrNotes: "Use 1:1.",
+        dietaryTags: ["vegan", "dairy-free"],
+      },
+      {
+        substitute: "Second non-match",
+        ratioOrNotes: "Use 1:1.",
+        dietaryTags: ["vegan"],
+      },
+      {
+        substitute: "Second match",
+        ratioOrNotes: "Use 1:1.",
+        dietaryTags: ["vegan", "dairy-free", "gluten-free"],
+      },
+    ];
+
+    expect(
+      orderSubstitutionsByDiet(sampleSubs, ["vegan", "dairy-free"]).map(
+        (sub) => sub.substitute,
+      ),
+    ).toEqual([
+      "First match",
+      "Second match",
+      "First non-match",
+      "Second non-match",
+    ]);
+  });
+
+  it("leaves order unchanged without preferred tags", () => {
+    const flourSwaps = getSubstitutions("all-purpose flour");
+
+    expect(orderSubstitutionsByDiet(flourSwaps, [])).toEqual(flourSwaps);
   });
 });
 

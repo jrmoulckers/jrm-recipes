@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { comments, ratings, type CommentKind } from "~/server/db/schema";
@@ -30,7 +30,12 @@ export async function getRecipeComments(
 
   const rows = await db.query.comments.findMany({
     where: eq(comments.recipeId, recipeId),
-    orderBy: [asc(comments.createdAt)],
+    orderBy: [
+      desc(
+        sql<number>`case when ${comments.kind} = 'suggestion' and ${comments.resolvedAt} is null and ${comments.appliedAt} is null then 1 else 0 end`,
+      ),
+      asc(comments.createdAt),
+    ],
     with: {
       user: {
         columns: {
