@@ -12,7 +12,7 @@ export function SiteFooter() {
           <Logo />
           <p className="max-w-xs text-xs">{brand.tagline}</p>
         </div>
-        <nav className="flex flex-wrap gap-x-6 gap-y-2">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/recipes" className="hover:text-foreground">
             Recipes
           </Link>
