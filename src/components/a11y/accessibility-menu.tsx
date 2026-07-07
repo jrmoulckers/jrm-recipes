@@ -71,7 +71,7 @@ function ToggleRow({
  */
 export function AccessibilityMenu() {
   const { prefs, update, reset } = useA11y();
-  const { theme, setTheme } = useTheme();
+  const { theme, setKidsMode } = useTheme();
   const active = isA11yActive(prefs);
   const kidsOn = theme === "kids";
 
@@ -194,7 +194,7 @@ export function AccessibilityMenu() {
             <Switch
               id="a11y-kids"
               checked={kidsOn}
-              onCheckedChange={(v) => setTheme(v ? "kids" : "kitchen")}
+              onCheckedChange={setKidsMode}
             />
           </section>
 

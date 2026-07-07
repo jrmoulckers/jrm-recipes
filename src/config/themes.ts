@@ -54,6 +54,13 @@ export const DEFAULT_COLOR_SCHEME: ColorScheme = "system";
 /** Cookie names let the server render the correct theme with no flash. */
 export const THEME_COOKIE = "heirloom-theme";
 export const SCHEME_COOKIE = "heirloom-scheme";
+/**
+ * Remembers the UI mode that was active before Kids mode was switched on, so
+ * turning Kids mode back off restores it instead of always dropping the family
+ * into the default theme. Persisted alongside `heirloom-theme` so it survives a
+ * reload; never stores `kids` itself.
+ */
+export const THEME_PREVIOUS_COOKIE = "heirloom-theme-prev";
 
 export function isUITheme(value: unknown): value is UITheme {
   return typeof value === "string" && UI_THEME_IDS.includes(value as UITheme);

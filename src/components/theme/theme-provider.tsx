@@ -9,6 +9,7 @@ import {
   DEFAULT_UI_THEME,
   SCHEME_COOKIE,
   THEME_COOKIE,
+  THEME_PREVIOUS_COOKIE,
   THEME_BEHAVIOR,
   isColorScheme,
   isUITheme,
@@ -23,6 +24,11 @@ type ThemeContextValue = {
   resolvedScheme: "light" | "dark";
   behavior: (typeof THEME_BEHAVIOR)[UITheme];
   setTheme: (theme: UITheme) => void;
+  /**
+   * Toggle Kids mode. Enabling it remembers the current UI mode; disabling it
+   * restores that remembered mode (or the default when there isn't one).
+   */
+  setKidsMode: (on: boolean) => void;
   setScheme: (scheme: ColorScheme) => void;
   toggleScheme: () => void;
 };
@@ -37,6 +43,36 @@ function persist(name: string, value: string) {
     document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
     /* storage may be unavailable (private mode) — theme still applies live */
+  }
+}
+
+/** Read a persisted value, preferring localStorage and falling back to cookie. */
+function readPersisted(name: string): string | null {
+  try {
+    const stored = localStorage.getItem(name);
+    if (stored) return stored;
+  } catch {
+    /* ignore — fall through to cookie */
+  }
+  try {
+    const prefix = `${name}=`;
+    for (const part of document.cookie.split("; ")) {
+      if (part.startsWith(prefix)) {
+        return decodeURIComponent(part.slice(prefix.length));
+      }
+    }
+  } catch {
+    /* storage may be unavailable */
+  }
+  return null;
+}
+
+function clearPersisted(name: string) {
+  try {
+    localStorage.removeItem(name);
+    document.cookie = `${name}=;path=/;max-age=0;samesite=lax`;
+  } catch {
+    /* storage may be unavailable */
   }
 }
 
@@ -94,6 +130,28 @@ export function ThemeProvider({
     persist(THEME_COOKIE, next);
   }, []);
 
+  const setKidsMode = React.useCallback(
+    (on: boolean) => {
+      if (on) {
+        // Remember the mode we're leaving so we can come back to it later.
+        // Never record "kids" itself (e.g. Kids mode was already active).
+        if (theme !== "kids") persist(THEME_PREVIOUS_COOKIE, theme);
+        setTheme("kids");
+        return;
+      }
+      // Restore the remembered mode. Fall back to the default when there isn't
+      // a valid one — e.g. Kids was picked straight from the mode picker.
+      const remembered = readPersisted(THEME_PREVIOUS_COOKIE);
+      const restored =
+        isUITheme(remembered) && remembered !== "kids"
+          ? remembered
+          : DEFAULT_UI_THEME;
+      clearPersisted(THEME_PREVIOUS_COOKIE);
+      setTheme(restored);
+    },
+    [theme, setTheme],
+  );
+
   const setScheme = React.useCallback((next: ColorScheme) => {
     setSchemeState(next);
     persist(SCHEME_COOKIE, next);
@@ -110,10 +168,11 @@ export function ThemeProvider({
       resolvedScheme,
       behavior: THEME_BEHAVIOR[theme],
       setTheme,
+      setKidsMode,
       setScheme,
       toggleScheme,
     }),
-    [theme, scheme, resolvedScheme, setTheme, setScheme, toggleScheme],
+    [theme, scheme, resolvedScheme, setTheme, setKidsMode, setScheme, toggleScheme],
   );
 
   return (
