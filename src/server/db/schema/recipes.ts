@@ -8,6 +8,7 @@ import {
   real,
   text,
   timestamp,
+  unique,
   varchar,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
@@ -90,7 +91,11 @@ export const recipes = pgTable(
     index("recipes_author_idx").on(t.authorId),
     index("recipes_group_idx").on(t.groupId),
     index("recipes_visibility_idx").on(t.visibility),
-    index("recipes_slug_idx").on(t.slug),
+    // Slugs are public lookup keys (getRecipe resolves by slug), so they must be
+    // globally unique — matching groups.slug / tags.slug. The unique constraint
+    // also provides the btree index that backs slug lookups, so no separate
+    // non-unique index is needed.
+    unique("recipes_slug_uq").on(t.slug),
     index("recipes_forked_from_idx").on(t.forkedFromId),
   ],
 );
