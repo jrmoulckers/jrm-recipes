@@ -6,6 +6,35 @@ import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 
+/** Delay before the auto-reload, giving a restored connection a beat to settle. */
+export const RECONNECT_DELAY_MS = 600;
+
+/**
+ * If we're online, flip the UI into its "retrying" state and schedule a reload
+ * after `delayMs`, returning the timer id so the caller can cancel it. Returns
+ * `undefined` (scheduling nothing) when offline. Side-effects are injected so
+ * this is unit-testable without a DOM.
+ *
+ * Centralizing this fixes the bug where a page that mounted already-online would
+ * show "Back online — reloading…" forever: the reload used to be scheduled only
+ * from the `online` event, which never fires when we're online from the start.
+ */
+export function scheduleReconnect(
+  online: boolean,
+  handlers: {
+    onRetrying: () => void;
+    reload: () => void;
+    setTimer?: (callback: () => void, ms: number) => number;
+  },
+  delayMs: number = RECONNECT_DELAY_MS,
+): number | undefined {
+  if (!online) return undefined;
+  handlers.onRetrying();
+  const setTimer =
+    handlers.setTimer ?? ((cb, ms) => window.setTimeout(cb, ms));
+  return setTimer(handlers.reload, delayMs);
+}
+
 /**
  * Connectivity-aware controls for the offline fallback page. Watches the
  * browser's online/offline events, auto-reloads the moment the network is
@@ -18,21 +47,42 @@ export function OfflineReconnect() {
 
   React.useEffect(() => {
     // Sync with the real state on mount (SSR always renders "online").
-    setOnline(navigator.onLine);
+    const isOnline = navigator.onLine;
+    setOnline(isOnline);
+
+    let reloadTimer: number | undefined;
+    const reconnect = (isNowOnline: boolean) => {
+      if (reloadTimer !== undefined) return;
+      reloadTimer = scheduleReconnect(isNowOnline, {
+        onRetrying: () => setRetrying(true),
+        reload: () => window.location.reload(),
+      });
+    };
+
+    // Already online at mount? The `online` event will never fire, so kick off
+    // the reload now — otherwise the badge promises a reload that never comes.
+    reconnect(isOnline);
 
     const handleOnline = () => {
       setOnline(true);
-      // Give the connection a beat to settle, then return to where they were.
-      setRetrying(true);
-      window.setTimeout(() => window.location.reload(), 600);
+      reconnect(true);
     };
-    const handleOffline = () => setOnline(false);
+    const handleOffline = () => {
+      setOnline(false);
+      // Dropped again before the reload fired — cancel it and drop the promise.
+      if (reloadTimer !== undefined) {
+        window.clearTimeout(reloadTimer);
+        reloadTimer = undefined;
+        setRetrying(false);
+      }
+    };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      if (reloadTimer !== undefined) window.clearTimeout(reloadTimer);
     };
   }, []);
 
