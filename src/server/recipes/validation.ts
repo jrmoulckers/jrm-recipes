@@ -61,27 +61,40 @@ export const recipeVisibility = z.enum([
 export const recipeStatus = z.enum(["draft", "published"]);
 export const recipeDifficulty = z.enum(["easy", "medium", "hard"]);
 
-export const recipeInput = z.object({
-  title: z.string().trim().min(1, "Give your recipe a title").max(200),
-  description: optionalString(2000),
-  coverImageUrl: optionalUrl,
-  servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
-  servingsNoun: optionalString(40),
-  prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
-  cookMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
-  totalMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
-  difficulty: recipeDifficulty.optional(),
-  cuisine: optionalString(80),
-  sourceName: optionalString(200),
-  sourceUrl: optionalUrl,
-  notes: optionalString(4000),
-  visibility: recipeVisibility.default("private"),
-  status: recipeStatus.default("draft"),
-  groupId: optionalString(24),
-  ingredients: z.array(ingredientInput).max(200).default([]),
-  steps: z.array(stepInput).max(200).default([]),
-  tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
-});
+export const recipeInput = z
+  .object({
+    title: z.string().trim().min(1, "Give your recipe a title").max(200),
+    description: optionalString(2000),
+    coverImageUrl: optionalUrl,
+    servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
+    servingsNoun: optionalString(40),
+    prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    cookMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    totalMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    difficulty: recipeDifficulty.optional(),
+    cuisine: optionalString(80),
+    sourceName: optionalString(200),
+    sourceUrl: optionalUrl,
+    notes: optionalString(4000),
+    visibility: recipeVisibility.default("private"),
+    status: recipeStatus.default("draft"),
+    groupId: optionalString(24),
+    ingredients: z.array(ingredientInput).max(200).default([]),
+    steps: z.array(stepInput).max(200).default([]),
+    tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+  })
+  .superRefine((val, ctx) => {
+    // "Group" visibility only makes sense with a group; without one the recipe
+    // is hidden from everyone but its author. Require a group so the form
+    // surfaces a clear error instead of silently orphaning the recipe.
+    if (val.visibility === "group" && !val.groupId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["groupId"],
+        message: "Choose a group for a group-visibility recipe",
+      });
+    }
+  });
 
 export type RecipeInput = z.infer<typeof recipeInput>;
 export type IngredientInput = z.infer<typeof ingredientInput>;

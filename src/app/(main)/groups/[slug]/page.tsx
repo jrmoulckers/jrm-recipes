@@ -195,6 +195,10 @@ export default async function GroupPage({
                 slug={group.slug}
                 groupName={group.name}
                 viewerRole={group.viewerRole}
+                isSoleOwner={
+                  group.viewerRole === "owner" &&
+                  group.members.filter((m) => m.role === "owner").length <= 1
+                }
               />
             </div>
           </div>

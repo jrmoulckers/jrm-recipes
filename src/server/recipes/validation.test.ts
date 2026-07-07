@@ -106,6 +106,45 @@ describe("recipeInput", () => {
       recipeInput.parse({ title: "Too Much", servings: "1001" }),
     ).toThrow();
   });
+
+  describe("group visibility requires a group (rc09)", () => {
+    it("rejects visibility=group with no groupId and flags the field", () => {
+      const res = recipeInput.safeParse({
+        title: "Family Stew",
+        visibility: "group",
+      });
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.flatten().fieldErrors.groupId).toBeDefined();
+      }
+    });
+
+    it("rejects visibility=group with an empty groupId", () => {
+      expect(
+        recipeInput.safeParse({
+          title: "Family Stew",
+          visibility: "group",
+          groupId: "",
+        }).success,
+      ).toBe(false);
+    });
+
+    it("accepts visibility=group when a groupId is provided", () => {
+      expect(
+        recipeInput.safeParse({
+          title: "Family Stew",
+          visibility: "group",
+          groupId: "grp_123",
+        }).success,
+      ).toBe(true);
+    });
+
+    it("still accepts non-group visibility without a group", () => {
+      expect(
+        recipeInput.safeParse({ title: "Solo", visibility: "private" }).success,
+      ).toBe(true);
+    });
+  });
 });
 
 describe("ingredientInput", () => {
