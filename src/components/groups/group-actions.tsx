@@ -16,16 +16,21 @@ export function GroupActions({
   slug,
   groupName,
   viewerRole,
+  isSoleOwner = false,
 }: {
   slug: string;
   groupName: string;
   viewerRole: DisplayRole | null;
+  isSoleOwner?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = React.useState<"leave" | "delete" | null>(null);
   const [isPending, startTransition] = React.useTransition();
 
   if (!viewerRole) return null;
+
+  const soleOwnerNote =
+    "As the group's only owner, you can't leave. Transfer ownership to another member, or delete the group instead.";
 
   function run(
     kind: "leave" | "delete",
@@ -49,38 +54,46 @@ export function GroupActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => {
-          if (!window.confirm(`Leave ${groupName}?`)) return;
-          run("leave", () => leaveGroupAction(slug), "You left the group.");
-        }}
-        disabled={isPending}
-      >
-        <LogOut />
-        {pending === "leave" ? "Leaving…" : "Leave group"}
-      </Button>
-      {viewerRole === "owner" ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          variant="destructive"
+          variant="outline"
           onClick={() => {
-            if (
-              !window.confirm(
-                `Delete ${groupName}? Recipes stay saved, but the group space will be removed.`,
-              )
-            ) {
-              return;
-            }
-            run("delete", () => deleteGroupAction(slug), "The group was deleted.");
+            if (isSoleOwner) return;
+            if (!window.confirm(`Leave ${groupName}?`)) return;
+            run("leave", () => leaveGroupAction(slug), "You left the group.");
           }}
-          disabled={isPending}
+          disabled={isPending || isSoleOwner}
+          title={isSoleOwner ? soleOwnerNote : undefined}
+          aria-disabled={isSoleOwner}
         >
-          <Trash2 />
-          {pending === "delete" ? "Deleting…" : "Delete group"}
+          <LogOut />
+          {pending === "leave" ? "Leaving…" : "Leave group"}
         </Button>
+        {viewerRole === "owner" ? (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              if (
+                !window.confirm(
+                  `Delete ${groupName}? Recipes stay saved, but the group space will be removed.`,
+                )
+              ) {
+                return;
+              }
+              run("delete", () => deleteGroupAction(slug), "The group was deleted.");
+            }}
+            disabled={isPending}
+          >
+            <Trash2 />
+            {pending === "delete" ? "Deleting…" : "Delete group"}
+          </Button>
+        ) : null}
+      </div>
+      {isSoleOwner ? (
+        <p className="text-sm text-muted-foreground">{soleOwnerNote}</p>
       ) : null}
     </div>
   );
