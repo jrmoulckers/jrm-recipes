@@ -57,7 +57,7 @@
   --popover-foreground: 22 20% 18%;
   --primary: 18 60% 44%;
   --primary-foreground: 40 44% 98%;
-  --secondary: 95 22% 42%;
+  --secondary: 95 22% 38%;
   --secondary-foreground: 60 30% 97%;
   --muted: 38 30% 91%;
   --muted-foreground: 26 14% 40%;
@@ -70,7 +70,7 @@
   --warning: 38 92% 50%;
   --warning-foreground: 30 45% 12%;
   --border: 34 26% 84%;
-  --input: 34 26% 84%;
+  --input: 34 26% 50%;
   --ring: 18 60% 44%;
 }
 
@@ -99,7 +99,7 @@
   --warning: 38 88% 56%;
   --warning-foreground: 30 45% 10%;
   --border: 26 14% 22%;
-  --input: 26 14% 24%;
+  --input: 26 14% 42%;
   --ring: 20 72% 54%;
 }
 
@@ -122,23 +122,23 @@
   --card-foreground: 280 30% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 280 30% 20%;
-  --primary: 280 68% 58%;
+  --primary: 280 68% 55%;
   --primary-foreground: 0 0% 100%;
   --secondary: 190 78% 46%;
   --secondary-foreground: 200 60% 10%;
   --muted: 290 30% 94%;
   --muted-foreground: 280 15% 45%;
-  --accent: 336 84% 62%;
+  --accent: 336 84% 48%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 356 75% 55%;
+  --destructive: 356 75% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 160 65% 40%;
   --success-foreground: 0 0% 100%;
   --warning: 40 95% 52%;
   --warning-foreground: 30 60% 12%;
   --border: 290 30% 88%;
-  --input: 290 30% 88%;
-  --ring: 280 68% 58%;
+  --input: 290 30% 59%;
+  --ring: 280 68% 55%;
 }
 
 [data-theme="whimsy"].dark {
@@ -159,14 +159,14 @@
   --muted-foreground: 290 25% 72%;
   --accent: 336 85% 68%;
   --accent-foreground: 336 40% 10%;
-  --destructive: 356 72% 60%;
+  --destructive: 356 72% 52%;
   --destructive-foreground: 0 0% 100%;
   --success: 160 60% 50%;
   --success-foreground: 0 0% 100%;
   --warning: 40 92% 60%;
   --warning-foreground: 30 60% 10%;
   --border: 280 20% 26%;
-  --input: 280 20% 28%;
+  --input: 280 20% 46%;
   --ring: 280 75% 68%;
 }
 
@@ -204,7 +204,7 @@
   --warning: 36 85% 46%;
   --warning-foreground: 30 60% 12%;
   --border: 220 16% 88%;
-  --input: 220 16% 88%;
+  --input: 220 16% 58%;
   --ring: 210 30% 22%;
 }
 
@@ -224,7 +224,7 @@
   --secondary-foreground: 210 20% 90%;
   --muted: 220 14% 18%;
   --muted-foreground: 215 14% 65%;
-  --accent: 14 65% 55%;
+  --accent: 14 65% 46%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 60% 54%;
   --destructive-foreground: 0 0% 100%;
@@ -233,7 +233,7 @@
   --warning: 36 82% 56%;
   --warning-foreground: 30 60% 10%;
   --border: 220 12% 22%;
-  --input: 220 12% 24%;
+  --input: 220 12% 44%;
   --ring: 210 24% 82%;
 }
 
@@ -259,23 +259,23 @@
   --card-foreground: 222 40% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 40% 20%;
-  --primary: 212 90% 52%;
+  --primary: 212 90% 46%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 145 62% 42%;
+  --secondary: 145 62% 32%;
   --secondary-foreground: 0 0% 100%;
   --muted: 45 60% 92%;
   --muted-foreground: 222 20% 40%;
   --accent: 38 100% 52%;
   --accent-foreground: 28 60% 14%;
-  --destructive: 0 78% 56%;
+  --destructive: 0 78% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 145 62% 40%;
   --success-foreground: 0 0% 100%;
   --warning: 42 100% 50%;
   --warning-foreground: 30 70% 12%;
   --border: 42 50% 84%;
-  --input: 42 50% 84%;
-  --ring: 212 90% 52%;
+  --input: 42 50% 44%;
+  --ring: 212 90% 46%;
 }
 
 [data-theme="kids"].dark {
@@ -296,14 +296,14 @@
   --muted-foreground: 48 40% 78%;
   --accent: 38 100% 58%;
   --accent-foreground: 28 60% 10%;
-  --destructive: 0 78% 62%;
+  --destructive: 0 78% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 145 58% 50%;
   --success-foreground: 0 0% 100%;
   --warning: 42 100% 58%;
   --warning-foreground: 30 70% 10%;
   --border: 224 24% 26%;
-  --input: 224 24% 28%;
+  --input: 224 24% 48%;
   --ring: 212 92% 62%;
 }
 
@@ -345,7 +345,7 @@
   --warning: 40 90% 38%;
   --warning-foreground: 0 0% 100%;
   --border: 0 0% 78%;
-  --input: 0 0% 62%;
+  --input: 0 0% 55%;
   --ring: 222 80% 44%;
 }
 
@@ -367,13 +367,13 @@
   --muted-foreground: 0 0% 68%;
   --accent: 214 90% 62%;
   --accent-foreground: 0 0% 6%;
-  --destructive: 0 72% 55%;
+  --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 100%;
   --success: 140 55% 45%;
   --success-foreground: 0 0% 6%;
   --warning: 40 90% 55%;
   --warning-foreground: 0 0% 6%;
   --border: 0 0% 30%;
-  --input: 0 0% 40%;
+  --input: 0 0% 42%;
   --ring: 214 90% 62%;
 }
