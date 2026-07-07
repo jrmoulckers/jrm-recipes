@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 
-import { COLOR_SCHEMES, UI_THEMES, type ColorScheme } from "~/config/themes";
+import { COLOR_SCHEMES, UI_THEMES, type ColorScheme, type UITheme } from "~/config/themes";
 import { useTheme } from "~/components/theme/theme-provider";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -11,6 +11,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
@@ -51,16 +53,21 @@ export function ThemeSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-        <div className="grid gap-1 p-1">
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => setTheme(value as UITheme)}
+          aria-label="Appearance"
+          className="grid gap-1 p-1"
+        >
           {UI_THEMES.map((t) => {
             const active = t.id === theme;
             return (
-              <button
+              <DropdownMenuRadioItem
                 key={t.id}
-                type="button"
-                onClick={() => setTheme(t.id)}
+                value={t.id}
+                onSelect={(event) => event.preventDefault()}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg border border-transparent p-2 text-left transition-colors hover:bg-muted",
+                  "gap-3 border border-transparent hover:bg-muted",
                   active && "border-border bg-muted",
                 )}
               >
@@ -82,29 +89,35 @@ export function ThemeSwitcher() {
                     {t.description}
                   </span>
                 </span>
-              </button>
+              </DropdownMenuRadioItem>
             );
           })}
-        </div>
+        </DropdownMenuRadioGroup>
 
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Lighting</DropdownMenuLabel>
-        <div className="flex gap-1 p-1">
+        <DropdownMenuRadioGroup
+          value={scheme}
+          onValueChange={(value) => setScheme(value as ColorScheme)}
+          aria-label="Lighting"
+          className="flex gap-1 p-1"
+        >
           {COLOR_SCHEMES.map((s) => (
-            <button
+            <DropdownMenuRadioItem
               key={s}
-              type="button"
-              onClick={() => setScheme(s)}
+              value={s}
+              onSelect={(event) => event.preventDefault()}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 rounded-lg border border-transparent p-2 text-xs font-medium capitalize transition-colors hover:bg-muted",
+                "flex-1 flex-col gap-1 p-2 text-xs font-medium capitalize [&>span:first-child]:hidden",
+                "border border-transparent hover:bg-muted",
                 scheme === s && "border-border bg-muted text-foreground",
               )}
             >
               {schemeIcon[s]}
               {s}
-            </button>
+            </DropdownMenuRadioItem>
           ))}
-        </div>
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
