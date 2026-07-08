@@ -77,6 +77,7 @@ import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import {
   findPreheatCue,
   formatStepTemperature,
+  isIngredientForStep,
 } from "~/lib/cook-cues";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
@@ -1144,8 +1145,8 @@ function StepIngredients({
   servings: number;
 }) {
   const locale = useLocale();
-  const linked = recipe.ingredients.filter(
-    (ing) => ing.stepPosition === step.position,
+  const linked = recipe.ingredients.filter((ing) =>
+    isIngredientForStep(ing.stepPosition, step.position),
   );
   if (linked.length === 0) return null;
   const base = recipe.servings ?? servings;

@@ -58,6 +58,11 @@ export type PreheatCue = {
  * Find the earliest preheat step that a cook would benefit from starting ahead
  * of time — i.e. one that isn't already the very first step. Returns null when
  * there's nothing to pull forward (no preheat step, or it's already step 1).
+ *
+ * Step positions arrive 0-based (mutations.ts writes `position: i` and it flows
+ * through serialize/toCookRecipe unchanged), but `stepNumber` is returned
+ * 1-based so callers can display it and compare against a 1-based ordinal
+ * directly.
  */
 export function findPreheatCue(steps: readonly CueStep[]): PreheatCue | null {
   const sorted = [...steps].sort((a, b) => a.position - b.position);
@@ -66,8 +71,26 @@ export function findPreheatCue(steps: readonly CueStep[]): PreheatCue | null {
     if (isPreheatStep(step.instruction)) {
       // If the very first thing you do is preheat, no reminder is needed.
       if (step.position === firstPosition) return null;
-      return { stepNumber: step.position, targetTempC: step.targetTempC ?? null };
+      return {
+        stepNumber: step.position + 1,
+        targetTempC: step.targetTempC ?? null,
+      };
     }
   }
   return null;
+}
+
+/**
+ * Whether an ingredient belongs to a given step. Step positions are stored
+ * 0-based in the DB (mutations.ts writes `position: i`) and reach Cook Mode
+ * unchanged, but ingredient→step links are captured as 1-based ordinals in the
+ * editor (the option value is `String(i + 1)`, shown as "Step {i + 1}"). Bridge
+ * the two conventions here, once, rather than at every call site.
+ */
+export function isIngredientForStep(
+  ingredientStepPosition: number | null | undefined,
+  stepPosition: number,
+): boolean {
+  if (ingredientStepPosition == null) return false;
+  return ingredientStepPosition === stepPosition + 1;
 }

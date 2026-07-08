@@ -4,6 +4,7 @@ import {
   celsiusToFahrenheit,
   findPreheatCue,
   formatStepTemperature,
+  isIngredientForStep,
   isPreheatStep,
   type CueStep,
 } from "./cook-cues";
@@ -54,21 +55,25 @@ describe("isPreheatStep", () => {
 });
 
 describe("findPreheatCue", () => {
+  // Step positions are stored 0-based in the DB (mutations.ts writes
+  // `position: i`) and reach Cook Mode unchanged, so the test data mirrors that.
+  // findPreheatCue returns a 1-based stepNumber for display.
   const steps: CueStep[] = [
-    { position: 1, instruction: "Mix the dry ingredients." },
-    { position: 2, instruction: "Preheat the oven to 200°C.", targetTempC: 200 },
-    { position: 3, instruction: "Fold in the butter." },
+    { position: 0, instruction: "Mix the dry ingredients." },
+    { position: 1, instruction: "Preheat the oven to 200°C.", targetTempC: 200 },
+    { position: 2, instruction: "Fold in the butter." },
   ];
 
-  it("pulls a later preheat step forward with its temperature", () => {
+  it("pulls a later preheat step forward as a 1-based step number", () => {
+    // 0-based position 1 is displayed as "Step 2".
     expect(findPreheatCue(steps)).toEqual({ stepNumber: 2, targetTempC: 200 });
   });
 
   it("returns null when preheating is already the first step", () => {
     expect(
       findPreheatCue([
-        { position: 1, instruction: "Preheat the oven to 180°C." },
-        { position: 2, instruction: "Cream the butter." },
+        { position: 0, instruction: "Preheat the oven to 180°C." },
+        { position: 1, instruction: "Cream the butter." },
       ]),
     ).toBeNull();
   });
@@ -76,8 +81,8 @@ describe("findPreheatCue", () => {
   it("returns null when no step preheats", () => {
     expect(
       findPreheatCue([
-        { position: 1, instruction: "Chop the onions." },
-        { position: 2, instruction: "Simmer for 20 minutes." },
+        { position: 0, instruction: "Chop the onions." },
+        { position: 1, instruction: "Simmer for 20 minutes." },
       ]),
     ).toBeNull();
   });
@@ -85,10 +90,30 @@ describe("findPreheatCue", () => {
   it("respects position order regardless of array order", () => {
     expect(
       findPreheatCue([
-        { position: 3, instruction: "Bake until golden." },
-        { position: 2, instruction: "Heat the oven to 220°C.", targetTempC: 220 },
-        { position: 1, instruction: "Roll out the dough." },
+        { position: 2, instruction: "Bake until golden." },
+        { position: 1, instruction: "Heat the oven to 220°C.", targetTempC: 220 },
+        { position: 0, instruction: "Roll out the dough." },
       ]),
     ).toEqual({ stepNumber: 2, targetTempC: 220 });
+  });
+});
+
+describe("isIngredientForStep", () => {
+  it("links a 1-based ingredient stepPosition to the 0-based step position", () => {
+    // The editor stores "Step 1" as stepPosition 1; the DB stores that first
+    // step at position 0. They must still match.
+    expect(isIngredientForStep(1, 0)).toBe(true);
+    expect(isIngredientForStep(2, 1)).toBe(true);
+    expect(isIngredientForStep(3, 2)).toBe(true);
+  });
+
+  it("does not link mismatched steps (off-by-one guard)", () => {
+    expect(isIngredientForStep(1, 1)).toBe(false);
+    expect(isIngredientForStep(2, 0)).toBe(false);
+  });
+
+  it("treats an unset link as belonging to no step", () => {
+    expect(isIngredientForStep(null, 0)).toBe(false);
+    expect(isIngredientForStep(undefined, 2)).toBe(false);
   });
 });
