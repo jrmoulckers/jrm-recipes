@@ -39,6 +39,18 @@ describe("motion tokens (issue #95)", () => {
     expect(TAILWIND).toContain("fade-in 0.2s var(--ease-standard)");
   });
 
+  it("provides direction-aware sheet slide keyframes for RTL (issue #93)", () => {
+    // The sheet docks on the logical inline-end edge, so RTL must slide from the
+    // opposite physical side. Both directions stay tokenized (no ease-out).
+    expect(TAILWIND).toContain(
+      '"slide-in-from-left": "slide-in-from-left 0.24s var(--ease-standard)"',
+    );
+    expect(TAILWIND).toContain(
+      '"slide-out-to-left": "slide-out-to-left 0.2s var(--ease-standard)"',
+    );
+    expect(TAILWIND).toContain("translateX(-100%)");
+  });
+
   it("adopts the tokens in the primitives instead of literal durations", () => {
     const button = read("src", "components", "ui", "button.tsx");
     const card = read("src", "components", "ui", "card.tsx");

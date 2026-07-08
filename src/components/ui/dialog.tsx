@@ -43,12 +43,16 @@ const dialogContentVariants = cva(
       // Enter/exit motion. `center` scales from the middle (the default for
       // every centered dialog); `sheet` slides from the inline-end edge so a
       // full-height side drawer's motion matches its spatial model (issue #93).
-      // The `sheet` positioning itself is supplied by the caller's className.
+      // The slide axis is direction-aware: LTR docks/animates on the right edge,
+      // RTL on the left, so the transform always hugs the end-anchored dock
+      // instead of sweeping across the viewport (`<html>` always carries an
+      // explicit dir, so exactly one variant applies). The `sheet` positioning
+      // itself is supplied by the caller's className.
       variant: {
         center:
           "data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
         sheet:
-          "data-[state=open]:animate-slide-in-from-right data-[state=closed]:animate-slide-out-to-right",
+          "ltr:data-[state=open]:animate-slide-in-from-right ltr:data-[state=closed]:animate-slide-out-to-right rtl:data-[state=open]:animate-slide-in-from-left rtl:data-[state=closed]:animate-slide-out-to-left",
       },
     },
     defaultVariants: { size: "lg", variant: "center" },

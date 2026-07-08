@@ -145,6 +145,14 @@ const config = {
           "0%": { opacity: "1", transform: "translateX(0)" },
           "100%": { opacity: "0", transform: "translateX(100%)" },
         },
+        "slide-in-from-left": {
+          "0%": { opacity: "0", transform: "translateX(-100%)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-out-to-left": {
+          "0%": { opacity: "1", transform: "translateX(0)" },
+          "100%": { opacity: "0", transform: "translateX(-100%)" },
+        },
         "step-in-from-right": {
           "0%": { opacity: "0", transform: "translateX(1.25rem)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
@@ -234,6 +242,8 @@ const config = {
         "pop-out": "pop-out 0.15s var(--ease-standard)",
         "slide-in-from-right": "slide-in-from-right 0.24s var(--ease-standard)",
         "slide-out-to-right": "slide-out-to-right 0.2s var(--ease-standard)",
+        "slide-in-from-left": "slide-in-from-left 0.24s var(--ease-standard)",
+        "slide-out-to-left": "slide-out-to-left 0.2s var(--ease-standard)",
         "step-in-from-right": "step-in-from-right 0.2s var(--ease-standard)",
         "step-in-from-left": "step-in-from-left 0.2s var(--ease-standard)",
         "celebrate-pop": "celebrate-pop 0.5s var(--ease-emphasized)",
