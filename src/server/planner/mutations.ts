@@ -16,7 +16,8 @@ import {
   parseDateParam,
   toDateParam,
 } from "./week";
-import type { AddEntryInput, MoveEntryInput } from "./validation";
+import type { AddEntryInput, BatchCookInput, MoveEntryInput } from "./validation";
+import { formatLeftoversNote } from "~/lib/planner-batch";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -111,6 +112,79 @@ export async function addEntry(input: AddEntryInput, user: User) {
       .returning();
 
     return created!;
+  });
+}
+
+export type BatchCookResult = {
+  primaryId: string;
+  leftoversId: string;
+};
+
+/**
+ * Batch cook (#380): insert the primary recipe entry and a linked leftovers
+ * entry on `leftoversDate` in a single transaction. The leftovers entry reuses
+ * the same `recipeId` and stores a structured note (see `~/lib/planner-batch`)
+ * so the board can recognise and style it — no schema change required.
+ */
+export async function addBatchCook(
+  input: BatchCookInput,
+  user: User,
+): Promise<BatchCookResult> {
+  return db.transaction(async (tx) => {
+    const recipe = await tx.query.recipes.findFirst({
+      where: eq(recipes.id, input.recipeId),
+      columns: {
+        id: true,
+        title: true,
+        authorId: true,
+        visibility: true,
+        groupId: true,
+      },
+    });
+    if (!recipe) throw new Error("NOT_FOUND");
+    const groupIds =
+      recipe.visibility === "group" ? await viewerGroupIds(tx, user.id) : [];
+    if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
+
+    const primaryPosition = await nextPosition(
+      tx,
+      user.id,
+      input.date,
+      input.slot,
+    );
+    const [primary] = await tx
+      .insert(mealPlanEntries)
+      .values({
+        userId: user.id,
+        groupId: null,
+        date: input.date,
+        slot: input.slot,
+        recipeId: recipe.id,
+        note: input.note ?? null,
+        position: primaryPosition,
+      })
+      .returning({ id: mealPlanEntries.id });
+
+    const leftoversPosition = await nextPosition(
+      tx,
+      user.id,
+      input.leftoversDate,
+      input.slot,
+    );
+    const [leftovers] = await tx
+      .insert(mealPlanEntries)
+      .values({
+        userId: user.id,
+        groupId: null,
+        date: input.leftoversDate,
+        slot: input.slot,
+        recipeId: recipe.id,
+        note: formatLeftoversNote(recipe.title, input.multiple),
+        position: leftoversPosition,
+      })
+      .returning({ id: mealPlanEntries.id });
+
+    return { primaryId: primary!.id, leftoversId: leftovers!.id };
   });
 }
 

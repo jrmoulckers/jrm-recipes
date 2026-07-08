@@ -6,15 +6,18 @@ import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
   addEntryInput,
+  batchCookInput,
   copyWeekInput,
   moveEntryInput,
   removeEntryInput,
   type AddEntryInput,
+  type BatchCookInput,
   type CopyWeekInput,
   type MoveEntryInput,
   type RemoveEntryInput,
 } from "./validation";
 import {
+  addBatchCook,
   addEntry,
   copyPreviousWeek,
   moveEntry,
@@ -109,6 +112,30 @@ export async function removeEntryAction(
   const user = await requireUser();
   try {
     await removeEntry(parsed.data.entryId, user);
+    revalidatePath("/plan");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function addBatchCookAction(
+  input: BatchCookInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = batchCookInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const user = await requireUser();
+  try {
+    await addBatchCook(parsed.data, user);
     revalidatePath("/plan");
     return { ok: true };
   } catch (error) {

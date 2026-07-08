@@ -1,24 +1,28 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const logCookAction = vi.fn();
-const removeEntryAction = vi.fn();
-const addEntryAction = vi.fn();
+type ActionResult = { ok: boolean; error?: string };
+const logCookAction = vi.fn<(input: unknown) => Promise<ActionResult>>();
+const removeEntryAction = vi.fn<(input: unknown) => Promise<ActionResult>>();
+const addEntryAction = vi.fn<(input: unknown) => Promise<ActionResult>>();
+const addBatchCookAction = vi.fn<(input: unknown) => Promise<ActionResult>>();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }));
 
 vi.mock("~/server/cooklog/actions", () => ({
-  logCookAction: (...args: unknown[]) => logCookAction(...args),
+  logCookAction: (input: unknown) => logCookAction(input),
 }));
 
 vi.mock("~/server/planner/actions", () => ({
-  removeEntryAction: (...args: unknown[]) => removeEntryAction(...args),
-  addEntryAction: (...args: unknown[]) => addEntryAction(...args),
+  removeEntryAction: (input: unknown) => removeEntryAction(input),
+  addEntryAction: (input: unknown) => addEntryAction(input),
+  addBatchCookAction: (input: unknown) => addBatchCookAction(input),
 }));
 
 import { PlannerBoard, type BoardDay, type BoardEntry } from "./planner-board";
+import { formatLeftoversNote } from "~/lib/planner-batch";
 
 afterEach(() => {
   cleanup();
@@ -31,6 +35,23 @@ const days: BoardDay[] = [
     weekdayLabel: "Mon",
     dayNumber: "6",
     fullLabel: "Monday, Jul 6",
+    isToday: false,
+  },
+];
+
+const weekDays: BoardDay[] = [
+  {
+    dateParam: "2026-07-06",
+    weekdayLabel: "Mon",
+    dayNumber: "6",
+    fullLabel: "Monday, Jul 6",
+    isToday: false,
+  },
+  {
+    dateParam: "2026-07-08",
+    weekdayLabel: "Wed",
+    dayNumber: "8",
+    fullLabel: "Wednesday, Jul 8",
     isToday: false,
   },
 ];
@@ -86,6 +107,89 @@ describe("PlannerBoard — Cooked it (#422)", () => {
       expect(
         screen.queryByRole("button", { name: /cooked it/i }),
       ).not.toBeInTheDocument(),
+    );
+  });
+});
+
+describe("PlannerBoard — batch cook / leftovers (#380)", () => {
+  const primary = recipeEntry();
+  const leftovers: BoardEntry = {
+    id: "entry-left",
+    dateParam: "2026-07-08",
+    slot: "dinner",
+    note: formatLeftoversNote("Weeknight Chili", 2),
+    recipe: { id: "recipe-1", slug: "chili", title: "Weeknight Chili" },
+  };
+
+  it("marks the primary with a batch badge and the linked night as leftovers", () => {
+    render(
+      <PlannerBoard days={weekDays} entries={[primary, leftovers]} recipes={[]} />,
+    );
+    expect(screen.getByText(/batch ×2/i)).toBeInTheDocument();
+    // Wednesday's chip is styled as leftovers…
+    expect(screen.getByText(/^leftovers$/i)).toBeInTheDocument();
+    // …and never surfaces the raw encoded note.
+    expect(screen.queryByText(/2× batch/i)).not.toBeInTheDocument();
+  });
+
+  it("does not offer Cooked it on a leftovers night", () => {
+    render(<PlannerBoard days={weekDays} entries={[leftovers]} recipes={[]} />);
+    expect(
+      screen.queryByRole("button", { name: /cooked it/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("removing a batch primary offers to also remove the leftovers", async () => {
+    removeEntryAction.mockResolvedValue({ ok: true });
+    render(
+      <PlannerBoard days={weekDays} entries={[primary, leftovers]} recipes={[]} />,
+    );
+
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: /remove weeknight chili from plan/i,
+      })[0]!,
+    );
+
+    const both = await screen.findByRole("button", { name: /remove both/i });
+    fireEvent.click(both);
+
+    await waitFor(() =>
+      expect(removeEntryAction).toHaveBeenCalledWith({ entryId: "entry-1" }),
+    );
+    expect(removeEntryAction).toHaveBeenCalledWith({ entryId: "entry-left" });
+  });
+
+  it("offers a batch-cook option for dinner and books both nights", async () => {
+    addBatchCookAction.mockResolvedValue({ ok: true });
+    render(
+      <PlannerBoard
+        days={weekDays}
+        entries={[]}
+        recipes={[{ id: "recipe-1", title: "Weeknight Chili", slug: "chili" }]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /add to dinner on monday, jul 6/i }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /weeknight chili/i }));
+
+    const toggle = await screen.findByLabelText(/batch cook/i);
+    fireEvent.click(toggle);
+
+    fireEvent.click(screen.getByRole("button", { name: /add to plan/i }));
+
+    await waitFor(() =>
+      expect(addBatchCookAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: "2026-07-06",
+          slot: "dinner",
+          recipeId: "recipe-1",
+          leftoversDate: "2026-07-08",
+          multiple: 2,
+        }),
+      ),
     );
   });
 });

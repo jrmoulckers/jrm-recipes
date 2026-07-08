@@ -69,7 +69,31 @@ export const copyWeekInput = z.object({
   week: dateParam,
 });
 
+/** Servings multiple for a batch cook (#380). */
+export const batchMultipleSchema = z.union([z.literal(2), z.literal(3)]);
+
+/**
+ * Batch cook: create a primary recipe entry plus a linked leftovers entry on a
+ * second day. Reuses the same recipe + note columns as a normal entry (#380).
+ */
+export const batchCookInput = z
+  .object({
+    date: dateParam,
+    slot: mealSlotSchema,
+    recipeId: idInput,
+    groupId: idInput.optional(),
+    note: noteInput,
+    leftoversDate: dateParam,
+    multiple: batchMultipleSchema,
+  })
+  .refine((value) => value.leftoversDate !== value.date, {
+    message: "Pick a different night for the leftovers",
+    path: ["leftoversDate"],
+  });
+
 export type AddEntryInput = z.infer<typeof addEntryInput>;
 export type MoveEntryInput = z.infer<typeof moveEntryInput>;
 export type RemoveEntryInput = z.infer<typeof removeEntryInput>;
 export type CopyWeekInput = z.infer<typeof copyWeekInput>;
+export type BatchCookInput = z.infer<typeof batchCookInput>;
+export type BatchMultipleValue = z.infer<typeof batchMultipleSchema>;
