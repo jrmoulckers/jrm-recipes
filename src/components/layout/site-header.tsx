@@ -11,6 +11,7 @@ import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
 import { AccessibilityMenu } from "~/components/a11y/accessibility-menu";
 import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
 import { AuthControls } from "~/components/auth/auth-controls";
+import { NotificationBellServer } from "~/components/notifications/notification-bell-server";
 
 /** Sticky top header with brand, primary nav, theme switcher, and auth. */
 export async function SiteHeader() {
@@ -36,6 +37,7 @@ export async function SiteHeader() {
           <LocaleSwitcher />
           <AccessibilityMenu />
           <OfflineStorageMenu />
+          <NotificationBellServer />
           <AuthControls
             isConfigured={isConfigured}
             user={
