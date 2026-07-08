@@ -427,18 +427,130 @@ export const PANTRY_STAPLES = [
   "nutmeg",
 ] as const;
 
-const STAPLE_MATCHERS: RegExp[] = PANTRY_STAPLES.map(keywordMatcher);
+/**
+ * Descriptors that may precede a staple's head noun without changing that the
+ * item is still that staple — "ground black pepper", "extra virgin olive oil",
+ * "fine sea salt", "unsalted butter". Deliberately does NOT include
+ * ingredient-defining words like "bell", "peanut", "coconut" or "sesame": when
+ * one of those precedes a staple word the item is a distinct must-buy ("bell
+ * pepper", "peanut butter", "coconut water", "sesame oil") and stays on the
+ * list.
+ */
+const STAPLE_QUALIFIERS = new Set<string>([
+  "ground",
+  "freshly",
+  "fresh",
+  "dried",
+  "whole",
+  "fine",
+  "finely",
+  "coarse",
+  "coarsely",
+  "flaky",
+  "kosher",
+  "sea",
+  "table",
+  "rock",
+  "black",
+  "white",
+  "extra",
+  "virgin",
+  "light",
+  "cooking",
+  "vegetable",
+  "canola",
+  "olive",
+  "sunflower",
+  "salted",
+  "unsalted",
+  "melted",
+  "softened",
+  "warm",
+  "hot",
+  "cold",
+  "boiling",
+  "iced",
+]);
 
 /**
- * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}).
- * Pure and whole-word so "salt" never flags "salted caramel" and "oil" never
- * flags "boiled egg". Used only when auto-building a list from a recipe —
- * manually added items are never run through this.
+ * Ingredients that literally contain a staple word but are distinct purchases a
+ * shopper must never lose. Belt-and-suspenders backup to the qualifier logic so
+ * these are always kept even if the allow-list ever grows carelessly.
+ */
+const STAPLE_EXCEPTIONS = new Set<string>([
+  "bell pepper",
+  "red bell pepper",
+  "green bell pepper",
+  "yellow bell pepper",
+  "orange bell pepper",
+  "red pepper",
+  "green pepper",
+  "jalapeño pepper",
+  "jalapeno pepper",
+  "banana pepper",
+  "peanut butter",
+  "almond butter",
+  "apple butter",
+  "cocoa butter",
+  "cashew butter",
+  "coconut water",
+  "rose water",
+  "water chestnut",
+  "sesame oil",
+  "chili oil",
+  "truffle oil",
+]);
+
+/** Staple phrases, normalized and ordered longest-first so a specific phrase
+ * ("olive oil") is preferred over a broad head noun ("oil"). */
+const STAPLE_PHRASES: string[] = Array.from(
+  new Set(PANTRY_STAPLES.map(normalizeItemName)),
+).sort((a, b) => b.split(" ").length - a.split(" ").length);
+
+/**
+ * True when `cleaned` is a staple whose head noun sits at the end of the name,
+ * preceded only by allowed qualifiers. An unknown leading word (bell, peanut,
+ * coconut, …) fails the prefix check so the item is treated as a real purchase.
+ */
+function matchesStaplePhrase(cleaned: string): boolean {
+  for (const phrase of STAPLE_PHRASES) {
+    if (cleaned === phrase) return true;
+    if (cleaned.endsWith(` ${phrase}`)) {
+      const prefix = cleaned.slice(0, cleaned.length - phrase.length - 1);
+      const prefixTokens = prefix.split(" ").filter(Boolean);
+      if (prefixTokens.every((token) => STAPLE_QUALIFIERS.has(token))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}) —
+ * i.e. a staple is its HEAD NOUN, optionally preceded by neutral qualifiers.
+ * Matching on the head noun (not mere whole-word containment) is what keeps
+ * "bell pepper", "peanut butter", "coconut water" and "sesame oil" on the list
+ * while still dropping "salt", "ground black pepper" and "olive oil". Used only
+ * when auto-building a list from a recipe — manually added items are never run
+ * through this.
  */
 export function isPantryStaple(item: string): boolean {
   const name = normalizeItemName(item);
   if (!name) return false;
-  return STAPLE_MATCHERS.some((matcher) => matcher.test(name));
+  // Defensive: drop a leading quantity/number ("2 eggs", "1/2 cup ...") so the
+  // head-noun check sees the ingredient words. Item names are usually
+  // quantity-free, but free-text entries aren't guaranteed to be.
+  const cleaned = name.replace(
+    /^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/,
+    "",
+  );
+  if (STAPLE_EXCEPTIONS.has(cleaned)) return false;
+  if (matchesStaplePhrase(cleaned)) return true;
+  // Tolerate a plural head noun ("peppercorns" → "peppercorn"); the prefix guard
+  // still protects compounds ("bell peppers" keeps "bell" as an unknown word).
+  const singular = cleaned.replace(/s$/, "");
+  return singular !== cleaned && matchesStaplePhrase(singular);
 }
 
 // --- Aggregation --------------------------------------------------------

@@ -500,6 +500,41 @@ describe("isPantryStaple", () => {
   });
 });
 
+describe("isPantryStaple — compound ingredients keep their head noun (#412)", () => {
+  // Regression: staple EXCLUSION used to use whole-word containment, so a staple
+  // word ("pepper", "butter", "water", "oil") appearing inside a distinct
+  // ingredient silently dropped a real must-buy from the default shopping list.
+  it.each([
+    "bell pepper",
+    "red bell pepper",
+    "jalapeño pepper",
+    "peanut butter",
+    "almond butter",
+    "coconut water",
+    "rose water",
+    "water chestnuts",
+    "sesame oil",
+    "chili oil",
+    "truffle oil",
+    "coconut oil",
+    "sparkling water",
+    "ground beef",
+  ])("keeps %s on the list (not a staple)", (item) => {
+    expect(isPantryStaple(item)).toBe(false);
+  });
+
+  it.each([
+    "salt",
+    "ground pepper",
+    "ground black pepper",
+    "olive oil",
+    "fine sea salt",
+    "unsalted butter",
+  ])("still drops %s (a genuine staple)", (item) => {
+    expect(isPantryStaple(item)).toBe(true);
+  });
+});
+
 describe("formatShoppingListText", () => {
   function item(
     over: Partial<ShoppingTextItem> & Pick<ShoppingTextItem, "item" | "category">,
