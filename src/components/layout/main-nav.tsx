@@ -47,8 +47,16 @@ export function MainNav() {
 /** App-like bottom tab bar for mobile. */
 export function BottomNav() {
   const pathname = usePathname();
-  // Hide chrome in immersive routes (cook mode, print).
-  if (pathname.includes("/cook") || pathname.includes("/print")) return null;
+  // Hide chrome in immersive / focused routes (cook mode, print, and the
+  // recipe editor — its sticky mobile Save/Cancel bar owns the bottom edge,
+  // issue #294).
+  if (
+    pathname.includes("/cook") ||
+    pathname.includes("/print") ||
+    pathname.endsWith("/edit") ||
+    pathname.endsWith("/new")
+  )
+    return null;
 
   const count = primaryNav.length;
   // First matching tab drives the sliding indicator. Computed from the pathname

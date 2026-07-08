@@ -24,6 +24,15 @@ function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
 }
 
+// The editor renders the Save action twice: the top action bar plus a sticky
+// mobile Save/Cancel bar that keeps it in the thumb zone (issue #294). In a
+// real browser only one is in the accessibility tree per breakpoint (the other
+// is `display:none` via a responsive `hidden`/`md:hidden` class), but jsdom
+// applies no CSS so both are present here — target the primary top-bar button.
+function primarySaveButton() {
+  return screen.getAllByRole("button", { name: /save recipe/i })[0]!;
+}
+
 beforeAll(() => {
   // jsdom doesn't implement scrollIntoView; the summary links call it.
   Element.prototype.scrollIntoView = vi.fn();
@@ -74,7 +83,7 @@ describe("RecipeEditor error summary (issue #124)", () => {
     render(<RecipeEditor mode="create" />);
 
     // Submit with an empty title -> client validation error.
-    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+    await user.click(primarySaveButton());
 
     const alert = await screen.findByRole("alert");
     // Summary receives focus so keyboard/SR users land on it.
@@ -88,7 +97,7 @@ describe("RecipeEditor error summary (issue #124)", () => {
     const user = userEvent.setup();
     render(<RecipeEditor mode="create" />);
 
-    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+    await user.click(primarySaveButton());
     await screen.findByRole("alert");
 
     const title = screen.getByLabelText(/^Title/);
@@ -105,7 +114,7 @@ describe("RecipeEditor error summary (issue #124)", () => {
     const user = userEvent.setup();
     render(<RecipeEditor mode="create" />);
 
-    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+    await user.click(primarySaveButton());
     const alert = await screen.findByRole("alert");
 
     await user.click(within(alert).getByRole("link", { name: "Title" }));
