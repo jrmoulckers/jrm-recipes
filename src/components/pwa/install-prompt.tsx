@@ -65,6 +65,11 @@ export function shouldShowIosInstallTip(
  * then offers a friendly install nudge. Dismissible (remembered for two weeks),
  * hidden once installed or running standalone. Mounted in the main app chrome
  * only — never in immersive cook/print views.
+ *
+ * Accessibility: this is a non-modal notification, not a dialog. It's a labelled
+ * `role="region"` that announces politely (`aria-live`) when it appears, so it
+ * never steals focus. `Escape` dismisses it while focus is inside, and it never
+ * traps keyboard focus (WCAG 2.1.1/2.1.2, 4.1.2, 4.1.3).
  */
 export function InstallPrompt() {
   const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
@@ -125,14 +130,30 @@ export function InstallPrompt() {
     window.setTimeout(() => setVariant(null), 200);
   }, []);
 
+  // Escape dismisses when focus is within the prompt — the expected keyboard
+  // affordance — without trapping focus (it's a non-modal notification, not a
+  // modal dialog), so nothing is stolen from the rest of the page.
+  const onKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        dismiss();
+      }
+    },
+    [dismiss],
+  );
+
   if (!variant) return null;
 
   const isIos = variant === "ios";
 
   return (
     <div
-      role="dialog"
+      role="region"
       aria-label={`Install ${brand.name}`}
+      aria-live="polite"
+      aria-atomic="true"
+      onKeyDown={onKeyDown}
       className={cn(
         "no-print fixed inset-x-4 z-40 mx-auto max-w-sm",
         "bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6",
