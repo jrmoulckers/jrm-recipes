@@ -192,6 +192,37 @@ export function IngredientsPanel({
     return [...map.entries()];
   }, [ingredients]);
 
+  // Displayed amount per ingredient for the current servings/system, plus the
+  // set that changed since the last render so only recomputed rows flash.
+  const amounts = React.useMemo(() => {
+    const map = new Map<string, { number: string; unit: string }>();
+    for (const ing of ingredients) {
+      map.set(ing.id, amountLabel(ing, factor, system, locale, kidSafe));
+    }
+    return map;
+  }, [ingredients, factor, system, locale, kidSafe]);
+
+  const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
+  const changedAmountIds = React.useMemo(() => {
+    const changed = new Set<string>();
+    const prev = prevAmountsRef.current;
+    for (const [id, { number, unit }] of amounts) {
+      const key = `${number}\u0000${unit}`;
+      const before = prev.get(id);
+      if (before !== undefined && before !== key && number !== "") {
+        changed.add(id);
+      }
+    }
+    return changed;
+  }, [amounts]);
+
+  React.useEffect(() => {
+    const map = prevAmountsRef.current;
+    for (const [id, { number, unit }] of amounts) {
+      map.set(id, `${number}\u0000${unit}`);
+    }
+  }, [amounts]);
+
   function updateServings(next: number) {
     if (controls) controls.onServingsChange(next);
     else setServingsInternal(next);
@@ -230,8 +261,16 @@ export function IngredientsPanel({
               <Minus />
             </Button>
             <div className="min-w-24 text-center">
-              <div className="font-display text-xl font-semibold tabular-nums">
-                {formatQuantity(servings, undefined, locale)}
+              <div className="overflow-hidden font-display text-xl font-semibold tabular-nums">
+                <span
+                  key={servings}
+                  className={cn(
+                    "inline-block",
+                    mounted && "motion-safe:animate-number-roll",
+                  )}
+                >
+                  {formatQuantity(servings, undefined, locale)}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground">
                 {servingsNoun ?? "servings"}
@@ -335,13 +374,11 @@ export function IngredientsPanel({
             )}
             <ul className="flex flex-col">
               {items.map((ing) => {
-                const { number, unit } = amountLabel(
-                  ing,
-                  factor,
-                  system,
-                  locale,
-                  kidSafe,
-                );
+                const { number, unit } = amounts.get(ing.id) ?? {
+                  number: "",
+                  unit: "",
+                };
+                const amountChanged = changedAmountIds.has(ing.id);
                 const isChecked = checked.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
@@ -439,7 +476,14 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {(number || unit) && (
-                            <span className="font-semibold tabular-nums">
+                            <span
+                              key={amountChanged ? `amt-${servings}-${system}` : "amt"}
+                              className={cn(
+                                "font-semibold tabular-nums",
+                                amountChanged &&
+                                  "-mx-1 rounded px-1 motion-safe:animate-amount-flash",
+                              )}
+                            >
                               {number}
                               {unit ? ` ${unit}` : ""}{" "}
                             </span>

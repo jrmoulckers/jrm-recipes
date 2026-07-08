@@ -174,6 +174,14 @@ const config = {
           "0%": { transform: "scaleX(0)" },
           "100%": { transform: "scaleX(1)" },
         },
+        "number-roll": {
+          "0%": { transform: "translateY(70%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "amount-flash": {
+          "0%": { backgroundColor: "hsl(var(--primary) / 0.25)" },
+          "100%": { backgroundColor: "hsl(var(--primary) / 0)" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -202,6 +210,8 @@ const config = {
         "check-pop": "check-pop 0.28s var(--ease-emphasized) both",
         "check-box-pop": "check-box-pop 0.3s var(--ease-emphasized)",
         "strike-in": "strike-in 0.3s var(--ease-standard) both",
+        "number-roll": "number-roll 0.28s var(--ease-emphasized)",
+        "amount-flash": "amount-flash 0.9s var(--ease-standard) both",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
