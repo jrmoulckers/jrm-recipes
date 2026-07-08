@@ -11,6 +11,10 @@ import {
 
 import { isOfflineFallbackRequest } from "../lib/offline-fallback";
 import {
+  COOK_NOTIFICATION_TYPE,
+  matchesCookClient,
+} from "../lib/cook-notify";
+import {
   isWarmCookBundleMessage,
   type WarmCookBundleMessage,
 } from "../lib/cook-warm";
@@ -168,4 +172,34 @@ self.addEventListener("message", (event) => {
   if (isWarmCookBundleMessage(event.data)) {
     event.waitUntil(warmCookBundle(event.data));
   }
+});
+
+/**
+ * Focus an already-open Cook Mode tab for the tapped timer notification, or open
+ * a fresh one (#186). Matches existing windows by pathname so tapping the alert
+ * returns the cook straight to the recipe they were cooking.
+ */
+async function focusOrOpenCook(targetUrl: string): Promise<void> {
+  const clientList = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const client of clientList) {
+    if (matchesCookClient(client.url, targetUrl)) {
+      await client.focus();
+      return;
+    }
+  }
+  await self.clients.openWindow(targetUrl);
+}
+
+self.addEventListener("notificationclick", (event) => {
+  const data = event.notification.data as
+    | { url?: string; type?: string }
+    | undefined;
+  // Only handle our cook-timer notifications; leave any others to default.
+  if (data?.type !== COOK_NOTIFICATION_TYPE) return;
+  event.notification.close();
+  const targetUrl = new URL(data.url ?? "/", self.location.origin).href;
+  event.waitUntil(focusOrOpenCook(targetUrl));
 });

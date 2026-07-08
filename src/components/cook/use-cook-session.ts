@@ -16,6 +16,11 @@ import {
   type TimerRecord,
   type UnitSystem,
 } from "~/lib/cook-state";
+import {
+  buildCookTimerNotification,
+  requestTimerNotificationPermission,
+  shouldSendTimerNotification,
+} from "~/lib/cook-notify";
 import { defaultSystemForLocale } from "~/lib/units";
 import { track } from "~/lib/analytics";
 import { HAPTICS, vibrate } from "~/lib/haptics";
@@ -85,6 +90,39 @@ function playTimerTone() {
   }
 
   play();
+}
+
+/**
+ * Fire a system notification for a completed timer when the tab is backgrounded
+ * (#186). Foreground completion keeps its tone + toast; this surfaces the alert
+ * on the lock screen / tray via the SW registration when the cook has stepped
+ * away. Best-effort: degrades silently where the SW or notifications are
+ * unavailable (dev, unsupported, denied).
+ */
+function notifyTimerComplete(input: {
+  stepNumber: number;
+  section: string | null;
+  recipeTitle: string;
+  recipeSlug: string;
+  stepId: string;
+}): void {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return;
+  const supported =
+    typeof Notification !== "undefined" && "serviceWorker" in navigator;
+  const permission =
+    typeof Notification !== "undefined" ? Notification.permission : "denied";
+  const documentHidden =
+    typeof document !== "undefined" && document.visibilityState === "hidden";
+  if (!shouldSendTimerNotification({ supported, permission, documentHidden })) {
+    return;
+  }
+
+  const { title, options } = buildCookTimerNotification(input);
+  void navigator.serviceWorker.ready
+    .then((registration) => registration.showNotification(title, options))
+    .catch(() => {
+      // SW not ready or notifications unavailable — tone + toast already fired.
+    });
 }
 
 function defaultState(
@@ -266,8 +304,15 @@ export function useCookSession(
       toast.success(`Step ${index + 1} timer is done`, {
         description: step.section ?? recipe.title,
       });
+      notifyTimerComplete({
+        stepNumber: index + 1,
+        section: step.section,
+        recipeTitle: recipe.title,
+        recipeSlug: recipe.slug,
+        stepId: step.id,
+      });
     });
-  }, [recipe.id, recipe.steps, recipe.title, state.timers]);
+  }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers]);
 
   const goToStep = React.useCallback(
     (index: number) => {
@@ -301,6 +346,12 @@ export function useCookSession(
 
       track("cook_timer_started", { recipeId: recipe.id });
       announcedTimersRef.current.delete(step.id);
+      // Contextual permission ask (#186): the user just chose to run a timer, so
+      // prompt now (a user gesture) rather than on cold load. No-op unless the
+      // permission is still "default"; denial degrades to tone + toast only.
+      void requestTimerNotificationPermission(
+        typeof Notification !== "undefined" ? Notification : undefined,
+      );
       setState((prev) => {
         const current = prev.timers[step.id] ?? makeTimer(step.timerSeconds);
         const remaining =
