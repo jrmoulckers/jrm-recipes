@@ -290,3 +290,50 @@ export async function getSubscriptionSnapshot(
     cancelAtPeriodEnd: best.cancelAtPeriodEnd,
   };
 }
+
+/**
+ * Resolve how many seats a group may fill (issue #325).
+ *
+ * A group's seat allowance is its effective plan's `maxFamilyMembers`, lifted to
+ * the purchased subscription `seats` when that's higher — so a Family group
+ * always gets at least the plan's headline number and more if they bought extra.
+ * `null` means unlimited. Falls back to the Free cap when the group has no
+ * active subscription (or the DB is unconfigured), and never throws: seat
+ * enforcement is meant to prompt an upgrade, never to break the family flow.
+ */
+export async function getGroupSeatLimit(
+  groupId: string,
+  now: Date = new Date(),
+): Promise<number | null> {
+  const freeLimit = getPlanEntitlements("free").maxFamilyMembers;
+  if (!isDbConfigured()) return freeLimit;
+
+  const customers = await db.query.billingCustomers.findMany({
+    where: eq(billingCustomers.groupId, groupId),
+    columns: { id: true },
+  });
+  if (customers.length === 0) return freeLimit;
+
+  const subs = await db.query.subscriptions.findMany({
+    where: inArray(
+      subscriptions.customerId,
+      customers.map((c) => c.id),
+    ),
+    columns: { planId: true, status: true, currentPeriodEnd: true, seats: true },
+  });
+  const active = subs.filter(
+    (s) =>
+      ENTITLED_STATUSES.includes(s.status) &&
+      (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
+  );
+  if (active.length === 0) return freeLimit;
+
+  const planId: PlanId = active.some((s) => s.planId !== "free")
+    ? "family"
+    : "free";
+  const planMax = getPlanEntitlements(planId).maxFamilyMembers;
+  if (planMax === null) return null;
+
+  const purchasedSeats = active.reduce((max, s) => Math.max(max, s.seats), 0);
+  return Math.max(planMax, purchasedSeats);
+}
