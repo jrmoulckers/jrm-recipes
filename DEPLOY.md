@@ -72,6 +72,30 @@ dedicated `/sign-in` page), so you can leave `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
 
 ---
 
+## 3b. Billing — Stripe (optional)
+
+Heirloom is fully usable on the **Free** tier with no billing configured — the
+pricing page renders read-only and upgrade buttons are disabled. Add Stripe to
+sell the Family/Premium plan.
+
+1. Create a [Stripe](https://stripe.com) account and, in **Test mode**, copy the
+   **Secret key** and **Publishable key** from the Developers → API keys page.
+2. Create a recurring **Product/Price** for Family and copy its **Price ID**
+   (`price_…`).
+3. After your first deploy, add a webhook endpoint pointing at
+   `https://<your-domain>/api/stripe/webhook` (events:
+   `checkout.session.completed`, `customer.subscription.*`,
+   `invoice.payment_failed`) and copy its **Signing secret** (`whsec_…`).
+4. Set the env vars in step 4:
+   - **`STRIPE_SECRET_KEY`** — server-only secret key
+   - **`STRIPE_WEBHOOK_SECRET`** — the webhook signing secret
+   - **`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`** — the publishable key (client-safe)
+
+> Optional. When unset, the whole billing layer degrades to a no-op: nobody can
+> be charged, and every feature that isn't limit-gated stays available.
+
+---
+
 ## 4. Deploy — Vercel
 
 1. Push this repo to GitHub (if it isn't already).
@@ -99,6 +123,9 @@ against Neon and build the app.
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | For uploads | Cloudinary cloud name                                                                        |
 | `NEXT_PUBLIC_CLOUDINARY_API_KEY`    | For uploads | Cloudinary API key (public)                                                                  |
 | `CLOUDINARY_API_SECRET`             | For uploads | Cloudinary API secret (server-only)                                                          |
+| `STRIPE_SECRET_KEY`                 | For billing | Stripe secret key (server-only)                                                              |
+| `STRIPE_WEBHOOK_SECRET`             | For billing | Stripe webhook signing secret for `/api/stripe/webhook`                                       |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`| For billing | Stripe publishable key (public, client-safe)                                                 |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL`     | Optional    | Defaults to `/sign-in`                                                                       |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL`     | Optional    | Defaults to `/sign-up`                                                                       |
 | `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy — preview or production — with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request) — leave it unset. |
