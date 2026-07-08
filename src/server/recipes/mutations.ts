@@ -22,6 +22,62 @@ import { buildAdaptationInput } from "./timeline";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+/** Postgres `unique_violation` SQLSTATE. */
+const PG_UNIQUE_VIOLATION = "23505";
+
+/** DB-level unique constraint guarding `recipes.slug` (see schema/recipes.ts). */
+const RECIPES_SLUG_CONSTRAINT = "recipes_slug_uq";
+
+/** Max attempts for a create/fork that races another writer for the same slug. */
+const MAX_SLUG_ATTEMPTS = 5;
+
+/**
+ * True when `err` is a Postgres unique-violation on the `recipes.slug`
+ * constraint. {@link uniqueSlug} pre-checks for a free slug, but two concurrent
+ * transactions can both pass that check and only collide at COMMIT-time on the
+ * DB constraint — that lost race surfaces here so callers can retry.
+ *
+ * The `postgres` driver exposes `.code` and `.constraint`; we fall back to the
+ * constraint name embedded in the message, and unwrap a single `cause` level in
+ * case an intermediate layer rewraps the driver error.
+ */
+export function isSlugConflict(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const e = err as {
+    code?: unknown;
+    constraint?: unknown;
+    constraint_name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+  if (e.code === PG_UNIQUE_VIOLATION) {
+    const constraint = e.constraint ?? e.constraint_name;
+    if (constraint === RECIPES_SLUG_CONSTRAINT) return true;
+    if (constraint == null && typeof e.message === "string")
+      return e.message.includes(RECIPES_SLUG_CONSTRAINT);
+    return false;
+  }
+  if (e.cause != null && e.cause !== err) return isSlugConflict(e.cause);
+  return false;
+}
+
+/**
+ * Run a write that may collide on the unique `recipes.slug` constraint,
+ * retrying the whole operation on conflict. Because each attempt is a fresh
+ * transaction, the retry re-runs {@link uniqueSlug} against newly-committed
+ * rows, so the DB constraint — not the app-side loop — is the source of truth.
+ */
+async function withSlugConflictRetry<T>(op: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await op();
+    } catch (err) {
+      if (attempt < MAX_SLUG_ATTEMPTS && isSlugConflict(err)) continue;
+      throw err;
+    }
+  }
+}
+
 /** Append a milestone to a recipe's timeline. Best-effort, never blocks. */
 async function recordEvent(
   tx: Tx,
@@ -42,7 +98,13 @@ async function recordEvent(
   });
 }
 
-async function uniqueSlug(
+/**
+ * Best-effort in-transaction search for a free slug derived from `base`. This
+ * narrows the collision window, but is *not* authoritative: the DB unique
+ * constraint is, and {@link withSlugConflictRetry} recovers from any race the
+ * check-then-insert here can still lose.
+ */
+export async function uniqueSlug(
   tx: Tx,
   base: string,
   ignoreId?: string,
@@ -218,35 +280,37 @@ async function applyRecipeInput(
 }
 
 export async function createRecipe(input: RecipeInput, author: User) {
-  return db.transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, recipeSlug(input.title));
-    const [row] = await tx
-      .insert(recipes)
-      .values({
-        ...scalarFields(input),
-        slug,
-        authorId: author.id,
-        publishedAt: input.status === "published" ? new Date() : null,
-      })
-      .returning({ id: recipes.id, slug: recipes.slug });
-    const recipe = row!;
-    await insertChildren(tx, recipe.id, input);
-    await syncTags(tx, recipe.id, input.tags);
-    await journal(tx, recipe.id, author.id, input, "Created");
-    await recordEvent(tx, {
-      recipeId: recipe.id,
-      actorId: author.id,
-      type: "created",
-    });
-    if (input.status === "published") {
+  return withSlugConflictRetry(() =>
+    db.transaction(async (tx) => {
+      const slug = await uniqueSlug(tx, recipeSlug(input.title));
+      const [row] = await tx
+        .insert(recipes)
+        .values({
+          ...scalarFields(input),
+          slug,
+          authorId: author.id,
+          publishedAt: input.status === "published" ? new Date() : null,
+        })
+        .returning({ id: recipes.id, slug: recipes.slug });
+      const recipe = row!;
+      await insertChildren(tx, recipe.id, input);
+      await syncTags(tx, recipe.id, input.tags);
+      await journal(tx, recipe.id, author.id, input, "Created");
       await recordEvent(tx, {
         recipeId: recipe.id,
         actorId: author.id,
-        type: "published",
+        type: "created",
       });
-    }
-    return recipe;
-  });
+      if (input.status === "published") {
+        await recordEvent(tx, {
+          recipeId: recipe.id,
+          actorId: author.id,
+          type: "published",
+        });
+      }
+      return recipe;
+    }),
+  );
 }
 
 export async function updateRecipe(
@@ -261,7 +325,14 @@ export async function updateRecipe(
     });
     if (!current) throw new Error("NOT_FOUND");
 
-    const result = await applyRecipeInput(tx, id, input, author, "Edited", current);
+    const result = await applyRecipeInput(
+      tx,
+      id,
+      input,
+      author,
+      "Edited",
+      current,
+    );
     const newlyPublished =
       input.status === "published" && current.status !== "published";
     await recordEvent(tx, {
@@ -278,71 +349,76 @@ export async function forkRecipe(
   author: User,
   forkNote?: string,
 ) {
-  return db.transaction(async (tx) => {
-    const source = await tx.query.recipes.findFirst({
-      where: or(
-        eq(recipes.id, sourceIdOrSlug),
-        eq(recipes.slug, sourceIdOrSlug),
-      ),
-      with: {
-        ingredients: { orderBy: [recipeIngredients.position] },
-        steps: { orderBy: [recipeSteps.position] },
-        tags: { with: { tag: true } },
-      },
-    });
+  return withSlugConflictRetry(() =>
+    db.transaction(async (tx) => {
+      const source = await tx.query.recipes.findFirst({
+        where: or(
+          eq(recipes.id, sourceIdOrSlug),
+          eq(recipes.slug, sourceIdOrSlug),
+        ),
+        with: {
+          ingredients: { orderBy: [recipeIngredients.position] },
+          steps: { orderBy: [recipeSteps.position] },
+          tags: { with: { tag: true } },
+        },
+      });
 
-    if (!source) throw new Error("NOT_FOUND");
+      if (!source) throw new Error("NOT_FOUND");
 
-    const groupIds =
-      source.visibility === "group" ? await viewerGroupIds(tx, author.id) : [];
-    if (!canForkSource(source, author, groupIds)) throw new Error("NOT_FOUND");
+      const groupIds =
+        source.visibility === "group"
+          ? await viewerGroupIds(tx, author.id)
+          : [];
+      if (!canForkSource(source, author, groupIds))
+        throw new Error("NOT_FOUND");
 
-    const input = buildAdaptationInput(source);
+      const input = buildAdaptationInput(source);
 
-    const slug = await uniqueSlug(tx, recipeSlug(input.title));
-    const note = forkNote?.trim();
-    const trimmedNote = note ? note.slice(0, 300) : null;
-    const [row] = await tx
-      .insert(recipes)
-      .values({
-        ...scalarFields(input),
-        slug,
-        authorId: author.id,
-        forkedFromId: source.id,
-        forkNote: trimmedNote,
-        publishedAt: input.status === "published" ? new Date() : null,
-      })
-      .returning({ id: recipes.id, slug: recipes.slug });
+      const slug = await uniqueSlug(tx, recipeSlug(input.title));
+      const note = forkNote?.trim();
+      const trimmedNote = note ? note.slice(0, 300) : null;
+      const [row] = await tx
+        .insert(recipes)
+        .values({
+          ...scalarFields(input),
+          slug,
+          authorId: author.id,
+          forkedFromId: source.id,
+          forkNote: trimmedNote,
+          publishedAt: input.status === "published" ? new Date() : null,
+        })
+        .returning({ id: recipes.id, slug: recipes.slug });
 
-    const recipe = row!;
-    await insertChildren(tx, recipe.id, input);
-    await syncTags(tx, recipe.id, input.tags);
-    await journal(
-      tx,
-      recipe.id,
-      author.id,
-      input,
-      `Adapted from "${source.title}"`,
-    );
+      const recipe = row!;
+      await insertChildren(tx, recipe.id, input);
+      await syncTags(tx, recipe.id, input.tags);
+      await journal(
+        tx,
+        recipe.id,
+        author.id,
+        input,
+        `Adapted from "${source.title}"`,
+      );
 
-    // Record both halves of the fork so it shows on each recipe's timeline: the
-    // adaptation's origin, and a new descendant on the source.
-    await recordEvent(tx, {
-      recipeId: recipe.id,
-      actorId: author.id,
-      type: "adapted",
-      note: trimmedNote ?? `Adapted from "${source.title}"`,
-      relatedRecipeId: source.id,
-    });
-    await recordEvent(tx, {
-      recipeId: source.id,
-      actorId: author.id,
-      type: "adapted",
-      note: trimmedNote,
-      relatedRecipeId: recipe.id,
-    });
-    return recipe;
-  });
+      // Record both halves of the fork so it shows on each recipe's timeline:
+      // the adaptation's origin, and a new descendant on the source.
+      await recordEvent(tx, {
+        recipeId: recipe.id,
+        actorId: author.id,
+        type: "adapted",
+        note: trimmedNote ?? `Adapted from "${source.title}"`,
+        relatedRecipeId: source.id,
+      });
+      await recordEvent(tx, {
+        recipeId: source.id,
+        actorId: author.id,
+        type: "adapted",
+        note: trimmedNote,
+        relatedRecipeId: recipe.id,
+      });
+      return recipe;
+    }),
+  );
 }
 
 export async function revertRecipe(
