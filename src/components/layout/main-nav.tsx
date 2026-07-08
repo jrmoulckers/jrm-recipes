@@ -24,7 +24,7 @@ export function MainNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
+              "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground",
               active ? "font-semibold text-foreground" : "text-muted-foreground",
             )}
           >
@@ -47,8 +47,16 @@ export function MainNav() {
 /** App-like bottom tab bar for mobile. */
 export function BottomNav() {
   const pathname = usePathname();
-  // Hide chrome in immersive routes (cook mode, print).
-  if (pathname.includes("/cook") || pathname.includes("/print")) return null;
+  // Hide chrome in immersive / focused routes (cook mode, print, and the
+  // recipe editor — its sticky mobile Save/Cancel bar owns the bottom edge,
+  // issue #294).
+  if (
+    pathname.includes("/cook") ||
+    pathname.includes("/print") ||
+    pathname.endsWith("/edit") ||
+    pathname.endsWith("/new")
+  )
+    return null;
 
   const count = primaryNav.length;
   // First matching tab drives the sliding indicator. Computed from the pathname
@@ -60,7 +68,7 @@ export function BottomNav() {
       aria-label="Primary mobile"
       className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur md:hidden"
     >
-      <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+      <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-safe-b">
         {/* A pill that glides along the top edge to the active tab. */}
         {activeIndex >= 0 && (
           <li
@@ -87,7 +95,7 @@ export function BottomNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors",
+                  "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted",
                   active ? "font-semibold text-primary" : "text-muted-foreground",
                 )}
               >

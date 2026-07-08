@@ -1,4 +1,5 @@
 import { type Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 /**
  * Every color is driven by a CSS variable (see src/styles/themes.css) so the
@@ -67,6 +68,23 @@ const config = {
           DEFAULT: "hsl(var(--popover) / <alpha-value>)",
           foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
         },
+      },
+      /**
+       * Safe-area inset spacing tokens (issue #284). Map the CSS
+       * `env(safe-area-inset-*)` values onto the spacing scale so any sticky or
+       * fixed chrome can reserve room for the notch / status bar / home
+       * indicator with a plain utility — e.g. `pt-safe-t` on a top-docked
+       * header, `pb-safe-b` on a bottom bar, `px-safe-l`/`px-safe-r` in
+       * landscape. `env()` resolves to 0 wherever there is no inset (desktop,
+       * non-notched devices, in-browser), so these never cause layout shift.
+       * When applying a top inset that should only appear in the installed PWA,
+       * gate it with the `[@media(display-mode:standalone)]:` arbitrary variant.
+       */
+      spacing: {
+        "safe-t": "env(safe-area-inset-top)",
+        "safe-b": "env(safe-area-inset-bottom)",
+        "safe-l": "env(safe-area-inset-left)",
+        "safe-r": "env(safe-area-inset-right)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -263,7 +281,22 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    /**
+     * `short-landscape:` — phones (and small tablets) held sideways, where
+     * vertical space is scarce. Cook Mode uses it to drop into a side-by-side
+     * layout and cap step-media height so the instruction and controls stay on
+     * screen without scrolling (issue #292). The 640px height ceiling keeps
+     * full-height landscape tablets/desktops on the normal layout.
+     */
+    plugin(({ addVariant }) => {
+      addVariant(
+        "short-landscape",
+        "@media (orientation: landscape) and (max-height: 640px)",
+      );
+    }),
+  ],
 } satisfies Config;
 
 export default config;

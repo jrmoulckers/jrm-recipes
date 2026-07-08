@@ -69,9 +69,14 @@ export function ImageUploadField({
             type="button"
             onClick={() => onChange("")}
             aria-label="Remove photo"
-            className="absolute end-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-token-sm backdrop-blur transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group absolute end-2 top-2 inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X className="size-4" />
+            <span
+              aria-hidden="true"
+              className="inline-flex size-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-token-sm backdrop-blur transition group-hover:bg-background"
+            >
+              <X className="size-4" />
+            </span>
           </button>
         </figure>
       ) : cloudinaryConfigured ? (

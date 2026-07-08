@@ -216,7 +216,7 @@ export function InstallPrompt() {
       tabIndex={-1}
       className={cn(
         "no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-none",
-        "bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6",
+        "bottom-[calc(theme(spacing.safe-b)+5rem)] md:bottom-6",
       )}
     >
       <div

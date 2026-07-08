@@ -1001,6 +1001,28 @@ export function RecipeEditor({
           </Field>
         </aside>
       </div>
+
+      {/* Sticky mobile action bar: keeps Save/Cancel in the thumb zone on
+          small viewports where the top action row scrolls out of reach. It
+          mirrors the top actions exactly — same form submission and shared
+          `pending` state — and is hidden from md up where the top row stays
+          visible. Bottom padding respects the home-indicator safe area; the
+          BottomNav is suppressed on editor routes so this bar owns the bottom
+          edge (issue #294). */}
+      <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex gap-2 border-t border-border bg-background/90 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden">
+        <Button
+          type="button"
+          variant="ghost"
+          className="flex-1"
+          onClick={() => router.back()}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" className="flex-1" disabled={pending}>
+          {pending ? <Loader2 className="animate-spin" /> : <Save />}
+          {mode === "edit" ? "Save changes" : "Save recipe"}
+        </Button>
+      </div>
     </form>
   );
 }

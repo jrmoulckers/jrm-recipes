@@ -146,7 +146,7 @@ export function RecipeCard({
       )}
       <Link
         href={`/recipes/${recipe.slug}`}
-        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg active:bg-muted/40 active:shadow-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
       <div className="relative aspect-[16/10] overflow-hidden">
         {recipe.coverImageUrl ? (
@@ -178,7 +178,7 @@ export function RecipeCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight">
           {titleSegments
             ? titleSegments.map((seg, i) =>
                 seg.hit ? (
@@ -203,7 +203,7 @@ export function RecipeCard({
           </p>
         )}
         {recipe.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
+          <p className="line-clamp-2 break-words text-sm text-muted-foreground">
             {recipe.description}
           </p>
         )}

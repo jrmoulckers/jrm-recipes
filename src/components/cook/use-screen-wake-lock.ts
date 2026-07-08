@@ -93,9 +93,33 @@ export function useScreenWakeLock() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    // Some mobile browsers drop the wake-lock sentinel when the device rotates
+    // between portrait and landscape, and a bfcache restore (navigating back
+    // into Cook Mode) resumes the page without re-running mount. Re-acquire in
+    // both cases so a propped-up, rotated phone — or a back-navigation — keeps
+    // the screen awake. `requestLock()` already no-ops when the document is
+    // hidden or a live sentinel is still held, so these can't double-acquire
+    // (issue #296). Resize is debounced to coalesce the rotation event storm.
+    let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+    function handleReacquire() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => requestLock(), 300);
+    }
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) requestLock();
+    }
+
+    window.addEventListener("orientationchange", handleReacquire);
+    window.addEventListener("resize", handleReacquire);
+    window.addEventListener("pageshow", handlePageShow);
+
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("orientationchange", handleReacquire);
+      window.removeEventListener("resize", handleReacquire);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.clearTimeout(resizeTimer);
       clearSentinel();
     };
   }, []);

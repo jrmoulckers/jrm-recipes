@@ -13,6 +13,10 @@
   html {
     font-size: calc(100% * var(--text-scale, 1) * var(--a11y-text-mult, 1));
     -webkit-text-size-adjust: 100%;
+    /* Suppress the default grey/blue tap flash on iOS/Android; press feedback is
+     * provided by token-driven `:active` states instead, so it stays on-theme
+     * across all five UI modes (issue #289). */
+    -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
   }
 
@@ -20,6 +24,13 @@
     @apply bg-background font-body text-foreground antialiased;
     min-height: 100dvh;
     text-rendering: optimizeLegibility;
+    /* Minimum supported width is 320px (iPhone SE / small Android). Clip any
+     * stray wide element so a single overflowing node can never introduce a
+     * horizontal page scrollbar at that width. `clip` (unlike `hidden`) does
+     * not create a scroll container, so `position: sticky` chrome keeps working
+     * (issue #293). User-generated text is additionally wrapped at the source
+     * with `break-words` / `overflow-wrap: anywhere`. */
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4, h5 {
@@ -43,9 +54,23 @@
     border-radius: calc(var(--radius) - 4px);
   }
 
-  /* Comfortable minimum tap targets (grows in Kids / Simple modes). */
+  /* Comfortable minimum tap targets (grows in Kids / Simple modes). The floor
+   * is 44x44px (WCAG 2.5.5 / Apple HIG) applied on both axes so icon-only and
+   * compact controls stay easy to hit. Scoped to real controls — inline text
+   * links (`a` without `.btn`) are intentionally excluded so prose isn't
+   * stretched; only link-styled buttons (`a.btn`, `label.btn`) opt in. */
   button, [role="button"], a.btn, label.btn {
-    min-height: var(--tap-min, 2.5rem);
+    min-height: var(--tap-min, 2.75rem);
+    min-width: var(--tap-min, 2.75rem);
+  }
+
+  /* Remove the legacy double-tap-zoom gesture (and its ~300ms tap delay) from
+   * interactive controls so rapid taps — e.g. Cook Mode Next/Previous with wet
+   * hands — register instantly. `manipulation` still allows panning/scrolling
+   * from these elements; pinch-to-zoom on page content and images is untouched,
+   * preserving accessibility (issue #288). */
+  button, a, [role="button"], [role="tab"], summary {
+    touch-action: manipulation;
   }
 
   ::selection {

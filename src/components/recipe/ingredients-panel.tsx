@@ -480,7 +480,7 @@ export function IngredientsPanel({
                         )}
                         <span
                           className={cn(
-                            "relative flex-1 text-[0.95rem]",
+                            "relative flex-1 text-[0.95rem] [overflow-wrap:anywhere]",
                             isChecked && "text-muted-foreground",
                           )}
                         >
