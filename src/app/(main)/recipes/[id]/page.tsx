@@ -1,7 +1,6 @@
 import { cache } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -50,6 +49,7 @@ import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
@@ -245,7 +245,7 @@ export default async function RecipePage({
       <div className="relative">
         {recipe.coverImageUrl ? (
           <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
-            <Image
+            <CloudinaryImage
               src={recipe.coverImageUrl}
               alt=""
               fill
@@ -483,7 +483,7 @@ export default async function RecipePage({
                           </p>
                           {step.imageUrl && (
                             <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
-                              <Image
+                              <CloudinaryImage
                                 src={step.imageUrl}
                                 alt={`Step ${i + 1}`}
                                 fill

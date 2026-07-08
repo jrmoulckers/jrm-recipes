@@ -56,7 +56,7 @@ export function buildCookLogRows(
   const { ownerId, users, recipes } = ids;
   return [
     {
-      id: "seed_clog_gravy_owner_recent",
+      id: "seed_clog_gravy_recent",
       recipeId: recipes.gravy,
       userId: ownerId,
       cookedAt: clock(6, 18 * 60),
@@ -72,7 +72,7 @@ export function buildCookLogRows(
       servingsMade: 6,
     },
     {
-      id: "seed_clog_gravy_owner_old",
+      id: "seed_clog_gravy_old",
       recipeId: recipes.gravy,
       userId: ownerId,
       cookedAt: clock(88),
@@ -145,19 +145,19 @@ export function buildCollectionRecipeRows(
   const { recipes } = ids;
   return [
     {
-      id: "seed_colr_weeknight_marinara",
+      id: "seed_colr_weeknight_mar",
       collectionId: "seed_col_weeknight",
       recipeId: recipes.marinara,
       position: 0,
     },
     {
-      id: "seed_colr_weeknight_focaccia",
+      id: "seed_colr_weeknight_foc",
       collectionId: "seed_col_weeknight",
       recipeId: recipes.focaccia,
       position: 1,
     },
     {
-      id: "seed_colr_baking_focaccia",
+      id: "seed_colr_baking_foc",
       collectionId: "seed_col_baking",
       recipeId: recipes.focaccia,
       position: 0,
@@ -169,7 +169,7 @@ export function buildCollectionRecipeRows(
       position: 0,
     },
     {
-      id: "seed_colr_sunday_marinara",
+      id: "seed_colr_sunday_mar",
       collectionId: "seed_col_sunday",
       recipeId: recipes.marinara,
       position: 1,

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import {
   and,
   arrayContains,
@@ -72,6 +74,10 @@ import {
   type RecipeSort,
 } from "./search";
 import { assembleTimeline, type TimelineEntry } from "./timeline";
+import {
+  PUBLIC_RECIPES_REVALIDATE_SECONDS,
+  PUBLIC_RECIPES_TAG,
+} from "./cache";
 import { todayParam } from "~/server/planner/week";
 
 /**
@@ -275,36 +281,60 @@ export async function listMyRecipes(userId: string) {
  * page. Returns the page plus the offset to fetch next, or `null` once the feed
  * is exhausted.
  */
+/**
+ * Non-personalized fetch of the public discover feed. Extracted so it can be
+ * wrapped in `unstable_cache` (below): the result depends only on its args, so
+ * it's safe to share across requests and users. Tagged with
+ * {@link PUBLIC_RECIPES_TAG} so recipe mutations can invalidate it.
+ */
+const fetchPublicRecipes = unstable_cache(
+  async (limit: number, offset: number, sort: RatingSort) => {
+    const rows = await db.query.recipes.findMany({
+      where: and(
+        notDeleted,
+        eq(recipes.visibility, "public"),
+        eq(recipes.status, "published"),
+      ),
+      orderBy:
+        sort === "top-rated"
+          ? topRatedOrderBy()
+          : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
+      limit,
+      offset,
+      with: {
+        // Public/anonymous feed: project the author down to the non-PII fields
+        // the card renders. `author: true` would serialize the whole users row
+        // (email, clerkId, …) into the RSC payload on /discover and /recipes.
+        author: { columns: { name: true, handle: true } },
+        tags: { with: { tag: true } },
+      },
+    });
+    return {
+      items: rows,
+      nextOffset: nextPageOffset(offset, rows.length, limit),
+    };
+  },
+  ["recipes:public-list"],
+  {
+    revalidate: PUBLIC_RECIPES_REVALIDATE_SECONDS,
+    tags: [PUBLIC_RECIPES_TAG],
+  },
+);
+
+/**
+ * The public "discover" feed. Non-personalized, so it's served from a tagged
+ * `unstable_cache` entry instead of hitting the DB on every request (#215).
+ * `limit`/`offset`/`sort` are part of the cache key, so each page and sort is
+ * cached independently; {@link fetchPublicRecipes} is invalidated by tag on any
+ * recipe mutation.
+ */
 export async function listPublicRecipes({
   limit = DISCOVER_PAGE_SIZE,
   offset = 0,
   sort = "recent",
 }: { limit?: number; offset?: number; sort?: RatingSort } = {}) {
   if (!isDbConfigured()) return { items: [], nextOffset: null };
-  const rows = await db.query.recipes.findMany({
-    where: and(
-      notDeleted,
-      eq(recipes.visibility, "public"),
-      eq(recipes.status, "published"),
-    ),
-    orderBy:
-      sort === "top-rated"
-        ? topRatedOrderBy()
-        : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
-    limit,
-    offset,
-    with: {
-      // Public/anonymous feed: project the author down to the non-PII fields the
-      // card renders. `author: true` would serialize the whole users row
-      // (email, clerkId, …) into the RSC payload on /discover and /recipes.
-      author: { columns: { name: true, handle: true } },
-      tags: { with: { tag: true } },
-    },
-  });
-  return {
-    items: rows,
-    nextOffset: nextPageOffset(offset, rows.length, limit),
-  };
+  return fetchPublicRecipes(limit, offset, sort);
 }
 
 /**

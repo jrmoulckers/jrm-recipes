@@ -1,16 +1,25 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { ImagePlus, X } from "lucide-react";
-import {
-  CldUploadWidget,
-  type CloudinaryUploadWidgetResults,
-} from "next-cloudinary";
+import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 import { env } from "~/env";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+
+/**
+ * The Cloudinary upload widget is a heavy, interaction-gated dependency, so it's
+ * split into its own async chunk and loaded on the client only when a configured
+ * upload control actually renders (#201). It never ships in the editor route's
+ * first-load JS, and the unconfigured URL-input fallback never fetches it at all.
+ */
+const CldUploadWidget = dynamic(
+  () => import("next-cloudinary").then((mod) => mod.CldUploadWidget),
+  { ssr: false },
+);
 
 /**
  * Cloudinary is optional. When it isn't configured the field degrades to a
@@ -65,46 +74,48 @@ export function ImageUploadField({
           </button>
         </figure>
       ) : cloudinaryConfigured ? (
-        <CldUploadWidget
-          signatureEndpoint="/api/cloudinary/sign"
-          options={{
-            folder,
-            maxFiles: 1,
-            resourceType: "image",
-            sources: ["local", "url", "camera"],
-            clientAllowedFormats: ["png", "jpeg", "jpg", "webp", "gif", "avif"],
-            maxImageFileSize: 8_000_000,
-          }}
-          onSuccess={(result: CloudinaryUploadWidgetResults) => {
-            const info = result.info;
-            if (info && typeof info !== "string") {
-              onChange(info.secure_url);
-            }
-          }}
-        >
-          {({ open }) => (
-            <button
-              type="button"
-              onClick={() => open()}
-              className={cn(
-                "flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                compact ? "aspect-[3/2] max-w-56 p-3" : "aspect-video p-6",
-              )}
-            >
-              <ImagePlus className={compact ? "size-5" : "size-6"} />
-              <span
-                className={cn("font-medium", compact ? "text-xs" : "text-sm")}
+        <div className={cn(compact ? "aspect-[3/2] max-w-56" : "aspect-video")}>
+          <CldUploadWidget
+            signatureEndpoint="/api/cloudinary/sign"
+            options={{
+              folder,
+              maxFiles: 1,
+              resourceType: "image",
+              sources: ["local", "url", "camera"],
+              clientAllowedFormats: ["png", "jpeg", "jpg", "webp", "gif", "avif"],
+              maxImageFileSize: 8_000_000,
+            }}
+            onSuccess={(result: CloudinaryUploadWidgetResults) => {
+              const info = result.info;
+              if (info && typeof info !== "string") {
+                onChange(info.secure_url);
+              }
+            }}
+          >
+            {({ open }) => (
+              <button
+                type="button"
+                onClick={() => open()}
+                className={cn(
+                  "flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  compact ? "p-3" : "p-6",
+                )}
               >
-                {compact ? "Add photo" : "Upload a photo"}
-              </span>
-              {compact ? null : (
-                <span className="text-xs text-muted-foreground">
-                  Drag &amp; drop, take a photo, or paste a URL below
+                <ImagePlus className={compact ? "size-5" : "size-6"} />
+                <span
+                  className={cn("font-medium", compact ? "text-xs" : "text-sm")}
+                >
+                  {compact ? "Add photo" : "Upload a photo"}
                 </span>
-              )}
-            </button>
-          )}
-        </CldUploadWidget>
+                {compact ? null : (
+                  <span className="text-xs text-muted-foreground">
+                    Drag &amp; drop, take a photo, or paste a URL below
+                  </span>
+                )}
+              </button>
+            )}
+          </CldUploadWidget>
+        </div>
       ) : null}
 
       {value ? null : (

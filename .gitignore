@@ -57,3 +57,9 @@ yarn-error.log*
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Lighthouse CI reports + build-log capture (regenerated each run)
+/.lighthouseci/
+/bundle-build.log
+# @next/bundle-analyzer output (part of /.next, but be explicit)
+/.next/analyze/

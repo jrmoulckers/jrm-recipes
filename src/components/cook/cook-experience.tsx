@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -31,6 +30,7 @@ import { toast } from "sonner";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import {
   Dialog,
   DialogContent,
@@ -488,7 +488,7 @@ function StepMedia({
     >
       {step.imageUrl && (
         <div className="relative aspect-video overflow-hidden rounded-xl bg-background">
-          <Image
+          <CloudinaryImage
             src={step.imageUrl}
             alt={`Step ${stepNumber} visual for ${recipeTitle}`}
             fill

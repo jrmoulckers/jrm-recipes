@@ -31,36 +31,61 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import { localeDirection, openGraphLocale } from "~/config/i18n";
+import { preconnectOrigins } from "~/config/resource-hints";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
 import { ThemeScript } from "~/components/theme/theme-script";
 import { A11yScript } from "~/components/a11y/a11y-script";
 
+// Font loading is tuned for the multi-theme setup (#182). Only ONE family — the
+// shared body font (Nunito) — is preloaded, because it paints on the default and
+// most other themes. The four display/decorative families are `preload: false`:
+// their `@font-face` rules stay in the document (so a client-side theme switch
+// can still apply the right font with no flash), but the browser only downloads
+// each one when the active theme's CSS actually paints it. On the default
+// (kitchen) theme that means just two families (Nunito + Fraunces) instead of
+// all five. Every family gets a size-matched `fallback` stack + `adjustFontFallback`
+// so the swap-in stays within CLS budget.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
+  preload: false,
+  fallback: ["ui-serif", "Georgia", "serif"],
+  adjustFontFallback: true,
 });
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
   display: "swap",
+  preload: true,
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  adjustFontFallback: true,
 });
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: false,
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  adjustFontFallback: true,
 });
 const baloo = Baloo_2({
   subsets: ["latin"],
   variable: "--font-baloo",
   display: "swap",
+  preload: false,
+  fallback: ["ui-rounded", "Segoe UI", "sans-serif"],
+  adjustFontFallback: true,
 });
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   display: "swap",
+  preload: false,
+  fallback: ["ui-monospace", "monospace"],
+  adjustFontFallback: true,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -132,6 +157,8 @@ export default async function RootLayout({
   // flicker on load (#335). Returns {} (all control) when analytics is off.
   const flags = await getAllFlags(currentUser?.id ?? "anonymous");
 
+  const authConfigured = isAuthConfigured();
+
   const tree = (
     <html
       lang={locale}
@@ -150,6 +177,14 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {preconnectOrigins(authConfigured).flatMap((origin) => [
+          <link key={`preconnect-${origin}`} rel="preconnect" href={origin} />,
+          <link
+            key={`dns-prefetch-${origin}`}
+            rel="dns-prefetch"
+            href={origin}
+          />,
+        ])}
         <ThemeScript />
         <A11yScript />
       </head>
@@ -173,5 +208,5 @@ export default async function RootLayout({
   );
 
   // Only mount ClerkProvider when auth is actually configured.
-  return isAuthConfigured() ? <ClerkProvider>{tree}</ClerkProvider> : tree;
+  return authConfigured ? <ClerkProvider>{tree}</ClerkProvider> : tree;
 }

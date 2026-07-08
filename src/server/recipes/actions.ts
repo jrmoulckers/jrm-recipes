@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "~/server/auth";
@@ -12,6 +12,7 @@ import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
+import { PUBLIC_RECIPES_TAG } from "./cache";
 import {
   createRecipe,
   deleteRecipe,
@@ -86,6 +87,7 @@ export async function createRecipeAction(
     revalidatePath("/recipes");
     revalidatePath("/");
     revalidatePath(recipeDetailPath(recipe));
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
@@ -118,6 +120,7 @@ export async function updateRecipeAction(
     });
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe));
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true, id, slug: recipe.slug };
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
@@ -139,6 +142,7 @@ export async function forkRecipeAction(
     });
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe.source));
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch {
     return {
@@ -173,6 +177,7 @@ export async function revertRecipeAction(
     });
     revalidatePath(recipeDetailPath(recipe));
     revalidatePath("/recipes");
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch (error) {
     const message =
@@ -203,6 +208,7 @@ export async function deleteRecipeAction(id: string): Promise<void> {
     // Already gone — fall through to the library.
   }
   revalidatePath("/recipes");
+  revalidateTag(PUBLIC_RECIPES_TAG);
   redirect("/recipes");
 }
 
@@ -223,5 +229,6 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
   }
   revalidatePath("/recipes");
   revalidatePath(recipeDetailPath(restored));
+  revalidateTag(PUBLIC_RECIPES_TAG);
   return true;
 }

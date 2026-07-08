@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   revalidatePathMock,
+  revalidateTagMock,
   requireUserMock,
   createRecipeMock,
   updateRecipeMock,
@@ -18,6 +19,7 @@ const {
   dbCountMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
   requireUserMock: vi.fn(),
   createRecipeMock: vi.fn(),
   updateRecipeMock: vi.fn(),
@@ -28,7 +30,10 @@ const {
   dbCountMock: vi.fn(),
 }));
 
-vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
+vi.mock("next/cache", () => ({
+  revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
+}));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
 vi.mock("~/server/db", () => ({
@@ -52,11 +57,13 @@ vi.mock("./mutations", () => ({
 
 import {
   createRecipeAction,
+  deleteRecipeAction,
   forkRecipeAction,
   revertRecipeAction,
   updateRecipeAction,
 } from "./actions";
 import { recipeInput } from "./validation";
+import { PUBLIC_RECIPES_TAG } from "./cache";
 
 const input = recipeInput.parse({ title: "Apple Pie" });
 
@@ -130,6 +137,43 @@ describe("createRecipeAction revalidation", () => {
 
     expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+  });
+});
+
+// #215 — recipe writes must bust the cached public discover feed by tag so a
+// create / edit / fork / revert / delete can't outlive the change.
+describe("public recipe cache invalidation (#215)", () => {
+  it("createRecipeAction revalidates the public recipes tag", async () => {
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+    await createRecipeAction(input);
+    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+  });
+
+  it("updateRecipeAction revalidates the public recipes tag", async () => {
+    updateRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+    await updateRecipeAction("rec_1", input);
+    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+  });
+
+  it("forkRecipeAction revalidates the public recipes tag", async () => {
+    forkRecipeMock.mockResolvedValue({
+      id: "fork_1",
+      slug: "apple-pie-adaptation",
+      source: { id: "rec_1", slug: "apple-pie" },
+    });
+    await forkRecipeAction("rec_1");
+    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+  });
+
+  it("revertRecipeAction revalidates the public recipes tag", async () => {
+    revertRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+    await revertRecipeAction("rec_1", 2);
+    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
+  });
+
+  it("deleteRecipeAction revalidates the public recipes tag", async () => {
+    await deleteRecipeAction("rec_1");
+    expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 });
 

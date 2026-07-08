@@ -3,6 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+// `listPublicRecipes` is now wrapped in `unstable_cache`, which throws outside a
+// Next request scope. Stub it to an identity so this suite still exercises the
+// underlying query builder against the db mock.
+vi.mock("next/cache", () => ({
+  unstable_cache: <A extends unknown[], R>(fn: (...args: A) => R) => fn,
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     query: {

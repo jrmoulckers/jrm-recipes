@@ -1,6 +1,5 @@
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
@@ -16,6 +15,7 @@ import {
   type RecipeMatchReason,
 } from "~/lib/search-match";
 import { Badge } from "~/components/ui/badge";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import {
   QuickPlanButton,
@@ -150,7 +150,7 @@ export function RecipeCard({
       >
       <div className="relative aspect-[16/10] overflow-hidden">
         {recipe.coverImageUrl ? (
-          <Image
+          <CloudinaryImage
             src={recipe.coverImageUrl}
             alt=""
             fill

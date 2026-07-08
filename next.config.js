@@ -5,7 +5,10 @@
 import "./src/env.js";
 
 import withSerwistInit from "@serwist/next";
+import bundleAnalyzer from "@next/bundle-analyzer";
 import createNextIntlPlugin from "next-intl/plugin";
+
+import { imageConfig } from "./src/config/next-image.js";
 
 // Point the next-intl plugin at the request config (cookie-based locale
 // resolution). This makes getTranslations/useTranslations, getLocale, and the
@@ -40,12 +43,7 @@ const config = {
   reactStrictMode: true,
   // PostHog's proxied endpoints are sensitive to trailing-slash redirects.
   skipTrailingSlashRedirect: true,
-  images: {
-    remotePatterns: [
-      { hostname: "res.cloudinary.com" },
-      { hostname: "img.clerk.com" },
-    ],
-  },
+  images: imageConfig,
   async rewrites() {
     // First-party reverse proxy for product analytics: browser capture hits
     // `/ingest/*` (same-origin, adblock-resilient) and Next forwards it to the
@@ -72,4 +70,11 @@ const config = {
   },
 };
 
-export default withSerwist(withNextIntl(config));
+// Wrap with @next/bundle-analyzer, gated on ANALYZE=true (see `pnpm analyze`).
+// Writes a static report to .next/analyze/ without trying to open a browser.
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+  openAnalyzer: false,
+});
+
+export default withBundleAnalyzer(withSerwist(withNextIntl(config)));

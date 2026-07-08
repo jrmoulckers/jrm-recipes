@@ -1,0 +1,9 @@
+{
+  "//": "First-load JS budgets in kB per tracked route. CI (scripts/check-bundle-budget.mjs) fails when 'next build' reports a First Load JS above these. Bump a budget deliberately in the same PR that grows a route, with justification. The / route was re-baselined to ~199 kB when #477 (busy-parent) added the signed-in personalized home rails (DinnerSuggestion + RotationRail) to (main)/page.tsx. All routes were then re-baselined again (+~13 kB each: / 199->212, /recipes 219->232, /recipes/[id] 243->262) when #476 (eng-i18n) added next-intl: NextIntlClientProvider + messages mount in the root layout and land in the shared chunk, so every route pays it. Both features merged to main before this gate existed, so neither was ever budget-checked here. Budgets below keep ~5-6% headroom and stay blocking for future regressions. Follow-ups could next/dynamic the home rails and trim the client messages payload.",
+  "routes": {
+    "/": 225,
+    "/recipes": 245,
+    "/recipes/[id]": 275,
+    "/recipes/[id]/edit": 175
+  }
+}
