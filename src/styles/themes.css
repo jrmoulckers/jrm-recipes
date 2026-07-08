@@ -26,6 +26,12 @@
   --text-scale: 1;
   --tap-min: 2.5rem;
   --motion-scale: 1;
+  /* Interactive-control sizing (Switch/Slider). `--control-scale` multiplies
+   * their visible dimensions; `--control-min` floors a control's hit area to
+   * `--tap-min`. Both are no-ops here so default modes render unchanged; the
+   * large-target modes (Kids/Simple) raise them below. */
+  --control-scale: 1;
+  --control-min: 0px;
 
   color-scheme: light;
 }
@@ -249,6 +255,10 @@
   --text-scale: 1.075;
   --tap-min: 3rem;
   --ring-width: 3px;
+  /* Big, easy taps: controls grow to the raised tap target. 3rem / 1.5rem = 2,
+   * so the Switch pill lands exactly on --tap-min and stays balanced. */
+  --control-scale: 2;
+  --control-min: var(--tap-min);
 
   --background: 48 100% 97%;
   --foreground: 222 40% 20%;
@@ -320,6 +330,9 @@
   --tap-min: 2.75rem;
   --ring-width: 3px;
   --motion-scale: 0;
+  /* Larger, low-dexterity-friendly controls (~2.75rem / 1.5rem). */
+  --control-scale: 1.85;
+  --control-min: var(--tap-min);
 
   --background: 0 0% 100%;
   --foreground: 0 0% 10%;
