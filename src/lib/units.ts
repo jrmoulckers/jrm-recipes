@@ -327,6 +327,124 @@ export function displayUnit(
   return def?.canonical ?? unit;
 }
 
+// --- Kid-friendly amounts (#447) ---------------------------------------------
+// A display layer only: spoken-style fraction words + spelled-out units for
+// Kids mode. It reuses the same scaled/measured values as the compact display
+// (no new math), and non-Kids modes never call it, so their output is unchanged.
+
+type KidFractionWords = {
+  /** After a whole number: "1 and {combined}" → "1 and a half". */
+  combined: string;
+  /** Fraction-only, with a unit following: "{withUnit} cup" → "half a cup". */
+  withUnit: string;
+  /** Fraction-only, no unit (a bare count): "{bare} onion" → "half onion". */
+  bare: string;
+};
+
+const KID_FRACTIONS: Array<[number, KidFractionWords]> = [
+  [1 / 8, { combined: "an eighth", withUnit: "an eighth of a", bare: "an eighth" }],
+  [1 / 6, { combined: "a sixth", withUnit: "a sixth of a", bare: "a sixth" }],
+  [1 / 4, { combined: "a quarter", withUnit: "a quarter of a", bare: "a quarter" }],
+  [1 / 3, { combined: "a third", withUnit: "a third of a", bare: "a third" }],
+  [3 / 8, { combined: "three-eighths", withUnit: "three-eighths of a", bare: "three-eighths" }],
+  [1 / 2, { combined: "a half", withUnit: "half a", bare: "half" }],
+  [5 / 8, { combined: "five-eighths", withUnit: "five-eighths of a", bare: "five-eighths" }],
+  [2 / 3, { combined: "two-thirds", withUnit: "two-thirds of a", bare: "two-thirds" }],
+  [3 / 4, { combined: "three-quarters", withUnit: "three-quarters of a", bare: "three-quarters" }],
+  [5 / 6, { combined: "five-sixths", withUnit: "five-sixths of a", bare: "five-sixths" }],
+  [7 / 8, { combined: "seven-eighths", withUnit: "seven-eighths of a", bare: "seven-eighths" }],
+];
+
+/** Canonical unit → [singular, plural] spoken word. */
+const KID_UNIT_WORDS: Record<string, [string, string]> = {
+  tsp: ["teaspoon", "teaspoons"],
+  tbsp: ["tablespoon", "tablespoons"],
+  "fl oz": ["fluid ounce", "fluid ounces"],
+  cup: ["cup", "cups"],
+  pint: ["pint", "pints"],
+  quart: ["quart", "quarts"],
+  gallon: ["gallon", "gallons"],
+  ml: ["milliliter", "milliliters"],
+  l: ["liter", "liters"],
+  oz: ["ounce", "ounces"],
+  lb: ["pound", "pounds"],
+  g: ["gram", "grams"],
+  kg: ["kilogram", "kilograms"],
+  "°F": ["degree", "degrees"],
+  "°C": ["degree", "degrees"],
+};
+
+/**
+ * Spell out a unit abbreviation for young cooks ("tbsp" → "tablespoons"),
+ * pluralized by quantity (plural when > 1). Unknown units degrade gracefully to
+ * the standard {@link displayUnit} output.
+ */
+export function expandKidUnit(
+  unit: string | null | undefined,
+  quantity: number | null | undefined,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  if (!unit) return "";
+  const def = UNIT_INDEX.get(unit.trim().toLowerCase());
+  const canonical = def?.canonical ?? unit;
+  const words = KID_UNIT_WORDS[canonical];
+  if (!words) return displayUnit(unit, quantity, locale);
+  const plural = quantity != null && quantity > 1;
+  return plural ? words[1] : words[0];
+}
+
+/**
+ * Kid-friendly rendering of a single measured amount: spoken fraction words and
+ * a spelled-out unit ("¾ cup" → "three-quarters of a cup", "1½ tbsp" → "1 and a
+ * half tablespoons"). Returns the same `{ number, unit }` shape as the compact
+ * path so callers can slot it straight in. Metric weights/volumes and odd
+ * decimals keep the precise compact number (with the unit still spelled out).
+ */
+export function formatKidAmount(
+  value: number | null | undefined,
+  unit?: string | null,
+  locale: string = DEFAULT_LOCALE,
+): { number: string; unit: string } {
+  if (value == null || Number.isNaN(value)) {
+    return { number: "", unit: expandKidUnit(unit, null, locale) };
+  }
+  const unitWord = expandKidUnit(unit, value, locale);
+
+  // Metric weights/volumes + temperature: keep the precise decimal.
+  if (isMetricUnit(unit) || unitDimension(unit) === "temperature") {
+    return { number: formatQuantity(value, unit, locale), unit: unitWord };
+  }
+
+  const n = roundNice(value);
+  if (n === 0) return { number: formatDecimal(0, locale), unit: unitWord };
+  const whole = Math.floor(n);
+  const frac = n - whole;
+  if (frac < 0.02) {
+    return { number: formatDecimal(whole, locale), unit: unitWord };
+  }
+
+  let best: { words: KidFractionWords; diff: number } | null = null;
+  for (const [f, words] of KID_FRACTIONS) {
+    const diff = Math.abs(frac - f);
+    if (diff < 0.03 && (!best || diff < best.diff)) best = { words, diff };
+  }
+  if (best) {
+    if (whole > 0) {
+      return {
+        number: `${formatDecimal(whole, locale)} and ${best.words.combined}`,
+        unit: unitWord,
+      };
+    }
+    return {
+      number: unit ? best.words.withUnit : best.words.bare,
+      unit: unitWord,
+    };
+  }
+
+  // Odd decimal (e.g. 0.9): fall back to the compact number, unit still spelled.
+  return { number: formatQuantity(value, unit, locale), unit: unitWord };
+}
+
 /** Regions that still cook in US customary / imperial units. */
 const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
 

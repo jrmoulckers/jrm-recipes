@@ -5,6 +5,8 @@ import {
   convertUnit,
   defaultSystemForLocale,
   displayUnit,
+  expandKidUnit,
+  formatKidAmount,
   formatQuantity,
   normalizeUnit,
   scaleQuantity,
@@ -305,5 +307,68 @@ describe("defaultSystemForLocale (#246)", () => {
   it("falls back to metric for unparseable locales", () => {
     expect(defaultSystemForLocale("")).toBe("metric");
     expect(defaultSystemForLocale("not a locale!!")).toBe("metric");
+  });
+});
+
+describe("formatKidAmount (issue #447)", () => {
+  it("spells out simple fractions with a unit", () => {
+    expect(formatKidAmount(0.5, "cup")).toEqual({
+      number: "half a",
+      unit: "cup",
+    });
+    expect(formatKidAmount(0.75, "cup")).toEqual({
+      number: "three-quarters of a",
+      unit: "cup",
+    });
+    expect(formatKidAmount(1 / 3, "cup")).toEqual({
+      number: "a third of a",
+      unit: "cup",
+    });
+  });
+
+  it("joins whole numbers and fractions with 'and' and pluralizes the unit", () => {
+    expect(formatKidAmount(1.5, "tbsp")).toEqual({
+      number: "1 and a half",
+      unit: "tablespoons",
+    });
+    expect(formatKidAmount(2.25, "cup")).toEqual({
+      number: "2 and a quarter",
+      unit: "cups",
+    });
+  });
+
+  it("uses singular units for one or less and plural above one", () => {
+    expect(formatKidAmount(1, "cup")).toEqual({ number: "1", unit: "cup" });
+    expect(formatKidAmount(3, "tsp")).toEqual({ number: "3", unit: "teaspoons" });
+  });
+
+  it("spells fraction-only amounts without a unit as a bare count", () => {
+    expect(formatKidAmount(0.5)).toEqual({ number: "half", unit: "" });
+  });
+
+  it("keeps precise decimals for metric weights and temperatures", () => {
+    expect(formatKidAmount(200, "g")).toEqual({ number: "200", unit: "grams" });
+    expect(formatKidAmount(180, "°C")).toEqual({
+      number: "180",
+      unit: "degrees",
+    });
+  });
+
+  it("returns an empty number when the value is missing", () => {
+    expect(formatKidAmount(null, "cup")).toEqual({ number: "", unit: "cup" });
+    expect(formatKidAmount(undefined)).toEqual({ number: "", unit: "" });
+  });
+});
+
+describe("expandKidUnit (issue #447)", () => {
+  it("spells out and pluralizes known units", () => {
+    expect(expandKidUnit("tbsp", 1)).toBe("tablespoon");
+    expect(expandKidUnit("tbsp", 3)).toBe("tablespoons");
+    expect(expandKidUnit("cup", 0.5)).toBe("cup");
+  });
+
+  it("degrades gracefully for unknown units", () => {
+    expect(expandKidUnit("clove", 2)).toBe(displayUnit("clove", 2));
+    expect(expandKidUnit(null, 2)).toBe("");
   });
 });
