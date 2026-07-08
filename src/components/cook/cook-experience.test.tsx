@@ -506,8 +506,13 @@ describe("Cook Mode Kids step trail (issue #441)", () => {
 });
 
 describe("Cook Mode completion moment (issue #437)", () => {
+  /* jsdom doesn't implement the object-URL helpers, so we save/restore them by
+     hand rather than vi.spyOn (which needs an existing function). They're only
+     reassigned, never invoked detached, so unbound-method doesn't apply. */
+  /* eslint-disable @typescript-eslint/unbound-method */
   const origCreate = URL.createObjectURL;
   const origRevoke = URL.revokeObjectURL;
+  /* eslint-enable @typescript-eslint/unbound-method */
 
   beforeEach(() => {
     URL.createObjectURL = vi.fn(() => "blob:mock-photo");
@@ -545,9 +550,9 @@ describe("Cook Mode completion moment (issue #437)", () => {
   it("previews a captured photo as a keepsake", () => {
     const { container } = renderKids();
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    const input = container.querySelector(
+    const input = container.querySelector<HTMLInputElement>(
       'input[type="file"]',
-    ) as HTMLInputElement;
+    )!;
     const file = new File(["x"], "cupcake.png", { type: "image/png" });
     fireEvent.change(input, { target: { files: [file] } });
     const img = screen.getByRole("img", { name: /my finished/i });
@@ -560,9 +565,9 @@ describe("Cook Mode completion moment (issue #437)", () => {
     URL.createObjectURL = undefined;
     const { container } = renderKids();
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    const input = container.querySelector(
+    const input = container.querySelector<HTMLInputElement>(
       'input[type="file"]',
-    ) as HTMLInputElement;
+    )!;
     const file = new File(["x"], "cupcake.png", { type: "image/png" });
     expect(() =>
       fireEvent.change(input, { target: { files: [file] } }),

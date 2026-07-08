@@ -57,7 +57,7 @@ function TechniqueChip({
     if (match.suggestion) {
       const suggested = getTechnique(match.suggestion.slug);
       const suggestedTip =
-        (kidSafe && suggested?.kidTip) || suggested?.shortTip;
+        kidSafe && suggested?.kidTip ? suggested.kidTip : suggested?.shortTip;
       return (
         <Popover>
           <PopoverTrigger asChild>
