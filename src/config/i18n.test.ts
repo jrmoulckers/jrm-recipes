@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  isLocale,
   localeDirection,
   resolveLocale,
 } from "./i18n";
@@ -36,8 +38,35 @@ describe("localeDirection", () => {
   });
 });
 
+describe("isLocale", () => {
+  it("accepts every supported locale", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(isLocale(locale)).toBe(true);
+    }
+  });
+
+  it("rejects unsupported or non-string values", () => {
+    expect(isLocale("en-US")).toBe(false);
+    expect(isLocale("fr")).toBe(false);
+    expect(isLocale(undefined)).toBe(false);
+    expect(isLocale(null)).toBe(false);
+    expect(isLocale(42)).toBe(false);
+  });
+});
+
 describe("resolveLocale", () => {
-  it("resolves to the configured default locale", () => {
+  it("resolves to the configured default locale with no request", () => {
     expect(resolveLocale()).toBe(DEFAULT_LOCALE);
+  });
+
+  it("returns a supported requested locale unchanged", () => {
+    expect(resolveLocale("de")).toBe("de");
+    expect(resolveLocale("ar")).toBe("ar");
+  });
+
+  it("falls back to the default for unsupported or missing requests", () => {
+    expect(resolveLocale("fr")).toBe(DEFAULT_LOCALE);
+    expect(resolveLocale(null)).toBe(DEFAULT_LOCALE);
+    expect(resolveLocale(undefined)).toBe(DEFAULT_LOCALE);
   });
 });

@@ -5,6 +5,12 @@
 import "./src/env.js";
 
 import withSerwistInit from "@serwist/next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Point the next-intl plugin at the request config (cookie-based locale
+// resolution). This makes getTranslations/useTranslations, getLocale, and the
+// formatters available throughout the App Router tree.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // Stable per deploy: use the commit SHA when a platform provides it (Vercel),
 // otherwise stamp the build time. Threaded into the offline page's precache
@@ -66,4 +72,4 @@ const config = {
   },
 };
 
-export default withSerwist(config);
+export default withSerwist(withNextIntl(config));

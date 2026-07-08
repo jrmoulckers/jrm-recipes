@@ -58,6 +58,7 @@
     "lucide-react": "^0.475.0",
     "next": "^15.1.7",
     "next-cloudinary": "^6.17.5",
+    "next-intl": "4.13.1",
     "postgres": "^3.4.5",
     "posthog-js": "^1.398.2",
     "qrcode-generator": "^2.0.4",

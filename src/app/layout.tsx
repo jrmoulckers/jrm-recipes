@@ -27,7 +27,10 @@ import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
 import { analyticsRequiresConsent } from "~/lib/analytics/config";
 import { getAllFlags } from "~/lib/analytics/server";
 import { atkinson } from "~/fonts/atkinson";
-import { localeDirection, resolveLocale } from "~/config/i18n";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+
+import { localeDirection } from "~/config/i18n";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
@@ -111,7 +114,8 @@ export default async function RootLayout({
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
   const household = parseHousehold(cookieStore.get(HOUSEHOLD_COOKIE)?.value);
   const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
-  const locale = resolveLocale();
+  const locale = await getLocale();
+  const messages = await getMessages();
   const currentUser = await getCurrentUser();
   // SSR-evaluate feature flags for the identified user so client variants don't
   // flicker on load (#335). Returns {} (all control) when analytics is off.
@@ -139,18 +143,20 @@ export default async function RootLayout({
         <A11yScript />
       </head>
       <body className="min-h-dvh bg-background">
-        <Providers
-          initialTheme={theme}
-          initialScheme={scheme}
-          initialA11y={a11y}
-          initialUserId={currentUser?.id ?? null}
-          initialConsent={consent}
-          requireConsent={analyticsRequiresConsent()}
-          initialFlags={flags}
-          initialHousehold={household}
-        >
-          {children}
-        </Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers
+            initialTheme={theme}
+            initialScheme={scheme}
+            initialA11y={a11y}
+            initialUserId={currentUser?.id ?? null}
+            initialConsent={consent}
+            requireConsent={analyticsRequiresConsent()}
+            initialFlags={flags}
+            initialHousehold={household}
+          >
+            {children}
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
