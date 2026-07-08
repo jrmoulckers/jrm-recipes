@@ -40,12 +40,19 @@ export function RecipeCard({
   recipe,
   favorited = false,
   canFavorite = false,
+  priority = false,
 }: {
   recipe: CardRecipe;
   /** Initial favorited state for the heart overlay. */
   favorited?: boolean;
   /** Show the favorite (heart) toggle over the cover image. */
   canFavorite?: boolean;
+  /**
+   * Prioritize the cover image for LCP: render it eagerly with
+   * `fetchpriority="high"` and a preload hint instead of lazy-loading. Only set
+   * this for genuinely above-the-fold cards (e.g. the first row of the grid).
+   */
+  priority?: boolean;
 }) {
   const rating = ratingDisplay(ratingSummary(recipe.ratings ?? []));
   const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
@@ -70,6 +77,7 @@ export function RecipeCard({
             src={recipe.coverImageUrl}
             alt=""
             fill
+            priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />

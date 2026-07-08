@@ -24,6 +24,14 @@ import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls
 
 export const metadata: Metadata = { title: "Recipes" };
 
+/**
+ * Number of leading cards treated as above-the-fold for LCP: the first row of
+ * the widest grid layout (`lg:grid-cols-3`). These render their cover image
+ * with `priority` so the LCP image is preloaded instead of lazy-loaded; every
+ * card after the first row stays lazy.
+ */
+const LCP_PRIORITY_COUNT = 3;
+
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -85,12 +93,13 @@ async function BrowseSections({ user }: { user: User | null }) {
     <>
       {mine.length > 0 ? (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((recipe) => (
+          {mine.map((recipe, i) => (
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
               canFavorite={canFavorite}
               favorited={favoriteIds.has(recipe.id)}
+              priority={i < LCP_PRIORITY_COUNT}
             />
           ))}
         </section>
@@ -111,6 +120,7 @@ async function BrowseSections({ user }: { user: User | null }) {
             initialNextOffset={discover.nextOffset}
             canFavorite={canFavorite}
             favoritedIds={[...favoriteIds]}
+            priorityCount={mine.length === 0 ? LCP_PRIORITY_COUNT : 0}
           />
         </section>
       )}
@@ -145,12 +155,13 @@ async function SearchResults({
         </span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {results.map((recipe) => (
+        {results.map((recipe, i) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
             canFavorite={canFavorite}
             favorited={favoriteIds.has(recipe.id)}
+            priority={i < LCP_PRIORITY_COUNT}
           />
         ))}
       </div>
