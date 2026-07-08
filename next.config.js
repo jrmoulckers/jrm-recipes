@@ -28,7 +28,11 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   // The service worker only runs in production builds.
   disable: process.env.NODE_ENV === "development",
-  reloadOnOnline: true,
+  // Don't force a full-page reload when connectivity returns: that could reload
+  // the app out from under an active Cook Mode session. Updates are surfaced by
+  // the user-controlled "update available" prompt instead (issue #163). The
+  // `/~offline` fallback still reconnects itself via its own online handler.
+  reloadOnOnline: false,
   // Root layout reads cookies() (for theme SSR), so every route renders
   // dynamically and nothing lands in the precache manifest automatically.
   // Precache the offline fallback + the offline recipe-image placeholder

@@ -105,7 +105,12 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  // Do NOT auto-activate a new SW: let it enter `waiting` so the client can
+  // offer a user-controlled "update available" prompt (issue #163) instead of
+  // swapping precached chunks mid-recipe. With `skipWaiting: false` Serwist
+  // registers a `message` listener that calls `self.skipWaiting()` when it
+  // receives `{ type: "SKIP_WAITING" }` — which the prompt posts on accept.
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [recipeImageCache, recipePageCache, ...defaultCache],

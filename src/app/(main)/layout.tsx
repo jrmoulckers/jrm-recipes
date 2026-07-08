@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/layout/site-header";
 import { SiteFooter } from "~/components/layout/site-footer";
 import { BottomNav } from "~/components/layout/main-nav";
 import { InstallPrompt } from "~/components/pwa/install-prompt";
+import { UpdatePrompt } from "~/components/pwa/update-prompt";
 
 export default function MainLayout({
   children,
@@ -25,6 +26,7 @@ export default function MainLayout({
       <SiteFooter />
       <BottomNav />
       <InstallPrompt />
+      <UpdatePrompt />
     </div>
   );
 }
