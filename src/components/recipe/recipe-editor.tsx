@@ -917,13 +917,34 @@ function Field({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const reactId = React.useId();
+  const child = React.isValidElement(children)
+    ? (children as React.ReactElement<Record<string, unknown>>)
+    : null;
+  const existingId =
+    child && typeof child.props.id === "string" ? child.props.id : undefined;
+  const controlId = existingId ?? reactId;
+
+  // Thread the generated id onto the control and mark it required so the
+  // relationship (and required state) is programmatic, not just a visual "*".
+  const control = child
+    ? React.cloneElement(child, {
+        id: controlId,
+        "aria-required": required ? true : undefined,
+      })
+    : children;
+
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="flex items-center gap-1">
+      <Label htmlFor={controlId} className="flex items-center gap-1">
         {label}
-        {required && <span className="text-destructive">*</span>}
+        {required && (
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        )}
       </Label>
-      {children}
+      {control}
       {hint && !error?.length && (
         <p className="text-xs text-muted-foreground">{hint}</p>
       )}
