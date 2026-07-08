@@ -4,6 +4,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { KidsModeToggle } from "./kids-mode-toggle";
 import { ThemeProvider } from "./theme-provider";
+import { A11yProvider } from "~/components/a11y/a11y-provider";
+import { A11Y_COOKIE, A11Y_PREVIOUS_COOKIE } from "~/config/a11y";
 import { THEME_COOKIE, THEME_PREVIOUS_COOKIE, type UITheme } from "~/config/themes";
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
@@ -25,7 +27,12 @@ beforeAll(() => {
 
 beforeEach(() => {
   localStorage.clear();
-  for (const name of [THEME_COOKIE, THEME_PREVIOUS_COOKIE]) {
+  for (const name of [
+    THEME_COOKIE,
+    THEME_PREVIOUS_COOKIE,
+    A11Y_COOKIE,
+    A11Y_PREVIOUS_COOKIE,
+  ]) {
     document.cookie = `${name}=;path=/;max-age=0`;
   }
 });
@@ -35,7 +42,9 @@ afterEach(cleanup);
 function renderToggle(theme: UITheme = "kitchen") {
   return render(
     <ThemeProvider initialTheme={theme}>
-      <KidsModeToggle />
+      <A11yProvider>
+        <KidsModeToggle />
+      </A11yProvider>
     </ThemeProvider>,
   );
 }

@@ -46,6 +46,15 @@ export const DEFAULT_A11Y: A11yPrefs = {
 /** One cookie holds the whole (small) object, URL-encoded JSON. */
 export const A11Y_COOKIE = "heirloom-a11y";
 
+/**
+ * Snapshot of the a11y prefs that were active *before* Kids mode was switched
+ * on (#445). Kids mode bumps text size + easy-reading type to kid-friendly
+ * defaults; this remembers the prior values so turning Kids mode off restores
+ * them (mirroring the theme-provider's "previous theme" cookie). Never holds a
+ * snapshot while Kids mode is off.
+ */
+export const A11Y_PREVIOUS_COOKIE = "heirloom-a11y-prev";
+
 /** Every <html> attribute this system controls (used to clear before applying). */
 export const A11Y_MANAGED_ATTRS = [
   "data-text",
@@ -124,4 +133,19 @@ export function isA11yActive(prefs: A11yPrefs): boolean {
     prefs.motion !== undefined ||
     prefs.reading
   );
+}
+
+/**
+ * Kid-friendly comfort defaults applied when Kids mode turns on (#445): larger
+ * text and easy-reading type. Only *unset* values are bumped — a grown-up who
+ * already picked a text size keeps it — so this never clobbers an explicit
+ * choice. `reading` has no tri-state, so its default (false) is treated as
+ * "unset" and enabled; the pre-Kids snapshot restores it on the way out.
+ */
+export function kidModeDefaults(prefs: A11yPrefs): A11yPrefs {
+  return {
+    ...prefs,
+    textSize: prefs.textSize === "default" ? "large" : prefs.textSize,
+    reading: true,
+  };
 }
