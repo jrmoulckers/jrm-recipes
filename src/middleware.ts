@@ -27,7 +27,10 @@ const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
  */
 function securedNext(request: NextRequest): NextResponse {
   const nonce = generateNonce();
-  const csp = buildContentSecurityPolicy(nonce);
+  const csp = buildContentSecurityPolicy(
+    nonce,
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  );
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);

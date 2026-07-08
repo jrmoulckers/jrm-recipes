@@ -11,22 +11,69 @@
  * and only serve as a graceful fallback for older engines.
  */
 
-/** Cloudinary host that fronts recipe media (covers/steps/video, avatars). */
-const CLOUDINARY = "https://res.cloudinary.com";
+/** Cloudinary hosts: media delivery, the upload widget iframe, and its API. */
+const CLOUDINARY_DELIVERY = "https://res.cloudinary.com";
+const CLOUDINARY_UPLOAD_WIDGET = "https://upload-widget.cloudinary.com";
+const CLOUDINARY_API = "https://api.cloudinary.com";
 /** Clerk-served avatar host (only reachable when auth is configured). */
 const CLERK_IMG = "https://img.clerk.com";
-/** Clerk Frontend API + hosted UI origins (dev + prod instances). */
-const CLERK_ORIGINS = ["https://*.clerk.accounts.dev", "https://clerk.dev"];
+/**
+ * Clerk *development* Frontend API origins (pk_test instances serve FAPI from a
+ * shared `*.clerk.accounts.dev` host). Production (pk_live) uses a per-app custom
+ * domain that we derive at runtime from the publishable key — see
+ * {@link clerkFrontendApiHost} — so nothing is blocked on the real domain.
+ */
+const CLERK_DEV_ORIGINS = ["https://*.clerk.accounts.dev"];
 /** Cloudflare Turnstile — Clerk's bot-protection challenge widget. */
 const TURNSTILE = "https://challenges.cloudflare.com";
 /** PostHog product-analytics hosts (capture is same-origin via /ingest). */
 const POSTHOG = ["https://*.posthog.com", "https://*.i.posthog.com"];
 
 /**
- * Build the Content-Security-Policy header value for a request, binding all
- * first-party inline/bootstrap scripts to `nonce`.
+ * Derive a Clerk instance's Frontend API host from its publishable key
+ * (issue #212). Clerk encodes the host in the key: `pk_live_<base64>` /
+ * `pk_test_<base64>`, where the base64 segment decodes to `<host>$`. A pk_live
+ * instance serves FAPI from a per-app custom domain (e.g. `clerk.example.com`)
+ * that clerk-js reaches via fetch/XHR + a session iframe — none of which are
+ * covered by `strict-dynamic` — so the derived host must be allowlisted or
+ * sign-in, session hydration, and every authed action break in production.
+ *
+ * Returns `null` for an absent/malformed key (dev-bypass / e2e with no key), so
+ * the policy simply omits the origin rather than emitting a broken token.
  */
-export function buildContentSecurityPolicy(nonce: string): string {
+export function clerkFrontendApiHost(
+  publishableKey: string | undefined,
+): string | null {
+  if (!publishableKey) return null;
+  const encoded = publishableKey.replace(/^pk_(test|live)_/, "");
+  if (encoded === publishableKey) return null;
+  try {
+    const host = atob(encoded).replace(/\$+$/, "");
+    // Guard against a malformed decode injecting extra CSP tokens/directives.
+    return /^[a-z0-9.-]+$/i.test(host) ? host : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the Content-Security-Policy header value for a request, binding all
+ * first-party inline/bootstrap scripts to `nonce`. When a Clerk publishable key
+ * is provided, its Frontend API host is allowlisted across the
+ * script/connect/img/frame directives so a real production (pk_live) deploy
+ * works; dev (pk_test) additionally keeps the shared `*.clerk.accounts.dev`
+ * origins.
+ */
+export function buildContentSecurityPolicy(
+  nonce: string,
+  publishableKey?: string,
+): string {
+  const clerkHost = clerkFrontendApiHost(publishableKey);
+  const clerkConnectFrame = [
+    ...CLERK_DEV_ORIGINS,
+    ...(clerkHost ? [`https://${clerkHost}`] : []),
+  ];
+
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     "base-uri": ["'self'"],
@@ -38,19 +85,43 @@ export function buildContentSecurityPolicy(nonce: string): string {
       "'self'",
       `'nonce-${nonce}'`,
       "'strict-dynamic'",
+      // Cloudinary upload widget + Clerk prod FAPI load scripts that
+      // strict-dynamic covers transitively, but list the widget host explicitly
+      // for engines that gate the initial <script src> on the origin.
+      CLOUDINARY_UPLOAD_WIDGET,
+      ...(clerkHost ? [`https://${clerkHost}`] : []),
       // Ignored where strict-dynamic is honored; fallback for old browsers.
       "https:",
       "'unsafe-inline'",
     ],
     // Tailwind + Next inject inline <style>; hashing them per-build is brittle.
     "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "data:", "blob:", CLOUDINARY, CLERK_IMG],
+    "img-src": [
+      "'self'",
+      "data:",
+      "blob:",
+      CLOUDINARY_DELIVERY,
+      CLERK_IMG,
+      ...(clerkHost ? [`https://${clerkHost}`] : []),
+    ],
     "font-src": ["'self'", "data:"],
-    "media-src": ["'self'", "blob:", CLOUDINARY],
-    "connect-src": ["'self'", CLOUDINARY, ...CLERK_ORIGINS, ...POSTHOG],
+    "media-src": ["'self'", "blob:", CLOUDINARY_DELIVERY],
+    "connect-src": [
+      "'self'",
+      CLOUDINARY_DELIVERY,
+      CLOUDINARY_API,
+      CLOUDINARY_UPLOAD_WIDGET,
+      ...clerkConnectFrame,
+      ...POSTHOG,
+    ],
     "worker-src": ["'self'", "blob:"],
     "manifest-src": ["'self'"],
-    "frame-src": ["'self'", ...CLERK_ORIGINS, TURNSTILE],
+    "frame-src": [
+      "'self'",
+      CLOUDINARY_UPLOAD_WIDGET,
+      ...clerkConnectFrame,
+      TURNSTILE,
+    ],
     // Auto-upgrade any stray http subresource to https in production.
     "upgrade-insecure-requests": [],
   };

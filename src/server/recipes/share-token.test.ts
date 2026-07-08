@@ -18,6 +18,7 @@ vi.mock("~/server/db", () => ({
 
 import type { User } from "~/server/db/schema";
 import { getRecipe, getRecipeByShareToken } from "./queries";
+import { generateShareToken } from "./share-token";
 
 const author = { id: "author_1" } as User;
 const stranger = { id: "stranger_1" } as User;
@@ -91,5 +92,25 @@ describe("unlisted share-token access (#204/#207)", () => {
   it("getRecipeByShareToken returns null for an empty token", async () => {
     await expect(getRecipeByShareToken("")).resolves.toBeNull();
     expect(dbMock.query.recipes.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("generateShareToken", () => {
+  it("produces a URL-safe, base64url token with no padding", () => {
+    for (let i = 0; i < 50; i++) {
+      const token = generateShareToken();
+      // Only base64url chars; never +, /, or = padding.
+      expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
+    }
+  });
+
+  it("carries ~256 bits of entropy (32 bytes → 43 chars)", () => {
+    expect(generateShareToken()).toHaveLength(43);
+  });
+
+  it("does not repeat across many draws (CSPRNG, not Math.random)", () => {
+    const tokens = new Set<string>();
+    for (let i = 0; i < 1000; i++) tokens.add(generateShareToken());
+    expect(tokens.size).toBe(1000);
   });
 });
