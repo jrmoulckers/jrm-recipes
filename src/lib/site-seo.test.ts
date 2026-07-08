@@ -39,6 +39,8 @@ describe("buildOrganizationJsonLd", () => {
       buildOrganizationJsonLd(),
     ]);
     expect(out).not.toContain("</script>");
-    expect(() => JSON.parse(out.replace(/\\u003c/g, "<"))).not.toThrow();
+    expect(() => {
+      JSON.parse(out.replace(/\\u003c/g, "<"));
+    }).not.toThrow();
   });
 });

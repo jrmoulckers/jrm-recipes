@@ -5,7 +5,7 @@ import { ChefHat } from "lucide-react";
 
 import { getPublicProfileByHandle } from "~/server/users/queries";
 import { brand } from "~/config/brand";
-import { absoluteUrl } from "~/lib/utils";
+import { absoluteUrl, displayNameFrom } from "~/lib/utils";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
@@ -31,7 +31,7 @@ export async function generateMetadata({
   const profile = await load(handle);
   if (!profile) return { title: "Cook not found", robots: { index: false } };
 
-  const displayName = profile.user.name?.trim() || `@${profile.user.handle}`;
+  const displayName = displayNameFrom(profile.user.name, `@${profile.user.handle}`);
   const count = profile.recipes.length;
   const canonical = absoluteUrl(`/cooks/${profile.user.handle}`);
   const description = `${count} public recipe${count === 1 ? "" : "s"} by ${displayName} on ${brand.name}.`;
@@ -61,7 +61,7 @@ export default async function CookProfilePage({
   if (!profile) notFound();
 
   const { user, recipes } = profile;
-  const displayName = user.name?.trim() || `@${user.handle}`;
+  const displayName = displayNameFrom(user.name, `@${user.handle}`);
   const count = recipes.length;
 
   return (
@@ -70,7 +70,7 @@ export default async function CookProfilePage({
         <Avatar className="size-20 text-xl">
           {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
           <AvatarFallback>
-            {initials(user.name?.trim() || user.handle || "?")}
+            {initials(displayNameFrom(user.name, user.handle, "?"))}
           </AvatarFallback>
         </Avatar>
         <div className="flex flex-col gap-1">

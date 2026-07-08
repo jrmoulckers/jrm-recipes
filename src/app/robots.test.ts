@@ -4,7 +4,7 @@ import robots from "./robots";
 
 describe("robots", () => {
   const result = robots();
-  const rule = Array.isArray(result.rules) ? result.rules[0]! : result.rules!;
+  const rule = Array.isArray(result.rules) ? result.rules[0]! : result.rules;
   const disallow = Array.isArray(rule.disallow)
     ? rule.disallow
     : [rule.disallow!];

@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { getPublicProfileByHandle } from "~/server/users/queries";
+import { displayNameFrom } from "~/lib/utils";
 import { loadFonts, fetchCoverDataUri } from "../../recipes/[id]/_assets/og";
 import { SIZE } from "../../recipes/[id]/_assets/card";
 import { ProfileCard, type ProfileCardData } from "../../_og/social-card";
@@ -27,7 +28,7 @@ export default async function Image({
     const profile = await getPublicProfileByHandle(handle);
     if (profile) {
       data = {
-        name: profile.user.name?.trim() || profile.user.handle || handle,
+        name: displayNameFrom(profile.user.name, profile.user.handle, handle),
         handle: profile.user.handle ?? handle,
         avatar: await fetchCoverDataUri(profile.user.avatarUrl),
         recipeCount: profile.recipes.length,

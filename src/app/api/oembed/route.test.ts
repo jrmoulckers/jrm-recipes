@@ -31,7 +31,11 @@ describe("GET /api/oembed", () => {
       `?url=${encodeURIComponent(`${ORIGIN}/recipes/apple-pie`)}&format=json`,
     );
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as {
+      type: string;
+      title: string;
+      html: string;
+    };
     expect(body.type).toBe("rich");
     expect(body.title).toBe("Apple Pie");
     expect(body.html).toContain("/embed/recipes/apple-pie");
