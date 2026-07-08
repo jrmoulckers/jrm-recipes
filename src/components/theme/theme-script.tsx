@@ -10,7 +10,7 @@ import {
  * BEFORE first paint, eliminating any flash of the wrong theme. Kept tiny and
  * dependency-free on purpose. Runtime changes are handled by ThemeProvider.
  */
-export function ThemeScript() {
+export function ThemeScript({ nonce }: { nonce?: string }) {
   const script = `
 (function () {
   try {
@@ -31,5 +31,5 @@ export function ThemeScript() {
   } catch (e) {}
 })();
 `;
-  return <script dangerouslySetInnerHTML={{ __html: script }} suppressHydrationWarning />;
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} suppressHydrationWarning />;
 }
