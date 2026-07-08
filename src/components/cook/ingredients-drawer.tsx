@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { ListChecks, Utensils } from "lucide-react";
 
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
@@ -35,6 +36,7 @@ export function IngredientsDrawer({
   label = "Ingredients",
   controls,
 }: IngredientsDrawerProps) {
+  const t = useTranslations("ingredientsDrawer");
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -42,7 +44,7 @@ export function IngredientsDrawer({
           type="button"
           variant="secondary"
           size="lg"
-          aria-label={`${label} list and recipe scaling`}
+          aria-label={t("region", { label })}
           className={cn("h-12 px-4 sm:h-14 sm:px-5", className)}
         >
           <ListChecks aria-hidden="true" />

@@ -366,6 +366,7 @@ function CookHeader({
   onStepSelect: (index: number) => void;
   ingredientControls: IngredientsPanelControls;
 }) {
+  const t = useTranslations("cook.a11y");
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
@@ -409,7 +410,7 @@ function CookHeader({
           className="hidden md:inline-flex"
           controls={ingredientControls}
         />
-        <Button asChild variant="ghost" size="icon" aria-label="Exit cook mode">
+        <Button asChild variant="ghost" size="icon" aria-label={t("exit")}>
           <Link href={`/recipes/${recipe.slug}`}>
             <X />
           </Link>
@@ -419,7 +420,7 @@ function CookHeader({
       <ProgressPrimitive.Root
         value={progressValue}
         className="h-2 w-full overflow-hidden bg-muted"
-        aria-label="Cooking progress"
+        aria-label={t("progress")}
       >
         <ProgressPrimitive.Indicator
           className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
@@ -526,6 +527,7 @@ function StepTimerCard({
   onReset: (step: CookStep) => void;
 }) {
   const t = useTranslations("cook.timer");
+  const tA11y = useTranslations("cook.a11y");
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
 
@@ -557,7 +559,9 @@ function StepTimerCard({
         className="mt-5 rounded-2xl bg-muted px-4 py-5 text-center"
         role="timer"
         aria-live="off"
-        aria-label={`Step timer, ${formatCountdown(timer.remaining)} remaining`}
+        aria-label={tA11y("stepTimer", {
+          time: formatCountdown(timer.remaining),
+        })}
       >
         <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
           {formatCountdown(timer.remaining)}
@@ -692,6 +696,7 @@ function ActiveTimersPanel({
   onPause: (step: CookStep) => void;
   onReset: (step: CookStep) => void;
 }) {
+  const t = useTranslations("cook.a11y");
   return (
     <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
@@ -717,9 +722,11 @@ function ActiveTimersPanel({
                 className="flex w-full items-center justify-between gap-3 text-start"
                 onClick={() => onSelect(stepIndex)}
                 aria-current={isCurrent ? "step" : undefined}
-                aria-label={`Jump to step ${stepIndex + 1}: ${
-                  step.section ?? step.instruction
-                } — ${formatCountdown(timer.remaining)} remaining`}
+                aria-label={t("jumpToStep", {
+                  position: stepIndex + 1,
+                  title: step.section ?? step.instruction,
+                  time: formatCountdown(timer.remaining),
+                })}
               >
                 <span className="min-w-0">
                   <span className="block font-medium">Step {stepIndex + 1}</span>
@@ -784,6 +791,7 @@ function OverviewDialog({
   currentIndex: number;
   onStepSelect: (index: number) => void;
 }) {
+  const t = useTranslations("cook.a11y");
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -810,9 +818,10 @@ function OverviewDialog({
                 <button
                   type="button"
                   aria-current={isCurrent ? "step" : undefined}
-                  aria-label={`Go to step ${index + 1}: ${
-                    step.section ?? step.instruction
-                  }`}
+                  aria-label={t("goToStep", {
+                    position: index + 1,
+                    title: step.section ?? step.instruction,
+                  })}
                   className={cn(
                     "flex w-full gap-4 rounded-xl p-3 text-start transition-colors hover:bg-muted",
                     isCurrent && "bg-primary/10 text-foreground",
@@ -877,6 +886,7 @@ function EmptyCookExperience({
   wakeLockStatus: string;
   ingredientControls: IngredientsPanelControls;
 }) {
+  const t = useTranslations("cook.a11y");
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
@@ -899,7 +909,7 @@ function EmptyCookExperience({
             className="hidden sm:inline-flex"
             controls={ingredientControls}
           />
-          <Button asChild variant="ghost" size="icon" aria-label="Exit cook mode">
+          <Button asChild variant="ghost" size="icon" aria-label={t("exit")}>
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
             </Link>

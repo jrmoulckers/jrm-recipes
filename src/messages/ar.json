@@ -11,6 +11,13 @@
       "remaining": "{time} متبقٍّ",
       "paused": "متوقّف مؤقّتًا، {time} متبقٍّ",
       "ready": "{time} جاهز"
+    },
+    "a11y": {
+      "exit": "إنهاء وضع الطهي",
+      "progress": "تقدّم الطهي",
+      "stepTimer": "مؤقّت الخطوة، {time} متبقٍّ",
+      "jumpToStep": "الانتقال إلى الخطوة {position}: {title} — {time} متبقٍّ",
+      "goToStep": "الانتقال إلى الخطوة {position}: {title}"
     }
   },
   "metadata": {
@@ -33,5 +40,30 @@
         "description": "راجع قائمة التسوق وحدّد ما تم شراؤه."
       }
     }
+  },
+  "accessibilityMenu": {
+    "trigger": "إعدادات إمكانية الوصول والراحة",
+    "textSizeGroup": "حجم النص"
+  },
+  "saveToCollection": {
+    "list": "مجموعاتك",
+    "add": "الإضافة إلى المجموعة {name}",
+    "remove": "الإزالة من المجموعة {name}",
+    "newNameField": "اسم المجموعة الجديدة"
+  },
+  "ingredientsDrawer": {
+    "region": "قائمة {label} وتحجيم الوصفة"
+  },
+  "recipeEditor": {
+    "importUrl": "رابط الوصفة المراد استيرادها",
+    "quantity": "الكمية",
+    "unit": "الوحدة",
+    "ingredient": "المكوّن",
+    "step": "الخطوة {position}",
+    "timerMinutes": "المؤقّت بالدقائق",
+    "techniques": "التقنيات",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "remove": "إزالة"
   }
 }

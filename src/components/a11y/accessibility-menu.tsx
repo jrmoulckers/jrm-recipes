@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Accessibility,
   Blocks,
@@ -81,6 +82,7 @@ function ToggleRow({
  * one-tap Kids mode that switches to the big, bright, simplified theme.
  */
 export function AccessibilityMenu() {
+  const t = useTranslations("accessibilityMenu");
   const { prefs, effective, update, reset } = useA11y();
   const { theme, setKidsMode } = useTheme();
   const household = useHousehold();
@@ -94,7 +96,7 @@ export function AccessibilityMenu() {
         <Button
           variant="outline"
           size="icon"
-          aria-label="Accessibility & comfort settings"
+          aria-label={t("trigger")}
           className="relative"
         >
           <Accessibility className="size-5" />
@@ -125,7 +127,7 @@ export function AccessibilityMenu() {
             </div>
             <div
               role="group"
-              aria-label="Text size"
+              aria-label={t("textSizeGroup")}
               className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1"
             >
               {TEXT_SIZES.map((size) => {

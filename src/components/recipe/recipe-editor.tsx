@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -159,6 +160,7 @@ export function RecipeEditor({
   groups?: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  const t = useTranslations("recipeEditor");
   const [pending, startTransition] = React.useTransition();
   const [errors, setErrors] = React.useState<Record<string, string[]>>({});
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
@@ -498,7 +500,7 @@ export function RecipeEditor({
                   }}
                   placeholder="https://example.com/best-marinara"
                   disabled={importing}
-                  aria-label="Recipe URL to import"
+                  aria-label={t("importUrl")}
                 />
                 <Button
                   type="button"
@@ -564,7 +566,7 @@ export function RecipeEditor({
                 >
                   <div className="grid flex-1 gap-2 sm:grid-cols-[4rem_5rem_1fr]">
                     <Input
-                      aria-label="Quantity"
+                      aria-label={t("quantity")}
                       value={row.quantity}
                       onChange={(e) =>
                         setIngredients((l) =>
@@ -579,7 +581,7 @@ export function RecipeEditor({
                       inputMode="decimal"
                     />
                     <Input
-                      aria-label="Unit"
+                      aria-label={t("unit")}
                       value={row.unit}
                       onChange={(e) =>
                         setIngredients((l) =>
@@ -593,7 +595,7 @@ export function RecipeEditor({
                       placeholder="cup"
                     />
                     <Input
-                      aria-label="Ingredient"
+                      aria-label={t("ingredient")}
                       value={row.item}
                       onChange={(e) =>
                         setIngredients((l) =>
@@ -647,7 +649,7 @@ export function RecipeEditor({
                   </span>
                   <div className="flex flex-1 flex-col gap-2">
                     <Textarea
-                      aria-label={`Step ${i + 1}`}
+                      aria-label={t("step", { position: i + 1 })}
                       value={row.instruction}
                       onChange={(e) =>
                         setSteps((l) =>
@@ -663,7 +665,7 @@ export function RecipeEditor({
                     />
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Input
-                        aria-label="Timer in minutes"
+                        aria-label={t("timerMinutes")}
                         value={row.timerMinutes}
                         onChange={(e) =>
                           setSteps((l) =>
@@ -678,7 +680,7 @@ export function RecipeEditor({
                         inputMode="decimal"
                       />
                       <Input
-                        aria-label="Techniques"
+                        aria-label={t("techniques")}
                         value={row.techniques}
                         onChange={(e) =>
                           setSteps((l) =>
@@ -971,17 +973,18 @@ function RowControls({
   onDown: () => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("recipeEditor");
   return (
     <div className="flex shrink-0 items-center">
       <GripVertical className="hidden size-4 text-muted-foreground sm:block" />
-      <Button type="button" size="icon" variant="ghost" aria-label="Move up" onClick={onUp}>
+      <Button type="button" size="icon" variant="ghost" aria-label={t("moveUp")} onClick={onUp}>
         <ChevronUp />
       </Button>
       <Button
         type="button"
         size="icon"
         variant="ghost"
-        aria-label="Move down"
+        aria-label={t("moveDown")}
         onClick={onDown}
       >
         <ChevronDown />
@@ -990,7 +993,7 @@ function RowControls({
         type="button"
         size="icon"
         variant="ghost"
-        aria-label="Remove"
+        aria-label={t("remove")}
         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
       >

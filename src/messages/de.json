@@ -11,6 +11,13 @@
       "remaining": "Noch {time}",
       "paused": "Pausiert, noch {time}",
       "ready": "{time} bereit"
+    },
+    "a11y": {
+      "exit": "Kochmodus verlassen",
+      "progress": "Kochfortschritt",
+      "stepTimer": "Schritt-Timer, noch {time}",
+      "jumpToStep": "Zu Schritt {position} springen: {title} — noch {time}",
+      "goToStep": "Zu Schritt {position} gehen: {title}"
     }
   },
   "metadata": {
@@ -33,5 +40,30 @@
         "description": "Überprüfe und hake deine Einkaufsliste ab."
       }
     }
+  },
+  "accessibilityMenu": {
+    "trigger": "Einstellungen für Barrierefreiheit und Komfort",
+    "textSizeGroup": "Textgröße"
+  },
+  "saveToCollection": {
+    "list": "Deine Sammlungen",
+    "add": "Zur Sammlung {name} hinzufügen",
+    "remove": "Aus Sammlung {name} entfernen",
+    "newNameField": "Name der neuen Sammlung"
+  },
+  "ingredientsDrawer": {
+    "region": "{label}-Liste und Rezeptskalierung"
+  },
+  "recipeEditor": {
+    "importUrl": "Rezept-URL zum Importieren",
+    "quantity": "Menge",
+    "unit": "Einheit",
+    "ingredient": "Zutat",
+    "step": "Schritt {position}",
+    "timerMinutes": "Timer in Minuten",
+    "techniques": "Techniken",
+    "moveUp": "Nach oben verschieben",
+    "moveDown": "Nach unten verschieben",
+    "remove": "Entfernen"
   }
 }

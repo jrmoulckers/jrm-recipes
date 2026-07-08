@@ -11,6 +11,13 @@
       "remaining": "{time} remaining",
       "paused": "Paused with {time} remaining",
       "ready": "{time} ready"
+    },
+    "a11y": {
+      "exit": "Exit cook mode",
+      "progress": "Cooking progress",
+      "stepTimer": "Step timer, {time} remaining",
+      "jumpToStep": "Jump to step {position}: {title} — {time} remaining",
+      "goToStep": "Go to step {position}: {title}"
     }
   },
   "metadata": {
@@ -33,5 +40,30 @@
         "description": "Review and check off your shopping list."
       }
     }
+  },
+  "accessibilityMenu": {
+    "trigger": "Accessibility & comfort settings",
+    "textSizeGroup": "Text size"
+  },
+  "saveToCollection": {
+    "list": "Your collections",
+    "add": "Add to collection {name}",
+    "remove": "Remove from collection {name}",
+    "newNameField": "New collection name"
+  },
+  "ingredientsDrawer": {
+    "region": "{label} list and recipe scaling"
+  },
+  "recipeEditor": {
+    "importUrl": "Recipe URL to import",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "ingredient": "Ingredient",
+    "step": "Step {position}",
+    "timerMinutes": "Timer in minutes",
+    "techniques": "Techniques",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove"
   }
 }
