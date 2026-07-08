@@ -103,3 +103,37 @@ describe("Cook Mode accessible names (issue #119)", () => {
     expect(second).not.toHaveAttribute("aria-current");
   });
 });
+
+describe("Cook Mode step navigation focus + announcement (issue #127)", () => {
+  const twoStep = makeRecipe({
+    steps: [
+      makeStep({ id: "s1", instruction: "Brown the sausage." }),
+      makeStep({ id: "s2", position: 2, instruction: "Simmer the tomatoes." }),
+    ],
+  });
+
+  it("does not yank focus or announce anything on initial load", () => {
+    render(<CookExperience recipe={twoStep} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Brown the sausage." }),
+    ).not.toHaveFocus();
+  });
+
+  it("moves focus to the new step heading and announces the position", async () => {
+    const user = userEvent.setup();
+    render(<CookExperience recipe={twoStep} />);
+
+    await user.click(screen.getByRole("button", { name: /next/i }));
+
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Simmer the tomatoes.",
+    });
+    // Heading is focusable only programmatically and receives focus on nav.
+    expect(heading).toHaveAttribute("tabindex", "-1");
+    expect(heading).toHaveFocus();
+    // A single, meaningful status message reinforces the new position.
+    expect(screen.getByRole("status")).toHaveTextContent("Step 2 of 2");
+  });
+});
