@@ -316,3 +316,75 @@ describe("importRecipeFromUrl redirect SSRF guard", () => {
     expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(6);
   });
 });
+
+describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects a public hostname that resolves to a loopback IP before fetching", async () => {
+    const fetchMock = vi.fn(async () => new Response("INTERNAL", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [{ address: "127.0.0.1", family: 4 }]);
+    await expect(
+      importRecipeFromUrl("https://rebind.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    // No bytes fetched from the internal target.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a hostname that resolves to the cloud metadata IP", async () => {
+    const fetchMock = vi.fn(async () => new Response("SECRETS", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [
+      { address: "169.254.169.254", family: 4 },
+    ]);
+    await expect(
+      importRecipeFromUrl("https://metadata.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when ANY resolved address is private (mixed A records)", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [
+      { address: "93.184.216.34", family: 4 },
+      { address: "10.0.0.5", family: 4 },
+    ]);
+    await expect(
+      importRecipeFromUrl("https://mixed.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("allows a hostname that resolves only to public addresses", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]);
+    const result = await importRecipeFromUrl(
+      "https://recipes.example/marinara",
+      { lookup },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.recipe.title).toBe("Grandma's Marinara");
+    expect(lookup).toHaveBeenCalled();
+  });
+
+  it("does not block when the name fails to resolve (no internal target)", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => {
+      throw new Error("ENOTFOUND");
+    });
+    const result = await importRecipeFromUrl("https://recipes.example/x", {
+      lookup,
+    });
+    expect(result.ok).toBe(true);
+  });
+});
