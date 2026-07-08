@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { formatDistanceToNow } from "date-fns";
+import { useLocale } from "next-intl";
 import {
   Check,
   CornerDownRight,
@@ -38,6 +38,7 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
+import { formatRelativeTime } from "~/lib/dates";
 
 type CommentKind = "comment" | "suggestion";
 
@@ -61,8 +62,8 @@ function initials(author: ThreadedComment["author"]) {
     .toUpperCase();
 }
 
-function relativeTime(date: Date) {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+function relativeTime(date: Date, locale: string) {
+  return formatRelativeTime(new Date(date), locale);
 }
 
 export function CommentsSection(props: {
@@ -311,6 +312,7 @@ function CommentItem({
 }) {
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [replyBody, setReplyBody] = React.useState("");
+  const locale = useLocale();
   const authorName = displayName(comment.author);
   const isSuggestion = comment.kind === "suggestion";
   const isApplied = Boolean(comment.appliedAt);
@@ -356,7 +358,7 @@ function CommentItem({
               dateTime={new Date(comment.createdAt).toISOString()}
               className="text-xs text-muted-foreground"
             >
-              {relativeTime(comment.createdAt)}
+              {relativeTime(comment.createdAt, locale)}
             </time>
           </div>
 
@@ -441,7 +443,7 @@ function CommentItem({
                     size="icon"
                     disabled={pending}
                     aria-label="Comment actions"
-                    className="ml-auto size-8 text-muted-foreground"
+                    className="ms-auto size-8 text-muted-foreground"
                   >
                     <MoreHorizontal className="size-4" />
                   </Button>
@@ -503,8 +505,8 @@ function CommentItem({
       {comment.replies.length > 0 ? (
         <div
           className={cn(
-            "mt-4 space-y-3 border-l border-border pl-4",
-            depth > 1 && "pl-3",
+            "mt-4 space-y-3 border-s border-border ps-4",
+            depth > 1 && "ps-3",
           )}
         >
           {comment.replies.map((reply) => (

@@ -400,8 +400,8 @@ export default function DesignGalleryPage() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="dg-search">With icon</Label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input id="dg-search" className="pl-9" placeholder="Search recipes" />
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input id="dg-search" className="ps-9" placeholder="Search recipes" />
             </div>
           </div>
           <div className="flex flex-col gap-2">

@@ -263,7 +263,7 @@ export default async function RecipePage({
       <div className="container -mt-16 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild size="sm" variant="ghost" className="-ml-2">
+            <Button asChild size="sm" variant="ghost" className="-ms-2">
               <Link href="/recipes">
                 <ArrowLeft /> Recipes
               </Link>

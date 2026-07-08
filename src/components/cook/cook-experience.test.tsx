@@ -1,5 +1,8 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render as rtlRender } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as React from "react";
+
+import { IntlWrapper } from "~/test/intl";
 
 // Cook Mode calls useRouter() for the "Done" flow; stub it so the immersive
 // chrome renders in jsdom without the App Router runtime.
@@ -18,6 +21,12 @@ import { CookExperience } from "./cook-experience";
 import type { CookRecipe } from "./types";
 
 afterEach(cleanup);
+
+// Cook mode reads the active locale (useCookSession → useLocale) to pick a
+// default measurement system, so every render needs the intl provider.
+function render(ui: React.ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 function makeRecipe(overrides: Partial<CookRecipe> = {}): CookRecipe {
   return {

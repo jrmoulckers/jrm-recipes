@@ -104,16 +104,34 @@ export function formatCountdown(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+/** Message keys the timer status line resolves against the catalog. */
+export type TimerStatusKey = "complete" | "remaining" | "paused" | "ready";
+
+/**
+ * Resolves a timer-status message key (with an optional formatted `{time}`
+ * value) to a localized string. The call shape matches next-intl's
+ * `useTranslations` return value, so a component can pass
+ * `useTranslations("cook.timer")` straight in while this module stays free of
+ * React and i18n dependencies.
+ */
+export type TimerStatusTranslator = (
+  key: TimerStatusKey,
+  values?: { time: string },
+) => string;
+
 /** Human-readable status line shown under the big countdown. */
-export function timerStatusText(timer: TimerRecord): string {
-  if (timer.status === "complete") return "Timer complete";
+export function timerStatusText(
+  timer: TimerRecord,
+  t: TimerStatusTranslator,
+): string {
+  if (timer.status === "complete") return t("complete");
   if (timer.status === "running") {
-    return `${formatCountdown(timer.remaining)} remaining`;
+    return t("remaining", { time: formatCountdown(timer.remaining) });
   }
   if (timer.status === "paused") {
-    return `Paused with ${formatCountdown(timer.remaining)} remaining`;
+    return t("paused", { time: formatCountdown(timer.remaining) });
   }
-  return `${formatCountdown(timer.duration)} ready`;
+  return t("ready", { time: formatCountdown(timer.duration) });
 }
 
 const INTERACTIVE_SHORTCUT_SELECTOR =

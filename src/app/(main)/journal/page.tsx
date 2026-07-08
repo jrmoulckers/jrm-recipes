@@ -1,12 +1,13 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, CookingPot, UtensilsCrossed } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { getMyRecentCooks } from "~/server/cooklog/queries";
 import { cookedTimesLabel, formatServingsMade } from "~/server/cooklog/summary";
+import { formatDate, formatRelativeTime } from "~/lib/dates";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
@@ -14,6 +15,7 @@ export const metadata: Metadata = { title: "Cooking journal" };
 
 export default async function JournalPage() {
   const user = await getCurrentUser();
+  const locale = await getLocale();
   const cooks =
     isDbConfigured() && user ? await getMyRecentCooks(user.id) : [];
 
@@ -41,7 +43,7 @@ export default async function JournalPage() {
       ) : cooks.length > 0 ? (
         <ol className="flex flex-col gap-4">
           {cooks.map((cook) => (
-            <JournalEntry key={cook.id} cook={cook} />
+            <JournalEntry key={cook.id} cook={cook} locale={locale} />
           ))}
         </ol>
       ) : (
@@ -53,7 +55,7 @@ export default async function JournalPage() {
 
 type Cook = Awaited<ReturnType<typeof getMyRecentCooks>>[number];
 
-function JournalEntry({ cook }: { cook: Cook }) {
+function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
   const cookedAt = new Date(cook.cookedAt);
   const valid = !Number.isNaN(cookedAt.getTime());
   const servings = formatServingsMade(cook.servingsMade);
@@ -90,9 +92,10 @@ function JournalEntry({ cook }: { cook: Cook }) {
         </div>
         <p className="text-sm text-muted-foreground">
           {valid
-            ? `${format(cookedAt, "PPP")} · ${formatDistanceToNow(cookedAt, {
-                addSuffix: true,
-              })}`
+            ? `${formatDate(cookedAt, "PPP", locale)} · ${formatRelativeTime(
+                cookedAt,
+                locale,
+              )}`
             : "Logged earlier"}
         </p>
         {cook.note && (

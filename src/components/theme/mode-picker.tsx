@@ -26,7 +26,7 @@ export function ModePicker() {
             onClick={() => setTheme(t.id)}
             aria-pressed={active}
             className={cn(
-              "group relative flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-token-lg",
+              "group relative flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-start transition-all hover:-translate-y-0.5 hover:shadow-token-lg",
               active ? "border-primary shadow-token" : "border-border",
             )}
           >

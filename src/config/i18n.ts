@@ -1,15 +1,12 @@
 /**
  * Internationalization config — the single source of truth for the app's
- * active locale and its writing direction.
+ * supported locales, the active default, and each locale's writing direction.
  *
- * Heirloom does not (yet) do per-request locale negotiation, so the "active"
- * locale is simply the one configured in `brand`. Centralizing it here means
- * `layout.tsx` renders `<html lang dir>` from a resolved value instead of a
- * hardcoded constant, and gives one place to grow real locale resolution
- * (cookie / Accept-Language) later without touching the layout again.
+ * Locale resolution is cookie/`Accept-Language`-driven at the edge of the i18n
+ * runtime (`src/i18n/request.ts`); this module stays framework-free so it can be
+ * imported from the layout, server helpers, formatters, and unit tests alike.
+ * It mirrors the shape/conventions of `src/config/themes.ts`.
  */
-
-import { brand } from "~/config/brand";
 
 /** Writing direction for the document root. */
 export type Direction = "ltr" | "rtl";
@@ -37,16 +34,123 @@ const RTL_LANGUAGES: ReadonlySet<string> = new Set([
   "yi", // Yiddish
 ]);
 
-/** The locale the app currently serves, per the brand configuration. */
-export const DEFAULT_LOCALE: string = brand.locale;
+/**
+ * The locales the app ships message catalogs for. Each id has a matching
+ * `src/messages/<id>.json`. English is first and is the default so existing
+ * English pages, copy, and snapshot tests never regress.
+ */
+export const SUPPORTED_LOCALES = ["en", "es", "de", "ar"] as const;
+export type Locale = (typeof SUPPORTED_LOCALES)[number];
+
+/** The locale served when nothing else is negotiated. */
+export const DEFAULT_LOCALE: Locale = "en";
 
 /**
- * Resolve the active locale for the current render. Today this is always the
- * configured default; the seam exists so future locale negotiation can slot in
- * without changing every caller.
+ * Cookie that persists a visitor's chosen locale across reloads. `NEXT_LOCALE`
+ * is the community/next-intl convention, and it lets the server render the
+ * correct language on first paint (no flash), the same way theme/a11y cookies
+ * do in `layout.tsx`.
  */
-export function resolveLocale(): string {
+export const LOCALE_COOKIE = "NEXT_LOCALE";
+
+/**
+ * Native language names (endonyms) for the locale switcher — a language menu
+ * should read in each language's own script, not the current UI language.
+ */
+export const LOCALE_ENDONYMS: Record<Locale, string> = {
+  en: "English",
+  es: "Español",
+  de: "Deutsch",
+  ar: "العربية",
+};
+
+/**
+ * OpenGraph `og:locale` values (BCP-47 with an underscore territory) for each
+ * supported locale. Crawlers/social cards expect the `language_TERRITORY` form
+ * rather than the bare language subtag the app routes on.
+ */
+export const OPEN_GRAPH_LOCALES: Record<Locale, string> = {
+  en: "en_US",
+  es: "es_ES",
+  de: "de_DE",
+  ar: "ar_AR",
+};
+
+/**
+ * Map a requested locale to its OpenGraph locale string, falling back to the
+ * default locale's value for anything unsupported.
+ */
+export function openGraphLocale(requested?: string | null): string {
+  return OPEN_GRAPH_LOCALES[resolveLocale(requested)];
+}
+
+/** True when `value` is one of the supported locales. */
+export function isLocale(value: unknown): value is Locale {
+  return (
+    typeof value === "string" &&
+    (SUPPORTED_LOCALES as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * Resolve a requested locale (from a cookie, param, or header) to a supported
+ * one, falling back to {@link DEFAULT_LOCALE}. Called with no argument it simply
+ * returns the default, so callers without negotiation still get a safe value.
+ */
+export function resolveLocale(requested?: string | null): Locale {
+  return isLocale(requested) ? requested : DEFAULT_LOCALE;
+}
+
+/**
+ * Negotiate the best supported locale from an `Accept-Language` header value.
+ *
+ * Parses the comma-separated language ranges with their optional quality
+ * weights (`;q=`), orders them by descending preference, and returns the first
+ * whose primary subtag matches a supported locale (so `de-DE` matches `de`). A
+ * `*` range, an empty/absent header, or no supported match all fall back to
+ * {@link DEFAULT_LOCALE}. Kept pure and framework-free so it runs both at the
+ * edge (middleware) and on the server (request config), and is unit testable.
+ */
+export function negotiateAcceptLanguage(header?: string | null): Locale {
+  if (!header) return DEFAULT_LOCALE;
+
+  const ranges = header
+    .split(",")
+    .map((part) => {
+      const segments = part.trim().split(";");
+      const tag = (segments[0] ?? "").trim().toLowerCase();
+      const quality = segments
+        .slice(1)
+        .map((param) => param.trim())
+        .find((param) => param.toLowerCase().startsWith("q="));
+      const parsed = quality ? Number.parseFloat(quality.slice(2)) : 1;
+      return { tag, q: Number.isNaN(parsed) ? 1 : parsed };
+    })
+    .filter((entry) => entry.tag.length > 0 && entry.q > 0)
+    .sort((a, b) => b.q - a.q);
+
+  for (const entry of ranges) {
+    if (entry.tag === "*") return DEFAULT_LOCALE;
+    const primary = entry.tag.split("-")[0] ?? entry.tag;
+    if (isLocale(primary)) return primary;
+  }
+
   return DEFAULT_LOCALE;
+}
+
+/**
+ * Resolve the active locale for a request using the app's precedence: a valid
+ * `NEXT_LOCALE` cookie wins (an explicit choice persisted by the switcher),
+ * otherwise the `Accept-Language` header is negotiated for first-time visitors,
+ * otherwise {@link DEFAULT_LOCALE}. Pure so the request config and middleware
+ * share one source of truth.
+ */
+export function resolveRequestLocale(
+  cookieValue?: string | null,
+  acceptLanguage?: string | null,
+): Locale {
+  if (isLocale(cookieValue)) return cookieValue;
+  return negotiateAcceptLanguage(acceptLanguage);
 }
 
 /**

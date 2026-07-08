@@ -1,8 +1,14 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import * as React from "react";
 
 import { CookAllergenBanner } from "./cook-allergen-banner";
 import { type CookIngredient, type CookRecipe } from "./types";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: React.ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 function ingredient(item: string, id: string): CookIngredient {
   return {

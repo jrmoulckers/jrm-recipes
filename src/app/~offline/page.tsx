@@ -37,7 +37,7 @@ export default function OfflinePage() {
       <div className="flex w-full max-w-md flex-col items-center gap-6">
         <div className="relative">
           <LogoMark className="size-14" />
-          <span className="absolute -bottom-1 -right-1 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm">
+          <span className="absolute -bottom-1 -end-1 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm">
             <CloudOff className="size-4" />
           </span>
         </div>
@@ -54,7 +54,7 @@ export default function OfflinePage() {
 
         <OfflineReconnect />
 
-        <div className="mt-4 w-full rounded-2xl border border-border bg-surface/60 p-4 text-left">
+        <div className="mt-4 w-full rounded-2xl border border-border bg-surface/60 p-4 text-start">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Still works without a connection
           </p>

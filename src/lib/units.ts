@@ -1,8 +1,12 @@
 /**
  * Ingredient quantity math: pretty fraction formatting, serving scaling, and
- * unit conversion. Pure and dependency-free so it's shared by the editor, the
- * recipe view, and offline cook mode — and easy to unit-test.
+ * unit conversion. Pure and side-effect-free so it's shared by the editor, the
+ * recipe view, and offline cook mode — and easy to unit-test. Decimal output is
+ * locale-aware (separators + numbering system); an optional `locale` argument
+ * defaults to {@link DEFAULT_LOCALE} so existing callers are unaffected.
  */
+
+import { DEFAULT_LOCALE } from "~/config/i18n";
 
 const VULGAR: Array<[number, string]> = [
   [1 / 8, "⅛"],
@@ -24,6 +28,30 @@ export function roundNice(n: number): number {
 }
 
 /**
+ * Map an app locale id to a BCP-47 tag suitable for `Intl` number formatting.
+ * Current CLDR resolves a region-less `ar` to Western ("latn") digits, but
+ * Heirloom's Arabic UI expects Arabic-Indic numerals, so pin the numbering
+ * system for the bare `ar` id. Every other locale (including region- or
+ * numbering-qualified Arabic like `ar-EG`) passes through unchanged.
+ */
+function numberingLocale(locale: string): string {
+  return locale === "ar" ? "ar-u-nu-arab" : locale;
+}
+
+/**
+ * Render a number with the active locale's decimal separator and numbering
+ * system (e.g. `1.5` → "1,5" in de-DE, Arabic-Indic digits in ar). Grouping is
+ * disabled so cooking quantities never gain a thousands separator. Values are
+ * pre-rounded by the callers, so three fraction digits is a safe ceiling.
+ */
+function formatDecimal(value: number, locale: string): string {
+  return new Intl.NumberFormat(numberingLocale(locale), {
+    useGrouping: false,
+    maximumFractionDigits: 3,
+  }).format(value);
+}
+
+/**
  * Format a number the way a recipe would: whole numbers plainly, common
  * fractions as vulgar glyphs (1.5 → "1½"), everything else to 2 decimals.
  *
@@ -31,45 +59,54 @@ export function roundNice(n: number): number {
  * rendered as plain decimals at a measurable precision instead of vulgar
  * fractions — a cook can't measure "⅓ g" or "½ ml". Omitting `unit` keeps the
  * imperial/fraction behavior, so existing callers are unaffected.
+ *
+ * Decimal and whole-number output is rendered through the active `locale`'s
+ * number formatter; the vulgar-fraction glyphs themselves stay locale-invariant.
  */
 export function formatQuantity(
   value: number | null | undefined,
   unit?: string | null,
+  locale: string = DEFAULT_LOCALE,
 ): string {
   if (value == null || Number.isNaN(value)) return "";
-  if (isMetricUnit(unit)) return formatMetricQuantity(value);
+  if (isMetricUnit(unit) || unitDimension(unit) === "temperature")
+    return formatMetricQuantity(value, locale);
   const n = roundNice(value);
-  if (n === 0) return "0";
+  if (n === 0) return formatDecimal(0, locale);
   const whole = Math.floor(n);
   const frac = n - whole;
-  if (frac < 0.02) return String(whole);
+  if (frac < 0.02) return formatDecimal(whole, locale);
 
   let best: { glyph: string; diff: number } | null = null;
   for (const [f, glyph] of VULGAR) {
     const diff = Math.abs(frac - f);
     if (diff < 0.03 && (!best || diff < best.diff)) best = { glyph, diff };
   }
-  if (best) return whole > 0 ? `${whole}${best.glyph}` : best.glyph;
+  if (best) {
+    return whole > 0
+      ? `${formatDecimal(whole, locale)}${best.glyph}`
+      : best.glyph;
+  }
 
   const rounded = Math.round(n * 100) / 100;
-  return String(rounded);
+  return formatDecimal(rounded, locale);
 }
 
 /**
  * Round a metric quantity to a precision a cook can actually measure and render
- * it as a decimal (never a vulgar fraction): whole grams/millilitres for
- * amounts ≥ 10, otherwise a single decimal place.
+ * it as a locale-aware decimal (never a vulgar fraction): whole grams/millilitres
+ * for amounts ≥ 10, otherwise a single decimal place.
  */
-function formatMetricQuantity(value: number): string {
+function formatMetricQuantity(value: number, locale: string): string {
   const n = roundNice(value);
-  if (n === 0) return "0";
+  if (n === 0) return formatDecimal(0, locale);
   const rounded = Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
-  return String(rounded);
+  return formatDecimal(rounded, locale);
 }
 
 // --- Units --------------------------------------------------------------
 
-export type Dimension = "volume" | "mass" | "count";
+export type Dimension = "volume" | "mass" | "count" | "temperature";
 
 type UnitDef = {
   canonical: string;
@@ -96,6 +133,12 @@ const UNIT_DEFS: UnitDef[] = [
   { canonical: "lb", dimension: "mass", base: 453.592, system: "us", aliases: ["pound", "pounds", "lbs"], plural: "lb" },
   { canonical: "g", dimension: "mass", base: 1, system: "metric", aliases: ["gram", "grams", "gramme", "grammes"] },
   { canonical: "kg", dimension: "mass", base: 1000, system: "metric", aliases: ["kilogram", "kilograms", "kilo", "kilos"] },
+  // Temperature is affine (offset + scale), so `base` is unused — conversion
+  // goes through convertTemperature. The bare "c" alias is intentionally
+  // omitted: it already means "cup", and a recipe's "2 c" is far more likely
+  // cups than Celsius. Callers wanting Celsius should use "°C"/"celsius".
+  { canonical: "°F", dimension: "temperature", base: 1, system: "us", aliases: ["f", "fahrenheit"] },
+  { canonical: "°C", dimension: "temperature", base: 1, system: "metric", aliases: ["celsius", "centigrade"] },
 ];
 
 const UNIT_INDEX = new Map<string, UnitDef>();
@@ -132,7 +175,30 @@ export function convertUnit(
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!a || !b) return null;
   if (a.dimension !== b.dimension) return null;
+  if (a.dimension === "temperature")
+    return convertTemperature(quantity, a.canonical, b.canonical);
   return roundNice((quantity * a.base) / b.base);
+}
+
+/**
+ * Convert an affine temperature between °F and °C. Unlike mass/volume (a simple
+ * base-ratio), temperature carries an offset, so it needs its own path. Results
+ * are rounded to whole degrees — the precision recipes and ovens actually use.
+ * Returns null unless both units are temperatures.
+ */
+export function convertTemperature(
+  value: number,
+  from: string,
+  to: string,
+): number | null {
+  const a = UNIT_INDEX.get(from.trim().toLowerCase());
+  const b = UNIT_INDEX.get(to.trim().toLowerCase());
+  if (!a || !b) return null;
+  if (a.dimension !== "temperature" || b.dimension !== "temperature") return null;
+  if (a.canonical === b.canonical) return Math.round(value);
+  const celsius = a.canonical === "°F" ? ((value - 32) * 5) / 9 : value;
+  const result = b.canonical === "°F" ? (celsius * 9) / 5 + 32 : celsius;
+  return Math.round(result);
 }
 
 const VOLUME_LADDER_US = ["tsp", "tbsp", "cup", "quart", "gallon"];
@@ -163,6 +229,13 @@ export function toSystem(
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
   if (!def || def.dimension === "count") {
     return unit ? { quantity: roundNice(quantity), unit } : null;
+  }
+  if (def.dimension === "temperature") {
+    const target = system === "us" ? "°F" : "°C";
+    const converted = convertTemperature(quantity, def.canonical, target);
+    return converted == null
+      ? { quantity: roundNice(quantity), unit: def.canonical }
+      : { quantity: converted, unit: target };
   }
   const ladder = ladderFor(def.dimension, system);
   if (ladder.length === 0) return { quantity: roundNice(quantity), unit: def.canonical };
@@ -215,13 +288,61 @@ export function scaleQuantity(
   return roundNice(quantity * factor);
 }
 
-/** Pluralize a unit label for display given a quantity. */
+/**
+ * The CLDR plural category (`one`, `few`, `other`, …) for a count in a locale,
+ * via `Intl.PluralRules`. Used to pick the right spelled-out unit label instead
+ * of a hand-rolled `count !== 1` check, which is wrong for the many languages
+ * with more than two plural forms.
+ */
+function pluralCategory(count: number, locale: string): Intl.LDMLPluralRule {
+  try {
+    return new Intl.PluralRules(locale).select(count);
+  } catch {
+    return new Intl.PluralRules(DEFAULT_LOCALE).select(count);
+  }
+}
+
+/**
+ * Pluralize a spelled-out unit label for display, choosing the form by the
+ * active locale's plural rules. Unit *symbols* (g, ml, kg, tsp) have no spelled
+ * plural and are returned invariant; only labels with a configured `plural`
+ * (cups, pints, quarts, gallons) inflect. With just singular/plural English
+ * forms available we treat the `one` category as singular and every other
+ * category as plural.
+ */
 export function displayUnit(
   unit: string | null | undefined,
   quantity: number | null | undefined,
+  locale: string = DEFAULT_LOCALE,
 ): string {
   if (!unit) return "";
   const def = UNIT_INDEX.get(unit.trim().toLowerCase());
-  if (def?.plural && quantity != null && quantity !== 1) return def.plural;
+  if (
+    def?.plural &&
+    quantity != null &&
+    pluralCategory(quantity, locale) !== "one"
+  ) {
+    return def.plural;
+  }
   return def?.canonical ?? unit;
+}
+
+/** Regions that still cook in US customary / imperial units. */
+const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
+
+/**
+ * The measurement system a locale most likely expects, used as cook mode's
+ * initial default before the cook makes (and stores) an explicit choice. The US
+ * and the few US-adjacent imperial regions map to `"us"`; everyone else maps to
+ * `"metric"`. The locale is maximized first, so a region-less id like `en`
+ * resolves to its likely region (`en` → US → `"us"`, `de` → DE → `"metric"`).
+ */
+export function defaultSystemForLocale(locale: string): "us" | "metric" {
+  let region: string | undefined;
+  try {
+    region = new Intl.Locale(locale).maximize().region ?? undefined;
+  } catch {
+    region = undefined;
+  }
+  return region && US_CUSTOMARY_REGIONS.has(region) ? "us" : "metric";
 }

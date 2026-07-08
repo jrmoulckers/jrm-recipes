@@ -1,13 +1,16 @@
 ﻿import { describe, expect, it } from "vitest";
 
 import {
+  convertTemperature,
   convertUnit,
+  defaultSystemForLocale,
   displayUnit,
   formatQuantity,
   normalizeUnit,
   scaleQuantity,
   toSystem,
   toSystemRange,
+  unitDimension,
 } from "./units";
 
 describe("formatQuantity", () => {
@@ -46,6 +49,32 @@ describe("formatQuantity", () => {
     expect(formatQuantity(2.5, "oz")).toBe("2½");
     expect(formatQuantity(0.5)).toBe("½");
     expect(formatQuantity(0.5, "pinch")).toBe("½");
+  });
+
+  it("defaults to the app default locale (Western digits, dot decimal)", () => {
+    expect(formatQuantity(1.2)).toBe("1.2");
+    expect(formatQuantity(1.5, "ml")).toBe("1.5");
+  });
+
+  it("uses the locale's decimal separator for comma-decimal locales", () => {
+    expect(formatQuantity(1.2, undefined, "de-DE")).toBe("1,2");
+    expect(formatQuantity(1.5, "ml", "de-DE")).toBe("1,5");
+    // Whole numbers gain no thousands separator (grouping is disabled).
+    expect(formatQuantity(237, "ml", "de-DE")).toBe("237");
+  });
+
+  it("uses the locale's numbering system for non-Latin-digit locales", () => {
+    const out = formatQuantity(1.2, undefined, "ar");
+    // Arabic-Indic digits, not Western — and different from the en rendering.
+    expect(out).not.toBe("1.2");
+    expect(out).toMatch(/[\u0660-\u0669]/);
+    expect(formatQuantity(3, undefined, "ar")).toMatch(/[\u0660-\u0669]/);
+  });
+
+  it("keeps vulgar-fraction glyphs invariant, localizing only the whole part", () => {
+    expect(formatQuantity(0.5, "cup", "de-DE")).toBe("½");
+    expect(formatQuantity(2.5, "oz", "de-DE")).toBe("2½");
+    expect(formatQuantity(0.5, "cup", "ar")).toBe("½");
   });
 });
 
@@ -105,6 +134,32 @@ describe("displayUnit", () => {
     expect(displayUnit("lb", 2)).toBe("lb");
     expect(displayUnit("Tablespoons", 3)).toBe("tbsp");
     expect(displayUnit(null, 3)).toBe("");
+  });
+
+  it("selects the plural category by locale, not a count !== 1 check (#247)", () => {
+    // English: only 1 is the "one" category; 0 and 2 are "other" → plural.
+    expect(displayUnit("cup", 0, "en")).toBe("cups");
+    expect(displayUnit("cup", 1, "en")).toBe("cup");
+    expect(displayUnit("cup", 2, "en")).toBe("cups");
+    // French treats 0 and 1 as singular ("one").
+    expect(displayUnit("cup", 0, "fr")).toBe("cup");
+    expect(displayUnit("cup", 1, "fr")).toBe("cup");
+    expect(displayUnit("cup", 2, "fr")).toBe("cups");
+    // Arabic has more than two categories (zero/one/two/few/many/other); every
+    // non-"one" count resolves to the plural label.
+    expect(displayUnit("cup", 1, "ar")).toBe("cup"); // one
+    expect(displayUnit("cup", 2, "ar")).toBe("cups"); // two
+    expect(displayUnit("cup", 3, "ar")).toBe("cups"); // few
+    expect(displayUnit("cup", 11, "ar")).toBe("cups"); // many
+    expect(displayUnit("cup", 100, "ar")).toBe("cups"); // other
+  });
+
+  it("keeps unit symbols invariant and falls back safely for bad locales", () => {
+    // Symbols (no configured plural) never inflect, whatever the count/locale.
+    expect(displayUnit("g", 5, "ar")).toBe("g");
+    expect(displayUnit("ml", 2, "fr")).toBe("ml");
+    // An unparseable locale falls back to the default plural rules.
+    expect(displayUnit("cup", 2, "not a locale!!")).toBe("cups");
   });
 });
 
@@ -177,5 +232,78 @@ describe("toSystemRange", () => {
       unit: "pinch",
     });
     expect(toSystemRange(1, 2, null, "metric")).toBeNull();
+  });
+});
+
+describe("temperature (#249)", () => {
+  it("recognizes temperature units and aliases", () => {
+    expect(unitDimension("°F")).toBe("temperature");
+    expect(unitDimension("°C")).toBe("temperature");
+    expect(unitDimension("fahrenheit")).toBe("temperature");
+    expect(unitDimension("Celsius")).toBe("temperature");
+    expect(unitDimension("centigrade")).toBe("temperature");
+    expect(normalizeUnit("Fahrenheit")).toBe("°F");
+    expect(normalizeUnit("celsius")).toBe("°C");
+  });
+
+  it("keeps the bare \"c\" alias meaning cups, not Celsius", () => {
+    expect(normalizeUnit("c")).toBe("cup");
+    expect(unitDimension("c")).toBe("volume");
+  });
+
+  it("converts Fahrenheit↔Celsius affinely and rounds to whole degrees", () => {
+    expect(convertTemperature(350, "°F", "°C")).toBe(177);
+    expect(convertTemperature(180, "°C", "°F")).toBe(356);
+    expect(convertTemperature(212, "°F", "°C")).toBe(100);
+    expect(convertTemperature(0, "°C", "°F")).toBe(32);
+    expect(convertTemperature(425, "fahrenheit", "celsius")).toBe(218);
+  });
+
+  it("returns the same value for identical units and null across dimensions", () => {
+    expect(convertTemperature(350, "°F", "°F")).toBe(350);
+    expect(convertTemperature(1, "°C", "g")).toBeNull();
+    expect(convertUnit(1, "°C", "cup")).toBeNull();
+  });
+
+  it("routes temperature through convertUnit's affine path", () => {
+    expect(convertUnit(350, "°F", "°C")).toBe(177);
+    expect(convertUnit(100, "°C", "°F")).toBe(212);
+  });
+
+  it("selects °F for US and °C for metric via toSystem", () => {
+    expect(toSystem(180, "°C", "us")).toEqual({ quantity: 356, unit: "°F" });
+    expect(toSystem(350, "°F", "metric")).toEqual({ quantity: 177, unit: "°C" });
+    // Already in the target system: value unchanged, unit canonicalized.
+    expect(toSystem(350, "°F", "us")).toEqual({ quantity: 350, unit: "°F" });
+  });
+
+  it("formats temperatures as plain locale-aware decimals, never fractions", () => {
+    expect(formatQuantity(350, "°F")).toBe("350");
+    expect(formatQuantity(177, "°C")).toBe("177");
+    // Large temperatures round to whole degrees; small ones keep one decimal
+    // and honor the locale separator.
+    expect(formatQuantity(212.5, "°C")).toBe("213");
+    expect(formatQuantity(4.5, "°C", "de-DE")).toBe("4,5");
+    expect(displayUnit("°C", 200)).toBe("°C");
+  });
+});
+
+describe("defaultSystemForLocale (#246)", () => {
+  it("maps US and US-adjacent locales to imperial", () => {
+    expect(defaultSystemForLocale("en")).toBe("us");
+    expect(defaultSystemForLocale("en-US")).toBe("us");
+  });
+
+  it("maps other locales to metric", () => {
+    expect(defaultSystemForLocale("de")).toBe("metric");
+    expect(defaultSystemForLocale("de-DE")).toBe("metric");
+    expect(defaultSystemForLocale("ar")).toBe("metric");
+    expect(defaultSystemForLocale("es")).toBe("metric");
+    expect(defaultSystemForLocale("en-GB")).toBe("metric");
+  });
+
+  it("falls back to metric for unparseable locales", () => {
+    expect(defaultSystemForLocale("")).toBe("metric");
+    expect(defaultSystemForLocale("not a locale!!")).toBe("metric");
   });
 });

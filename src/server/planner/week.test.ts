@@ -48,6 +48,12 @@ describe("startOfPlannerWeek", () => {
     expect(toDateParam(startOfPlannerWeek(MON_JUL_6))).toBe("2026-07-05");
     expect(toDateParam(startOfPlannerWeek(THU_JUL_9))).toBe("2026-07-05");
   });
+
+  it("honors the locale's week start (Monday for es/de)", () => {
+    expect(startOfPlannerWeek(MON_JUL_6, "es").getDay()).toBe(1);
+    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "es"))).toBe("2026-07-06");
+    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "de"))).toBe("2026-07-06");
+  });
 });
 
 describe("addDaysToParam", () => {
@@ -73,12 +79,25 @@ describe("getPlannerWeek", () => {
     expect(toDateParam(week.days[0]!)).toBe("2026-07-05");
     expect(toDateParam(week.days[6]!)).toBe("2026-07-11");
   });
+
+  it("shifts to a Monday–Sunday week for a Monday-start locale", () => {
+    const week = getPlannerWeek(THU_JUL_9, "es");
+    expect(week.startParam).toBe("2026-07-06");
+    expect(week.endParam).toBe("2026-07-12");
+    expect(week.days[0]!.getDay()).toBe(1);
+    expect(week.days[6]!.getDay()).toBe(0);
+  });
 });
 
 describe("week navigation", () => {
   it("moves to the start of the next and previous week", () => {
     expect(nextWeekParam(MON_JUL_6)).toBe("2026-07-12");
     expect(previousWeekParam(MON_JUL_6)).toBe("2026-06-28");
+  });
+
+  it("keeps navigation aligned to the locale's week start", () => {
+    expect(nextWeekParam(MON_JUL_6, "es")).toBe("2026-07-13");
+    expect(previousWeekParam(MON_JUL_6, "es")).toBe("2026-06-29");
   });
 });
 
@@ -110,6 +129,14 @@ describe("day formatting", () => {
     expect(formatFullDay(sunday)).toBe("Sunday, Jul 5");
     expect(formatWeekdayLong(sunday)).toBe("Sunday");
     expect(formatMonthDay(sunday)).toBe("Jul 5");
+  });
+
+  it("re-exports locale-aware formatters", () => {
+    const sunday = new Date(2026, 6, 5);
+    expect(formatDayName(sunday, "es")).toBe("dom");
+    expect(formatWeekRange(sunday, new Date(2026, 6, 11), "de")).toBe(
+      "Juli 5 – 11, 2026",
+    );
   });
 });
 

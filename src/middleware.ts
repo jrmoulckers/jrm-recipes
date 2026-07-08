@@ -1,5 +1,46 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse, type NextRequest } from "next/server";
+import {
+  NextResponse,
+  type NextMiddleware,
+  type NextRequest,
+} from "next/server";
+
+import { LOCALE_COOKIE, negotiateAcceptLanguage } from "~/config/i18n";
+
+/** One year, in seconds — mirrors the locale/theme cookies' persistence. */
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+/**
+ * Seed a first-time visitor's locale from their `Accept-Language` header.
+ *
+ * When the `NEXT_LOCALE` cookie is absent we negotiate the best supported
+ * locale from the header and persist it on the response cookie. Every
+ * downstream reader — `getRequestConfig` on the server and the
+ * provider/switcher on the client — then sees one stable cookie value, so the
+ * negotiated language survives reloads with no flash and no hydration mismatch.
+ * A present cookie is never overwritten, so an explicit choice from the
+ * switcher always wins. The locale value is one of a fixed set of tokens
+ * (`en`/`es`/`de`/`ar`), so appending it to `Set-Cookie` needs no escaping and
+ * works whether the wrapped middleware returns a `NextResponse` or a plain
+ * `Response` (e.g. a Clerk auth redirect).
+ */
+function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
+  return async (request, event) => {
+    const response = (await handler(request, event)) ?? NextResponse.next();
+
+    if (!request.cookies.has(LOCALE_COOKIE)) {
+      const locale = negotiateAcceptLanguage(
+        request.headers.get("accept-language"),
+      );
+      response.headers.append(
+        "set-cookie",
+        `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`,
+      );
+    }
+
+    return response;
+  };
+}
 
 /**
  * Auth is optional in local/test runs. When Clerk keys are absent (or dev-bypass
@@ -29,11 +70,11 @@ if (
   );
 }
 
-export default clerkConfigured
+const authMiddleware: NextMiddleware = clerkConfigured
   ? clerkMiddleware()
-  : function middleware(_req: NextRequest) {
-      return NextResponse.next();
-    };
+  : (_request: NextRequest) => NextResponse.next();
+
+export default withNegotiatedLocale(authMiddleware);
 
 export const config = {
   matcher: [

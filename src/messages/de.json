@@ -1,0 +1,69 @@
+{
+  "footer": {
+    "landmark": "Fußzeile",
+    "recipes": "Rezepte",
+    "family": "Familie",
+    "create": "Erstellen"
+  },
+  "cook": {
+    "timer": {
+      "complete": "Timer abgelaufen",
+      "remaining": "Noch {time}",
+      "paused": "Pausiert, noch {time}",
+      "ready": "{time} bereit"
+    },
+    "a11y": {
+      "exit": "Kochmodus verlassen",
+      "progress": "Kochfortschritt",
+      "stepTimer": "Schritt-Timer, noch {time}",
+      "jumpToStep": "Zu Schritt {position} springen: {title} — noch {time}",
+      "goToStep": "Zu Schritt {position} gehen: {title}"
+    }
+  },
+  "metadata": {
+    "tagline": "Familienrezepte, lebendig bewahrt.",
+    "description": "Erstelle, koche und gib die Lieblingsrezepte deiner Familie weiter – schön, gemeinsam.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "Neues Rezept",
+        "short_name": "Neu",
+        "description": "Beginne ein neues Rezept oder importiere es über einen Link."
+      },
+      "plan": {
+        "name": "Essensplan",
+        "short_name": "Plan",
+        "description": "Plane die Mahlzeiten für die kommende Woche."
+      },
+      "shopping": {
+        "name": "Einkaufsliste",
+        "short_name": "Einkauf",
+        "description": "Überprüfe und hake deine Einkaufsliste ab."
+      }
+    }
+  },
+  "accessibilityMenu": {
+    "trigger": "Einstellungen für Barrierefreiheit und Komfort",
+    "textSizeGroup": "Textgröße"
+  },
+  "saveToCollection": {
+    "list": "Deine Sammlungen",
+    "add": "Zur Sammlung {name} hinzufügen",
+    "remove": "Aus Sammlung {name} entfernen",
+    "newNameField": "Name der neuen Sammlung"
+  },
+  "ingredientsDrawer": {
+    "region": "{label}-Liste und Rezeptskalierung"
+  },
+  "recipeEditor": {
+    "importUrl": "Rezept-URL zum Importieren",
+    "quantity": "Menge",
+    "unit": "Einheit",
+    "ingredient": "Zutat",
+    "step": "Schritt {position}",
+    "timerMinutes": "Timer in Minuten",
+    "techniques": "Techniken",
+    "moveUp": "Nach oben verschieben",
+    "moveDown": "Nach unten verschieben",
+    "remove": "Entfernen"
+  }
+}

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AlertTriangle, Info, Minus, Plus, Users } from "lucide-react";
+import { useLocale } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import {
@@ -11,6 +12,7 @@ import {
   toSystem,
 } from "~/lib/units";
 import { type UnitSystem } from "~/lib/cook-state";
+import { formatList } from "~/lib/i18n-format";
 import {
   scalingNudge,
   DIETARY_TAG_LABELS,
@@ -80,17 +82,22 @@ function measure(q: number | null, unit: string | null, system: System) {
   return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
 
-function amountLabel(ing: PanelIngredient, factor: number, system: System) {
+function amountLabel(
+  ing: PanelIngredient,
+  factor: number,
+  system: System,
+  locale: string,
+) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
   const m = measure(q, ing.unit, system);
   const mMax = qMax != null ? measure(qMax, ing.unit, system) : null;
-  if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null) };
+  if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null, locale) };
   const number =
     mMax?.q != null
-      ? `${formatQuantity(m.q)}–${formatQuantity(mMax.q)}`
-      : formatQuantity(m.q);
-  return { number, unit: displayUnit(m.unit, m.q) };
+      ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
+      : formatQuantity(m.q, undefined, locale);
+  return { number, unit: displayUnit(m.unit, m.q, locale) };
 }
 
 export function IngredientsPanel({
@@ -121,6 +128,7 @@ export function IngredientsPanel({
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
+  const locale = useLocale();
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
@@ -197,7 +205,7 @@ export function IngredientsPanel({
             </Button>
             <div className="min-w-24 text-center">
               <div className="font-display text-xl font-semibold tabular-nums">
-                {formatQuantity(servings)}
+                {formatQuantity(servings, undefined, locale)}
               </div>
               <div className="text-xs text-muted-foreground">
                 {servingsNoun ?? "servings"}
@@ -301,7 +309,7 @@ export function IngredientsPanel({
             )}
             <ul className="flex flex-col">
               {items.map((ing) => {
-                const { number, unit } = amountLabel(ing, factor, system);
+                const { number, unit } = amountLabel(ing, factor, system, locale);
                 const isChecked = checked.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
@@ -321,14 +329,20 @@ export function IngredientsPanel({
                 const reason = flagged
                   ? [
                       conflict.allergens.length > 0
-                        ? `contains ${conflict.allergens
-                            .map((a) => ALLERGEN_LABELS[a].toLowerCase())
-                            .join(", ")}`
+                        ? `contains ${formatList(
+                            conflict.allergens.map((a) =>
+                              ALLERGEN_LABELS[a].toLowerCase(),
+                            ),
+                            locale,
+                          )}`
                         : null,
                       conflict.diets.length > 0
-                        ? `not ${conflict.diets
-                            .map((d) => DIETARY_TAG_LABELS[d].toLowerCase())
-                            .join(", ")}`
+                        ? `not ${formatList(
+                            conflict.diets.map((d) =>
+                              DIETARY_TAG_LABELS[d].toLowerCase(),
+                            ),
+                            locale,
+                          )}`
                         : null,
                     ]
                       .filter(Boolean)
@@ -341,7 +355,7 @@ export function IngredientsPanel({
                         type="button"
                         onClick={() => toggle(ing.id)}
                         aria-pressed={isChecked}
-                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
+                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
                       >
                         <span
                           className={cn(
@@ -376,7 +390,7 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {ing.optional && (
-                            <Badge variant="muted" className="ml-2 align-middle">
+                            <Badge variant="muted" className="ms-2 align-middle">
                               optional
                             </Badge>
                           )}
@@ -390,7 +404,7 @@ export function IngredientsPanel({
                       />
                     </div>
                     {flagged && (
-                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
                           <span className="sr-only">Dietary warning — </span>
@@ -399,7 +413,7 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {nudge && (
-                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
                       </p>

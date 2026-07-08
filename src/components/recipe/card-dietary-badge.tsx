@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
+import { formatList } from "~/lib/i18n-format";
 import { Badge } from "~/components/ui/badge";
 
 /** The active-member data a card needs to render its safe-for badge. */
@@ -42,6 +44,7 @@ export function CardDietaryBadge({
 }) {
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const member = members.find((m) => m.id === activeMemberId);
+  const locale = useLocale();
 
   // Only meaningful when the active member actually has allergies to check —
   // otherwise every card would wear a trivial "safe" chip.
@@ -69,7 +72,7 @@ export function CardDietaryBadge({
   }
 
   const names = conflicts.map((a) => ALLERGEN_LABELS[a].toLowerCase());
-  const label = `Contains ${formatList(names)}`;
+  const label = `Contains ${formatList(names, locale)}`;
   return (
     <Badge
       variant="warning"
@@ -81,11 +84,4 @@ export function CardDietaryBadge({
       {label}
     </Badge>
   );
-}
-
-/** Join labels into a natural "a, b and c" list. */
-function formatList(items: string[]): string {
-  if (items.length <= 1) return items.join("");
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }

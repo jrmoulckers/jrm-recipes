@@ -6,8 +6,14 @@ import "./src/env.js";
 
 import withSerwistInit from "@serwist/next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import createNextIntlPlugin from "next-intl/plugin";
 
 import { imageConfig } from "./src/config/next-image.js";
+
+// Point the next-intl plugin at the request config (cookie-based locale
+// resolution). This makes getTranslations/useTranslations, getLocale, and the
+// formatters available throughout the App Router tree.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 // Stable per deploy: use the commit SHA when a platform provides it (Vercel),
 // otherwise stamp the build time. Threaded into the offline page's precache
@@ -71,4 +77,4 @@ const withBundleAnalyzer = bundleAnalyzer({
   openAnalyzer: false,
 });
 
-export default withBundleAnalyzer(withSerwist(config));
+export default withBundleAnalyzer(withSerwist(withNextIntl(config)));

@@ -1,0 +1,69 @@
+{
+  "footer": {
+    "landmark": "Footer",
+    "recipes": "Recipes",
+    "family": "Family",
+    "create": "Create"
+  },
+  "cook": {
+    "timer": {
+      "complete": "Timer complete",
+      "remaining": "{time} remaining",
+      "paused": "Paused with {time} remaining",
+      "ready": "{time} ready"
+    },
+    "a11y": {
+      "exit": "Exit cook mode",
+      "progress": "Cooking progress",
+      "stepTimer": "Step timer, {time} remaining",
+      "jumpToStep": "Jump to step {position}: {title} — {time} remaining",
+      "goToStep": "Go to step {position}: {title}"
+    }
+  },
+  "metadata": {
+    "tagline": "Family recipes, kept alive.",
+    "description": "Create, cook, and pass down the recipes your family loves — beautifully, together.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "New recipe",
+        "short_name": "New recipe",
+        "description": "Start a new recipe or import one from a link."
+      },
+      "plan": {
+        "name": "Meal plan",
+        "short_name": "Plan",
+        "description": "Plan meals for the week ahead."
+      },
+      "shopping": {
+        "name": "Shopping list",
+        "short_name": "Shopping",
+        "description": "Review and check off your shopping list."
+      }
+    }
+  },
+  "accessibilityMenu": {
+    "trigger": "Accessibility & comfort settings",
+    "textSizeGroup": "Text size"
+  },
+  "saveToCollection": {
+    "list": "Your collections",
+    "add": "Add to collection {name}",
+    "remove": "Remove from collection {name}",
+    "newNameField": "New collection name"
+  },
+  "ingredientsDrawer": {
+    "region": "{label} list and recipe scaling"
+  },
+  "recipeEditor": {
+    "importUrl": "Recipe URL to import",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "ingredient": "Ingredient",
+    "step": "Step {position}",
+    "timerMinutes": "Timer in minutes",
+    "techniques": "Techniques",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove"
+  }
+}
