@@ -19,6 +19,7 @@ import {
 import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import { AuditAction, recordAudit } from "~/server/audit";
 import { recipeSlug, type RecipeInput } from "./validation";
+import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
 import { buildAdaptationInput } from "./timeline";
 
@@ -384,6 +385,15 @@ async function applyRecipeInput(
   await insertChildren(tx, id, input);
   await syncTags(tx, id, input.tags);
   await journal(tx, id, author.id, input, label);
+  // Mint a share token the first time a recipe becomes unlisted (issue #204).
+  // Guarded by `share_token IS NULL` so an existing token (and its enabled /
+  // rotated state, #207) is preserved across edits and never regenerated here.
+  if (input.visibility === "unlisted") {
+    await tx
+      .update(recipes)
+      .set({ shareToken: generateShareToken() })
+      .where(and(eq(recipes.id, id), isNull(recipes.shareToken)));
+  }
   return { id, slug: current.slug };
 }
 
@@ -398,6 +408,10 @@ export async function createRecipe(input: RecipeInput, author: User) {
           ...scalarFields(input, groupId),
           slug,
           authorId: author.id,
+          // A recipe created directly as unlisted needs its share token up front
+          // so `/r/<token>` works immediately (issue #204).
+          shareToken:
+            input.visibility === "unlisted" ? generateShareToken() : null,
           publishedAt: input.status === "published" ? new Date() : null,
         })
         .returning({ id: recipes.id, slug: recipes.slug });

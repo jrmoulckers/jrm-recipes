@@ -127,12 +127,27 @@ function formatTimer(seconds: number): string {
 
 export default async function RecipePage({
   params,
+  shareToken,
 }: {
   params: Promise<RecipeRouteParams>;
+  // Set only when this render is reached through the `/r/<token>` share route
+  // (issue #204); it both grants access to the unlisted recipe and is echoed
+  // back to the share UI so "Copy link" hands out the token URL, not the slug.
+  shareToken?: string;
 }) {
   const { id } = await parseRecipeParams(params);
-  const { user, recipe } = await getRecipeForViewer(id);
+  const { user, recipe } = await getRecipeForViewer(id, shareToken);
   if (!recipe) notFound();
+
+  // Unlisted recipes are shared by token, never by their guessable slug, so the
+  // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
+  // public/group recipes, where the address itself is the shareable link.
+  const shareUrl =
+    recipe.visibility === "unlisted" &&
+    recipe.shareToken &&
+    recipe.shareLinkEnabled
+      ? absoluteUrl(`/r/${recipe.shareToken}`)
+      : undefined;
 
   const isOwner = Boolean(user?.id === recipe.authorId);
   const dbEnabled = isDbConfigured();
@@ -330,7 +345,11 @@ export default async function RecipePage({
               </Link>
             </Button>
             <GrownUpControls>
-              <ShareButton title={recipe.title} author={recipe.author?.name} />
+              <ShareButton
+                title={recipe.title}
+                author={recipe.author?.name}
+                shareUrl={shareUrl}
+              />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>
             <AddToShoppingList

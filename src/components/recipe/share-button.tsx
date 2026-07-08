@@ -40,9 +40,14 @@ function cardImageUrl(): string {
 export function ShareButton({
   title,
   author,
+  shareUrl,
 }: {
   title: string;
   author?: string | null;
+  // Absolute URL to hand out when sharing. For unlisted recipes this is the
+  // unguessable `/r/<token>` link (issue #204); when omitted we fall back to the
+  // current page URL (public/group recipes, where the address is shareable).
+  shareUrl?: string;
 }) {
   // Pre-fetched card image, kept ready so the native share call fires inside
   // the click gesture (Safari drops file sharing if you await first).
@@ -53,6 +58,11 @@ export function ShareButton({
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   const text = shareText({ title, author });
+
+  /** The link to share/copy: the explicit share URL, else this page's URL. */
+  function linkToShare(): string {
+    return shareUrl ?? window.location.href;
+  }
 
   async function loadCardFile(): Promise<File | null> {
     if (fileRef.current) return fileRef.current;
@@ -83,7 +93,7 @@ export function ShareButton({
   }
 
   async function shareCard() {
-    const url = window.location.href;
+    const url = linkToShare();
     const file = fileRef.current;
     try {
       if (
@@ -128,7 +138,7 @@ export function ShareButton({
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(
-        shareMessageWithUrl({ title, author }, window.location.href),
+        shareMessageWithUrl({ title, author }, linkToShare()),
       );
       track("recipe_shared", { method: "copy_link" });
       track("share_link_copied", {});

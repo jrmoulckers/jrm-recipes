@@ -24,6 +24,13 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp with time zo
 ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_token" varchar(32);--> statement-breakpoint
 ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_link_enabled" boolean DEFAULT true NOT NULL;--> statement-breakpoint
 ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_token_rotated_at" timestamp with time zone;--> statement-breakpoint
+-- Backward-compat backfill (#204): every EXISTING unlisted recipe gets a random,
+-- unguessable token so its `/r/<token>` link works immediately. Guarded on NULL
+-- so it only ever fills gaps (idempotent + safe to re-run). New unlisted recipes
+-- get their token from the app at write time.
+UPDATE "recipes"
+  SET "share_token" = substr(md5(random()::text || clock_timestamp()::text || "id"), 1, 32)
+  WHERE "visibility" = 'unlisted' AND "share_token" IS NULL;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint

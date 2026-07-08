@@ -485,8 +485,11 @@ export function canView(
   viewer: User | null,
   groupIds: string[],
 ) {
-  if (recipe.visibility === "public" || recipe.visibility === "unlisted")
-    return true;
+  // NOTE: `unlisted` is intentionally NOT public here (issue #204). An unlisted
+  // recipe is reachable by a non-owner only through its unguessable share token
+  // (see {@link getRecipeByShareToken}), never by its guessable slug/id — so
+  // this slug/id-scoped predicate must not grant anonymous access to it.
+  if (recipe.visibility === "public") return true;
   if (recipe.authorId === viewer?.id) return true;
   if (
     recipe.visibility === "group" &&
@@ -517,7 +520,11 @@ export async function canViewRecipe(
  * intentionally left dynamic rather than wrapped in `unstable_cache`; only the
  * non-personalized public feed ({@link listPublicRecipes}) is cached (#160).
  */
-export async function getRecipe(idOrSlug: string, viewer: User | null) {
+export async function getRecipe(
+  idOrSlug: string,
+  viewer: User | null,
+  shareToken?: string | null,
+) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
     where: and(notDeleted, or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug))),
@@ -532,8 +539,61 @@ export async function getRecipe(idOrSlug: string, viewer: User | null) {
   });
   if (!recipe) return null;
   const groupIds = await viewerGroupIds(viewer);
-  if (!canView(recipe, viewer, groupIds)) return null;
-  return recipe;
+  if (canView(recipe, viewer, groupIds)) return recipe;
+  // An unlisted recipe is otherwise invisible by slug/id, but a caller that
+  // presents the matching, still-enabled share token (the `/r/<token>` route)
+  // is granted access here (issues #204/#207).
+  if (viewerHoldsShareLink(recipe, shareToken)) return recipe;
+  return null;
+}
+
+/**
+ * True when `shareToken` is the live share secret for an `unlisted` recipe:
+ * a non-empty token that matches the stored one while the link is enabled.
+ * Disabling or rotating the link (#207) makes any stale token fail this check.
+ */
+function viewerHoldsShareLink(
+  recipe: {
+    visibility: string;
+    shareToken: string | null;
+    shareLinkEnabled: boolean;
+  },
+  shareToken: string | null | undefined,
+): boolean {
+  return (
+    recipe.visibility === "unlisted" &&
+    recipe.shareLinkEnabled &&
+    !!recipe.shareToken &&
+    !!shareToken &&
+    recipe.shareToken === shareToken
+  );
+}
+
+/**
+ * Resolve an `unlisted` recipe by its unguessable share token (issue #204).
+ * Only ever matches an unlisted recipe whose share link is enabled; a disabled
+ * or rotated token (issue #207) resolves to nothing → the route 404s. This is
+ * the *only* anonymous path to an unlisted recipe; slug/id lookups never are.
+ */
+export async function getRecipeByShareToken(token: string) {
+  if (!isDbConfigured() || !token) return null;
+  const recipe = await db.query.recipes.findFirst({
+    where: and(
+      notDeleted,
+      eq(recipes.shareToken, token),
+      eq(recipes.visibility, "unlisted"),
+      eq(recipes.shareLinkEnabled, true),
+    ),
+    with: {
+      author: true,
+      group: true,
+      ingredients: { orderBy: [recipeIngredients.position] },
+      steps: { orderBy: [recipeSteps.position] },
+      tags: { with: { tag: true } },
+      ratings: true,
+    },
+  });
+  return recipe ?? null;
 }
 
 /** Lightweight existence/ownership check for edit/delete guards. */
