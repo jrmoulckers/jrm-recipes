@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from "~/server/db";
+import { recipes } from "~/server/db/schema";
+import { eq } from "drizzle-orm";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { isAnalyticsConfigured } from "~/lib/analytics/config";
+import { captureServer } from "~/lib/analytics/server";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
 import {
@@ -60,6 +64,25 @@ export async function createRecipeAction(
   const user = await requireUser();
   try {
     const recipe = await createRecipe(parsed.data, user);
+    void captureServer(user.id, "recipe_created", {
+      recipeId: recipe.id,
+      ingredientCount: parsed.data.ingredients.length,
+      stepCount: parsed.data.steps.length,
+      hasPhoto: Boolean(parsed.data.coverImageUrl),
+      visibility: parsed.data.visibility,
+      source: "manual",
+    });
+    // Activation funnel (#328): emit first_recipe_created exactly once, when the
+    // author's recipe count first reaches 1. Gated on analytics being configured
+    // so the default path skips the extra count query.
+    if (isAnalyticsConfigured()) {
+      const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
+      if (authored === 1) {
+        void captureServer(user.id, "first_recipe_created", {
+          recipeId: recipe.id,
+        });
+      }
+    }
     revalidatePath("/recipes");
     revalidatePath("/");
     revalidatePath(recipeDetailPath(recipe));
@@ -86,6 +109,13 @@ export async function updateRecipeAction(
   const user = await requireUser();
   try {
     const recipe = await updateRecipe(id, parsed.data, user);
+    void captureServer(user.id, "recipe_updated", {
+      recipeId: id,
+      ingredientCount: parsed.data.ingredients.length,
+      stepCount: parsed.data.steps.length,
+      hasPhoto: Boolean(parsed.data.coverImageUrl),
+      visibility: parsed.data.visibility,
+    });
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe));
     return { ok: true, id, slug: recipe.slug };
@@ -103,6 +133,10 @@ export async function forkRecipeAction(
   try {
     const user = await requireUser();
     const recipe = await forkRecipe(sourceId, user, forkNote);
+    void captureServer(user.id, "recipe_forked", {
+      recipeId: recipe.id,
+      sourceId,
+    });
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe.source));
     return { ok: true, id: recipe.id, slug: recipe.slug };
@@ -133,6 +167,10 @@ export async function revertRecipeAction(
   try {
     const user = await requireUser();
     const recipe = await revertRecipe(recipeId, versionNumber, user);
+    void captureServer(user.id, "recipe_reverted", {
+      recipeId: recipe.id,
+      versionNumber,
+    });
     revalidatePath(recipeDetailPath(recipe));
     revalidatePath("/recipes");
     return { ok: true, id: recipe.id, slug: recipe.slug };
@@ -149,8 +187,10 @@ export async function importRecipeFromUrlAction(
   url: string,
 ): Promise<ImportResult> {
   // Tie the fetch to an authenticated session so it isn't an open proxy.
-  await requireUser();
-  return importRecipeFromUrl(url);
+  const user = await requireUser();
+  const result = await importRecipeFromUrl(url);
+  void captureServer(user.id, "recipe_imported", { ok: result.ok });
+  return result;
 }
 
 export async function deleteRecipeAction(id: string): Promise<void> {
@@ -158,6 +198,7 @@ export async function deleteRecipeAction(id: string): Promise<void> {
   const user = await requireUser();
   try {
     await deleteRecipe(id, user);
+    void captureServer(user.id, "recipe_deleted", { recipeId: id });
   } catch {
     // Already gone — fall through to the library.
   }

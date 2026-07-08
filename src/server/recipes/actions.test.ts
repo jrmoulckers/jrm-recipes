@@ -13,6 +13,9 @@ const {
   updateRecipeMock,
   forkRecipeMock,
   revertRecipeMock,
+  captureServerMock,
+  isAnalyticsConfiguredMock,
+  dbCountMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   requireUserMock: vi.fn(),
@@ -20,12 +23,24 @@ const {
   updateRecipeMock: vi.fn(),
   forkRecipeMock: vi.fn(),
   revertRecipeMock: vi.fn(),
+  captureServerMock: vi.fn(),
+  isAnalyticsConfiguredMock: vi.fn(),
+  dbCountMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
-vi.mock("~/server/db", () => ({ isDbConfigured: () => true }));
+vi.mock("~/server/db", () => ({
+  isDbConfigured: () => true,
+  db: { $count: dbCountMock },
+}));
+vi.mock("~/server/db/schema", () => ({ recipes: { authorId: {} } }));
+vi.mock("drizzle-orm", () => ({ eq: vi.fn(() => ({})) }));
+vi.mock("~/lib/analytics/config", () => ({
+  isAnalyticsConfigured: isAnalyticsConfiguredMock,
+}));
+vi.mock("~/lib/analytics/server", () => ({ captureServer: captureServerMock }));
 vi.mock("./import", () => ({ importRecipeFromUrl: vi.fn() }));
 vi.mock("./mutations", () => ({
   createRecipe: createRecipeMock,
@@ -48,6 +63,10 @@ const input = recipeInput.parse({ title: "Apple Pie" });
 beforeEach(() => {
   vi.clearAllMocks();
   requireUserMock.mockResolvedValue({ id: "user_1" });
+  // Default: analytics off, so the activation count query is skipped and the
+  // existing revalidation/funnel tests exercise the fast path unchanged.
+  isAnalyticsConfiguredMock.mockReturnValue(false);
+  dbCountMock.mockResolvedValue(1);
 });
 
 describe("updateRecipeAction revalidation", () => {
@@ -111,5 +130,120 @@ describe("createRecipeAction revalidation", () => {
 
     expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+  });
+});
+
+describe("recipe funnel analytics (#310)", () => {
+  it("tracks recipe_created with a non-PII event shape on success", async () => {
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await createRecipeAction(
+      recipeInput.parse({
+        title: "Apple Pie",
+        coverImageUrl: "https://example.com/pie.jpg",
+        visibility: "public",
+        ingredients: [{ item: "apples" }, { item: "sugar" }],
+        steps: [{ instruction: "bake" }],
+      }),
+    );
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_created", {
+      recipeId: "rec_1",
+      ingredientCount: 2,
+      stepCount: 1,
+      hasPhoto: true,
+      visibility: "public",
+      source: "manual",
+    });
+  });
+
+  it("does not track when validation fails (success paths only)", async () => {
+    const res = await createRecipeAction({ title: "" } as never);
+
+    expect(res.ok).toBe(false);
+    expect(captureServerMock).not.toHaveBeenCalled();
+    expect(createRecipeMock).not.toHaveBeenCalled();
+  });
+
+  it("tracks recipe_updated on success", async () => {
+    updateRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await updateRecipeAction("rec_1", input);
+
+    expect(captureServerMock).toHaveBeenCalledWith(
+      "user_1",
+      "recipe_updated",
+      expect.objectContaining({ recipeId: "rec_1", visibility: "private" }),
+    );
+  });
+
+  it("tracks recipe_forked with the source id on success", async () => {
+    forkRecipeMock.mockResolvedValue({
+      id: "fork_1",
+      slug: "apple-pie-adaptation",
+      source: { id: "rec_1", slug: "apple-pie" },
+    });
+
+    await forkRecipeAction("rec_1");
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_forked", {
+      recipeId: "fork_1",
+      sourceId: "rec_1",
+    });
+  });
+
+  it("tracks recipe_reverted on success", async () => {
+    revertRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await revertRecipeAction("rec_1", 3);
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_reverted", {
+      recipeId: "rec_1",
+      versionNumber: 3,
+    });
+  });
+});
+
+describe("activation funnel: first_recipe_created (#328)", () => {
+  it("emits first_recipe_created when the author's count first reaches 1", async () => {
+    isAnalyticsConfiguredMock.mockReturnValue(true);
+    dbCountMock.mockResolvedValue(1);
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await createRecipeAction(input);
+
+    expect(captureServerMock).toHaveBeenCalledWith(
+      "user_1",
+      "first_recipe_created",
+      { recipeId: "rec_1" },
+    );
+  });
+
+  it("does not emit first_recipe_created on later recipes (no double count)", async () => {
+    isAnalyticsConfiguredMock.mockReturnValue(true);
+    dbCountMock.mockResolvedValue(4);
+    createRecipeMock.mockResolvedValue({ id: "rec_9", slug: "ninth" });
+
+    await createRecipeAction(input);
+
+    expect(captureServerMock).not.toHaveBeenCalledWith(
+      "user_1",
+      "first_recipe_created",
+      expect.anything(),
+    );
+  });
+
+  it("skips the activation count query entirely when analytics is off", async () => {
+    isAnalyticsConfiguredMock.mockReturnValue(false);
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await createRecipeAction(input);
+
+    expect(dbCountMock).not.toHaveBeenCalled();
+    expect(captureServerMock).not.toHaveBeenCalledWith(
+      "user_1",
+      "first_recipe_created",
+      expect.anything(),
+    );
   });
 });

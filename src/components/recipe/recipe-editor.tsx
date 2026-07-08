@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { track } from "~/lib/analytics";
 import { type RecipeInput } from "~/server/recipes/validation";
 import { type ImportedRecipe } from "~/server/recipes/import";
 import {
@@ -112,6 +113,11 @@ export function RecipeEditor({
   const [errors, setErrors] = React.useState<Record<string, string[]>>({});
   const [importUrl, setImportUrl] = React.useState("");
   const [importing, setImporting] = React.useState(false);
+
+  // Editor-open is the top of the creation/edit funnel (#310).
+  React.useEffect(() => {
+    track("editor_opened", { mode });
+  }, [mode]);
 
   const [form, setForm] = React.useState(() => ({
     title: initial?.title ?? "",
@@ -279,6 +285,10 @@ export function RecipeEditor({
         router.refresh();
       } else {
         setErrors(res.fieldErrors ?? {});
+        track("editor_save_failed", {
+          mode,
+          fieldCount: Object.keys(res.fieldErrors ?? {}).length,
+        });
         toast.error(res.error);
       }
     });

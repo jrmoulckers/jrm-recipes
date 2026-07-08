@@ -19,6 +19,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
+import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 
 const features = [
   {
@@ -58,6 +59,7 @@ const features = [
 export default function HomePage() {
   return (
     <div className="flex flex-col">
+      <LandingViewedTracker />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div

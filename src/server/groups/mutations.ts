@@ -197,7 +197,14 @@ export async function addMember(
 
     const member = await memberWithUser(tx, inserted.id);
     if (!member) throw new Error("CONFLICT");
-    return member;
+
+    // Count after the insert so the caller can bucket the group's size for
+    // analytics without ever seeing individual members.
+    const members = await tx.query.groupMembers.findMany({
+      where: eq(groupMembers.groupId, group.id),
+      columns: { id: true },
+    });
+    return { ...member, memberCount: members.length };
   });
 }
 
@@ -275,7 +282,7 @@ export async function leaveGroup(groupSlugOrId: string, user: User) {
     }
 
     await tx.delete(groupMembers).where(eq(groupMembers.id, membership.id));
-    return { slug: group.slug };
+    return { slug: group.slug, groupId: group.id };
   });
 }
 
@@ -303,7 +310,7 @@ export async function deleteGroup(groupSlugOrId: string, user: User) {
       .returning({ slug: groups.slug });
 
     if (!deleted) throw new Error("NOT_FOUND");
-    return deleted;
+    return { slug: deleted.slug, groupId: group.id };
   });
 }
 

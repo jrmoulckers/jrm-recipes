@@ -7,6 +7,7 @@ import {
   BookOpenText,
   Contrast,
   RotateCcw,
+  ShieldCheck,
   Type,
   Zap,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { TEXT_SIZES, type TextSize, isA11yActive } from "~/config/a11y";
 import { cn } from "~/lib/utils";
 import { useA11y } from "~/components/a11y/a11y-provider";
 import { useTheme } from "~/components/theme/theme-provider";
+import { PrivacyToggle } from "~/components/privacy/privacy-toggle";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Separator } from "~/components/ui/separator";
@@ -196,6 +198,17 @@ export function AccessibilityMenu() {
               checked={kidsOn}
               onCheckedChange={setKidsMode}
             />
+          </section>
+
+          <Separator />
+
+          {/* Privacy & analytics opt-out (#324) */}
+          <section className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ShieldCheck className="size-4 text-muted-foreground" />
+              Privacy
+            </div>
+            <PrivacyToggle />
           </section>
 
           {active && (

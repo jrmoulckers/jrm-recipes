@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { captureServer } from "~/lib/analytics/server";
+import { groupSizeBucket } from "~/lib/analytics/groups";
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
@@ -71,6 +73,11 @@ export async function createGroupAction(input: GroupInput): Promise<ActionResult
   try {
     const group = await createGroup(parsed.data, user);
     revalidateGroup(group.slug);
+    // A brand-new group only has its creator, so the size bucket is always "1".
+    void captureServer(user.id, "group_created", {
+      groupId: group.id,
+      sizeBucket: "1",
+    });
     return { ok: true, slug: group.slug };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -120,8 +127,23 @@ export async function addMemberAction(
 
   const user = await requireUser();
   try {
-    await addMember(slug, user, parsed.data.identifier, parsed.data.role);
+    const member = await addMember(slug, user, parsed.data.identifier, parsed.data.role);
     revalidateGroup(slug);
+    const sizeBucket = groupSizeBucket(member.memberCount);
+    // invite_sent is attributed to the inviter; invite_accepted is attributed
+    // to the invited user (their internal id — never a handle or email). In
+    // this model a member can only be added once they already have an account,
+    // so their membership activates immediately: the invite is "accepted" the
+    // moment it is sent.
+    void captureServer(user.id, "invite_sent", {
+      groupId: member.groupId,
+      role: parsed.data.role,
+      sizeBucket,
+    });
+    void captureServer(member.userId, "invite_accepted", {
+      groupId: member.groupId,
+      role: parsed.data.role,
+    });
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -146,8 +168,12 @@ export async function updateMemberRoleAction(
 
   const user = await requireUser();
   try {
-    await updateMemberRole(slug, user, memberUserId, parsed.data.role);
+    const member = await updateMemberRole(slug, user, memberUserId, parsed.data.role);
     revalidateGroup(slug);
+    void captureServer(user.id, "member_role_changed", {
+      groupId: member.groupId,
+      role: parsed.data.role,
+    });
     return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -177,6 +203,7 @@ export async function leaveGroupAction(slug: string): Promise<ActionResult> {
   try {
     const group = await leaveGroup(slug, user);
     revalidateGroup(group.slug);
+    void captureServer(user.id, "group_left", { groupId: group.groupId });
     return { ok: true, slug: group.slug };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
@@ -190,6 +217,7 @@ export async function deleteGroupAction(slug: string): Promise<ActionResult> {
   try {
     const group = await deleteGroup(slug, user);
     revalidateGroup(group.slug);
+    void captureServer(user.id, "group_deleted", { groupId: group.groupId });
     return { ok: true, slug: group.slug };
   } catch (error) {
     return { ok: false, error: messageFor(error) };

@@ -5,6 +5,7 @@ import { AlertTriangle, Clapperboard, Download, Loader2, Share } from "lucide-re
 import { toast } from "sonner";
 
 import { slugify } from "~/lib/utils";
+import { track } from "~/lib/analytics";
 import {
   buildReelScenes,
   type ReelExportMode,
@@ -182,6 +183,10 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
       const blob = await render();
       if (!blob) throw new Error("no-blob");
       saveBlob(blob);
+      track("reel_exported", {
+        kind: exportMode === "video" ? "video" : "image",
+        method: "download",
+      });
       toast.success(exportMode === "image" ? "Image downloaded" : "Reel downloaded");
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
@@ -204,6 +209,10 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
         typeof navigator.canShare === "function" &&
         navigator.canShare({ files: [file] });
       if (nativeShare && canShareFile) {
+        track("reel_exported", {
+          kind: exportMode === "video" ? "video" : "image",
+          method: "share",
+        });
         await navigator.share({
           files: [file],
           title: reel.title,
@@ -212,6 +221,10 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
       } else {
         // Fall back to a download when file-sharing isn't available.
         saveBlob(blob);
+        track("reel_exported", {
+          kind: exportMode === "video" ? "video" : "image",
+          method: "download",
+        });
         toast.success(
           exportMode === "image"
             ? "Image saved — share it from your gallery"
