@@ -149,6 +149,33 @@ describe("getSubstitutions", () => {
       veganButterSwaps.every((sub) => sub.dietaryTags?.includes("vegan")),
     ).toBe(true);
   });
+
+  it("filters to egg-free swaps for an egg-allergy cook", () => {
+    const eggFreeMayoSwaps = getSubstitutions("mayonnaise", ["egg-free"]);
+
+    expect(eggFreeMayoSwaps.length).toBeGreaterThan(0);
+    expect(
+      eggFreeMayoSwaps.every((sub) => sub.dietaryTags?.includes("egg-free")),
+    ).toBe(true);
+    // The egg-free "Vegan mayo" swap survives; the egg-based options do not.
+    expect(eggFreeMayoSwaps.map((sub) => sub.substitute)).toContain(
+      "Vegan mayo",
+    );
+    expect(eggFreeMayoSwaps.map((sub) => sub.substitute)).not.toContain(
+      "Plain Greek yogurt",
+    );
+  });
+
+  it("filters to vegetarian swaps", () => {
+    const vegetarianMayoSwaps = getSubstitutions("mayonnaise", ["vegetarian"]);
+
+    expect(vegetarianMayoSwaps.length).toBeGreaterThan(0);
+    expect(
+      vegetarianMayoSwaps.every((sub) =>
+        sub.dietaryTags?.includes("vegetarian"),
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("filterSubstitutionsByDiet", () => {

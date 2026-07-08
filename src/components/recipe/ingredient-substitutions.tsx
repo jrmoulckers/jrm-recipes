@@ -27,14 +27,18 @@ const TAG_VARIANT: Record<DietaryTag, NonNullable<BadgeProps["variant"]>> = {
 
 const FILTER_TAGS = [
   "vegan",
-  "gluten-free",
+  "vegetarian",
   "dairy-free",
+  "gluten-free",
+  "egg-free",
 ] as const satisfies readonly DietaryTag[];
 
 const FILTER_LABEL: Record<(typeof FILTER_TAGS)[number], string> = {
   vegan: "Vegan",
-  "gluten-free": "Gluten-free",
+  vegetarian: "Vegetarian",
   "dairy-free": "Dairy-free",
+  "gluten-free": "Gluten-free",
+  "egg-free": "Egg-free",
 };
 
 /**
