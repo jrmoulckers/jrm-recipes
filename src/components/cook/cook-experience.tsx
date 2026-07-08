@@ -46,6 +46,7 @@ import { cn, formatMinutes } from "~/lib/utils";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
+import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
@@ -148,6 +149,8 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         onStepSelect={goToStep}
         ingredientControls={ingredientControls}
       />
+
+      <CookAllergenBanner recipe={recipe} />
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section
