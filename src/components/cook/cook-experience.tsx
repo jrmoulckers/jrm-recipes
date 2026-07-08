@@ -64,6 +64,7 @@ import { PreCookChecklist } from "./pre-cook-checklist";
 import { CookCompletion } from "./cook-completion";
 import { KidsBadgeReward } from "./kids-badge-reward";
 import { awardForCompletion, type KidBadge } from "./kids-rewards";
+import { OfflineReadyBadge } from "./offline-ready-badge";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -610,6 +611,7 @@ function CookHeader({
                 Screen awake
               </Badge>
             )}
+            <OfflineReadyBadge className="hidden md:inline-flex" />
           </div>
           <h2 className="truncate font-display text-lg font-semibold tracking-tight sm:text-2xl">
             {recipe.title}
@@ -1343,6 +1345,7 @@ function EmptyCookExperience({
                   Screen awake
                 </Badge>
               )}
+              <OfflineReadyBadge className="hidden md:inline-flex" />
             </div>
             <h1 className="truncate font-display text-xl font-semibold">
               {recipe.title}
