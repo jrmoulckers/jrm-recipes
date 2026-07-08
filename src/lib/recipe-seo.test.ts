@@ -12,6 +12,7 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
     slug: "aunt-mays-peach-cobbler",
     title: "Aunt May's Peach Cobbler",
     description: "Bubbling fruit under a craggy biscuit top.",
+    cuisine: null,
     coverImageUrl: "https://cdn.example.com/cobbler.jpg",
     servings: 8,
     servingsNoun: "squares",
@@ -49,6 +50,7 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
       { value: 4, userId: "fan_2" },
       { value: 5, userId: "fan_3" },
     ],
+    tags: [],
     publishedAt: new Date("2024-06-01T12:00:00.000Z"),
     ...overrides,
   };
@@ -226,8 +228,62 @@ describe("buildRecipeJsonLd", () => {
     expect(jsonLd.recipeIngredient).toBeUndefined();
     expect(jsonLd.recipeInstructions).toBeUndefined();
     expect(jsonLd.nutrition).toBeUndefined();
+    expect(jsonLd.recipeCuisine).toBeUndefined();
+    expect(jsonLd.keywords).toBeUndefined();
+    expect(jsonLd.recipeCategory).toBeUndefined();
     // Required identity fields are always present.
     expect(jsonLd.name).toBe("Aunt May's Peach Cobbler");
+  });
+});
+
+describe("buildRecipeJsonLd taxonomy", () => {
+  it("emits recipeCuisine when cuisine is set", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe({ cuisine: "  Italian  " }));
+    expect(jsonLd.recipeCuisine).toBe("Italian");
+  });
+
+  it("omits recipeCuisine for blank/whitespace cuisine", () => {
+    expect(buildRecipeJsonLd(makeRecipe({ cuisine: "   " })).recipeCuisine).toBeUndefined();
+    expect(buildRecipeJsonLd(makeRecipe({ cuisine: null })).recipeCuisine).toBeUndefined();
+  });
+
+  it("emits keywords as a de-duplicated, trimmed, comma-joined list", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        tags: [
+          { tag: { name: "Summer" } },
+          { tag: { name: " Peach " } },
+          { tag: { name: "summer" } },
+          { tag: { name: "  " } },
+          { tag: null },
+        ],
+      }),
+    );
+    expect(jsonLd.keywords).toBe("Summer, Peach");
+  });
+
+  it("resolves recipeCategory from a meal-course tag", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        tags: [{ tag: { name: "Southern" } }, { tag: { name: "dessert" } }],
+      }),
+    );
+    expect(jsonLd.recipeCategory).toBe("Dessert");
+    expect(jsonLd.keywords).toBe("Southern, dessert");
+  });
+
+  it("omits recipeCategory when no tag matches the vocabulary", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ tags: [{ tag: { name: "Heirloom" } }] }),
+    );
+    expect(jsonLd.recipeCategory).toBeUndefined();
+    expect(jsonLd.keywords).toBe("Heirloom");
+  });
+
+  it("omits both when there are no usable tags", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe({ tags: [] }));
+    expect(jsonLd.keywords).toBeUndefined();
+    expect(jsonLd.recipeCategory).toBeUndefined();
   });
 });
 

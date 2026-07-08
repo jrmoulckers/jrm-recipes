@@ -51,6 +51,7 @@ export type SeoRecipe = {
   slug: string;
   title: string;
   description: string | null;
+  cuisine: string | null;
   coverImageUrl: string | null;
   servings: number | null;
   servingsNoun: string | null;
@@ -61,6 +62,7 @@ export type SeoRecipe = {
   author: { name: string | null } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
+  tags: { tag: { name: string } | null }[];
   ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
 } & SeoNutrition;
@@ -215,6 +217,66 @@ function buildNutrition(
 }
 
 /**
+ * Known meal-course categories mapped from lowercased tag names (and a few
+ * common synonyms) to the canonical schema.org-friendly label. Used to resolve
+ * `recipeCategory` from free-form tags (issue #314): the first recipe tag whose
+ * name matches this vocabulary wins; when none match the field is omitted.
+ */
+const CATEGORY_VOCAB = new Map<string, string>([
+  ["appetizer", "Appetizer"],
+  ["appetizers", "Appetizer"],
+  ["starter", "Appetizer"],
+  ["breakfast", "Breakfast"],
+  ["brunch", "Breakfast"],
+  ["lunch", "Lunch"],
+  ["dinner", "Main"],
+  ["main", "Main"],
+  ["main course", "Main"],
+  ["main dish", "Main"],
+  ["entree", "Main"],
+  ["entrée", "Main"],
+  ["side", "Side"],
+  ["side dish", "Side"],
+  ["salad", "Salad"],
+  ["soup", "Soup"],
+  ["dessert", "Dessert"],
+  ["desserts", "Dessert"],
+  ["snack", "Snack"],
+  ["snacks", "Snack"],
+  ["drink", "Drink"],
+  ["drinks", "Drink"],
+  ["beverage", "Drink"],
+  ["cocktail", "Drink"],
+  ["bread", "Bread"],
+  ["sauce", "Sauce"],
+  ["condiment", "Sauce"],
+]);
+
+/** Clean, non-empty, case-insensitively de-duplicated tag names in order. */
+function cleanTagNames(recipe: SeoRecipe): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const entry of recipe.tags) {
+    const name = entry.tag?.name?.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}
+
+/** First tag matching the meal-course vocabulary, as a canonical label. */
+function resolveCategory(tagNames: string[]): string | undefined {
+  for (const name of tagNames) {
+    const canonical = CATEGORY_VOCAB.get(name.toLowerCase());
+    if (canonical) return canonical;
+  }
+  return undefined;
+}
+
+/**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
  * called for `public` recipes; optional fields are omitted when absent so the
  * structured data stays clean.
@@ -228,6 +290,7 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   };
 
   if (recipe.description) jsonLd.description = recipe.description;
+  if (recipe.cuisine?.trim()) jsonLd.recipeCuisine = recipe.cuisine.trim();
   const images = recipeImages(recipe);
   if (images.length > 0) jsonLd.image = images;
   if (recipe.author?.name) {
@@ -264,6 +327,11 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   if (recipe.servings != null) {
     jsonLd.recipeYield = `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`;
   }
+
+  const tagNames = cleanTagNames(recipe);
+  if (tagNames.length > 0) jsonLd.keywords = tagNames.join(", ");
+  const category = resolveCategory(tagNames);
+  if (category) jsonLd.recipeCategory = category;
 
   const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {
