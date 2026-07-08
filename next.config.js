@@ -5,6 +5,7 @@
 import "./src/env.js";
 
 import withSerwistInit from "@serwist/next";
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 import { imageConfig } from "./src/config/next-image.js";
 
@@ -63,4 +64,11 @@ const config = {
   },
 };
 
-export default withSerwist(config);
+// Wrap with @next/bundle-analyzer, gated on ANALYZE=true (see `pnpm analyze`).
+// Writes a static report to .next/analyze/ without trying to open a browser.
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+  openAnalyzer: false,
+});
+
+export default withBundleAnalyzer(withSerwist(config));

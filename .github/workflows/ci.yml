@@ -44,11 +44,16 @@ jobs:
         run: pnpm test
 
       - name: Build
-        run: pnpm build
+        run: pnpm build | tee bundle-build.log
         env:
           SKIP_ENV_VALIDATION: "1"
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
           NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+
+      # Fail the build if a tracked route's first-load JS exceeds its budget
+      # (bundle-budgets.json). Reuses the log captured above so we build once.
+      - name: Bundle size budget
+        run: node scripts/check-bundle-budget.mjs bundle-build.log
 
   # End-to-end smoke test. Playwright builds + starts the app (see
   # playwright.config.ts) with dev-bypass auth and no database, so pages degrade

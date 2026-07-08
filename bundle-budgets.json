@@ -1,0 +1,9 @@
+{
+  "//": "First-load JS budgets in kB per tracked route. CI (scripts/check-bundle-budget.mjs) fails when 'next build' reports a First Load JS above these. Bump a budget deliberately in the same PR that grows a route, with justification. Baselines at time of writing: / 120, /recipes 202, /recipes/[id] 234, /recipes/[id]/edit 157.",
+  "routes": {
+    "/": 135,
+    "/recipes": 220,
+    "/recipes/[id]": 255,
+    "/recipes/[id]/edit": 175
+  }
+}
