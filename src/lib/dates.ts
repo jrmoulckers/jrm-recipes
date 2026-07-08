@@ -40,7 +40,7 @@ export function dateFnsLocale(locale: string = DEFAULT_LOCALE): DateFnsLocale {
 
 /** The day a week starts on for a locale, straight from CLDR via `date-fns`. */
 export function weekStartsOn(locale: string = DEFAULT_LOCALE): WeekStartsOn {
-  return (dateFnsLocale(locale).options?.weekStartsOn ?? 0) as WeekStartsOn;
+  return dateFnsLocale(locale).options?.weekStartsOn ?? 0;
 }
 
 /** Format a date with a `date-fns` pattern in the active locale. */

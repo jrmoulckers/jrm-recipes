@@ -5,7 +5,7 @@ const config = {
   parserOptions: {
     project: true,
   },
-  plugins: ["@typescript-eslint", "drizzle"],
+  plugins: ["@typescript-eslint", "drizzle", "i18next"],
   extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
@@ -28,6 +28,20 @@ const config = {
       { checksVoidReturn: { attributes: false } },
     ],
     "@typescript-eslint/no-explicit-any": "warn",
+    // Guard against new hardcoded user-facing copy leaking into JSX once the
+    // message catalogs exist (#238). WARN keeps `next lint` green while the
+    // existing English strings are migrated surface-by-surface; new code should
+    // read copy from `~/messages/*` via next-intl. Flags JSX text and the
+    // user-facing attributes below; non-JSX/TS code is exempt (mode jsx-only).
+    "i18next/no-literal-string": [
+      "warn",
+      {
+        mode: "jsx-only",
+        "jsx-attributes": {
+          include: ["alt", "aria-label", "placeholder", "title"],
+        },
+      },
+    ],
     "drizzle/enforce-delete-with-where": [
       "error",
       { drizzleObjectName: ["db"] },
@@ -37,6 +51,21 @@ const config = {
       { drizzleObjectName: ["db"] },
     ],
   },
+  overrides: [
+    {
+      // Non-shipping code: tests, fixtures, and DB seed data are not
+      // user-facing UI, so the literal-string guard would only add noise.
+      files: [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "src/test/**",
+        "src/server/db/seed.ts",
+      ],
+      rules: {
+        "i18next/no-literal-string": "off",
+      },
+    },
+  ],
   ignorePatterns: [
     "node_modules/",
     ".next/",

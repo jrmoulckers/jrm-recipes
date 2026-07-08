@@ -154,6 +154,36 @@ wrong theme on load.
 
 ---
 
+## Internationalization (i18n)
+
+Heirloom ships message catalogs for **English (default), Spanish, German, and
+Arabic**. The active locale is resolved from the `NEXT_LOCALE` cookie (no URL
+prefix) and applied server-side, so the right language and writing direction
+render on first paint. Switch languages from the header's language menu.
+
+**Convention: all user-facing copy comes from the message catalogs — never
+hardcode it in JSX.**
+
+- **Catalogs** live in `src/messages/<locale>.json` (`en`, `es`, `de`, `ar`) and
+  are read through [next-intl](https://next-intl.dev): `useTranslations()` in
+  client components, `getTranslations()` on the server. Add every new string to
+  **all** catalogs, keyed under a namespace.
+- **Formatting** is locale-aware via helpers — `~/lib/i18n-format` (numbers,
+  quantities, lists), `~/lib/dates` (dates, weekdays, relative time), and the
+  measurement/temperature utilities — rather than hand-built English strings.
+- **RTL:** components use Tailwind **logical** utilities (`ps-`/`pe-`,
+  `ms-`/`me-`, `text-start`/`text-end`, `start-`/`end-`) so layouts mirror
+  automatically under `dir="rtl"`.
+- **Guardrail:** ESLint's `i18next/no-literal-string` (warning) flags hardcoded
+  JSX text and the user-facing `alt` / `aria-label` / `placeholder` / `title`
+  attributes so new copy can't silently skip translation. It's scoped to UI
+  code — non-UI strings (`className`, `data-*`, routes, config) and tests/seed
+  are ignored. Existing English strings are being migrated surface-by-surface,
+  so the rule stays at **warn** (it doesn't fail `pnpm lint`) until extraction
+  completes; treat new warnings in your diff as a prompt to use a catalog.
+
+---
+
 ## Scripts
 
 | Command                        | What it does                                      |
