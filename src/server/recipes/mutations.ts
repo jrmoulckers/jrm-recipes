@@ -17,6 +17,7 @@ import {
   type User,
 } from "~/server/db/schema";
 import { canonicalizeTag } from "~/lib/tag-taxonomy";
+import { AuditAction, recordAudit } from "~/server/audit";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { parseSnapshot } from "./queries";
 import { buildAdaptationInput } from "./timeline";
@@ -429,7 +430,13 @@ export async function updateRecipe(
   return db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
-      columns: { id: true, slug: true, publishedAt: true, status: true },
+      columns: {
+        id: true,
+        slug: true,
+        publishedAt: true,
+        status: true,
+        visibility: true,
+      },
     });
     if (!current) throw new DomainError("NOT_FOUND");
 
@@ -448,6 +455,15 @@ export async function updateRecipe(
       actorId: author.id,
       type: newlyPublished ? "published" : "updated",
     });
+    if (input.visibility !== current.visibility) {
+      await recordAudit(tx, {
+        actorId: author.id,
+        action: AuditAction.RecipeVisibilityChanged,
+        targetType: "recipe",
+        targetId: id,
+        metadata: { from: current.visibility, to: input.visibility },
+      });
+    }
     return result;
   });
 }
@@ -599,6 +615,12 @@ export async function deleteRecipe(id: string, author: User) {
     )
     .returning({ id: recipes.id });
   if (!row) throw new DomainError("NOT_FOUND");
+  await recordAudit(db, {
+    actorId: author.id,
+    action: AuditAction.RecipeDeleted,
+    targetType: "recipe",
+    targetId: id,
+  });
   return row;
 }
 
