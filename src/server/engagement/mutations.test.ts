@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getTableConfig } from "drizzle-orm/pg-core";
+import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
+import { type SQL } from "drizzle-orm";
 
 const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
 
@@ -36,6 +37,8 @@ const recipeRow = {
 function fakeTx(overrides: {
   recipe?: unknown;
   comment?: unknown;
+  /** The caller's existing rating row, if any (drives aggregate deltas). */
+  existingRating?: { value: number } | null;
 }): unknown {
   const chain = {
     values: vi.fn(() => chain),
@@ -52,6 +55,9 @@ function fakeTx(overrides: {
           "recipe" in overrides ? overrides.recipe : recipeRow,
         ),
       },
+      ratings: {
+        findFirst: vi.fn(async () => overrides.existingRating ?? null),
+      },
       comments: {
         findFirst: vi.fn(async () => overrides.comment ?? null),
         findMany: vi.fn(async () => []),
@@ -61,6 +67,12 @@ function fakeTx(overrides: {
     update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
   };
+}
+
+/** Render a Drizzle SQL fragment's bound params (no DB needed). */
+const dialect = new PgDialect({ casing: "snake_case" });
+function paramsOf(fragment: unknown): unknown[] {
+  return dialect.sqlToQuery(fragment as SQL).params;
 }
 
 /** Run the mutation's transaction callback against a fake tx. */
@@ -327,6 +339,69 @@ describe("setRating blocks an author rating their own recipe", () => {
     expect(
       (tx as { insert: ReturnType<typeof vi.fn> }).insert,
     ).toHaveBeenCalled();
+  });
+});
+
+describe("rating mutations keep the denormalized aggregates in step (issue #154)", () => {
+  it("a brand-new vote bumps ratingCount by 1 and ratingSum by the value", async () => {
+    const tx = fakeTx({ recipe: recipeRow, existingRating: null });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await setRating(
+      { recipeId: "recipe_1", recipeSlug: "sunday-sauce", value: 5 },
+      user,
+    );
+
+    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
+    const agg = payloadWith(chain.set.mock.calls, "ratingCount");
+    expect(agg).toBeDefined();
+    expect(paramsOf(agg!.ratingCount)).toContain(1);
+    expect(paramsOf(agg!.ratingSum)).toContain(5);
+  });
+
+  it("changing an existing vote leaves the count and shifts the sum by the delta", async () => {
+    const tx = fakeTx({ recipe: recipeRow, existingRating: { value: 2 } });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await setRating(
+      { recipeId: "recipe_1", recipeSlug: "sunday-sauce", value: 5 },
+      user,
+    );
+
+    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
+    const agg = payloadWith(chain.set.mock.calls, "ratingCount");
+    expect(agg).toBeDefined();
+    // No new voter: count delta is 0; sum moves by (5 - 2) = 3.
+    expect(paramsOf(agg!.ratingCount)).toContain(0);
+    expect(paramsOf(agg!.ratingSum)).toContain(3);
+  });
+
+  it("removeRating drops the count by 1 and the sum by the removed value", async () => {
+    const tx = fakeTx({ recipe: recipeRow, existingRating: { value: 4 } });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await removeRating("recipe_1", user);
+
+    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
+    const agg = payloadWith(chain.set.mock.calls, "ratingSum");
+    expect(agg).toBeDefined();
+    expect(paramsOf(agg!.ratingSum)).toContain(4);
+  });
+
+  it("removeRating on the owner's own (uncounted) rating leaves the aggregates alone", async () => {
+    // ownerUser.id === recipeRow.authorId: a legacy self-rating the backfill
+    // never counted, so deleting it must not decrement the owner-excluded totals.
+    const tx = fakeTx({ recipe: recipeRow, existingRating: { value: 5 } });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await removeRating("recipe_1", ownerUser);
+
+    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
+    expect(payloadWith(chain.set.mock.calls, "ratingSum")).toBeUndefined();
   });
 });
 

@@ -8,6 +8,7 @@ import {
   parseRatingSort,
   ratingDisplay,
   ratingSummary,
+  summaryFromAggregates,
   TOP_RATED_PRIOR_MEAN,
 } from "./ratings";
 
@@ -38,6 +39,29 @@ describe("ratingSummary", () => {
 
   it("handles a single rating", () => {
     expect(ratingSummary([{ value: 3 }])).toEqual({ average: 3, count: 1 });
+  });
+});
+
+describe("summaryFromAggregates", () => {
+  it("returns an empty summary when the count is zero", () => {
+    expect(summaryFromAggregates(0, 0)).toEqual({ average: 0, count: 0 });
+  });
+
+  it("treats a negative count as unrated (defensive)", () => {
+    expect(summaryFromAggregates(-1, 4)).toEqual({ average: 0, count: 0 });
+  });
+
+  it("derives the average from sum / count", () => {
+    // 12 / 3 = 4
+    expect(summaryFromAggregates(3, 12)).toEqual({ average: 4, count: 3 });
+  });
+
+  it("rounds to one decimal, matching ratingSummary", () => {
+    // 13 / 3 = 4.333… -> 4.3, identical to ratingSummary of the raw values.
+    expect(summaryFromAggregates(3, 13)).toEqual({ average: 4.3, count: 3 });
+    expect(summaryFromAggregates(3, 13)).toEqual(
+      ratingSummary([{ value: 5 }, { value: 4 }, { value: 4 }]),
+    );
   });
 });
 

@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   real,
@@ -14,10 +15,12 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
-import { fk, pk, timestamps } from "./_shared";
+import { fk, pk, softDelete, timestamps } from "./_shared";
 import { users } from "./users";
 import { groups } from "./groups";
 import { comments, ratings, recipeTags } from "./engagement";
+import { reviews } from "./reviews";
+import type { RecipeInput } from "~/server/recipes/validation";
 
 export const recipeVisibility = pgEnum("recipe_visibility", [
   "private",
@@ -86,12 +89,32 @@ export const recipes = pgTable(
     forkNote: varchar({ length: 300 }),
 
     publishedAt: timestamp({ withTimezone: true }),
+    // Denormalized, owner-excluded rating aggregates (issue #154). Maintained
+    // transactionally by the rating mutations (setRating/removeRating) and read
+    // directly by list/feed cards + the top-rated ordering, so a feed never has
+    // to pull every `ratings` row just to show a count + average. `ratingAvg` is
+    // derived (`ratingSum / ratingCount`) rather than stored to avoid rounding
+    // drift. Owners can't rate their own recipe, so these never count self-votes.
+    ratingCount: integer().notNull().default(0),
+    ratingSum: integer().notNull().default(0),
+    // Soft-delete (issue #165): deleting a recipe tombstones it instead of
+    // cascading away its versions/events/ratings/comments, so family history
+    // survives and an owner can restore it. Children stay, hidden via the parent.
+    ...softDelete(() => users.id),
     ...timestamps(),
   },
   (t) => [
-    index("recipes_author_idx").on(t.authorId),
-    index("recipes_group_idx").on(t.groupId),
-    index("recipes_visibility_idx").on(t.visibility),
+    // Every recipe read path filters `deleted_at IS NULL` (issue #165), so the
+    // hot lookup indexes are partial: they stay small and never scan tombstones.
+    index("recipes_author_idx")
+      .on(t.authorId)
+      .where(sql`${t.deletedAt} is null`),
+    index("recipes_group_idx")
+      .on(t.groupId)
+      .where(sql`${t.deletedAt} is null`),
+    index("recipes_visibility_idx")
+      .on(t.visibility)
+      .where(sql`${t.deletedAt} is null`),
     // Slugs are public lookup keys (getRecipe resolves by slug), so they must be
     // globally unique — matching groups.slug / tags.slug. The unique constraint
     // also provides the btree index that backs slug lookups, so no separate
@@ -105,8 +128,27 @@ export const recipes = pgTable(
     check("recipes_prep_minutes_check", sql`${t.prepMinutes} >= 0`),
     check("recipes_cook_minutes_check", sql`${t.cookMinutes} >= 0`),
     check("recipes_total_minutes_check", sql`${t.totalMinutes} >= 0`),
+    // Denormalized rating aggregates can never be negative (issue #154); the
+    // migration backfills them and the mutations only ever += / -= real votes.
+    check("recipes_rating_count_check", sql`${t.ratingCount} >= 0`),
+    check("recipes_rating_sum_check", sql`${t.ratingSum} >= 0`),
   ],
 );
+
+/**
+ * Full-text search (issue #158) is intentionally NOT modelled as Drizzle columns
+ * or indexes here. The FTS migration hand-adds:
+ *   - a generated, STORED `tsvector` column `recipes.search_vector`
+ *     (`setweight` A/B/C over title/description/cuisine, `english` config) with a
+ *     GIN index, queried via `search_vector @@ websearch_to_tsquery(...)` in
+ *     `searchRecipes` (see `recipeSearchMatchSql`); and
+ *   - `pg_trgm` GIN indexes on `recipe_ingredients.item` and `tags.name` so the
+ *     substring `ILIKE '%q%'` fallbacks are index-backed instead of seq scans.
+ * Keeping these untracked (like the `pg_trgm` extension itself) avoids
+ * drizzle-kit generated-column/opclass drift while still enforcing them in the
+ * database. Nothing in the app SELECTs `search_vector`, so the ORM never needs
+ * to know it exists.
+ */
 
 /** One ingredient line. `quantity`/`quantityMax` are numeric so we can scale. */
 export const recipeIngredients = pgTable(
@@ -176,11 +218,24 @@ export const recipeVersions = pgTable(
     versionNumber: integer().notNull().default(1),
     label: varchar({ length: 200 }),
     summary: varchar({ length: 500 }),
-    snapshot: text().notNull(),
+    // The full RecipeInput at save time, stored as `jsonb` so Postgres validates
+    // the JSON structurally and future timeline/diff features can query inside a
+    // snapshot. `parseSnapshot` still Zod-validates the *shape* on read.
+    snapshot: jsonb().$type<RecipeInput>().notNull(),
     authorId: fk().references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("recipe_versions_recipe_idx").on(t.recipeId, t.versionNumber)],
+  (t) => [
+    // (recipe_id, version_number) is unique at the DB level (issue #151). Version
+    // numbers are allocated as max+1, but READ COMMITTED lets two concurrent edits
+    // read the same max and write the same number. The constraint makes the DB the
+    // arbiter; its btree also backs the version-ordered history reads that the old
+    // non-unique `recipe_versions_recipe_idx` used to serve.
+    unique("recipe_versions_recipe_version_uq").on(t.recipeId, t.versionNumber),
+    // Covering index for the authorId foreign key (issue #153): the
+    // `ON DELETE set null` on user delete otherwise scans every version row.
+    index("recipe_versions_author_idx").on(t.authorId),
+  ],
 );
 
 /**
@@ -204,7 +259,14 @@ export const recipeEvents = pgTable(
     }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("recipe_events_recipe_idx").on(t.recipeId, t.createdAt)],
+  (t) => [
+    index("recipe_events_recipe_idx").on(t.recipeId, t.createdAt),
+    // Covering indexes for the actorId + relatedRecipeId foreign keys (issue
+    // #153): the actor `ON DELETE set null` cascade and the fork back-link
+    // lookup (events pointing at a related recipe) otherwise scan the log.
+    index("recipe_events_actor_idx").on(t.actorId),
+    index("recipe_events_related_idx").on(t.relatedRecipeId),
+  ],
 );
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -230,6 +292,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   tags: many(recipeTags),
   ratings: many(ratings),
   comments: many(comments),
+  reviews: many(reviews),
 }));
 
 export const recipeIngredientsRelations = relations(

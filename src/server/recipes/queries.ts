@@ -6,9 +6,12 @@ import {
   desc,
   eq,
   exists,
+  gt,
   ilike,
   inArray,
   isNotNull,
+  isNull,
+  lt,
   lte,
   or,
   sql,
@@ -20,13 +23,13 @@ import {
   compareByTopRated,
   excludeOwnerRatings,
   ratingSummary,
+  summaryFromAggregates,
   TOP_RATED_PRIOR_COUNT,
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from "~/lib/ratings";
 import {
   groupMembers,
-  ratings,
   recipeEvents,
   recipeIngredients,
   recipeSteps,
@@ -37,13 +40,29 @@ import {
   type User,
 } from "~/server/db/schema";
 import { recipeInput, type RecipeInput } from "./validation";
-import { DISCOVER_PAGE_SIZE, nextPageOffset } from "./pagination";
+import {
+  clampPageSize,
+  DISCOVER_PAGE_SIZE,
+  FORK_LIST_CAP,
+  nextPageOffset,
+  toCursorPage,
+  TIMELINE_EVENT_PAGE_SIZE,
+  VERSION_HISTORY_PAGE_SIZE,
+} from "./pagination";
 import {
   tagFilterSlug,
   type RecipeSearch,
   type RecipeSort,
 } from "./search";
 import { assembleTimeline, type TimelineEntry } from "./timeline";
+
+/**
+ * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
+ * read path ANDs this in so tombstoned rows never surface in a list, detail,
+ * search, lineage, timeline, or facet — while their child history (versions,
+ * events, ratings, comments) is preserved and returns intact on restore.
+ */
+const notDeleted = isNull(recipes.deletedAt);
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
@@ -55,57 +74,48 @@ export type RecipeSearchResult = Awaited<
   ReturnType<typeof searchRecipes>
 >[number];
 export type RecipeFacets = Awaited<ReturnType<typeof listRecipeFacets>>;
-export type VersionListItem = Awaited<
-  ReturnType<typeof getRecipeVersions>
->[number];
+/** One page of a recipe's saved versions, newest first (#159). */
+export type VersionHistoryPage = Awaited<ReturnType<typeof getRecipeVersions>>;
+export type VersionListItem = VersionHistoryPage["items"][number];
 
 /** Re-exported for recipe detail pages that import it from the query module. */
 export { excludeOwnerRatings, ratingSummary };
 
 /**
- * Re-order a fetched list so the highest-rated recipes come first, excluding any
- * owner self-rating from each recipe's summary. Used for lists that are already
- * fully loaded (e.g. a viewer's library); paged/searched feeds order in SQL via
- * {@link topRatedOrderBy} instead so the ranking is global rather than
- * per-window. `"recent"` keeps the DB order untouched.
+ * Re-order a fetched list so the highest-rated recipes come first, using each
+ * recipe's denormalized, owner-excluded aggregates (issue #154). Used for lists
+ * that are already fully loaded (e.g. a viewer's library); paged/searched feeds
+ * order in SQL via {@link topRatedOrderBy} instead so the ranking is global
+ * rather than per-window. `"recent"` keeps the DB order untouched.
  */
 function applyRatingSort<
-  T extends { authorId: string; ratings: { value: number; userId: string }[] },
+  T extends { ratingCount: number; ratingSum: number },
 >(rows: T[], sort: RatingSort): T[] {
   if (sort !== "top-rated") return rows;
   return [...rows].sort((a, b) =>
     compareByTopRated(
-      ratingSummary(excludeOwnerRatings(a.ratings, a.authorId)),
-      ratingSummary(excludeOwnerRatings(b.ratings, b.authorId)),
+      summaryFromAggregates(a.ratingCount, a.ratingSum),
+      summaryFromAggregates(b.ratingCount, b.ratingSum),
     ),
   );
 }
 
 /**
- * Per-recipe weighted "top rated" score, computed in SQL over the recipe's FULL
- * set of ratings (excluding the owner's own), so ordering by it ranks globally
- * rather than within a fetched page. Mirrors `bayesianScore` in `~/lib/ratings`:
- * `(sum + prMean*prCount) / (count + prCount)`. Exported for unit assertions.
+ * Per-recipe weighted "top rated" score, read straight from the denormalized
+ * aggregates on `recipes` (issue #154) rather than a correlated subquery over
+ * `ratings`, so the feed no longer scans the ratings table per row. Mirrors
+ * `bayesianScore` in `~/lib/ratings`: `(sum + prMean*prCount) / (count +
+ * prCount)`. Exported for unit assertions.
  */
 export function topRatedScoreSql(): SQL {
   const priorSum = TOP_RATED_PRIOR_MEAN * TOP_RATED_PRIOR_COUNT;
-  return sql`(
-    select (coalesce(sum(${ratings.value}), 0) + ${priorSum})::float
-         / (count(*) + ${TOP_RATED_PRIOR_COUNT})::float
-    from ${ratings}
-    where ${ratings.recipeId} = ${recipes.id}
-      and ${ratings.userId} <> ${recipes.authorId}
-  )`;
+  return sql`((${recipes.ratingSum} + ${priorSum})::float
+     / (${recipes.ratingCount} + ${TOP_RATED_PRIOR_COUNT})::float)`;
 }
 
 /** Whether a recipe has any non-owner rating, so unrated recipes sort last. */
 function topRatedHasRatingsSql(): SQL {
-  return sql`(
-    select count(*) > 0
-    from ${ratings}
-    where ${ratings.recipeId} = ${recipes.id}
-      and ${ratings.userId} <> ${recipes.authorId}
-  )`;
+  return sql`(${recipes.ratingCount} > 0)`;
 }
 
 /**
@@ -147,9 +157,9 @@ async function viewerGroupIds(viewer: User | null): Promise<string[]> {
 export async function listMyRecipes(userId: string) {
   if (!isDbConfigured()) return [];
   return db.query.recipes.findMany({
-    where: eq(recipes.authorId, userId),
+    where: and(notDeleted, eq(recipes.authorId, userId)),
     orderBy: [desc(recipes.updatedAt)],
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
 }
 
@@ -171,6 +181,7 @@ export async function listPublicRecipes({
   if (!isDbConfigured()) return { items: [], nextOffset: null };
   const rows = await db.query.recipes.findMany({
     where: and(
+      notDeleted,
       eq(recipes.visibility, "public"),
       eq(recipes.status, "published"),
     ),
@@ -180,7 +191,7 @@ export async function listPublicRecipes({
         : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
     offset,
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
   return {
     items: rows,
@@ -228,7 +239,7 @@ export async function canViewRecipe(
 export async function getRecipe(idOrSlug: string, viewer: User | null) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
-    where: or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
+    where: and(notDeleted, or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug))),
     with: {
       author: true,
       group: true,
@@ -249,6 +260,7 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
     where: and(
+      notDeleted,
       or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
       eq(recipes.authorId, userId),
     ),
@@ -276,9 +288,9 @@ export async function listLibrary(
       ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
       : eq(recipes.authorId, viewer.id);
   const rows = await db.query.recipes.findMany({
-    where: scope,
+    where: and(notDeleted, scope),
     orderBy: [desc(recipes.updatedAt)],
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
   return applyRatingSort(rows, sort);
 }
@@ -289,12 +301,15 @@ export async function listLibrary(
  * shows today (library + discover) so search never widens visibility.
  */
 function visibleRecipesScope(viewer: User | null, groupIds: string[]): SQL {
-  return or(
-    and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
-    viewer ? eq(recipes.authorId, viewer.id) : undefined,
-    groupIds.length > 0
-      ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
-      : undefined,
+  return and(
+    notDeleted,
+    or(
+      and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
+      viewer ? eq(recipes.authorId, viewer.id) : undefined,
+      groupIds.length > 0
+        ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
+        : undefined,
+    ),
   )!;
 }
 
@@ -326,9 +341,49 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
 const RECIPE_SEARCH_LIMIT = 60;
 
 /**
+ * Postgres text-search configuration for recipe search (issue #158). `english`
+ * gives us stemming ("tomatoes" matches "tomato") and stop-word removal. Kept as
+ * a single constant so the query and the generated `search_vector` column (see
+ * the FTS migration) always agree on the dictionary.
+ */
+const RECIPE_FTS_CONFIG = "english";
+
+/**
+ * Does a recipe's full-text `search_vector` match a user query? Uses
+ * `websearch_to_tsquery`, which accepts free-form input (quotes, `or`, `-term`)
+ * and never throws on syntax, unlike `to_tsquery`. `search_vector` is a
+ * generated, GIN-indexed `tsvector` maintained by Postgres (issue #158, added in
+ * the FTS migration), so this predicate is index-backed — no per-row seq scan.
+ * Referenced by raw column name because the vector is deliberately not mapped in
+ * the Drizzle schema (nothing selects it, and keeping it untracked avoids
+ * generated-column migration drift).
+ */
+export function recipeSearchMatchSql(q: string): SQL {
+  return sql`"recipes"."search_vector" @@ websearch_to_tsquery('${sql.raw(
+    RECIPE_FTS_CONFIG,
+  )}', ${q})`;
+}
+
+/**
+ * Relevance score for a text query, weighted title > description > cuisine (the
+ * weights live in the generated column). Only computed over rows that already
+ * passed the WHERE match, so it costs nothing on the unmatched majority. Used as
+ * the lead ORDER BY term for text searches so the best matches surface first.
+ */
+export function recipeSearchRankSql(q: string): SQL {
+  return sql`ts_rank("recipes"."search_vector", websearch_to_tsquery('${sql.raw(
+    RECIPE_FTS_CONFIG,
+  )}', ${q}))`;
+}
+
+/**
  * Search, filter, and sort recipes a viewer may see. All narrowing runs in SQL
- * against existing indexes; returns [] when the DB is off. The free-text query
- * matches title, description, cuisine, tag names, and ingredient item text.
+ * against existing indexes; returns [] when the DB is off. Free text is matched
+ * with Postgres full-text search over a weighted, GIN-indexed `search_vector`
+ * (title > description > cuisine, with stemming) plus trigram-accelerated
+ * substring matches on ingredient item text and tag names (issue #158). Text
+ * queries are ordered by relevance (`ts_rank`); everything else keeps the
+ * requested sort.
  */
 export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
   if (!isDbConfigured()) return [];
@@ -342,9 +397,7 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     const like = `%${escapeLike(search.q)}%`;
     conditions.push(
       or(
-        ilike(recipes.title, like),
-        ilike(recipes.description, like),
-        ilike(recipes.cuisine, like),
+        recipeSearchMatchSql(search.q),
         exists(
           db
             .select({ one: sql`1` })
@@ -396,12 +449,23 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     );
   }
 
+  const baseOrder =
+    search.sort === "top-rated"
+      ? topRatedOrderBy()
+      : recipeOrderBy(search.sort);
+  // For a text query, relevance leads: best full-text matches first, with the
+  // requested sort as the tie-breaker (and as the sole order for empty `q`).
+  // Ingredient-/tag-only matches score 0 on the vector, so they trail the
+  // title/description/cuisine hits but still appear.
+  const orderBy = search.q
+    ? [desc(recipeSearchRankSql(search.q)), ...baseOrder]
+    : baseOrder;
+
   const rows = await db.query.recipes.findMany({
     where: and(...conditions),
-    orderBy:
-      search.sort === "top-rated" ? topRatedOrderBy() : recipeOrderBy(search.sort),
+    orderBy,
     limit: RECIPE_SEARCH_LIMIT,
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
 
   // "top-rated" ordering (weighted, owner-excluded) is applied in SQL over the
@@ -443,28 +507,61 @@ export async function listRecipeFacets(
   };
 }
 
-/** Validate a persisted version snapshot before using it. */
-export function parseSnapshot(snapshot: string): RecipeInput | null {
-  try {
-    const parsed = recipeInput.safeParse(JSON.parse(snapshot) as unknown);
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
+/**
+ * Validate a persisted version snapshot before using it.
+ *
+ * `recipe_versions.snapshot` is `jsonb`, so Drizzle hands back an already-parsed
+ * value — `jsonb` guarantees valid JSON but not a valid *shape*, so we still run
+ * it through the Zod `recipeInput` schema. A string is JSON-parsed defensively
+ * so any legacy/text snapshot that slips through never crashes a caller.
+ */
+export function parseSnapshot(snapshot: unknown): RecipeInput | null {
+  let value: unknown = snapshot;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return null;
+    }
   }
+  const parsed = recipeInput.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
-/** Version history for a recipe, newest first. */
-export async function getRecipeVersions(recipeId: string) {
-  if (!isDbConfigured()) return [];
-  return db.query.recipeVersions.findMany({
-    where: eq(recipeVersions.recipeId, recipeId),
-    orderBy: [desc(recipeVersions.versionNumber)],
-    with: {
-      author: {
-        columns: { id: true, name: true, handle: true, avatarUrl: true },
-      },
-    },
-  });
+/**
+ * A page of a recipe's saved versions, newest first (#159). Keyset-paginated on
+ * the monotonic `versionNumber` and — crucially — excludes the heavy `snapshot`
+ * jsonb blob, which the history list never renders (only a version *preview*
+ * needs it, via {@link getRecipeVersion}). Pass the previous page's
+ * `nextCursor` as `beforeVersion` to walk further back into the history.
+ */
+export async function getRecipeVersions(
+  recipeId: string,
+  options: { beforeVersion?: number | null; limit?: number } = {},
+) {
+  const limit = clampPageSize(options.limit, VERSION_HISTORY_PAGE_SIZE);
+  const rows = isDbConfigured()
+    ? await db.query.recipeVersions.findMany({
+        where: and(
+          eq(recipeVersions.recipeId, recipeId),
+          options.beforeVersion != null
+            ? lt(recipeVersions.versionNumber, options.beforeVersion)
+            : undefined,
+        ),
+        orderBy: [desc(recipeVersions.versionNumber)],
+        // Omit the snapshot jsonb from list rows — it can be large and the
+        // history list only needs metadata (label, author, timestamp).
+        columns: { snapshot: false },
+        with: {
+          author: {
+            columns: { id: true, name: true, handle: true, avatarUrl: true },
+          },
+        },
+        // Over-fetch one row to detect whether a further page exists.
+        limit: limit + 1,
+      })
+    : [];
+  return toCursorPage(rows, limit, (row) => row.versionNumber);
 }
 
 /** A single saved recipe version, usually for previewing a snapshot. */
@@ -498,13 +595,13 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
   if (!isDbConfigured()) return { parent: null, adaptations: [] };
 
   const recipe = await db.query.recipes.findFirst({
-    where: eq(recipes.id, recipeId),
+    where: and(notDeleted, eq(recipes.id, recipeId)),
     columns: { forkedFromId: true },
   });
 
   const parent = recipe?.forkedFromId
     ? ((await db.query.recipes.findFirst({
-        where: eq(recipes.id, recipe.forkedFromId),
+        where: and(notDeleted, eq(recipes.id, recipe.forkedFromId)),
         columns: { id: true, slug: true, title: true },
         with: { author: { columns: { name: true } } },
       })) ?? null)
@@ -512,7 +609,7 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
 
   const groupIds = await viewerGroupIds(viewer);
   const forks = await db.query.recipes.findMany({
-    where: eq(recipes.forkedFromId, recipeId),
+    where: and(notDeleted, eq(recipes.forkedFromId, recipeId)),
     orderBy: [desc(recipes.updatedAt)],
     columns: {
       id: true,
@@ -523,6 +620,9 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
       groupId: true,
     },
     with: { author: { columns: { name: true } } },
+    // Bound the fan-out: a wildly-forked recipe can't load unlimited children
+    // into one lineage read (#159). The most recently touched forks win.
+    limit: FORK_LIST_CAP,
   });
   // Hide forks the viewer isn't allowed to see so a public recipe never lists
   // another member's private (or out-of-group) adaptation.
@@ -534,6 +634,13 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
 export type RecipeTimeline = Awaited<ReturnType<typeof getRecipeTimeline>>;
 
 /**
+ * Opaque keyset cursor into a recipe's timeline events: the `(createdAt, id)`
+ * of the last event on a page. Callers pass it back as `afterEvent` to fetch
+ * the next, older-to-newer slice of history (#159).
+ */
+export type TimelineCursor = { createdAt: Date; id: string };
+
+/**
  * Assemble a recipe's family-history timeline: its own milestones (created,
  * edited, published) plus each fork it originates and, if it is itself an
  * adaptation, a link back to the recipe it came from — all in chronological
@@ -542,28 +649,53 @@ export type RecipeTimeline = Awaited<ReturnType<typeof getRecipeTimeline>>;
  *
  * Descendant-fork entries (and their fork notes) are gated with {@link canView}
  * for `viewer`, so a public recipe's timeline never leaks a private adaptation.
+ *
+ * Events are keyset-paginated oldest-first (#159): the first page begins the
+ * story and folds in the (bounded) descendant forks plus any synthetic origin;
+ * pass the returned `nextCursor` as `afterEvent` to read newer events. Later
+ * pages carry events only — the origin back-fill and fork side-list belong to
+ * the story's opening page, never a continuation.
  */
 export async function getRecipeTimeline(
   recipeId: string,
   viewer: User | null,
+  options: { afterEvent?: TimelineCursor | null; limit?: number } = {},
 ): Promise<{
   entries: TimelineEntry[];
   parent: { slug: string; title: string; author?: { name: string | null } | null } | null;
+  nextCursor: TimelineCursor | null;
 }> {
-  if (!isDbConfigured()) return { entries: [], parent: null };
+  if (!isDbConfigured())
+    return { entries: [], parent: null, nextCursor: null };
 
   const recipe = await db.query.recipes.findFirst({
-    where: eq(recipes.id, recipeId),
+    where: and(notDeleted, eq(recipes.id, recipeId)),
     columns: { id: true, forkedFromId: true, createdAt: true },
   });
-  if (!recipe) return { entries: [], parent: null };
+  if (!recipe) return { entries: [], parent: null, nextCursor: null };
 
   const groupIds = await viewerGroupIds(viewer);
+  const isFirstPage = options.afterEvent == null;
+  const eventLimit = clampPageSize(options.limit, TIMELINE_EVENT_PAGE_SIZE);
+  const cursor = options.afterEvent ?? null;
 
-  const [events, children, parentRecipe] = await Promise.all([
+  const [eventRows, children, parentRecipe] = await Promise.all([
     db.query.recipeEvents.findMany({
-      where: eq(recipeEvents.recipeId, recipeId),
-      orderBy: [asc(recipeEvents.createdAt)],
+      where: and(
+        eq(recipeEvents.recipeId, recipeId),
+        // Keyset seek past the last event on the previous page, ordered by the
+        // same (createdAt, id) tuple we sort by so ties never skip a row.
+        cursor
+          ? or(
+              gt(recipeEvents.createdAt, cursor.createdAt),
+              and(
+                eq(recipeEvents.createdAt, cursor.createdAt),
+                gt(recipeEvents.id, cursor.id),
+              ),
+            )
+          : undefined,
+      ),
+      orderBy: [asc(recipeEvents.createdAt), asc(recipeEvents.id)],
       with: {
         actor: { columns: { name: true, handle: true, avatarUrl: true } },
         related: {
@@ -576,23 +708,33 @@ export async function getRecipeTimeline(
           },
         },
       },
+      // Over-fetch one row to detect a further page of events.
+      limit: eventLimit + 1,
     }),
-    db.query.recipes.findMany({
-      where: eq(recipes.forkedFromId, recipeId),
-      columns: {
-        id: true,
-        slug: true,
-        title: true,
-        createdAt: true,
-        authorId: true,
-        visibility: true,
-        groupId: true,
-      },
-      with: { author: { columns: { name: true, handle: true, avatarUrl: true } } },
-    }),
+    // Descendant forks are a bounded side-list that belongs to the opening page
+    // only, so continuations don't re-emit them (#159).
+    isFirstPage
+      ? db.query.recipes.findMany({
+          where: and(notDeleted, eq(recipes.forkedFromId, recipeId)),
+          orderBy: [asc(recipes.createdAt)],
+          columns: {
+            id: true,
+            slug: true,
+            title: true,
+            createdAt: true,
+            authorId: true,
+            visibility: true,
+            groupId: true,
+          },
+          with: {
+            author: { columns: { name: true, handle: true, avatarUrl: true } },
+          },
+          limit: FORK_LIST_CAP,
+        })
+      : Promise.resolve([]),
     recipe.forkedFromId
       ? db.query.recipes.findFirst({
-          where: eq(recipes.id, recipe.forkedFromId),
+          where: and(notDeleted, eq(recipes.id, recipe.forkedFromId)),
           columns: { id: true, slug: true, title: true, createdAt: true },
           with: {
             author: { columns: { name: true, handle: true, avatarUrl: true } },
@@ -600,6 +742,15 @@ export async function getRecipeTimeline(
         })
       : Promise.resolve(undefined),
   ]);
+
+  // Trim the over-fetched sentinel row and derive the cursor to the next page
+  // of events (the last kept event's key), or null when history is exhausted.
+  const events = eventRows.slice(0, eventLimit);
+  const lastEvent = events[events.length - 1];
+  const nextCursor =
+    eventRows.length > eventLimit && lastEvent
+      ? { createdAt: lastEvent.createdAt, id: lastEvent.id }
+      : null;
 
   // Only surface descendant forks the viewer may see; a private adaptation (and
   // its fork note) must stay hidden on a public recipe's timeline.
@@ -634,11 +785,13 @@ export async function getRecipeTimeline(
     });
   }
 
-  // Back-fill for recipes created before the events log existed.
+  // Back-fill for recipes created before the events log existed. Only the
+  // opening page can begin the story, so a continuation never invents an
+  // origin milestone the earlier page already showed (#159).
   const hasOrigin = entries.some(
     (e) => e.kind === "created" || e.kind === "adapted",
   );
-  if (!hasOrigin) {
+  if (isFirstPage && !hasOrigin) {
     entries.push({
       id: `synth-origin-${recipe.id}`,
       kind: parentRecipe ? "adapted" : "created",
@@ -676,5 +829,6 @@ export async function getRecipeTimeline(
           author: parentRecipe.author,
         }
       : null,
+    nextCursor,
   };
 }

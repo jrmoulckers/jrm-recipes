@@ -6,6 +6,7 @@ export * from "./users";
 export * from "./groups";
 export * from "./recipes";
 export * from "./engagement";
+export * from "./reviews";
 export * from "./cooklog";
 export * from "./shopping";
 export * from "./planner";

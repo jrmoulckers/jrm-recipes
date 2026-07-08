@@ -52,6 +52,10 @@ export const shoppingListItems = pgTable(
   },
   (t) => [
     index("shopping_list_items_list_idx").on(t.listId, t.position),
+    // Covering index for the recipeId foreign key (issue #153 audit): the
+    // `ON DELETE set null` when a linked recipe is deleted otherwise scans the
+    // list-items table. `listId` is already covered by the composite above.
+    index("shopping_list_items_recipe_idx").on(t.recipeId),
     // Non-negative quantities with a sane range (upper bound >= lower bound),
     // matching recipe_ingredients so aggregated lines stay well-formed.
     check("shopping_list_items_quantity_check", sql`${t.quantity} >= 0`),

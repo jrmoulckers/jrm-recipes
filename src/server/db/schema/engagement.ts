@@ -54,6 +54,10 @@ export const ratings = pgTable(
   (t) => [
     unique("ratings_recipe_user_uq").on(t.recipeId, t.userId),
     index("ratings_recipe_idx").on(t.recipeId),
+    // Covering index for the userId foreign key (issue #153). The composite
+    // unique above is recipeId-first, so it can't serve a userId-first lookup or
+    // the `ON DELETE cascade` when a user is removed; this keeps both index-fast.
+    index("ratings_user_idx").on(t.userId),
     // DB backstop for the 1–5 star range enforced in Zod (`ratingInput.value`
     // in src/server/engagement/validation.ts). Guards writes that bypass the
     // action path (seed, imports, admin/raw SQL) from persisting 0/6/negative.
@@ -96,6 +100,10 @@ export const comments = pgTable(
   (t) => [
     index("comments_recipe_idx").on(t.recipeId),
     index("comments_parent_idx").on(t.parentId),
+    // Covering index for the userId foreign key (issue #153): backs "comments by
+    // user" reads and the `ON DELETE cascade` when a user is removed, both of
+    // which otherwise sequentially scan the table.
+    index("comments_user_idx").on(t.userId),
   ],
 );
 

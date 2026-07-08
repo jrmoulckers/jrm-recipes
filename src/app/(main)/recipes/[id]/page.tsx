@@ -334,9 +334,9 @@ export default async function RecipePage({
             </TabsTrigger>
             <TabsTrigger value="timeline">
               <History className="size-4" /> Timeline
-              {versions.length > 0 && (
+              {versions.items.length > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  {versions.length}
+                  {versions.items.length}
                 </span>
               )}
             </TabsTrigger>
@@ -495,7 +495,7 @@ export default async function RecipePage({
                   Saved versions
                 </div>
                 <RecipeTimeline
-                  versions={versions}
+                  versions={versions.items}
                   recipeSlug={recipe.slug}
                   recipeId={recipe.id}
                   canRevert={isOwner}
