@@ -47,6 +47,7 @@ import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
+import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions";
 import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
@@ -67,6 +68,7 @@ import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-dis
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { getAnchoredSuggestions } from "~/server/engagement/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
 export async function generateMetadata({
@@ -176,6 +178,7 @@ export default async function RecipePage({
     similar,
     favoriteIds,
     memberProfiles,
+    anchoredSuggestions,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     isFavorited(recipe.id, user?.id ?? null),
@@ -183,8 +186,19 @@ export default async function RecipePage({
     listSimilarRecipes(user, recipe.id),
     getFavoriteRecipeIds(user?.id),
     user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
+    dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
   ]);
   await recordView;
+  // Group anchored suggestions (#346) by their target so each ingredient row and
+  // method step can render the ones that point at it.
+  const suggestionsByAnchor = new Map<string, typeof anchoredSuggestions>();
+  for (const suggestion of anchoredSuggestions) {
+    const key = `${suggestion.anchorType}:${suggestion.anchorId}`;
+    const bucket = suggestionsByAnchor.get(key);
+    if (bucket) bucket.push(suggestion);
+    else suggestionsByAnchor.set(key, [suggestion]);
+  }
+  const canSuggest = Boolean(user);
   // Family members drive the nutrition panel's calorie-goal indicator (#430)
   // and the ingredient conflict flags (#429); narrow the stored string arrays
   // back to the canonical unions here so the client gets typed data.
@@ -447,6 +461,21 @@ export default async function RecipePage({
                     servingsNoun={recipe.servingsNoun}
                     nutrition={pickNutrition(recipe)}
                     members={calorieMembers}
+                    renderSuggestions={(ingredientId, label) => (
+                      <AnchoredSuggestions
+                        recipeId={recipe.id}
+                        recipeSlug={recipe.slug}
+                        anchorType="ingredient"
+                        anchorId={ingredientId}
+                        anchorLabel={label}
+                        canInteract={canSuggest}
+                        suggestions={
+                          suggestionsByAnchor.get(
+                            `ingredient:${ingredientId}`,
+                          ) ?? []
+                        }
+                      />
+                    )}
                   />
                 ) : (
                   <p className="text-muted-foreground">
@@ -547,6 +576,17 @@ export default async function RecipePage({
                             )}
                             <TechniqueChips techniques={step.techniques} />
                           </div>
+                          <AnchoredSuggestions
+                            recipeId={recipe.id}
+                            recipeSlug={recipe.slug}
+                            anchorType="step"
+                            anchorId={step.id}
+                            anchorLabel={`Step ${i + 1}`}
+                            canInteract={canSuggest}
+                            suggestions={
+                              suggestionsByAnchor.get(`step:${step.id}`) ?? []
+                            }
+                          />
                         </div>
                       </li>
                     ))}

@@ -75,6 +75,17 @@ export async function createComment(
       parentAuthorId = parent.userId;
     }
 
+    // Anchor a suggestion to a specific ingredient/step (#346). Only stored for
+    // suggestions; a plain comment is always whole-recipe. The label is a
+    // snapshot so the reference still reads sensibly if the target is later
+    // edited or removed.
+    const isSuggestion = input.kind === "suggestion";
+    const anchorType =
+      isSuggestion && input.anchorType ? input.anchorType : null;
+    const anchorId = anchorType && input.anchorId ? input.anchorId : null;
+    const anchorLabel =
+      anchorType && input.anchorLabel ? input.anchorLabel : null;
+
     const [created] = await tx
       .insert(comments)
       .values({
@@ -83,6 +94,9 @@ export async function createComment(
         parentId: input.parentId ?? null,
         kind: input.kind,
         body: input.body,
+        anchorType,
+        anchorId,
+        anchorLabel,
       })
       .returning();
 

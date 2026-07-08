@@ -407,6 +407,12 @@ function CommentItem({
                 Suggestion
               </Badge>
             ) : null}
+            {isSuggestion && comment.anchorLabel ? (
+              <Badge variant="muted" title={`Anchored to ${comment.anchorLabel}`}>
+                {comment.anchorType === "ingredient" ? "Ingredient" : "Step"}:{" "}
+                {comment.anchorLabel}
+              </Badge>
+            ) : null}
             {isApplied ? (
               <Badge variant="default">
                 <Sparkles className="size-3" />

@@ -294,6 +294,77 @@ describe("createComment emits social notifications (#340/#348)", () => {
   });
 });
 
+describe("createComment persists an anchor for suggestions (#346)", () => {
+  const commentRecipe = {
+    id: "recipe_1",
+    title: "Sunday Sauce",
+    authorId: "owner_9",
+    visibility: "group",
+    groupId: "group_1",
+  };
+
+  /** The payload passed to the comment insert (first values() call). */
+  function insertedComment(tx: unknown) {
+    const chain = (tx as { chain: { values: ReturnType<typeof vi.fn> } }).chain;
+    return (chain.values.mock.calls as unknown[][])[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+  }
+
+  it("stores anchorType/anchorId/anchorLabel on a suggestion", async () => {
+    const tx = fakeTx({ recipe: commentRecipe });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await createComment(
+      {
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        kind: "suggestion",
+        body: "Use less salt here",
+        anchorType: "ingredient",
+        anchorId: "ing_7",
+        anchorLabel: "2 tsp salt",
+      },
+      user,
+    );
+
+    expect(insertedComment(tx)).toMatchObject({
+      kind: "suggestion",
+      anchorType: "ingredient",
+      anchorId: "ing_7",
+      anchorLabel: "2 tsp salt",
+    });
+  });
+
+  it("drops the anchor on a plain comment even if one is passed", async () => {
+    const tx = fakeTx({ recipe: commentRecipe });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await createComment(
+      {
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        kind: "comment",
+        body: "Looks great",
+        anchorType: "step",
+        anchorId: "step_2",
+        anchorLabel: "Step 2",
+      },
+      user,
+    );
+
+    expect(insertedComment(tx)).toMatchObject({
+      kind: "comment",
+      anchorType: null,
+      anchorId: null,
+      anchorLabel: null,
+    });
+  });
+});
+
 const ownerUser = { id: "owner_9" } as unknown as User;
 
 /** An open suggestion owned by `owner_9`, proposed by contributor `contrib_3`. */

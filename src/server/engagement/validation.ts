@@ -17,6 +17,10 @@ export const commentInput = z.object({
     .trim()
     .min(1, "Write a comment before posting")
     .max(COMMENT_MAX_LENGTH, COMMENT_TOO_LONG_MESSAGE),
+  // Anchored suggestions (#346): tie a suggestion to a specific ingredient/step.
+  anchorType: z.enum(["ingredient", "step"]).optional(),
+  anchorId: idInput.optional(),
+  anchorLabel: z.string().trim().max(200).optional(),
 });
 
 export const ratingInput = z.object({

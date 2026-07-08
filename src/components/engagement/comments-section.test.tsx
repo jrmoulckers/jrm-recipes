@@ -20,6 +20,7 @@ vi.mock("~/server/engagement/actions", () => ({
   deleteCommentAction: vi.fn(),
   resolveCommentAction: vi.fn(),
   applySuggestionAction: vi.fn(),
+  toggleReactionAction: vi.fn(),
 }));
 
 const refresh = vi.fn();
@@ -39,6 +40,9 @@ function makeComment(overrides: Partial<ThreadedComment> = {}): ThreadedComment 
     id: "comment_1",
     kind: "comment",
     body: "Turned out delicious!",
+    anchorType: null,
+    anchorId: null,
+    anchorLabel: null,
     resolvedAt: null,
     appliedAt: null,
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
@@ -136,7 +140,7 @@ describe("CommentsSection", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.queryByPlaceholderText("Leave a note for the family table…"),
+      screen.queryByPlaceholderText(/Leave a note for the family table…/),
     ).not.toBeInTheDocument();
   });
 
@@ -153,7 +157,7 @@ describe("CommentsSection", () => {
     );
 
     await user.type(
-      screen.getByPlaceholderText("Leave a note for the family table…"),
+      screen.getByPlaceholderText(/Leave a note for the family table…/),
       "Making this tonight",
     );
     await user.click(screen.getByRole("button", { name: "Post" }));

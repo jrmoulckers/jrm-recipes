@@ -159,6 +159,7 @@ export function IngredientsPanel({
   controls,
   nutrition,
   members,
+  renderSuggestions,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -168,6 +169,8 @@ export function IngredientsPanel({
   nutrition?: Nutrition;
   /** Optional saved family members (calorie goals #430 + conflict flags #429). */
   members?: DietaryMember[];
+  /** Optional anchored-suggestion slot rendered under each ingredient row (#346). */
+  renderSuggestions?: (ingredientId: string, label: string) => React.ReactNode;
 }) {
   const canScale = baseServings != null && baseServings > 0;
   const [servingsInternal, setServingsInternal] = React.useState(
@@ -871,6 +874,11 @@ export function IngredientsPanel({
                           {breakdown}
                         </span>
                       </p>
+                    )}
+                    {renderSuggestions && (
+                      <div className="ms-9">
+                        {renderSuggestions(ing.id, ing.item)}
+                      </div>
                     )}
                   </li>
                 );

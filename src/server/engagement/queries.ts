@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { comments, ratings, recipes, type CommentKind } from "~/server/db/schema";
@@ -15,6 +15,9 @@ export type ThreadedComment = {
   id: string;
   kind: CommentKind;
   body: string;
+  anchorType: "ingredient" | "step" | null;
+  anchorId: string | null;
+  anchorLabel: string | null;
   resolvedAt: Date | null;
   appliedAt: Date | null;
   createdAt: Date;
@@ -60,6 +63,9 @@ export async function getRecipeComments(
       id: row.id,
       kind: row.kind,
       body: row.body,
+      anchorType: row.anchorType,
+      anchorId: row.anchorId,
+      anchorLabel: row.anchorLabel,
       resolvedAt: row.resolvedAt,
       appliedAt: row.appliedAt,
       createdAt: row.createdAt,
@@ -89,6 +95,66 @@ export async function getRecipeComments(
   }
 
   return roots;
+}
+
+/** An open suggestion anchored to a specific ingredient/step (issue #346). */
+export type AnchoredSuggestion = {
+  id: string;
+  anchorType: "ingredient" | "step";
+  anchorId: string;
+  anchorLabel: string | null;
+  body: string;
+  resolvedAt: Date | null;
+  appliedAt: Date | null;
+  createdAt: Date;
+  author: {
+    id: string;
+    name: string | null;
+    handle: string | null;
+  } | null;
+};
+
+/**
+ * Suggestions anchored to an ingredient/step (issue #346), for rendering inline
+ * next to their target. Excludes hidden (moderated) rows. The caller indexes
+ * these by `anchorId` to attach them to each ingredient row / method step.
+ */
+export async function getAnchoredSuggestions(
+  recipeId: string,
+): Promise<AnchoredSuggestion[]> {
+  if (!isDbConfigured()) return [];
+
+  const rows = await db.query.comments.findMany({
+    where: and(
+      eq(comments.recipeId, recipeId),
+      eq(comments.kind, "suggestion"),
+      isNotNull(comments.anchorId),
+      isNull(comments.hiddenAt),
+    ),
+    orderBy: [asc(comments.createdAt)],
+    with: {
+      user: { columns: { id: true, name: true, handle: true } },
+    },
+  });
+
+  const result: AnchoredSuggestion[] = [];
+  for (const row of rows) {
+    if (!row.anchorType || !row.anchorId) continue;
+    result.push({
+      id: row.id,
+      anchorType: row.anchorType,
+      anchorId: row.anchorId,
+      anchorLabel: row.anchorLabel,
+      body: row.body,
+      resolvedAt: row.resolvedAt,
+      appliedAt: row.appliedAt,
+      createdAt: row.createdAt,
+      author: row.user
+        ? { id: row.user.id, name: row.user.name, handle: row.user.handle }
+        : null,
+    });
+  }
+  return result;
 }
 
 /**
