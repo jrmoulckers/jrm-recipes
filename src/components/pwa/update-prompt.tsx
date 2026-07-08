@@ -33,6 +33,10 @@ export function UpdatePrompt() {
   const [blockedByCook, setBlockedByCook] = React.useState(false);
   const [dismissed, setDismissed] = React.useState(false);
   const [entered, setEntered] = React.useState(false);
+  // Set when the user accepts the prompt, so a first-ever visit that later
+  // receives an update in the same session still reloads on activation even
+  // though there was no controller when the page first loaded.
+  const userAcceptedRef = React.useRef(false);
 
   // Detect a waiting service worker and reload once it takes control.
   React.useEffect(() => {
@@ -42,10 +46,21 @@ export function UpdatePrompt() {
     const container = navigator.serviceWorker;
     let cancelled = false;
     let reloading = false;
+    // Whether this page was already controlled when it loaded. On a first-ever
+    // visit there's no controller yet, so the new worker's `clientsClaim`
+    // activation fires `controllerchange` — that's an install, NOT an update, so
+    // we must not reload. Only an update that replaces an existing controller
+    // (after the user accepts) should trigger the one-time reload.
+    const hadControllerAtLoad = container.controller != null;
 
     const onControllerChange = () => {
-      // Guard so a single activation triggers a single reload.
-      if (reloading) return;
+      // Guard so a single activation triggers a single reload. Reload only when
+      // this page was already controlled at load (a genuine update replacing an
+      // existing worker, incl. other tabs) or when the user accepted the prompt
+      // here — never on the first-install `clientsClaim` activation.
+      if (reloading || (!hadControllerAtLoad && !userAcceptedRef.current)) {
+        return;
+      }
       reloading = true;
       window.location.reload();
     };
@@ -131,6 +146,7 @@ export function UpdatePrompt() {
 
   const reload = React.useCallback(() => {
     if (!waitingWorker) return;
+    userAcceptedRef.current = true;
     setEntered(false);
     // Serwist activates the waiting worker on this message; the
     // `controllerchange` handler above then reloads the page once.
