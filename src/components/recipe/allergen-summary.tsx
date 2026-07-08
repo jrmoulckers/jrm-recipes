@@ -1,9 +1,13 @@
 import * as React from "react";
-import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Eye, ShieldCheck } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
-import { ALLERGEN_LABELS, summarizeAllergens } from "~/lib/allergens";
+import {
+  ALLERGEN_LABELS,
+  summarizeAllergens,
+  summarizeHiddenAllergens,
+} from "~/lib/allergens";
 
 /**
  * A compact, server-rendered "Contains" allergen summary for a recipe. Rolls
@@ -27,8 +31,10 @@ export function AllergenSummary({
   headingId?: string;
 }) {
   const allergens = summarizeAllergens(items);
+  const hidden = summarizeHiddenAllergens(items);
+  const hiddenNotes = [...new Set(hidden.map((warning) => warning.note))];
 
-  if (allergens.length === 0) {
+  if (allergens.length === 0 && hidden.length === 0) {
     return (
       <div
         className={cn(
@@ -53,22 +59,59 @@ export function AllergenSummary({
         className,
       )}
     >
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <span
-          id={headingId}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-warning-foreground"
+      {allergens.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span
+            id={headingId}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-warning-foreground"
+          >
+            <AlertTriangle className="size-4 shrink-0" aria-hidden />
+            Contains
+          </span>
+          <ul className="flex flex-wrap gap-1.5" aria-label="Contains allergens">
+            {allergens.map((allergen) => (
+              <li key={allergen}>
+                <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {hidden.length > 0 && (
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-x-2 gap-y-1.5",
+            allergens.length > 0 && "mt-2 border-t border-warning/25 pt-2",
+          )}
         >
-          <AlertTriangle className="size-4 shrink-0" aria-hidden />
-          Contains
-        </span>
-        <ul className="flex flex-wrap gap-1.5">
-          {allergens.map((allergen) => (
-            <li key={allergen}>
-              <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>
-            </li>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <Eye className="size-4 shrink-0" aria-hidden />
+            Often hides
+          </span>
+          <ul
+            className="flex flex-wrap gap-1.5"
+            aria-label="Possibly hidden allergens"
+          >
+            {hidden.map((warning) => (
+              <li key={warning.allergen}>
+                <Badge variant="outline">
+                  {ALLERGEN_LABELS[warning.allergen]}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {hiddenNotes.length > 0 && (
+        <ul className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
+          {hiddenNotes.map((note) => (
+            <li key={note}>{note}</li>
           ))}
         </ul>
-      </div>
+      )}
+
       <p className="mt-1.5 text-xs text-muted-foreground">
         Best-effort detection — always double-check the ingredients for
         allergies.

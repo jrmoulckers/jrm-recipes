@@ -5,7 +5,9 @@ import {
   ALLERGEN_LABELS,
   detectAllergenHits,
   detectAllergens,
+  detectHiddenAllergens,
   summarizeAllergens,
+  summarizeHiddenAllergens,
   type Allergen,
 } from "./allergens";
 
@@ -147,5 +149,66 @@ describe("metadata", () => {
       hidden: false,
       note: undefined,
     });
+  });
+});
+
+describe("detectHiddenAllergens — derived / hidden sources", () => {
+  it("flags wheat hidden inside soy sauce", () => {
+    const warnings = detectHiddenAllergens("soy sauce");
+    const wheat = warnings.find((w) => w.allergen === "wheat");
+    expect(wheat).toBeDefined();
+    expect(wheat?.note).toBeTruthy();
+  });
+
+  it("flags fish hidden inside worcestershire sauce", () => {
+    const allergens = detectHiddenAllergens("worcestershire sauce").map(
+      (w) => w.allergen,
+    );
+    expect(allergens).toContain("fish");
+  });
+
+  it("flags tree nuts and dairy hidden inside pesto", () => {
+    const allergens = detectHiddenAllergens("basil pesto").map(
+      (w) => w.allergen,
+    );
+    expect(allergens).toContain("tree-nut");
+    expect(allergens).toContain("dairy");
+  });
+
+  it("returns nothing for a plain ingredient", () => {
+    expect(detectHiddenAllergens("carrot")).toEqual([]);
+  });
+});
+
+describe("summarizeHiddenAllergens", () => {
+  it("excludes allergens already declared directly", () => {
+    // Wheat flour makes wheat a *direct* allergen, so soy sauce's hidden
+    // wheat should not be surfaced again as a hidden warning.
+    const hidden = summarizeHiddenAllergens([
+      "all-purpose flour",
+      "soy sauce",
+    ]).map((w) => w.allergen);
+    expect(hidden).not.toContain("wheat");
+  });
+
+  it("surfaces a hidden allergen when it is not otherwise present", () => {
+    const hidden = summarizeHiddenAllergens(["chicken", "soy sauce"]).map(
+      (w) => w.allergen,
+    );
+    expect(hidden).toContain("wheat");
+  });
+
+  it("de-duplicates and sorts hidden warnings in canonical order", () => {
+    const hidden = summarizeHiddenAllergens([
+      "soy sauce",
+      "teriyaki glaze",
+      "basil pesto",
+    ]);
+    const allergens = hidden.map((w) => w.allergen);
+    // No duplicates.
+    expect(new Set(allergens).size).toBe(allergens.length);
+    // Canonical (ALLERGENS index) order, not alphabetical.
+    const indices = allergens.map((a) => ALLERGENS.indexOf(a));
+    expect(indices).toEqual([...indices].sort((x, y) => x - y));
   });
 });

@@ -392,6 +392,112 @@ export const ALLERGEN_RULES: AllergenRule[] = [
       "halva",
     ],
   },
+
+  // --- Hidden / derived allergens ---------------------------------------
+  // Allergens that a busy cook won't read off the ingredient's name. Each is
+  // marked `hidden` and carries a "check the label" note. Sources are the FDA
+  // major-allergen guidance plus standard culinary composition; formulations
+  // vary by brand, so the copy always defers to the label.
+  {
+    // Soy sauce is brewed with wheat (the soy itself is caught directly).
+    allergens: ["wheat"],
+    aliases: ["soy sauce", "shoyu"],
+    unless: ["tamari", "gluten free", "gluten-free"],
+    hidden: true,
+    note: "Soy sauce is usually brewed with wheat — check for a gluten-free tamari.",
+  },
+  {
+    // Teriyaki and hoisin are soy-sauce based; hoisin also commonly has sesame.
+    allergens: ["soy", "wheat"],
+    aliases: ["teriyaki"],
+    unless: ["gluten free", "gluten-free"],
+    hidden: true,
+    note: "Teriyaki sauce is usually made with soy sauce and wheat.",
+  },
+  {
+    allergens: ["soy", "wheat", "sesame"],
+    aliases: ["hoisin"],
+    hidden: true,
+    note: "Hoisin sauce usually contains soy, wheat, and sesame.",
+  },
+  {
+    // Worcestershire sauce is fermented with anchovies (fish).
+    allergens: ["fish"],
+    aliases: ["worcestershire"],
+    unless: ["vegan", "vegetarian"],
+    hidden: true,
+    note: "Worcestershire sauce usually contains anchovies (fish).",
+  },
+  {
+    // Classic Caesar dressing has anchovies and egg yolk.
+    allergens: ["fish", "egg"],
+    aliases: ["caesar"],
+    unless: ["vegan"],
+    hidden: true,
+    note: "Caesar dressing usually contains anchovies (fish) and egg.",
+  },
+  {
+    // Pesto: pine nuts (tree nut) + parmesan (dairy).
+    allergens: ["tree-nut", "dairy"],
+    aliases: ["pesto"],
+    unless: ["vegan"],
+    hidden: true,
+    note: "Pesto is usually made with pine nuts (tree nut) and parmesan (dairy).",
+  },
+  {
+    // Marzipan / almond paste are ground almonds.
+    allergens: ["tree-nut"],
+    aliases: ["marzipan", "almond paste", "frangipane"],
+    hidden: true,
+    note: "Marzipan is made from almonds (tree nut).",
+  },
+  {
+    // Nougat is whipped egg white with nuts.
+    allergens: ["egg", "tree-nut"],
+    aliases: ["nougat"],
+    hidden: true,
+    note: "Nougat usually contains egg white and nuts.",
+  },
+  {
+    // Lecithin is most often soy-derived unless labeled sunflower.
+    allergens: ["soy"],
+    aliases: ["lecithin"],
+    unless: ["sunflower"],
+    hidden: true,
+    note: "Lecithin is usually soy-derived unless labeled sunflower.",
+  },
+  {
+    // Imitation crab (surimi) is minced fish, often bound with wheat.
+    allergens: ["fish", "wheat"],
+    aliases: ["surimi", "imitation crab"],
+    hidden: true,
+    note: "Imitation crab (surimi) is made from fish and often contains wheat.",
+  },
+  {
+    // Tempura batter is wheat flour and egg.
+    allergens: ["wheat", "egg"],
+    aliases: ["tempura"],
+    hidden: true,
+    note: "Tempura batter is made with wheat flour and egg.",
+  },
+  {
+    // Gravy and roux are thickened with wheat flour.
+    allergens: ["wheat"],
+    aliases: ["gravy", "roux"],
+    unless: ["gluten free", "gluten-free", "cornstarch"],
+    hidden: true,
+    note: "Gravy is usually thickened with wheat flour.",
+  },
+  {
+    // Udon are wheat noodles (name alone doesn't say so).
+    allergens: ["wheat"],
+    aliases: ["udon"],
+    hidden: true,
+    note: "Udon are wheat noodles.",
+  },
+  // Note: "natural flavors" is deliberately NOT mapped — it can hide soy, dairy,
+  // or nuts, but which one is unknowable from the text, so asserting a specific
+  // allergen would be misleading. The best-effort disclaimer covers it.
 ];
 
 // --- Matcher -------------------------------------------------------------
@@ -485,4 +591,48 @@ export function detectAllergens(item: string | null | undefined): Allergen[] {
  */
 export function summarizeAllergens(items: string[]): Allergen[] {
   return sortAllergens(items.flatMap((item) => detectAllergens(item)));
+}
+
+/**
+ * The hidden/derived allergens an ingredient carries that its name doesn't make
+ * obvious (e.g. soy sauce → wheat, marzipan → tree-nut), each paired with a
+ * cautionary note. De-duplicated by allergen and sorted in canonical order.
+ */
+export function detectHiddenAllergens(
+  item: string | null | undefined,
+): HiddenAllergenWarning[] {
+  const byAllergen = new Map<Allergen, string>();
+  for (const hit of detectAllergenHits(item)) {
+    if (!hit.hidden || !hit.note) continue;
+    if (!byAllergen.has(hit.allergen)) byAllergen.set(hit.allergen, hit.note);
+  }
+  return sortAllergens([...byAllergen.keys()]).map((allergen) => ({
+    allergen,
+    note: byAllergen.get(allergen)!,
+  }));
+}
+
+/**
+ * Recipe-level hidden allergens: derived allergens across all ingredients that
+ * are NOT already surfaced as direct "Contains" allergens (so the two lists
+ * stay distinct — an allergen that's obvious from one ingredient isn't repeated
+ * as "hidden" just because another ingredient hides it).
+ */
+export function summarizeHiddenAllergens(
+  items: string[],
+): HiddenAllergenWarning[] {
+  const direct = new Set(summarizeAllergens(items));
+  const byAllergen = new Map<Allergen, string>();
+  for (const item of items) {
+    for (const warning of detectHiddenAllergens(item)) {
+      if (direct.has(warning.allergen)) continue;
+      if (!byAllergen.has(warning.allergen)) {
+        byAllergen.set(warning.allergen, warning.note);
+      }
+    }
+  }
+  return sortAllergens([...byAllergen.keys()]).map((allergen) => ({
+    allergen,
+    note: byAllergen.get(allergen)!,
+  }));
 }
