@@ -71,4 +71,23 @@ Current variants live in `KID_COPY`; read them with `pickKidCopy(kidSafe, …)`
 (client, paired with `useThemeBehavior`) or `pickCopy(theme, …)`. Non-Kids modes
 must be byte-for-byte unchanged.
 
+## Share text
+
+The words that ride along with a shared recipe link are content, not throwaway.
+When a link lands in a family chat it should say *what* it is and *whose* it is —
+never arrive as a naked URL.
+
+- Name the recipe first, then a warm one-liner. With a known cook, attribute it:
+  "{title}, from {cook}'s kitchen. Made with Heirloom."
+- Without a cook, keep it familial and plain:
+  "{title} — a family recipe on Heirloom."
+- Keep it short enough for messaging apps. **No hashtags, no marketing fluff.**
+- `navigator.share` gets the message as `text` and the link as `url`
+  separately; the clipboard fallback copies "{text} {url}" together.
+- Confirmations stay terse: "Recipe link copied".
+
+The templates live in `src/lib/share-text.ts` so every share surface reads the
+same voice.
+
+
 

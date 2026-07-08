@@ -323,7 +323,7 @@ export default async function RecipePage({
               </Link>
             </Button>
             <GrownUpControls>
-              <ShareButton title={recipe.title} />
+              <ShareButton title={recipe.title} author={recipe.author?.name} />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>
             <AddToShoppingList
