@@ -17,8 +17,8 @@ export async function SiteHeader() {
   const { isConfigured, user } = await getAuthState();
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-      <div className="container flex h-16 items-center gap-4">
+    <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur [@media(display-mode:standalone)]:pt-safe-t supports-[backdrop-filter]:bg-card/70">
+      <div className="container flex min-h-16 items-center gap-4">
         <Link href="/" className="shrink-0" aria-label="Heirloom home">
           <Logo />
         </Link>

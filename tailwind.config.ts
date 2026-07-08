@@ -68,6 +68,23 @@ const config = {
           foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
         },
       },
+      /**
+       * Safe-area inset spacing tokens (issue #284). Map the CSS
+       * `env(safe-area-inset-*)` values onto the spacing scale so any sticky or
+       * fixed chrome can reserve room for the notch / status bar / home
+       * indicator with a plain utility — e.g. `pt-safe-t` on a top-docked
+       * header, `pb-safe-b` on a bottom bar, `px-safe-l`/`px-safe-r` in
+       * landscape. `env()` resolves to 0 wherever there is no inset (desktop,
+       * non-notched devices, in-browser), so these never cause layout shift.
+       * When applying a top inset that should only appear in the installed PWA,
+       * gate it with the `[@media(display-mode:standalone)]:` arbitrary variant.
+       */
+      spacing: {
+        "safe-t": "env(safe-area-inset-top)",
+        "safe-b": "env(safe-area-inset-bottom)",
+        "safe-l": "env(safe-area-inset-left)",
+        "safe-r": "env(safe-area-inset-right)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
