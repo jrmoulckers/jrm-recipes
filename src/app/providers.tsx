@@ -19,16 +19,18 @@ export function Providers({
   initialTheme,
   initialScheme,
   initialA11y,
+  initialUserId = null,
 }: {
   children: React.ReactNode;
   initialTheme?: UITheme;
   initialScheme?: ColorScheme;
   initialA11y?: A11yPrefs;
+  initialUserId?: string | null;
 }) {
   return (
     <ThemeProvider initialTheme={initialTheme} initialScheme={initialScheme}>
       <A11yProvider initialPrefs={initialA11y}>
-        <AnalyticsProvider>
+        <AnalyticsProvider userId={initialUserId}>
           <TooltipProvider delayDuration={200}>
             {children}
             <Toaster position="top-center" richColors closeButton />

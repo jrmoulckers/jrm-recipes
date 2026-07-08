@@ -4,8 +4,16 @@ import { eq } from "drizzle-orm";
 
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
-import { users, type User } from "~/server/db/schema";
+import {
+  groupMembers,
+  recipes,
+  users,
+  type User,
+} from "~/server/db/schema";
 import { DEV_USER } from "~/server/auth/dev-user";
+import { isAnalyticsConfigured } from "~/lib/analytics/config";
+import { buildIdentityTraits } from "~/lib/analytics/identity";
+import { identifyServer } from "~/lib/analytics/server";
 
 /**
  * Heirloom auth module.
@@ -119,8 +127,38 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   );
 }
 
-/** The current app user, or null if not signed in (never null in dev-bypass). */
-export async function getCurrentUser(): Promise<User | null> {
+/**
+ * Fire-and-forget server-side identify with non-PII person properties (#321).
+ *
+ * The distinct id is the internal `users.id` — never the Clerk id, email, or
+ * name — and the attached traits are counts/flags only. It short-circuits with
+ * zero DB work when analytics is unconfigured (the default), so it adds no
+ * latency to the common path, and it swallows its own errors so identity is
+ * always best-effort and never breaks auth.
+ */
+async function identifyUser(user: User): Promise<void> {
+  if (!isAnalyticsConfigured() || !isDbConfigured()) return;
+  try {
+    const [groupCount, recipeCount] = await Promise.all([
+      db.$count(groupMembers, eq(groupMembers.userId, user.id)),
+      db.$count(recipes, eq(recipes.authorId, user.id)),
+    ]);
+    await identifyServer(
+      user.id,
+      buildIdentityTraits({
+        createdAt: user.createdAt,
+        groupCount,
+        hasRecipes: recipeCount > 0,
+        isDev: user.id === DEV_USER.id,
+      }),
+    );
+  } catch {
+    // Identity is best-effort; never let it break an auth-gated request.
+  }
+}
+
+/** Resolve the current app user without any analytics side effects. */
+async function resolveCurrentUser(): Promise<User | null> {
   if (!isAuthConfigured()) {
     assertDevBypassAllowed();
     return getOrCreateDevUser();
@@ -129,6 +167,13 @@ export async function getCurrentUser(): Promise<User | null> {
   const { userId } = await auth();
   if (!userId) return null;
   return syncClerkUser(userId);
+}
+
+/** The current app user, or null if not signed in (never null in dev-bypass). */
+export async function getCurrentUser(): Promise<User | null> {
+  const user = await resolveCurrentUser();
+  if (user) void identifyUser(user);
+  return user;
 }
 
 /** Full auth snapshot for UI (header, guards). */

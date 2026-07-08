@@ -24,7 +24,7 @@ import {
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
 import { atkinson } from "~/fonts/atkinson";
 import { localeDirection, resolveLocale } from "~/config/i18n";
-import { isAuthConfigured } from "~/server/auth";
+import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
 import { ThemeScript } from "~/components/theme/theme-script";
@@ -106,6 +106,7 @@ export default async function RootLayout({
     : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
   const locale = resolveLocale();
+  const currentUser = await getCurrentUser();
 
   const tree = (
     <html
@@ -133,6 +134,7 @@ export default async function RootLayout({
           initialTheme={theme}
           initialScheme={scheme}
           initialA11y={a11y}
+          initialUserId={currentUser?.id ?? null}
         >
           {children}
         </Providers>
