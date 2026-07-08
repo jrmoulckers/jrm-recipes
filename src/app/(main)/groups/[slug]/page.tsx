@@ -21,6 +21,8 @@ import { RoleBadge } from "~/components/groups/role-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { brand } from "~/config/brand";
+import { absoluteUrl } from "~/lib/utils";
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -36,9 +38,25 @@ export async function generateMetadata({
   const { slug } = await params;
   const { group } = await load(slug);
   if (!group) return { title: "Group not found" };
+  const canonical = absoluteUrl(`/groups/${group.slug}`);
+  const description =
+    group.description ??
+    `A shared family cookbook on ${brand.name}.`;
   return {
     title: group.name,
-    description: group.description ?? undefined,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${group.name} · ${brand.name}`,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: group.name,
+      description,
+    },
   };
 }
 
