@@ -11,6 +11,7 @@ import {
   fromZodError,
 } from "~/server/action-result";
 import { messageForError } from "~/server/errors";
+import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import {
   commentInput,
   deleteCommentInput,
@@ -46,6 +47,7 @@ export async function addCommentAction(
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
+  if (!checkRateLimit("engagementWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
   try {
     await createComment(parsed.data, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
@@ -168,6 +170,7 @@ export async function setRatingAction(
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
+  if (!checkRateLimit("engagementWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
   try {
     await setRating(parsed.data, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);

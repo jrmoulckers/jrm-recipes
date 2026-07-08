@@ -4,6 +4,7 @@ import { z } from "zod";
 import { env } from "~/env";
 import { requireUser } from "~/server/auth";
 import { getLimitStatus } from "~/server/billing/entitlements";
+import { checkRateLimit } from "~/server/rate-limit";
 import { type User } from "~/server/db/schema";
 
 // The Cloudinary SDK relies on Node crypto for signing, so keep this off the
@@ -134,6 +135,16 @@ export async function POST(request: Request) {
     user = await requireUser();
   } catch {
     return Response.json({ error: "Sign in to upload." }, { status: 401 });
+  }
+
+  // 2a. Throttle signature issuance per user to blunt Cloudinary quota/cost
+  //     abuse (issue #199). Friendly 429 with Retry-After, no internals leaked.
+  const limit = checkRateLimit("sign", user.id);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Too many upload requests. Please slow down." },
+      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } },
+    );
   }
 
   const cloudName = env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
