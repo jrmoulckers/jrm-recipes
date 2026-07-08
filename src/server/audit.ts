@@ -25,10 +25,18 @@ export const AuditAction = {
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 
+/**
+ * A closed set of known values that still accepts an arbitrary string, without
+ * the literals being collapsed into `string` (which `no-redundant-type-
+ * constituents` rightly flags). The `string & {}` intersection keeps the
+ * literal members visible for autocomplete.
+ */
+type LiteralUnion<T extends string> = T | (string & {});
+
 export type AuditEntry = {
   actorId: string | null;
-  action: AuditAction | string;
-  targetType: "group" | "recipe" | "user" | string;
+  action: LiteralUnion<AuditAction>;
+  targetType: LiteralUnion<"group" | "recipe" | "user">;
   targetId?: string | null;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;

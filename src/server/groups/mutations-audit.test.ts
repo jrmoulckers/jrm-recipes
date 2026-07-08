@@ -102,7 +102,10 @@ describe("group mutation audit logging (#219)", () => {
         action: AuditAction.GroupMemberRoleUpdated,
         targetType: "group",
         targetId: group.id,
-        metadata: expect.objectContaining({ from: "member", to: "admin" }),
+        metadata: expect.objectContaining({
+          from: "member",
+          to: "admin",
+        }) as Record<string, unknown>,
       }),
     );
   });
