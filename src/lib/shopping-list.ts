@@ -20,7 +20,7 @@ import {
   unitDimension,
   type Dimension,
 } from "./units";
-import { detectAllergens, type Allergen } from "./allergens";
+import { detectAllergensForSafety, type Allergen } from "./allergens";
 
 // --- Public types -------------------------------------------------------
 
@@ -67,7 +67,9 @@ export type AggregatedItem = {
   /**
    * Best-effort allergens detected in this line's name (issue #432), rolled up
    * from the same knowledge base the recipe page uses. Lets the list warn when
-   * an item carries an allergen the active family member must avoid.
+   * an item carries an allergen the active family member must avoid. Uses the
+   * conservative direct+hidden union so a hidden source (e.g. wheat in soy
+   * sauce) still warns an allergic member.
    */
   allergens: Allergen[];
 };
@@ -535,7 +537,7 @@ function finalize(acc: Accumulator): AggregatedItem {
     optional: acc.allOptional,
     hasOptional: acc.anyOptional,
     recipeIds: acc.recipeIds,
-    allergens: detectAllergens(acc.item),
+    allergens: detectAllergensForSafety(acc.item),
   };
 }
 

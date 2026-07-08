@@ -10,6 +10,8 @@ import {
   matchIngredientDetailed,
   type DietaryTag,
 } from "~/lib/substitutions";
+import { safeSubstitutions } from "~/lib/dietary-match";
+import { type Allergen } from "~/lib/allergens";
 import { Badge, type BadgeProps } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -57,11 +59,20 @@ export function IngredientSubstitutions({
   className,
   flagged = false,
   presetTags,
+  avoidAllergens,
 }: {
   item: string;
   className?: string;
   flagged?: boolean;
   presetTags?: DietaryTag[];
+  /**
+   * The active member's FULL allergen set (issue #429 safety fix). When
+   * provided, any swap whose own name/notes carry one of these allergens is
+   * dropped — so a swap can never be presented as "safe" while introducing a
+   * *different* one of the member's allergens (e.g. a cashew-based dairy swap
+   * for a member who is also allergic to tree nuts).
+   */
+  avoidAllergens?: Allergen[];
 }) {
   const presetKey = (presetTags ?? []).join("|");
   const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>(
@@ -69,8 +80,12 @@ export function IngredientSubstitutions({
   );
   const match = React.useMemo(() => matchIngredientDetailed(item), [item]);
   const substitutions = React.useMemo(
-    () => getSubstitutions(item, selectedTags),
-    [item, selectedTags],
+    () =>
+      safeSubstitutions(
+        getSubstitutions(item, selectedTags),
+        avoidAllergens ?? [],
+      ),
+    [item, selectedTags, avoidAllergens],
   );
 
   // Re-seed the filter when the active restriction changes (e.g. the cook picks

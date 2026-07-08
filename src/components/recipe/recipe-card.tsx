@@ -39,8 +39,12 @@ export type CardRecipe = {
   ratingSum?: number;
   /** Legacy raw ratings, used only when aggregates aren't provided. */
   ratings?: { value: number }[];
-  /** Detected allergens rolled up from ingredients, for the safe-for badge. */
-  allergens?: Allergen[];
+  /**
+   * Detected allergens rolled up from ingredients (conservative direct+hidden
+   * union), for the safe-for badge. `null` = no structured ingredient data to
+   * analyze (badge withholds the "safe" verdict); `[]` = analyzed, none found.
+   */
+  allergens?: Allergen[] | null;
 };
 
 const GRADIENTS = [
@@ -174,7 +178,7 @@ export function RecipeCard({
         {members && members.length > 0 && (
           <CardDietaryBadge
             members={members}
-            recipeAllergens={recipe.allergens ?? []}
+            recipeAllergens={recipe.allergens ?? null}
           />
         )}
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">

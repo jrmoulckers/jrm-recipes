@@ -643,3 +643,32 @@ export function summarizeHiddenAllergens(
     note: byAllergen.get(allergen)!,
   }));
 }
+
+/**
+ * The conservative allergen set for a *personalized* "safe for {member}"
+ * determination on a single ingredient: the union of directly-carried AND
+ * hidden/derived allergens. Personal safety must fail conservative — if the
+ * only wheat in an item is the wheat brewed into "soy sauce" (a hidden source),
+ * a wheat-allergic member is NOT safe with it — so both detection paths are
+ * combined here. De-duplicated and sorted in canonical order.
+ *
+ * Use this (not {@link detectAllergens}) wherever the result decides whether a
+ * recipe or ingredient is safe *for a specific person*; keep {@link
+ * detectAllergens} for the neutral "Contains" display, which pairs with a
+ * separate hidden-allergen list.
+ */
+export function detectAllergensForSafety(
+  item: string | null | undefined,
+): Allergen[] {
+  return sortAllergens(detectAllergenHits(item).map((hit) => hit.allergen));
+}
+
+/**
+ * Recipe-level counterpart of {@link detectAllergensForSafety}: roll a whole
+ * ingredient list up to the union of every direct and hidden/derived allergen,
+ * for "safe for {member}" filters and badges. Fail conservative — a hidden
+ * source anywhere in the recipe still counts against the member.
+ */
+export function summarizeAllergensForSafety(items: string[]): Allergen[] {
+  return sortAllergens(items.flatMap((item) => detectAllergensForSafety(item)));
+}

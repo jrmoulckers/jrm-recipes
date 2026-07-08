@@ -5,8 +5,10 @@ import {
   ALLERGEN_LABELS,
   detectAllergenHits,
   detectAllergens,
+  detectAllergensForSafety,
   detectHiddenAllergens,
   summarizeAllergens,
+  summarizeAllergensForSafety,
   summarizeHiddenAllergens,
   type Allergen,
 } from "./allergens";
@@ -209,6 +211,57 @@ describe("summarizeHiddenAllergens", () => {
     expect(new Set(allergens).size).toBe(allergens.length);
     // Canonical (ALLERGENS index) order, not alphabetical.
     const indices = allergens.map((a) => ALLERGENS.indexOf(a));
+    expect(indices).toEqual([...indices].sort((x, y) => x - y));
+  });
+});
+
+describe("detectAllergensForSafety — conservative direct+hidden union (#383/#405)", () => {
+  it("counts a hidden source against personal safety (soy sauce → wheat)", () => {
+    // The neutral "Contains" detector hides the derived wheat; the personal
+    // safety detector must NOT — a wheat-allergic member is unsafe with it.
+    expect(detectAllergens("soy sauce")).not.toContain("wheat");
+    expect(detectAllergensForSafety("soy sauce")).toContain("wheat");
+    // Soy is still there directly.
+    expect(detectAllergensForSafety("soy sauce")).toContain("soy");
+  });
+
+  it("counts anchovies hidden in Worcestershire as fish", () => {
+    expect(detectAllergens("worcestershire sauce")).not.toContain("fish");
+    expect(detectAllergensForSafety("worcestershire sauce")).toContain("fish");
+  });
+
+  it("is empty for a plainly safe ingredient", () => {
+    expect(detectAllergensForSafety("diced carrots")).toEqual([]);
+  });
+});
+
+describe("summarizeAllergensForSafety — recipe-level union for 'safe for'", () => {
+  it("makes a soy-sauce recipe unsafe for a wheat-allergic member", () => {
+    const recipe = summarizeAllergensForSafety([
+      "chicken thighs",
+      "soy sauce",
+      "green onion",
+    ]);
+    expect(recipe).toContain("wheat");
+  });
+
+  it("makes a Worcestershire recipe unsafe for a fish-allergic member", () => {
+    const recipe = summarizeAllergensForSafety([
+      "ground beef",
+      "worcestershire sauce",
+    ]);
+    expect(recipe).toContain("fish");
+  });
+
+  it("surfaces pesto's pine nut + parmesan for tree-nut / dairy allergies", () => {
+    const recipe = summarizeAllergensForSafety(["pasta base", "basil pesto"]);
+    expect(recipe).toEqual(expect.arrayContaining(["tree-nut", "dairy"]));
+  });
+
+  it("stays canonically sorted and de-duplicated", () => {
+    const recipe = summarizeAllergensForSafety(["soy sauce", "soy sauce"]);
+    expect(new Set(recipe).size).toBe(recipe.length);
+    const indices = recipe.map((a) => ALLERGENS.indexOf(a));
     expect(indices).toEqual([...indices].sort((x, y) => x - y));
   });
 });

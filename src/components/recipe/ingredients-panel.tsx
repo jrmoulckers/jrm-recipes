@@ -16,7 +16,11 @@ import {
   DIETARY_TAG_LABELS,
   type DietaryTag,
 } from "~/lib/substitutions";
-import { detectAllergens, ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
+import {
+  detectAllergensForSafety,
+  ALLERGEN_LABELS,
+  type Allergen,
+} from "~/lib/allergens";
 import {
   detectIngredientConflict,
   isIngredientConflict,
@@ -293,7 +297,7 @@ export function IngredientsPanel({
                     : null;
                 const conflict = memberNeeds
                   ? detectIngredientConflict(
-                      detectAllergens(ing.item),
+                      detectAllergensForSafety(ing.item),
                       memberNeeds,
                     )
                   : null;
@@ -366,6 +370,7 @@ export function IngredientsPanel({
                         item={ing.item}
                         flagged={flagged}
                         presetTags={conflict?.suggestedTags}
+                        avoidAllergens={memberNeeds?.allergens}
                       />
                     </div>
                     {flagged && (

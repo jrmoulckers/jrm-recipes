@@ -29,7 +29,11 @@ import {
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from "~/lib/ratings";
-import { summarizeAllergens, isAllergen, type Allergen } from "~/lib/allergens";
+import {
+  summarizeAllergensForSafety,
+  isAllergen,
+  type Allergen,
+} from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { hasAllergenConflict } from "~/lib/dietary-match";
 import {
@@ -296,18 +300,19 @@ export async function listPublicRecipes({
 }
 
 /**
- * Map recipe ids to their best-effort detected allergens (issue #431/#432).
- * Pulls just the ingredient `item` text for the given recipes in one batched
- * query and rolls each recipe up with `summarizeAllergens` — the same detector
- * the recipe page uses, so there's no second knowledge base. Recipes with no
- * ingredients (or when the DB is off) simply map to an empty list.
+ * Pull just the ingredient `item` text for a set of recipes in one batched
+ * query, grouped by recipe id. Recipes with no ingredient rows (or when the DB
+ * is off) simply don't appear as keys — callers use that absence to tell
+ * "analyzed, none found" apart from "nothing to analyze". Shared by the card
+ * badge, planner roll-up, and the "safe for" filter so there's one query and
+ * one detector path.
  */
-export async function recipeAllergenMap(
+async function recipeIngredientItems(
   recipeIds: string[],
-): Promise<Map<string, Allergen[]>> {
-  const result = new Map<string, Allergen[]>();
+): Promise<Map<string, string[]>> {
+  const byRecipe = new Map<string, string[]>();
   const ids = [...new Set(recipeIds)];
-  if (ids.length === 0 || !isDbConfigured()) return result;
+  if (ids.length === 0 || !isDbConfigured()) return byRecipe;
   const ingredientRows = await db
     .select({
       recipeId: recipeIngredients.recipeId,
@@ -315,34 +320,61 @@ export async function recipeAllergenMap(
     })
     .from(recipeIngredients)
     .where(inArray(recipeIngredients.recipeId, ids));
-  const itemsByRecipe = new Map<string, string[]>();
   for (const { recipeId, item } of ingredientRows) {
-    const list = itemsByRecipe.get(recipeId) ?? [];
+    const list = byRecipe.get(recipeId) ?? [];
     list.push(item);
-    itemsByRecipe.set(recipeId, list);
+    byRecipe.set(recipeId, list);
   }
+  return byRecipe;
+}
+
+/**
+ * Map recipe ids to the allergens to weigh for a *personalized* safety warning
+ * (issues #431/#432). Rolls each recipe up with `summarizeAllergensForSafety` —
+ * the conservative union of direct AND hidden/derived allergens — so a member's
+ * allergen is never missed just because its only source is hidden (e.g. wheat
+ * inside soy sauce). Recipes with no ingredients (or when the DB is off) map to
+ * an empty list; callers that warn (planner) simply show no warning, and never
+ * assert safety off an empty list.
+ */
+export async function recipeAllergenMap(
+  recipeIds: string[],
+): Promise<Map<string, Allergen[]>> {
+  const result = new Map<string, Allergen[]>();
+  const ids = [...new Set(recipeIds)];
+  if (ids.length === 0 || !isDbConfigured()) return result;
+  const itemsByRecipe = await recipeIngredientItems(ids);
   for (const id of ids) {
-    result.set(id, summarizeAllergens(itemsByRecipe.get(id) ?? []));
+    result.set(id, summarizeAllergensForSafety(itemsByRecipe.get(id) ?? []));
   }
   return result;
 }
 
 /**
  * Attach best-effort detected allergens to card rows for the "safe for my
- * family" badge (#431). Returns the rows widened with an `allergens` field;
- * callers only bother when a family profile with allergies is active.
+ * family" badge (#431). Returns the rows widened with an `allergens` field that
+ * is deliberately `Allergen[] | null`: `null` means "no structured ingredient
+ * data to analyze" (so the badge must NOT claim the recipe is safe), while `[]`
+ * means "analyzed, none of the member's allergens found". Uses the conservative
+ * direct+hidden union. Callers only bother when a family profile with allergies
+ * is active.
  */
 export async function attachCardAllergens<T extends { id: string }>(
   rows: T[],
-): Promise<(T & { allergens: Allergen[] })[]> {
+): Promise<(T & { allergens: Allergen[] | null })[]> {
   if (rows.length === 0 || !isDbConfigured()) {
-    return rows.map((row) => ({ ...row, allergens: [] }));
+    return rows.map((row) => ({ ...row, allergens: null }));
   }
-  const byRecipe = await recipeAllergenMap(rows.map((row) => row.id));
-  return rows.map((row) => ({
-    ...row,
-    allergens: byRecipe.get(row.id) ?? [],
-  }));
+  const itemsByRecipe = await recipeIngredientItems(rows.map((row) => row.id));
+  return rows.map((row) => {
+    const items = itemsByRecipe.get(row.id);
+    return {
+      ...row,
+      // No ingredient rows → not analyzable → null, never an affirmative "safe".
+      allergens:
+        items && items.length > 0 ? summarizeAllergensForSafety(items) : null,
+    };
+  });
 }
 
 /**
@@ -680,36 +712,23 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     },
   });
 
-  // "Safe for <member>" allergen filtering (#405) is best-effort text detection,
-  // so it runs in JS: pull the candidate rows' ingredients in one query and drop
-  // any recipe that carries an allergen the member must avoid.
+  // Allergen safety is best-effort text detection, so it runs in JS: pull the
+  // candidate rows' ingredients in one query and drop any recipe that carries
+  // an allergen the member must avoid. Uses the conservative direct+hidden
+  // union (so a hidden source like wheat-in-soy-sauce still excludes the
+  // recipe), and drops recipes with no ingredient data outright — a "safe for"
+  // result must never include a recipe we couldn't actually analyze.
   let safeRows = rows;
   if (avoidAllergens.length > 0 && rows.length > 0) {
-    const ingredientRows = await db
-      .select({
-        recipeId: recipeIngredients.recipeId,
-        item: recipeIngredients.item,
-      })
-      .from(recipeIngredients)
-      .where(
-        inArray(
-          recipeIngredients.recipeId,
-          rows.map((r) => r.id),
-        ),
+    const itemsByRecipe = await recipeIngredientItems(rows.map((r) => r.id));
+    safeRows = rows.filter((row) => {
+      const items = itemsByRecipe.get(row.id);
+      if (!items || items.length === 0) return false;
+      return !hasAllergenConflict(
+        avoidAllergens,
+        summarizeAllergensForSafety(items),
       );
-    const itemsByRecipe = new Map<string, string[]>();
-    for (const { recipeId, item } of ingredientRows) {
-      const list = itemsByRecipe.get(recipeId) ?? [];
-      list.push(item);
-      itemsByRecipe.set(recipeId, list);
-    }
-    safeRows = rows.filter(
-      (row) =>
-        !hasAllergenConflict(
-          avoidAllergens,
-          summarizeAllergens(itemsByRecipe.get(row.id) ?? []),
-        ),
-    );
+    });
   }
 
   // Weighted "best match"/"top-rated" ordering is applied in SQL over the full

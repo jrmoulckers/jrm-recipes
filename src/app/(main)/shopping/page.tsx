@@ -5,7 +5,7 @@ import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { getShoppingList } from "~/server/shopping/queries";
 import { listMemberProfiles } from "~/server/dietary/queries";
-import { detectAllergens, isAllergen } from "~/lib/allergens";
+import { detectAllergensForSafety, isAllergen } from "~/lib/allergens";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import { DbShoppingList } from "~/components/shopping/db-shopping-list";
@@ -31,7 +31,7 @@ export default async function ShoppingPage() {
     note: row.note,
     category: (row.category as ShoppingCategory | null) ?? "Other",
     checked: row.checked,
-    allergens: detectAllergens(row.item),
+    allergens: detectAllergensForSafety(row.item),
   }));
 
   const members: ActiveMemberOption[] = profiles.map((m) => ({

@@ -39,6 +39,24 @@ describe("CardDietaryBadge", () => {
     expect(screen.getByText(/looks safe for ada/i)).toBeInTheDocument();
   });
 
+  it("stays silent (no false 'safe') when there is no ingredient data", () => {
+    useActiveMemberStore.setState({ activeMemberId: "m1" });
+    const { container } = render(
+      <CardDietaryBadge members={MEMBERS} recipeAllergens={null} />,
+    );
+    // null = "nothing to analyze" — must NOT render the reassuring safe badge.
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByText(/looks safe/i)).not.toBeInTheDocument();
+  });
+
+  it("still warns on a conflict even from an otherwise sparse recipe", () => {
+    useActiveMemberStore.setState({ activeMemberId: "m1" });
+    render(
+      <CardDietaryBadge members={MEMBERS} recipeAllergens={["dairy"]} />,
+    );
+    expect(screen.getByText(/contains dairy/i)).toBeInTheDocument();
+  });
+
   it("warns and names the conflicting allergen", () => {
     useActiveMemberStore.setState({ activeMemberId: "m1" });
     render(

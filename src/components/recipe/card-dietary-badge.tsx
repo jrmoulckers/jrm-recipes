@@ -32,7 +32,13 @@ export function CardDietaryBadge({
   recipeAllergens,
 }: {
   members: CardDietaryMember[];
-  recipeAllergens: Allergen[];
+  /**
+   * The recipe's detected allergens (conservative direct+hidden union, rolled
+   * up server-side). `null` means there was no structured ingredient data to
+   * analyze — distinct from `[]` ("analyzed, none found") — so the reassuring
+   * "safe" badge is withheld rather than claimed off missing data.
+   */
+  recipeAllergens: Allergen[] | null;
 }) {
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const member = members.find((m) => m.id === activeMemberId);
@@ -40,6 +46,10 @@ export function CardDietaryBadge({
   // Only meaningful when the active member actually has allergies to check —
   // otherwise every card would wear a trivial "safe" chip.
   if (!member || member.allergens.length === 0) return null;
+
+  // No ingredient data to analyze: never imply "safe" from an absence of
+  // detections. Stay silent (the grid stays clean; no false reassurance).
+  if (recipeAllergens === null) return null;
 
   const conflicts = allergenConflicts(member.allergens, recipeAllergens);
 

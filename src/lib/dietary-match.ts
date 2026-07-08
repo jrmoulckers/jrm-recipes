@@ -11,8 +11,8 @@
  * formulations, so callers always pair it with a "double-check" disclaimer.
  */
 
-import { type Allergen } from "./allergens";
-import { type DietaryTag } from "./substitutions";
+import { detectAllergensForSafety, type Allergen } from "./allergens";
+import { type DietaryTag, type Substitution } from "./substitutions";
 
 /** A family member's combined restrictions. */
 export type MemberNeeds = {
@@ -150,4 +150,29 @@ export function detectIngredientConflict(
 /** True when an ingredient trips any of the member's allergens or diets. */
 export function isIngredientConflict(conflict: IngredientConflict): boolean {
   return conflict.allergens.length > 0 || conflict.diets.length > 0;
+}
+
+/**
+ * Filter a candidate swap list down to those that are actually safe for a
+ * member's FULL allergen set (issue #429 safety fix). A swap surfaced under
+ * "safe swaps for {name}" must never introduce *another* of the member's
+ * allergens — e.g. a dairy swap of "cashew cream" is unsafe for someone who is
+ * also allergic to tree nuts, and an "almond milk" swap is unsafe for a nut
+ * allergy. Runs the same best-effort detector (direct + hidden) over each
+ * swap's name and notes and drops any that carries an avoided allergen. An
+ * empty `avoidAllergens` (no active member, or no recorded allergies) leaves
+ * the list untouched.
+ */
+export function safeSubstitutions(
+  subs: readonly Substitution[],
+  avoidAllergens: readonly Allergen[],
+): Substitution[] {
+  if (avoidAllergens.length === 0) return [...subs];
+  const avoid = new Set<Allergen>(avoidAllergens);
+  return subs.filter((sub) => {
+    const carried = detectAllergensForSafety(
+      `${sub.substitute} ${sub.ratioOrNotes}`,
+    );
+    return !carried.some((allergen) => avoid.has(allergen));
+  });
 }
