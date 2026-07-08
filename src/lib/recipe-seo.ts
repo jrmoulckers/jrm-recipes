@@ -25,6 +25,24 @@ export type SeoStep = {
 };
 
 /**
+ * Optional per-serving nutrition (issue #414 stores these on `recipes`). All
+ * fields are nullable/absent — a recipe may carry none, some, or all — and are
+ * emitted as a schema.org `NutritionInformation` object only when at least one
+ * is present (issue #307). Energy is kcal and sodium is mg (whole numbers);
+ * macronutrients are grams and may be fractional.
+ */
+export type SeoNutrition = {
+  calories?: number | null;
+  proteinGrams?: number | null;
+  carbsGrams?: number | null;
+  fatGrams?: number | null;
+  saturatedFatGrams?: number | null;
+  sodiumMg?: number | null;
+  sugarGrams?: number | null;
+  fiberGrams?: number | null;
+};
+
+/**
  * The minimal recipe shape the JSON-LD builder needs. `FullRecipe` from the
  * query layer is structurally assignable to this, so callers just pass the row.
  */
@@ -44,7 +62,7 @@ export type SeoRecipe = {
   steps: SeoStep[];
   ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
-};
+} & SeoNutrition;
 
 /**
  * Format a minute count as an ISO-8601 duration (`90` → `"PT1H30M"`), which is
@@ -122,6 +140,51 @@ function recipeImages(recipe: SeoRecipe): string[] {
   );
 }
 
+/** Trim a numeric measurement to at most one decimal place (`12.0` → `"12"`). */
+function trimNumber(value: number): string {
+  return String(Math.round(value * 10) / 10);
+}
+
+/**
+ * Map the per-serving nutrition columns onto a schema.org `NutritionInformation`
+ * object, emitting only the properties that are actually populated. Returns
+ * `undefined` when the recipe carries no nutrition data so the caller can omit
+ * the field entirely (issue #307).
+ */
+function buildNutrition(
+  recipe: SeoNutrition,
+): Record<string, unknown> | undefined {
+  const nutrition: Record<string, unknown> = {};
+
+  if (recipe.calories != null && Number.isFinite(recipe.calories)) {
+    nutrition.calories = `${Math.round(recipe.calories)} calories`;
+  }
+  const grams: [keyof SeoNutrition, string][] = [
+    ["proteinGrams", "proteinContent"],
+    ["carbsGrams", "carbohydrateContent"],
+    ["fatGrams", "fatContent"],
+    ["saturatedFatGrams", "saturatedFatContent"],
+    ["sugarGrams", "sugarContent"],
+    ["fiberGrams", "fiberContent"],
+  ];
+  for (const [field, prop] of grams) {
+    const value = recipe[field];
+    if (value != null && Number.isFinite(value)) {
+      nutrition[prop] = `${trimNumber(value)} g`;
+    }
+  }
+  if (recipe.sodiumMg != null && Number.isFinite(recipe.sodiumMg)) {
+    nutrition.sodiumContent = `${Math.round(recipe.sodiumMg)} mg`;
+  }
+
+  if (Object.keys(nutrition).length === 0) return undefined;
+  return {
+    "@type": "NutritionInformation",
+    servingSize: "1 serving",
+    ...nutrition,
+  };
+}
+
 /**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
  * called for `public` recipes; optional fields are omitted when absent so the
@@ -184,6 +247,9 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
       worstRating: 1,
     };
   }
+
+  const nutrition = buildNutrition(recipe);
+  if (nutrition) jsonLd.nutrition = nutrition;
 
   return jsonLd;
 }

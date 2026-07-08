@@ -225,8 +225,74 @@ describe("buildRecipeJsonLd", () => {
     expect(jsonLd.recipeYield).toBeUndefined();
     expect(jsonLd.recipeIngredient).toBeUndefined();
     expect(jsonLd.recipeInstructions).toBeUndefined();
+    expect(jsonLd.nutrition).toBeUndefined();
     // Required identity fields are always present.
     expect(jsonLd.name).toBe("Aunt May's Peach Cobbler");
+  });
+});
+
+describe("buildRecipeJsonLd nutrition", () => {
+  it("emits a NutritionInformation block with formatted units", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        calories: 320,
+        proteinGrams: 8,
+        carbsGrams: 45,
+        fatGrams: 12,
+        saturatedFatGrams: 5,
+        sodiumMg: 400,
+        sugarGrams: 20,
+        fiberGrams: 3,
+      }),
+    );
+
+    expect(jsonLd.nutrition).toEqual({
+      "@type": "NutritionInformation",
+      servingSize: "1 serving",
+      calories: "320 calories",
+      proteinContent: "8 g",
+      carbohydrateContent: "45 g",
+      fatContent: "12 g",
+      saturatedFatContent: "5 g",
+      sugarContent: "20 g",
+      fiberContent: "3 g",
+      sodiumContent: "400 mg",
+    });
+  });
+
+  it("includes only the populated nutrient properties", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ calories: 210, proteinGrams: 6.5 }),
+    );
+
+    expect(jsonLd.nutrition).toEqual({
+      "@type": "NutritionInformation",
+      servingSize: "1 serving",
+      calories: "210 calories",
+      proteinContent: "6.5 g",
+    });
+  });
+
+  it("rounds energy and trims macronutrient decimals", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ calories: 199.6, fatGrams: 12.04, sodiumMg: 305.5 }),
+    );
+
+    expect(jsonLd.nutrition).toMatchObject({
+      calories: "200 calories",
+      fatContent: "12 g",
+      sodiumContent: "306 mg",
+    });
+  });
+
+  it("omits nutrition entirely when no values are present", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe());
+    expect(jsonLd.nutrition).toBeUndefined();
+
+    const zeroedButNull = buildRecipeJsonLd(
+      makeRecipe({ calories: null, proteinGrams: null }),
+    );
+    expect(zeroedButNull.nutrition).toBeUndefined();
   });
 });
 
