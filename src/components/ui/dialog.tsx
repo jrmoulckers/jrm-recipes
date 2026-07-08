@@ -30,7 +30,7 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const dialogContentVariants = cva(
-  "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
+  "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto",
   {
     variants: {
       // Content-driven widths; `lg` preserves the historical default.
@@ -40,8 +40,18 @@ const dialogContentVariants = cva(
         lg: "max-w-lg",
         xl: "max-w-3xl",
       },
+      // Enter/exit motion. `center` scales from the middle (the default for
+      // every centered dialog); `sheet` slides from the inline-end edge so a
+      // full-height side drawer's motion matches its spatial model (issue #93).
+      // The `sheet` positioning itself is supplied by the caller's className.
+      variant: {
+        center:
+          "data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
+        sheet:
+          "data-[state=open]:animate-slide-in-from-right data-[state=closed]:animate-slide-out-to-right",
+      },
     },
-    defaultVariants: { size: "lg" },
+    defaultVariants: { size: "lg", variant: "center" },
   },
 );
 
@@ -49,13 +59,13 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
     VariantProps<typeof dialogContentVariants>
->(({ className, children, size, ...props }, ref) => (
+>(({ className, children, size, variant, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        dialogContentVariants({ size }),
+        dialogContentVariants({ size, variant }),
         OVERLAY_SURFACE,
         OVERLAY_PADDING.dialog,
         // Clear the home indicator on notched phones (issue #291).

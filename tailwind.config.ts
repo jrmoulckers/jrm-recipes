@@ -137,6 +137,14 @@ const config = {
           "0%": { opacity: "1", transform: "scale(1)" },
           "100%": { opacity: "0", transform: "scale(0.96)" },
         },
+        "slide-in-from-right": {
+          "0%": { opacity: "0", transform: "translateX(100%)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-out-to-right": {
+          "0%": { opacity: "1", transform: "translateX(0)" },
+          "100%": { opacity: "0", transform: "translateX(100%)" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -157,6 +165,8 @@ const config = {
         "fade-out": "fade-out 0.15s var(--ease-standard)",
         "pop-in": "pop-in 0.18s var(--ease-standard)",
         "pop-out": "pop-out 0.15s var(--ease-standard)",
+        "slide-in-from-right": "slide-in-from-right 0.24s var(--ease-standard)",
+        "slide-out-to-right": "slide-out-to-right 0.2s var(--ease-standard)",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
