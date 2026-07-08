@@ -75,7 +75,7 @@ export function IngredientsDrawer({
         variant="sheet"
         className="start-auto end-0 top-0 grid h-dvh max-h-dvh w-full max-w-xl translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-none border-y-0 border-e-0 bg-popover p-0 sm:rounded-s-2xl"
       >
-        <DialogHeader className="border-b border-border p-5 pe-14 text-start">
+        <DialogHeader className="border-b border-border p-5 pe-14 pt-[max(1.25rem,env(safe-area-inset-top))] text-start">
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Utensils className="size-5 text-primary" />
             Ingredients
@@ -85,7 +85,7 @@ export function IngredientsDrawer({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pr-[max(1.25rem,env(safe-area-inset-right))]">
           {recipe.ingredients.length > 0 ? (
             <IngredientsPanel
               ingredients={recipe.ingredients}
