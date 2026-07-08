@@ -180,7 +180,12 @@ export const recipeVersions = pgTable(
     authorId: fk().references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("recipe_versions_recipe_idx").on(t.recipeId, t.versionNumber)],
+  (t) => [
+    index("recipe_versions_recipe_idx").on(t.recipeId, t.versionNumber),
+    // Covering index for the authorId foreign key (issue #153): the
+    // `ON DELETE set null` on user delete otherwise scans every version row.
+    index("recipe_versions_author_idx").on(t.authorId),
+  ],
 );
 
 /**
@@ -204,7 +209,14 @@ export const recipeEvents = pgTable(
     }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("recipe_events_recipe_idx").on(t.recipeId, t.createdAt)],
+  (t) => [
+    index("recipe_events_recipe_idx").on(t.recipeId, t.createdAt),
+    // Covering indexes for the actorId + relatedRecipeId foreign keys (issue
+    // #153): the actor `ON DELETE set null` cascade and the fork back-link
+    // lookup (events pointing at a related recipe) otherwise scan the log.
+    index("recipe_events_actor_idx").on(t.actorId),
+    index("recipe_events_related_idx").on(t.relatedRecipeId),
+  ],
 );
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({

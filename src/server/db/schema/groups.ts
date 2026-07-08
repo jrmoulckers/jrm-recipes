@@ -20,6 +20,10 @@ export const groups = pgTable(
     name: varchar({ length: 120 }).notNull(),
     description: varchar({ length: 500 }),
     avatarUrl: varchar({ length: 2048 }),
+    // `createdById` is intentionally left without a covering index (issue #153
+    // audit): `groups` is a tiny, slow-growing table and the `set null` cascade
+    // on user delete touches at most a handful of rows, so an index would cost
+    // more on writes than it saves.
     createdById: fk().references(() => users.id, { onDelete: "set null" }),
     ...timestamps(),
   },
