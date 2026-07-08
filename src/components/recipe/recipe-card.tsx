@@ -18,9 +18,23 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import {
+  QuickPlanButton,
+  type QuickPlanDay,
+} from "~/components/recipe/quick-plan-button";
+import {
   CardDietaryBadge,
   type CardDietaryMember,
 } from "~/components/recipe/card-dietary-badge";
+
+/**
+ * Context for the card-level "add to this week's plan" control (#379). Supplied
+ * by browse pages for signed-in users with a database; omit it and no quick-plan
+ * affordance renders.
+ */
+export type QuickPlanContext = {
+  days: QuickPlanDay[];
+  defaultDate: string;
+};
 
 export type CardRecipe = {
   id: string;
@@ -64,6 +78,7 @@ export function RecipeCard({
   recipe,
   favorited = false,
   canFavorite = false,
+  quickPlan,
   priority = false,
   matchReason,
   members,
@@ -73,6 +88,11 @@ export function RecipeCard({
   favorited?: boolean;
   /** Show the favorite (heart) toggle over the cover image. */
   canFavorite?: boolean;
+  /**
+   * When set, renders a quick "add to this week's plan" control over the card
+   * (#379). Only supplied for signed-in users when a database is configured.
+   */
+  quickPlan?: QuickPlanContext;
   /**
    * Prioritize the cover image for LCP: render it eagerly with
    * `fetchpriority="high"` and a preload hint instead of lazy-loading. Only set
@@ -110,6 +130,18 @@ export function RecipeCard({
           recipeSlug={recipe.slug}
           initialFavorited={favorited}
           className="absolute right-2 top-2 z-10"
+        />
+      )}
+      {quickPlan && (
+        <QuickPlanButton
+          recipeId={recipe.id}
+          recipeTitle={recipe.title}
+          days={quickPlan.days}
+          defaultDate={quickPlan.defaultDate}
+          className={cn(
+            "absolute left-2 top-2 z-10",
+            recipe.visibility !== "public" && "top-11",
+          )}
         />
       )}
       <Link

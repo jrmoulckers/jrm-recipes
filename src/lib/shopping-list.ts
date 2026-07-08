@@ -381,6 +381,178 @@ export function categorize(item: string): ShoppingCategory {
   return best?.category ?? "Other";
 }
 
+// --- Pantry staples -----------------------------------------------------
+
+/**
+ * The things a busy parent has never once needed to buy on a weeknight run
+ * (issue #412): salt, pepper, water, cooking oils, butter, and a few common
+ * dried spices. When a recipe is added to the list these are omitted by default
+ * so the list you actually shop from is short; an "include staples" override
+ * keeps them for the week you really are out of oil.
+ *
+ * Deliberately conservative — fresh herbs/aromatics (basil, cilantro, ginger,
+ * garlic, onion) are excluded so a real produce purchase is never auto-hidden.
+ */
+export const PANTRY_STAPLES = [
+  "salt",
+  "sea salt",
+  "kosher salt",
+  "table salt",
+  "pepper",
+  "black pepper",
+  "white pepper",
+  "peppercorn",
+  "water",
+  "cold water",
+  "warm water",
+  "hot water",
+  "oil",
+  "olive oil",
+  "extra virgin olive oil",
+  "vegetable oil",
+  "canola oil",
+  "sunflower oil",
+  "cooking oil",
+  "cooking spray",
+  "butter",
+  "garlic powder",
+  "onion powder",
+  "chili powder",
+  "paprika",
+  "cumin",
+  "cinnamon",
+  "cayenne",
+  "bay leaf",
+  "bay leaves",
+  "nutmeg",
+] as const;
+
+/**
+ * Descriptors that may precede a staple's head noun without changing that the
+ * item is still that staple — "ground black pepper", "extra virgin olive oil",
+ * "fine sea salt", "unsalted butter". Deliberately does NOT include
+ * ingredient-defining words like "bell", "peanut", "coconut" or "sesame": when
+ * one of those precedes a staple word the item is a distinct must-buy ("bell
+ * pepper", "peanut butter", "coconut water", "sesame oil") and stays on the
+ * list.
+ */
+const STAPLE_QUALIFIERS = new Set<string>([
+  "ground",
+  "freshly",
+  "fresh",
+  "dried",
+  "whole",
+  "fine",
+  "finely",
+  "coarse",
+  "coarsely",
+  "flaky",
+  "kosher",
+  "sea",
+  "table",
+  "rock",
+  "black",
+  "white",
+  "extra",
+  "virgin",
+  "light",
+  "cooking",
+  "vegetable",
+  "canola",
+  "olive",
+  "sunflower",
+  "salted",
+  "unsalted",
+  "melted",
+  "softened",
+  "warm",
+  "hot",
+  "cold",
+  "boiling",
+  "iced",
+]);
+
+/**
+ * Ingredients that literally contain a staple word but are distinct purchases a
+ * shopper must never lose. Belt-and-suspenders backup to the qualifier logic so
+ * these are always kept even if the allow-list ever grows carelessly.
+ */
+const STAPLE_EXCEPTIONS = new Set<string>([
+  "bell pepper",
+  "red bell pepper",
+  "green bell pepper",
+  "yellow bell pepper",
+  "orange bell pepper",
+  "red pepper",
+  "green pepper",
+  "jalapeño pepper",
+  "jalapeno pepper",
+  "banana pepper",
+  "peanut butter",
+  "almond butter",
+  "apple butter",
+  "cocoa butter",
+  "cashew butter",
+  "coconut water",
+  "rose water",
+  "water chestnut",
+  "sesame oil",
+  "chili oil",
+  "truffle oil",
+]);
+
+/** Staple phrases, normalized and ordered longest-first so a specific phrase
+ * ("olive oil") is preferred over a broad head noun ("oil"). */
+const STAPLE_PHRASES: string[] = Array.from(
+  new Set(PANTRY_STAPLES.map(normalizeItemName)),
+).sort((a, b) => b.split(" ").length - a.split(" ").length);
+
+/**
+ * True when `cleaned` is a staple whose head noun sits at the end of the name,
+ * preceded only by allowed qualifiers. An unknown leading word (bell, peanut,
+ * coconut, …) fails the prefix check so the item is treated as a real purchase.
+ */
+function matchesStaplePhrase(cleaned: string): boolean {
+  for (const phrase of STAPLE_PHRASES) {
+    if (cleaned === phrase) return true;
+    if (cleaned.endsWith(` ${phrase}`)) {
+      const prefix = cleaned.slice(0, cleaned.length - phrase.length - 1);
+      const prefixTokens = prefix.split(" ").filter(Boolean);
+      if (prefixTokens.every((token) => STAPLE_QUALIFIERS.has(token))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}) —
+ * i.e. a staple is its HEAD NOUN, optionally preceded by neutral qualifiers.
+ * Matching on the head noun (not mere whole-word containment) is what keeps
+ * "bell pepper", "peanut butter", "coconut water" and "sesame oil" on the list
+ * while still dropping "salt", "ground black pepper" and "olive oil". Used only
+ * when auto-building a list from a recipe — manually added items are never run
+ * through this.
+ */
+export function isPantryStaple(item: string): boolean {
+  const name = normalizeItemName(item);
+  if (!name) return false;
+  // Defensive: drop a leading quantity/number ("2 eggs", "1/2 cup ...") so the
+  // head-noun check sees the ingredient words. Item names are usually
+  // quantity-free, but free-text entries aren't guaranteed to be.
+  const cleaned = name.replace(
+    /^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/,
+    "",
+  );
+  if (STAPLE_EXCEPTIONS.has(cleaned)) return false;
+  if (matchesStaplePhrase(cleaned)) return true;
+  // Tolerate a plural head noun ("peppercorns" → "peppercorn"); the prefix guard
+  // still protects compounds ("bell peppers" keeps "bell" as an unknown word).
+  const singular = cleaned.replace(/s$/, "");
+  return singular !== cleaned && matchesStaplePhrase(singular);
+}
+
 // --- Aggregation --------------------------------------------------------
 
 /** Metric canonical units, used to pick a display system for a combined line. */
@@ -607,4 +779,67 @@ export function describeQuantity(
       : formatQuantity(item.quantity);
   const unit = displayUnit(item.unit, item.quantityMax ?? item.quantity);
   return unit ? `${number} ${unit}` : number;
+}
+
+/** Minimal shape needed to render one list line as shareable text. */
+export type ShoppingTextItem = Pick<
+  AggregatedItem,
+  "item" | "quantity" | "quantityMax" | "unit"
+> & {
+  note?: string | null;
+  category: ShoppingCategory;
+  checked?: boolean;
+};
+
+export type FormatShoppingListOptions = {
+  /** Include already-checked ("in cart") items. Default false. */
+  includeChecked?: boolean;
+  /** Optional heading placed at the top of the text. */
+  title?: string;
+};
+
+function shareLine(item: ShoppingTextItem): string {
+  const amount = describeQuantity(item);
+  const base = amount ? `${amount} ${item.item}` : item.item;
+  return item.note ? `${base} — ${item.note}` : base;
+}
+
+/**
+ * Serialize a shopping list to tidy, human-readable plain text grouped by aisle
+ * with Markdown-style checkboxes ("- [ ] 2 lb chicken") so it pastes cleanly
+ * into Messages/WhatsApp/Notes (issue #408). Already-checked items are excluded
+ * by default. Pure — no DOM — so it is unit-testable and safe on the server.
+ */
+export function formatShoppingListText(
+  items: ShoppingTextItem[],
+  options: FormatShoppingListOptions = {},
+): string {
+  const { includeChecked = false, title } = options;
+  const visible = items.filter((item) => includeChecked || !item.checked);
+  if (visible.length === 0) return "";
+
+  const byCategory = new Map<ShoppingCategory, ShoppingTextItem[]>();
+  for (const item of visible) {
+    const category = CATEGORY_INDEX.has(item.category) ? item.category : "Other";
+    const list = byCategory.get(category) ?? [];
+    list.push(item);
+    byCategory.set(category, list);
+  }
+
+  const lines: string[] = [];
+  if (title?.trim()) lines.push(title.trim(), "");
+
+  for (const category of SHOPPING_CATEGORIES) {
+    const group = byCategory.get(category);
+    if (!group || group.length === 0) continue;
+    lines.push(`${category}:`);
+    for (const item of group
+      .slice()
+      .sort((a, b) => a.item.localeCompare(b.item))) {
+      lines.push(`- [${item.checked ? "x" : " "}] ${shareLine(item)}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n").trimEnd();
 }

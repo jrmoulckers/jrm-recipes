@@ -16,10 +16,22 @@ import {
 } from "lucide-react";
 
 import { brand } from "~/config/brand";
+import { getCurrentUser } from "~/server/auth";
+import { isDbConfigured } from "~/server/db";
+import type { User } from "~/server/db/schema";
+import {
+  listBackInRotation,
+  ROTATION_MIN,
+} from "~/server/collections/queries";
+import { listDinnerCandidates } from "~/server/recipes/queries";
+import { buildQuickPlanContext } from "~/server/planner/quick-plan";
+import { todayParam } from "~/server/planner/week";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
+import { DinnerSuggestion } from "~/components/recipe/dinner-suggestion";
+import { RotationRail } from "~/components/recipe/rotation-rail";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import {
@@ -63,7 +75,30 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+/**
+ * Personalized home data for signed-in users with a database (#426): the "back
+ * in the rotation" favorites plus the quick-plan context their Add-to-plan
+ * actions need. Kept in one round of queries so the marketing page stays fast
+ * for everyone else.
+ */
+async function loadPersonalizedHome(user: User) {
+  const today = todayParam();
+  const [dinner, rotation, quickPlan] = await Promise.all([
+    listDinnerCandidates(user, { today }),
+    listBackInRotation(user.id),
+    buildQuickPlanContext(user.id),
+  ]);
+  return { today, dinner, rotation, quickPlan };
+}
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const personalized =
+    user && isDbConfigured() ? await loadPersonalizedHome(user) : null;
+  const showDinner = personalized != null && personalized.dinner.length > 0;
+  const showRotation =
+    personalized != null && personalized.rotation.length >= ROTATION_MIN;
+
   return (
     <div className="flex flex-col">
       <script
@@ -79,6 +114,24 @@ export default function HomePage() {
         }}
       />
       <LandingViewedTracker />
+      {personalized && (showDinner || showRotation) && (
+        <section className="border-b border-border bg-surface">
+          <div className="container flex flex-col gap-10 py-10">
+            {showDinner && (
+              <DinnerSuggestion
+                candidates={personalized.dinner}
+                today={personalized.today}
+              />
+            )}
+            {showRotation && (
+              <RotationRail
+                recipes={personalized.rotation}
+                quickPlan={personalized.quickPlan}
+              />
+            )}
+          </div>
+        </section>
+      )}
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div

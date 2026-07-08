@@ -44,6 +44,66 @@ export type PlannerEntry = Awaited<
   ReturnType<typeof listEntriesInRange>
 >[number];
 
+/**
+ * Entries planned for a single date, each with enough recipe text (step
+ * instructions + ingredient items/notes) to run the prep-ahead heuristic
+ * (#388). Kept lean — no media, no scaling columns — since it only feeds a
+ * keyword scan. Guarded so the page renders with no database configured.
+ */
+export async function listEntriesWithPrepText(userId: string, date: string) {
+  if (!isDbConfigured()) return [];
+  return db.query.mealPlanEntries.findMany({
+    where: and(
+      eq(mealPlanEntries.userId, userId),
+      eq(mealPlanEntries.date, date),
+    ),
+    orderBy: [asc(mealPlanEntries.position), asc(mealPlanEntries.createdAt)],
+    with: {
+      recipe: {
+        columns: { id: true, slug: true, title: true },
+        with: {
+          ingredients: { columns: { item: true, note: true } },
+          steps: { columns: { instruction: true } },
+        },
+      },
+    },
+  });
+}
+
+export type PrepTextEntry = Awaited<
+  ReturnType<typeof listEntriesWithPrepText>
+>[number];
+
+/**
+ * Dinner entries for a week, with just enough recipe detail (title + total
+ * time) to render the printable fridge menu (#438). Dinner slot only, ordered
+ * by day. Guarded so the print page renders with no database configured.
+ */
+export async function listWeekDinners(
+  userId: string,
+  startDate: string,
+  endDate: string,
+) {
+  if (!isDbConfigured()) return [];
+  return db.query.mealPlanEntries.findMany({
+    where: and(
+      eq(mealPlanEntries.userId, userId),
+      eq(mealPlanEntries.slot, "dinner"),
+      gte(mealPlanEntries.date, startDate),
+      lte(mealPlanEntries.date, endDate),
+    ),
+    orderBy: [asc(mealPlanEntries.date), asc(mealPlanEntries.position)],
+    columns: { date: true, note: true },
+    with: {
+      recipe: { columns: { title: true, totalMinutes: true } },
+    },
+  });
+}
+
+export type WeekDinnerEntry = Awaited<
+  ReturnType<typeof listWeekDinners>
+>[number];
+
 async function viewerGroupIds(userId: string): Promise<string[]> {
   const rows = await db.query.groupMembers.findMany({
     where: eq(groupMembers.userId, userId),

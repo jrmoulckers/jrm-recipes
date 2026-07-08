@@ -11,6 +11,7 @@ import {
 import { getRecipe } from "~/server/recipes/queries";
 import {
   categorize,
+  isPantryStaple,
   mergeShoppingItems,
   toShoppingItems,
   type ShoppingItemInput,
@@ -52,11 +53,15 @@ async function userListIds(userId: string): Promise<string[]> {
  * Add a recipe's ingredients (scaled to `desiredServings`) to the user's list,
  * re-consolidating with the existing unchecked, un-noted items so quantities
  * combine unit-aware. Checked items and manually-noted items are left intact.
+ *
+ * Pantry staples (salt, oil, …) are skipped by default so the list stays short
+ * (#412); pass `includeStaples` to keep them.
  */
 export async function addRecipeToList(
   user: User,
   recipeId: string,
   desiredServings?: number,
+  includeStaples = false,
 ): Promise<void> {
   const recipe = await getRecipe(recipeId, user);
   if (!recipe) throw new Error("NOT_FOUND");
@@ -72,7 +77,7 @@ export async function addRecipeToList(
       unit: ing.unit,
       optional: ing.optional,
     })),
-  });
+  }).filter((item) => includeStaples || !isPantryStaple(item.item));
   if (contributions.length === 0) return;
 
   await db.transaction(async (tx) => {
