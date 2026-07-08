@@ -71,6 +71,13 @@
       "when": 1783470615392,
       "tag": "0009_rich_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783475198170,
+      "tag": "0010_strange_moondragon",
+      "breakpoints": true
     }
   ]
 }

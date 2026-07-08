@@ -1,5 +1,6 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   pgEnum,
@@ -53,6 +54,10 @@ export const ratings = pgTable(
   (t) => [
     unique("ratings_recipe_user_uq").on(t.recipeId, t.userId),
     index("ratings_recipe_idx").on(t.recipeId),
+    // DB backstop for the 1–5 star range enforced in Zod (`ratingInput.value`
+    // in src/server/engagement/validation.ts). Guards writes that bypass the
+    // action path (seed, imports, admin/raw SQL) from persisting 0/6/negative.
+    check("ratings_value_range_check", sql`${t.value} between 1 and 5`),
   ],
 );
 

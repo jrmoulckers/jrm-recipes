@@ -5,6 +5,14 @@ import { slugify } from "~/lib/utils";
 /**
  * Validation contract for recipe input. The editor (client) and the server
  * actions both use these schemas so the shape is guaranteed end to end.
+ *
+ * These numeric bounds are mirrored by DB-level CHECK constraints (migration
+ * 0010) so the same invariants hold for writes that bypass this path (seed,
+ * imports, admin/raw SQL): servings >= 1; prep/cook/total minutes >= 0;
+ * timerSeconds >= 0; ingredient quantity/quantityMax >= 0 with quantityMax >=
+ * quantity. Keep the two in sync — loosening a bound here without updating the
+ * constraint (or vice versa) will surface as a DB write error. The 1–5 rating
+ * bound lives in src/server/engagement/validation.ts (`ratingInput`).
  */
 
 const optionalString = (max: number) =>
