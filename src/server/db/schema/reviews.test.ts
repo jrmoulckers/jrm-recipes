@@ -59,10 +59,12 @@ describe("reviews table (issue #174)", () => {
   });
 
   it("cascades when the parent recipe or user is deleted", () => {
-    for (const fk of foreignKeys) {
-      expect(fk.onDelete).toBe("cascade");
-    }
-    expect(foreignKeys).toHaveLength(2);
+    // The recipe + author FKs cascade; the moderation hidden_by FK nulls out so
+    // hiding history survives the moderator being removed (issue #357).
+    const cascadeFks = foreignKeys.filter((fk) => fk.onDelete === "cascade");
+    const setNullFks = foreignKeys.filter((fk) => fk.onDelete === "set null");
+    expect(cascadeFks).toHaveLength(2);
+    expect(setNullFks).toHaveLength(1);
   });
 
   it("guards the 1–5 star range with a CHECK", () => {
