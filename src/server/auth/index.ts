@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
@@ -93,7 +93,7 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   if (!isDbConfigured()) return null;
 
   const existing = await db.query.users.findFirst({
-    where: eq(users.clerkId, clerkId),
+    where: and(eq(users.clerkId, clerkId), isNull(users.deletedAt)),
   });
   if (existing) return existing;
 
@@ -230,4 +230,60 @@ export async function requireUserWithEntitlements(): Promise<{
   const user = await requireUser();
   const entitlements = await getEntitlements(user);
   return { user, entitlements };
+}
+
+/** The subset of a Clerk profile the local `users` row mirrors (issue #217). */
+export type ClerkUserProfile = {
+  email: string | null;
+  name: string | null;
+  handle: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * Apply a Clerk `user.updated` event (issue #217): keep the local `users` row's
+ * email / name / handle / avatar in sync with the identity provider. This
+ * matters because group invites are resolved by email/handle
+ * ({@link findUserByIdentifier}), so a stale address could route an invite to
+ * the wrong account. No-op when the DB is unconfigured or the Clerk user has no
+ * local row yet (it'll be created lazily on their next authenticated read).
+ */
+export async function applyClerkUserUpdate(
+  clerkId: string,
+  profile: ClerkUserProfile,
+): Promise<void> {
+  if (!isDbConfigured() || !clerkId) return;
+  await db
+    .update(users)
+    .set({
+      email: profile.email,
+      name: profile.name && profile.name.length > 0 ? profile.name : "Cook",
+      handle: profile.handle,
+      avatarUrl: profile.avatarUrl,
+    })
+    .where(and(eq(users.clerkId, clerkId), isNull(users.deletedAt)));
+}
+
+/**
+ * Apply a Clerk `user.deleted` event (issue #217): soft-delete and anonymize the
+ * local row. The row is *kept* so authored recipes and group history stay
+ * referentially intact (their FKs point here), but every piece of PII — email,
+ * name, handle, avatar, and the `clerkId` link itself — is scrubbed, and
+ * `deletedAt` is stamped so the account can no longer authenticate (the
+ * clerkId+deletedAt-filtered lookup in `syncClerkUser` will never resurrect it).
+ * Idempotent: a repeat delete simply re-scrubs an already-anonymized row.
+ */
+export async function applyClerkUserDeletion(clerkId: string): Promise<void> {
+  if (!isDbConfigured() || !clerkId) return;
+  await db
+    .update(users)
+    .set({
+      deletedAt: new Date(),
+      clerkId: null,
+      email: null,
+      name: "Deleted user",
+      handle: null,
+      avatarUrl: null,
+    })
+    .where(eq(users.clerkId, clerkId));
 }

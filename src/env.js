@@ -86,6 +86,10 @@ export const env = createEnv({
       .default("development"),
     DATABASE_URL: z.string().url().optional(),
     CLERK_SECRET_KEY: z.string().optional(),
+    // Svix signing secret (`whsec_…`) for the Clerk webhook (#217). Optional like
+    // every other integration: unset ⇒ the webhook route is a 501 no-op, so the
+    // app boots/builds with zero config and never processes unsigned payloads.
+    CLERK_WEBHOOK_SECRET: z.string().optional(),
     CLOUDINARY_API_SECRET: z.string().optional(),
     // Shared secret guarding the weekly-digest trigger endpoint (#354). When
     // unset the endpoint is disabled (503) so it can never be triggered
@@ -132,6 +136,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
