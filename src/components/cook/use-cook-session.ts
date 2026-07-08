@@ -15,6 +15,12 @@ import {
   type TimerRecord,
   type UnitSystem,
 } from "~/lib/cook-state";
+import { track } from "~/lib/analytics";
+import {
+  beginCookSession,
+  endCookSession,
+  type WritableStorage,
+} from "~/lib/analytics/cook-tracking";
 
 import type { CookRecipe, CookStep } from "./types";
 
@@ -87,6 +93,16 @@ function defaultState(recipe: CookRecipe): StoredCookState {
   };
 }
 
+/** localStorage, or null when unavailable (SSR / private mode). */
+function cookStorage(): WritableStorage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Owns all cook-mode state that should outlive an individual drawer or a page
  * reload: the current step, ingredient scaling/units/checklist, and per-step
@@ -149,6 +165,44 @@ export function useCookSession(recipe: CookRecipe) {
     });
   }, [totalSteps]);
 
+  // cook_started: once per session, deduped across reload via a localStorage
+  // marker (#313). Runs after hydration and never inside the 250ms timer loop.
+  const startedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!loaded || startedRef.current) return;
+    startedRef.current = true;
+    const { isNew } = beginCookSession(cookStorage(), recipe.id);
+    if (isNew) track("cook_started", { recipeId: recipe.id, totalSteps });
+  }, [loaded, recipe.id, totalSteps]);
+
+  // cook_step_advanced / cook_completed: driven off step-index changes only, so
+  // the 250ms timer tick (which only touches timers) never re-runs this.
+  const prevStepRef = React.useRef<number | null>(null);
+  const completedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!loaded) return;
+    const previous = prevStepRef.current;
+    prevStepRef.current = state.stepIndex;
+    // First settle after hydration establishes the baseline, not an advance.
+    if (previous === null || state.stepIndex <= previous) return;
+
+    track("cook_step_advanced", {
+      recipeId: recipe.id,
+      stepIndex: state.stepIndex,
+      totalSteps,
+    });
+
+    if (
+      !completedRef.current &&
+      totalSteps > 0 &&
+      state.stepIndex >= totalSteps - 1
+    ) {
+      completedRef.current = true;
+      const { durationMs } = endCookSession(cookStorage(), recipe.id);
+      track("cook_completed", { recipeId: recipe.id, totalSteps, durationMs });
+    }
+  }, [loaded, state.stepIndex, totalSteps, recipe.id]);
+
   const hasRunningTimers = React.useMemo(
     () => countRunningTimers(state.timers) > 0,
     [state.timers],
@@ -177,11 +231,12 @@ export function useCookSession(recipe: CookRecipe) {
 
       announcedTimersRef.current.add(step.id);
       playTimerTone();
+      track("cook_timer_completed", { recipeId: recipe.id });
       toast.success(`Step ${index + 1} timer is done`, {
         description: step.section ?? recipe.title,
       });
     });
-  }, [recipe.steps, recipe.title, state.timers]);
+  }, [recipe.id, recipe.steps, recipe.title, state.timers]);
 
   const goToStep = React.useCallback(
     (index: number) => {
@@ -209,31 +264,35 @@ export function useCookSession(recipe: CookRecipe) {
     });
   }, [totalSteps]);
 
-  const startTimer = React.useCallback((step: CookStep) => {
-    if (step.timerSeconds == null || step.timerSeconds <= 0) return;
+  const startTimer = React.useCallback(
+    (step: CookStep) => {
+      if (step.timerSeconds == null || step.timerSeconds <= 0) return;
 
-    announcedTimersRef.current.delete(step.id);
-    setState((prev) => {
-      const current = prev.timers[step.id] ?? makeTimer(step.timerSeconds);
-      const remaining =
-        current.status === "complete" || current.remaining <= 0
-          ? current.duration
-          : current.remaining;
+      track("cook_timer_started", { recipeId: recipe.id });
+      announcedTimersRef.current.delete(step.id);
+      setState((prev) => {
+        const current = prev.timers[step.id] ?? makeTimer(step.timerSeconds);
+        const remaining =
+          current.status === "complete" || current.remaining <= 0
+            ? current.duration
+            : current.remaining;
 
-      return {
-        ...prev,
-        timers: {
-          ...prev.timers,
-          [step.id]: {
-            ...current,
-            remaining,
-            status: "running",
-            endsAt: Date.now() + remaining * 1000,
+        return {
+          ...prev,
+          timers: {
+            ...prev.timers,
+            [step.id]: {
+              ...current,
+              remaining,
+              status: "running",
+              endsAt: Date.now() + remaining * 1000,
+            },
           },
-        },
-      };
-    });
-  }, []);
+        };
+      });
+    },
+    [recipe.id],
+  );
 
   const pauseTimer = React.useCallback((step: CookStep) => {
     setState((prev) => {
@@ -268,13 +327,21 @@ export function useCookSession(recipe: CookRecipe) {
     }));
   }, []);
 
-  const setServings = React.useCallback((next: number) => {
-    setState((prev) => ({ ...prev, servings: next }));
-  }, []);
+  const setServings = React.useCallback(
+    (next: number) => {
+      track("cook_servings_scaled", { recipeId: recipe.id, servings: next });
+      setState((prev) => ({ ...prev, servings: next }));
+    },
+    [recipe.id],
+  );
 
-  const setSystem = React.useCallback((next: UnitSystem) => {
-    setState((prev) => ({ ...prev, system: next }));
-  }, []);
+  const setSystem = React.useCallback(
+    (next: UnitSystem) => {
+      track("cook_unit_system_changed", { recipeId: recipe.id, system: next });
+      setState((prev) => ({ ...prev, system: next }));
+    },
+    [recipe.id],
+  );
 
   const toggleChecked = React.useCallback((id: string) => {
     setState((prev) => {
@@ -293,6 +360,8 @@ export function useCookSession(recipe: CookRecipe) {
         // Ignore private-mode failures.
       }
     }
+    // Clear the cook_started marker too, so re-cooking starts a fresh session.
+    endCookSession(cookStorage(), recipe.id);
     announcedTimersRef.current.clear();
     setState(defaultState(recipe));
   }, [recipe, storageKey]);
