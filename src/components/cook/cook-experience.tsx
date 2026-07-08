@@ -60,12 +60,15 @@ import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
 import { useOneHandedNav } from "./use-one-handed-nav";
 import { useHousehold } from "~/components/household/household-provider";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
   const speech = useSpeech();
   const household = useHousehold();
   const router = useRouter();
+  // Kids mode's large-target flag genuinely upsizes the primary controls (#439).
+  const { largeTargets } = useThemeBehavior();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
 
@@ -317,7 +320,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             type="button"
             size="xl"
             variant="outline"
-            className="h-16 justify-start text-lg sm:h-[4.5rem]"
+            className={cn(
+              "justify-start",
+              largeTargets
+                ? "h-[4.5rem] text-xl sm:h-20"
+                : "h-16 text-lg sm:h-[4.5rem]",
+            )}
             onClick={goPrevious}
             disabled={!canGoPrevious}
           >
@@ -327,7 +335,8 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
           <IngredientsDrawer
             recipe={recipe}
-            className="hidden h-16 px-6 text-lg sm:inline-flex"
+            prominent
+            className="hidden sm:inline-flex"
             label="Ingredients"
             controls={ingredientControls}
           />
@@ -335,7 +344,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           <Button
             type="button"
             size="xl"
-            className="h-16 justify-end text-lg sm:h-[4.5rem]"
+            className={cn(
+              "justify-end",
+              largeTargets
+                ? "h-[4.5rem] text-xl sm:h-20"
+                : "h-16 text-lg sm:h-[4.5rem]",
+            )}
             onClick={canGoNext ? goNext : handleFinish}
           >
             {canGoNext ? "Next" : "Done"}
@@ -402,7 +416,7 @@ function CookHeader({
         />
         <IngredientsDrawer
           recipe={recipe}
-          className="h-12 px-3 md:hidden"
+          className="md:hidden"
           controls={ingredientControls}
         />
         <IngredientsDrawer

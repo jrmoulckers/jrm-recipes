@@ -1,8 +1,9 @@
-import { cleanup, render as rtlRender } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as React from "react";
 
 import { IntlWrapper } from "~/test/intl";
+import { ThemeProvider } from "~/components/theme/theme-provider";
 
 // Cook Mode calls useRouter() for the "Done" flow; stub it so the immersive
 // chrome renders in jsdom without the App Router runtime.
@@ -21,6 +22,23 @@ import { CookExperience } from "./cook-experience";
 import type { CookRecipe } from "./types";
 
 afterEach(cleanup);
+
+// ThemeProvider effects lean on matchMedia, which jsdom does not implement.
+beforeAll(() => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  );
+});
 
 // Cook mode reads the active locale (useCookSession → useLocale) to pick a
 // default measurement system, so every render needs the intl provider.
@@ -123,5 +141,35 @@ describe("Cook Mode chrome safe-area insets (issue #283)", () => {
     expect(row?.className).toContain(
       "pr-[max(1rem,env(safe-area-inset-right))]",
     );
+  });
+});
+
+describe("Cook Mode large-target flag (issue #439)", () => {
+  function renderWithTheme(ui: React.ReactElement, theme: "kitchen" | "kids") {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme={theme}>{ui}</ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  it("upsizes Previous/Next to kid-sized targets in Kids mode", () => {
+    renderWithTheme(<CookExperience recipe={makeRecipe()} />, "kids");
+    const previous = screen.getByRole("button", { name: "Previous" });
+    // makeRecipe has a single step, so the primary action reads "Done".
+    const done = screen.getByRole("button", { name: "Done" });
+
+    // The kid target is taller than the default footer button on every width.
+    expect(previous.className).toContain("sm:h-20");
+    expect(previous.className).toContain("text-xl");
+    expect(done.className).toContain("sm:h-20");
+  });
+
+  it("keeps the default control sizing outside Kids mode (no regression)", () => {
+    renderWithTheme(<CookExperience recipe={makeRecipe()} />, "kitchen");
+    const previous = screen.getByRole("button", { name: "Previous" });
+
+    expect(previous.className).toContain("h-16");
+    expect(previous.className).not.toContain("sm:h-20");
   });
 });
