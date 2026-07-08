@@ -33,6 +33,9 @@ export type ReelExportMethod = "download" | "share";
 /** Group roles that can be invited/assigned (never "owner"). */
 export type InviteRole = "admin" | "member" | "kid";
 
+/** Where a waitlist email was captured (mirrors the waitlist source enum). */
+export type WaitlistSource = "landing" | "hero" | "closing";
+
 /** Coarse group-size buckets — keeps household size low-cardinality + non-identifying. */
 export type GroupSizeBucket = "1" | "2-5" | "6-10" | "11+";
 
@@ -112,6 +115,11 @@ export interface EventProperties {
   signup_completed: Record<string, never>;
   first_recipe_created: { recipeId: string };
   first_cook_started: { recipeId: string };
+
+  // --- Top-of-funnel waitlist capture (#351) ---
+  // `duplicate` flags a resubmission of an already-captured email so the
+  // conversion funnel can dedupe. No PII — the email is never an event property.
+  waitlist_joined: { source: WaitlistSource; duplicate: boolean };
 
   // --- Experimentation (#335/#336) ---
   $feature_flag_called: {

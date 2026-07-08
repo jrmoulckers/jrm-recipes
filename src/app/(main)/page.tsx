@@ -21,6 +21,7 @@ import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
+import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import {
   buildOrganizationJsonLd,
   buildWebSiteJsonLd,
@@ -185,6 +186,13 @@ export default function HomePage() {
                 <ChefHat /> Create your first recipe
               </Link>
             </Button>
+            <div className="mt-2 w-full max-w-md">
+              <p className="mb-3 text-sm text-muted-foreground">
+                Not ready yet? Get early access and cooking tips in your inbox —
+                no account needed.
+              </p>
+              <WaitlistForm source="closing" />
+            </div>
           </CardContent>
         </Card>
       </section>
