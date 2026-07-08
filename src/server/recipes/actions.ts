@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { recipeDetailPath } from "~/lib/recipe-path";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
 import {
@@ -60,6 +61,7 @@ export async function createRecipeAction(
     const recipe = await createRecipe(parsed.data, user);
     revalidatePath("/recipes");
     revalidatePath("/");
+    revalidatePath(recipeDetailPath(recipe));
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
@@ -84,7 +86,7 @@ export async function updateRecipeAction(
   try {
     const recipe = await updateRecipe(id, parsed.data, user);
     revalidatePath("/recipes");
-    revalidatePath(`/recipes/${id}`);
+    revalidatePath(recipeDetailPath(recipe));
     return { ok: true, id, slug: recipe.slug };
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
@@ -101,7 +103,7 @@ export async function forkRecipeAction(
     const user = await requireUser();
     const recipe = await forkRecipe(sourceId, user, forkNote);
     revalidatePath("/recipes");
-    revalidatePath(`/recipes/${sourceId}`);
+    revalidatePath(recipeDetailPath(recipe.source));
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch {
     return {
@@ -130,7 +132,7 @@ export async function revertRecipeAction(
   try {
     const user = await requireUser();
     const recipe = await revertRecipe(recipeId, versionNumber, user);
-    revalidatePath(`/recipes/${recipeId}`);
+    revalidatePath(recipeDetailPath(recipe));
     revalidatePath("/recipes");
     return { ok: true, id: recipe.id, slug: recipe.slug };
   } catch (error) {

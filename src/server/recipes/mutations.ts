@@ -458,7 +458,9 @@ export async function forkRecipe(
         note: trimmedNote,
         relatedRecipeId: recipe.id,
       });
-      return recipe;
+      // Expose the source's slug so the action can revalidate the source's
+      // (slug-based) detail page, whose lineage now includes this adaptation.
+      return { ...recipe, source: { id: source.id, slug: source.slug } };
     }),
   );
 }
