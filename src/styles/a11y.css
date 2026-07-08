@@ -93,3 +93,97 @@
 [data-reading="readable"] li {
   max-width: 68ch;
 }
+
+/* ---------------------------------------------------------------------------
+ * OS-level contrast signals (issue #96). Unlike the axes above, these respond
+ * to the operating system with no in-app toggle:
+ *
+ *   @media (prefers-contrast: more) — adopt the SAME neutral token overrides as
+ *     [data-contrast="high"], so users who ask the OS for more contrast get it
+ *     automatically. Brand primary/accent are preserved (identity stays intact).
+ *
+ *   @media (forced-colors: active) — Windows High Contrast Mode replaces our
+ *     token-painted backgrounds/borders with the system palette. Token-only
+ *     boundaries (ghost/outline buttons, switch + slider tracks) and box-shadow
+ *     focus rings can vanish, so we restore visible borders and a real focus
+ *     OUTLINE (box-shadow is unreliable here) using system color keywords.
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-contrast: more) {
+  :root {
+    --ring-width: 3px;
+  }
+
+  :root:not(.dark) {
+    --foreground: 0 0% 4%;
+    --surface-foreground: 0 0% 4%;
+    --card-foreground: 0 0% 4%;
+    --popover-foreground: 0 0% 4%;
+    --muted-foreground: 0 0% 20%;
+    --border: 0 0% 28%;
+    --input: 0 0% 28%;
+    --ring: 0 0% 0%;
+  }
+
+  :root.dark {
+    --foreground: 0 0% 100%;
+    --surface-foreground: 0 0% 100%;
+    --card-foreground: 0 0% 100%;
+    --popover-foreground: 0 0% 100%;
+    --muted-foreground: 0 0% 86%;
+    --border: 0 0% 74%;
+    --input: 0 0% 74%;
+    --ring: 0 0% 100%;
+  }
+
+  :where([class*="border"]) {
+    border-color: hsl(var(--border));
+  }
+}
+
+@media (forced-colors: active) {
+  /* Give every interactive control a boundary from the system palette. */
+  button,
+  [role="button"],
+  a.btn,
+  label.btn,
+  input,
+  select,
+  textarea,
+  [role="switch"],
+  [role="slider"] {
+    border: 1px solid ButtonText;
+  }
+
+  /* Switch: keep on/off legible when the token track flattens. The thumb is the
+     Radix Thumb child; the checked track leans on the selection color. */
+  [role="switch"] {
+    background-color: Canvas;
+  }
+  [role="switch"] > * {
+    background-color: ButtonText;
+    forced-color-adjust: none;
+  }
+  [role="switch"][data-state="checked"] {
+    background-color: Highlight;
+  }
+
+  /* Slider: make the thumb a clear, filled system indicator. */
+  [role="slider"] {
+    background-color: Highlight;
+  }
+
+  /* Focus outline must survive forced colors — do not rely on box-shadow rings.
+     !important defeats the utility `outline-none` that ring-based primitives set. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible,
+  [role="switch"]:focus-visible,
+  [role="slider"]:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+}
