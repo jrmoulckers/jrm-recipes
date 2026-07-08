@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 
 import { slugify } from "~/lib/utils";
 import { db } from "~/server/db";
@@ -602,20 +602,40 @@ export async function acceptInviteLink(token: string, user: User) {
       };
     }
 
-    // Enforce the cap only for a genuinely new join.
-    if (link.maxUses != null && link.useCount >= link.maxUses) {
-      throw new Error("EXHAUSTED");
-    }
+    // Claim a use with a single conditional bump. The WHERE re-checks the cap
+    // (plus revocation/expiry) against the *current* row under its write lock,
+    // so two users redeeming a maxUses=1 link concurrently serialize here: the
+    // loser matches 0 rows (useCount has already reached maxUses) and is
+    // rejected. The read-time guards above only produce friendlier errors; this
+    // atomic UPDATE is what actually enforces the cap, closing the
+    // check-then-insert race. Seat the member only after the bump succeeds, in
+    // the same tx so any later failure rolls the increment back.
+    const now = new Date();
+    const claimed = await tx
+      .update(groupInviteLinks)
+      .set({ useCount: sql`${groupInviteLinks.useCount} + 1` })
+      .where(
+        and(
+          eq(groupInviteLinks.id, link.id),
+          isNull(groupInviteLinks.revokedAt),
+          or(
+            isNull(groupInviteLinks.expiresAt),
+            gt(groupInviteLinks.expiresAt, now),
+          ),
+          or(
+            isNull(groupInviteLinks.maxUses),
+            lt(groupInviteLinks.useCount, groupInviteLinks.maxUses),
+          ),
+        ),
+      )
+      .returning({ id: groupInviteLinks.id });
+    if (claimed.length === 0) throw new Error("EXHAUSTED");
 
     await tx.insert(groupMembers).values({
       groupId: link.groupId,
       userId: user.id,
       role: link.role,
     });
-    await tx
-      .update(groupInviteLinks)
-      .set({ useCount: sql`${groupInviteLinks.useCount} + 1` })
-      .where(eq(groupInviteLinks.id, link.id));
 
     return {
       groupId: link.groupId,

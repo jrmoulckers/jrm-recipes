@@ -291,7 +291,13 @@ export async function listPublicRecipes({
         : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
     offset,
-    with: { author: true, tags: { with: { tag: true } } },
+    with: {
+      // Public/anonymous feed: project the author down to the non-PII fields the
+      // card renders. `author: true` would serialize the whole users row
+      // (email, clerkId, …) into the RSC payload on /discover and /recipes.
+      author: { columns: { name: true, handle: true } },
+      tags: { with: { tag: true } },
+    },
   });
   return {
     items: rows,

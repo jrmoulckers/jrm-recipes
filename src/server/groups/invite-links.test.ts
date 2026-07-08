@@ -256,12 +256,58 @@ describe("acceptInviteLink (issue #343)", () => {
         useCount: 2,
         revokedAt: null,
       },
+      // The conditional bump's `useCount < maxUses` guard matches no rows.
+      returning: [],
     });
     runWith(tx);
     await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
       "EXHAUSTED",
     );
     expect(tx.insert).not.toHaveBeenCalled();
+  });
+
+  it("never seats more members than maxUses when two redemptions race", async () => {
+    const link = {
+      id: "link_1",
+      groupId: "group_1",
+      role: "member" as MemberRole,
+      token: "tok_link",
+      expiresAt: null,
+      maxUses: 1,
+      useCount: 0,
+      revokedAt: null,
+    };
+
+    // First redeemer wins the single use: the conditional bump matches the row.
+    const first = fakeTx({
+      memberships: [null],
+      link,
+      returning: [{ id: "link_1" }],
+    });
+    runWith(first);
+    const a = await acceptInviteLink("tok_link", joiner);
+    expect(a.alreadyMember).toBe(false);
+    expect(first.insert).toHaveBeenCalledWith(groupMembers);
+    // The use is claimed before the membership is seated, so an exhausted link
+    // can never insert a member.
+    expect(first.update.mock.invocationCallOrder[0]!).toBeLessThan(
+      first.insert.mock.invocationCallOrder[0]!,
+    );
+
+    // A different user redeeming concurrently still reads useCount 0 (READ
+    // COMMITTED stale read), but the atomic bump now fails `useCount < maxUses`
+    // and returns no rows, so the loser is rejected and seats nobody — useCount
+    // never exceeds maxUses.
+    const second = fakeTx({
+      memberships: [null],
+      link,
+      returning: [],
+    });
+    runWith(second);
+    await expect(acceptInviteLink("tok_link", stranger)).rejects.toThrow(
+      "EXHAUSTED",
+    );
+    expect(second.insert).not.toHaveBeenCalled();
   });
 
   it("rejects an unknown token", async () => {
