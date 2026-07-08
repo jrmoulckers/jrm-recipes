@@ -1,5 +1,7 @@
 // @ts-check
 
+import { ALLOWED_MEDIA_HOSTS } from "./media-hosts.js";
+
 /**
  * next/image optimizer settings.
  *
@@ -24,8 +26,7 @@ export const imageConfig = {
   // Fixed-width images (step photos ~28rem, card thumbnails, avatars) live at
   // the small end of the ladder — all below the smallest deviceSize.
   imageSizes: [48, 64, 96, 128, 256, 384],
-  remotePatterns: [
-    { hostname: "res.cloudinary.com" },
-    { hostname: "img.clerk.com" },
-  ],
+  // Derived from the single media-host allowlist (issue #216) so the optimizer
+  // only ever fetches hosts we also permit recipes to store.
+  remotePatterns: ALLOWED_MEDIA_HOSTS.map((hostname) => ({ hostname })),
 };

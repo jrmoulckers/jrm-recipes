@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 
 import {
   ingredientInput,
@@ -267,5 +267,69 @@ describe("recipeSlug", () => {
   it("builds a sensible recipe slug", () => {
     expect(recipeSlug("Grandma's Pie!")).toBe("grandmas-pie");
     expect(recipeSlug("!!!")).toBe("recipe");
+  });
+});
+
+describe("media URL host allowlist (i216)", () => {
+  it("allows any host when Cloudinary is unconfigured (dev URL-paste)", () => {
+    // The suite runs with no NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, so the escape
+    // hatch is active and a pasted external image URL still validates.
+    expect(
+      recipeInput.parse({
+        title: "Pasted",
+        coverImageUrl: "https://example.com/photo.jpg",
+      }).coverImageUrl,
+    ).toBe("https://example.com/photo.jpg");
+  });
+
+  it("enforces the allowlist once Cloudinary is configured", async () => {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME", "demo");
+    try {
+      const { recipeInput: configured } = await import("./validation");
+
+      // Off-allowlist cover/step image/video are rejected.
+      expect(
+        configured.safeParse({
+          title: "Beacon",
+          coverImageUrl: "https://evil.example/pixel.gif",
+        }).success,
+      ).toBe(false);
+      expect(
+        configured.safeParse({
+          title: "Beacon",
+          steps: [
+            { instruction: "Watch", videoUrl: "https://evil.example/v.mp4" },
+          ],
+        }).success,
+      ).toBe(false);
+
+      // Cloudinary-hosted media still validates unchanged.
+      expect(
+        configured.safeParse({
+          title: "Uploaded",
+          coverImageUrl:
+            "https://res.cloudinary.com/demo/image/upload/heirloom/x.jpg",
+          steps: [
+            {
+              instruction: "Sear",
+              imageUrl:
+                "https://res.cloudinary.com/demo/image/upload/heirloom/s.jpg",
+            },
+          ],
+        }).success,
+      ).toBe(true);
+
+      // A non-media source link is unaffected by the media allowlist.
+      expect(
+        configured.safeParse({
+          title: "Sourced",
+          sourceUrl: "https://cooking.example/recipe",
+        }).success,
+      ).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });
