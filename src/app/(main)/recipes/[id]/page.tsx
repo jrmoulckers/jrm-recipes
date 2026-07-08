@@ -53,6 +53,7 @@ import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
 import { TechniqueChips } from "~/components/cook/technique-chips";
+import { CookBundleWarmer } from "~/components/cook/cook-bundle-warmer";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
@@ -301,6 +302,14 @@ export default async function RecipePage({
 
           {/* Action bar */}
           <div className="flex flex-wrap gap-2 pt-1">
+            {/* Best-effort: warm the offline Cook Mode bundle for this recipe. */}
+            <CookBundleWarmer
+              slug={recipe.slug}
+              imageSrcs={[
+                recipe.coverImageUrl,
+                ...recipe.steps.map((step) => step.imageUrl),
+              ].filter((src): src is string => Boolean(src))}
+            />
             <Button asChild size="lg">
               <Link href={`/recipes/${recipe.slug}/cook`}>
                 <Play /> Cook

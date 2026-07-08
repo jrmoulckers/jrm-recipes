@@ -11,6 +11,10 @@ import {
 
 import { isOfflineFallbackRequest } from "../lib/offline-fallback";
 import {
+  isWarmCookBundleMessage,
+  type WarmCookBundleMessage,
+} from "../lib/cook-warm";
+import {
   isRecipeImageRequest,
   RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS,
   RECIPE_IMAGE_CACHE_MAX_ENTRIES,
@@ -133,3 +137,30 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/**
+ * Proactively warm the offline Cook Mode bundle on request from the client
+ * (see `CookBundleWarmer`, issue #166). Best-effort: each entry is added
+ * independently and failures (offline, cross-origin, already-evicted) are
+ * swallowed so warming never surfaces an error. Reuses the existing named
+ * caches — the Cook document lands in the recipe-pages cache and step images in
+ * the recipe-images cache — so there are no duplicate caches.
+ */
+async function warmCookBundle(message: WarmCookBundleMessage): Promise<void> {
+  const warm = async (cacheName: string, urls: string[]): Promise<void> => {
+    if (urls.length === 0) return;
+    const cache = await caches.open(cacheName);
+    await Promise.allSettled(urls.map((url) => cache.add(url)));
+  };
+
+  await Promise.allSettled([
+    warm(RECIPE_PAGE_CACHE_NAME, message.pageUrls),
+    warm(RECIPE_IMAGE_CACHE_NAME, message.imageUrls),
+  ]);
+}
+
+self.addEventListener("message", (event) => {
+  if (isWarmCookBundleMessage(event.data)) {
+    event.waitUntil(warmCookBundle(event.data));
+  }
+});
