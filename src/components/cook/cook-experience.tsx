@@ -17,8 +17,11 @@ import {
   ListOrdered,
   Pause,
   Play,
+  Repeat,
   RotateCcw,
   Timer,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,9 +54,11 @@ import { TechniqueChips } from "./technique-chips";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
+import { useSpeech } from "./use-speech";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
+  const speech = useSpeech();
   const router = useRouter();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
@@ -138,6 +143,17 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     setStepAnnouncement(`Step ${stepIndex + 1} of ${totalSteps}`);
   }, [stepIndex, totalSteps]);
 
+  // Read-aloud (#436): speak the active step whenever it changes (or the moment
+  // read-aloud is switched on). `speak` cancels any prior utterance, so rapid
+  // navigation never stacks up. Destructured so the effect depends on the stable
+  // callback, not the controller object's per-render identity.
+  const { enabled: readAloud, speak } = speech;
+  const currentInstruction = recipe.steps[stepIndex]?.instruction ?? "";
+  const currentStepId = recipe.steps[stepIndex]?.id ?? null;
+  React.useEffect(() => {
+    if (readAloud && currentInstruction) speak(currentInstruction);
+  }, [readAloud, currentStepId, currentInstruction, speak]);
+
   if (!firstStep) {
     return (
       <EmptyCookExperience
@@ -204,6 +220,13 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                   <Timer className="size-3.5" />
                   {formatCountdown(currentStep.timerSeconds)}
                 </Badge>
+              )}
+              {speech.supported && (
+                <ReadAloudControls
+                  enabled={speech.enabled}
+                  onToggle={() => speech.setEnabled(!speech.enabled)}
+                  onRepeat={() => speech.speak(currentStep.instruction)}
+                />
               )}
             </div>
 
@@ -367,6 +390,43 @@ function CookHeader({
         />
       </ProgressPrimitive.Root>
     </header>
+  );
+}
+
+function ReadAloudControls({
+  enabled,
+  onToggle,
+  onRepeat,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  onRepeat: () => void;
+}) {
+  return (
+    <div className="ml-auto flex items-center gap-2">
+      <Button
+        type="button"
+        size="sm"
+        variant={enabled ? "default" : "outline"}
+        aria-pressed={enabled}
+        onClick={onToggle}
+      >
+        {enabled ? <Volume2 /> : <VolumeX />}
+        Read aloud
+      </Button>
+      {enabled && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          aria-label="Repeat this step aloud"
+          onClick={onRepeat}
+        >
+          <Repeat />
+          Repeat
+        </Button>
+      )}
+    </div>
   );
 }
 
