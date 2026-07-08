@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 
 import { UI_THEMES } from "~/config/themes";
 import { useTheme } from "~/components/theme/theme-provider";
+import { ThemeSwatch } from "~/components/theme/theme-swatch";
 import { cn } from "~/lib/utils";
 
 /**
@@ -29,15 +30,7 @@ export function ModePicker() {
               active ? "border-primary shadow-token" : "border-border",
             )}
           >
-            <span className="flex -space-x-2">
-              {t.swatch.map((c, i) => (
-                <span
-                  key={i}
-                  className="size-8 rounded-full border-2 border-card"
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </span>
+            <ThemeSwatch theme={t.id} size="lg" />
             <span>
               <span className="flex items-center gap-1.5 font-display text-base font-semibold">
                 {t.label}
