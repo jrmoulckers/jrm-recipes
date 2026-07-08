@@ -53,6 +53,7 @@ import {
 import { cn, formatMinutes } from "~/lib/utils";
 import { detectStepHazards } from "~/lib/kid-safety";
 import { HAPTICS, vibrate } from "~/lib/haptics";
+import { useReducedMotion } from "~/lib/use-reduced-motion";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
@@ -137,7 +138,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
-  const handleFinish = React.useCallback(() => {
+  const reducedMotion = useReducedMotion();
+  const [celebrating, setCelebrating] = React.useState(false);
+  const celebrationTimeoutRef = React.useRef<number | null>(null);
+
+  const finishAndLeave = React.useCallback(() => {
     clearSession();
     toast.success("Nicely done — recipe complete!", {
       description: `Log this cook to add ${recipe.title} to your journal.`,
@@ -186,7 +191,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   }, [readyStorageKey]);
 
   // "You did it!" completion moment (#437): finishing opens a celebratory screen
-  // (photo capture + badges) instead of navigating away instantly. `handleFinish`
+  // (photo capture + badges) instead of navigating away instantly. `finishAndLeave`
   // is the real leave action, run when the child taps done/skip.
   const [finished, setFinished] = React.useState(false);
   const [earnedBadges, setEarnedBadges] = React.useState<KidBadge[]>([]);
@@ -203,6 +208,32 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     }
     setFinished(true);
   }, [kidSafe, recipe.title, recipe.slug]);
+
+  // Completion celebration (#121): finishing plays a short success beat (progress
+  // flourish + a checkmark burst layered above the completion screen) as the
+  // "You did it!" screen (#437) opens. Under reduced motion — OS,
+  // data-motion="reduced", or Simple mode — skip the beat and open the screen
+  // straight away so nothing is delayed.
+  const handleFinish = React.useCallback(() => {
+    if (!reducedMotion) {
+      setCelebrating(true);
+      vibrate(HAPTICS.timerComplete);
+      celebrationTimeoutRef.current = window.setTimeout(
+        () => setCelebrating(false),
+        750,
+      );
+    }
+    openCompletion();
+  }, [reducedMotion, openCompletion]);
+
+  React.useEffect(
+    () => () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -305,12 +336,25 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      {celebrating && (
+        <div
+          className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <span className="relative flex items-center justify-center">
+            <span className="absolute inline-flex size-28 rounded-full bg-success/25 motion-safe:animate-celebrate-burst" />
+            <span className="absolute inline-flex size-40 rounded-full bg-success/10 motion-safe:animate-celebrate-burst [animation-delay:80ms]" />
+            <CheckCircle2 className="relative size-24 text-success drop-shadow-lg motion-safe:animate-celebrate-pop" />
+          </span>
+        </div>
+      )}
       <CookHeader
         recipe={recipe}
         runningTimerCount={runningTimerCount}
         currentIndex={stepIndex}
         totalSteps={totalSteps}
         progressValue={progressValue}
+        celebrating={celebrating}
         wakeLockStatus={wakeLockStatus}
         onStepSelect={goToStep}
         ingredientControls={ingredientControls}
@@ -478,7 +522,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={canGoNext ? navNext : openCompletion}
+            onClick={canGoNext ? navNext : handleFinish}
           >
             {canGoNext ? "Next" : "Done"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
@@ -490,7 +534,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         <CookCompletion
           recipeTitle={recipe.title}
           celebratory={kidSafe}
-          onDone={handleFinish}
+          onDone={finishAndLeave}
         >
           {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
         </CookCompletion>
@@ -505,6 +549,7 @@ function CookHeader({
   currentIndex,
   totalSteps,
   progressValue,
+  celebrating,
   wakeLockStatus,
   onStepSelect,
   ingredientControls,
@@ -514,6 +559,7 @@ function CookHeader({
   currentIndex: number;
   totalSteps: number;
   progressValue: number;
+  celebrating: boolean;
   wakeLockStatus: string;
   onStepSelect: (index: number) => void;
   ingredientControls: IngredientsPanelControls;
@@ -584,7 +630,10 @@ function CookHeader({
           aria-label={t("progress")}
         >
           <ProgressPrimitive.Indicator
-            className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
+            className={cn(
+              "h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none",
+              celebrating && "motion-safe:animate-progress-flourish",
+            )}
             style={{ width: `${progressValue}%` }}
           />
         </ProgressPrimitive.Root>

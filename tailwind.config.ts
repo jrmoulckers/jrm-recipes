@@ -153,6 +153,19 @@ const config = {
           "0%": { opacity: "0", transform: "translateX(-1.25rem)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        "celebrate-pop": {
+          "0%": { opacity: "0", transform: "scale(0.4)" },
+          "60%": { opacity: "1", transform: "scale(1.12)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "celebrate-burst": {
+          "0%": { opacity: "0.6", transform: "scale(0.5)" },
+          "100%": { opacity: "0", transform: "scale(2.3)" },
+        },
+        "progress-flourish": {
+          "0%, 100%": { filter: "brightness(1)" },
+          "50%": { filter: "brightness(1.4)" },
+        },
         "heart-pop": {
           "0%": { transform: "scale(1)" },
           "25%": { transform: "scale(0.8)" },
@@ -223,6 +236,9 @@ const config = {
         "slide-out-to-right": "slide-out-to-right 0.2s var(--ease-standard)",
         "step-in-from-right": "step-in-from-right 0.2s var(--ease-standard)",
         "step-in-from-left": "step-in-from-left 0.2s var(--ease-standard)",
+        "celebrate-pop": "celebrate-pop 0.5s var(--ease-emphasized)",
+        "celebrate-burst": "celebrate-burst 0.7s var(--ease-standard)",
+        "progress-flourish": "progress-flourish 0.6s var(--ease-standard)",
         "heart-pop": "heart-pop 0.4s var(--ease-emphasized)",
         "heart-burst": "heart-burst 0.45s var(--ease-standard)",
         "star-pop": "star-pop 0.35s var(--ease-emphasized) both",
