@@ -64,6 +64,13 @@
       "when": 1783466392472,
       "tag": "0008_cool_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783470615392,
+      "tag": "0009_rich_avengers",
+      "breakpoints": true
     }
   ]
 }

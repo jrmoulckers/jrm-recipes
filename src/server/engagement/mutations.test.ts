@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getTableConfig } from "drizzle-orm/pg-core";
 
 const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
 
@@ -10,7 +11,7 @@ vi.mock("~/server/recipes/queries", () => ({
 }));
 
 import { canViewRecipe } from "~/server/recipes/queries";
-import type { User } from "~/server/db/schema";
+import { comments, type User } from "~/server/db/schema";
 import {
   applySuggestion,
   createComment,
@@ -69,6 +70,26 @@ function runWith(tx: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe("comments.parentId self-referential foreign key (schema)", () => {
+  it("references comments.id with ON DELETE cascade so replies can't outlive their parent", () => {
+    const { foreignKeys } = getTableConfig(comments);
+
+    // The thread link is a real FK now (not a bare column): parentId -> id.
+    const parentFk = foreignKeys.find((fk) =>
+      fk.reference().columns.includes(comments.parentId),
+    );
+    expect(parentFk).toBeDefined();
+
+    const ref = parentFk!.reference();
+    // Self-referential: the target column is comments.id on the same table.
+    expect(ref.foreignColumns).toContain(comments.id);
+
+    // Deleting a parent comment cascades to its replies (thread hygiene), so a
+    // reply can never be left rooted at a missing parent.
+    expect(parentFk!.onDelete).toBe("cascade");
+  });
 });
 
 describe("engagement mutations enforce view permission", () => {
