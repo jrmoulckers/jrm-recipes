@@ -47,14 +47,14 @@ export const ingredientInput = z.object({
   quantity: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   quantityMax: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   unit: optionalString(40),
-  item: z.string().trim().min(1, "Ingredient is required").max(300),
+  item: z.string().trim().min(1, "Add an ingredient").max(300),
   note: optionalString(300),
   optional: z.boolean().optional().default(false),
 });
 
 export const stepInput = z.object({
   section: optionalString(120),
-  instruction: z.string().trim().min(1, "Step text is required").max(5000),
+  instruction: z.string().trim().min(1, "Add step text").max(5000),
   imageUrl: optionalUrl,
   videoUrl: optionalUrl,
   timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
@@ -123,7 +123,7 @@ export const recipeInput = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["groupId"],
-        message: "Choose a group for a group-visibility recipe",
+        message: "Choose a group for this group recipe",
       });
     }
   });

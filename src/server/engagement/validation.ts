@@ -10,8 +10,8 @@ export const commentInput = z.object({
   body: z
     .string()
     .trim()
-    .min(1, "Write a comment before posting.")
-    .max(4000, "Keep comments under 4,000 characters."),
+    .min(1, "Write a comment before posting")
+    .max(4000, "Keep comments under 4,000 characters"),
 });
 
 export const ratingInput = z.object({

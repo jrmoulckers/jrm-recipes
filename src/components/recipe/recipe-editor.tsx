@@ -390,7 +390,7 @@ export function RecipeEditor({
       }
       if (payload.visibility === "group" && !payload.groupId) {
         toast.error("Pick a group, or change the recipe's visibility.");
-        return { groupId: ["Choose a group for a group-visibility recipe"] };
+        return { groupId: ["Choose a group for this group recipe"] };
       }
       const res =
         mode === "edit" && recipeId

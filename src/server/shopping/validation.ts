@@ -35,7 +35,7 @@ export const manualItemInput = z.object({
 
 /** Add a recipe's (optionally rescaled) ingredients to the list. */
 export const addRecipeToListInput = z.object({
-  recipeId: z.string().trim().min(1, "Recipe is required").max(24),
+  recipeId: z.string().trim().min(1, "Pick a recipe").max(24),
   desiredServings: optionalNumber.pipe(
     z.number().int().min(1).max(1000).optional(),
   ),

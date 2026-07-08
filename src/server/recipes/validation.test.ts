@@ -239,7 +239,7 @@ describe("ingredientInput", () => {
 
   it("rejects empty item text and invalid quantities", () => {
     expect(() => ingredientInput.parse({ item: " " })).toThrow(
-      /Ingredient is required/,
+      /Add an ingredient/,
     );
     expect(() => ingredientInput.parse({ item: "Salt", quantity: "100001" })).toThrow();
   });
@@ -255,7 +255,7 @@ describe("stepInput", () => {
 
   it("rejects empty instructions and out-of-range timers", () => {
     expect(() => stepInput.parse({ instruction: " " })).toThrow(
-      /Step text is required/,
+      /Add step text/,
     );
     expect(() =>
       stepInput.parse({ instruction: "Wait", timerSeconds: "86401" }),

@@ -11,7 +11,7 @@ const idInput = z.string().trim().min(1);
 const optionalNote = z
   .string()
   .trim()
-  .max(2000, "Keep your note under 2,000 characters.")
+  .max(2000, "Keep your note under 2,000 characters")
   .optional()
   .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
