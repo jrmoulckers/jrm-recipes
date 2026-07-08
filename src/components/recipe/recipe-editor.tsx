@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
+import { recipeDetailPath } from "~/lib/recipe-path";
 import { type RecipeInput } from "~/server/recipes/validation";
 import { type ImportedRecipe } from "~/server/recipes/import";
 import {
@@ -274,7 +275,7 @@ export function RecipeEditor({
           : await createRecipeAction(payload);
       if (res.ok) {
         toast.success(mode === "edit" ? "Recipe updated" : "Recipe created");
-        router.push(`/recipes/${res.slug ?? res.id}`);
+        router.push(recipeDetailPath(res));
         router.refresh();
       } else {
         setErrors(res.fieldErrors ?? {});
