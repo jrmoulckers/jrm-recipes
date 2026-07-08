@@ -22,6 +22,7 @@ export type SeoStep = {
   section: string | null;
   instruction: string;
   imageUrl?: string | null;
+  videoUrl?: string | null;
 };
 
 /**
@@ -140,6 +141,34 @@ function recipeImages(recipe: SeoRecipe): string[] {
   );
 }
 
+/**
+ * Emit a schema.org `VideoObject` when a recipe has step video (issue #308).
+ * Google renders a video badge/thumbnail on recipe results when a valid
+ * `VideoObject` is present. We pick the first step that carries a `videoUrl`,
+ * fall back to the cover (else first step image) for the thumbnail, and use
+ * `publishedAt` for `uploadDate`. Returns `undefined` when no step video exists
+ * so the caller omits the field entirely.
+ */
+function buildVideo(recipe: SeoRecipe): Record<string, unknown> | undefined {
+  const withVideo = recipe.steps.find(
+    (step) => typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0,
+  );
+  if (!withVideo?.videoUrl) return undefined;
+
+  const video: Record<string, unknown> = {
+    "@type": "VideoObject",
+    name: recipe.title,
+    description: recipe.description ?? recipe.title,
+    contentUrl: withVideo.videoUrl.trim(),
+  };
+
+  const thumbnail = recipeImages(recipe)[0];
+  if (thumbnail) video.thumbnailUrl = thumbnail;
+  if (recipe.publishedAt) video.uploadDate = recipe.publishedAt.toISOString();
+
+  return video;
+}
+
 /** Trim a numeric measurement to at most one decimal place (`12.0` → `"12"`). */
 function trimNumber(value: number): string {
   return String(Math.round(value * 10) / 10);
@@ -250,6 +279,9 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
 
   const nutrition = buildNutrition(recipe);
   if (nutrition) jsonLd.nutrition = nutrition;
+
+  const video = buildVideo(recipe);
+  if (video) jsonLd.video = video;
 
   return jsonLd;
 }

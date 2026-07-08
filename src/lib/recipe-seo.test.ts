@@ -231,6 +231,78 @@ describe("buildRecipeJsonLd", () => {
   });
 });
 
+describe("buildRecipeJsonLd video", () => {
+  it("emits a VideoObject when a step has video", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        coverImageUrl: "https://cdn.example.com/cobbler.jpg",
+        steps: [
+          { section: null, instruction: "Mix." },
+          {
+            section: null,
+            instruction: "Bake.",
+            videoUrl: "https://cdn.example.com/bake.mp4",
+          },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toEqual({
+      "@type": "VideoObject",
+      name: "Aunt May's Peach Cobbler",
+      description: "Bubbling fruit under a craggy biscuit top.",
+      contentUrl: "https://cdn.example.com/bake.mp4",
+      thumbnailUrl: "https://cdn.example.com/cobbler.jpg",
+      uploadDate: "2024-06-01T12:00:00.000Z",
+    });
+  });
+
+  it("chooses the first step video when several exist", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        steps: [
+          { section: null, instruction: "One.", videoUrl: "https://v/first.mp4" },
+          { section: null, instruction: "Two.", videoUrl: "https://v/second.mp4" },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toMatchObject({
+      contentUrl: "https://v/first.mp4",
+    });
+  });
+
+  it("falls back to the first step image for the thumbnail", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        coverImageUrl: null,
+        publishedAt: null,
+        steps: [
+          {
+            section: null,
+            instruction: "Bake.",
+            imageUrl: "https://cdn.example.com/step.jpg",
+            videoUrl: "https://cdn.example.com/bake.mp4",
+          },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toEqual({
+      "@type": "VideoObject",
+      name: "Aunt May's Peach Cobbler",
+      description: "Bubbling fruit under a craggy biscuit top.",
+      contentUrl: "https://cdn.example.com/bake.mp4",
+      thumbnailUrl: "https://cdn.example.com/step.jpg",
+    });
+  });
+
+  it("omits video when no step has one", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe());
+    expect(jsonLd.video).toBeUndefined();
+  });
+});
+
 describe("buildRecipeJsonLd nutrition", () => {
   it("emits a NutritionInformation block with formatted units", () => {
     const jsonLd = buildRecipeJsonLd(
