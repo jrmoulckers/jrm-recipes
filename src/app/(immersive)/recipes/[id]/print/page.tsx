@@ -2,8 +2,8 @@ import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { toPrintRecipe } from "~/server/recipes/serialize";
 import { PrintView } from "~/components/print/print-view";
-import type { PrintRecipe } from "~/components/print/types";
 
 export async function generateMetadata({
   params,
@@ -24,47 +24,5 @@ export default async function PrintPage({
   const { recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
-  const serializableRecipe: PrintRecipe = {
-    id: recipe.id,
-    slug: recipe.slug,
-    title: recipe.title,
-    description: recipe.description,
-    coverImageUrl: recipe.coverImageUrl,
-    visibility: recipe.visibility,
-    servings: recipe.servings,
-    servingsNoun: recipe.servingsNoun,
-    prepMinutes: recipe.prepMinutes,
-    cookMinutes: recipe.cookMinutes,
-    totalMinutes: recipe.totalMinutes,
-    difficulty: recipe.difficulty,
-    cuisine: recipe.cuisine,
-    sourceName: recipe.sourceName,
-    sourceUrl: recipe.sourceUrl,
-    notes: recipe.notes,
-    author: recipe.author ? { name: recipe.author.name } : null,
-    ingredients: recipe.ingredients.map((ingredient) => ({
-      id: ingredient.id,
-      section: ingredient.section,
-      quantity: ingredient.quantity,
-      quantityMax: ingredient.quantityMax,
-      unit: ingredient.unit,
-      item: ingredient.item,
-      note: ingredient.note,
-      optional: ingredient.optional,
-    })),
-    steps: recipe.steps.map((step) => ({
-      id: step.id,
-      section: step.section,
-      instruction: step.instruction,
-      timerSeconds: step.timerSeconds,
-      techniques: step.techniques,
-    })),
-    tags: recipe.tags.map(({ tag }) => ({
-      tag: {
-        name: tag.name,
-      },
-    })),
-  };
-
-  return <PrintView recipe={serializableRecipe} />;
+  return <PrintView recipe={toPrintRecipe(recipe)} />;
 }
