@@ -300,6 +300,42 @@ export async function listPublicRecipes({
 }
 
 /**
+ * Public, embed-safe projection of a single recipe (issue #347). Returns only
+ * the handful of fields the oEmbed card + `/embed/recipes/[id]` iframe need, and
+ * *only* when the recipe is `public` + `published` — private/group/unlisted
+ * recipes (and anything soft-deleted, or when the DB is off) resolve to `null`
+ * so an embed can never leak non-public data.
+ */
+export async function getPublicRecipeCard(idOrSlug: string) {
+  if (!isDbConfigured()) return null;
+  const recipe = await db.query.recipes.findFirst({
+    where: and(
+      notDeleted,
+      or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
+      eq(recipes.visibility, "public"),
+      eq(recipes.status, "published"),
+    ),
+    columns: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      coverImageUrl: true,
+      servings: true,
+      servingsNoun: true,
+      totalMinutes: true,
+      difficulty: true,
+    },
+    with: { author: { columns: { name: true, handle: true } } },
+  });
+  return recipe ?? null;
+}
+
+export type PublicRecipeCard = NonNullable<
+  Awaited<ReturnType<typeof getPublicRecipeCard>>
+>;
+
+/**
  * Slim projection for the sitemap (issue #323): the slug and `updatedAt` of
  * every public + published recipe, newest first. Selects only the two columns
  * the sitemap needs (no over-fetch) and returns an empty list when the DB is

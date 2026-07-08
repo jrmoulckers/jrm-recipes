@@ -87,10 +87,24 @@ export async function generateMetadata({
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? undefined;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
+  const isPublic = recipe.visibility === "public";
   return {
     title: recipe.title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      // oEmbed discovery (issue #347): let consumers auto-resolve an embeddable
+      // card. Only advertised for public recipes (the embed route 404s others).
+      ...(isPublic
+        ? {
+            types: {
+              "application/json+oembed": `${absoluteUrl(
+                "/api/oembed",
+              )}?url=${encodeURIComponent(canonical)}&format=json`,
+            },
+          }
+        : {}),
+    },
     // Keep private/group/unlisted recipes out of search indexes; only public
     // recipes should be crawlable.
     ...(recipe.visibility !== "public"
