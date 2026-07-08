@@ -36,6 +36,7 @@ import {
 } from "~/server/planner/week";
 import { Button } from "~/components/ui/button";
 import { PrepAheadNote } from "~/components/planner/prep-ahead-note";
+import { CopyLastWeekButton } from "~/components/planner/copy-last-week-button";
 import {
   PlannerBoard,
   PlannerEmptyState,
@@ -161,7 +162,8 @@ export default async function PlanPage({
               day.
             </p>
           </div>
-          <nav className="flex items-center gap-2" aria-label="Week navigation">
+          <nav className="flex flex-wrap items-center gap-2" aria-label="Week navigation">
+            {dbConfigured && user && <CopyLastWeekButton week={startParam} />}
             <Button
               asChild
               variant="outline"

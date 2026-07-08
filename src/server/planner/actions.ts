@@ -6,16 +6,27 @@ import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
   addEntryInput,
+  copyWeekInput,
   moveEntryInput,
   removeEntryInput,
   type AddEntryInput,
+  type CopyWeekInput,
   type MoveEntryInput,
   type RemoveEntryInput,
 } from "./validation";
-import { addEntry, moveEntry, removeEntry } from "./mutations";
+import {
+  addEntry,
+  copyPreviousWeek,
+  moveEntry,
+  removeEntry,
+} from "./mutations";
 
 export type ActionResult =
   | { ok: true }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+
+export type CopyWeekActionResult =
+  | { ok: true; copied: number; previousEmpty: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
 const NO_DB =
@@ -100,6 +111,30 @@ export async function removeEntryAction(
     await removeEntry(parsed.data.entryId, user);
     revalidatePath("/plan");
     return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function copyPreviousWeekAction(
+  input: CopyWeekInput,
+): Promise<CopyWeekActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = copyWeekInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const user = await requireUser();
+  try {
+    const result = await copyPreviousWeek(user, parsed.data.week);
+    revalidatePath("/plan");
+    return { ok: true, ...result };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

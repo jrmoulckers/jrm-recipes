@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
@@ -10,6 +10,12 @@ import {
   type MealSlot,
   type User,
 } from "~/server/db/schema";
+import {
+  addDaysToParam,
+  getPlannerWeek,
+  parseDateParam,
+  toDateParam,
+} from "./week";
 import type { AddEntryInput, MoveEntryInput } from "./validation";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -145,4 +151,72 @@ export async function removeEntry(entryId: string, user: User) {
     .returning({ id: mealPlanEntries.id });
   if (!row) throw new Error("NOT_FOUND");
   return row;
+}
+
+export type CopyWeekResult = { copied: number; previousEmpty: boolean };
+
+/**
+ * Copy the previous week's entries onto the week containing `weekParam`, shifted
+ * forward 7 days onto the matching day + slot (#434). Only *empty* cells are
+ * filled, so anything already planned this week is preserved. Returns how many
+ * entries were copied and whether last week was empty (for a friendly message).
+ */
+export async function copyPreviousWeek(
+  user: User,
+  weekParam: string,
+): Promise<CopyWeekResult> {
+  const target = getPlannerWeek(parseDateParam(weekParam));
+  const startParam = toDateParam(target.start);
+  const endParam = toDateParam(target.end);
+  const prevStart = addDaysToParam(startParam, -7);
+  const prevEnd = addDaysToParam(endParam, -7);
+
+  return db.transaction(async (tx) => {
+    const previous = await tx.query.mealPlanEntries.findMany({
+      where: and(
+        eq(mealPlanEntries.userId, user.id),
+        gte(mealPlanEntries.date, prevStart),
+        lte(mealPlanEntries.date, prevEnd),
+      ),
+      orderBy: [asc(mealPlanEntries.date), asc(mealPlanEntries.position)],
+      columns: {
+        date: true,
+        slot: true,
+        recipeId: true,
+        groupId: true,
+        note: true,
+        position: true,
+      },
+    });
+
+    if (previous.length === 0) return { copied: 0, previousEmpty: true };
+
+    const current = await tx.query.mealPlanEntries.findMany({
+      where: and(
+        eq(mealPlanEntries.userId, user.id),
+        gte(mealPlanEntries.date, startParam),
+        lte(mealPlanEntries.date, endParam),
+      ),
+      columns: { date: true, slot: true },
+    });
+    // Cells (day + slot) already holding something this week are left untouched.
+    const occupied = new Set(current.map((e) => `${e.date}|${e.slot}`));
+
+    const rows = previous
+      .map((entry) => ({
+        userId: user.id,
+        groupId: entry.groupId,
+        date: addDaysToParam(entry.date, 7),
+        slot: entry.slot,
+        recipeId: entry.recipeId,
+        note: entry.note,
+        position: entry.position,
+      }))
+      .filter((row) => !occupied.has(`${row.date}|${row.slot}`));
+
+    if (rows.length === 0) return { copied: 0, previousEmpty: false };
+
+    await tx.insert(mealPlanEntries).values(rows);
+    return { copied: rows.length, previousEmpty: false };
+  });
 }

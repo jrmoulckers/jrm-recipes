@@ -65,6 +65,11 @@ export const removeEntryInput = z.object({
   entryId: idInput,
 });
 
+export const copyWeekInput = z.object({
+  week: dateParam,
+});
+
 export type AddEntryInput = z.infer<typeof addEntryInput>;
 export type MoveEntryInput = z.infer<typeof moveEntryInput>;
 export type RemoveEntryInput = z.infer<typeof removeEntryInput>;
+export type CopyWeekInput = z.infer<typeof copyWeekInput>;

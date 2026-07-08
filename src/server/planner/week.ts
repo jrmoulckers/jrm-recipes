@@ -39,6 +39,11 @@ export function tomorrowParam(): string {
   return toDateParam(addDays(new Date(), 1));
 }
 
+/** Shift a `yyyy-MM-dd` param by a number of days (used to copy a week, #434). */
+export function addDaysToParam(param: string, days: number): string {
+  return toDateParam(addDays(parseDateParam(param), days));
+}
+
 /**
  * Parse a `yyyy-MM-dd` string into a local Date, falling back to today when the
  * value is missing or malformed (e.g. a hand-edited URL).
