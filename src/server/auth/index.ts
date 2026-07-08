@@ -13,9 +13,36 @@ import { DEV_USER } from "~/server/auth/dev-user";
  * All auth flows through here so the rest of the app never imports Clerk
  * directly. When Clerk isn't configured (or NEXT_PUBLIC_DEV_AUTH_BYPASS=1) we
  * fall back to a stable local "dev" user, so the app + tests run with no keys.
+ *
+ * Security: dev-bypass is strictly a LOCAL/TEST affordance. `getCurrentUser`
+ * calls `assertDevBypassAllowed` before ever returning the shared `DEV_USER`,
+ * so production fails closed instead of silently serving every request as one
+ * shared, fully-authenticated account. This backs up the boot/build guard in
+ * `~/env`; `SKIP_ENV_VALIDATION` is the single escape hatch, used only by the
+ * CI build + e2e run (which never serve real users).
  */
 
 export { DEV_USER };
+
+/**
+ * Fail closed: the shared dev-bypass user must never be served in production.
+ * Reaching the dev fallback in prod always means auth is misconfigured (either
+ * NEXT_PUBLIC_DEV_AUTH_BYPASS=1 or missing Clerk keys), so throw rather than
+ * degrade. Parameterized for tests; defaults read the live environment.
+ */
+export function assertDevBypassAllowed(
+  nodeEnv: string = env.NODE_ENV,
+  skipValidation = Boolean(process.env.SKIP_ENV_VALIDATION),
+): void {
+  if (skipValidation) return;
+  if (nodeEnv === "production") {
+    throw new Error(
+      "Refusing to serve the shared dev-bypass user in production. Configure " +
+        "Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset " +
+        "NEXT_PUBLIC_DEV_AUTH_BYPASS. Dev-bypass is a local/test-only affordance.",
+    );
+  }
+}
 
 /** True when real Clerk auth should be used. */
 export function isAuthConfigured(): boolean {
@@ -95,6 +122,7 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
 /** The current app user, or null if not signed in (never null in dev-bypass). */
 export async function getCurrentUser(): Promise<User | null> {
   if (!isAuthConfigured()) {
+    assertDevBypassAllowed();
     return getOrCreateDevUser();
   }
   const { auth } = await import("@clerk/nextjs/server");
