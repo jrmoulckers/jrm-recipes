@@ -32,6 +32,7 @@ import {
   isFavorited,
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { brand } from "~/config/brand";
 import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
@@ -72,7 +73,8 @@ export async function generateMetadata({
   const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
-  const description = recipe.description ?? undefined;
+  const description =
+    recipe.description ?? `A family recipe on ${brand.name}.`;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
   const isPublic = recipe.visibility === "public";
   return {

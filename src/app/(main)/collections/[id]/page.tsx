@@ -12,6 +12,7 @@ import { CollectionActions } from "~/components/collections/collection-actions";
 import { RemoveFromCollectionButton } from "~/components/collections/remove-from-collection-button";
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
 import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
+import { brand } from "~/config/brand";
 
 const load = cache(async (id: string) => {
   const user = await getCurrentUser();
@@ -27,9 +28,21 @@ export async function generateMetadata({
   const { id } = await parseCollectionParams(params);
   const { collection } = await load(id);
   if (!collection) return { title: "Collection not found" };
+  const description =
+    collection.description ?? `A recipe collection on ${brand.name}.`;
   return {
     title: collection.name,
-    description: collection.description ?? undefined,
+    description,
+    openGraph: {
+      type: "website",
+      title: `${collection.name} · ${brand.name}`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: collection.name,
+      description,
+    },
   };
 }
 

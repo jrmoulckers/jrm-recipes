@@ -38,7 +38,10 @@ import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
 
-export const metadata: Metadata = { title: "Recipes" };
+export const metadata: Metadata = {
+  title: "Your recipes",
+  description: "Every recipe you've saved and created, together in one library.",
+};
 
 /**
  * Number of leading cards treated as above-the-fold for LCP: the first row of

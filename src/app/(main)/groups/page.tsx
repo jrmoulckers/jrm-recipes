@@ -9,7 +9,10 @@ import { Button } from "~/components/ui/button";
 import { CreateGroupDialog } from "~/components/groups/create-group-dialog";
 import { GroupCard } from "~/components/groups/group-card";
 
-export const metadata: Metadata = { title: "Family" };
+export const metadata: Metadata = {
+  title: "Family",
+  description: "Shared cookbooks for the people you cook with.",
+};
 
 export default async function GroupsPage() {
   const user = await getCurrentUser();

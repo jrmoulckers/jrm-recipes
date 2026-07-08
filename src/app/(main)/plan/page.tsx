@@ -46,7 +46,10 @@ import {
   type BoardRecipe,
 } from "~/components/planner/planner-board";
 
-export const metadata: Metadata = { title: "Plan" };
+export const metadata: Metadata = {
+  title: "Meal plan",
+  description: "Plan the week's meals and turn them into a shopping list.",
+};
 
 export default async function PlanPage({
   searchParams,
