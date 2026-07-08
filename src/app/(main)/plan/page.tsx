@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -165,6 +165,13 @@ export default async function PlanPage({
           </div>
           <nav className="flex flex-wrap items-center gap-2" aria-label="Week navigation">
             {dbConfigured && user && <CopyLastWeekButton week={startParam} />}
+            {dbConfigured && user && (
+              <Button asChild variant="outline">
+                <Link href={`/plan/print?week=${startParam}`}>
+                  <Printer /> Print this week
+                </Link>
+              </Button>
+            )}
             <Button
               asChild
               variant="outline"

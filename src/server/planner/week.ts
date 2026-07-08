@@ -130,3 +130,13 @@ export function formatDayNumber(date: Date): string {
 export function formatFullDay(date: Date): string {
   return format(date, "EEEE, MMM d");
 }
+
+/** Full weekday name, e.g. "Monday" — used by the printable week menu (#438). */
+export function formatWeekdayLong(date: Date): string {
+  return format(date, "EEEE");
+}
+
+/** Month + day, e.g. "Jul 6" — used by the printable week menu (#438). */
+export function formatMonthDay(date: Date): string {
+  return format(date, "MMM d");
+}

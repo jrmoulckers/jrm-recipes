@@ -74,6 +74,36 @@ export type PrepTextEntry = Awaited<
   ReturnType<typeof listEntriesWithPrepText>
 >[number];
 
+/**
+ * Dinner entries for a week, with just enough recipe detail (title + total
+ * time) to render the printable fridge menu (#438). Dinner slot only, ordered
+ * by day. Guarded so the print page renders with no database configured.
+ */
+export async function listWeekDinners(
+  userId: string,
+  startDate: string,
+  endDate: string,
+) {
+  if (!isDbConfigured()) return [];
+  return db.query.mealPlanEntries.findMany({
+    where: and(
+      eq(mealPlanEntries.userId, userId),
+      eq(mealPlanEntries.slot, "dinner"),
+      gte(mealPlanEntries.date, startDate),
+      lte(mealPlanEntries.date, endDate),
+    ),
+    orderBy: [asc(mealPlanEntries.date), asc(mealPlanEntries.position)],
+    columns: { date: true, note: true },
+    with: {
+      recipe: { columns: { title: true, totalMinutes: true } },
+    },
+  });
+}
+
+export type WeekDinnerEntry = Awaited<
+  ReturnType<typeof listWeekDinners>
+>[number];
+
 async function viewerGroupIds(userId: string): Promise<string[]> {
   const rows = await db.query.groupMembers.findMany({
     where: eq(groupMembers.userId, userId),

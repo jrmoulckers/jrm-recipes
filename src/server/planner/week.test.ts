@@ -6,6 +6,8 @@ import {
   formatDayName,
   formatDayNumber,
   formatFullDay,
+  formatMonthDay,
+  formatWeekdayLong,
   formatWeekRange,
   getPlannerWeek,
   isSameDate,
@@ -106,6 +108,8 @@ describe("day formatting", () => {
     expect(formatDayName(sunday)).toBe("Sun");
     expect(formatDayNumber(sunday)).toBe("5");
     expect(formatFullDay(sunday)).toBe("Sunday, Jul 5");
+    expect(formatWeekdayLong(sunday)).toBe("Sunday");
+    expect(formatMonthDay(sunday)).toBe("Jul 5");
   });
 });
 
