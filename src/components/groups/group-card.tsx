@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Users } from "lucide-react";
 
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { type MyGroup } from "~/server/groups/queries";
 import { RoleBadge } from "./role-badge";
 
@@ -24,7 +24,7 @@ export function GroupCard({ group }: { group: MyGroup }) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-primary/12 font-display text-lg font-bold text-primary">
           {group.avatarUrl ? (
-            <Image
+            <CloudinaryImage
               src={group.avatarUrl}
               alt=""
               width={56}

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { BookMarked } from "lucide-react";
 
 import { cn } from "~/lib/utils";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { type CollectionSummary } from "~/server/collections/queries";
 
 const GRADIENTS = [
@@ -32,7 +32,7 @@ export function CollectionCard({
     >
       <div className="relative aspect-[16/10] overflow-hidden">
         {collection.coverImageUrl ? (
-          <Image
+          <CloudinaryImage
             src={collection.coverImageUrl}
             alt=""
             fill
