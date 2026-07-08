@@ -93,14 +93,30 @@ export function formatQuantity(
 }
 
 /**
- * Round a metric quantity to a precision a cook can actually measure and render
- * it as a locale-aware decimal (never a vulgar fraction): whole grams/millilitres
- * for amounts ≥ 10, otherwise a single decimal place.
+ * The magnitude at or above which a metric amount is rendered as a whole
+ * number. Below it — the small doses where a tenth of a gram is a real
+ * measurement (yeast, salt, baking soda, spices, #403) — a single decimal
+ * place is kept so scaling "12.5 g" shows "12.5", not a rounded "13".
  */
-function formatMetricQuantity(value: number, locale: string): string {
+const METRIC_WHOLE_THRESHOLD = 50;
+
+/**
+ * Round a metric quantity to a precision a cook can actually measure and render
+ * it as a locale-aware decimal (never a vulgar fraction). Large amounts (≥
+ * {@link METRIC_WHOLE_THRESHOLD}, e.g. 500 g flour) stay clean whole numbers;
+ * small doses keep one decimal place so measurable precision isn't rounded away
+ * (#403). A value that lands on a whole number renders without a trailing `.0`.
+ */
+export function formatMetricQuantity(
+  value: number,
+  locale: string = DEFAULT_LOCALE,
+): string {
   const n = roundNice(value);
   if (n === 0) return formatDecimal(0, locale);
-  const rounded = Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
+  const rounded =
+    Math.abs(n) >= METRIC_WHOLE_THRESHOLD
+      ? Math.round(n)
+      : Math.round(n * 10) / 10;
   return formatDecimal(rounded, locale);
 }
 

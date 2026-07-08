@@ -7,6 +7,7 @@ import {
   displayUnit,
   expandKidUnit,
   formatKidAmount,
+  formatMetricQuantity,
   formatQuantity,
   normalizeUnit,
   scaleQuantity,
@@ -33,8 +34,10 @@ describe("formatQuantity", () => {
   it("formats metric quantities as measurable decimals, not vulgar fractions (ck06)", () => {
     // Awkward imperial→metric conversions must round to sensible precision and
     // render as decimals — never as a vulgar fraction of a gram/millilitre.
-    expect(formatQuantity(28.35, "g")).toBe("28");
-    expect(formatQuantity(14.17, "g")).toBe("14");
+    // Small metric masses keep a decimal of measurable precision (#403), so
+    // an oz→g conversion of a small dose is no longer rounded to a whole gram.
+    expect(formatQuantity(28.35, "g")).toBe("28.4");
+    expect(formatQuantity(14.17, "g")).toBe("14.2");
     expect(formatQuantity(236.588, "ml")).toBe("237");
     // Small amounts keep a single decimal place.
     expect(formatQuantity(0.5, "g")).toBe("0.5");
@@ -77,6 +80,33 @@ describe("formatQuantity", () => {
     expect(formatQuantity(0.5, "cup", "de-DE")).toBe("½");
     expect(formatQuantity(2.5, "oz", "de-DE")).toBe("2½");
     expect(formatQuantity(0.5, "cup", "ar")).toBe("½");
+  });
+});
+
+describe("formatMetricQuantity (#403 small-dose precision)", () => {
+  it("keeps one decimal for small masses instead of rounding to whole grams", () => {
+    // A scaled 12.5 g dose of salt must not collapse to 13 g.
+    expect(formatMetricQuantity(12.5)).toBe("12.5");
+    expect(formatMetricQuantity(2.4)).toBe("2.4");
+    expect(formatMetricQuantity(0.6)).toBe("0.6");
+    expect(formatMetricQuantity(49.9)).toBe("49.9");
+  });
+
+  it("renders large clean amounts as whole numbers without a trailing .0", () => {
+    expect(formatMetricQuantity(50)).toBe("50");
+    expect(formatMetricQuantity(500)).toBe("500");
+    expect(formatMetricQuantity(1000)).toBe("1000");
+    // At/above the threshold, precision rounds to whole grams.
+    expect(formatMetricQuantity(500.4)).toBe("500");
+  });
+
+  it("drops a trailing zero for small whole values and handles zero", () => {
+    expect(formatMetricQuantity(12)).toBe("12");
+    expect(formatMetricQuantity(0)).toBe("0");
+  });
+
+  it("localizes the decimal separator", () => {
+    expect(formatMetricQuantity(12.5, "de-DE")).toBe("12,5");
   });
 });
 
