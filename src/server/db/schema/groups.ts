@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   check,
   index,
+  integer,
   pgEnum,
   pgTable,
   timestamp,
@@ -115,9 +116,45 @@ export const groupInvitations = pgTable(
   ],
 );
 
+/**
+ * Shareable, multi-use group invite links that onboard *new* users (issue
+ * #343). Unlike `group_invitations` (a single-invitee record keyed to an
+ * email/handle), a link carries no invitee: a manager generates one, shares the
+ * URL, and anyone who opens it can join the group at `role`. Tokens are opaque
+ * and unguessable; a link can be capped (`maxUses`), time-limited (`expiresAt`),
+ * or revoked (`revokedAt`). `useCount` tracks accepted joins for the cap.
+ */
+export const groupInviteLinks = pgTable(
+  "group_invite_links",
+  {
+    id: pk(),
+    groupId: fk()
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    // Who created the link; nulls out if that user is later removed so the link
+    // (and memberships it produced) survive.
+    createdById: fk().references(() => users.id, { onDelete: "set null" }),
+    role: memberRole().notNull().default("member"),
+    token: varchar({ length: 64 }).notNull().unique(),
+    // Null expiry = never expires; null maxUses = unlimited joins.
+    expiresAt: timestamp({ withTimezone: true }),
+    maxUses: integer(),
+    useCount: integer().notNull().default(0),
+    revokedAt: timestamp({ withTimezone: true }),
+    ...timestamps(),
+  },
+  (t) => [
+    index("group_invite_links_group_idx").on(t.groupId),
+    // Covering index for the createdById FK (issue #153 convention) so the
+    // `set null` cascade on user delete doesn't sequentially scan.
+    index("group_invite_links_created_by_idx").on(t.createdById),
+  ],
+);
+
 export const groupsRelations = relations(groups, ({ many, one }) => ({
   members: many(groupMembers),
   invitations: many(groupInvitations),
+  inviteLinks: many(groupInviteLinks),
   recipes: many(recipes),
   createdBy: one(users, {
     fields: [groups.createdById],
@@ -156,6 +193,20 @@ export const groupInvitationsRelations = relations(
   }),
 );
 
+export const groupInviteLinksRelations = relations(
+  groupInviteLinks,
+  ({ one }) => ({
+    group: one(groups, {
+      fields: [groupInviteLinks.groupId],
+      references: [groups.id],
+    }),
+    createdBy: one(users, {
+      fields: [groupInviteLinks.createdById],
+      references: [users.id],
+    }),
+  }),
+);
+
 export type Group = typeof groups.$inferSelect;
 export type NewGroup = typeof groups.$inferInsert;
 export type GroupMember = typeof groupMembers.$inferSelect;
@@ -163,3 +214,5 @@ export type MemberRole = (typeof memberRole.enumValues)[number];
 export type GroupInvitation = typeof groupInvitations.$inferSelect;
 export type NewGroupInvitation = typeof groupInvitations.$inferInsert;
 export type InvitationStatus = (typeof invitationStatus.enumValues)[number];
+export type GroupInviteLink = typeof groupInviteLinks.$inferSelect;
+export type NewGroupInviteLink = typeof groupInviteLinks.$inferInsert;

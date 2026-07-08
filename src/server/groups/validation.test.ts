@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { addMemberInput, groupInput, updateRoleInput } from "./validation";
+import {
+  addMemberInput,
+  createInviteLinkInput,
+  groupInput,
+  updateRoleInput,
+} from "./validation";
 
 describe("groupInput", () => {
   it("trims names and optional text", () => {
@@ -56,5 +61,30 @@ describe("updateRoleInput", () => {
       role: "kid",
     });
     expect(() => updateRoleInput.parse({ role: "owner" })).toThrow();
+  });
+});
+
+describe("createInviteLinkInput (issue #343)", () => {
+  it("defaults to an evergreen member link", () => {
+    expect(createInviteLinkInput.parse({})).toMatchObject({ role: "member" });
+    const parsed = createInviteLinkInput.parse({});
+    expect(parsed.expiresInDays).toBeUndefined();
+    expect(parsed.maxUses).toBeUndefined();
+  });
+
+  it("limits the role to the non-privileged set", () => {
+    expect(createInviteLinkInput.parse({ role: "kid" })).toMatchObject({
+      role: "kid",
+    });
+    expect(() => createInviteLinkInput.parse({ role: "admin" })).toThrow();
+    expect(() => createInviteLinkInput.parse({ role: "owner" })).toThrow();
+  });
+
+  it("coerces and bounds expiry and max uses", () => {
+    expect(
+      createInviteLinkInput.parse({ expiresInDays: "30", maxUses: "10" }),
+    ).toMatchObject({ expiresInDays: 30, maxUses: 10 });
+    expect(() => createInviteLinkInput.parse({ expiresInDays: 0 })).toThrow();
+    expect(() => createInviteLinkInput.parse({ maxUses: 0 })).toThrow();
   });
 });

@@ -105,6 +105,9 @@ export interface EventProperties {
   group_created: { groupId: string; sizeBucket: GroupSizeBucket };
   invite_sent: { groupId: string; role: InviteRole; sizeBucket: GroupSizeBucket };
   invite_accepted: { groupId: string; role: string };
+  // Shareable invite links (#343): a manager minted a link; joins reuse
+  // `invite_accepted`. Role is the (non-privileged) role the link grants.
+  invite_link_created: { groupId: string; role: InviteRole };
   member_role_changed: { groupId: string; role: InviteRole };
   group_left: { groupId: string };
   group_deleted: { groupId: string };
