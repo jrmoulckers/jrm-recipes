@@ -22,6 +22,25 @@ export type SeoStep = {
   section: string | null;
   instruction: string;
   imageUrl?: string | null;
+  videoUrl?: string | null;
+};
+
+/**
+ * Optional per-serving nutrition (issue #414 stores these on `recipes`). All
+ * fields are nullable/absent — a recipe may carry none, some, or all — and are
+ * emitted as a schema.org `NutritionInformation` object only when at least one
+ * is present (issue #307). Energy is kcal and sodium is mg (whole numbers);
+ * macronutrients are grams and may be fractional.
+ */
+export type SeoNutrition = {
+  calories?: number | null;
+  proteinGrams?: number | null;
+  carbsGrams?: number | null;
+  fatGrams?: number | null;
+  saturatedFatGrams?: number | null;
+  sodiumMg?: number | null;
+  sugarGrams?: number | null;
+  fiberGrams?: number | null;
 };
 
 /**
@@ -32,6 +51,7 @@ export type SeoRecipe = {
   slug: string;
   title: string;
   description: string | null;
+  cuisine: string | null;
   coverImageUrl: string | null;
   servings: number | null;
   servingsNoun: string | null;
@@ -42,9 +62,10 @@ export type SeoRecipe = {
   author: { name: string | null } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
+  tags: { tag: { name: string } | null }[];
   ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
-};
+} & SeoNutrition;
 
 /**
  * Format a minute count as an ISO-8601 duration (`90` → `"PT1H30M"`), which is
@@ -123,6 +144,139 @@ function recipeImages(recipe: SeoRecipe): string[] {
 }
 
 /**
+ * Emit a schema.org `VideoObject` when a recipe has step video (issue #308).
+ * Google renders a video badge/thumbnail on recipe results when a valid
+ * `VideoObject` is present. We pick the first step that carries a `videoUrl`,
+ * fall back to the cover (else first step image) for the thumbnail, and use
+ * `publishedAt` for `uploadDate`. Returns `undefined` when no step video exists
+ * so the caller omits the field entirely.
+ */
+function buildVideo(recipe: SeoRecipe): Record<string, unknown> | undefined {
+  const withVideo = recipe.steps.find(
+    (step) => typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0,
+  );
+  if (!withVideo?.videoUrl) return undefined;
+
+  const video: Record<string, unknown> = {
+    "@type": "VideoObject",
+    name: recipe.title,
+    description: recipe.description ?? recipe.title,
+    contentUrl: withVideo.videoUrl.trim(),
+  };
+
+  const thumbnail = recipeImages(recipe)[0];
+  if (thumbnail) video.thumbnailUrl = thumbnail;
+  if (recipe.publishedAt) video.uploadDate = recipe.publishedAt.toISOString();
+
+  return video;
+}
+
+/** Trim a numeric measurement to at most one decimal place (`12.0` → `"12"`). */
+function trimNumber(value: number): string {
+  return String(Math.round(value * 10) / 10);
+}
+
+/**
+ * Map the per-serving nutrition columns onto a schema.org `NutritionInformation`
+ * object, emitting only the properties that are actually populated. Returns
+ * `undefined` when the recipe carries no nutrition data so the caller can omit
+ * the field entirely (issue #307).
+ */
+function buildNutrition(
+  recipe: SeoNutrition,
+): Record<string, unknown> | undefined {
+  const nutrition: Record<string, unknown> = {};
+
+  if (recipe.calories != null && Number.isFinite(recipe.calories)) {
+    nutrition.calories = `${Math.round(recipe.calories)} calories`;
+  }
+  const grams: [keyof SeoNutrition, string][] = [
+    ["proteinGrams", "proteinContent"],
+    ["carbsGrams", "carbohydrateContent"],
+    ["fatGrams", "fatContent"],
+    ["saturatedFatGrams", "saturatedFatContent"],
+    ["sugarGrams", "sugarContent"],
+    ["fiberGrams", "fiberContent"],
+  ];
+  for (const [field, prop] of grams) {
+    const value = recipe[field];
+    if (value != null && Number.isFinite(value)) {
+      nutrition[prop] = `${trimNumber(value)} g`;
+    }
+  }
+  if (recipe.sodiumMg != null && Number.isFinite(recipe.sodiumMg)) {
+    nutrition.sodiumContent = `${Math.round(recipe.sodiumMg)} mg`;
+  }
+
+  if (Object.keys(nutrition).length === 0) return undefined;
+  return {
+    "@type": "NutritionInformation",
+    servingSize: "1 serving",
+    ...nutrition,
+  };
+}
+
+/**
+ * Known meal-course categories mapped from lowercased tag names (and a few
+ * common synonyms) to the canonical schema.org-friendly label. Used to resolve
+ * `recipeCategory` from free-form tags (issue #314): the first recipe tag whose
+ * name matches this vocabulary wins; when none match the field is omitted.
+ */
+const CATEGORY_VOCAB = new Map<string, string>([
+  ["appetizer", "Appetizer"],
+  ["appetizers", "Appetizer"],
+  ["starter", "Appetizer"],
+  ["breakfast", "Breakfast"],
+  ["brunch", "Breakfast"],
+  ["lunch", "Lunch"],
+  ["dinner", "Main"],
+  ["main", "Main"],
+  ["main course", "Main"],
+  ["main dish", "Main"],
+  ["entree", "Main"],
+  ["entrée", "Main"],
+  ["side", "Side"],
+  ["side dish", "Side"],
+  ["salad", "Salad"],
+  ["soup", "Soup"],
+  ["dessert", "Dessert"],
+  ["desserts", "Dessert"],
+  ["snack", "Snack"],
+  ["snacks", "Snack"],
+  ["drink", "Drink"],
+  ["drinks", "Drink"],
+  ["beverage", "Drink"],
+  ["cocktail", "Drink"],
+  ["bread", "Bread"],
+  ["sauce", "Sauce"],
+  ["condiment", "Sauce"],
+]);
+
+/** Clean, non-empty, case-insensitively de-duplicated tag names in order. */
+function cleanTagNames(recipe: SeoRecipe): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const entry of recipe.tags) {
+    const name = entry.tag?.name?.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}
+
+/** First tag matching the meal-course vocabulary, as a canonical label. */
+function resolveCategory(tagNames: string[]): string | undefined {
+  for (const name of tagNames) {
+    const canonical = CATEGORY_VOCAB.get(name.toLowerCase());
+    if (canonical) return canonical;
+  }
+  return undefined;
+}
+
+/**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
  * called for `public` recipes; optional fields are omitted when absent so the
  * structured data stays clean.
@@ -136,6 +290,7 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   };
 
   if (recipe.description) jsonLd.description = recipe.description;
+  if (recipe.cuisine?.trim()) jsonLd.recipeCuisine = recipe.cuisine.trim();
   const images = recipeImages(recipe);
   if (images.length > 0) jsonLd.image = images;
   if (recipe.author?.name) {
@@ -173,6 +328,11 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
     jsonLd.recipeYield = `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`;
   }
 
+  const tagNames = cleanTagNames(recipe);
+  if (tagNames.length > 0) jsonLd.keywords = tagNames.join(", ");
+  const category = resolveCategory(tagNames);
+  if (category) jsonLd.recipeCategory = category;
+
   const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {
     jsonLd.aggregateRating = {
@@ -185,7 +345,40 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
     };
   }
 
+  const nutrition = buildNutrition(recipe);
+  if (nutrition) jsonLd.nutrition = nutrition;
+
+  const video = buildVideo(recipe);
+  if (video) jsonLd.video = video;
+
   return jsonLd;
+}
+
+/**
+ * Build a schema.org `BreadcrumbList` for a public recipe page (issue #315):
+ * Home › Recipes › {recipe}. Each item carries an absolute `item` URL (via
+ * `absoluteUrl`) so Google can render a breadcrumb trail in the SERP. The final
+ * crumb uses the recipe's canonical `/recipes/{slug}` URL. Rendered in a second
+ * JSON-LD `<script>` gated to public recipes, exactly like the Recipe JSON-LD.
+ */
+export function buildBreadcrumbJsonLd(
+  recipe: Pick<SeoRecipe, "slug" | "title">,
+): Record<string, unknown> {
+  const crumbs: { name: string; path: string }[] = [
+    { name: "Home", path: "/" },
+    { name: "Recipes", path: "/recipes" },
+    { name: recipe.title, path: `/recipes/${recipe.slug}` },
+  ];
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: absoluteUrl(crumb.path),
+    })),
+  };
 }
 
 /**

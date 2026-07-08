@@ -14,3 +14,4 @@ export * from "./collections";
 export * from "./views";
 export * from "./searches";
 export * from "./dietary";
+export * from "./waitlist";

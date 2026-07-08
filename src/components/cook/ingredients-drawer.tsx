@@ -42,9 +42,10 @@ export function IngredientsDrawer({
           type="button"
           variant="secondary"
           size="lg"
+          aria-label={`${label} list and recipe scaling`}
           className={cn("h-12 px-4 sm:h-14 sm:px-5", className)}
         >
-          <ListChecks />
+          <ListChecks aria-hidden="true" />
           <span className="hidden sm:inline">{label}</span>
           <span className="sm:hidden">List</span>
         </Button>

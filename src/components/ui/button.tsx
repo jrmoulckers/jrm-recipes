@@ -77,6 +77,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           asChild && loading && "pointer-events-none",
         )}
         ref={ref}
+        data-variant={variant ?? "default"}
         aria-busy={loading || undefined}
         data-loading={loading ? "" : undefined}
         aria-disabled={asChild && loading ? true : undefined}

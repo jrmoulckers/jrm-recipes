@@ -66,11 +66,13 @@
   }
 }
 
-/* Global reduced-motion: honor OS setting AND modes that opt out of motion. */
+/* Global reduced-motion: honor OS setting AND modes that opt out of motion.
+ * Scoped to :not([data-motion="off"]) so an explicit in-app "off" (issue #130)
+ * overrides the OS preference; unset/"reduced" still reduce. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="off"]) *,
+  :root:not([data-motion="off"]) *::before,
+  :root:not([data-motion="off"]) *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -91,7 +93,7 @@
  * only the calm `bg-muted` base remains (see components/ui/skeleton.tsx).
  */
 @media (prefers-reduced-motion: reduce) {
-  [data-skeleton-shimmer] {
+  :root:not([data-motion="off"]) [data-skeleton-shimmer] {
     display: none;
   }
 }

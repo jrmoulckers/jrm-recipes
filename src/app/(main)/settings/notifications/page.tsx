@@ -1,0 +1,72 @@
+import { type Metadata } from "next";
+import { BellRing } from "lucide-react";
+
+import { getCurrentUser, isAuthConfigured } from "~/server/auth";
+import { isDbConfigured } from "~/server/db";
+import { DigestOptIn } from "~/components/settings/digest-opt-in";
+
+export const metadata: Metadata = { title: "Notifications" };
+
+export default async function NotificationsPage() {
+  const user = await getCurrentUser();
+  const authConfigured = isAuthConfigured();
+  const dbConfigured = isDbConfigured();
+
+  if (authConfigured && dbConfigured && !user) return <SignInNudge />;
+
+  return (
+    <div className="container flex flex-col gap-8 py-10">
+      <header className="max-w-2xl">
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          Notifications
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Choose what Heirloom emails you. We keep it to a minimum — your recipes
+          and family details are never shared.
+        </p>
+      </header>
+
+      {!dbConfigured ? (
+        <ConnectDbNotice />
+      ) : (
+        <div className="max-w-2xl">
+          <DigestOptIn defaultOptedIn={user?.weeklyDigestOptIn ?? false} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SignInNudge() {
+  return (
+    <div className="container py-16">
+      <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
+        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+          <BellRing className="size-7" aria-hidden="true" />
+        </span>
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight">
+            Notification settings are private
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Sign in from the header to manage your email preferences.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConnectDbNotice() {
+  return (
+    <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
+      <p className="mx-auto max-w-md">
+        Connect a database to manage email preferences. Set{" "}
+        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+          DATABASE_URL
+        </code>{" "}
+        or start the local Postgres container.
+      </p>
+    </div>
+  );
+}

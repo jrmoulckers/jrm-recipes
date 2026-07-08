@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertCircle,
   ChevronDown,
   ChevronUp,
   Download,
@@ -160,6 +161,16 @@ export function RecipeEditor({
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [errors, setErrors] = React.useState<Record<string, string[]>>({});
+  const errorSummaryRef = React.useRef<HTMLDivElement>(null);
+  const errorKeys = Object.keys(errors);
+
+  // Move focus to the summary whenever a submit attempt produces errors so
+  // screen-reader and keyboard users land on the list of what needs fixing.
+  React.useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      errorSummaryRef.current?.focus();
+    }
+  }, [errors]);
   const [importUrl, setImportUrl] = React.useState("");
   const [importing, setImporting] = React.useState(false);
 
@@ -401,6 +412,63 @@ export function RecipeEditor({
         </div>
       </div>
 
+      {errorKeys.length > 0 && (
+        <div
+          ref={errorSummaryRef}
+          tabIndex={-1}
+          role="alert"
+          aria-labelledby="recipe-error-summary-heading"
+          className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm outline-none"
+        >
+          <h2
+            id="recipe-error-summary-heading"
+            className="flex items-center gap-2 font-medium text-destructive"
+          >
+            <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+            {errorKeys.length === 1
+              ? "Please fix this field before saving:"
+              : `Please fix these ${errorKeys.length} fields before saving:`}
+          </h2>
+          <ul className="mt-2 flex list-disc flex-col gap-1 pl-8">
+            {errorKeys.map((key) => {
+              const label = FIELD_LABELS[key] ?? prettifyFieldKey(key);
+              const message = errors[key]?.[0];
+              const targetId = `recipe-field-${key}`;
+              return (
+                <li key={key}>
+                  {ANCHORABLE_FIELDS.has(key) ? (
+                    <a
+                      href={`#${targetId}`}
+                      onClick={(e) => {
+                        const el = document.getElementById(targetId);
+                        if (el) {
+                          e.preventDefault();
+                          el.scrollIntoView({
+                            block: "center",
+                            behavior: "smooth",
+                          });
+                          el.focus();
+                        }
+                      }}
+                      className="font-medium text-destructive underline underline-offset-2 hover:no-underline"
+                    >
+                      {label}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-destructive">
+                      {label}
+                    </span>
+                  )}
+                  {message ? (
+                    <span className="text-muted-foreground"> — {message}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         {/* Main column */}
         <div className="flex flex-col gap-8">
@@ -450,7 +518,7 @@ export function RecipeEditor({
           ) : null}
 
           <section className="flex flex-col gap-4">
-            <Field label="Title" error={errors.title} required>
+            <Field label="Title" name="title" error={errors.title} required>
               <Input
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
@@ -458,7 +526,12 @@ export function RecipeEditor({
                 autoFocus
               />
             </Field>
-            <Field label="Description" hint="A sentence about the dish.">
+            <Field
+              label="Description"
+              name="description"
+              hint="A sentence about the dish."
+              error={errors.description}
+            >
               <Textarea
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
@@ -646,7 +719,12 @@ export function RecipeEditor({
             </div>
           </section>
 
-          <Field label="Notes" hint="Tips, substitutions, the story behind it.">
+          <Field
+            label="Notes"
+            name="notes"
+            hint="Tips, substitutions, the story behind it."
+            error={errors.notes}
+          >
             <Textarea
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
@@ -658,27 +736,35 @@ export function RecipeEditor({
         {/* Sidebar */}
         <aside className="flex h-fit flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky lg:top-20">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Servings">
+            <Field label="Servings" name="servings" error={errors.servings}>
               <Input
                 value={form.servings}
                 onChange={(e) => set("servings", e.target.value)}
                 inputMode="numeric"
               />
             </Field>
-            <Field label="Unit">
+            <Field label="Unit" name="servingsNoun" error={errors.servingsNoun}>
               <Input
                 value={form.servingsNoun}
                 onChange={(e) => set("servingsNoun", e.target.value)}
               />
             </Field>
-            <Field label="Prep (min)">
+            <Field
+              label="Prep (min)"
+              name="prepMinutes"
+              error={errors.prepMinutes}
+            >
               <Input
                 value={form.prepMinutes}
                 onChange={(e) => set("prepMinutes", e.target.value)}
                 inputMode="numeric"
               />
             </Field>
-            <Field label="Cook (min)">
+            <Field
+              label="Cook (min)"
+              name="cookMinutes"
+              error={errors.cookMinutes}
+            >
               <Input
                 value={form.cookMinutes}
                 onChange={(e) => set("cookMinutes", e.target.value)}
@@ -687,7 +773,7 @@ export function RecipeEditor({
             </Field>
           </div>
 
-          <Field label="Difficulty">
+          <Field label="Difficulty" name="difficulty" error={errors.difficulty}>
             <select
               className={selectClass}
               value={form.difficulty}
@@ -702,7 +788,7 @@ export function RecipeEditor({
             </select>
           </Field>
 
-          <Field label="Cuisine">
+          <Field label="Cuisine" name="cuisine" error={errors.cuisine}>
             <Input
               value={form.cuisine}
               onChange={(e) => set("cuisine", e.target.value)}
@@ -724,7 +810,12 @@ export function RecipeEditor({
             </p>
             <div className="grid grid-cols-2 gap-3">
               {NUTRITION_FIELDS.map((f) => (
-                <Field key={f.key} label={`${f.label} (${f.unit})`}>
+                <Field
+                  key={f.key}
+                  name={f.key}
+                  label={`${f.label} (${f.unit})`}
+                  error={errors[f.key]}
+                >
                   <Input
                     value={form[f.key]}
                     onChange={(e) => set(f.key, e.target.value)}
@@ -774,8 +865,9 @@ export function RecipeEditor({
 
           <div className="h-px bg-border" />
 
-          <Field label="Tags" hint="Comma separated.">
+          <Field label="Tags" name="tags" hint="Comma separated." error={errors.tags}>
             <Input
+              id="recipe-field-tags"
               value={form.tags}
               onChange={(e) => set("tags", e.target.value)}
               placeholder="dinner, weeknight"
@@ -814,7 +906,11 @@ export function RecipeEditor({
 
           <div className="h-px bg-border" />
 
-          <Field label="Who can see this?">
+          <Field
+            label="Who can see this?"
+            name="visibility"
+            error={errors.visibility}
+          >
             <select
               className={selectClass}
               value={form.visibility}
@@ -832,7 +928,7 @@ export function RecipeEditor({
           </Field>
 
           {form.visibility === "group" && groups.length > 0 && (
-            <Field label="Group">
+            <Field label="Group" name="groupId" error={errors.groupId}>
               <select
                 className={selectClass}
                 value={form.groupId}
@@ -848,7 +944,7 @@ export function RecipeEditor({
             </Field>
           )}
 
-          <Field label="Status">
+          <Field label="Status" name="status" error={errors.status}>
             <select
               className={selectClass}
               value={form.status}
@@ -904,31 +1000,132 @@ function RowControls({
   );
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  title: "Title",
+  description: "Description",
+  servings: "Servings",
+  servingsNoun: "Unit",
+  prepMinutes: "Prep (min)",
+  cookMinutes: "Cook (min)",
+  difficulty: "Difficulty",
+  cuisine: "Cuisine",
+  notes: "Notes",
+  calories: "Calories",
+  proteinGrams: "Protein",
+  carbsGrams: "Carbs",
+  fatGrams: "Fat",
+  saturatedFatGrams: "Saturated fat",
+  sodiumMg: "Sodium",
+  sugarGrams: "Sugar",
+  fiberGrams: "Fiber",
+  tags: "Tags",
+  visibility: "Who can see this?",
+  groupId: "Group",
+  status: "Status",
+  ingredients: "Ingredients",
+  steps: "Steps",
+  dietaryFlags: "Dietary",
+  coverImageUrl: "Cover photo",
+};
+
+// Fields that render a control with a matching `recipe-field-<key>` id, so the
+// error-summary entry can be an anchor that focuses the offending control.
+const ANCHORABLE_FIELDS = new Set([
+  "title",
+  "description",
+  "servings",
+  "servingsNoun",
+  "prepMinutes",
+  "cookMinutes",
+  "difficulty",
+  "cuisine",
+  "notes",
+  "calories",
+  "proteinGrams",
+  "carbsGrams",
+  "fatGrams",
+  "saturatedFatGrams",
+  "sodiumMg",
+  "sugarGrams",
+  "fiberGrams",
+  "tags",
+  "visibility",
+  "groupId",
+  "status",
+]);
+
+function prettifyFieldKey(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
 function Field({
   label,
   hint,
   error,
   required,
+  name,
   children,
 }: {
   label: string;
   hint?: string;
   error?: string[];
   required?: boolean;
+  name?: string;
   children: React.ReactNode;
 }) {
+  const reactId = React.useId();
+  const child = React.isValidElement(children)
+    ? (children as React.ReactElement<Record<string, unknown>>)
+    : null;
+  const existingId =
+    child && typeof child.props.id === "string" ? child.props.id : undefined;
+  // Named fields get a deterministic id so the error summary can link to them.
+  const controlId = existingId ?? (name ? `recipe-field-${name}` : reactId);
+  const hasError = Boolean(error?.length);
+  const hintId = `${controlId}-hint`;
+  const errorId = `${controlId}-error`;
+  const describedBy = hasError ? errorId : hint ? hintId : undefined;
+  const existingDescribedBy =
+    child && typeof child.props["aria-describedby"] === "string"
+      ? child.props["aria-describedby"]
+      : undefined;
+
+  // Thread the generated id + validation state onto the control so the label
+  // association, required state, and error message are all programmatic.
+  const control = child
+    ? React.cloneElement(child, {
+        id: controlId,
+        "aria-required": required ? true : undefined,
+        "aria-invalid": hasError ? true : undefined,
+        "aria-describedby":
+          [existingDescribedBy, describedBy].filter(Boolean).join(" ") ||
+          undefined,
+      })
+    : children;
+
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="flex items-center gap-1">
+      <Label htmlFor={controlId} className="flex items-center gap-1">
         {label}
-        {required && <span className="text-destructive">*</span>}
+        {required && (
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        )}
       </Label>
-      {children}
-      {hint && !error?.length && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+      {control}
+      {hint && !hasError && (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
       )}
-      {error?.length ? (
-        <p className={cn("text-xs text-destructive")}>{error[0]}</p>
+      {hasError ? (
+        <p id={errorId} className={cn("text-xs text-destructive")}>
+          {error![0]}
+        </p>
       ) : null}
     </div>
   );

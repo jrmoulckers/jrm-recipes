@@ -46,7 +46,7 @@ import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
-import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
+import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
@@ -87,10 +87,24 @@ export async function generateMetadata({
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? undefined;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
+  const isPublic = recipe.visibility === "public";
   return {
     title: recipe.title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      // oEmbed discovery (issue #347): let consumers auto-resolve an embeddable
+      // card. Only advertised for public recipes (the embed route 404s others).
+      ...(isPublic
+        ? {
+            types: {
+              "application/json+oembed": `${absoluteUrl(
+                "/api/oembed",
+              )}?url=${encodeURIComponent(canonical)}&format=json`,
+            },
+          }
+        : {}),
+    },
     // Keep private/group/unlisted recipes out of search indexes; only public
     // recipes should be crawlable.
     ...(recipe.visibility !== "public"
@@ -191,8 +205,9 @@ export default async function RecipePage({
 
   // schema.org structured data — public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
-  const jsonLd =
-    recipe.visibility === "public" ? buildRecipeJsonLd(recipe) : null;
+  const isPublic = recipe.visibility === "public";
+  const jsonLd = isPublic ? buildRecipeJsonLd(recipe) : null;
+  const breadcrumbJsonLd = isPublic ? buildBreadcrumbJsonLd(recipe) : null;
 
   const meta = [
     recipe.totalMinutes != null && {
@@ -216,6 +231,14 @@ export default async function RecipePage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(breadcrumbJsonLd),
+          }}
         />
       )}
       {/* Hero */}
@@ -276,9 +299,18 @@ export default async function RecipePage({
             {recipe.author?.name && (
               <span>
                 By{" "}
-                <span className="font-medium text-foreground">
-                  {recipe.author.name}
-                </span>
+                {recipe.author.handle ? (
+                  <Link
+                    href={`/cooks/${recipe.author.handle}`}
+                    className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                  >
+                    {recipe.author.name}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-foreground">
+                    {recipe.author.name}
+                  </span>
+                )}
               </span>
             )}
             {meta.map((m, i) => (

@@ -101,6 +101,8 @@
  *   @media (prefers-contrast: more) — adopt the SAME neutral token overrides as
  *     [data-contrast="high"], so users who ask the OS for more contrast get it
  *     automatically. Brand primary/accent are preserved (identity stays intact).
+ *     Gated on :not([data-contrast="off"]) so an explicit in-app opt-out (#130)
+ *     overrides the OS preference.
  *
  *   @media (forced-colors: active) — Windows High Contrast Mode replaces our
  *     token-painted backgrounds/borders with the system palette. Token-only
@@ -110,11 +112,11 @@
  * ------------------------------------------------------------------------- */
 
 @media (prefers-contrast: more) {
-  :root {
+  :root:not([data-contrast="off"]) {
     --ring-width: 3px;
   }
 
-  :root:not(.dark) {
+  :root:not([data-contrast="off"]):not(.dark) {
     --foreground: 0 0% 4%;
     --surface-foreground: 0 0% 4%;
     --card-foreground: 0 0% 4%;
@@ -125,7 +127,7 @@
     --ring: 0 0% 0%;
   }
 
-  :root.dark {
+  :root:not([data-contrast="off"]).dark {
     --foreground: 0 0% 100%;
     --surface-foreground: 0 0% 100%;
     --card-foreground: 0 0% 100%;
@@ -136,7 +138,7 @@
     --ring: 0 0% 100%;
   }
 
-  :where([class*="border"]) {
+  :root:not([data-contrast="off"]) :where([class*="border"]) {
     border-color: hsl(var(--border));
   }
 }
@@ -185,5 +187,31 @@
   [role="slider"]:focus-visible {
     outline: 2px solid Highlight !important;
     outline-offset: 2px;
+  }
+
+  /* Selected / pressed / current / active states (issue #131). These normally
+     lean on token backgrounds (bg-primary + tints) that flatten in forced
+     colors, so an active tab, a pressed toggle/segment, or the current nav item
+     becomes indistinguishable from its siblings. Paint them with the system
+     SELECTION pair so the state survives. Text + icons use currentColor, so
+     setting `color` carries them along; forced-color-adjust lets it apply. */
+  [aria-pressed="true"],
+  [aria-selected="true"],
+  [aria-current]:not([aria-current="false"]),
+  [data-state="on"],
+  [data-state="active"] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  /* Primary / emphasis buttons: a heavier system border marks the default
+     action apart from ghost/outline/secondary buttons (which keep the 1px
+     border above) now that brand fills (bg-primary) are ignored. */
+  button[data-variant="default"],
+  button[data-variant="accent"],
+  button[data-variant="destructive"] {
+    border-width: 2px;
   }
 }

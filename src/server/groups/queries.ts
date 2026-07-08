@@ -4,6 +4,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
+  groupInviteLinks,
   groupMembers,
   groups,
   recipes,
@@ -152,6 +153,60 @@ export async function getMembership(groupId: string, userId: string) {
     })) ?? null
   );
 }
+
+export type InviteLinkStatus = "active" | "expired" | "revoked" | "exhausted";
+
+/**
+ * Public-safe preview for the `/join/[token]` page (issue #343). Resolves a link
+ * token to just enough of its group to render an invitation card (name, blurb,
+ * avatar, member count) plus a `status` the page turns into a friendly state.
+ * Deliberately leaks nothing private — no member identities, no recipes.
+ */
+export async function getInviteLinkPreview(token: string) {
+  if (!isDbConfigured()) return null;
+
+  const link = await db.query.groupInviteLinks.findFirst({
+    where: eq(groupInviteLinks.token, token),
+    with: {
+      group: {
+        columns: {
+          id: true,
+          slug: true,
+          name: true,
+          description: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  });
+  if (!link) return null;
+
+  const members = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.groupId, link.groupId),
+    columns: { id: true },
+  });
+
+  const status: InviteLinkStatus =
+    link.revokedAt != null
+      ? "revoked"
+      : link.expiresAt != null && link.expiresAt.getTime() <= Date.now()
+        ? "expired"
+        : link.maxUses != null && link.useCount >= link.maxUses
+          ? "exhausted"
+          : "active";
+
+  return {
+    token,
+    role: link.role,
+    status,
+    group: link.group,
+    memberCount: members.length,
+  };
+}
+
+export type InviteLinkPreview = NonNullable<
+  Awaited<ReturnType<typeof getInviteLinkPreview>>
+>;
 
 export type MyGroup = Awaited<ReturnType<typeof listMyGroups>>[number];
 export type FullGroup = NonNullable<Awaited<ReturnType<typeof getGroupBySlug>>>;

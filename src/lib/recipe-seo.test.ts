@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildRecipeJsonLd,
+  buildBreadcrumbJsonLd,
   minutesToIsoDuration,
   serializeJsonLd,
   type SeoRecipe,
@@ -12,6 +13,7 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
     slug: "aunt-mays-peach-cobbler",
     title: "Aunt May's Peach Cobbler",
     description: "Bubbling fruit under a craggy biscuit top.",
+    cuisine: null,
     coverImageUrl: "https://cdn.example.com/cobbler.jpg",
     servings: 8,
     servingsNoun: "squares",
@@ -49,6 +51,7 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
       { value: 4, userId: "fan_2" },
       { value: 5, userId: "fan_3" },
     ],
+    tags: [],
     publishedAt: new Date("2024-06-01T12:00:00.000Z"),
     ...overrides,
   };
@@ -225,8 +228,233 @@ describe("buildRecipeJsonLd", () => {
     expect(jsonLd.recipeYield).toBeUndefined();
     expect(jsonLd.recipeIngredient).toBeUndefined();
     expect(jsonLd.recipeInstructions).toBeUndefined();
+    expect(jsonLd.nutrition).toBeUndefined();
+    expect(jsonLd.recipeCuisine).toBeUndefined();
+    expect(jsonLd.keywords).toBeUndefined();
+    expect(jsonLd.recipeCategory).toBeUndefined();
     // Required identity fields are always present.
     expect(jsonLd.name).toBe("Aunt May's Peach Cobbler");
+  });
+});
+
+describe("buildRecipeJsonLd taxonomy", () => {
+  it("emits recipeCuisine when cuisine is set", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe({ cuisine: "  Italian  " }));
+    expect(jsonLd.recipeCuisine).toBe("Italian");
+  });
+
+  it("omits recipeCuisine for blank/whitespace cuisine", () => {
+    expect(buildRecipeJsonLd(makeRecipe({ cuisine: "   " })).recipeCuisine).toBeUndefined();
+    expect(buildRecipeJsonLd(makeRecipe({ cuisine: null })).recipeCuisine).toBeUndefined();
+  });
+
+  it("emits keywords as a de-duplicated, trimmed, comma-joined list", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        tags: [
+          { tag: { name: "Summer" } },
+          { tag: { name: " Peach " } },
+          { tag: { name: "summer" } },
+          { tag: { name: "  " } },
+          { tag: null },
+        ],
+      }),
+    );
+    expect(jsonLd.keywords).toBe("Summer, Peach");
+  });
+
+  it("resolves recipeCategory from a meal-course tag", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        tags: [{ tag: { name: "Southern" } }, { tag: { name: "dessert" } }],
+      }),
+    );
+    expect(jsonLd.recipeCategory).toBe("Dessert");
+    expect(jsonLd.keywords).toBe("Southern, dessert");
+  });
+
+  it("omits recipeCategory when no tag matches the vocabulary", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ tags: [{ tag: { name: "Heirloom" } }] }),
+    );
+    expect(jsonLd.recipeCategory).toBeUndefined();
+    expect(jsonLd.keywords).toBe("Heirloom");
+  });
+
+  it("omits both when there are no usable tags", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe({ tags: [] }));
+    expect(jsonLd.keywords).toBeUndefined();
+    expect(jsonLd.recipeCategory).toBeUndefined();
+  });
+});
+
+describe("buildRecipeJsonLd video", () => {
+  it("emits a VideoObject when a step has video", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        coverImageUrl: "https://cdn.example.com/cobbler.jpg",
+        steps: [
+          { section: null, instruction: "Mix." },
+          {
+            section: null,
+            instruction: "Bake.",
+            videoUrl: "https://cdn.example.com/bake.mp4",
+          },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toEqual({
+      "@type": "VideoObject",
+      name: "Aunt May's Peach Cobbler",
+      description: "Bubbling fruit under a craggy biscuit top.",
+      contentUrl: "https://cdn.example.com/bake.mp4",
+      thumbnailUrl: "https://cdn.example.com/cobbler.jpg",
+      uploadDate: "2024-06-01T12:00:00.000Z",
+    });
+  });
+
+  it("chooses the first step video when several exist", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        steps: [
+          { section: null, instruction: "One.", videoUrl: "https://v/first.mp4" },
+          { section: null, instruction: "Two.", videoUrl: "https://v/second.mp4" },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toMatchObject({
+      contentUrl: "https://v/first.mp4",
+    });
+  });
+
+  it("falls back to the first step image for the thumbnail", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        coverImageUrl: null,
+        publishedAt: null,
+        steps: [
+          {
+            section: null,
+            instruction: "Bake.",
+            imageUrl: "https://cdn.example.com/step.jpg",
+            videoUrl: "https://cdn.example.com/bake.mp4",
+          },
+        ],
+      }),
+    );
+
+    expect(jsonLd.video).toEqual({
+      "@type": "VideoObject",
+      name: "Aunt May's Peach Cobbler",
+      description: "Bubbling fruit under a craggy biscuit top.",
+      contentUrl: "https://cdn.example.com/bake.mp4",
+      thumbnailUrl: "https://cdn.example.com/step.jpg",
+    });
+  });
+
+  it("omits video when no step has one", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe());
+    expect(jsonLd.video).toBeUndefined();
+  });
+});
+
+describe("buildRecipeJsonLd nutrition", () => {
+  it("emits a NutritionInformation block with formatted units", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        calories: 320,
+        proteinGrams: 8,
+        carbsGrams: 45,
+        fatGrams: 12,
+        saturatedFatGrams: 5,
+        sodiumMg: 400,
+        sugarGrams: 20,
+        fiberGrams: 3,
+      }),
+    );
+
+    expect(jsonLd.nutrition).toEqual({
+      "@type": "NutritionInformation",
+      servingSize: "1 serving",
+      calories: "320 calories",
+      proteinContent: "8 g",
+      carbohydrateContent: "45 g",
+      fatContent: "12 g",
+      saturatedFatContent: "5 g",
+      sugarContent: "20 g",
+      fiberContent: "3 g",
+      sodiumContent: "400 mg",
+    });
+  });
+
+  it("includes only the populated nutrient properties", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ calories: 210, proteinGrams: 6.5 }),
+    );
+
+    expect(jsonLd.nutrition).toEqual({
+      "@type": "NutritionInformation",
+      servingSize: "1 serving",
+      calories: "210 calories",
+      proteinContent: "6.5 g",
+    });
+  });
+
+  it("rounds energy and trims macronutrient decimals", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({ calories: 199.6, fatGrams: 12.04, sodiumMg: 305.5 }),
+    );
+
+    expect(jsonLd.nutrition).toMatchObject({
+      calories: "200 calories",
+      fatContent: "12 g",
+      sodiumContent: "306 mg",
+    });
+  });
+
+  it("omits nutrition entirely when no values are present", () => {
+    const jsonLd = buildRecipeJsonLd(makeRecipe());
+    expect(jsonLd.nutrition).toBeUndefined();
+
+    const zeroedButNull = buildRecipeJsonLd(
+      makeRecipe({ calories: null, proteinGrams: null }),
+    );
+    expect(zeroedButNull.nutrition).toBeUndefined();
+  });
+});
+
+describe("buildBreadcrumbJsonLd", () => {
+  it("builds Home > Recipes > recipe with positions and absolute URLs", () => {
+    const jsonLd = buildBreadcrumbJsonLd(makeRecipe());
+
+    expect(jsonLd["@type"]).toBe("BreadcrumbList");
+    const items = jsonLd.itemListElement as Record<string, unknown>[];
+    expect(items).toHaveLength(3);
+
+    expect(items[0]).toMatchObject({ position: 1, name: "Home" });
+    expect(items[1]).toMatchObject({ position: 2, name: "Recipes" });
+    expect(items[2]).toMatchObject({
+      position: 3,
+      name: "Aunt May's Peach Cobbler",
+    });
+
+    expect(items[0]!.item).toContain("/");
+    expect(items[1]!.item).toContain("/recipes");
+    // Final crumb uses the canonical /recipes/{slug} URL.
+    expect(items[2]!.item).toContain("/recipes/aunt-mays-peach-cobbler");
+    for (const item of items) {
+      expect(item["@type"]).toBe("ListItem");
+      expect(String(item.item)).toMatch(/^https?:\/\//);
+    }
+  });
+
+  it("serializes without a script breakout", () => {
+    const out = serializeJsonLd(
+      buildBreadcrumbJsonLd(makeRecipe({ title: "</script>Cobbler" })),
+    );
+    expect(out).not.toContain("</script>");
   });
 });
 

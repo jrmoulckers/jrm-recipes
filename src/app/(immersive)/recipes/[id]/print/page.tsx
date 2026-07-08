@@ -37,6 +37,7 @@ export default async function PrintPage({
     title: recipe.title,
     description: recipe.description,
     coverImageUrl: recipe.coverImageUrl,
+    visibility: recipe.visibility,
     servings: recipe.servings,
     servingsNoun: recipe.servingsNoun,
     prepMinutes: recipe.prepMinutes,

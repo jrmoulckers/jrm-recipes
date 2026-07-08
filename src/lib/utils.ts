@@ -65,3 +65,19 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 }
+
+/**
+ * First non-empty, trimmed value — the display-name fallback rule (a real name,
+ * else a handle, else a placeholder). Centralizes the empty-string-as-absent
+ * behavior so call sites don't reach for `||` (which our lint config forbids in
+ * favor of `??`, and `??` would wrongly keep a whitespace-only name).
+ */
+export function displayNameFrom(
+  ...candidates: (string | null | undefined)[]
+): string {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}

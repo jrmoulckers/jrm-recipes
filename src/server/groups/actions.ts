@@ -5,11 +5,14 @@ import { z } from "zod";
 
 import { captureServer } from "~/lib/analytics/server";
 import { groupSizeBucket } from "~/lib/analytics/groups";
+import { absoluteUrl } from "~/lib/utils";
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
+  acceptInviteLink,
   addMember,
   createGroup,
+  createInviteLink,
   deleteGroup,
   leaveGroup,
   removeMember,
@@ -19,9 +22,11 @@ import {
 } from "./mutations";
 import {
   addMemberInput,
+  createInviteLinkInput,
   groupInput,
   updateRoleInput,
   type AddMemberInput,
+  type CreateInviteLinkInput,
   type GroupInput,
   type UpdateRoleInput,
 } from "./validation";
@@ -45,6 +50,12 @@ function messageFor(error: unknown): string {
       return "Transfer ownership or delete the group first.";
     case "NOT_FOUND":
       return "We couldn't find that group.";
+    case "REVOKED":
+      return "This invite link has been turned off. Ask for a fresh one.";
+    case "EXPIRED":
+      return "This invite link has expired. Ask for a fresh one.";
+    case "EXHAUSTED":
+      return "This invite link has reached its limit. Ask for a fresh one.";
     case "CONFLICT":
       return "That change couldn't be completed. Please refresh and try again.";
     default:
@@ -248,6 +259,76 @@ export async function transferOwnershipAction(
     const group = await transferOwnership(slug, user, parsed.data.newOwnerUserId);
     revalidateGroup(group.slug);
     return { ok: true, slug: group.slug };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export type InviteLinkResult =
+  | { ok: true; url: string; token: string }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+
+/**
+ * Mint a shareable invite link and hand back its absolute URL (issue #343).
+ * Manager-only (enforced in the mutation). Records a non-PII
+ * `invite_link_created` event attributed to the creator.
+ */
+export async function createInviteLinkAction(
+  slug: string,
+  input: CreateInviteLinkInput,
+): Promise<InviteLinkResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = createInviteLinkInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const user = await requireUser();
+  try {
+    const link = await createInviteLink(slug, user, parsed.data);
+    void captureServer(user.id, "invite_link_created", {
+      groupId: link.groupId,
+      role: parsed.data.role ?? "member",
+    });
+    return { ok: true, url: absoluteUrl(`/join/${link.token}`), token: link.token };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export type AcceptInviteLinkResult =
+  | { ok: true; slug: string; alreadyMember: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Join a group from an invite-link token (issue #343). Used by the `/join`
+ * page's CTA (and its auto-join after auth). Idempotent for existing members;
+ * emits `invite_accepted` only for a genuinely new join.
+ */
+export async function acceptInviteLinkAction(
+  token: string,
+): Promise<AcceptInviteLinkResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = z.string().trim().min(1).safeParse(token);
+  if (!parsed.success) return { ok: false, error: "That invite link is invalid." };
+
+  const user = await requireUser();
+  try {
+    const result = await acceptInviteLink(parsed.data, user);
+    revalidateGroup(result.slug);
+    if (!result.alreadyMember) {
+      void captureServer(user.id, "invite_accepted", {
+        groupId: result.groupId,
+        role: result.role,
+      });
+    }
+    return { ok: true, slug: result.slug, alreadyMember: result.alreadyMember };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

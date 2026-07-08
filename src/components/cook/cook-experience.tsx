@@ -118,6 +118,26 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [goNext, goPrevious, totalSteps]);
 
+  const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  const hasNavigatedRef = React.useRef(false);
+  const [stepAnnouncement, setStepAnnouncement] = React.useState("");
+
+  // On step navigation (arrow keys, Prev/Next, or an overview jump) move focus
+  // to the new step's heading and announce the new position politely. Without
+  // this a screen-reader user hears nothing change and a keyboard user's focus
+  // is stranded on a control that just scrolled out of view. The heading text
+  // carries the instruction; the live region reinforces the position. Skips the
+  // first mount (and any resumed-session restore) so focus isn't yanked on load.
+  React.useEffect(() => {
+    if (totalSteps === 0) return;
+    if (!hasNavigatedRef.current) {
+      hasNavigatedRef.current = true;
+      return;
+    }
+    stepHeadingRef.current?.focus();
+    setStepAnnouncement(`Step ${stepIndex + 1} of ${totalSteps}`);
+  }, [stepIndex, totalSteps]);
+
   if (!firstStep) {
     return (
       <EmptyCookExperience
@@ -151,6 +171,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       />
 
       <CookAllergenBanner recipe={recipe} />
+
+      <p className="sr-only" role="status" aria-live="polite">
+        {stepAnnouncement}
+      </p>
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section
@@ -189,7 +213,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               </p>
               <h1
                 id="current-step-title"
-                className="max-w-4xl font-display text-3xl font-semibold leading-tight tracking-tight text-pretty sm:text-4xl lg:text-5xl"
+                ref={stepHeadingRef}
+                tabIndex={-1}
+                className="max-w-4xl text-pretty font-display text-3xl font-semibold leading-tight tracking-tight focus:outline-none sm:text-4xl lg:text-5xl"
               >
                 {currentStep.instruction}
               </h1>
@@ -433,6 +459,7 @@ function StepTimerCard({
         className="mt-5 rounded-2xl bg-muted px-4 py-5 text-center"
         role="timer"
         aria-live="off"
+        aria-label={`Step timer, ${formatCountdown(timer.remaining)} remaining`}
       >
         <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
           {formatCountdown(timer.remaining)}
@@ -591,6 +618,10 @@ function ActiveTimersPanel({
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-left"
                 onClick={() => onSelect(stepIndex)}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`Jump to step ${stepIndex + 1}: ${
+                  step.section ?? step.instruction
+                } — ${formatCountdown(timer.remaining)} remaining`}
               >
                 <span className="min-w-0">
                   <span className="block font-medium">Step {stepIndex + 1}</span>
@@ -680,6 +711,10 @@ function OverviewDialog({
               <li key={step.id}>
                 <button
                   type="button"
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={`Go to step ${index + 1}: ${
+                    step.section ?? step.instruction
+                  }`}
                   className={cn(
                     "flex w-full gap-4 rounded-xl p-3 text-left transition-colors hover:bg-muted",
                     isCurrent && "bg-primary/10 text-foreground",

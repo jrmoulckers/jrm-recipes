@@ -8,11 +8,18 @@ import {
   A11Y_MANAGED_ATTRS,
   DEFAULT_A11Y,
   a11yAttributes,
+  resolveTriState,
   serializeA11y,
 } from "~/config/a11y";
 
 type A11yContextValue = {
   prefs: A11yPrefs;
+  /**
+   * Effective on/off after resolving tri-state prefs against the live OS
+   * signals (`prefers-reduced-motion` / `prefers-contrast`). Use this to render
+   * toggle state so the panel reflects reality, not just the stored value.
+   */
+  effective: { motion: boolean; contrast: boolean };
   /** Merge a partial update into the current preferences. */
   update: (patch: Partial<A11yPrefs>) => void;
   /** Restore every preference to its default. */
@@ -22,6 +29,19 @@ type A11yContextValue = {
 const A11yContext = React.createContext<A11yContextValue | null>(null);
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
+
+const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const CONTRAST_QUERY = "(prefers-contrast: more)";
+
+function readSystem(): { motion: boolean; contrast: boolean } {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return { motion: false, contrast: false };
+  }
+  return {
+    motion: window.matchMedia(MOTION_QUERY).matches,
+    contrast: window.matchMedia(CONTRAST_QUERY).matches,
+  };
+}
 
 function persist(prefs: A11yPrefs) {
   const value = serializeA11y(prefs);
@@ -54,6 +74,25 @@ export function A11yProvider({
     initialPrefs ?? DEFAULT_A11Y,
   );
 
+  // OS signals. Seeded false for SSR/first paint (matchMedia is client-only),
+  // then hydrated + kept live via listeners. Only read where no explicit pref
+  // exists, so this never fights a user choice.
+  const [system, setSystem] = React.useState({ motion: false, contrast: false });
+
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const motionMq = window.matchMedia(MOTION_QUERY);
+    const contrastMq = window.matchMedia(CONTRAST_QUERY);
+    const sync = () => setSystem(readSystem());
+    sync();
+    motionMq.addEventListener("change", sync);
+    contrastMq.addEventListener("change", sync);
+    return () => {
+      motionMq.removeEventListener("change", sync);
+      contrastMq.removeEventListener("change", sync);
+    };
+  }, []);
+
   // Keep <html> attributes in sync with state (covers SSR mismatch + updates).
   React.useEffect(() => {
     applyAttributes(prefs);
@@ -74,9 +113,17 @@ export function A11yProvider({
     });
   }, []);
 
+  const effective = React.useMemo(
+    () => ({
+      motion: resolveTriState(prefs.motion, system.motion),
+      contrast: resolveTriState(prefs.contrast, system.contrast),
+    }),
+    [prefs.motion, prefs.contrast, system.motion, system.contrast],
+  );
+
   const value = React.useMemo<A11yContextValue>(
-    () => ({ prefs, update, reset }),
-    [prefs, update, reset],
+    () => ({ prefs, effective, update, reset }),
+    [prefs, effective, update, reset],
   );
 
   return <A11yContext.Provider value={value}>{children}</A11yContext.Provider>;
