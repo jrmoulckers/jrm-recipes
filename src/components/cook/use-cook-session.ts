@@ -19,6 +19,7 @@ import { track } from "~/lib/analytics";
 import {
   beginCookSession,
   endCookSession,
+  markFirstCookStarted,
   type WritableStorage,
 } from "~/lib/analytics/cook-tracking";
 
@@ -172,7 +173,12 @@ export function useCookSession(recipe: CookRecipe) {
     if (!loaded || startedRef.current) return;
     startedRef.current = true;
     const { isNew } = beginCookSession(cookStorage(), recipe.id);
-    if (isNew) track("cook_started", { recipeId: recipe.id, totalSteps });
+    if (isNew) {
+      track("cook_started", { recipeId: recipe.id, totalSteps });
+      // Activation funnel (#328): the user's first-ever cook on this device.
+      const { isFirstEver } = markFirstCookStarted(cookStorage());
+      if (isFirstEver) track("first_cook_started", { recipeId: recipe.id });
+    }
   }, [loaded, recipe.id, totalSteps]);
 
   // cook_step_advanced / cook_completed: driven off step-index changes only, so

@@ -11,6 +11,7 @@ import {
 } from "@clerk/nextjs";
 
 import { Button } from "~/components/ui/button";
+import { track } from "~/lib/analytics";
 import {
   Avatar,
   AvatarFallback,
@@ -67,7 +68,9 @@ export function AuthControls({
             </Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <Button size="sm">Get started</Button>
+            <Button size="sm" onClick={() => track("signup_started", {})}>
+              Get started
+            </Button>
           </SignUpButton>
         </div>
       </SignedOut>
@@ -90,7 +93,11 @@ export function StartCookingButton({
     return (
       <SignedOut>
         <SignUpButton mode="modal">
-          <Button size="lg" className={className}>
+          <Button
+            size="lg"
+            className={className}
+            onClick={() => track("signup_started", {})}
+          >
             Start your cookbook
           </Button>
         </SignUpButton>

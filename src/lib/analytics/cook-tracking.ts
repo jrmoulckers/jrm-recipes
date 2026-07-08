@@ -12,11 +12,40 @@
 
 export const COOK_TRACK_PREFIX = "heirloom.cook.track.";
 
+/** Device-local marker recording that the user has ever started a cook (#328). */
+export const FIRST_COOK_MARKER = "heirloom.cook.first";
+
 type ReadableStorage = Pick<Storage, "getItem">;
 type WritableStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export function cookTrackKey(recipeId: string): string {
   return `${COOK_TRACK_PREFIX}${recipeId}`;
+}
+
+/**
+ * Record that the user has started a cook on this device and report whether it
+ * was their first ever (issue #328's `first_cook_started` activation step).
+ *
+ * The marker is device-local (localStorage), so it's a privacy-friendly
+ * *approximation* of a person-level first cook — good enough to drive the
+ * activation funnel without a server round-trip or storing anything per-user.
+ * Returns `isFirstEver: false` when storage is unavailable or a read/write
+ * fails, so a private-mode session never falsely claims a first cook.
+ */
+export function markFirstCookStarted(
+  storage: WritableStorage | null | undefined,
+  now: number = Date.now(),
+): { isFirstEver: boolean } {
+  if (!storage) return { isFirstEver: false };
+  try {
+    if (storage.getItem(FIRST_COOK_MARKER) != null) {
+      return { isFirstEver: false };
+    }
+    storage.setItem(FIRST_COOK_MARKER, String(now));
+    return { isFirstEver: true };
+  } catch {
+    return { isFirstEver: false };
+  }
 }
 
 /**

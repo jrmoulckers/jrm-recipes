@@ -13,7 +13,7 @@ import {
 import { DEV_USER } from "~/server/auth/dev-user";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { buildIdentityTraits } from "~/lib/analytics/identity";
-import { identifyServer } from "~/lib/analytics/server";
+import { captureServer, identifyServer } from "~/lib/analytics/server";
 
 /**
  * Heirloom auth module.
@@ -119,6 +119,14 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
     })
     .onConflictDoNothing({ target: users.clerkId })
     .returning();
+
+  // First time the app has seen this Clerk account — the sign-up funnel's
+  // terminal step (#328). Guarded by the insert actually creating a row so a
+  // race that hits onConflictDoNothing doesn't double-count; attributed to the
+  // internal user id (never PII) so it stitches to identify.
+  if (created) {
+    void captureServer(created.id, "signup_completed", {});
+  }
 
   return (
     created ??

@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from "~/server/db";
+import { recipes } from "~/server/db/schema";
+import { eq } from "drizzle-orm";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
@@ -68,6 +71,17 @@ export async function createRecipeAction(
       visibility: parsed.data.visibility,
       source: "manual",
     });
+    // Activation funnel (#328): emit first_recipe_created exactly once, when the
+    // author's recipe count first reaches 1. Gated on analytics being configured
+    // so the default path skips the extra count query.
+    if (isAnalyticsConfigured()) {
+      const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
+      if (authored === 1) {
+        void captureServer(user.id, "first_recipe_created", {
+          recipeId: recipe.id,
+        });
+      }
+    }
     revalidatePath("/recipes");
     revalidatePath("/");
     revalidatePath(recipeDetailPath(recipe));
