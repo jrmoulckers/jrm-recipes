@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarDays,
   ChefHat,
+  Compass,
   CookingPot,
   Heart,
   Home,
@@ -25,6 +26,12 @@ export const primaryNav: NavItem[] = [
     label: "Recipes",
     icon: BookOpen,
     match: (p) => p.startsWith("/recipes"),
+  },
+  {
+    href: "/discover",
+    label: "Discover",
+    icon: Compass,
+    match: (p) => p.startsWith("/discover"),
   },
   {
     href: "/collections",

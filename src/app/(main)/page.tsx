@@ -4,6 +4,7 @@ import {
   BookHeart,
   ChefHat,
   Clock3,
+  Compass,
   Import,
   Palette,
   Printer,
@@ -103,7 +104,9 @@ export default function HomePage() {
               </Link>
             </Button>
             <Button asChild size="xl" variant="outline">
-              <Link href="/recipes">Browse recipes</Link>
+              <Link href="/discover">
+                <Compass /> Discover recipes
+              </Link>
             </Button>
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">

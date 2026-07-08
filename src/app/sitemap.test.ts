@@ -38,7 +38,7 @@ describe("sitemap", () => {
     const cobbler = entries.find((e) => e.url.endsWith("/recipes/peach-cobbler"));
     expect(cobbler).toBeDefined();
     expect(cobbler!.lastModified).toEqual(updatedAt);
-    expect(entries).toHaveLength(4);
+    expect(entries).toHaveLength(5);
   });
 
   it("includes public cook profiles", async () => {
@@ -54,6 +54,12 @@ describe("sitemap", () => {
   it("emits only static routes when there is no public content", async () => {
     mockList.mockResolvedValue([]);
     const entries = await sitemap();
-    expect(entries).toHaveLength(2);
+    expect(entries).toHaveLength(3);
+  });
+
+  it("includes the discover surface among the static routes", async () => {
+    mockList.mockResolvedValue([]);
+    const entries = await sitemap();
+    expect(entries.some((e) => e.url.endsWith("/discover"))).toBe(true);
   });
 });

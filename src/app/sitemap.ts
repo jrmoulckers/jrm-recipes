@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
+    { url: absoluteUrl("/discover"), changeFrequency: "daily", priority: 0.9 },
     { url: absoluteUrl("/recipes"), changeFrequency: "daily", priority: 0.8 },
   ];
 
