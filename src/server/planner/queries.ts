@@ -44,6 +44,36 @@ export type PlannerEntry = Awaited<
   ReturnType<typeof listEntriesInRange>
 >[number];
 
+/**
+ * Entries planned for a single date, each with enough recipe text (step
+ * instructions + ingredient items/notes) to run the prep-ahead heuristic
+ * (#388). Kept lean — no media, no scaling columns — since it only feeds a
+ * keyword scan. Guarded so the page renders with no database configured.
+ */
+export async function listEntriesWithPrepText(userId: string, date: string) {
+  if (!isDbConfigured()) return [];
+  return db.query.mealPlanEntries.findMany({
+    where: and(
+      eq(mealPlanEntries.userId, userId),
+      eq(mealPlanEntries.date, date),
+    ),
+    orderBy: [asc(mealPlanEntries.position), asc(mealPlanEntries.createdAt)],
+    with: {
+      recipe: {
+        columns: { id: true, slug: true, title: true },
+        with: {
+          ingredients: { columns: { item: true, note: true } },
+          steps: { columns: { instruction: true } },
+        },
+      },
+    },
+  });
+}
+
+export type PrepTextEntry = Awaited<
+  ReturnType<typeof listEntriesWithPrepText>
+>[number];
+
 async function viewerGroupIds(userId: string): Promise<string[]> {
   const rows = await db.query.groupMembers.findMany({
     where: eq(groupMembers.userId, userId),

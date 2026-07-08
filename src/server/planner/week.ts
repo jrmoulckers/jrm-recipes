@@ -34,6 +34,11 @@ export function todayParam(): string {
   return toDateParam(new Date());
 }
 
+/** Tomorrow as a `yyyy-MM-dd` string — used by the prep-ahead nudge (#388). */
+export function tomorrowParam(): string {
+  return toDateParam(addDays(new Date(), 1));
+}
+
 /**
  * Parse a `yyyy-MM-dd` string into a local Date, falling back to today when the
  * value is missing or malformed (e.g. a hand-edited URL).
