@@ -47,7 +47,7 @@ import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
-import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
+import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
@@ -191,8 +191,9 @@ export default async function RecipePage({
 
   // schema.org structured data — public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
-  const jsonLd =
-    recipe.visibility === "public" ? buildRecipeJsonLd(recipe) : null;
+  const isPublic = recipe.visibility === "public";
+  const jsonLd = isPublic ? buildRecipeJsonLd(recipe) : null;
+  const breadcrumbJsonLd = isPublic ? buildBreadcrumbJsonLd(recipe) : null;
 
   const meta = [
     recipe.totalMinutes != null && {
@@ -216,6 +217,14 @@ export default async function RecipePage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(breadcrumbJsonLd),
+          }}
         />
       )}
       {/* Hero */}

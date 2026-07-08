@@ -355,6 +355,33 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
 }
 
 /**
+ * Build a schema.org `BreadcrumbList` for a public recipe page (issue #315):
+ * Home › Recipes › {recipe}. Each item carries an absolute `item` URL (via
+ * `absoluteUrl`) so Google can render a breadcrumb trail in the SERP. The final
+ * crumb uses the recipe's canonical `/recipes/{slug}` URL. Rendered in a second
+ * JSON-LD `<script>` gated to public recipes, exactly like the Recipe JSON-LD.
+ */
+export function buildBreadcrumbJsonLd(
+  recipe: Pick<SeoRecipe, "slug" | "title">,
+): Record<string, unknown> {
+  const crumbs: { name: string; path: string }[] = [
+    { name: "Home", path: "/" },
+    { name: "Recipes", path: "/recipes" },
+    { name: recipe.title, path: `/recipes/${recipe.slug}` },
+  ];
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: absoluteUrl(crumb.path),
+    })),
+  };
+}
+
+/**
  * Serialize a JSON-LD object for embedding in a `<script>` tag, escaping `<`
  * so a value can never break out of the element (`</script>` injection).
  */

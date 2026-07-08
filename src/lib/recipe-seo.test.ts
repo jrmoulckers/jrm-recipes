@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildRecipeJsonLd,
+  buildBreadcrumbJsonLd,
   minutesToIsoDuration,
   serializeJsonLd,
   type SeoRecipe,
@@ -421,6 +422,39 @@ describe("buildRecipeJsonLd nutrition", () => {
       makeRecipe({ calories: null, proteinGrams: null }),
     );
     expect(zeroedButNull.nutrition).toBeUndefined();
+  });
+});
+
+describe("buildBreadcrumbJsonLd", () => {
+  it("builds Home > Recipes > recipe with positions and absolute URLs", () => {
+    const jsonLd = buildBreadcrumbJsonLd(makeRecipe());
+
+    expect(jsonLd["@type"]).toBe("BreadcrumbList");
+    const items = jsonLd.itemListElement as Record<string, unknown>[];
+    expect(items).toHaveLength(3);
+
+    expect(items[0]).toMatchObject({ position: 1, name: "Home" });
+    expect(items[1]).toMatchObject({ position: 2, name: "Recipes" });
+    expect(items[2]).toMatchObject({
+      position: 3,
+      name: "Aunt May's Peach Cobbler",
+    });
+
+    expect(items[0]!.item).toContain("/");
+    expect(items[1]!.item).toContain("/recipes");
+    // Final crumb uses the canonical /recipes/{slug} URL.
+    expect(items[2]!.item).toContain("/recipes/aunt-mays-peach-cobbler");
+    for (const item of items) {
+      expect(item["@type"]).toBe("ListItem");
+      expect(String(item.item)).toMatch(/^https?:\/\//);
+    }
+  });
+
+  it("serializes without a script breakout", () => {
+    const out = serializeJsonLd(
+      buildBreadcrumbJsonLd(makeRecipe({ title: "</script>Cobbler" })),
+    );
+    expect(out).not.toContain("</script>");
   });
 });
 
