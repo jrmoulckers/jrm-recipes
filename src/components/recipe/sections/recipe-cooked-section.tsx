@@ -1,7 +1,13 @@
 import { isDbConfigured } from "~/server/db";
-import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
+import {
+  getCookCount,
+  getFamilyCooks,
+  getRecipeCookLog,
+  getShareableGroupForRecipe,
+} from "~/server/cooklog/queries";
 import { getReactionsForTargets } from "~/server/engagement/reactions";
 import { CookLogSection } from "~/components/cooklog/cook-log-section";
+import { FamilyCooksStrip } from "~/components/cooklog/family-cooks-strip";
 
 /**
  * "Cooked it" tab content (#176). Fetches the cook log and count in parallel so
@@ -20,9 +26,11 @@ export async function RecipeCookedSection({
   userId: string | null;
   canLog: boolean;
 }) {
-  const [entries, cookCount] = await Promise.all([
+  const [entries, cookCount, shareGroup, familyCooks] = await Promise.all([
     getRecipeCookLog(recipeId, userId),
     getCookCount(recipeId, userId),
+    getShareableGroupForRecipe(recipeId, userId),
+    getFamilyCooks(recipeId, userId),
   ]);
 
   // Reaction tallies for every cook-log entry in one query (#342).
@@ -34,7 +42,8 @@ export async function RecipeCookedSection({
   const reactionsByEntry = Object.fromEntries(reactionMap);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <FamilyCooksStrip cooks={familyCooks} />
       <CookLogSection
         recipeId={recipeId}
         recipeSlug={recipeSlug}
@@ -44,6 +53,7 @@ export async function RecipeCookedSection({
         canLog={canLog}
         canReact={Boolean(userId)}
         reactionsByEntry={reactionsByEntry}
+        shareGroup={shareGroup}
         dbConfigured={isDbConfigured()}
       />
     </div>

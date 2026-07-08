@@ -57,6 +57,8 @@ export const logCookInput = z.object({
   photoUrl: optionalPhotoUrl,
   servingsMade: optionalServings,
   cookedAt: optionalCookedAt,
+  /** Share this cook to the recipe's family group activity feed (#352). */
+  shareWithFamily: z.boolean().optional(),
 });
 
 export const deleteCookLogInput = z.object({

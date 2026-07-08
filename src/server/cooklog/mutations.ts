@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
   cookLogEntries,
+  groupMembers,
   recipes,
   type CookLogEntry,
   type User,
@@ -21,9 +22,24 @@ export async function createCookLog(
   return db.transaction(async (tx: Tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
-      columns: { id: true },
+      columns: { id: true, groupId: true },
     });
     if (!recipe) throw new Error("NOT_FOUND");
+
+    // Resolve the group to share to (#352): only when the cook opts in, the
+    // recipe belongs to a group, and the cook is actually a member of it. This
+    // keeps a personal cook private unless deliberately shared to their family.
+    let sharedToGroupId: string | null = null;
+    if (input.shareWithFamily && recipe.groupId) {
+      const membership = await tx.query.groupMembers.findFirst({
+        where: and(
+          eq(groupMembers.groupId, recipe.groupId),
+          eq(groupMembers.userId, user.id),
+        ),
+        columns: { id: true },
+      });
+      if (membership) sharedToGroupId = recipe.groupId;
+    }
 
     const [created] = await tx
       .insert(cookLogEntries)
@@ -34,6 +50,7 @@ export async function createCookLog(
         note: input.note ?? null,
         photoUrl: input.photoUrl ?? null,
         servingsMade: input.servingsMade ?? null,
+        sharedToGroupId,
       })
       .returning();
 
