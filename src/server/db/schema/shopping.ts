@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgTable,
@@ -49,7 +50,17 @@ export const shoppingListItems = pgTable(
     position: integer().notNull().default(0),
     ...timestamps(),
   },
-  (t) => [index("shopping_list_items_list_idx").on(t.listId, t.position)],
+  (t) => [
+    index("shopping_list_items_list_idx").on(t.listId, t.position),
+    // Non-negative quantities with a sane range (upper bound >= lower bound),
+    // matching recipe_ingredients so aggregated lines stay well-formed.
+    check("shopping_list_items_quantity_check", sql`${t.quantity} >= 0`),
+    check("shopping_list_items_quantity_max_check", sql`${t.quantityMax} >= 0`),
+    check(
+      "shopping_list_items_quantity_range_check",
+      sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
+    ),
+  ],
 );
 
 export const shoppingListsRelations = relations(

@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgEnum,
@@ -97,6 +98,13 @@ export const recipes = pgTable(
     // non-unique index is needed.
     unique("recipes_slug_uq").on(t.slug),
     index("recipes_forked_from_idx").on(t.forkedFromId),
+    // Non-negative time/serving invariants mirroring Zod (`recipeInput` in
+    // src/server/recipes/validation.ts: servings min 1, minutes min 0). These
+    // columns are nullable, so a NULL value passes the check by SQL semantics.
+    check("recipes_servings_check", sql`${t.servings} >= 1`),
+    check("recipes_prep_minutes_check", sql`${t.prepMinutes} >= 0`),
+    check("recipes_cook_minutes_check", sql`${t.cookMinutes} >= 0`),
+    check("recipes_total_minutes_check", sql`${t.totalMinutes} >= 0`),
   ],
 );
 
@@ -117,7 +125,17 @@ export const recipeIngredients = pgTable(
     note: varchar({ length: 300 }),
     optional: boolean().notNull().default(false),
   },
-  (t) => [index("recipe_ingredients_recipe_idx").on(t.recipeId, t.position)],
+  (t) => [
+    index("recipe_ingredients_recipe_idx").on(t.recipeId, t.position),
+    // Non-negative quantities; a range's upper bound can't fall below its lower
+    // bound. Mirrors `ingredientInput` (min 0) in src/server/recipes/validation.ts.
+    check("recipe_ingredients_quantity_check", sql`${t.quantity} >= 0`),
+    check("recipe_ingredients_quantity_max_check", sql`${t.quantityMax} >= 0`),
+    check(
+      "recipe_ingredients_quantity_range_check",
+      sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
+    ),
+  ],
 );
 
 /** One instruction step, optionally timed and with its own media. */
@@ -137,7 +155,11 @@ export const recipeSteps = pgTable(
     // Techniques referenced in this step (Phase 3 "learn to cook" tutor).
     techniques: text().array(),
   },
-  (t) => [index("recipe_steps_recipe_idx").on(t.recipeId, t.position)],
+  (t) => [
+    index("recipe_steps_recipe_idx").on(t.recipeId, t.position),
+    // A step timer can't run negative. Mirrors `stepInput.timerSeconds` (min 0).
+    check("recipe_steps_timer_seconds_check", sql`${t.timerSeconds} >= 0`),
+  ],
 );
 
 /**
