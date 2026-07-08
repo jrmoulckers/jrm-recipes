@@ -4,7 +4,8 @@
     "recipes": "Recetas",
     "family": "Familia",
     "create": "Crear",
-    "pricing": "Precios"
+    "pricing": "Precios",
+    "billing": "Facturación"
   },
   "cook": {
     "timer": {

@@ -4,7 +4,8 @@
     "recipes": "الوصفات",
     "family": "العائلة",
     "create": "إنشاء",
-    "pricing": "الأسعار"
+    "pricing": "الأسعار",
+    "billing": "الفوترة"
   },
   "cook": {
     "timer": {

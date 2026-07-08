@@ -76,14 +76,15 @@ export const primaryNav: NavItem[] = [
 export type FooterNavItem = {
   href: Route;
   /** Key into the `footer` message namespace (see src/messages/*.json). */
-  labelKey: "pricing";
+  labelKey: "pricing" | "billing";
 };
 
 /**
- * Secondary links shown in the footer (issue #312). Kept here so the pricing
- * surface has a single source of truth for its route; labels stay localized via
- * the `footer` message namespace.
+ * Secondary links shown in the footer (issues #312 / #319). Kept here so the
+ * pricing and billing surfaces have a single source of truth for their routes;
+ * labels stay localized via the `footer` message namespace.
  */
 export const footerNav: FooterNavItem[] = [
   { href: "/pricing", labelKey: "pricing" },
+  { href: "/settings/billing", labelKey: "billing" },
 ];

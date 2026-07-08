@@ -207,3 +207,86 @@ export async function getLimitStatus(
 
   return { limit, used, remaining, ratio, state };
 }
+
+/** The active subscription's user-facing state, for the billing surface (#319). */
+export interface SubscriptionSnapshot {
+  planId: PlanId;
+  status: SubscriptionStatus;
+  /** Next renewal boundary; `null` when Stripe hasn't reported one yet. */
+  currentPeriodEnd: Date | null;
+  /** Trial end while `status === "trialing"`; `null` otherwise. */
+  trialEnd: Date | null;
+  /** True when the plan is set to lapse at period end (self-serve cancel). */
+  cancelAtPeriodEnd: boolean;
+}
+
+/**
+ * Resolve the caller's active subscription details for the billing settings
+ * surface (#319). Mirrors {@link getEffectivePlanId}'s owner resolution — a
+ * personal customer OR any group the user belongs to — but returns the winning
+ * row's full state (status, renewal/trial dates, cancel flag) rather than just
+ * the plan id. Returns `null` for the Free case (unconfigured DB, no billing
+ * customer, or no entitling subscription), which the UI renders explicitly.
+ */
+export async function getSubscriptionSnapshot(
+  user: User,
+  now: Date = new Date(),
+): Promise<SubscriptionSnapshot | null> {
+  if (!isDbConfigured()) return null;
+
+  const memberships = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, user.id),
+    columns: { groupId: true },
+  });
+  const groupIds = memberships.map((m) => m.groupId);
+
+  const ownerConds = [eq(billingCustomers.userId, user.id)];
+  if (groupIds.length > 0) {
+    ownerConds.push(inArray(billingCustomers.groupId, groupIds));
+  }
+  const customers = await db.query.billingCustomers.findMany({
+    where: or(...ownerConds),
+    columns: { id: true },
+  });
+  if (customers.length === 0) return null;
+
+  const subs = await db.query.subscriptions.findMany({
+    where: inArray(
+      subscriptions.customerId,
+      customers.map((c) => c.id),
+    ),
+    columns: {
+      planId: true,
+      status: true,
+      currentPeriodEnd: true,
+      trialEnd: true,
+      cancelAtPeriodEnd: true,
+    },
+  });
+
+  const active = subs.filter(
+    (s) =>
+      ENTITLED_STATUSES.includes(s.status) &&
+      (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
+  );
+  if (active.length === 0) return null;
+
+  // Prefer a paid plan, then the furthest renewal, so the surface reflects the
+  // subscription that actually grants the user's entitlements.
+  const best = active.reduce((winner, s) => {
+    const winnerPaid = winner.planId !== "free";
+    const candidatePaid = s.planId !== "free";
+    if (candidatePaid !== winnerPaid) return candidatePaid ? s : winner;
+    const winnerEnd = winner.currentPeriodEnd?.getTime() ?? 0;
+    const candidateEnd = s.currentPeriodEnd?.getTime() ?? 0;
+    return candidateEnd > winnerEnd ? s : winner;
+  });
+
+  return {
+    planId: best.planId,
+    status: best.status,
+    currentPeriodEnd: best.currentPeriodEnd,
+    trialEnd: best.trialEnd,
+    cancelAtPeriodEnd: best.cancelAtPeriodEnd,
+  };
+}
