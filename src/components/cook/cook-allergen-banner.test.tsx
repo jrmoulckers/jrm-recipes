@@ -30,6 +30,7 @@ function makeRecipe(items: string[]): CookRecipe {
     prepMinutes: null,
     cookMinutes: null,
     totalMinutes: null,
+    householdId: null,
     notes: null,
     nutrition: {},
     ingredients: items.map((item, i) => ingredient(item, `i${i}`)),
