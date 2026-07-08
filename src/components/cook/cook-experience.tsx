@@ -69,6 +69,7 @@ import { TechniqueChips } from "./technique-chips";
 import { KidSafetyCallout } from "./kid-safety-callout";
 import { PreCookChecklist } from "./pre-cook-checklist";
 import { CookCompletion } from "./cook-completion";
+import { CookCompletionFeedback } from "./cook-completion-feedback";
 import { KidsBadgeReward } from "./kids-badge-reward";
 import { awardForCompletion, type KidBadge } from "./kids-rewards";
 import { OfflineReadyBadge } from "./offline-ready-badge";
@@ -86,7 +87,13 @@ import { useOneHandedNav } from "./use-one-handed-nav";
 import { useHousehold } from "~/components/household/household-provider";
 import { useThemeBehavior } from "~/components/theme/theme-provider";
 
-export function CookExperience({ recipe }: { recipe: CookRecipe }) {
+export function CookExperience({
+  recipe,
+  feedback,
+}: {
+  recipe: CookRecipe;
+  feedback?: { canRate: boolean; isOwner: boolean };
+}) {
   const wakeLockStatus = useScreenWakeLock();
   const speech = useSpeech();
   const household = useHousehold();
@@ -622,6 +629,15 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           onDone={finishAndLeave}
         >
           {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
+          {feedback ? (
+            <CookCompletionFeedback
+              recipeId={recipe.id}
+              recipeSlug={recipe.slug}
+              canRate={feedback.canRate}
+              isOwner={feedback.isOwner}
+              reducedMotion={reducedMotion}
+            />
+          ) : null}
         </CookCompletion>
       )}
     </div>
