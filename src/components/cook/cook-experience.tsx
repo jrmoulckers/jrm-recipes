@@ -107,6 +107,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
   const canGoPrevious = stepIndex > 0;
   const canGoNext = stepIndex < totalSteps - 1;
+  const reducedMotion = useReducedMotion();
 
   const navPrevious = React.useCallback(() => {
     if (stepIndex <= 0) return;
@@ -123,6 +124,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const oneHandedNav = useOneHandedNav({
     onNext: navNext,
     onPrevious: navPrevious,
+    canNext: canGoNext,
+    canPrevious: canGoPrevious,
+    reduced: reducedMotion,
   });
 
   const ingredientControls = React.useMemo<IngredientsPanelControls>(
@@ -138,7 +142,6 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
-  const reducedMotion = useReducedMotion();
   const [celebrating, setCelebrating] = React.useState(false);
   const celebrationTimeoutRef = React.useRef<number | null>(null);
 
@@ -371,11 +374,15 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           key={currentStep.id}
           aria-labelledby="current-step-title"
           onClick={oneHandedNav.onClick}
-          onTouchStart={oneHandedNav.onTouchStart}
-          onTouchEnd={oneHandedNav.onTouchEnd}
+          onPointerDown={oneHandedNav.onPointerDown}
+          onPointerMove={oneHandedNav.onPointerMove}
+          onPointerUp={oneHandedNav.onPointerUp}
+          onPointerCancel={oneHandedNav.onPointerCancel}
+          style={oneHandedNav.dragStyle}
           className={cn(
-            "relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg",
+            "relative min-w-0 touch-pan-y overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg",
             stepEnterAnimation,
+            oneHandedNav.dragging && "cursor-grabbing select-none",
           )}
         >
           {canGoPrevious && (
