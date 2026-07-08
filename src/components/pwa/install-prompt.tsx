@@ -39,6 +39,22 @@ function isStandalone() {
   );
 }
 
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+/** Tabbable elements inside the dialog, in DOM order, for the focus trap. */
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter((el) => el.tabIndex !== -1 && !el.hasAttribute("disabled"));
+}
+
 /**
  * Whether to surface the iOS "Add to Home Screen" tip. iOS Safari never fires
  * `beforeinstallprompt`, so it's the one platform where we must nudge manually.
@@ -65,11 +81,21 @@ export function shouldShowIosInstallTip(
  * then offers a friendly install nudge. Dismissible (remembered for two weeks),
  * hidden once installed or running standalone. Mounted in the main app chrome
  * only — never in immersive cook/print views.
+ *
+ * Accessibility: it announces `role="dialog"` (`aria-modal="true"`) and honours
+ * that contract. On open it captures the previously focused element and moves
+ * focus to the primary action; `Tab`/`Shift+Tab` are trapped inside; `Escape`
+ * dismisses from anywhere; and focus is restored to the prior element on close
+ * (WCAG 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 4.1.2).
  */
 export function InstallPrompt() {
   const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [variant, setVariant] = React.useState<"prompt" | "ios" | null>(null);
   const [entered, setEntered] = React.useState(false);
+
+  const labelId = React.useId();
+  const descriptionId = React.useId();
 
   React.useEffect(() => {
     if (isStandalone() || recentlyDismissed()) return;
@@ -125,16 +151,71 @@ export function InstallPrompt() {
     window.setTimeout(() => setVariant(null), 200);
   }, []);
 
+  // Full dialog focus management, active only while open. On open we remember
+  // the previously focused element and move focus to the primary action; Tab is
+  // trapped within the dialog; Escape (bound at the document, so it works from
+  // anywhere — not just after tabbing in) dismisses; and on close we restore
+  // focus to where it was. The listener is added on open and removed on close,
+  // so there's no leak, no double-registration, and Escape isn't swallowed when
+  // the prompt is closed.
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!variant || !container) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Move focus to the primary action (Install, or Dismiss on iOS).
+    (getFocusable(container)[0] ?? container).focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dismiss();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = getFocusable(container);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        container.focus();
+        return;
+      }
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !container.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !container.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      // Restore focus to whatever the user was on before the dialog opened.
+      previouslyFocused?.focus?.();
+    };
+  }, [variant, dismiss]);
+
   if (!variant) return null;
 
   const isIos = variant === "ios";
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
-      aria-label={`Install ${brand.name}`}
+      aria-modal="true"
+      aria-labelledby={labelId}
+      aria-describedby={descriptionId}
+      tabIndex={-1}
       className={cn(
-        "no-print fixed inset-x-4 z-40 mx-auto max-w-sm",
+        "no-print fixed inset-x-4 z-40 mx-auto max-w-sm focus:outline-none",
         "bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6",
       )}
     >
@@ -151,18 +232,24 @@ export function InstallPrompt() {
           <LogoMark className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight">
+          <p id={labelId} className="text-sm font-semibold leading-tight">
             Install {brand.name}
           </p>
           {isIos ? (
-            <p className="text-xs leading-snug text-muted-foreground">
+            <p
+              id={descriptionId}
+              className="text-xs leading-snug text-muted-foreground"
+            >
               Tap{" "}
               <Share className="inline-block size-3.5 -translate-y-px" aria-hidden />
               <span className="sr-only">Share</span> then &ldquo;Add to Home
               Screen&rdquo;.
             </p>
           ) : (
-            <p className="truncate text-xs text-muted-foreground">
+            <p
+              id={descriptionId}
+              className="truncate text-xs text-muted-foreground"
+            >
               Add to your home screen for one-tap cook mode.
             </p>
           )}
