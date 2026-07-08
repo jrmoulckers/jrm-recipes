@@ -6,6 +6,8 @@ import "./src/env.js";
 
 import withSerwistInit from "@serwist/next";
 
+import { imageConfig } from "./src/config/next-image.js";
+
 // Stable per deploy: use the commit SHA when a platform provides it (Vercel),
 // otherwise stamp the build time. Threaded into the offline page's precache
 // revision so a new deploy invalidates the cached fallback.
@@ -34,12 +36,7 @@ const config = {
   reactStrictMode: true,
   // PostHog's proxied endpoints are sensitive to trailing-slash redirects.
   skipTrailingSlashRedirect: true,
-  images: {
-    remotePatterns: [
-      { hostname: "res.cloudinary.com" },
-      { hostname: "img.clerk.com" },
-    ],
-  },
+  images: imageConfig,
   async rewrites() {
     // First-party reverse proxy for product analytics: browser capture hits
     // `/ingest/*` (same-origin, adblock-resilient) and Next forwards it to the
