@@ -1,24 +1,6 @@
 import * as React from "react";
 
-import { Skeleton } from "~/components/ui/skeleton";
-
-function RecipeCardSkeleton() {
-  return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token">
-      <Skeleton className="aspect-[16/10] w-full rounded-none" />
-      <div className="flex flex-col gap-3 p-4">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
-        <div className="flex gap-3 pt-1">
-          <Skeleton className="h-3 w-12" />
-          <Skeleton className="h-3 w-10" />
-          <Skeleton className="h-3 w-14" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { RecipeCardSkeleton, Skeleton } from "~/components/ui/skeleton";
 
 export default function RecipesLoading() {
   return (

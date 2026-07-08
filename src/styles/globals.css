@@ -85,6 +85,22 @@
   transition-duration: 0.001ms !important;
 }
 
+/*
+ * Skeleton shimmer collapses to a static block wherever motion is undesired.
+ * The band relies on animation to read as a sweep; without it, hide the band so
+ * only the calm `bg-muted` base remains (see components/ui/skeleton.tsx).
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-skeleton-shimmer] {
+    display: none;
+  }
+}
+
+[data-theme="barebones"] [data-skeleton-shimmer],
+[data-motion="reduced"] [data-skeleton-shimmer] {
+  display: none;
+}
+
 /* Cook-mode / print helpers used across the app. */
 @media print {
   .no-print {

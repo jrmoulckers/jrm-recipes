@@ -129,6 +129,9 @@ const config = {
           "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       transitionDuration: {
         fast: "var(--duration-fast)",
@@ -144,6 +147,7 @@ const config = {
         "accordion-up": "accordion-up 0.2s var(--ease-standard)",
         "fade-in": "fade-in 0.2s var(--ease-standard)",
         "pop-in": "pop-in 0.18s var(--ease-standard)",
+        shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
   },
