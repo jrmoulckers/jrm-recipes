@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
 import { AlertTriangle, X } from "lucide-react";
 
 import {
@@ -8,6 +9,7 @@ import {
   summarizeAllergens,
   summarizeHiddenAllergens,
 } from "~/lib/allergens";
+import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { type CookRecipe } from "./types";
 
@@ -32,6 +34,7 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
   const allergens = React.useMemo(() => summarizeAllergens(items), [items]);
   const hidden = React.useMemo(() => summarizeHiddenAllergens(items), [items]);
   const [acknowledged, setAcknowledged] = React.useState(false);
+  const locale = useLocale();
 
   if ((allergens.length === 0 && hidden.length === 0) || acknowledged) {
     return null;
@@ -52,13 +55,13 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
           {labels.length > 0 && (
             <p className="text-lg font-semibold leading-tight sm:text-xl">
               <span className="font-bold">This recipe contains:</span>{" "}
-              {labels.join(", ")}
+              {formatList(labels, locale)}
             </p>
           )}
           {hiddenLabels.length > 0 && (
             <p className="text-sm font-medium leading-tight sm:text-base">
               <span className="font-semibold">May also contain (check labels):</span>{" "}
-              {hiddenLabels.join(", ")}
+              {formatList(hiddenLabels, locale)}
             </p>
           )}
           <p className="text-xs font-normal opacity-80">{DISCLAIMER}</p>

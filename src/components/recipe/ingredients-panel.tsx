@@ -12,6 +12,7 @@ import {
   toSystem,
 } from "~/lib/units";
 import { type UnitSystem } from "~/lib/cook-state";
+import { formatList } from "~/lib/i18n-format";
 import {
   scalingNudge,
   DIETARY_TAG_LABELS,
@@ -328,14 +329,20 @@ export function IngredientsPanel({
                 const reason = flagged
                   ? [
                       conflict.allergens.length > 0
-                        ? `contains ${conflict.allergens
-                            .map((a) => ALLERGEN_LABELS[a].toLowerCase())
-                            .join(", ")}`
+                        ? `contains ${formatList(
+                            conflict.allergens.map((a) =>
+                              ALLERGEN_LABELS[a].toLowerCase(),
+                            ),
+                            locale,
+                          )}`
                         : null,
                       conflict.diets.length > 0
-                        ? `not ${conflict.diets
-                            .map((d) => DIETARY_TAG_LABELS[d].toLowerCase())
-                            .join(", ")}`
+                        ? `not ${formatList(
+                            conflict.diets.map((d) =>
+                              DIETARY_TAG_LABELS[d].toLowerCase(),
+                            ),
+                            locale,
+                          )}`
                         : null,
                     ]
                       .filter(Boolean)

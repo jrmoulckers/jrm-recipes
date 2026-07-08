@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   AlertTriangle,
   Check,
@@ -34,6 +35,7 @@ import {
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts, type ActiveMemberOption } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
+import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -244,6 +246,7 @@ function EntryChip({
   batch?: BatchBadge;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const [isPending, startTransition] = React.useTransition();
   const [isCooking, startCooking] = React.useTransition();
   const [cooked, setCooked] = React.useState(false);
@@ -298,7 +301,10 @@ function EntryChip({
   const alerts = allergenConflicts(avoidAllergens, entry.recipe?.allergens ?? []);
   const alertText =
     alerts.length > 0
-      ? `Contains ${alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()).join(", ")}`
+      ? `Contains ${formatList(
+          alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+          locale,
+        )}`
       : null;
 
   return (
