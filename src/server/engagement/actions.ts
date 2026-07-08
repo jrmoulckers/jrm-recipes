@@ -7,8 +7,10 @@ import { isDbConfigured } from "~/server/db";
 import { PUBLIC_RECIPES_TAG } from "~/server/recipes/cache";
 import {
   type ActionResult as BaseActionResult,
+  fail,
   fromZodError,
 } from "~/server/action-result";
+import { messageForError } from "~/server/errors";
 import {
   commentInput,
   deleteCommentInput,
@@ -34,10 +36,6 @@ import {
 
 export type ActionResult = BaseActionResult;
 
-function errorCode(error: unknown) {
-  return error instanceof Error ? error.message : "";
-}
-
 export async function addCommentAction(
   input: CommentInput,
 ): Promise<ActionResult> {
@@ -53,14 +51,16 @@ export async function addCommentAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    const code = errorCode(error);
-    if (code === "FORBIDDEN") {
-      return { ok: false, error: "You don't have access to this recipe." };
-    }
-    if (code === "NOT_FOUND") {
-      return { ok: false, error: "We couldn't find that recipe thread." };
-    }
-    return { ok: false, error: "We couldn't post that." };
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "You don't have access to this recipe.",
+          NOT_FOUND: "We couldn't find that recipe thread.",
+        },
+        "We couldn't post that.",
+      ),
+    );
   }
 }
 
@@ -79,17 +79,16 @@ export async function deleteCommentAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    const code = errorCode(error);
-    if (code === "FORBIDDEN") {
-      return {
-        ok: false,
-        error: "Only the comment author or recipe owner can delete that.",
-      };
-    }
-    if (code === "NOT_FOUND") {
-      return { ok: false, error: "That comment is already gone." };
-    }
-    return { ok: false, error: "We couldn't delete that comment." };
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "Only the comment author or recipe owner can delete that.",
+          NOT_FOUND: "That comment is already gone.",
+        },
+        "We couldn't delete that comment.",
+      ),
+    );
   }
 }
 
@@ -112,23 +111,18 @@ export async function resolveCommentAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    const code = errorCode(error);
-    if (code === "FORBIDDEN") {
-      return {
-        ok: false,
-        error: "Only the recipe owner can resolve suggestions.",
-      };
-    }
-    if (code === "ALREADY_APPLIED") {
-      return {
-        ok: false,
-        error: "That suggestion was already applied and can't be reopened.",
-      };
-    }
-    if (code === "NOT_FOUND") {
-      return { ok: false, error: "We couldn't find that suggestion." };
-    }
-    return { ok: false, error: "We couldn't update that suggestion." };
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "Only the recipe owner can resolve suggestions.",
+          ALREADY_APPLIED:
+            "That suggestion was already applied and can't be reopened.",
+          NOT_FOUND: "We couldn't find that suggestion.",
+        },
+        "We couldn't update that suggestion.",
+      ),
+    );
   }
 }
 
@@ -150,20 +144,17 @@ export async function applySuggestionAction(
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
-    const code = errorCode(error);
-    if (code === "FORBIDDEN") {
-      return {
-        ok: false,
-        error: "Only the recipe owner can apply suggestions.",
-      };
-    }
-    if (code === "ALREADY_APPLIED") {
-      return { ok: false, error: "That suggestion was already applied." };
-    }
-    if (code === "NOT_FOUND") {
-      return { ok: false, error: "We couldn't find that suggestion." };
-    }
-    return { ok: false, error: "We couldn't apply that suggestion." };
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "Only the recipe owner can apply suggestions.",
+          ALREADY_APPLIED: "That suggestion was already applied.",
+          NOT_FOUND: "We couldn't find that suggestion.",
+        },
+        "We couldn't apply that suggestion.",
+      ),
+    );
   }
 }
 
@@ -185,17 +176,17 @@ export async function setRatingAction(
     revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
-    const code = errorCode(error);
-    if (code === "FORBIDDEN") {
-      return { ok: false, error: "You don't have access to this recipe." };
-    }
-    if (code === "SELF_RATING") {
-      return { ok: false, error: "You can't rate your own recipe." };
-    }
-    if (code === "NOT_FOUND") {
-      return { ok: false, error: "We couldn't find that recipe." };
-    }
-    return { ok: false, error: "We couldn't save your rating." };
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "You don't have access to this recipe.",
+          SELF_RATING: "You can't rate your own recipe.",
+          NOT_FOUND: "We couldn't find that recipe.",
+        },
+        "We couldn't save your rating.",
+      ),
+    );
   }
 }
 
@@ -216,9 +207,12 @@ export async function removeRatingAction(
     revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
-    if (errorCode(error) === "FORBIDDEN") {
-      return { ok: false, error: "You don't have access to this recipe." };
-    }
-    return { ok: false, error: "We couldn't remove your rating." };
+    return fail(
+      messageForError(
+        error,
+        { FORBIDDEN: "You don't have access to this recipe." },
+        "We couldn't remove your rating.",
+      ),
+    );
   }
 }

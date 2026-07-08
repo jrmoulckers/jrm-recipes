@@ -14,6 +14,7 @@ import {
   ok,
 } from "~/server/action-result";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
 import { importRecipeFromUrl, type ImportResult } from "./import";
@@ -44,7 +45,7 @@ const GROUP_FORBIDDEN =
 
 /** True when a mutation rejected a group assignment for lack of membership. */
 function isForbidden(error: unknown): boolean {
-  return error instanceof Error && error.message === "FORBIDDEN";
+  return domainCodeOf(error) === "FORBIDDEN";
 }
 
 function groupForbiddenResult(): ActionResult {
@@ -170,11 +171,13 @@ export async function revertRecipeAction(
     revalidateTag(PUBLIC_RECIPES_TAG);
     return ok({ id: recipe.id, slug: recipe.slug });
   } catch (error) {
-    const message =
-      error instanceof Error && error.message === "BAD_SNAPSHOT"
-        ? "That saved version can't be restored."
-        : "We couldn't restore that recipe version.";
-    return fail(message);
+    return fail(
+      messageForError(
+        error,
+        { BAD_SNAPSHOT: "That saved version can't be restored." },
+        "We couldn't restore that recipe version.",
+      ),
+    );
   }
 }
 
