@@ -42,6 +42,7 @@ import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
+import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 
 export const metadata: Metadata = { title: "Recipes" };
 
@@ -121,6 +122,7 @@ export default async function RecipesPage({
               <UtensilsCrossed /> Cook with what you have
             </Link>
           </Button>
+          {dbReady && user ? <QuickCaptureDialog /> : null}
           <Button asChild size="lg">
             <Link href="/recipes/new">
               <ChefHat /> New recipe
