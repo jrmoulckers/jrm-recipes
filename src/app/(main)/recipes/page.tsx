@@ -24,9 +24,20 @@ import {
   type RecipeSearch,
 } from "~/server/recipes/search";
 import { getFavoriteRecipeIds } from "~/server/collections/queries";
+import { listWeekDinners } from "~/server/planner/queries";
+import {
+  formatDayName,
+  formatMonthDay,
+  getPlannerWeek,
+  toDateParam,
+  todayParam,
+} from "~/server/planner/week";
 import { listMySavedSearches } from "~/server/searches/queries";
 import { Button } from "~/components/ui/button";
-import { RecipeCard } from "~/components/recipe/recipe-card";
+import {
+  RecipeCard,
+  type QuickPlanContext,
+} from "~/components/recipe/recipe-card";
 import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
@@ -45,6 +56,29 @@ const LCP_PRIORITY_COUNT = 3;
 /** How many popular tags to show in the browse-view "Browse by tag" strip. */
 const POPULAR_BROWSE_TAG_COUNT = 10;
 
+/**
+ * Build the quick-plan context (#379): the current planner week's days plus the
+ * next empty dinner to pre-select. Returns `null` when signed-out or without a
+ * database, so cards render no quick-plan control.
+ */
+async function buildQuickPlan(userId: string): Promise<QuickPlanContext> {
+  const week = getPlannerWeek(new Date());
+  const dinners = await listWeekDinners(userId, week.startParam, week.endParam);
+  const occupied = new Set(dinners.map((entry) => entry.date));
+  const days = week.days.map((day) => ({
+    value: toDateParam(day),
+    label: `${formatDayName(day)}, ${formatMonthDay(day)}`,
+  }));
+  const today = todayParam();
+  const upcoming = days.filter((day) => day.value >= today);
+  const pool = upcoming.length > 0 ? upcoming : days;
+  const defaultDate =
+    pool.find((day) => !occupied.has(day.value))?.value ??
+    pool[0]?.value ??
+    today;
+  return { days, defaultDate };
+}
+
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -54,11 +88,12 @@ export default async function RecipesPage({
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
   const dbReady = isDbConfigured();
-  const [facets, savedSearches] = await Promise.all([
+  const [facets, savedSearches, quickPlan] = await Promise.all([
     dbReady
       ? listRecipeFacets(user, search)
       : Promise.resolve({ cuisines: [], tags: [] }),
     listMySavedSearches(user?.id),
+    dbReady && user ? buildQuickPlan(user.id) : Promise.resolve(null),
   ]);
   const members: CardDietaryMember[] =
     dbReady && user
@@ -105,9 +140,14 @@ export default async function RecipesPage({
             members={members}
           />
           {browsing ? (
-            <BrowseSections user={user} members={members} />
+            <BrowseSections user={user} members={members} quickPlan={quickPlan} />
           ) : (
-            <SearchResults user={user} search={search} members={members} />
+            <SearchResults
+              user={user}
+              search={search}
+              members={members}
+              quickPlan={quickPlan}
+            />
           )}
         </>
       )}
@@ -119,9 +159,11 @@ export default async function RecipesPage({
 async function BrowseSections({
   user,
   members,
+  quickPlan,
 }: {
   user: User | null;
   members: CardDietaryMember[];
+  quickPlan: QuickPlanContext | null;
 }) {
   const [mine, discover, favoriteIds, tags, recentlyViewed] = await Promise.all([
     listLibrary(user),
@@ -157,6 +199,7 @@ async function BrowseSections({
                 recipe={recipe}
                 canFavorite={canFavorite}
                 favorited={favoriteIds.has(recipe.id)}
+                quickPlan={quickPlan ?? undefined}
               />
             ))}
           </div>
@@ -203,6 +246,7 @@ async function BrowseSections({
               recipe={recipe}
               canFavorite={canFavorite}
               favorited={favoriteIds.has(recipe.id)}
+              quickPlan={quickPlan ?? undefined}
               priority={i < LCP_PRIORITY_COUNT}
               members={members}
             />
@@ -238,10 +282,12 @@ async function SearchResults({
   user,
   search,
   members,
+  quickPlan,
 }: {
   user: User | null;
   search: RecipeSearch;
   members: CardDietaryMember[];
+  quickPlan: QuickPlanContext | null;
 }) {
   const [results, favoriteIds] = await Promise.all([
     searchRecipes(user, search),
@@ -262,6 +308,7 @@ async function SearchResults({
             favoriteIds={favoriteIds}
             canFavorite={canFavorite}
             members={members}
+            quickPlan={quickPlan}
             correction={{ from: search.q!, to: suggestion }}
           />
         );
@@ -276,6 +323,7 @@ async function SearchResults({
       favoriteIds={favoriteIds}
       canFavorite={canFavorite}
       members={members}
+      quickPlan={quickPlan}
     />
   );
 }
@@ -286,12 +334,14 @@ async function ResultsGrid({
   favoriteIds,
   canFavorite,
   members,
+  quickPlan,
   correction,
 }: {
   results: RecipeSearchResult[];
   favoriteIds: Set<string>;
   canFavorite: boolean;
   members: CardDietaryMember[];
+  quickPlan: QuickPlanContext | null;
   correction?: { from: string; to: string };
 }) {
   // Only pay for allergen roll-up when a family member with allergies is active.
@@ -329,6 +379,7 @@ async function ResultsGrid({
             recipe={recipe}
             canFavorite={canFavorite}
             favorited={favoriteIds.has(recipe.id)}
+            quickPlan={quickPlan ?? undefined}
             priority={i < LCP_PRIORITY_COUNT}
             matchReason={recipe.matchReason}
             members={members}
