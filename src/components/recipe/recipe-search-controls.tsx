@@ -192,7 +192,7 @@ export function RecipeSearchControls({
       </div>
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Label htmlFor={searchId} className="sr-only">
           Search recipes
         </Label>
@@ -202,7 +202,7 @@ export function RecipeSearchControls({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search recipes, ingredients, cuisines, tags…"
-          className="pl-10"
+          className="ps-10"
         />
       </div>
 

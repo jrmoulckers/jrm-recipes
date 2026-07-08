@@ -221,7 +221,7 @@ export function InstallPrompt() {
     >
       <div
         className={cn(
-          "flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 pr-2 shadow-lg backdrop-blur",
+          "flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 pe-2 shadow-lg backdrop-blur",
           "transition-all duration-300 ease-out motion-reduce:transition-none",
           entered
             ? "translate-y-0 opacity-100"

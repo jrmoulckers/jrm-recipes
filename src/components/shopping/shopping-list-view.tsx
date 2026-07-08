@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { useLocale } from "next-intl";
 import {
   describeQuantity,
   formatShoppingListText,
@@ -12,6 +13,7 @@ import {
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts } from "~/lib/dietary-match";
 import { toast } from "sonner";
+import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
@@ -131,6 +133,7 @@ function ItemRow({
 }) {
   const amount = describeQuantity(item);
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
+  const locale = useLocale();
   return (
     <li className="group flex items-center gap-1">
       <button
@@ -138,7 +141,7 @@ function ItemRow({
         disabled={disabled}
         onClick={() => onToggle(item.id, !item.checked)}
         aria-pressed={item.checked}
-        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted disabled:opacity-50"
+        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted disabled:opacity-50"
       >
         <span
           className={cn(
@@ -165,21 +168,25 @@ function ItemRow({
             <span className="text-muted-foreground"> — {item.note}</span>
           )}
           {item.optional && (
-            <Badge variant="muted" className="ml-2 align-middle">
+            <Badge variant="muted" className="ms-2 align-middle">
               optional
             </Badge>
           )}
           {alerts.length > 0 && (
             <Badge
               variant="warning"
-              className="ml-2 gap-1 align-middle"
+              className="ms-2 gap-1 align-middle"
               title={ALLERGEN_DISCLAIMER}
-              aria-label={`Allergen warning: contains ${alerts
-                .map((a) => ALLERGEN_LABELS[a].toLowerCase())
-                .join(", ")}. ${ALLERGEN_DISCLAIMER}`}
+              aria-label={`Allergen warning: contains ${formatList(
+                alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+                locale,
+              )}. ${ALLERGEN_DISCLAIMER}`}
             >
               <AlertTriangle className="size-3" aria-hidden />
-              {alerts.map((a) => ALLERGEN_LABELS[a]).join(", ")}
+              {formatList(
+                alerts.map((a) => ALLERGEN_LABELS[a]),
+                locale,
+              )}
             </Badge>
           )}
         </span>

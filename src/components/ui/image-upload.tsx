@@ -59,7 +59,7 @@ export function ImageUploadField({
             type="button"
             onClick={() => onChange("")}
             aria-label="Remove photo"
-            className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-token-sm backdrop-blur transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="absolute end-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-token-sm backdrop-blur transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="size-4" />
           </button>

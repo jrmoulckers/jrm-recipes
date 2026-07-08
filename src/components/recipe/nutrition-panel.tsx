@@ -210,7 +210,7 @@ export function NutritionPanel({
             </dt>
             <dd className="text-sm tabular-nums">
               {formatNutrient(row.value, row.decimals)}
-              <span className="ml-1 text-muted-foreground">{row.unit}</span>
+              <span className="ms-1 text-muted-foreground">{row.unit}</span>
             </dd>
           </div>
         ))}

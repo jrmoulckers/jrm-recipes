@@ -52,7 +52,7 @@ export default async function CollectionPage({
   return (
     <div className="container flex flex-col gap-8 py-10">
       <div>
-        <Button asChild size="sm" variant="ghost" className="-ml-2">
+        <Button asChild size="sm" variant="ghost" className="-ms-2">
           <Link href="/collections">
             <ArrowLeft /> Saved
           </Link>
@@ -116,7 +116,7 @@ export default async function CollectionPage({
                 <RemoveFromCollectionButton
                   collectionId={collection.id}
                   recipeId={recipe.id}
-                  className="absolute right-2 top-2 z-10"
+                  className="absolute end-2 top-2 z-10"
                 />
               )}
               <RecipeCard recipe={recipe} />

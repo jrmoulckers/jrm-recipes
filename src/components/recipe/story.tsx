@@ -107,7 +107,7 @@ export function RecipeStory({
         </div>
       </div>
 
-      <ol className="relative space-y-4 before:absolute before:bottom-4 before:left-[1.15rem] before:top-4 before:w-px before:bg-border">
+      <ol className="relative space-y-4 before:absolute before:bottom-4 before:start-[1.15rem] before:top-4 before:w-px before:bg-border">
         {entries.map((entry) => {
           const style = entryStyle(entry);
           const Icon = style.icon;

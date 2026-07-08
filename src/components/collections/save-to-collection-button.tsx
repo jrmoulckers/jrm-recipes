@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { BookmarkPlus, Check, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ export function SaveToCollectionButton({
   canSave: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("saveToCollection");
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<CollectionMembership[]>(collections);
   const [pendingId, setPendingId] = React.useState<string | null>(null);
@@ -124,7 +126,7 @@ export function SaveToCollectionButton({
 
         {items.length > 0 && (
           <ul
-            aria-label="Your collections"
+            aria-label={t("list")}
             className="grid max-h-64 gap-1 overflow-y-auto"
           >
             {items.map((collection) => (
@@ -136,10 +138,10 @@ export function SaveToCollectionButton({
                   }
                   disabled={pendingId === collection.id}
                   aria-pressed={collection.contains}
-                  aria-label={`${
-                    collection.contains ? "Remove from" : "Add to"
-                  } collection ${collection.name}`}
-                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                  aria-label={t(collection.contains ? "remove" : "add", {
+                    name: collection.name,
+                  })}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-start text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                 >
                   <span className="line-clamp-1 font-medium">
                     {collection.name}
@@ -171,7 +173,7 @@ export function SaveToCollectionButton({
             placeholder="New collection name"
             maxLength={120}
             disabled={creating}
-            aria-label="New collection name"
+            aria-label={t("newNameField")}
           />
           <Button
             type="submit"

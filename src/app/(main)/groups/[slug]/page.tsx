@@ -250,7 +250,7 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
             🍲
           </div>
         )}
-        <div className="absolute left-3 top-3 flex gap-2">
+        <div className="absolute start-3 top-3 flex gap-2">
           {recipe.visibility !== "public" ? (
             <Badge variant="muted" className="capitalize backdrop-blur">
               {recipe.visibility}

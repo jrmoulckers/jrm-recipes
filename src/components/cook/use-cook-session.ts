@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +16,7 @@ import {
   type TimerRecord,
   type UnitSystem,
 } from "~/lib/cook-state";
+import { defaultSystemForLocale } from "~/lib/units";
 import { track } from "~/lib/analytics";
 import {
   beginCookSession,
@@ -87,11 +89,12 @@ function playTimerTone() {
 function defaultState(
   recipe: CookRecipe,
   householdSize: number | null,
+  system: UnitSystem,
 ): StoredCookState {
   return {
     stepIndex: 0,
     servings: householdSize ?? recipe.servings ?? null,
-    system: "original",
+    system,
     checked: [],
     timers: {},
   };
@@ -122,9 +125,13 @@ export function useCookSession(
   const storageKey = cookStorageKey(recipe.id);
   const totalSteps = recipe.steps.length;
   const baseServings = recipe.servings ?? null;
+  // No stored preference yet? Start from the system the reader's locale implies
+  // (US → imperial, elsewhere → metric); an explicit, persisted choice always
+  // wins during hydration below.
+  const locale = useLocale();
 
   const [state, setState] = React.useState<StoredCookState>(() =>
-    defaultState(recipe, householdSize),
+    defaultState(recipe, householdSize, defaultSystemForLocale(locale)),
   );
   const [loaded, setLoaded] = React.useState(false);
   const announcedTimersRef = React.useRef<Set<string>>(new Set());
@@ -385,8 +392,8 @@ export function useCookSession(
     // Clear the cook_started marker too, so re-cooking starts a fresh session.
     endCookSession(cookStorage(), recipe.id);
     announcedTimersRef.current.clear();
-    setState(defaultState(recipe, householdSize));
-  }, [recipe, storageKey, householdSize]);
+    setState(defaultState(recipe, householdSize, defaultSystemForLocale(locale)));
+  }, [recipe, storageKey, householdSize, locale]);
 
   const activeTimers = React.useMemo<ActiveTimer[]>(() => {
     const active: ActiveTimer[] = [];

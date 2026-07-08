@@ -68,7 +68,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-2">
-        <Search className="ml-1 size-4 shrink-0 text-muted-foreground" />
+        <Search className="ms-1 size-4 shrink-0 text-muted-foreground" />
         {items.map((item) => (
           <span
             key={item}

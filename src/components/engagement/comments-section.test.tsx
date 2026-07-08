@@ -1,13 +1,19 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as React from "react";
 
 import { CommentsSection } from "./comments-section";
 import type { ThreadedComment } from "~/server/engagement/queries";
+import { IntlWrapper } from "~/test/intl";
 import {
   addCommentAction,
   applySuggestionAction,
 } from "~/server/engagement/actions";
+
+function render(ui: React.ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 vi.mock("~/server/engagement/actions", () => ({
   addCommentAction: vi.fn(),

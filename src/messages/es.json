@@ -1,0 +1,69 @@
+{
+  "footer": {
+    "landmark": "Pie de página",
+    "recipes": "Recetas",
+    "family": "Familia",
+    "create": "Crear"
+  },
+  "cook": {
+    "timer": {
+      "complete": "Temporizador completado",
+      "remaining": "{time} restante",
+      "paused": "En pausa con {time} restante",
+      "ready": "{time} listo"
+    },
+    "a11y": {
+      "exit": "Salir del modo cocina",
+      "progress": "Progreso de cocción",
+      "stepTimer": "Temporizador del paso, {time} restante",
+      "jumpToStep": "Ir al paso {position}: {title} — {time} restante",
+      "goToStep": "Ir al paso {position}: {title}"
+    }
+  },
+  "metadata": {
+    "tagline": "Recetas de familia, siempre vivas.",
+    "description": "Crea, cocina y transmite las recetas que tu familia adora, juntos y con cariño.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "Nueva receta",
+        "short_name": "Nueva",
+        "description": "Empieza una receta nueva o impórtala desde un enlace."
+      },
+      "plan": {
+        "name": "Menú semanal",
+        "short_name": "Menú",
+        "description": "Planifica las comidas de la semana."
+      },
+      "shopping": {
+        "name": "Lista de la compra",
+        "short_name": "Compra",
+        "description": "Revisa y marca tu lista de la compra."
+      }
+    }
+  },
+  "accessibilityMenu": {
+    "trigger": "Ajustes de accesibilidad y comodidad",
+    "textSizeGroup": "Tamaño del texto"
+  },
+  "saveToCollection": {
+    "list": "Tus colecciones",
+    "add": "Añadir a la colección {name}",
+    "remove": "Quitar de la colección {name}",
+    "newNameField": "Nombre de la nueva colección"
+  },
+  "ingredientsDrawer": {
+    "region": "Lista de {label} y ajuste de raciones"
+  },
+  "recipeEditor": {
+    "importUrl": "URL de la receta para importar",
+    "quantity": "Cantidad",
+    "unit": "Unidad",
+    "ingredient": "Ingrediente",
+    "step": "Paso {position}",
+    "timerMinutes": "Temporizador en minutos",
+    "techniques": "Técnicas",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "remove": "Eliminar"
+  }
+}

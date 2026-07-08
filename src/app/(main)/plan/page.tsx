@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
+import { getLocale } from "next-intl/server";
 import { CalendarDays, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
@@ -53,8 +54,9 @@ export default async function PlanPage({
   searchParams: Promise<{ week?: string }>;
 }) {
   const { week } = await searchParams;
+  const locale = await getLocale();
   const focusDate = parseDateParam(week);
-  const { start, end, days } = getPlannerWeek(focusDate);
+  const { start, end, days } = getPlannerWeek(focusDate, locale);
   const startParam = toDateParam(start);
   const endParam = toDateParam(end);
 
@@ -115,9 +117,9 @@ export default async function PlanPage({
 
   const boardDays: BoardDay[] = days.map((day) => ({
     dateParam: toDateParam(day),
-    weekdayLabel: formatDayName(day),
-    dayNumber: formatDayNumber(day),
-    fullLabel: formatFullDay(day),
+    weekdayLabel: formatDayName(day, locale),
+    dayNumber: formatDayNumber(day, locale),
+    fullLabel: formatFullDay(day, locale),
     isToday: isToday(day),
   }));
 
@@ -156,7 +158,7 @@ export default async function PlanPage({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight">
-              {formatWeekRange(start, end)}
+              {formatWeekRange(start, end, locale)}
             </h1>
             <p className="mt-1 text-muted-foreground">
               Plan the week&rsquo;s meals — assign recipes or quick notes to each
@@ -178,7 +180,7 @@ export default async function PlanPage({
               size="icon"
               aria-label="Previous week"
             >
-              <Link href={`/plan?week=${previousWeekParam(focusDate)}`}>
+              <Link href={`/plan?week=${previousWeekParam(focusDate, locale)}`}>
                 <ChevronLeft />
               </Link>
             </Button>
@@ -186,7 +188,7 @@ export default async function PlanPage({
               <Link href={`/plan?week=${todayParam()}`}>This week</Link>
             </Button>
             <Button asChild variant="outline" size="icon" aria-label="Next week">
-              <Link href={`/plan?week=${nextWeekParam(focusDate)}`}>
+              <Link href={`/plan?week=${nextWeekParam(focusDate, locale)}`}>
                 <ChevronRight />
               </Link>
             </Button>

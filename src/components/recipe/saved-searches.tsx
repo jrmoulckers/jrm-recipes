@@ -108,7 +108,7 @@ export function SavedSearches({
                   <button
                     type="button"
                     onClick={() => apply(saved.query)}
-                    className="flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                    className="flex-1 truncate rounded-md px-2 py-1.5 text-start text-sm hover:bg-muted"
                   >
                     {saved.name}
                   </button>

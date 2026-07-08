@@ -1,10 +1,15 @@
 import { type MetadataRoute } from "next";
 
 import { brand } from "~/config/brand";
+import { DEFAULT_LOCALE, localeDirection } from "~/config/i18n";
+import en from "~/messages/en.json";
 
 /**
- * PWA manifest, served at /manifest.webmanifest. Icons are generated into
- * /public/icons. Name/colors come from the single brand config.
+ * PWA manifest, served at /manifest.webmanifest. Manifest routes are statically
+ * generated and can't read the locale cookie, so the installed app's strings use
+ * the default-locale catalog ({@link DEFAULT_LOCALE}); the brand wordmark and
+ * colors still come from the single brand config. The active-locale experience
+ * is localized at runtime via `generateMetadata` in the root layout.
  */
 export default function manifest(): MetadataRoute.Manifest {
   // Reuse the app icon for shortcut glyphs; launchers scale it as needed.
@@ -12,10 +17,14 @@ export default function manifest(): MetadataRoute.Manifest {
     { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
   ];
 
+  const { description, shortcuts } = en.metadata;
+
   return {
     name: brand.name,
     short_name: brand.shortName,
-    description: brand.description,
+    description,
+    lang: DEFAULT_LOCALE,
+    dir: localeDirection(DEFAULT_LOCALE),
     id: "/",
     start_url: "/",
     scope: "/",
@@ -52,23 +61,23 @@ export default function manifest(): MetadataRoute.Manifest {
     // icon. Static routes only.
     shortcuts: [
       {
-        name: "New recipe",
-        short_name: "New recipe",
-        description: "Start a new recipe or import one from a link.",
+        name: shortcuts.newRecipe.name,
+        short_name: shortcuts.newRecipe.short_name,
+        description: shortcuts.newRecipe.description,
         url: "/recipes/new",
         icons: shortcutIcons,
       },
       {
-        name: "Meal plan",
-        short_name: "Plan",
-        description: "Plan meals for the week ahead.",
+        name: shortcuts.plan.name,
+        short_name: shortcuts.plan.short_name,
+        description: shortcuts.plan.description,
         url: "/plan",
         icons: shortcutIcons,
       },
       {
-        name: "Shopping list",
-        short_name: "Shopping",
-        description: "Review and check off your shopping list.",
+        name: shortcuts.shopping.name,
+        short_name: shortcuts.shopping.short_name,
+        description: shortcuts.shopping.description,
         url: "/shopping",
         icons: shortcutIcons,
       },

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   AlertTriangle,
   Check,
@@ -34,6 +35,7 @@ import {
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts, type ActiveMemberOption } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
+import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -244,6 +246,7 @@ function EntryChip({
   batch?: BatchBadge;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const [isPending, startTransition] = React.useTransition();
   const [isCooking, startCooking] = React.useTransition();
   const [cooked, setCooked] = React.useState(false);
@@ -298,7 +301,10 @@ function EntryChip({
   const alerts = allergenConflicts(avoidAllergens, entry.recipe?.allergens ?? []);
   const alertText =
     alerts.length > 0
-      ? `Contains ${alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()).join(", ")}`
+      ? `Contains ${formatList(
+          alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+          locale,
+        )}`
       : null;
 
   return (
@@ -550,13 +556,13 @@ function AddEntryDialog({
             <div className="grid gap-2">
               <Label htmlFor={searchId}>Recipe</Label>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={searchId}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search your recipes…"
-                  className="pl-9"
+                  className="ps-9"
                   autoComplete="off"
                 />
               </div>
@@ -582,7 +588,7 @@ function AddEntryDialog({
                               setSelectedId(selected ? null : recipe.id)
                             }
                             className={cn(
-                              "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+                              "flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
                               selected && "bg-primary/10 text-foreground",
                             )}
                             aria-pressed={selected}
