@@ -204,7 +204,7 @@ export function isUnlimited(value: LimitValue): boolean {
 
 /** Coerce a limit to a comparable number (`null` → `Infinity`). */
 export function limitToNumber(value: LimitValue): number {
-  return value === null ? Number.POSITIVE_INFINITY : value;
+  return value ?? Number.POSITIVE_INFINITY;
 }
 
 /** Type guard for a known plan id. */
