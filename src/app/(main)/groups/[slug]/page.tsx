@@ -13,8 +13,13 @@ import {
 } from "~/server/groups/queries";
 import { getOpenReportCount } from "~/server/moderation/queries";
 import { getGroupActivity } from "~/server/activity/queries";
+import {
+  getRecentCookAlongsToLog,
+  getUpcomingCookAlongs,
+} from "~/server/cookalong/queries";
 import { AddMemberForm } from "~/components/groups/add-member-form";
 import { ActivityFeed } from "~/components/groups/activity-feed";
+import { CookAlongSection } from "~/components/groups/cook-along-section";
 import { GroupActions } from "~/components/groups/group-actions";
 import { InviteLinkManager } from "~/components/groups/invite-link-manager";
 import {
@@ -96,6 +101,18 @@ export default async function GroupPage({
           role: group.viewerRole,
         })
       : null;
+  const isMember = Boolean(group.viewerRole);
+  const [upcomingCookAlongs, cookAlongsToLog] =
+    isMember && viewer
+      ? await Promise.all([
+          getUpcomingCookAlongs(group.id, viewer.id),
+          getRecentCookAlongsToLog(group.id, viewer.id),
+        ])
+      : [[], []];
+  const cookAlongRecipes = group.recipes.map((recipe) => ({
+    id: recipe.id,
+    title: recipe.title,
+  }));
   const members = group.members.map<MemberListMember>((member) => ({
     id: member.id,
     userId: member.userId,
@@ -197,6 +214,20 @@ export default async function GroupPage({
           ) : null}
 
           {activity ? <Separator /> : null}
+
+          {isMember ? (
+            <>
+              <CookAlongSection
+                groupSlug={group.slug}
+                groupId={group.id}
+                isMember={isMember}
+                recipes={cookAlongRecipes}
+                upcoming={upcomingCookAlongs}
+                toLog={cookAlongsToLog}
+              />
+              <Separator />
+            </>
+          ) : null}
 
           <section className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
