@@ -1,4 +1,5 @@
 import {
+  getMentionCandidates,
   getRecipeComments,
   getViewerRating,
 } from "~/server/engagement/queries";
@@ -26,9 +27,10 @@ export async function RecipeDiscussionSection({
   isRecipeOwner: boolean;
   canInteract: boolean;
 }) {
-  const [viewerRating, comments] = await Promise.all([
+  const [viewerRating, comments, mentionCandidates] = await Promise.all([
     getViewerRating(recipeId, currentUserId),
     getRecipeComments(recipeId),
+    getMentionCandidates(recipeId),
   ]);
 
   return (
@@ -47,6 +49,7 @@ export async function RecipeDiscussionSection({
         currentUserId={currentUserId}
         isRecipeOwner={isRecipeOwner}
         canPost={canInteract}
+        mentionCandidates={mentionCandidates}
       />
     </div>
   );

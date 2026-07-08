@@ -39,6 +39,8 @@ function fakeTx(overrides: {
   comment?: unknown;
   /** The caller's existing rating row, if any (drives aggregate deltas). */
   existingRating?: { value: number } | null;
+  /** Group members returned for mention resolution (issue #340). */
+  members?: unknown[];
 }): unknown {
   const chain = {
     values: vi.fn(() => chain),
@@ -61,6 +63,9 @@ function fakeTx(overrides: {
       comments: {
         findFirst: vi.fn(async () => overrides.comment ?? null),
         findMany: vi.fn(async () => []),
+      },
+      groupMembers: {
+        findMany: vi.fn(async () => overrides.members ?? []),
       },
     },
     insert: vi.fn(() => chain),
@@ -186,6 +191,106 @@ describe("engagement mutations enforce view permission", () => {
     mockCanView.mockResolvedValue(false);
 
     await expect(deleteComment("comment_1", user)).rejects.toThrow("FORBIDDEN");
+  });
+});
+
+describe("createComment emits social notifications (#340/#348)", () => {
+  const commentRecipe = {
+    id: "recipe_1",
+    title: "Sunday Sauce",
+    authorId: "owner_9",
+    visibility: "group",
+    groupId: "group_1",
+    author: {
+      id: "owner_9",
+      name: "Owner",
+      handle: "owner",
+      avatarUrl: null,
+    },
+  };
+  const members = [
+    { user: { id: "u_gran", name: "Gran", handle: "gran", avatarUrl: null } },
+    { user: { id: "user_1", name: "Me", handle: "me", avatarUrl: null } },
+  ];
+
+  /** Notification payloads captured from the tx's insert().values() calls. */
+  function notifiedTypes(tx: unknown) {
+    const chain = (tx as { chain: { values: ReturnType<typeof vi.fn> } }).chain;
+    return chain.values.mock.calls
+      .map((call) => call[0] as Record<string, unknown>)
+      .filter((v) => v && typeof v.type === "string" && "recipientId" in v);
+  }
+
+  it("notifies mentioned members but never the author of the comment", async () => {
+    const tx = fakeTx({ recipe: commentRecipe, members });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await createComment(
+      {
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        kind: "comment",
+        body: "Hey @gran and @me — thoughts? (@me is myself)",
+      },
+      user,
+    );
+
+    const notes = notifiedTypes(tx);
+    // @gran resolves and is notified; @me is the actor -> notify() no-ops.
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatchObject({
+      recipientId: "u_gran",
+      type: "mention",
+      recipeId: "recipe_1",
+      context: "Sunday Sauce",
+    });
+  });
+
+  it("ignores unknown @handles", async () => {
+    const tx = fakeTx({ recipe: commentRecipe, members });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await createComment(
+      {
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        kind: "comment",
+        body: "cc @nobody",
+      },
+      user,
+    );
+
+    expect(notifiedTypes(tx)).toHaveLength(0);
+  });
+
+  it("notifies the parent author of a reply", async () => {
+    const tx = fakeTx({
+      recipe: commentRecipe,
+      comment: { id: "parent_1", userId: "u_gran" },
+      members,
+    });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await createComment(
+      {
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        parentId: "parent_1",
+        kind: "comment",
+        body: "Thanks!",
+      },
+      user,
+    );
+
+    const notes = notifiedTypes(tx);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatchObject({
+      recipientId: "u_gran",
+      type: "comment_reply",
+    });
   });
 });
 

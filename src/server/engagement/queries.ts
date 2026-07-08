@@ -4,6 +4,8 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { comments, ratings, type CommentKind } from "~/server/db/schema";
+import type { MentionCandidate } from "~/lib/mentions";
+import { loadMentionCandidates } from "./mention-targets";
 
 export type ThreadedComment = {
   id: string;
@@ -83,6 +85,18 @@ export async function getRecipeComments(
   }
 
   return roots;
+}
+
+/**
+ * The members who can be @mentioned on this recipe (issue #340): the recipe
+ * author plus its group. Given to the composer for autocomplete and reused by
+ * the renderer to resolve which `@handles` become links.
+ */
+export async function getMentionCandidates(
+  recipeId: string,
+): Promise<MentionCandidate[]> {
+  if (!isDbConfigured()) return [];
+  return loadMentionCandidates(db, recipeId);
 }
 
 export async function getViewerRating(

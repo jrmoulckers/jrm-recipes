@@ -18,6 +18,9 @@ import {
 } from "~/server/db/schema";
 import type { CommentInput, RatingInput } from "./validation";
 import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
+import { loadMentionCandidates } from "./mention-targets";
+import { notify } from "~/server/notifications/notify";
+import { resolveMentions } from "~/lib/mentions";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -50,6 +53,7 @@ export async function createComment(
       where: eq(recipes.id, input.recipeId),
       columns: {
         id: true,
+        title: true,
         authorId: true,
         visibility: true,
         groupId: true,
@@ -58,15 +62,17 @@ export async function createComment(
     if (!recipe) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
 
+    let parentAuthorId: string | null = null;
     if (input.parentId) {
       const parent = await tx.query.comments.findFirst({
         where: and(
           eq(comments.id, input.parentId),
           eq(comments.recipeId, input.recipeId),
         ),
-        columns: { id: true },
+        columns: { id: true, userId: true },
       });
       if (!parent) throw new DomainError("NOT_FOUND");
+      parentAuthorId = parent.userId;
     }
 
     const [created] = await tx
@@ -79,6 +85,37 @@ export async function createComment(
         body: input.body,
       })
       .returning();
+
+    // Social notifications (#340/#348), written in the same tx so they land
+    // atomically with the comment. notify() no-ops on self-actions.
+    const mentioned = resolveMentions(
+      input.body,
+      await loadMentionCandidates(tx, input.recipeId),
+    );
+    const mentionedIds = new Set<string>();
+    for (const target of mentioned) {
+      mentionedIds.add(target.id);
+      await notify(tx, {
+        recipientId: target.id,
+        actorId: user.id,
+        type: "mention",
+        recipeId: input.recipeId,
+        entityId: created!.id,
+        context: recipe.title,
+      });
+    }
+    // Notify the parent comment's author of a reply — unless they were already
+    // @mentioned in the same comment (avoid a double ping).
+    if (parentAuthorId && !mentionedIds.has(parentAuthorId)) {
+      await notify(tx, {
+        recipientId: parentAuthorId,
+        actorId: user.id,
+        type: "comment_reply",
+        recipeId: input.recipeId,
+        entityId: created!.id,
+        context: recipe.title,
+      });
+    }
 
     return created!;
   });

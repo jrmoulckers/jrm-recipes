@@ -22,6 +22,9 @@ import {
   resolveCommentAction,
 } from "~/server/engagement/actions";
 import type { ThreadedComment } from "~/server/engagement/queries";
+import type { MentionCandidate } from "~/lib/mentions";
+import { MentionTextarea } from "~/components/engagement/mention-textarea";
+import { MentionText } from "~/components/engagement/mention-text";
 import {
   Avatar,
   AvatarFallback,
@@ -37,7 +40,6 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import { Textarea } from "~/components/ui/textarea";
 import { CharacterCounter } from "~/components/ui/character-counter";
 import {
   COMMENT_MAX_LENGTH,
@@ -79,6 +81,7 @@ export function CommentsSection(props: {
   currentUserId: string | null;
   isRecipeOwner: boolean;
   canPost: boolean;
+  mentionCandidates?: MentionCandidate[];
 }) {
   const {
     recipeId,
@@ -87,6 +90,7 @@ export function CommentsSection(props: {
     currentUserId,
     isRecipeOwner,
     canPost,
+    mentionCandidates = [],
   } = props;
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -226,14 +230,15 @@ export function CommentsSection(props: {
             <Label htmlFor="comment-body" className="sr-only">
               Comment body
             </Label>
-            <Textarea
+            <MentionTextarea
               id="comment-body"
               value={body}
-              onChange={(event) => setBody(event.target.value)}
+              onChange={setBody}
+              candidates={mentionCandidates}
               placeholder={
                 kind === "suggestion"
                   ? "Suggest a change the recipe owner can resolve…"
-                  : "Leave a note for the family table…"
+                  : "Leave a note for the family table… use @ to mention someone"
               }
               className="min-h-28 resize-y bg-background"
               disabled={pending}
@@ -286,6 +291,7 @@ export function CommentsSection(props: {
                 isRecipeOwner={isRecipeOwner}
                 canPost={canPost}
                 pending={pending}
+                mentionCandidates={mentionCandidates}
                 onPostReply={postComment}
                 onDelete={deleteComment}
                 onResolve={resolveSuggestion}
@@ -305,6 +311,7 @@ function CommentItem({
   isRecipeOwner,
   canPost,
   pending,
+  mentionCandidates,
   onPostReply,
   onDelete,
   onResolve,
@@ -316,6 +323,7 @@ function CommentItem({
   isRecipeOwner: boolean;
   canPost: boolean;
   pending: boolean;
+  mentionCandidates: MentionCandidate[];
   onPostReply: PostComment;
   onDelete: (commentId: string) => void;
   onResolve: (commentId: string, resolved: boolean) => void;
@@ -403,7 +411,7 @@ function CommentItem({
               isResolved && "text-muted-foreground",
             )}
           >
-            {comment.body}
+            <MentionText body={comment.body} candidates={mentionCandidates} />
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-1">
@@ -480,11 +488,12 @@ function CommentItem({
               <Label htmlFor={`reply-${comment.id}`} className="sr-only">
                 Reply
               </Label>
-              <Textarea
+              <MentionTextarea
                 id={`reply-${comment.id}`}
                 value={replyBody}
-                onChange={(event) => setReplyBody(event.target.value)}
-                placeholder="Write a reply…"
+                onChange={setReplyBody}
+                candidates={mentionCandidates}
+                placeholder="Write a reply… use @ to mention someone"
                 className="min-h-20 bg-background"
                 maxLength={4000}
                 disabled={pending}
@@ -529,6 +538,7 @@ function CommentItem({
               isRecipeOwner={isRecipeOwner}
               canPost={canPost}
               pending={pending}
+              mentionCandidates={mentionCandidates}
               onPostReply={onPostReply}
               onDelete={onDelete}
               onResolve={onResolve}
