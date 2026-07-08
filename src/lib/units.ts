@@ -304,6 +304,125 @@ export function scaleQuantity(
   return roundNice(quantity * factor);
 }
 
+// --- Weigh-based cooking: volume → weight by density (#385) ---------------
+
+/**
+ * Approximate densities (grams per millilitre) for the staples a home baker
+ * weighs most. Values are typical kitchen references — coverage matters more
+ * than a perfect number, and any density beats guessing at a scooped cup. Each
+ * entry lists normalized match phrases; the longest matching phrase wins so
+ * "brown sugar" beats "sugar" and "bread flour" beats "flour".
+ */
+type DensityEntry = { gPerMl: number; phrases: string[] };
+
+const INGREDIENT_DENSITIES: DensityEntry[] = [
+  { gPerMl: 1.0, phrases: ["water"] },
+  { gPerMl: 1.03, phrases: ["milk", "buttermilk"] },
+  { gPerMl: 1.0, phrases: ["cream", "heavy cream", "sour cream"] },
+  { gPerMl: 1.03, phrases: ["yogurt", "yoghurt"] },
+  {
+    gPerMl: 0.53,
+    phrases: ["flour", "all purpose flour", "plain flour", "bread flour"],
+  },
+  { gPerMl: 0.55, phrases: ["whole wheat flour", "wholemeal flour"] },
+  { gPerMl: 0.85, phrases: ["sugar", "granulated sugar", "caster sugar"] },
+  { gPerMl: 0.9, phrases: ["brown sugar"] },
+  {
+    gPerMl: 0.5,
+    phrases: ["powdered sugar", "confectioners sugar", "icing sugar"],
+  },
+  { gPerMl: 0.96, phrases: ["butter"] },
+  { gPerMl: 0.92, phrases: ["oil", "olive oil", "vegetable oil", "canola oil"] },
+  { gPerMl: 1.42, phrases: ["honey"] },
+  { gPerMl: 1.37, phrases: ["maple syrup"] },
+  { gPerMl: 0.45, phrases: ["cocoa", "cocoa powder"] },
+  { gPerMl: 0.54, phrases: ["cornstarch", "corn starch", "cornflour"] },
+  { gPerMl: 1.2, phrases: ["salt"] },
+];
+
+/**
+ * Normalize an ingredient's free-text `item` into whole-word tokens for density
+ * matching. Mirrors the tolerant normalizer in `substitutions.ts` (lowercase,
+ * strip accents/parentheticals, keep the part before the first comma), but is
+ * kept local so `units.ts` stays dependency-free (substitutions imports units).
+ */
+function densityTokens(item: string | null | undefined): string[] {
+  if (!item) return [];
+  let s = item.toLowerCase();
+  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = s.replace(/\([^)]*\)/g, " ");
+  s = s.split(",")[0] ?? s;
+  s = s.replace(/[^a-z0-9]+/g, " ");
+  return s.split(" ").filter(Boolean);
+}
+
+/** True when `phrase` appears as a contiguous run of whole words in `haystack`. */
+function containsWholePhrase(haystack: string[], phrase: string[]): boolean {
+  if (phrase.length === 0 || phrase.length > haystack.length) return false;
+  for (let i = 0; i + phrase.length <= haystack.length; i++) {
+    let matched = true;
+    for (let j = 0; j < phrase.length; j++) {
+      if (haystack[i + j] !== phrase[j]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return true;
+  }
+  return false;
+}
+
+const DENSITY_INDEX = INGREDIENT_DENSITIES.flatMap((entry) =>
+  entry.phrases.map((phrase) => ({
+    gPerMl: entry.gPerMl,
+    tokens: phrase.split(" "),
+  })),
+);
+
+/**
+ * Resolve an ingredient's density (grams per millilitre) from its `item` text,
+ * or `null` when nothing in the static table matches. Prefers the most specific
+ * (longest) phrase so "brown sugar" and "olive oil" beat "sugar" and "oil".
+ */
+export function densityForItem(item: string | null | undefined): number | null {
+  const tokens = densityTokens(item);
+  if (tokens.length === 0) return null;
+  let best: { gPerMl: number; len: number } | null = null;
+  for (const { gPerMl, tokens: phrase } of DENSITY_INDEX) {
+    if (!containsWholePhrase(tokens, phrase)) continue;
+    if (!best || phrase.length > best.len) best = { gPerMl, len: phrase.length };
+  }
+  return best ? best.gPerMl : null;
+}
+
+/**
+ * Convert a measured ingredient amount to grams so a cook can weigh straight
+ * onto a scale (#385). Mass units convert directly; volume units resolve a
+ * density from the `item` text and multiply. Returns `null` — meaning "render
+ * unchanged" — for count/unitless amounts ("1 egg", "pinch"), temperatures, or
+ * a volume whose ingredient has no known density (so callers never show "NaN g").
+ */
+export function toWeight(
+  quantity: number | null | undefined,
+  unit: string | null | undefined,
+  item: string | null | undefined,
+): number | null {
+  if (quantity == null || Number.isNaN(quantity)) return null;
+  const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
+  if (!def) return null;
+  if (def.dimension === "mass") {
+    // `base` is grams for mass units, so this also converts oz/lb/kg → g.
+    return roundNice(quantity * def.base);
+  }
+  if (def.dimension === "volume") {
+    const density = densityForItem(item);
+    if (density == null) return null;
+    // `base` is millilitres for volume units.
+    return roundNice(quantity * def.base * density);
+  }
+  return null;
+}
+
 /**
  * The CLDR plural category (`one`, `few`, `other`, …) for a count in a locale,
  * via `Intl.PluralRules`. Used to pick the right spelled-out unit label instead

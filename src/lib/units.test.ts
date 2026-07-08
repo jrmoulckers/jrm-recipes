@@ -4,6 +4,7 @@ import {
   convertTemperature,
   convertUnit,
   defaultSystemForLocale,
+  densityForItem,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
@@ -13,6 +14,7 @@ import {
   scaleQuantity,
   toSystem,
   toSystemRange,
+  toWeight,
   unitDimension,
 } from "./units";
 
@@ -119,6 +121,44 @@ describe("scaleQuantity", () => {
   it("preserves nullable quantities", () => {
     expect(scaleQuantity(null, 2)).toBeNull();
     expect(scaleQuantity(undefined, 2)).toBeNull();
+  });
+});
+
+describe("densityForItem / toWeight (#385 weigh-based cooking)", () => {
+  it("resolves densities for common staples and prefers the specific phrase", () => {
+    expect(densityForItem("all-purpose flour")).toBe(0.53);
+    expect(densityForItem("granulated sugar")).toBe(0.85);
+    // "brown sugar" must win over the bare "sugar" entry.
+    expect(densityForItem("brown sugar, packed")).toBe(0.9);
+    expect(densityForItem("extra-virgin olive oil")).toBe(0.92);
+    expect(densityForItem("water")).toBe(1);
+  });
+
+  it("returns null for ingredients with no known density", () => {
+    expect(densityForItem("dragonfruit")).toBeNull();
+    expect(densityForItem("")).toBeNull();
+    expect(densityForItem(null)).toBeNull();
+  });
+
+  it("converts volume ingredients to grams via density", () => {
+    // 1 cup (236.588 ml) flour × 0.53 ≈ 125 g.
+    expect(toWeight(1, "cup", "all-purpose flour")).toBeCloseTo(125.39, 1);
+    // 1 cup water ≈ 236.6 g.
+    expect(toWeight(1, "cup", "water")).toBeCloseTo(236.59, 1);
+  });
+
+  it("converts mass units to grams directly, no density needed", () => {
+    expect(toWeight(1, "oz", "anything")).toBeCloseTo(28.35, 2);
+    expect(toWeight(1, "lb", "butter")).toBeCloseTo(453.59, 1);
+    expect(toWeight(2, "kg", "flour")).toBe(2000);
+  });
+
+  it("leaves count/unknown/undensity amounts unconverted (no NaN g)", () => {
+    expect(toWeight(1, null, "egg")).toBeNull();
+    expect(toWeight(1, "", "pinch")).toBeNull();
+    // A volume of something with no known density can't be weighed.
+    expect(toWeight(2, "cup", "diced tomatoes")).toBeNull();
+    expect(toWeight(null, "cup", "flour")).toBeNull();
   });
 });
 

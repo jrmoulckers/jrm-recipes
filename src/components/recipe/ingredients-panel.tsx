@@ -13,6 +13,7 @@ import {
   formatQuantity,
   scaleQuantity,
   toSystem,
+  toWeight,
 } from "~/lib/units";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
@@ -80,9 +81,20 @@ export type IngredientsPanelControls = {
   householdSize?: number | null;
 };
 
-function measure(q: number | null, unit: string | null, system: System) {
+function measure(
+  q: number | null,
+  unit: string | null,
+  system: System,
+  item: string,
+) {
   if (q == null) return { q: null as number | null, unit: unit ?? "" };
   if (system === "original" || !unit) return { q, unit: unit ?? "" };
+  if (system === "grams") {
+    // Weigh-based cooking (#385): render convertible volumes/masses in grams,
+    // leaving count/unknown ingredients (e.g. "1 egg", "pinch") untouched.
+    const grams = toWeight(q, unit, item);
+    return grams != null ? { q: grams, unit: "g" } : { q, unit };
+  }
   const converted = toSystem(q, unit, system);
   return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
@@ -96,8 +108,8 @@ function amountLabel(
 ) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
-  const m = measure(q, ing.unit, system);
-  const mMax = qMax != null ? measure(qMax, ing.unit, system) : null;
+  const m = measure(q, ing.unit, system, ing.item);
+  const mMax = qMax != null ? measure(qMax, ing.unit, system, ing.item) : null;
   if (m.q == null) {
     return {
       number: "",
@@ -116,8 +128,8 @@ function amountLabel(
   }
   const number =
     mMax?.q != null
-      ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
-      : formatQuantity(m.q, undefined, locale);
+      ? `${formatQuantity(m.q, m.unit, locale)}–${formatQuantity(mMax.q, m.unit, locale)}`
+      : formatQuantity(m.q, m.unit, locale);
   return { number, unit: displayUnit(m.unit, m.q, locale) };
 }
 
@@ -326,7 +338,7 @@ export function IngredientsPanel({
           aria-label="Measurement system"
           className="inline-flex rounded-lg border border-border p-0.5 text-sm"
         >
-          {(["original", "us", "metric"] as const).map((s) => (
+          {(["original", "us", "metric", "grams"] as const).map((s) => (
             <button
               key={s}
               type="button"
