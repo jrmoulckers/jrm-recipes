@@ -33,6 +33,11 @@ import { ImageUploadField } from "~/components/ui/image-upload";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { CharacterCounter } from "~/components/ui/character-counter";
+import {
+  COOK_NOTE_MAX_LENGTH,
+  COOK_NOTE_TOO_LONG_MESSAGE,
+} from "~/server/cooklog/validation";
 
 export function CookLogSection({
   recipeId,
@@ -285,10 +290,19 @@ function LogCookButton({
               id="cook-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              maxLength={2000}
               placeholder="Doubled the garlic, baked 5 min longer, everyone went back for seconds…"
               disabled={pending}
             />
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Note any tweaks so next time is even better.
+              </p>
+              <CharacterCounter
+                value={note.length}
+                max={COOK_NOTE_MAX_LENGTH}
+                overMessage={COOK_NOTE_TOO_LONG_MESSAGE}
+              />
+            </div>
           </div>
 
           <ImageUploadField

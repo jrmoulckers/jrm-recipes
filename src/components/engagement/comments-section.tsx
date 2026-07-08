@@ -38,6 +38,11 @@ import {
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
+import { CharacterCounter } from "~/components/ui/character-counter";
+import {
+  COMMENT_MAX_LENGTH,
+  COMMENT_TOO_LONG_MESSAGE,
+} from "~/server/engagement/validation";
 import { cn } from "~/lib/utils";
 import { formatRelativeTime } from "~/lib/dates";
 
@@ -231,18 +236,24 @@ export function CommentsSection(props: {
                   : "Leave a note for the family table…"
               }
               className="min-h-28 resize-y bg-background"
-              maxLength={4000}
               disabled={pending}
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
                 {kind === "suggestion"
-                  ? "Suggestions stay open until the recipe owner resolves them."
-                  : "Comments support replies for side conversations."}
+                  ? "Suggest a change the recipe owner can resolve."
+                  : "Share how it turned out or a tweak you'd make."}
               </p>
-              <Button type="submit" size="sm" disabled={pending || !body.trim()}>
-                {pending ? "Posting…" : "Post"}
-              </Button>
+              <div className="flex items-center gap-3">
+                <CharacterCounter
+                  value={body.length}
+                  max={COMMENT_MAX_LENGTH}
+                  overMessage={COMMENT_TOO_LONG_MESSAGE}
+                />
+                <Button type="submit" size="sm" disabled={pending || !body.trim()}>
+                  {pending ? "Posting…" : "Post"}
+                </Button>
+              </div>
             </div>
           </form>
         ) : (
