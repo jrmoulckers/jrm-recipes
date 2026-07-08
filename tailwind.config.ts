@@ -125,9 +125,17 @@ const config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        "fade-out": {
+          from: { opacity: "1" },
+          to: { opacity: "0" },
+        },
         "pop-in": {
           "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "pop-out": {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.96)" },
         },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
@@ -146,7 +154,9 @@ const config = {
         "accordion-down": "accordion-down 0.2s var(--ease-standard)",
         "accordion-up": "accordion-up 0.2s var(--ease-standard)",
         "fade-in": "fade-in 0.2s var(--ease-standard)",
+        "fade-out": "fade-out 0.15s var(--ease-standard)",
         "pop-in": "pop-in 0.18s var(--ease-standard)",
+        "pop-out": "pop-out 0.15s var(--ease-standard)",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
