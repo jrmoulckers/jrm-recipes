@@ -78,6 +78,13 @@
       "when": 1783475198170,
       "tag": "0010_strange_moondragon",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783490020461,
+      "tag": "0011_colorful_thundra",
+      "breakpoints": true
     }
   ]
 }
