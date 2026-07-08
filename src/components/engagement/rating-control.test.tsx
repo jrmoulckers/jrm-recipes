@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -147,6 +147,95 @@ describe("RatingControl", () => {
     expect(
       await screen.findByText("Your rating: 4. Click it again to clear."),
     ).toBeInTheDocument();
+  });
+
+  it("exposes the star cluster as a labelled group (1.3.1 / 4.1.2)", () => {
+    render(
+      <RatingControl
+        {...baseProps}
+        summary={{ average: 4, count: 2 }}
+        viewerRating={null}
+        canRate
+      />,
+    );
+
+    const group = screen.getByRole("group", { name: "Recipe rating" });
+    expect(group).toBeInTheDocument();
+    // All five stars live inside the labelled group.
+    for (const value of [1, 2, 3, 4, 5]) {
+      const name = value === 1 ? "Rate 1 star" : `Rate ${value} stars`;
+      expect(within(group).getByRole("button", { name })).toBeInTheDocument();
+    }
+  });
+
+  it("keeps a visible focus ring on every star even when rating is disabled (2.4.7)", () => {
+    const { rerender } = render(
+      <RatingControl
+        {...baseProps}
+        summary={{ average: 4, count: 2 }}
+        viewerRating={null}
+        canRate={false}
+      />,
+    );
+
+    for (const value of [1, 2, 3, 4, 5]) {
+      const name = value === 1 ? "Rate 1 star" : `Rate ${value} stars`;
+      const star = screen.getByRole("button", { name });
+      expect(star).toBeDisabled();
+      expect(star).toHaveClass("focus-visible:ring-2", "focus-visible:ring-ring");
+    }
+
+    rerender(
+      <RatingControl
+        {...baseProps}
+        summary={{ average: 4, count: 2 }}
+        viewerRating={null}
+        canRate
+      />,
+    );
+
+    const enabledStar = screen.getByRole("button", { name: "Rate 3 stars" });
+    expect(enabledStar).toBeEnabled();
+    expect(enabledStar).toHaveClass(
+      "focus-visible:ring-2",
+      "focus-visible:ring-ring",
+    );
+  });
+
+  it("announces the summary through a polite status region (4.1.3)", () => {
+    render(
+      <RatingControl
+        {...baseProps}
+        summary={{ average: 4.5, count: 10 }}
+        viewerRating={null}
+        canRate
+      />,
+    );
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveTextContent("4.5");
+    expect(status).toHaveTextContent("10 ratings");
+  });
+
+  it("updates the status region when a rating is submitted (4.1.3)", async () => {
+    const user = userEvent.setup();
+    render(
+      <RatingControl
+        {...baseProps}
+        summary={{ average: 0, count: 0 }}
+        viewerRating={null}
+        canRate
+      />,
+    );
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("No ratings yet");
+
+    await user.click(screen.getByRole("button", { name: "Rate 4 stars" }));
+
+    await waitFor(() => expect(status).toHaveTextContent("4.0"));
+    expect(status).toHaveTextContent("1 rating");
   });
 
   it("clears the rating when the current star is clicked again", async () => {

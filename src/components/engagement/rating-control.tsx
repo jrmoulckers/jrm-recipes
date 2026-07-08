@@ -98,7 +98,7 @@ export function RatingControl(props: {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-token">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div role="status" aria-live="polite">
           <p className="text-sm font-semibold text-foreground">
             {summary.count > 0 ? summary.average.toFixed(1) : "No ratings yet"}
           </p>
@@ -112,6 +112,7 @@ export function RatingControl(props: {
         <div
           className="flex items-center gap-1"
           onMouseLeave={() => setHoverRating(null)}
+          role="group"
           aria-label="Recipe rating"
         >
           {[1, 2, 3, 4, 5].map((value) => {
@@ -128,9 +129,8 @@ export function RatingControl(props: {
                 onFocus={() => canRate && setHoverRating(value)}
                 onBlur={() => setHoverRating(null)}
                 className={cn(
-                  "rounded-full p-1.5 text-muted-foreground transition-[color,transform] duration-150 motion-reduce:transition-none",
-                  canRate &&
-                    "hover:scale-105 hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "rounded-full p-1.5 text-muted-foreground transition-[color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none",
+                  canRate && "hover:scale-105 hover:text-amber-400",
                   pending && "cursor-wait",
                   !canRate && "cursor-default",
                 )}
