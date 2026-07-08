@@ -11,6 +11,7 @@ import { type ConsentStatus } from "~/config/consent";
 import { type FlagMap } from "~/lib/analytics/flags";
 import { ThemeProvider } from "~/components/theme/theme-provider";
 import { A11yProvider } from "~/components/a11y/a11y-provider";
+import { HouseholdProvider } from "~/components/household/household-provider";
 import { AnalyticsProvider } from "~/components/analytics/analytics-provider";
 import { ConsentProvider } from "~/components/analytics/consent-provider";
 import { FlagsProvider } from "~/components/analytics/flags-provider";
@@ -29,6 +30,7 @@ export function Providers({
   initialConsent = "unset",
   requireConsent = false,
   initialFlags = {},
+  initialHousehold = null,
 }: {
   children: React.ReactNode;
   initialTheme?: UITheme;
@@ -38,25 +40,28 @@ export function Providers({
   initialConsent?: ConsentStatus;
   requireConsent?: boolean;
   initialFlags?: FlagMap;
+  initialHousehold?: number | null;
 }) {
   return (
     <ThemeProvider initialTheme={initialTheme} initialScheme={initialScheme}>
       <A11yProvider initialPrefs={initialA11y}>
-        <ConsentProvider
-          initialStatus={initialConsent}
-          requireConsent={requireConsent}
-        >
-          <AnalyticsProvider userId={initialUserId}>
-            <FlagsProvider initialFlags={initialFlags}>
-              <PageviewTracker />
-              <TooltipProvider delayDuration={200}>
-                {children}
-                <ConsentNotice />
-                <Toaster position="top-center" richColors closeButton />
-              </TooltipProvider>
-            </FlagsProvider>
-          </AnalyticsProvider>
-        </ConsentProvider>
+        <HouseholdProvider initialSize={initialHousehold}>
+          <ConsentProvider
+            initialStatus={initialConsent}
+            requireConsent={requireConsent}
+          >
+            <AnalyticsProvider userId={initialUserId}>
+              <FlagsProvider initialFlags={initialFlags}>
+                <PageviewTracker />
+                <TooltipProvider delayDuration={200}>
+                  {children}
+                  <ConsentNotice />
+                  <Toaster position="top-center" richColors closeButton />
+                </TooltipProvider>
+              </FlagsProvider>
+            </AnalyticsProvider>
+          </ConsentProvider>
+        </HouseholdProvider>
       </A11yProvider>
     </ThemeProvider>
   );

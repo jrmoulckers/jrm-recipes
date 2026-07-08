@@ -6,15 +6,24 @@ import {
   Blocks,
   BookOpenText,
   Contrast,
+  Minus,
+  Plus,
   RotateCcw,
   ShieldCheck,
   Type,
+  Users,
   Zap,
 } from "lucide-react";
 
 import { TEXT_SIZES, type TextSize, isA11yActive } from "~/config/a11y";
+import {
+  DEFAULT_HOUSEHOLD,
+  MAX_HOUSEHOLD,
+  MIN_HOUSEHOLD,
+} from "~/config/household";
 import { cn } from "~/lib/utils";
 import { useA11y } from "~/components/a11y/a11y-provider";
+import { useHousehold } from "~/components/household/household-provider";
 import { useTheme } from "~/components/theme/theme-provider";
 import { PrivacyToggle } from "~/components/privacy/privacy-toggle";
 import { Button } from "~/components/ui/button";
@@ -74,8 +83,10 @@ function ToggleRow({
 export function AccessibilityMenu() {
   const { prefs, effective, update, reset } = useA11y();
   const { theme, setKidsMode } = useTheme();
+  const household = useHousehold();
   const active = isA11yActive(prefs);
   const kidsOn = theme === "kids";
+  const householdValue = household.size ?? DEFAULT_HOUSEHOLD;
 
   return (
     <Dialog>
@@ -183,6 +194,69 @@ export function AccessibilityMenu() {
               checked={prefs.reading}
               onChange={(v) => update({ reading: v })}
             />
+          </section>
+
+          <Separator />
+
+          {/* Household size — auto-scale recipes for a busy family (#399) */}
+          <section className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Users className="size-4 text-muted-foreground" />
+              Cooking for
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label="Fewer people"
+                  disabled={householdValue <= MIN_HOUSEHOLD}
+                  onClick={() => household.setSize(householdValue - 1)}
+                >
+                  <Minus />
+                </Button>
+                <div className="min-w-16 text-center">
+                  <div
+                    className={cn(
+                      "font-display text-xl font-semibold tabular-nums",
+                      household.size == null && "text-muted-foreground",
+                    )}
+                  >
+                    {householdValue}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {householdValue === 1 ? "person" : "people"}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label="More people"
+                  disabled={householdValue >= MAX_HOUSEHOLD}
+                  onClick={() => household.setSize(householdValue + 1)}
+                >
+                  <Plus />
+                </Button>
+              </div>
+              <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+                {household.size == null
+                  ? "Recipes use their own servings. Set this to auto-scale Cook Mode and shopping lists."
+                  : "Cook Mode and shopping lists start scaled to your family."}
+              </p>
+            </div>
+            {household.size != null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={household.clear}
+                className="self-start text-muted-foreground"
+              >
+                <RotateCcw className="size-4" />
+                Use each recipe&apos;s servings
+              </Button>
+            )}
           </section>
 
           <Separator />

@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   DAYS_IN_WEEK,
+  addDaysToParam,
   formatDayName,
   formatDayNumber,
   formatFullDay,
+  formatMonthDay,
+  formatWeekdayLong,
   formatWeekRange,
   getPlannerWeek,
   isSameDate,
@@ -44,6 +47,18 @@ describe("startOfPlannerWeek", () => {
     expect(startOfPlannerWeek(MON_JUL_6).getDay()).toBe(0);
     expect(toDateParam(startOfPlannerWeek(MON_JUL_6))).toBe("2026-07-05");
     expect(toDateParam(startOfPlannerWeek(THU_JUL_9))).toBe("2026-07-05");
+  });
+});
+
+describe("addDaysToParam", () => {
+  it("shifts a date param forward and backward by whole days", () => {
+    expect(addDaysToParam("2026-07-06", 7)).toBe("2026-07-13");
+    expect(addDaysToParam("2026-07-06", -7)).toBe("2026-06-29");
+    expect(addDaysToParam("2026-07-06", 0)).toBe("2026-07-06");
+  });
+
+  it("rolls across month boundaries", () => {
+    expect(addDaysToParam("2026-07-30", 7)).toBe("2026-08-06");
   });
 });
 
@@ -93,6 +108,8 @@ describe("day formatting", () => {
     expect(formatDayName(sunday)).toBe("Sun");
     expect(formatDayNumber(sunday)).toBe("5");
     expect(formatFullDay(sunday)).toBe("Sunday, Jul 5");
+    expect(formatWeekdayLong(sunday)).toBe("Sunday");
+    expect(formatMonthDay(sunday)).toBe("Jul 5");
   });
 });
 

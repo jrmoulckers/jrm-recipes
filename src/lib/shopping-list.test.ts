@@ -4,14 +4,18 @@ import {
   aggregateShoppingList,
   categorize,
   describeQuantity,
+  formatShoppingListText,
   groupByCategory,
+  isPantryStaple,
   mergeShoppingItems,
   normalizeItemName,
+  PANTRY_STAPLES,
   scaleFactor,
   toShoppingItems,
   type AggregatedItem,
   type ShoppingCategory,
   type ShoppingItemInput,
+  type ShoppingTextItem,
 } from "./shopping-list";
 
 function byItem<T extends { item: string }>(items: T[], name: string) {
@@ -438,3 +442,160 @@ describe("aggregated allergens (#432)", () => {
 
 const _sample: ShoppingItemInput = { item: "Water" };
 void _sample;
+
+describe("isPantryStaple", () => {
+  it.each([
+    "salt",
+    "Sea Salt",
+    "kosher salt",
+    "black pepper",
+    "peppercorns",
+    "water",
+    "warm water",
+    "oil",
+    "olive oil",
+    "Extra Virgin Olive Oil",
+    "vegetable oil",
+    "cooking spray",
+    "butter",
+    "garlic powder",
+    "onion powder",
+    "paprika",
+    "ground cumin",
+    "cinnamon",
+    "bay leaf",
+    "2 bay leaves",
+  ])("treats %s as a staple", (item) => {
+    expect(isPantryStaple(item)).toBe(true);
+  });
+
+  it.each([
+    "chicken thighs",
+    "flour",
+    "granulated sugar",
+    "fresh basil",
+    "fresh ginger",
+    "garlic clove",
+    "yellow onion",
+    "coconut milk",
+    "chicken stock",
+    "tomatoes",
+    "",
+  ])("does not treat %s as a staple", (item) => {
+    expect(isPantryStaple(item)).toBe(false);
+  });
+
+  it("matches whole words only (no substring false positives)", () => {
+    // "oil" must not fire on "boiled", "salt" must not fire on "salted"
+    expect(isPantryStaple("boiled potatoes")).toBe(false);
+    expect(isPantryStaple("salted caramel")).toBe(false);
+    // fresh aromatics are deliberately excluded so real produce is never hidden
+    expect(isPantryStaple("garlic")).toBe(false);
+    expect(isPantryStaple("basil")).toBe(false);
+  });
+
+  it("exposes a non-empty staple list", () => {
+    expect(PANTRY_STAPLES.length).toBeGreaterThan(0);
+    expect(PANTRY_STAPLES).toContain("salt");
+  });
+});
+
+describe("isPantryStaple — compound ingredients keep their head noun (#412)", () => {
+  // Regression: staple EXCLUSION used to use whole-word containment, so a staple
+  // word ("pepper", "butter", "water", "oil") appearing inside a distinct
+  // ingredient silently dropped a real must-buy from the default shopping list.
+  it.each([
+    "bell pepper",
+    "red bell pepper",
+    "jalapeño pepper",
+    "peanut butter",
+    "almond butter",
+    "coconut water",
+    "rose water",
+    "water chestnuts",
+    "sesame oil",
+    "chili oil",
+    "truffle oil",
+    "coconut oil",
+    "sparkling water",
+    "ground beef",
+  ])("keeps %s on the list (not a staple)", (item) => {
+    expect(isPantryStaple(item)).toBe(false);
+  });
+
+  it.each([
+    "salt",
+    "ground pepper",
+    "ground black pepper",
+    "olive oil",
+    "fine sea salt",
+    "unsalted butter",
+  ])("still drops %s (a genuine staple)", (item) => {
+    expect(isPantryStaple(item)).toBe(true);
+  });
+});
+
+describe("formatShoppingListText", () => {
+  function item(
+    over: Partial<ShoppingTextItem> & Pick<ShoppingTextItem, "item" | "category">,
+  ): ShoppingTextItem {
+    return {
+      quantity: null,
+      quantityMax: null,
+      unit: null,
+      checked: false,
+      ...over,
+    };
+  }
+
+  const sample: ShoppingTextItem[] = [
+    item({ item: "Chicken thighs", quantity: 2, unit: "lb", category: "Meat & Seafood" }),
+    item({ item: "Spinach", quantity: 1, unit: "bunch", category: "Produce" }),
+    item({ item: "Apples", quantity: 6, category: "Produce" }),
+    item({ item: "Milk", quantity: 1, unit: "gal", category: "Dairy & Eggs", checked: true }),
+  ];
+
+  it("groups by aisle with markdown checkboxes, excluding checked items", () => {
+    const text = formatShoppingListText(sample);
+    expect(text).toContain("Produce:");
+    expect(text).toContain("- [ ] 6 Apples");
+    expect(text).toContain("- [ ] 1 bunch Spinach");
+    expect(text).toContain("Meat & Seafood:");
+    expect(text).toContain("- [ ] 2 lb Chicken thighs");
+    // checked "Milk" is excluded by default, so its aisle never appears
+    expect(text).not.toContain("Milk");
+    expect(text).not.toContain("Dairy & Eggs:");
+  });
+
+  it("orders categories by aisle and items alphabetically within one", () => {
+    const text = formatShoppingListText(sample);
+    expect(text.indexOf("Produce:")).toBeLessThan(text.indexOf("Meat & Seafood:"));
+    expect(text.indexOf("Apples")).toBeLessThan(text.indexOf("Spinach"));
+  });
+
+  it("includes checked items (as [x]) when asked", () => {
+    const text = formatShoppingListText(sample, { includeChecked: true });
+    expect(text).toContain("- [x] 1 gallon Milk");
+  });
+
+  it("prepends an optional title", () => {
+    const text = formatShoppingListText(sample, { title: "Weeknight run" });
+    expect(text.startsWith("Weeknight run\n")).toBe(true);
+  });
+
+  it("appends notes to the line", () => {
+    const text = formatShoppingListText([
+      item({ item: "Bread", category: "Bakery", note: "the seeded one" }),
+    ]);
+    expect(text).toContain("- [ ] Bread — the seeded one");
+  });
+
+  it("returns an empty string when there is nothing to send", () => {
+    expect(formatShoppingListText([])).toBe("");
+    expect(
+      formatShoppingListText([
+        item({ item: "Milk", category: "Dairy & Eggs", checked: true }),
+      ]),
+    ).toBe("");
+  });
+});

@@ -84,10 +84,13 @@ function playTimerTone() {
   play();
 }
 
-function defaultState(recipe: CookRecipe): StoredCookState {
+function defaultState(
+  recipe: CookRecipe,
+  householdSize: number | null,
+): StoredCookState {
   return {
     stepIndex: 0,
-    servings: recipe.servings ?? null,
+    servings: householdSize ?? recipe.servings ?? null,
     system: "original",
     checked: [],
     timers: {},
@@ -111,13 +114,17 @@ function cookStorage(): WritableStorage | null {
  * localStorage keyed by recipe id, with timers persisted by absolute end time so
  * a running countdown survives a reload.
  */
-export function useCookSession(recipe: CookRecipe) {
+export function useCookSession(
+  recipe: CookRecipe,
+  options?: { householdSize?: number | null },
+) {
+  const householdSize = options?.householdSize ?? null;
   const storageKey = cookStorageKey(recipe.id);
   const totalSteps = recipe.steps.length;
   const baseServings = recipe.servings ?? null;
 
   const [state, setState] = React.useState<StoredCookState>(() =>
-    defaultState(recipe),
+    defaultState(recipe, householdSize),
   );
   const [loaded, setLoaded] = React.useState(false);
   const announcedTimersRef = React.useRef<Set<string>>(new Set());
@@ -138,14 +145,14 @@ export function useCookSession(recipe: CookRecipe) {
       }
       setState({
         stepIndex: clampStepIndex(stored.stepIndex, totalSteps),
-        servings: stored.servings ?? baseServings,
+        servings: stored.servings ?? householdSize ?? baseServings,
         system: stored.system,
         checked: stored.checked,
         timers,
       });
     }
     setLoaded(true);
-  }, [storageKey, totalSteps, baseServings]);
+  }, [storageKey, totalSteps, baseServings, householdSize]);
 
   // Persist after hydration; skipping the pre-load render avoids clobbering
   // stored data with the initial defaults.
@@ -378,8 +385,8 @@ export function useCookSession(recipe: CookRecipe) {
     // Clear the cook_started marker too, so re-cooking starts a fresh session.
     endCookSession(cookStorage(), recipe.id);
     announcedTimersRef.current.clear();
-    setState(defaultState(recipe));
-  }, [recipe, storageKey]);
+    setState(defaultState(recipe, householdSize));
+  }, [recipe, storageKey, householdSize]);
 
   const activeTimers = React.useMemo<ActiveTimer[]>(() => {
     const active: ActiveTimer[] = [];

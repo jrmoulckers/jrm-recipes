@@ -48,6 +48,7 @@ import {
   recipeVersions,
   recipeViews,
   recipes,
+  mealPlanEntries,
   tags,
   cookLogEntries,
   favorites,
@@ -77,6 +78,7 @@ import {
   PUBLIC_RECIPES_REVALIDATE_SECONDS,
   PUBLIC_RECIPES_TAG,
 } from "./cache";
+import { todayParam } from "~/server/planner/week";
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -566,6 +568,73 @@ export async function listLibrary(
     with: { author: true, tags: { with: { tag: true } } },
   });
   return applyRatingSort(rows, sort);
+}
+
+/** A dinner-appropriate recipe for the one-tap "what's for dinner" picker (#375). */
+export type DinnerCandidate = {
+  id: string;
+  slug: string;
+  title: string;
+  coverImageUrl: string | null;
+  totalMinutes: number | null;
+  difficulty: "easy" | "medium" | "hard" | null;
+};
+
+/** Longest dinner a "quick" candidate may take before it loses the bias (#375). */
+const QUICK_DINNER_MINUTES = 45;
+
+/**
+ * Candidate recipes for the home dinner picker (#375): the viewer's library
+ * (their own + their groups', published only), minus whatever is already on
+ * tonight's dinner plan, biased toward quick + easy/medium dishes. Returns a
+ * bounded pool the client shuffles from; empty without a database or user.
+ */
+export async function listDinnerCandidates(
+  viewer: User | null,
+  { today = todayParam(), limit = 30 }: { today?: string; limit?: number } = {},
+): Promise<DinnerCandidate[]> {
+  if (!isDbConfigured() || !viewer) return [];
+  const groupIds = await viewerGroupIds(viewer);
+  const scope =
+    groupIds.length > 0
+      ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
+      : eq(recipes.authorId, viewer.id);
+  const [rows, todaysDinner] = await Promise.all([
+    db.query.recipes.findMany({
+      where: and(notDeleted, eq(recipes.status, "published"), scope),
+      columns: {
+        id: true,
+        slug: true,
+        title: true,
+        coverImageUrl: true,
+        totalMinutes: true,
+        difficulty: true,
+      },
+    }),
+    db.query.mealPlanEntries.findMany({
+      where: and(
+        eq(mealPlanEntries.userId, viewer.id),
+        eq(mealPlanEntries.slot, "dinner"),
+        eq(mealPlanEntries.date, today),
+      ),
+      columns: { recipeId: true },
+    }),
+  ]);
+  const planned = new Set(
+    todaysDinner
+      .map((entry) => entry.recipeId)
+      .filter((id): id is string => id != null),
+  );
+  const available = rows.filter((recipe) => !planned.has(recipe.id));
+  // Soft bias: quick (or untimed) and not "hard". Fall back to the full pool so
+  // a cook whose recipes are all long/hard still gets a suggestion.
+  const preferred = available.filter(
+    (recipe) =>
+      (recipe.totalMinutes == null || recipe.totalMinutes <= QUICK_DINNER_MINUTES) &&
+      recipe.difficulty !== "hard",
+  );
+  const pool = preferred.length > 0 ? preferred : available;
+  return pool.slice(0, limit);
 }
 
 /**

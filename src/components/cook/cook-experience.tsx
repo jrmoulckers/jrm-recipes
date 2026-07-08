@@ -12,12 +12,17 @@ import {
   CheckCircle2,
   ChefHat,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   ListOrdered,
   Pause,
   Play,
+  Repeat,
   RotateCcw,
   Timer,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,9 +56,14 @@ import { TechniqueChips } from "./technique-chips";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
+import { useSpeech } from "./use-speech";
+import { useOneHandedNav } from "./use-one-handed-nav";
+import { useHousehold } from "~/components/household/household-provider";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
+  const speech = useSpeech();
+  const household = useHousehold();
   const router = useRouter();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
@@ -76,7 +86,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     setSystem,
     toggleChecked,
     clearSession,
-  } = useCookSession(recipe);
+  } = useCookSession(recipe, { householdSize: household.size });
+
+  const oneHandedNav = useOneHandedNav({
+    onNext: goNext,
+    onPrevious: goPrevious,
+  });
 
   const ingredientControls = React.useMemo<IngredientsPanelControls>(
     () => ({
@@ -86,8 +101,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       onSystemChange: setSystem,
       checked,
       onToggleChecked: toggleChecked,
+      householdSize: household.size,
     }),
-    [servings, setServings, system, setSystem, checked, toggleChecked],
+    [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
   const handleFinish = React.useCallback(() => {
@@ -138,6 +154,17 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     setStepAnnouncement(`Step ${stepIndex + 1} of ${totalSteps}`);
   }, [stepIndex, totalSteps]);
 
+  // Read-aloud (#436): speak the active step whenever it changes (or the moment
+  // read-aloud is switched on). `speak` cancels any prior utterance, so rapid
+  // navigation never stacks up. Destructured so the effect depends on the stable
+  // callback, not the controller object's per-render identity.
+  const { enabled: readAloud, speak } = speech;
+  const currentInstruction = recipe.steps[stepIndex]?.instruction ?? "";
+  const currentStepId = recipe.steps[stepIndex]?.id ?? null;
+  React.useEffect(() => {
+    if (readAloud && currentInstruction) speak(currentInstruction);
+  }, [readAloud, currentStepId, currentInstruction, speak]);
+
   if (!firstStep) {
     return (
       <EmptyCookExperience
@@ -180,8 +207,28 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         <section
           key={currentStep.id}
           aria-labelledby="current-step-title"
-          className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
+          onClick={oneHandedNav.onClick}
+          onTouchStart={oneHandedNav.onTouchStart}
+          onTouchEnd={oneHandedNav.onTouchEnd}
+          className="relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
         >
+          {canGoPrevious && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-1 text-muted-foreground/25"
+            >
+              <ChevronLeft className="size-8" />
+            </span>
+          )}
+          {canGoNext && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-1 text-muted-foreground/25"
+            >
+              <ChevronRight className="size-8" />
+            </span>
+          )}
+
           <StepMedia
             step={currentStep}
             stepNumber={stepIndex + 1}
@@ -205,6 +252,13 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                   {formatCountdown(currentStep.timerSeconds)}
                 </Badge>
               )}
+              {speech.supported && (
+                <ReadAloudControls
+                  enabled={speech.enabled}
+                  onToggle={() => speech.setEnabled(!speech.enabled)}
+                  onRepeat={() => speech.speak(currentStep.instruction)}
+                />
+              )}
             </div>
 
             <div className="flex flex-col gap-4">
@@ -219,6 +273,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               >
                 {currentStep.instruction}
               </h1>
+              {totalSteps > 1 && (
+                <p className="text-xs text-muted-foreground/80">
+                  Tap the sides or swipe to move between steps.
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -367,6 +426,43 @@ function CookHeader({
         />
       </ProgressPrimitive.Root>
     </header>
+  );
+}
+
+function ReadAloudControls({
+  enabled,
+  onToggle,
+  onRepeat,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  onRepeat: () => void;
+}) {
+  return (
+    <div className="ml-auto flex items-center gap-2">
+      <Button
+        type="button"
+        size="sm"
+        variant={enabled ? "default" : "outline"}
+        aria-pressed={enabled}
+        onClick={onToggle}
+      >
+        {enabled ? <Volume2 /> : <VolumeX />}
+        Read aloud
+      </Button>
+      {enabled && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          aria-label="Repeat this step aloud"
+          onClick={onRepeat}
+        >
+          <Repeat />
+          Repeat
+        </Button>
+      )}
+    </div>
   );
 }
 

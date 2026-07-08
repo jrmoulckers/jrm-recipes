@@ -22,6 +22,7 @@ import {
   isUITheme,
 } from "~/config/themes";
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
+import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
 import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
 import { analyticsRequiresConsent } from "~/lib/analytics/config";
 import { getAllFlags } from "~/lib/analytics/server";
@@ -133,6 +134,7 @@ export default async function RootLayout({
     ? schemeCookie
     : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
+  const household = parseHousehold(cookieStore.get(HOUSEHOLD_COOKIE)?.value);
   const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
   const locale = resolveLocale();
   const currentUser = await getCurrentUser();
@@ -180,6 +182,7 @@ export default async function RootLayout({
           initialConsent={consent}
           requireConsent={analyticsRequiresConsent()}
           initialFlags={flags}
+          initialHousehold={household}
         >
           {children}
         </Providers>

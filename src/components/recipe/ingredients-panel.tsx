@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Info, Minus, Plus } from "lucide-react";
+import { AlertTriangle, Info, Minus, Plus, Users } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import {
@@ -69,6 +69,8 @@ export type IngredientsPanelControls = {
   onSystemChange: (next: System) => void;
   checked: ReadonlySet<string>;
   onToggleChecked: (id: string) => void;
+  /** When set, the servings were seeded from the saved household size (#399). */
+  householdSize?: number | null;
 };
 
 function measure(q: number | null, unit: string | null, system: System) {
@@ -137,6 +139,13 @@ export function IngredientsPanel({
   const checked = controls ? controls.checked : checkedInternal;
 
   const factor = canScale ? servings / baseServings : 1;
+
+  const householdSize = controls?.householdSize ?? null;
+  const scaledToHousehold =
+    householdSize != null &&
+    canScale &&
+    servings === householdSize &&
+    householdSize !== baseServings;
 
   const sections = React.useMemo(() => {
     const map = new Map<string, PanelIngredient[]>();
@@ -240,6 +249,13 @@ export function IngredientsPanel({
           ))}
         </div>
       </div>
+
+      {scaledToHousehold && (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Users className="size-3.5 text-primary" aria-hidden="true" />
+          Scaled to your family of {householdSize}.
+        </p>
+      )}
 
       {memberList.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2">

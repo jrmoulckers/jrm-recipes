@@ -1,11 +1,12 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
   listEntriesInRange,
+  listEntriesWithPrepText,
   listPlannableRecipes,
   type PlannableRecipe,
   type PlannerEntry,
@@ -14,6 +15,11 @@ import { recipeAllergenMap } from "~/server/recipes/queries";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { isAllergen, type Allergen } from "~/lib/allergens";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
+import {
+  buildPrepAheadReminders,
+  type PlannedPrepRecipe,
+  type PrepAheadReminder,
+} from "~/lib/prep-ahead";
 import {
   formatDayName,
   formatDayNumber,
@@ -26,8 +32,11 @@ import {
   previousWeekParam,
   toDateParam,
   todayParam,
+  tomorrowParam,
 } from "~/server/planner/week";
 import { Button } from "~/components/ui/button";
+import { PrepAheadNote } from "~/components/planner/prep-ahead-note";
+import { CopyLastWeekButton } from "~/components/planner/copy-last-week-button";
 import {
   PlannerBoard,
   PlannerEmptyState,
@@ -57,11 +66,14 @@ export default async function PlanPage({
   let recipes: PlannableRecipe[] = [];
   let members: ActiveMemberOption[] = [];
   let allergensByRecipe = new Map<string, Allergen[]>();
+  let prepReminders: PrepAheadReminder[] = [];
   if (dbConfigured && user) {
-    const [entryRows, recipeRows, profiles] = await Promise.all([
+    const tomorrow = tomorrowParam();
+    const [entryRows, recipeRows, profiles, prepRows] = await Promise.all([
       listEntriesInRange(user.id, startParam, endParam),
       listPlannableRecipes(user),
       listMemberProfiles(user.id),
+      listEntriesWithPrepText(user.id, tomorrow),
     ]);
     entries = entryRows;
     recipes = recipeRows;
@@ -77,6 +89,28 @@ export default async function PlanPage({
         .filter((id): id is string => Boolean(id));
       allergensByRecipe = await recipeAllergenMap(recipeIds);
     }
+
+    // Prep-ahead nudge (#388): scan tomorrow's planned recipes for "start it
+    // tonight" language. Dedupe by slug so a recipe planned twice (lunch +
+    // dinner) only nudges once.
+    const tomorrowLabel = formatDayName(parseDateParam(tomorrow));
+    const plannedTomorrow = new Map<string, PlannedPrepRecipe>();
+    for (const entry of prepRows) {
+      const recipe = entry.recipe;
+      if (!recipe || plannedTomorrow.has(recipe.slug)) continue;
+      plannedTomorrow.set(recipe.slug, {
+        slug: recipe.slug,
+        title: recipe.title,
+        dayLabel: tomorrowLabel,
+        texts: [
+          ...recipe.steps.map((step) => step.instruction),
+          ...recipe.ingredients.map((ing) =>
+            [ing.item, ing.note].filter(Boolean).join(" "),
+          ),
+        ],
+      });
+    }
+    prepReminders = buildPrepAheadReminders([...plannedTomorrow.values()]);
   }
 
   const boardDays: BoardDay[] = days.map((day) => ({
@@ -94,6 +128,7 @@ export default async function PlanPage({
     note: entry.note,
     recipe: entry.recipe
       ? {
+          id: entry.recipe.id,
           slug: entry.recipe.slug,
           title: entry.recipe.title,
           allergens: allergensByRecipe.get(entry.recipe.id) ?? [],
@@ -128,7 +163,15 @@ export default async function PlanPage({
               day.
             </p>
           </div>
-          <nav className="flex items-center gap-2" aria-label="Week navigation">
+          <nav className="flex flex-wrap items-center gap-2" aria-label="Week navigation">
+            {dbConfigured && user && <CopyLastWeekButton week={startParam} />}
+            {dbConfigured && user && (
+              <Button asChild variant="outline">
+                <Link href={`/plan/print?week=${startParam}`}>
+                  <Printer /> Print this week
+                </Link>
+              </Button>
+            )}
             <Button
               asChild
               variant="outline"
@@ -157,6 +200,7 @@ export default async function PlanPage({
         <SignInNudge />
       ) : (
         <>
+          <PrepAheadNote reminders={prepReminders} />
           <PlannerBoard
             days={boardDays}
             entries={boardEntries}
