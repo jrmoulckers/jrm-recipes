@@ -10,9 +10,9 @@ import { eq } from "drizzle-orm";
 import {
   type ActionResult as BaseActionResult,
   fail,
-  fromZodError,
   ok,
 } from "~/server/action-result";
+import { authedAction, NEEDS_DATABASE } from "~/server/action";
 import { recipeDetailPath } from "~/lib/recipe-path";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -32,9 +32,6 @@ import {
 /** Recipe mutations resolve to the new/affected recipe's id + slug. */
 export type ActionResult = BaseActionResult<{ id: string; slug: string | null }>;
 
-const NO_DB =
-  "Recipes need a database. Set DATABASE_URL (see .env.example) to start saving.";
-
 /**
  * Message shown when a recipe is assigned to a group its author doesn't belong
  * to. Mirrors the `FORBIDDEN` guard in {@link createRecipe}/{@link updateRecipe}
@@ -52,81 +49,83 @@ function groupForbiddenResult(): ActionResult {
   return fail(GROUP_FORBIDDEN, { groupId: [GROUP_FORBIDDEN] });
 }
 
+const runCreateRecipe = authedAction({
+  input: recipeInput,
+  handler: async (data, user): Promise<ActionResult> => {
+    try {
+      const recipe = await createRecipe(data, user);
+      void captureServer(user.id, "recipe_created", {
+        recipeId: recipe.id,
+        ingredientCount: data.ingredients.length,
+        stepCount: data.steps.length,
+        hasPhoto: Boolean(data.coverImageUrl),
+        visibility: data.visibility,
+        source: "manual",
+      });
+      // Activation funnel (#328): emit first_recipe_created exactly once, when
+      // the author's recipe count first reaches 1. Gated on analytics being
+      // configured so the default path skips the extra count query.
+      if (isAnalyticsConfigured()) {
+        const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
+        if (authored === 1) {
+          void captureServer(user.id, "first_recipe_created", {
+            recipeId: recipe.id,
+          });
+        }
+      }
+      revalidatePath("/recipes");
+      revalidatePath("/");
+      revalidatePath(recipeDetailPath(recipe));
+      revalidateTag(PUBLIC_RECIPES_TAG);
+      return ok({ id: recipe.id, slug: recipe.slug });
+    } catch (error) {
+      if (isForbidden(error)) return groupForbiddenResult();
+      throw error;
+    }
+  },
+});
+
 export async function createRecipeAction(
   input: RecipeInput,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return fail(NO_DB);
-  const parsed = recipeInput.safeParse(input);
-  if (!parsed.success) {
-    return fromZodError(parsed.error);
-  }
-  const user = await requireUser();
-  try {
-    const recipe = await createRecipe(parsed.data, user);
-    void captureServer(user.id, "recipe_created", {
-      recipeId: recipe.id,
-      ingredientCount: parsed.data.ingredients.length,
-      stepCount: parsed.data.steps.length,
-      hasPhoto: Boolean(parsed.data.coverImageUrl),
-      visibility: parsed.data.visibility,
-      source: "manual",
-    });
-    // Activation funnel (#328): emit first_recipe_created exactly once, when the
-    // author's recipe count first reaches 1. Gated on analytics being configured
-    // so the default path skips the extra count query.
-    if (isAnalyticsConfigured()) {
-      const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
-      if (authored === 1) {
-        void captureServer(user.id, "first_recipe_created", {
-          recipeId: recipe.id,
-        });
-      }
-    }
-    revalidatePath("/recipes");
-    revalidatePath("/");
-    revalidatePath(recipeDetailPath(recipe));
-    revalidateTag(PUBLIC_RECIPES_TAG);
-    return ok({ id: recipe.id, slug: recipe.slug });
-  } catch (error) {
-    if (isForbidden(error)) return groupForbiddenResult();
-    throw error;
-  }
+  return runCreateRecipe(input);
 }
+
+const runUpdateRecipe = authedAction({
+  input: recipeInput,
+  handler: async (data, user, id: string): Promise<ActionResult> => {
+    try {
+      const recipe = await updateRecipe(id, data, user);
+      void captureServer(user.id, "recipe_updated", {
+        recipeId: id,
+        ingredientCount: data.ingredients.length,
+        stepCount: data.steps.length,
+        hasPhoto: Boolean(data.coverImageUrl),
+        visibility: data.visibility,
+      });
+      revalidatePath("/recipes");
+      revalidatePath(recipeDetailPath(recipe));
+      revalidateTag(PUBLIC_RECIPES_TAG);
+      return ok({ id, slug: recipe.slug });
+    } catch (error) {
+      if (isForbidden(error)) return groupForbiddenResult();
+      return fail("We couldn't find that recipe to update.");
+    }
+  },
+});
 
 export async function updateRecipeAction(
   id: string,
   input: RecipeInput,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return fail(NO_DB);
-  const parsed = recipeInput.safeParse(input);
-  if (!parsed.success) {
-    return fromZodError(parsed.error);
-  }
-  const user = await requireUser();
-  try {
-    const recipe = await updateRecipe(id, parsed.data, user);
-    void captureServer(user.id, "recipe_updated", {
-      recipeId: id,
-      ingredientCount: parsed.data.ingredients.length,
-      stepCount: parsed.data.steps.length,
-      hasPhoto: Boolean(parsed.data.coverImageUrl),
-      visibility: parsed.data.visibility,
-    });
-    revalidatePath("/recipes");
-    revalidatePath(recipeDetailPath(recipe));
-    revalidateTag(PUBLIC_RECIPES_TAG);
-    return ok({ id, slug: recipe.slug });
-  } catch (error) {
-    if (isForbidden(error)) return groupForbiddenResult();
-    return fail("We couldn't find that recipe to update.");
-  }
+  return runUpdateRecipe(id, input);
 }
 
 export async function forkRecipeAction(
   sourceId: string,
   forkNote?: string,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return fail(NO_DB);
+  if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   try {
     const user = await requireUser();
     const recipe = await forkRecipe(sourceId, user, forkNote);
@@ -158,7 +157,7 @@ export async function revertRecipeAction(
   recipeId: string,
   versionNumber: number,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return fail(NO_DB);
+  if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   try {
     const user = await requireUser();
     const recipe = await revertRecipe(recipeId, versionNumber, user);
