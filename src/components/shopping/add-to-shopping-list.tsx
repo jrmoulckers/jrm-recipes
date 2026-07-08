@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ListPlus, Loader2, ShoppingCart } from "lucide-react";
+import { ListPlus, Loader2, ShoppingCart, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { addRecipeToShoppingListAction } from "~/server/shopping/actions";
 import { isPantryStaple } from "~/lib/shopping-list";
 import { useShoppingStore } from "~/lib/shopping-store";
+import { useHousehold } from "~/components/household/household-provider";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -45,9 +46,14 @@ export function AddToShoppingList({
   dbEnabled: boolean;
 }) {
   const router = useRouter();
+  const household = useHousehold();
   const [open, setOpen] = React.useState(false);
   const [servings, setServings] = React.useState(
-    recipe.servings ? String(recipe.servings) : "",
+    household.size
+      ? String(household.size)
+      : recipe.servings
+        ? String(recipe.servings)
+        : "",
   );
   const [includeStaples, setIncludeStaples] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
@@ -61,6 +67,11 @@ export function AddToShoppingList({
     const n = Number(value);
     return Number.isFinite(n) && n > 0 ? Math.round(n) : undefined;
   }
+
+  const scaledToHousehold =
+    household.size != null &&
+    desiredServings() === household.size &&
+    household.size !== recipe.servings;
 
   function added() {
     toast.success("Added to your shopping list", {
@@ -133,6 +144,12 @@ export function AddToShoppingList({
           ) : (
             <p className="text-xs text-muted-foreground">
               This recipe has no serving size, so quantities are added as-is.
+            </p>
+          )}
+          {scaledToHousehold && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Users className="size-3.5 text-primary" aria-hidden="true" />
+              Scaled to your family of {household.size}.
             </p>
           )}
         </div>

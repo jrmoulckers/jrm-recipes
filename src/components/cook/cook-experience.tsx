@@ -58,10 +58,12 @@ import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
 import { useOneHandedNav } from "./use-one-handed-nav";
+import { useHousehold } from "~/components/household/household-provider";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
   const speech = useSpeech();
+  const household = useHousehold();
   const router = useRouter();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
@@ -84,7 +86,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     setSystem,
     toggleChecked,
     clearSession,
-  } = useCookSession(recipe);
+  } = useCookSession(recipe, { householdSize: household.size });
 
   const oneHandedNav = useOneHandedNav({
     onNext: goNext,
@@ -99,8 +101,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       onSystemChange: setSystem,
       checked,
       onToggleChecked: toggleChecked,
+      householdSize: household.size,
     }),
-    [servings, setServings, system, setSystem, checked, toggleChecked],
+    [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
   const handleFinish = React.useCallback(() => {

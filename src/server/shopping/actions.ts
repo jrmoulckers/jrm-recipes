@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
 import {
   addManualItem,
   addRecipeToList,
@@ -52,10 +54,18 @@ export async function addRecipeToShoppingListAction(
   }
   const user = await requireUser();
   try {
+    // Fall back to the saved household size when the caller didn't pass an
+    // explicit servings count, so lists scale to the family by default (#399).
+    let desiredServings = parsed.data.desiredServings;
+    if (desiredServings == null) {
+      const store = await cookies();
+      desiredServings =
+        parseHousehold(store.get(HOUSEHOLD_COOKIE)?.value) ?? undefined;
+    }
     await addRecipeToList(
       user,
       parsed.data.recipeId,
-      parsed.data.desiredServings,
+      desiredServings,
       parsed.data.includeStaples,
     );
     revalidatePath("/shopping");
