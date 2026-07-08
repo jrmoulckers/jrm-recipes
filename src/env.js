@@ -35,7 +35,9 @@ const skipValidation =
  * forces `NODE_ENV=production` for every `next build`/`next lint`, including the
  * zero-config CI + local builds that must keep passing. `SKIP_ENV_VALIDATION`
  * is the single escape hatch (used only by the CI build + e2e, which serve no
- * real users).
+ * real users). Preview deploys are *not* caught here (they run as
+ * `VERCEL_ENV=preview`), but are still fail-closed per request by the runtime
+ * guard in `~/server/auth`, so no deployed environment can serve dev-bypass.
  *
  * @param {Record<string, string | undefined>} [vars]
  * @returns {boolean}
@@ -121,10 +123,13 @@ export const env = createEnv({
  * Fail-closed production auth guard.
  *
  * `@t3-oss/env-nextjs` has no hook for a cross-field refinement, so we run one
- * explicit Zod `superRefine` over the resolved auth vars. It runs only for a
- * real production deploy (`isProductionDeploy`) and only on the server, so local
- * dev, `NODE_ENV=test`, `next lint`, previews, and the zero-config CI/e2e build
- * are all unaffected — while a misconfigured production deploy fails to build.
+ * explicit Zod `superRefine` over the resolved auth vars. This build/boot guard
+ * runs only for a real production deploy (`isProductionDeploy`) and only on the
+ * server, so local dev, `NODE_ENV=test`, `next lint`, and the zero-config CI/e2e
+ * build keep working with dev-bypass. Preview deploys skip *this* build-time
+ * check but are still fail-closed at request time by the runtime guard in
+ * `~/server/auth` (Vercel sets `NODE_ENV=production` on preview too), so any
+ * deployed environment — preview or production — requires real Clerk keys.
  */
 if (isProductionDeploy() && typeof window === "undefined") {
   const result = z

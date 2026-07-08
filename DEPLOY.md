@@ -11,11 +11,14 @@ into Vercel, and connect the repo. Budget ~20 minutes.
 - [Cloudinary](https://cloudinary.com) — image/video storage & delivery
 - [Vercel](https://vercel.com) — hosting + CI/CD
 
-> You can go live with **just Neon** if you like. Without Clerk, the app runs in
-> its guarded dev-bypass auth mode. Without Cloudinary, photo fields fall back to
-> pasting an image URL, so Cloudinary is optional at launch — add it whenever you
-> want native drag-and-drop / camera uploads. Add Clerk and Cloudinary whenever
-> you're ready — no code changes required to go live.
+> **Clerk is required for any deployed environment (preview or production).** The
+> app fails closed: a deploy that would fall back to dev-bypass auth — no Clerk
+> keys, or `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` — refuses to build/boot (production) or
+> to serve requests (preview), so set the Clerk keys before you deploy. Dev-bypass
+> (a single shared local user) is strictly a **local/test** affordance. Neon
+> (Postgres) backs your real data. Cloudinary stays optional — without it, photo
+> fields fall back to pasting an image URL, so add it whenever you want native
+> drag-and-drop / camera uploads, with no code changes.
 
 ---
 
@@ -98,7 +101,7 @@ against Neon and build the app.
 | `CLOUDINARY_API_SECRET`             | For uploads | Cloudinary API secret (server-only)                                                          |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL`     | Optional    | Defaults to `/sign-in`                                                                       |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL`     | Optional    | Defaults to `/sign-up`                                                                       |
-| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Never (prod) | Local/test-only. Forces dev-bypass auth. **A production deploy with this set to `1` (or with Clerk keys missing) fails closed and refuses to build/boot** — leave it unset. |
+| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy — preview or production — with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request) — leave it unset. |
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.
