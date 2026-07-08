@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   real,
@@ -18,6 +19,7 @@ import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
 import { groups } from "./groups";
 import { comments, ratings, recipeTags } from "./engagement";
+import type { RecipeInput } from "~/server/recipes/validation";
 
 export const recipeVisibility = pgEnum("recipe_visibility", [
   "private",
@@ -176,7 +178,10 @@ export const recipeVersions = pgTable(
     versionNumber: integer().notNull().default(1),
     label: varchar({ length: 200 }),
     summary: varchar({ length: 500 }),
-    snapshot: text().notNull(),
+    // The full RecipeInput at save time, stored as `jsonb` so Postgres validates
+    // the JSON structurally and future timeline/diff features can query inside a
+    // snapshot. `parseSnapshot` still Zod-validates the *shape* on read.
+    snapshot: jsonb().$type<RecipeInput>().notNull(),
     authorId: fk().references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },

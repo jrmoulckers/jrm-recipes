@@ -265,7 +265,7 @@ async function journal(
     authorId,
     versionNumber: next,
     label: label ?? null,
-    snapshot: JSON.stringify(input),
+    snapshot: input,
   });
 }
 

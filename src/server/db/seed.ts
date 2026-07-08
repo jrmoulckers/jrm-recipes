@@ -50,6 +50,7 @@ import {
   type User,
 } from "~/server/db/schema";
 import { DEV_USER } from "~/server/auth/dev-user";
+import type { RecipeInput } from "~/server/recipes/validation";
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -476,8 +477,8 @@ async function ensureMemberships(tx: Tx, ownerId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /** A RecipeInput-shaped snapshot for the version history (previewable/revertible). */
-function versionSnapshot(r: SeedRecipe): string {
-  return JSON.stringify({
+function versionSnapshot(r: SeedRecipe): RecipeInput {
+  return {
     title: r.title,
     description: r.description,
     servings: r.servings,
@@ -506,7 +507,7 @@ function versionSnapshot(r: SeedRecipe): string {
       techniques: step.techniques ?? [],
     })),
     tags: r.tags,
-  });
+  };
 }
 
 /** Upsert a recipe row (scalars) — keeps the same id/createdAt across runs. */

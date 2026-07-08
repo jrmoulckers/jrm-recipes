@@ -443,14 +443,25 @@ export async function listRecipeFacets(
   };
 }
 
-/** Validate a persisted version snapshot before using it. */
-export function parseSnapshot(snapshot: string): RecipeInput | null {
-  try {
-    const parsed = recipeInput.safeParse(JSON.parse(snapshot) as unknown);
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
+/**
+ * Validate a persisted version snapshot before using it.
+ *
+ * `recipe_versions.snapshot` is `jsonb`, so Drizzle hands back an already-parsed
+ * value — `jsonb` guarantees valid JSON but not a valid *shape*, so we still run
+ * it through the Zod `recipeInput` schema. A string is JSON-parsed defensively
+ * so any legacy/text snapshot that slips through never crashes a caller.
+ */
+export function parseSnapshot(snapshot: unknown): RecipeInput | null {
+  let value: unknown = snapshot;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return null;
+    }
   }
+  const parsed = recipeInput.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /** Version history for a recipe, newest first. */
