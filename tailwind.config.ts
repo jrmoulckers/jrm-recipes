@@ -80,6 +80,24 @@ const config = {
         body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
+      /**
+       * Tokenized type scale (issue #98). Sizes are in `rem` so they inherit the
+       * root `font-size: calc(100% * --text-scale * --a11y-text-mult)` — i.e. the
+       * per-mode `--text-scale` and the a11y text-size axis both scale every step
+       * automatically. Each step ships a paired line-height (and tracking on the
+       * larger display steps) so hierarchy stays coherent across all five modes'
+       * display fonts. Consume via the `Heading` / `Text` primitives.
+       */
+      fontSize: {
+        display: ["3rem", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        h1: ["2.25rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        h2: ["1.75rem", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        h3: ["1.375rem", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
+        h4: ["1.125rem", { lineHeight: "1.4", letterSpacing: "-0.005em" }],
+        "body-lg": ["1.125rem", { lineHeight: "1.7" }],
+        body: ["1rem", { lineHeight: "1.6" }],
+        "body-sm": ["0.875rem", { lineHeight: "1.55" }],
+      },
       boxShadow: {
         "token-sm": "var(--shadow-sm)",
         token: "var(--shadow)",
