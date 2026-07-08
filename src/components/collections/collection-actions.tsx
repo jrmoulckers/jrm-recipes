@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   deleteCollectionAction,
@@ -66,7 +67,7 @@ export function CollectionActions({
       void renameCollectionAction(collection.id, input).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
         toast.success("Collection updated");
@@ -84,7 +85,7 @@ export function CollectionActions({
     startTransition(() => {
       void deleteCollectionAction(collection.id).then((result) => {
         if (!result.ok) {
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
         toast.success("Collection deleted");

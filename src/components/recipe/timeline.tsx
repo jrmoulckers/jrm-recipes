@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { Clock, History, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { cn } from "~/lib/utils";
 import { formatRelativeTime } from "~/lib/dates";
@@ -154,7 +155,7 @@ function RestoreVersionButton({
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   }
 

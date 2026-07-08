@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { removeRecipeFromCollectionAction } from "~/server/collections/actions";
 import { cn } from "~/lib/utils";
@@ -34,7 +35,7 @@ export function RemoveFromCollectionButton({
         toast.success("Removed from collection");
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

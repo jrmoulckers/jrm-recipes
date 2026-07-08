@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Crown, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   removeMemberAction,
@@ -88,7 +89,7 @@ export function MemberList({
       void action()
         .then((result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           toast.success(successMessage);

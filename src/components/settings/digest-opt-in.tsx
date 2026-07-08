@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { Switch } from "~/components/ui/switch";
 import { setWeeklyDigestOptInAction } from "~/server/digest/actions";
@@ -22,7 +23,7 @@ export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
       const result = await setWeeklyDigestOptInAction(next);
       if (!result.ok) {
         setOptedIn(previous);
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
         return;
       }
       toast.success(

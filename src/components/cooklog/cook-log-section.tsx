@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { deleteCookLogAction, logCookAction } from "~/server/cooklog/actions";
 import type { CookLogItem } from "~/server/cooklog/queries";
@@ -243,7 +244,7 @@ function LogCookButton({
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   }
 
@@ -350,7 +351,7 @@ function DeleteCookButton({
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   }
 

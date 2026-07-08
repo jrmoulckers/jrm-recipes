@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   addCommentAction,
@@ -119,7 +120,7 @@ export function CommentsSection(props: {
         onSuccess?.();
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   };
@@ -131,7 +132,7 @@ export function CommentsSection(props: {
         toast.success("Comment deleted");
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
@@ -147,7 +148,7 @@ export function CommentsSection(props: {
         toast.success(resolved ? "Suggestion resolved" : "Suggestion reopened");
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
@@ -163,7 +164,7 @@ export function CommentsSection(props: {
         toast.success("Suggestion applied");
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

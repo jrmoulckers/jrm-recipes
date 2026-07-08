@@ -17,6 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
@@ -291,7 +292,7 @@ export function RecipeEditor({
         );
         setImportUrl("");
       } else {
-        toast.error(res.error);
+        toast.error(friendlyError(res.error));
       }
     } catch {
       toast.error("Something went wrong importing that link.");
@@ -411,7 +412,7 @@ export function RecipeEditor({
       if (res.upgrade) {
         setUpgrade(res.error);
       } else {
-        toast.error(res.error);
+        toast.error(friendlyError(res.error));
       }
       return res.fieldErrors ?? NO_ERRORS;
     },

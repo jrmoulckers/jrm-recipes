@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { updateGroupAction } from "~/server/groups/actions";
 import { type GroupInput } from "~/server/groups/validation";
@@ -43,7 +44,7 @@ export function GroupSettingsForm({
       void updateGroupAction(slug, input).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
 

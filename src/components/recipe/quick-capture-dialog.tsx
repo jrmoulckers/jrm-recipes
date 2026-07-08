@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PencilLine, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { createRecipeAction } from "~/server/recipes/actions";
 import { type RecipeInput } from "~/server/recipes/validation";
@@ -82,7 +83,7 @@ export function QuickCaptureDialog() {
         router.refresh();
       } else {
         setError(result.error);
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

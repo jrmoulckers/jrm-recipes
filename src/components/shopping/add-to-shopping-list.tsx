@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ListPlus, Loader2, ShoppingCart, Users } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { addRecipeToShoppingListAction } from "~/server/shopping/actions";
 import { isPantryStaple } from "~/lib/shopping-list";
@@ -103,7 +104,7 @@ export function AddToShoppingList({
         includeStaples,
       });
       if (result.ok) added();
-      else toast.error(result.error);
+      else toast.error(friendlyError(result.error));
     });
   }
 

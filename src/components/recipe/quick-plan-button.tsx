@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { addEntryAction } from "~/server/planner/actions";
 import {
@@ -90,7 +91,7 @@ export function QuickPlanButton({
         setOpen(false);
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   deleteGroupAction,
@@ -42,7 +43,7 @@ export function GroupActions({
       void action()
         .then((result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           toast.success(success);

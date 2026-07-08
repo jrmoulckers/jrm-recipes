@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check, Copy, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { createInviteLinkAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
@@ -50,7 +51,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
       void createInviteLinkAction(slug, { role, expiresInDays }).then(
         (result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           setUrl(result.url);

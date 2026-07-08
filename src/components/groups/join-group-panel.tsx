@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { LogIn, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { acceptInviteLinkAction } from "~/server/groups/actions";
 import { track } from "~/lib/analytics";
@@ -41,7 +42,7 @@ export function JoinGroupPanel({
     startTransition(() => {
       void acceptInviteLinkAction(token).then((result) => {
         if (!result.ok) {
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
         toast.success(

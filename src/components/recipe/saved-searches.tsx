@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, BookmarkPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   createSavedSearchAction,
@@ -61,7 +62,7 @@ export function SavedSearches({
     startTransition(() => {
       void deleteSavedSearchAction(id).then((result) => {
         if (!result.ok) {
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
         toast.success("Saved search removed");
@@ -78,7 +79,7 @@ export function SavedSearches({
         (result) => {
           if (!result.ok) {
             setFieldError(result.fieldErrors?.name?.[0] ?? result.error);
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           toast.success("Search saved");

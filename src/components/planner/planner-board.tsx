@@ -14,6 +14,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   addBatchCookAction,
@@ -261,7 +262,7 @@ function EntryChip({
       );
       const failed = results.find((result) => !result.ok);
       if (failed && !failed.ok) {
-        toast.error(failed.error);
+        toast.error(friendlyError(failed.error));
       } else {
         toast.success(
           alsoLeftovers && batch
@@ -292,7 +293,7 @@ function EntryChip({
         setCooked(true);
         toast.success("Logged to your journal");
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
@@ -538,7 +539,7 @@ function AddEntryDialog({
         router.refresh();
       } else {
         setError(result.error);
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
