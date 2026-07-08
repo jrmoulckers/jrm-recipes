@@ -9,6 +9,7 @@ import {
 import { type A11yPrefs } from "~/config/a11y";
 import { ThemeProvider } from "~/components/theme/theme-provider";
 import { A11yProvider } from "~/components/a11y/a11y-provider";
+import { AnalyticsProvider } from "~/components/analytics/analytics-provider";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "~/components/ui/sonner";
 
@@ -27,10 +28,12 @@ export function Providers({
   return (
     <ThemeProvider initialTheme={initialTheme} initialScheme={initialScheme}>
       <A11yProvider initialPrefs={initialA11y}>
-        <TooltipProvider delayDuration={200}>
-          {children}
-          <Toaster position="top-center" richColors closeButton />
-        </TooltipProvider>
+        <AnalyticsProvider>
+          <TooltipProvider delayDuration={200}>
+            {children}
+            <Toaster position="top-center" richColors closeButton />
+          </TooltipProvider>
+        </AnalyticsProvider>
       </A11yProvider>
     </ThemeProvider>
   );
