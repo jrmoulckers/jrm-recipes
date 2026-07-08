@@ -4,9 +4,11 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
+import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { canViewRecipe } from "~/server/recipes/queries";
 import {
   comments,
+  groupMembers,
   ratings,
   recipeEvents,
   recipes,
@@ -107,6 +109,18 @@ export async function deleteComment(
     }
     if (comment.userId !== user.id && comment.recipe.authorId !== user.id) {
       throw new DomainError("FORBIDDEN");
+    }
+    // Kid-safe (issue #345): the kid role can comment but never delete — not even
+    // their own — so a child can't quietly erase family conversation.
+    if (comment.recipe.groupId) {
+      const membership = await tx.query.groupMembers.findFirst({
+        where: and(
+          eq(groupMembers.groupId, comment.recipe.groupId),
+          eq(groupMembers.userId, user.id),
+        ),
+        columns: { role: true },
+      });
+      if (membership) assertKidAllowed(membership.role, "delete_comment");
     }
 
     const descendants = await collectDescendantIds(tx, [commentId]);
