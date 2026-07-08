@@ -1,15 +1,14 @@
 /**
  * Cache wiring for the public (non-personalized) recipe reads (#215).
  *
- * These constants are shared between the query layer (which serves the public
- * discover feed from `unstable_cache`) and the mutation actions (which bust that
- * cache with `revalidateTag`). Keeping them in a dependency-light module lets
- * both `server-only` queries and `"use server"` actions import the same tag
- * without pulling one into the other.
+ * The tag strings themselves now live in the typed {@link ./cache-tags} helper
+ * (#160) — the single source of truth shared by the query layer and the
+ * mutation actions. This module re-exports {@link PUBLIC_RECIPES_TAG} for its
+ * existing importers and owns the revalidate window used by the discover feed's
+ * `unstable_cache`.
  */
 
-/** Tag applied to every cached public recipe list entry. */
-export const PUBLIC_RECIPES_TAG = "recipes:public";
+export { PUBLIC_RECIPES_TAG } from "./cache-tags";
 
 /**
  * Upper bound (seconds) on how long a cached public recipe page may be served
