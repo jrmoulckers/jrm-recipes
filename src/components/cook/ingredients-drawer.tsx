@@ -85,7 +85,7 @@ export function IngredientsDrawer({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 overflow-y-auto p-5">
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
           {recipe.ingredients.length > 0 ? (
             <IngredientsPanel
               ingredients={recipe.ingredients}

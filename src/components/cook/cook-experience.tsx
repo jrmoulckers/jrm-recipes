@@ -338,7 +338,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         : "motion-safe:animate-fade-in";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex min-h-dvh flex-col overscroll-y-contain bg-background text-foreground">
       {celebrating && (
         <div
           className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
@@ -1238,7 +1238,7 @@ function OverviewDialog({
             Jump to any step without stopping timers.
           </DialogDescription>
         </DialogHeader>
-        <ol className="max-h-[70dvh] overflow-y-auto p-3">
+        <ol className="max-h-[70dvh] overflow-y-auto overscroll-contain p-3">
           {steps.map((step, index) => {
             const isCurrent = index === currentIndex;
 
