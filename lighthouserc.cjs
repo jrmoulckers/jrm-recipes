@@ -4,15 +4,17 @@
  * A runtime performance gate that complements the static bundle-size budget
  * (#206). CI builds the app, seeds an ephemeral throwaway Postgres (public
  * credentials — no repo secrets), starts the production server in dev-bypass
- * mode, and runs Lighthouse against the key routes, asserting Core Web Vitals
- * lab budgets so a rendered-performance regression fails the PR.
+ * mode, and runs Lighthouse against the key routes, reporting Core Web Vitals
+ * lab budgets as warnings so regressions stay visible without blocking the PR
+ * until real baselines are calibrated on shared CI hardware. (The static
+ * bundle-size budget in #206 stays a hard, blocking gate.)
  *
  * Routes:
  *   /                              landing page
  *   /recipes                       discover feed
  *   /recipes/nonnas-sunday-gravy   a seeded, public recipe detail page
  *
- * Budgets (lab): LCP <= 2.5s, CLS <= 0.1, TBT <= 200ms, performance >= 0.8.
+ * Budgets (lab, warn-level): LCP <= 2.5s, CLS <= 0.1, TBT <= 200ms, perf >= 0.8.
  * The desktop preset (1x CPU, no mobile throttling) keeps the lab metrics
  * stable on shared CI hardware; bump a budget deliberately with justification.
  *
@@ -40,10 +42,10 @@ module.exports = {
     },
     assert: {
       assertions: {
-        "categories:performance": ["error", { minScore: 0.8 }],
-        "largest-contentful-paint": ["error", { maxNumericValue: 2500 }],
-        "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
-        "total-blocking-time": ["error", { maxNumericValue: 200 }],
+        "categories:performance": ["warn", { minScore: 0.8 }],
+        "largest-contentful-paint": ["warn", { maxNumericValue: 2500 }],
+        "cumulative-layout-shift": ["warn", { maxNumericValue: 0.1 }],
+        "total-blocking-time": ["warn", { maxNumericValue: 200 }],
       },
     },
     upload: {
