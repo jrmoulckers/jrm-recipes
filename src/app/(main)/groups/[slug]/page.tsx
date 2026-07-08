@@ -3,7 +3,7 @@ import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus, Settings, Users } from "lucide-react";
+import { Plus, ShieldAlert, Settings, Users } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -11,6 +11,7 @@ import {
   getGroupBySlug,
   type GroupRecipe,
 } from "~/server/groups/queries";
+import { getOpenReportCount } from "~/server/moderation/queries";
 import { AddMemberForm } from "~/components/groups/add-member-form";
 import { GroupActions } from "~/components/groups/group-actions";
 import { InviteLinkManager } from "~/components/groups/invite-link-manager";
@@ -83,6 +84,9 @@ export default async function GroupPage({
   if (!group) notFound();
 
   const canManage = canManageGroup(group.viewerRole);
+  const openReportCount = canManage
+    ? await getOpenReportCount(group.id, group.viewerRole)
+    : 0;
   const members = group.members.map<MemberListMember>((member) => ({
     id: member.id,
     userId: member.userId,
@@ -138,6 +142,19 @@ export default async function GroupPage({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {canManage ? (
+              <Button asChild variant="outline">
+                <Link href={`/groups/${group.slug}/moderation`}>
+                  <ShieldAlert />
+                  Moderation
+                  {openReportCount > 0 ? (
+                    <Badge variant="destructive" className="ms-1">
+                      {openReportCount}
+                    </Badge>
+                  ) : null}
+                </Link>
+              </Button>
+            ) : null}
             {canManage ? (
               <Button asChild variant="outline">
                 <Link href={`/groups/${group.slug}/settings`}>
