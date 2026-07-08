@@ -18,6 +18,11 @@
       "stepTimer": "مؤقّت الخطوة، {time} متبقٍّ",
       "jumpToStep": "الانتقال إلى الخطوة {position}: {title} — {time} متبقٍّ",
       "goToStep": "الانتقال إلى الخطوة {position}: {title}"
+    },
+    "readAloud": {
+      "toggle": "القراءة بصوت عالٍ",
+      "repeat": "تكرار",
+      "repeatLabel": "قراءة هذه الخطوة بصوت عالٍ"
     }
   },
   "metadata": {
@@ -43,7 +48,16 @@
   },
   "accessibilityMenu": {
     "trigger": "إعدادات إمكانية الوصول والراحة",
-    "textSizeGroup": "حجم النص"
+    "textSizeGroup": "حجم النص",
+    "household": {
+      "label": "الطهي لـ",
+      "decrement": "عدد أقل من الأشخاص",
+      "increment": "عدد أكبر من الأشخاص",
+      "people": "{count, plural, one {شخص} other {أشخاص}}",
+      "hintUnset": "تستخدم الوصفات حصصها الخاصة. اضبط هذا لتوسيع نطاق وضع الطهي وقوائم التسوق تلقائيًا.",
+      "hintSet": "يبدأ وضع الطهي وقوائم التسوق مضبوطين على حجم عائلتك.",
+      "reset": "استخدام حصص كل وصفة"
+    }
   },
   "saveToCollection": {
     "list": "مجموعاتك",

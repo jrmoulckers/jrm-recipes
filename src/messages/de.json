@@ -18,6 +18,11 @@
       "stepTimer": "Schritt-Timer, noch {time}",
       "jumpToStep": "Zu Schritt {position} springen: {title} — noch {time}",
       "goToStep": "Zu Schritt {position} gehen: {title}"
+    },
+    "readAloud": {
+      "toggle": "Vorlesen",
+      "repeat": "Wiederholen",
+      "repeatLabel": "Diesen Schritt vorlesen"
     }
   },
   "metadata": {
@@ -43,7 +48,16 @@
   },
   "accessibilityMenu": {
     "trigger": "Einstellungen für Barrierefreiheit und Komfort",
-    "textSizeGroup": "Textgröße"
+    "textSizeGroup": "Textgröße",
+    "household": {
+      "label": "Kochen für",
+      "decrement": "Weniger Personen",
+      "increment": "Mehr Personen",
+      "people": "{count, plural, one {Person} other {Personen}}",
+      "hintUnset": "Rezepte verwenden ihre eigenen Portionen. Lege dies fest, um den Kochmodus und Einkaufslisten automatisch zu skalieren.",
+      "hintSet": "Kochmodus und Einkaufslisten starten auf deine Familie skaliert.",
+      "reset": "Portionen jedes Rezepts verwenden"
+    }
   },
   "saveToCollection": {
     "list": "Deine Sammlungen",

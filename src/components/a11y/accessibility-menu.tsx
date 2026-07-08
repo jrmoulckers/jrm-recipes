@@ -204,7 +204,7 @@ export function AccessibilityMenu() {
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Users className="size-4 text-muted-foreground" />
-              Cooking for
+              {t("household.label")}
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export function AccessibilityMenu() {
                   type="button"
                   size="icon"
                   variant="outline"
-                  aria-label="Fewer people"
+                  aria-label={t("household.decrement")}
                   disabled={householdValue <= MIN_HOUSEHOLD}
                   onClick={() => household.setSize(householdValue - 1)}
                 >
@@ -228,14 +228,14 @@ export function AccessibilityMenu() {
                     {householdValue}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {householdValue === 1 ? "person" : "people"}
+                    {t("household.people", { count: householdValue })}
                   </div>
                 </div>
                 <Button
                   type="button"
                   size="icon"
                   variant="outline"
-                  aria-label="More people"
+                  aria-label={t("household.increment")}
                   disabled={householdValue >= MAX_HOUSEHOLD}
                   onClick={() => household.setSize(householdValue + 1)}
                 >
@@ -244,8 +244,8 @@ export function AccessibilityMenu() {
               </div>
               <p className="min-w-0 flex-1 text-xs text-muted-foreground">
                 {household.size == null
-                  ? "Recipes use their own servings. Set this to auto-scale Cook Mode and shopping lists."
-                  : "Cook Mode and shopping lists start scaled to your family."}
+                  ? t("household.hintUnset")
+                  : t("household.hintSet")}
               </p>
             </div>
             {household.size != null && (
@@ -256,7 +256,7 @@ export function AccessibilityMenu() {
                 className="self-start text-muted-foreground"
               >
                 <RotateCcw className="size-4" />
-                Use each recipe&apos;s servings
+                {t("household.reset")}
               </Button>
             )}
           </section>
