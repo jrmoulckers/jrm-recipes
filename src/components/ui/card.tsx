@@ -11,7 +11,7 @@ const Card = React.forwardRef<
     className={cn(
       "rounded-xl border border-border bg-card text-card-foreground shadow-token",
       interactive &&
-        "transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg",
+        "transition-[transform,box-shadow] duration-base ease-standard hover:-translate-y-0.5 hover:shadow-token-lg",
       className,
     )}
     {...props}

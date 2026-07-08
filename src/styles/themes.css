@@ -27,6 +27,16 @@
   --text-scale: 1;
   --tap-min: 2.5rem;
   --motion-scale: 1;
+  /* Motion vocabulary. Durations are scaled by --motion-scale, so Simple mode
+   * (scale 0) collapses every tokenized transition to 0ms through the token
+   * path; the OS/user reduced-motion rules in globals.css still layer on top.
+   * --ease-standard intentionally equals the enter-animation curve (ease-out)
+   * so fade-in / pop-in keep their exact feel. */
+  --duration-fast: calc(150ms * var(--motion-scale));
+  --duration-base: calc(200ms * var(--motion-scale));
+  --duration-slow: calc(320ms * var(--motion-scale));
+  --ease-standard: cubic-bezier(0, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.4, 0, 0.2, 1);
   /* Interactive-control sizing (Switch/Slider). `--control-scale` multiplies
    * their visible dimensions; `--control-min` floors a control's hit area to
    * `--tap-min`. Both are no-ops here so default modes render unchanged; the
