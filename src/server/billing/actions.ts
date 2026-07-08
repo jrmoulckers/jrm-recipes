@@ -122,7 +122,19 @@ export async function createCheckoutSessionAction(
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: user.id,
-      subscription_data: { metadata: { userId: user.id, planId } },
+      // Let customers enter Stripe-managed promotion codes at checkout (#326):
+      // launch offers, community discounts, win-back — all owned in Stripe, no
+      // coupon logic of our own.
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { userId: user.id, planId },
+        // Start a Stripe-managed free trial when the plan offers one (#326). The
+        // resolver already treats `trialing` as fully entitled, and the webhook
+        // persists the trial end so the UI can show an honest end date.
+        ...(plan.trialDays > 0
+          ? { trial_period_days: plan.trialDays }
+          : {}),
+      },
       metadata: { userId: user.id, planId },
       success_url: `${appUrl()}/settings/billing?checkout=success`,
       cancel_url: `${appUrl()}/pricing?checkout=cancelled`,

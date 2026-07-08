@@ -110,6 +110,10 @@ export async function syncSubscription(sub: Stripe.Subscription): Promise<void> 
   const item = sub.items?.data?.[0];
   const priceId = item?.price?.id ?? null;
   const endSeconds = periodEndSeconds(sub);
+  // Persist the trial end (#326) so /settings/billing can show an honest
+  // "trial ends on <date>" without a Stripe round-trip. `trial_end` is a stable
+  // top-level field; null once the trial converts or when there was none.
+  const trialSeconds = sub.trial_end ?? null;
   // Only the Family plan is purchasable today, so any synced subscription is
   // Family; `stripePriceId` records exactly which price for future catalogs.
   const planId: PlanId = "family";
@@ -123,6 +127,7 @@ export async function syncSubscription(sub: Stripe.Subscription): Promise<void> 
       planId,
       status: mapStatus(sub.status),
       currentPeriodEnd: endSeconds ? new Date(endSeconds * 1000) : null,
+      trialEnd: trialSeconds ? new Date(trialSeconds * 1000) : null,
       cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
       seats: item?.quantity ?? 1,
     })
@@ -134,6 +139,7 @@ export async function syncSubscription(sub: Stripe.Subscription): Promise<void> 
         planId,
         status: mapStatus(sub.status),
         currentPeriodEnd: endSeconds ? new Date(endSeconds * 1000) : null,
+        trialEnd: trialSeconds ? new Date(trialSeconds * 1000) : null,
         cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
         seats: item?.quantity ?? 1,
         updatedAt: new Date(),

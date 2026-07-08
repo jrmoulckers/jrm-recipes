@@ -107,6 +107,20 @@ describe("createCheckoutSessionAction", () => {
     expect(args?.success_url).toContain("https://app.test/settings/billing");
     expect(args?.cancel_url).toContain("https://app.test/pricing");
   });
+
+  it("enables promo codes and starts the plan's free trial (#326)", async () => {
+    await createCheckoutSessionAction("family");
+    const args = stripeMock.checkout.sessions.create.mock.calls[0]?.[0] as
+      | {
+          allow_promotion_codes?: boolean;
+          subscription_data?: { trial_period_days?: number };
+        }
+      | undefined;
+    // Stripe-managed coupons at checkout.
+    expect(args?.allow_promotion_codes).toBe(true);
+    // Family declares a 14-day trial in src/config/plans.ts.
+    expect(args?.subscription_data?.trial_period_days).toBe(14);
+  });
 });
 
 describe("createBillingPortalSessionAction", () => {
