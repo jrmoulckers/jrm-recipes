@@ -14,6 +14,7 @@ import {
 } from "~/server/action-result";
 import { authedAction, NEEDS_DATABASE } from "~/server/action";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { absoluteUrl } from "~/lib/utils";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
@@ -28,6 +29,7 @@ import {
   forkRecipe,
   restoreRecipe,
   revertRecipe,
+  setShareLinkState,
   updateRecipe,
 } from "./mutations";
 
@@ -257,4 +259,36 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
   revalidatePath(recipeDetailPath(restored));
   revalidateRecipeTags(restored.id);
   return true;
+}
+
+/** Result of a share-link change: the new URL (null when revoked) + its state. */
+export type ShareLinkActionResult = BaseActionResult<{
+  url: string | null;
+  enabled: boolean;
+}>;
+
+/**
+ * Owner-only: disable/enable or rotate an unlisted recipe's share link (#207).
+ * Authorization is enforced in {@link setShareLinkState} (row scoped to the
+ * author); a non-owner resolves to a generic failure. On success we bust the
+ * recipe's cache tags and hand back the fresh token URL (or null when revoked).
+ */
+export async function setShareLinkStateAction(
+  recipeId: string,
+  change: { enabled?: boolean; rotate?: boolean },
+): Promise<ShareLinkActionResult> {
+  if (!isDbConfigured()) return fail(NEEDS_DATABASE);
+  const user = await requireUser();
+  if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+  try {
+    const state = await setShareLinkState(recipeId, user, change);
+    revalidateRecipeTags(recipeId);
+    const url =
+      state.shareToken && state.shareLinkEnabled
+        ? absoluteUrl(`/r/${state.shareToken}`)
+        : null;
+    return ok({ url, enabled: state.shareLinkEnabled });
+  } catch {
+    return fail("We couldn't update that share link.");
+  }
 }

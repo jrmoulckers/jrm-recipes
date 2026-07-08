@@ -99,6 +99,9 @@ export interface EventProperties {
   recipe_shared: { method: ShareMethod };
   share_card_downloaded: Record<string, never>;
   share_link_copied: Record<string, never>;
+  // Owner-facing share-link revocation / rotation (issue #207).
+  share_link_disabled: Record<string, never>;
+  share_link_rotated: Record<string, never>;
   reel_exported: { kind: ReelExportKind; method: ReelExportMethod };
 
   // --- Group collaboration & invite funnel (#317) ---

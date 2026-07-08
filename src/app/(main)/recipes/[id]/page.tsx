@@ -349,6 +349,9 @@ export default async function RecipePage({
                 title={recipe.title}
                 author={recipe.author?.name}
                 shareUrl={shareUrl}
+                recipeId={recipe.id}
+                manageable={isOwner && recipe.visibility === "unlisted"}
+                shareEnabled={recipe.shareLinkEnabled}
               />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>

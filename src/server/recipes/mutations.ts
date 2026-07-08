@@ -658,3 +658,82 @@ export async function restoreRecipe(id: string, author: User) {
   if (!row) throw new DomainError("NOT_FOUND");
   return row;
 }
+
+/** The share-link state returned after an owner changes it (issue #207). */
+export type ShareLinkState = {
+  shareToken: string | null;
+  shareLinkEnabled: boolean;
+  shareTokenRotatedAt: Date | null;
+};
+
+/**
+ * Owner-only share-link controls for an unlisted recipe (issue #207).
+ *
+ * - `enabled: false` **revokes** the link: every URL that was ever handed out
+ *   immediately 404s (see {@link getRecipeByShareToken}), while the recipe stays
+ *   editable and owner-visible.
+ * - `rotate: true` **rotates** the token: the old token dies and a fresh one is
+ *   minted, so a leaked/compromised link can be replaced without unsharing.
+ * - Enabling a never-shared recipe mints its first token so there's a URL to
+ *   hand out.
+ *
+ * Authorization is enforced by scoping the row to `authorId`, so a non-owner
+ * (or a stranger guessing an id) gets NOT_FOUND and can never change link state.
+ * Returns the resulting state so the caller can surface the new URL.
+ */
+export async function setShareLinkState(
+  id: string,
+  author: User,
+  change: { enabled?: boolean; rotate?: boolean },
+): Promise<ShareLinkState> {
+  return db.transaction(async (tx) => {
+    const current = await tx.query.recipes.findFirst({
+      where: and(
+        eq(recipes.id, id),
+        eq(recipes.authorId, author.id),
+        isNull(recipes.deletedAt),
+      ),
+      columns: {
+        shareToken: true,
+        shareLinkEnabled: true,
+        shareTokenRotatedAt: true,
+      },
+    });
+    if (!current) throw new DomainError("NOT_FOUND");
+
+    const next: Partial<ShareLinkState> = {};
+    if (change.rotate) {
+      next.shareToken = generateShareToken();
+      next.shareTokenRotatedAt = new Date();
+    } else if (!current.shareToken && change.enabled !== false) {
+      // First enable of a recipe that never had a token — mint one to share.
+      next.shareToken = generateShareToken();
+    }
+    if (change.enabled !== undefined) next.shareLinkEnabled = change.enabled;
+
+    if (Object.keys(next).length === 0) return current;
+
+    const [updated] = await tx
+      .update(recipes)
+      .set(next)
+      .where(eq(recipes.id, id))
+      .returning({
+        shareToken: recipes.shareToken,
+        shareLinkEnabled: recipes.shareLinkEnabled,
+        shareTokenRotatedAt: recipes.shareTokenRotatedAt,
+      });
+    if (!updated) throw new DomainError("NOT_FOUND");
+
+    await recordAudit(tx, {
+      actorId: author.id,
+      action: AuditAction.RecipeShareLinkChanged,
+      targetType: "recipe",
+      targetId: id,
+      metadata: {
+        rotated: Boolean(change.rotate),
+        enabled: updated.shareLinkEnabled,
+      },
+    });
+    return updated;
+  });
+}
