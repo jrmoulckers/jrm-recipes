@@ -69,13 +69,14 @@ import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? undefined;
@@ -133,9 +134,9 @@ function countComments(list: ThreadedComment[]): number {
 export default async function RecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await params;
+  const { id } = await parseRecipeParams(params);
   const { user, recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 

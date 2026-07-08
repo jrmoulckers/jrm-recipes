@@ -36,6 +36,7 @@ import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
+import { type SearchParams } from "~/lib/route-params";
 
 export const metadata: Metadata = { title: "Recipes" };
 
@@ -53,7 +54,7 @@ const POPULAR_BROWSE_TAG_COUNT = 10;
 export default async function RecipesPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
   const user = await getCurrentUser();
   const search = parseRecipeSearch(await searchParams);

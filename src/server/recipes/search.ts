@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { slugify } from "~/lib/utils";
+import type { SearchParams } from "~/lib/route-params";
 
 /**
  * Pure search/filter/sort contract for the recipes browse page.
@@ -52,8 +53,12 @@ export function defaultSortFor(q: string | undefined | null): RecipeSort {
 export const recipeDifficultyValues = ["easy", "medium", "hard"] as const;
 export type RecipeDifficultyFilter = (typeof recipeDifficultyValues)[number];
 
-/** Raw search params as delivered by Next.js (`string | string[] | undefined`). */
-export type RawSearchParams = Record<string, string | string[] | undefined>;
+/**
+ * Raw search params as delivered by Next.js. Aliases the shared
+ * {@link SearchParams} contract (#208) so the query parser and every page agree
+ * on one shape.
+ */
+export type RawSearchParams = SearchParams;
 
 const first = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;

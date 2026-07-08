@@ -7,15 +7,16 @@ import {
   type RecipeEditorValue,
 } from "~/components/recipe/recipe-editor";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
+import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
 export const metadata = { title: "Edit recipe" };
 
 export default async function EditRecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await params;
+  const { id } = await parseRecipeParams(params);
   const user = await getCurrentUser();
   if (!user) redirect(`/recipes/${id}`);
 

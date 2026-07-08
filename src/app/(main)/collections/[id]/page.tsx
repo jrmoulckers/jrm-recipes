@@ -11,6 +11,7 @@ import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CollectionActions } from "~/components/collections/collection-actions";
 import { RemoveFromCollectionButton } from "~/components/collections/remove-from-collection-button";
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
+import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
 
 const load = cache(async (id: string) => {
   const user = await getCurrentUser();
@@ -21,9 +22,9 @@ const load = cache(async (id: string) => {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<CollectionRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id } = await parseCollectionParams(params);
   const { collection } = await load(id);
   if (!collection) return { title: "Collection not found" };
   return {
@@ -35,9 +36,9 @@ export async function generateMetadata({
 export default async function CollectionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<CollectionRouteParams>;
 }) {
-  const { id } = await params;
+  const { id } = await parseCollectionParams(params);
   const { collection } = await load(id);
   if (!collection) notFound();
 

@@ -24,6 +24,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { brand } from "~/config/brand";
 import { absoluteUrl } from "~/lib/utils";
+import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -34,9 +35,9 @@ const load = cache(async (slug: string) => {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<SlugRouteParams>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
   if (!group) return { title: "Group not found" };
   const canonical = absoluteUrl(`/groups/${group.slug}`);
@@ -74,9 +75,9 @@ function initials(name: string) {
 export default async function GroupPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<SlugRouteParams>;
 }) {
-  const { slug } = await params;
+  const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
   if (!group) notFound();
 
