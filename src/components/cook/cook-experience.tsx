@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   ChefHat,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   ListOrdered,
   Pause,
@@ -55,6 +57,7 @@ import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
+import { useOneHandedNav } from "./use-one-handed-nav";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
@@ -82,6 +85,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     toggleChecked,
     clearSession,
   } = useCookSession(recipe);
+
+  const oneHandedNav = useOneHandedNav({
+    onNext: goNext,
+    onPrevious: goPrevious,
+  });
 
   const ingredientControls = React.useMemo<IngredientsPanelControls>(
     () => ({
@@ -196,8 +204,28 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         <section
           key={currentStep.id}
           aria-labelledby="current-step-title"
-          className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
+          onClick={oneHandedNav.onClick}
+          onTouchStart={oneHandedNav.onTouchStart}
+          onTouchEnd={oneHandedNav.onTouchEnd}
+          className="relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
         >
+          {canGoPrevious && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-1 text-muted-foreground/25"
+            >
+              <ChevronLeft className="size-8" />
+            </span>
+          )}
+          {canGoNext && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-1 text-muted-foreground/25"
+            >
+              <ChevronRight className="size-8" />
+            </span>
+          )}
+
           <StepMedia
             step={currentStep}
             stepNumber={stepIndex + 1}
@@ -242,6 +270,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               >
                 {currentStep.instruction}
               </h1>
+              {totalSteps > 1 && (
+                <p className="text-xs text-muted-foreground/80">
+                  Tap the sides or swipe to move between steps.
+                </p>
+              )}
             </div>
           </div>
         </section>

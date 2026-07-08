@@ -715,7 +715,7 @@ export function formatShoppingListText(
   }
 
   const lines: string[] = [];
-  if (title && title.trim()) lines.push(title.trim(), "");
+  if (title?.trim()) lines.push(title.trim(), "");
 
   for (const category of SHOPPING_CATEGORIES) {
     const group = byCategory.get(category);
