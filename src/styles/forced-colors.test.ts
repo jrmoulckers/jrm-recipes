@@ -45,8 +45,9 @@ describe("forced-colors + prefers-contrast (issue #96)", () => {
     expect(css).toMatch(/--border:\s*0 0% 74%/); // dark
     expect(css).toMatch(/--ring:\s*0 0% 0%/);
     expect(css).toMatch(/--ring:\s*0 0% 100%/);
-    expect(css).toContain(":root.dark");
-    expect(css).toContain(":root:not(.dark)");
+    // #130 gates the OS override so an explicit in-app opt-out still wins.
+    expect(css).toContain(':root:not([data-contrast="off"]).dark');
+    expect(css).toContain(':root:not([data-contrast="off"]):not(.dark)');
   });
 
   it("gives controls system-colored borders under forced-colors", () => {
