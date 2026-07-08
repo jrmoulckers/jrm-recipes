@@ -1,16 +1,22 @@
 import "server-only";
 
-import { and, asc, desc, eq, or } from "drizzle-orm";
+import { and, asc, desc, eq, max, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
   collectionRecipes,
   collections,
+  cookLogEntries,
   favorites,
   groupMembers,
   type User,
 } from "~/server/db/schema";
 import { canView } from "~/server/recipes/queries";
+import {
+  ROTATION_MIN,
+  ROTATION_WINDOW_DAYS,
+  selectBackInRotation,
+} from "~/lib/rotation";
 
 const recipeCardWith = {
   author: true,
@@ -202,6 +208,50 @@ export async function listMyFavorites(userId: string) {
   return rows
     .map((row) => row.recipe)
     .filter((recipe): recipe is NonNullable<typeof recipe> => recipe != null);
+}
+
+/**
+ * "Back in the rotation" tuning + selection logic lives in a pure, testable lib
+ * (#426); re-exported here so existing import sites keep working.
+ */
+export { ROTATION_WINDOW_DAYS, ROTATION_MIN };
+
+/**
+ * "Back in the rotation" (#426): the viewer's favorites they haven't cooked
+ * recently — favorites minus recipes cooked within `windowDays`, ordered so the
+ * longest-neglected surface first (never-cooked, then oldest-cooked). Returns
+ * recipe cards ready for the rail. Empty when no database is configured.
+ */
+export async function listBackInRotation(
+  userId: string,
+  { windowDays = ROTATION_WINDOW_DAYS, limit = 12 }: { windowDays?: number; limit?: number } = {},
+) {
+  if (!isDbConfigured()) return [];
+  const favorited = await db.query.favorites.findMany({
+    where: eq(favorites.userId, userId),
+    // Oldest-favorited first breaks ties among never-cooked recipes.
+    orderBy: [asc(favorites.createdAt)],
+    with: { recipe: { with: recipeCardWith } },
+  });
+  const recipes = favorited
+    .map((row) => row.recipe)
+    .filter((recipe): recipe is NonNullable<typeof recipe> => recipe != null);
+  if (recipes.length === 0) return [];
+
+  const cookedRows = await db
+    .select({
+      recipeId: cookLogEntries.recipeId,
+      last: max(cookLogEntries.cookedAt),
+    })
+    .from(cookLogEntries)
+    .where(eq(cookLogEntries.userId, userId))
+    .groupBy(cookLogEntries.recipeId);
+  const lastCooked = new Map<string, number>();
+  for (const row of cookedRows) {
+    if (row.last != null) lastCooked.set(row.recipeId, new Date(row.last).getTime());
+  }
+
+  return selectBackInRotation(recipes, lastCooked, { windowDays, limit });
 }
 
 /**

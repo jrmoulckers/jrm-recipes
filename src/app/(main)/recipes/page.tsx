@@ -24,14 +24,7 @@ import {
   type RecipeSearch,
 } from "~/server/recipes/search";
 import { getFavoriteRecipeIds } from "~/server/collections/queries";
-import { listWeekDinners } from "~/server/planner/queries";
-import {
-  formatDayName,
-  formatMonthDay,
-  getPlannerWeek,
-  toDateParam,
-  todayParam,
-} from "~/server/planner/week";
+import { buildQuickPlanContext } from "~/server/planner/quick-plan";
 import { listMySavedSearches } from "~/server/searches/queries";
 import { Button } from "~/components/ui/button";
 import {
@@ -57,29 +50,6 @@ const LCP_PRIORITY_COUNT = 3;
 /** How many popular tags to show in the browse-view "Browse by tag" strip. */
 const POPULAR_BROWSE_TAG_COUNT = 10;
 
-/**
- * Build the quick-plan context (#379): the current planner week's days plus the
- * next empty dinner to pre-select. Returns `null` when signed-out or without a
- * database, so cards render no quick-plan control.
- */
-async function buildQuickPlan(userId: string): Promise<QuickPlanContext> {
-  const week = getPlannerWeek(new Date());
-  const dinners = await listWeekDinners(userId, week.startParam, week.endParam);
-  const occupied = new Set(dinners.map((entry) => entry.date));
-  const days = week.days.map((day) => ({
-    value: toDateParam(day),
-    label: `${formatDayName(day)}, ${formatMonthDay(day)}`,
-  }));
-  const today = todayParam();
-  const upcoming = days.filter((day) => day.value >= today);
-  const pool = upcoming.length > 0 ? upcoming : days;
-  const defaultDate =
-    pool.find((day) => !occupied.has(day.value))?.value ??
-    pool[0]?.value ??
-    today;
-  return { days, defaultDate };
-}
-
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -94,7 +64,7 @@ export default async function RecipesPage({
       ? listRecipeFacets(user, search)
       : Promise.resolve({ cuisines: [], tags: [] }),
     listMySavedSearches(user?.id),
-    dbReady && user ? buildQuickPlan(user.id) : Promise.resolve(null),
+    dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
   ]);
   const members: CardDietaryMember[] =
     dbReady && user

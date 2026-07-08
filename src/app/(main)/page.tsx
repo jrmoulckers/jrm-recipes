@@ -15,10 +15,18 @@ import {
 } from "lucide-react";
 
 import { brand } from "~/config/brand";
+import { getCurrentUser } from "~/server/auth";
+import { isDbConfigured } from "~/server/db";
+import {
+  listBackInRotation,
+  ROTATION_MIN,
+} from "~/server/collections/queries";
+import { buildQuickPlanContext } from "~/server/planner/quick-plan";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
+import { RotationRail } from "~/components/recipe/rotation-rail";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 
 const features = [
@@ -56,10 +64,40 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+/**
+ * Personalized home data for signed-in users with a database (#426): the "back
+ * in the rotation" favorites plus the quick-plan context their Add-to-plan
+ * actions need. Kept in one round of queries so the marketing page stays fast
+ * for everyone else.
+ */
+async function loadPersonalizedHome(userId: string) {
+  const [rotation, quickPlan] = await Promise.all([
+    listBackInRotation(userId),
+    buildQuickPlanContext(userId),
+  ]);
+  return { rotation, quickPlan };
+}
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const personalized =
+    user && isDbConfigured() ? await loadPersonalizedHome(user.id) : null;
+  const showRotation =
+    personalized != null && personalized.rotation.length >= ROTATION_MIN;
+
   return (
     <div className="flex flex-col">
       <LandingViewedTracker />
+      {showRotation && (
+        <section className="border-b border-border bg-surface">
+          <div className="container py-10">
+            <RotationRail
+              recipes={personalized.rotation}
+              quickPlan={personalized.quickPlan}
+            />
+          </div>
+        </section>
+      )}
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
