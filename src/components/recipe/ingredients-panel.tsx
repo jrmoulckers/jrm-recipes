@@ -8,6 +8,7 @@ import { cn } from "~/lib/utils";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
   decomposeMeasure,
+  deriveScaleFactor,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
@@ -164,6 +165,13 @@ export function IngredientsPanel({
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
+  // "Scale to…" (#390): pin one ingredient to a target amount and derive the
+  // scale factor from it, then feed it back through the normal servings lever.
+  const [scaleToOpen, setScaleToOpen] = React.useState(false);
+  const [pinId, setPinId] = React.useState<string>("");
+  const [pinAmount, setPinAmount] = React.useState<string>("");
+  const [pinUnit, setPinUnit] = React.useState<string>("");
+
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
@@ -266,6 +274,41 @@ export function IngredientsPanel({
     else setSystemInternal(next);
   }
 
+  // Ingredients that carry a numeric amount are the only ones we can pin a
+  // target to (#390); "1 pinch" or "to taste" fall back gracefully by absence.
+  const pinnable = React.useMemo(
+    () => ingredients.filter((i) => i.quantity != null && i.quantity > 0),
+    [ingredients],
+  );
+  const pinIngredient =
+    pinnable.find((i) => i.id === pinId) ?? pinnable[0] ?? null;
+  const pinFactor = pinIngredient
+    ? deriveScaleFactor(
+        pinIngredient.quantity,
+        pinAmount.trim() === "" ? null : Number(pinAmount),
+        pinIngredient.unit,
+        pinUnit.trim() === "" ? pinIngredient.unit : pinUnit,
+      )
+    : null;
+  const pinServings =
+    pinFactor != null && canScale && baseServings
+      ? Math.min(1000, Math.max(1, Math.round(baseServings * pinFactor * 100) / 100))
+      : null;
+
+  function openScaleTo() {
+    const seed = pinnable[0] ?? null;
+    setPinId(seed?.id ?? "");
+    setPinUnit(seed?.unit ?? "");
+    setPinAmount("");
+    setScaleToOpen(true);
+  }
+
+  function applyScaleTo() {
+    if (pinServings == null) return;
+    updateServings(pinServings);
+    setScaleToOpen(false);
+  }
+
   function toggle(id: string) {
     if (!checked.has(id)) vibrate(HAPTICS.select);
     if (controls) {
@@ -329,6 +372,19 @@ export function IngredientsPanel({
                 Reset
               </Button>
             )}
+            {pinnable.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-expanded={scaleToOpen}
+                onClick={() =>
+                  scaleToOpen ? setScaleToOpen(false) : openScaleTo()
+                }
+              >
+                Scale to…
+              </Button>
+            )}
           </div>
         ) : (
           <span className="text-sm text-muted-foreground">Ingredients</span>
@@ -356,6 +412,83 @@ export function IngredientsPanel({
           ))}
         </div>
       </div>
+
+      {scaleToOpen && pinIngredient && (
+        <form
+          className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface/50 px-3 py-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyScaleTo();
+          }}
+        >
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Ingredient
+            <select
+              value={pinIngredient.id}
+              onChange={(e) => {
+                const next = pinnable.find((i) => i.id === e.target.value);
+                setPinId(e.target.value);
+                setPinUnit(next?.unit ?? "");
+              }}
+              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+            >
+              {pinnable.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.item}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Target amount
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={pinAmount}
+              onChange={(e) => setPinAmount(e.target.value)}
+              placeholder={formatQuantity(
+                pinIngredient.quantity ?? 0,
+                undefined,
+                locale,
+              )}
+              className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+            />
+          </label>
+          {pinIngredient.unit && (
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+              Unit
+              <input
+                type="text"
+                value={pinUnit}
+                onChange={(e) => setPinUnit(e.target.value)}
+                className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+              />
+            </label>
+          )}
+          <Button type="submit" size="sm" disabled={pinServings == null}>
+            Apply
+          </Button>
+          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+            {pinAmount.trim() === "" ? (
+              <>Pin one ingredient to what you have and rescale the whole recipe.</>
+            ) : pinFactor != null && pinServings != null ? (
+              <>
+                ≈ {formatQuantity(pinFactor, undefined, locale)}× the recipe
+                {servingsNoun ? (
+                  <>
+                    {" "}— {formatQuantity(pinServings, undefined, locale)}{" "}
+                    {servingsNoun}
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>That amount can’t be converted to this ingredient’s unit.</>
+            )}
+          </p>
+        </form>
+      )}
 
       {scaledToHousehold && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">

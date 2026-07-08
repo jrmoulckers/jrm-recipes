@@ -6,6 +6,7 @@ import {
   decomposeMeasure,
   defaultSystemForLocale,
   densityForItem,
+  deriveScaleFactor,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
@@ -160,6 +161,33 @@ describe("densityForItem / toWeight (#385 weigh-based cooking)", () => {
     // A volume of something with no known density can't be weighed.
     expect(toWeight(2, "cup", "diced tomatoes")).toBeNull();
     expect(toWeight(null, "cup", "flour")).toBeNull();
+  });
+});
+
+describe("deriveScaleFactor (#390 scale to target)", () => {
+  it("derives a factor from a target amount in the same unit", () => {
+    expect(deriveScaleFactor(250, 500, "g", "g")).toBe(2);
+    expect(deriveScaleFactor(4, 3, "cup", "cup")).toBe(0.75);
+  });
+
+  it("converts the target through a compatible unit", () => {
+    // Recipe base 2 cups; cook has 1 quart (= 4 cups) → ×2.
+    expect(deriveScaleFactor(2, 1, "cup", "quart")).toBe(2);
+    // 500 g target against a 1 lb (453.592 g) base ≈ ×1.1.
+    expect(deriveScaleFactor(1, 500, "lb", "g")).toBeCloseTo(1.1023, 3);
+  });
+
+  it("treats a missing unit on either side as same-unit", () => {
+    expect(deriveScaleFactor(12, 24, null, null)).toBe(2);
+    expect(deriveScaleFactor(12, 24, "cup", null)).toBe(2);
+  });
+
+  it("returns null for incompatible units or bad input", () => {
+    expect(deriveScaleFactor(2, 3, "cup", "g")).toBeNull();
+    expect(deriveScaleFactor(null, 3, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(0, 3, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(2, 0, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(2, -3, "g", "g")).toBeNull();
   });
 });
 

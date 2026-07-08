@@ -304,6 +304,42 @@ export function scaleQuantity(
   return roundNice(quantity * factor);
 }
 
+/**
+ * Derive the scale factor that turns a recipe's base amount of one ingredient
+ * into a target amount the cook actually has or needs (#390) — e.g. "500 g of
+ * bananas" from a recipe that calls for 250 g gives ×2. The target may be given
+ * in the ingredient's own unit or any convertible one (grams → the base's cups,
+ * etc.). Returns `null` when either amount is missing / non-positive or the
+ * units don't convert, so callers can fall back to servings scaling.
+ */
+export function deriveScaleFactor(
+  baseQuantity: number | null | undefined,
+  targetQuantity: number | null | undefined,
+  baseUnit?: string | null,
+  targetUnit?: string | null,
+): number | null {
+  if (
+    baseQuantity == null ||
+    !Number.isFinite(baseQuantity) ||
+    baseQuantity <= 0 ||
+    targetQuantity == null ||
+    !Number.isFinite(targetQuantity) ||
+    targetQuantity <= 0
+  ) {
+    return null;
+  }
+  let target = targetQuantity;
+  const from = normalizeUnit(targetUnit);
+  const to = normalizeUnit(baseUnit);
+  if (from && to && from !== to) {
+    const converted = convertUnit(targetQuantity, from, to);
+    if (converted == null) return null;
+    target = converted;
+  }
+  const factor = target / baseQuantity;
+  return Number.isFinite(factor) && factor > 0 ? factor : null;
+}
+
 // --- Weigh-based cooking: volume → weight by density (#385) ---------------
 
 /**
