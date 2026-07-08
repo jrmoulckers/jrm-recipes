@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   NUTRIENTS,
+  assessDailyValue,
+  classifyLevel,
   formatNutrient,
   hasNutrition,
+  nutritionFlags,
   nutritionRows,
   pickNutrition,
   scaleNutrition,
@@ -118,5 +121,63 @@ describe("formatNutrient", () => {
 
   it("drops trailing zeros so whole grams read cleanly", () => {
     expect(formatNutrient(38, 1)).toBe("38");
+  });
+});
+
+describe("classifyLevel (5/20 rule)", () => {
+  it("bands by %DV: ≤5 low, ≥20 high, else moderate", () => {
+    expect(classifyLevel(5)).toBe("low");
+    expect(classifyLevel(4.9)).toBe("low");
+    expect(classifyLevel(12)).toBe("moderate");
+    expect(classifyLevel(19.9)).toBe("moderate");
+    expect(classifyLevel(20)).toBe("high");
+    expect(classifyLevel(38)).toBe("high");
+  });
+});
+
+describe("assessDailyValue", () => {
+  it("computes sodium %DV against the 2300 mg Daily Value", () => {
+    const flag = assessDailyValue({ sodiumMg: 874 }, "sodiumMg");
+    expect(flag).toMatchObject({
+      key: "sodiumMg",
+      label: "Sodium",
+      unit: "mg",
+      amount: 874,
+      percentDV: 38, // 874 / 2300 ≈ 38%
+      level: "high",
+    });
+  });
+
+  it("computes sugar %DV against the 50 g Daily Value", () => {
+    const flag = assessDailyValue({ sugarGrams: 2 }, "sugarGrams");
+    expect(flag).toMatchObject({ percentDV: 4, level: "low" });
+  });
+
+  it("derives the band from the exact ratio, not the rounded percent", () => {
+    // 115 mg / 2300 = 5.0% exactly → low (boundary).
+    expect(assessDailyValue({ sodiumMg: 115 }, "sodiumMg")?.level).toBe("low");
+    // 116 mg / 2300 ≈ 5.04% → moderate even though it rounds to 5%.
+    expect(assessDailyValue({ sodiumMg: 116 }, "sodiumMg")?.level).toBe(
+      "moderate",
+    );
+  });
+
+  it("returns null when the nutrient is absent", () => {
+    expect(assessDailyValue({}, "sodiumMg")).toBeNull();
+    expect(assessDailyValue({ sodiumMg: null }, "sodiumMg")).toBeNull();
+  });
+});
+
+describe("nutritionFlags", () => {
+  it("returns sodium and sugar flags when both exist, in order", () => {
+    const flags = nutritionFlags({ sodiumMg: 900, sugarGrams: 30 });
+    expect(flags.map((f) => f.key)).toEqual(["sodiumMg", "sugarGrams"]);
+  });
+
+  it("only surfaces flags whose values exist", () => {
+    expect(nutritionFlags({ sodiumMg: 100 }).map((f) => f.key)).toEqual([
+      "sodiumMg",
+    ]);
+    expect(nutritionFlags({ calories: 400 })).toEqual([]);
   });
 });

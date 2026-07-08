@@ -4,15 +4,28 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
+import { Badge } from "~/components/ui/badge";
 import {
   formatNutrient,
   hasNutrition,
+  nutritionFlags,
   nutritionRows,
   scaleNutrition,
   type Nutrition,
+  type NutrientLevel,
 } from "~/lib/nutrition";
 
 type Basis = "serving" | "whole";
+
+/** Badge variant + prose for each dietary band (issue #416). */
+const LEVEL_STYLE: Record<
+  NutrientLevel,
+  { variant: "success" | "secondary" | "warning"; word: string }
+> = {
+  low: { variant: "success", word: "Low" },
+  moderate: { variant: "secondary", word: "Moderate" },
+  high: { variant: "warning", word: "High" },
+};
 
 /**
  * A compact Nutrition Facts panel driven by a recipe's stored *per-serving*
@@ -50,6 +63,7 @@ export function NutritionPanel({
       : nutritionRows(nutrition);
 
   const noun = servingsNoun ?? "servings";
+  const flags = nutritionFlags(nutrition);
 
   return (
     <section
@@ -92,6 +106,24 @@ export function NutritionPanel({
           ? `Whole recipe · ${formatQuantity(wholeServings)} ${noun}`
           : "Amounts are per serving"}
       </p>
+
+      {flags.length > 0 && (
+        <ul
+          aria-label="Dietary flags per serving"
+          className="mt-3 flex flex-wrap gap-1.5"
+        >
+          {flags.map((flag) => {
+            const style = LEVEL_STYLE[flag.level];
+            return (
+              <li key={flag.key}>
+                <Badge variant={style.variant}>
+                  {style.word} {flag.label.toLowerCase()} · {flag.percentDV}% DV
+                </Badge>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <dl className="mt-3 flex flex-col">
         {rows.map((row, i) => (

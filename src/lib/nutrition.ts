@@ -103,3 +103,81 @@ export function formatNutrient(value: number, decimals: number): string {
     maximumFractionDigits: decimals,
   });
 }
+
+/**
+ * At-a-glance dietary flags (issue #416). Sodium and (added) sugar drive most
+ * everyday dietary goals, so we classify each *per serving* against its FDA
+ * Daily Value and surface a low/moderate/high band the UI can badge.
+ *
+ * Note: the schema stores total sugars, which we treat as the added-sugar proxy
+ * against the 50 g DV — honest labelling ("Sugars") keeps that explicit.
+ */
+export type NutrientLevel = "low" | "moderate" | "high";
+
+/**
+ * FDA Daily Values used for %DV, kept in one place so thresholds are easy to
+ * audit and adjust. Sodium 2300 mg; added sugars 50 g (2000 kcal reference).
+ */
+export const DAILY_VALUES = [
+  { key: "sodiumMg", label: "Sodium", unit: "mg", dailyValue: 2300 },
+  { key: "sugarGrams", label: "Sugars", unit: "g", dailyValue: 50 },
+] as const satisfies readonly {
+  key: NutrientKey;
+  label: string;
+  unit: string;
+  dailyValue: number;
+}[];
+
+/**
+ * FDA "5/20 rule" bands: ≤5% DV is low, ≥20% DV is high, anything between is
+ * moderate. Adjust here to retune every badge at once.
+ */
+export const LEVEL_THRESHOLDS = { lowMaxPercent: 5, highMinPercent: 20 } as const;
+
+export function classifyLevel(percentDV: number): NutrientLevel {
+  if (percentDV <= LEVEL_THRESHOLDS.lowMaxPercent) return "low";
+  if (percentDV >= LEVEL_THRESHOLDS.highMinPercent) return "high";
+  return "moderate";
+}
+
+export type DailyValueFlag = {
+  key: NutrientKey;
+  label: string;
+  unit: string;
+  amount: number;
+  percentDV: number;
+  level: NutrientLevel;
+};
+
+/**
+ * Per-serving %DV assessment for a single flaggable nutrient, or null when the
+ * recipe doesn't carry that value. `percentDV` is rounded for display, but the
+ * band is derived from the exact ratio so a value never lands in the wrong band
+ * due to rounding.
+ */
+export function assessDailyValue(
+  perServing: Nutrition,
+  key: (typeof DAILY_VALUES)[number]["key"],
+): DailyValueFlag | null {
+  const meta = DAILY_VALUES.find((d) => d.key === key);
+  if (!meta) return null;
+  const value = perServing[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const exactPercent = (value / meta.dailyValue) * 100;
+  return {
+    key: meta.key,
+    label: meta.label,
+    unit: meta.unit,
+    amount: value,
+    percentDV: Math.round(exactPercent),
+    level: classifyLevel(exactPercent),
+  };
+}
+
+/** All available per-serving dietary flags (sodium, sugar), in order. */
+export function nutritionFlags(perServing: Nutrition): DailyValueFlag[] {
+  return DAILY_VALUES.flatMap((d) => {
+    const flag = assessDailyValue(perServing, d.key);
+    return flag ? [flag] : [];
+  });
+}

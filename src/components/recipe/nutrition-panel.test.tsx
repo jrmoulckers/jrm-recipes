@@ -38,4 +38,24 @@ describe("NutritionPanel", () => {
     );
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("flags high sodium with a %DV badge", () => {
+    render(<NutritionPanel nutrition={{ sodiumMg: 874 }} servings={4} />);
+    const flags = screen.getByRole("list", { name: /dietary flags/i });
+    expect(
+      within(flags).getByText(/high sodium · 38% dv/i),
+    ).toBeInTheDocument();
+  });
+
+  it("flags low sugar distinctly from high sodium", () => {
+    render(
+      <NutritionPanel
+        nutrition={{ sodiumMg: 900, sugarGrams: 2 }}
+        servings={4}
+      />,
+    );
+    const flags = screen.getByRole("list", { name: /dietary flags/i });
+    expect(within(flags).getByText(/sodium ·/i)).toBeInTheDocument();
+    expect(within(flags).getByText(/low sugars · 4% dv/i)).toBeInTheDocument();
+  });
 });
