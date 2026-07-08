@@ -839,11 +839,17 @@ function StepTimerCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token",
+        "relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token",
         isComplete && "border-success/40 bg-success/10 ring-2 ring-success/20",
       )}
       aria-labelledby="step-timer-title"
     >
+      {isComplete && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
+        />
+      )}
       <div className="flex items-center justify-between gap-3">
         <h2
           id="step-timer-title"
@@ -1021,11 +1027,17 @@ function ActiveTimersPanel({
             <div
               key={step.id}
               className={cn(
-                "rounded-xl border border-border bg-background p-3",
+                "relative rounded-xl border border-border bg-background p-3",
                 isCurrent && "border-primary/40 bg-primary/10",
                 timer.status === "complete" && "border-success/40 bg-success/10",
               )}
             >
+              {timer.status === "complete" && (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
+                />
+              )}
               <button
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-start"

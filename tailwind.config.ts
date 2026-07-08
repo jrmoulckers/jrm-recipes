@@ -182,6 +182,10 @@ const config = {
           "0%": { backgroundColor: "hsl(var(--primary) / 0.25)" },
           "100%": { backgroundColor: "hsl(var(--primary) / 0)" },
         },
+        "timer-done-pulse": {
+          "0%, 100%": { opacity: "0", transform: "scale(1)" },
+          "50%": { opacity: "1", transform: "scale(1.02)" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -212,6 +216,7 @@ const config = {
         "strike-in": "strike-in 0.3s var(--ease-standard) both",
         "number-roll": "number-roll 0.28s var(--ease-emphasized)",
         "amount-flash": "amount-flash 0.9s var(--ease-standard) both",
+        "timer-done-pulse": "timer-done-pulse 0.9s var(--ease-emphasized) 3",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
