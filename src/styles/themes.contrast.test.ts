@@ -130,6 +130,8 @@ const TEXT_PAIRS: ReadonlyArray<{ fg: string; bg: string; label: string }> = [
   { fg: "destructive-foreground", bg: "destructive", label: "destructive button" },
   { fg: "accent-foreground", bg: "accent", label: "accent button" },
   { fg: "info-foreground", bg: "info", label: "info fill" },
+  { fg: "background", bg: "foreground", label: "tooltip (default) chip" },
+  { fg: "popover-foreground", bg: "popover", label: "tooltip (soft) / popover" },
   { fg: "primary", bg: "background", label: "active nav label" },
 ];
 
