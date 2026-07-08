@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  detectIngredientConflict,
   hasAllergenConflict,
+  isIngredientConflict,
   isRecipeSafeFor,
   meetsDiets,
   type MemberNeeds,
@@ -77,5 +79,47 @@ describe("isRecipeSafeFor", () => {
         { allergens: ["peanut", "dairy"], dietaryFlags: [] },
       ),
     ).toBe(true);
+  });
+});
+
+describe("detectIngredientConflict", () => {
+  const dairyFreeVegan: MemberNeeds = {
+    allergens: [],
+    diets: ["dairy-free", "vegan"],
+  };
+
+  it("flags a diet violation and suggests the neutralizing tag", () => {
+    // "butter" → dairy; conflicts with both dairy-free and vegan.
+    const conflict = detectIngredientConflict(["dairy"], dairyFreeVegan);
+    expect(conflict.allergens).toEqual([]);
+    expect(conflict.diets).toEqual(["dairy-free", "vegan"]);
+    expect(conflict.suggestedTags).toContain("dairy-free");
+    expect(isIngredientConflict(conflict)).toBe(true);
+  });
+
+  it("flags a raw allergen and maps it to a -free swap tag", () => {
+    const conflict = detectIngredientConflict(["wheat"], {
+      allergens: ["wheat"],
+      diets: [],
+    });
+    expect(conflict.allergens).toEqual(["wheat"]);
+    expect(conflict.diets).toEqual([]);
+    expect(conflict.suggestedTags).toEqual(["gluten-free"]);
+  });
+
+  it("does not flag an allergen the member doesn't avoid", () => {
+    const conflict = detectIngredientConflict(["soy"], dairyFreeVegan);
+    expect(isIngredientConflict(conflict)).toBe(false);
+    expect(conflict.suggestedTags).toEqual([]);
+  });
+
+  it("suggests no tag for an allergen with no matching diet (e.g. peanut)", () => {
+    const conflict = detectIngredientConflict(["peanut"], {
+      allergens: ["peanut"],
+      diets: [],
+    });
+    expect(conflict.allergens).toEqual(["peanut"]);
+    expect(conflict.suggestedTags).toEqual([]);
+    expect(isIngredientConflict(conflict)).toBe(true);
   });
 });

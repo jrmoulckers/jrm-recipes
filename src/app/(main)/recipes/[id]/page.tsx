@@ -44,6 +44,8 @@ import {
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { pickNutrition } from "~/lib/nutrition";
+import { isAllergen } from "~/lib/allergens";
+import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
@@ -176,12 +178,15 @@ export default async function RecipePage({
     ]);
   await recordView;
   const commentCount = countComments(comments);
-  // Family members with a calorie goal let the nutrition panel frame a serving
-  // against "today's budget" (issue #430).
+  // Family members drive the nutrition panel's calorie-goal indicator (#430)
+  // and the ingredient conflict flags (#429); narrow the stored string arrays
+  // back to the canonical unions here so the client gets typed data.
   const calorieMembers = memberProfiles.map((m) => ({
     id: m.id,
     name: m.name,
     calorieGoal: m.calorieGoal,
+    allergens: (m.allergens ?? []).filter(isAllergen),
+    diets: (m.diets ?? []).filter(isDietaryTag),
   }));
 
   // schema.org structured data — public recipes only, so we never expose the
@@ -406,7 +411,7 @@ export default async function RecipePage({
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
                     nutrition={pickNutrition(recipe)}
-                    calorieMembers={calorieMembers}
+                    members={calorieMembers}
                   />
                 ) : (
                   <p className="text-muted-foreground">

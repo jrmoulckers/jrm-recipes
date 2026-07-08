@@ -6,6 +6,7 @@ import { ArrowLeftRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   getSubstitutions,
+  isDietaryTag,
   matchIngredientDetailed,
   type DietaryTag,
 } from "~/lib/substitutions";
@@ -45,20 +46,41 @@ const FILTER_LABEL: Record<(typeof FILTER_TAGS)[number], string> = {
  * Subtle "swap" affordance shown only when an ingredient has known
  * substitutions. Opens a popover listing options with dietary tags. Renders
  * nothing when the ingredient has no match, so the list stays uncluttered.
+ *
+ * When the active family member can't have this ingredient (issue #429) the
+ * trigger is `flagged` (warning-styled, with an explicit accessible label) and
+ * the swap list is pre-filtered to `presetTags` so the safe option is the first
+ * thing the cook sees.
  */
 export function IngredientSubstitutions({
   item,
   className,
+  flagged = false,
+  presetTags,
 }: {
   item: string;
   className?: string;
+  flagged?: boolean;
+  presetTags?: DietaryTag[];
 }) {
-  const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>([]);
+  const presetKey = (presetTags ?? []).join("|");
+  const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>(
+    presetTags ?? [],
+  );
   const match = React.useMemo(() => matchIngredientDetailed(item), [item]);
   const substitutions = React.useMemo(
     () => getSubstitutions(item, selectedTags),
     [item, selectedTags],
   );
+
+  // Re-seed the filter when the active restriction changes (e.g. the cook picks
+  // a different family member). Keyed on the joined tags so a same-content array
+  // identity change doesn't clobber a manual toggle.
+  React.useEffect(() => {
+    setSelectedTags(
+      presetKey.length > 0 ? presetKey.split("|").filter(isDietaryTag) : [],
+    );
+  }, [presetKey]);
 
   if (!match) return null;
 
@@ -79,10 +101,17 @@ export function IngredientSubstitutions({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Substitutions for ${entry.name.toLowerCase()}`}
-          title="See substitutions"
+          aria-label={
+            flagged
+              ? `Safe swaps for ${entry.name.toLowerCase()} — conflicts with the selected dietary needs`
+              : `Substitutions for ${entry.name.toLowerCase()}`
+          }
+          title={flagged ? "See safe swaps" : "See substitutions"}
           className={cn(
-            "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            "inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            flagged
+              ? "text-warning hover:bg-warning/10"
+              : "text-muted-foreground hover:bg-muted hover:text-primary",
             className,
           )}
         >

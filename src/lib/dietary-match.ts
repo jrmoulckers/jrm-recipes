@@ -63,3 +63,67 @@ export function isRecipeSafeFor(
     meetsDiets(member.diets, recipe.dietaryFlags)
   );
 }
+
+/**
+ * The allergens each diet forbids *and that the allergen knowledge base can
+ * detect from ingredient text*. Diets also forbid things the KB can't see
+ * (vegan/vegetarian exclude meat; vegan excludes honey), so ingredient-level
+ * flagging is necessarily best-effort — the "double-check" disclaimer covers
+ * the gaps.
+ */
+export const DIET_FORBIDDEN_ALLERGENS: Record<DietaryTag, Allergen[]> = {
+  vegan: ["dairy", "egg", "fish", "shellfish"],
+  vegetarian: ["fish", "shellfish"],
+  "dairy-free": ["dairy"],
+  "gluten-free": ["wheat"],
+  "egg-free": ["egg"],
+};
+
+/**
+ * The "-free" diet tag that neutralizes a given allergen, where one exists.
+ * Used to pre-filter the substitutions popover toward a safe swap when the
+ * conflict is a raw allergen rather than a declared diet.
+ */
+const ALLERGEN_TO_DIET: Partial<Record<Allergen, DietaryTag>> = {
+  dairy: "dairy-free",
+  egg: "egg-free",
+  wheat: "gluten-free",
+};
+
+/** A single ingredient's conflict with the active member's restrictions. */
+export type IngredientConflict = {
+  /** Member allergens this ingredient carries. */
+  allergens: Allergen[];
+  /** Member diets this ingredient violates. */
+  diets: DietaryTag[];
+  /** Dietary tags to pre-filter the swap popover toward a safe option. */
+  suggestedTags: DietaryTag[];
+};
+
+/**
+ * Cross-reference one ingredient's detected allergens against a member's needs
+ * (issue #429). Reuses the allergen knowledge base (caller passes the result of
+ * `detectAllergens`) — no second knowledge base — and returns which allergens
+ * and diets it trips plus the dietary tags that would surface a safe swap.
+ */
+export function detectIngredientConflict(
+  itemAllergens: readonly Allergen[],
+  member: MemberNeeds,
+): IngredientConflict {
+  const carried = new Set<Allergen>(itemAllergens);
+  const allergens = member.allergens.filter((a) => carried.has(a));
+  const diets = member.diets.filter((d) =>
+    DIET_FORBIDDEN_ALLERGENS[d].some((a) => carried.has(a)),
+  );
+  const suggested = new Set<DietaryTag>(diets);
+  for (const a of allergens) {
+    const tag = ALLERGEN_TO_DIET[a];
+    if (tag) suggested.add(tag);
+  }
+  return { allergens, diets, suggestedTags: [...suggested] };
+}
+
+/** True when an ingredient trips any of the member's allergens or diets. */
+export function isIngredientConflict(conflict: IngredientConflict): boolean {
+  return conflict.allergens.length > 0 || conflict.diets.length > 0;
+}
