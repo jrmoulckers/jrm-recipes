@@ -20,6 +20,7 @@
   --font-display: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --shadow-sm: 0 1px 2px hsl(24 30% 20% / 0.05);
   --shadow: 0 1px 2px hsl(24 30% 20% / 0.06), 0 8px 24px -12px hsl(24 40% 20% / 0.18);
   --shadow-lg: 0 14px 44px -14px hsl(24 40% 20% / 0.26);
   --ring-width: 2px;
@@ -39,6 +40,7 @@
 .dark {
   color-scheme: dark;
   /* Dark shadows are essentially black glows across every mode. */
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.32);
   --shadow: 0 2px 4px hsl(0 0% 0% / 0.35), 0 12px 32px -12px hsl(0 0% 0% / 0.55);
   --shadow-lg: 0 20px 52px -14px hsl(0 0% 0% / 0.62);
 }
@@ -116,6 +118,7 @@
   --radius: 1.4rem;
   --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --shadow-sm: 0 1px 2px hsl(280 40% 40% / 0.08);
   --shadow: 0 2px 4px hsl(280 40% 40% / 0.08), 0 12px 32px -12px hsl(280 60% 50% / 0.22);
   --shadow-lg: 0 20px 48px -14px hsl(300 60% 50% / 0.3);
 
@@ -183,6 +186,7 @@
   --radius: 0.4rem;
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --shadow-sm: 0 1px 2px hsl(220 20% 20% / 0.07);
   --shadow: 0 1px 2px hsl(220 20% 20% / 0.08), 0 6px 20px -12px hsl(220 20% 20% / 0.18);
   --shadow-lg: 0 16px 40px -16px hsl(220 20% 20% / 0.22);
 
@@ -250,6 +254,7 @@
   --radius: 1.5rem;
   --font-display: var(--font-baloo), ui-rounded, "Segoe UI", sans-serif;
   --font-body: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --shadow-sm: 0 2px 0 hsl(212 60% 40% / 0.12);
   --shadow: 0 3px 0 hsl(212 60% 40% / 0.14), 0 12px 28px -12px hsl(212 80% 40% / 0.28);
   --shadow-lg: 0 6px 0 hsl(212 60% 40% / 0.14), 0 22px 44px -14px hsl(212 80% 40% / 0.34);
   --text-scale: 1.075;
@@ -324,6 +329,7 @@
   --radius: 0.25rem;
   --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-body: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --shadow-sm: 0 1px 1px hsl(0 0% 0% / 0.08);
   --shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
   --shadow-lg: 0 2px 6px hsl(0 0% 0% / 0.14);
   --text-scale: 1.03;

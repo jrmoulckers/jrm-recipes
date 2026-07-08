@@ -77,6 +77,7 @@ const config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       boxShadow: {
+        "token-sm": "var(--shadow-sm)",
         token: "var(--shadow)",
         "token-lg": "var(--shadow-lg)",
       },
