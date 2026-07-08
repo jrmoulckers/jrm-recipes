@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { identify, reset } from "~/lib/analytics";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
+import { isCaptureAllowed } from "~/lib/analytics/consent";
 import { clearClientBackend, setClientBackend } from "~/lib/analytics/backend";
 import { createPostHogBackend } from "~/lib/analytics/posthog-client";
 
@@ -40,6 +41,8 @@ export function AnalyticsProvider({
     void createPostHogBackend().then((backend) => {
       if (active && backend) {
         setClientBackend(backend);
+        // Respect a prior opt-out / DNT decision the instant the SDK is live.
+        if (!isCaptureAllowed()) backend.optOut();
         setReady(true);
       }
     });

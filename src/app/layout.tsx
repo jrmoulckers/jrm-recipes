@@ -22,6 +22,8 @@ import {
   isUITheme,
 } from "~/config/themes";
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
+import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
+import { analyticsRequiresConsent } from "~/lib/analytics/config";
 import { atkinson } from "~/fonts/atkinson";
 import { localeDirection, resolveLocale } from "~/config/i18n";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
@@ -105,6 +107,7 @@ export default async function RootLayout({
     ? schemeCookie
     : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
+  const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
   const locale = resolveLocale();
   const currentUser = await getCurrentUser();
 
@@ -135,6 +138,8 @@ export default async function RootLayout({
           initialScheme={scheme}
           initialA11y={a11y}
           initialUserId={currentUser?.id ?? null}
+          initialConsent={consent}
+          requireConsent={analyticsRequiresConsent()}
         >
           {children}
         </Providers>

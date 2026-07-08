@@ -11,6 +11,7 @@
  * where the backend holds the current distinct id).
  */
 import { getClientBackend } from "./backend";
+import { isCaptureAllowed } from "./consent";
 import { type AnalyticsEventName, type EventProperties } from "./events";
 import { scrubProperties } from "./scrub";
 
@@ -25,6 +26,7 @@ export function track<K extends AnalyticsEventName>(
   name: K,
   properties: EventProperties[K],
 ): void {
+  if (!isCaptureAllowed()) return;
   try {
     getClientBackend().capture(name, scrubProperties(properties));
   } catch {
@@ -37,6 +39,7 @@ export function identify(
   distinctId: string,
   properties?: Record<string, unknown>,
 ): void {
+  if (!isCaptureAllowed()) return;
   try {
     getClientBackend().identify(distinctId, scrubProperties(properties));
   } catch {
@@ -46,6 +49,7 @@ export function identify(
 
 /** Alias an anonymous device id to an identified user id (funnel stitching). */
 export function alias(distinctId: string, previousId?: string): void {
+  if (!isCaptureAllowed()) return;
   try {
     getClientBackend().alias(distinctId, previousId);
   } catch {

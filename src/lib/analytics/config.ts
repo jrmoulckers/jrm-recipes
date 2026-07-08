@@ -38,3 +38,12 @@ export function analyticsHost(): string {
 export function isAnalyticsConfigured(): boolean {
   return Boolean(analyticsKey());
 }
+
+/**
+ * True when analytics requires explicit opt-in consent (GDPR-style) before any
+ * capture. When false (the default), the app uses an opt-out model but still
+ * honors DNT/GPC and an explicit opt-out — see `~/lib/analytics/consent`.
+ */
+export function analyticsRequiresConsent(): boolean {
+  return env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT === "1";
+}

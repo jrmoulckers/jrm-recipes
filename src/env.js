@@ -101,6 +101,9 @@ export const env = createEnv({
     // layer no-ops (see ~/lib/analytics) so the app boots + builds with no key.
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+    // Consent model for analytics. Set to "1" to require explicit opt-in
+    // consent before any capture (GDPR-style); unset/other = opt-out model.
+    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -119,6 +122,8 @@ export const env = createEnv({
     NEXT_PUBLIC_CLOUDINARY_API_KEY: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT:
+      process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT,
   },
 
   skipValidation,
