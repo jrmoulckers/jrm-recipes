@@ -10,6 +10,10 @@ import {
   type PlannableRecipe,
   type PlannerEntry,
 } from "~/server/planner/queries";
+import { recipeAllergenMap } from "~/server/recipes/queries";
+import { listMemberProfiles } from "~/server/dietary/queries";
+import { isAllergen, type Allergen } from "~/lib/allergens";
+import { type ActiveMemberOption } from "~/lib/dietary-match";
 import {
   formatDayName,
   formatDayNumber,
@@ -51,11 +55,28 @@ export default async function PlanPage({
 
   let entries: PlannerEntry[] = [];
   let recipes: PlannableRecipe[] = [];
+  let members: ActiveMemberOption[] = [];
+  let allergensByRecipe = new Map<string, Allergen[]>();
   if (dbConfigured && user) {
-    [entries, recipes] = await Promise.all([
+    const [entryRows, recipeRows, profiles] = await Promise.all([
       listEntriesInRange(user.id, startParam, endParam),
       listPlannableRecipes(user),
+      listMemberProfiles(user.id),
     ]);
+    entries = entryRows;
+    recipes = recipeRows;
+    members = profiles.map((m) => ({
+      id: m.id,
+      name: m.name,
+      allergens: (m.allergens ?? []).filter(isAllergen),
+    }));
+    // Only pay for the allergen roll-up when someone with allergies is active.
+    if (members.some((m) => m.allergens.length > 0)) {
+      const recipeIds = entries
+        .map((entry) => entry.recipe?.id)
+        .filter((id): id is string => Boolean(id));
+      allergensByRecipe = await recipeAllergenMap(recipeIds);
+    }
   }
 
   const boardDays: BoardDay[] = days.map((day) => ({
@@ -72,7 +93,11 @@ export default async function PlanPage({
     slot: entry.slot,
     note: entry.note,
     recipe: entry.recipe
-      ? { slug: entry.recipe.slug, title: entry.recipe.title }
+      ? {
+          slug: entry.recipe.slug,
+          title: entry.recipe.title,
+          allergens: allergensByRecipe.get(entry.recipe.id) ?? [],
+        }
       : null,
   }));
 
@@ -136,6 +161,7 @@ export default async function PlanPage({
             days={boardDays}
             entries={boardEntries}
             recipes={boardRecipes}
+            members={members}
           />
           {boardEntries.length === 0 && <PlannerEmptyState />}
         </>

@@ -296,11 +296,40 @@ export async function listPublicRecipes({
 }
 
 /**
+ * Map recipe ids to their best-effort detected allergens (issue #431/#432).
+ * Pulls just the ingredient `item` text for the given recipes in one batched
+ * query and rolls each recipe up with `summarizeAllergens` — the same detector
+ * the recipe page uses, so there's no second knowledge base. Recipes with no
+ * ingredients (or when the DB is off) simply map to an empty list.
+ */
+export async function recipeAllergenMap(
+  recipeIds: string[],
+): Promise<Map<string, Allergen[]>> {
+  const result = new Map<string, Allergen[]>();
+  const ids = [...new Set(recipeIds)];
+  if (ids.length === 0 || !isDbConfigured()) return result;
+  const ingredientRows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      item: recipeIngredients.item,
+    })
+    .from(recipeIngredients)
+    .where(inArray(recipeIngredients.recipeId, ids));
+  const itemsByRecipe = new Map<string, string[]>();
+  for (const { recipeId, item } of ingredientRows) {
+    const list = itemsByRecipe.get(recipeId) ?? [];
+    list.push(item);
+    itemsByRecipe.set(recipeId, list);
+  }
+  for (const id of ids) {
+    result.set(id, summarizeAllergens(itemsByRecipe.get(id) ?? []));
+  }
+  return result;
+}
+
+/**
  * Attach best-effort detected allergens to card rows for the "safe for my
- * family" badge (#431). Pulls just the ingredient `item` text for the given
- * recipes in one batched query and rolls it up per recipe with
- * `summarizeAllergens` — the same detector the recipe page uses, so there's no
- * second knowledge base. Returns the rows widened with an `allergens` field;
+ * family" badge (#431). Returns the rows widened with an `allergens` field;
  * callers only bother when a family profile with allergies is active.
  */
 export async function attachCardAllergens<T extends { id: string }>(
@@ -309,27 +338,10 @@ export async function attachCardAllergens<T extends { id: string }>(
   if (rows.length === 0 || !isDbConfigured()) {
     return rows.map((row) => ({ ...row, allergens: [] }));
   }
-  const ingredientRows = await db
-    .select({
-      recipeId: recipeIngredients.recipeId,
-      item: recipeIngredients.item,
-    })
-    .from(recipeIngredients)
-    .where(
-      inArray(
-        recipeIngredients.recipeId,
-        rows.map((row) => row.id),
-      ),
-    );
-  const itemsByRecipe = new Map<string, string[]>();
-  for (const { recipeId, item } of ingredientRows) {
-    const list = itemsByRecipe.get(recipeId) ?? [];
-    list.push(item);
-    itemsByRecipe.set(recipeId, list);
-  }
+  const byRecipe = await recipeAllergenMap(rows.map((row) => row.id));
   return rows.map((row) => ({
     ...row,
-    allergens: summarizeAllergens(itemsByRecipe.get(row.id) ?? []),
+    allergens: byRecipe.get(row.id) ?? [],
   }));
 }
 

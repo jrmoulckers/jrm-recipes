@@ -30,6 +30,7 @@ function makeItem(item: string, category: ShoppingCategory): AggregatedItem {
     optional: false,
     hasOptional: false,
     recipeIds: [],
+    allergens: [],
   };
 }
 
@@ -393,5 +394,47 @@ describe("describeQuantity", () => {
 });
 
 // Type export smoke test — keeps the public input type wired up.
+describe("aggregated allergens (#432)", () => {
+  it("tags a consolidated line with allergens detected in its name", () => {
+    const result = aggregateShoppingList([
+      {
+        servings: 1,
+        desiredServings: 1,
+        ingredients: [
+          { item: "Peanut butter", quantity: 2, unit: "tbsp" },
+          { item: "Whole milk", quantity: 1, unit: "cup" },
+          { item: "Onion", quantity: 1 },
+        ],
+      },
+    ]);
+    expect(byItem(result.items, "Peanut butter")[0]?.allergens).toEqual([
+      "peanut",
+    ]);
+    expect(byItem(result.items, "Whole milk")[0]?.allergens).toEqual(["dairy"]);
+    // A plain produce item carries no detected allergen.
+    expect(byItem(result.items, "Onion")[0]?.allergens).toEqual([]);
+  });
+
+  it("keeps allergens on a line merged across recipes", () => {
+    const result = aggregateShoppingList([
+      {
+        recipeId: "a",
+        servings: 1,
+        desiredServings: 1,
+        ingredients: [{ item: "Butter", quantity: 1, unit: "tbsp" }],
+      },
+      {
+        recipeId: "b",
+        servings: 1,
+        desiredServings: 1,
+        ingredients: [{ item: "butter", quantity: 1, unit: "tbsp" }],
+      },
+    ]);
+    const butter = byItem(result.items, "Butter");
+    expect(butter).toHaveLength(1);
+    expect(butter[0]?.allergens).toEqual(["dairy"]);
+  });
+});
+
 const _sample: ShoppingItemInput = { item: "Water" };
 void _sample;

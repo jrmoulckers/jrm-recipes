@@ -26,6 +26,17 @@ export type RecipeDietary = {
   dietaryFlags: DietaryTag[];
 };
 
+/**
+ * A selectable family member for the client "cooking/shopping for" controls:
+ * enough to label the selection and check allergens. Diets are optional because
+ * some surfaces (shopping list, planner) only warn on detectable allergens.
+ */
+export type ActiveMemberOption = {
+  id: string;
+  name: string;
+  allergens: Allergen[];
+};
+
 /** True when the recipe carries any allergen the member must avoid. */
 export function hasAllergenConflict(
   memberAllergens: readonly Allergen[],
