@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { formatDistanceToNow } from "date-fns";
+import { useLocale } from "next-intl";
 import { Clock, History, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
+import { formatRelativeTime } from "~/lib/dates";
 import { revertRecipeAction } from "~/server/recipes/actions";
 import type { VersionListItem } from "~/server/recipes/queries";
 import { Button } from "~/components/ui/button";
@@ -33,6 +34,7 @@ export function RecipeTimeline({
   canRevert: boolean;
 }) {
   const latestVersion = versions[0]?.versionNumber;
+  const locale = useLocale();
 
   if (versions.length === 0) {
     return (
@@ -107,7 +109,7 @@ export function RecipeTimeline({
                       {author} ·{" "}
                       {Number.isNaN(createdAt.getTime())
                         ? "saved earlier"
-                        : formatDistanceToNow(createdAt, { addSuffix: true })}
+                        : formatRelativeTime(createdAt, locale)}
                     </p>
                     {version.summary && (
                       <p className="mt-3 text-sm text-muted-foreground">

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { useLocale } from "next-intl";
 import {
   CookingPot,
   Loader2,
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { deleteCookLogAction, logCookAction } from "~/server/cooklog/actions";
 import type { CookLogItem } from "~/server/cooklog/queries";
 import { cookedTimesLabel, formatServingsMade } from "~/server/cooklog/summary";
+import { formatDate, formatRelativeTime } from "~/lib/dates";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -134,6 +135,7 @@ function CookLogTimeline({
   entries: CookLogItem[];
   recipeSlug: string;
 }) {
+  const locale = useLocale();
   return (
     <ol className="relative space-y-4 before:absolute before:bottom-3 before:left-[1.15rem] before:top-3 before:w-px before:bg-border">
       {entries.map((entry) => {
@@ -154,11 +156,11 @@ function CookLogTimeline({
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                 <div className="min-w-0">
                   <p className="font-medium leading-tight">
-                    {valid ? format(cookedAt, "PPP") : "Logged earlier"}
+                    {valid ? formatDate(cookedAt, "PPP", locale) : "Logged earlier"}
                   </p>
                   {valid && (
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(cookedAt, { addSuffix: true })}
+                      {formatRelativeTime(cookedAt, locale)}
                     </p>
                   )}
                 </div>
@@ -187,7 +189,7 @@ function CookLogTimeline({
                   {/* eslint-disable-next-line @next/next/no-img-element -- cook photos may be arbitrary user-pasted URLs (Cloudinary optional) that can't be pre-allowlisted for next/image */}
                   <img
                     src={entry.photoUrl}
-                    alt={`Cooked on ${valid ? format(cookedAt, "PPP") : "an earlier date"}`}
+                    alt={`Cooked on ${valid ? formatDate(cookedAt, "PPP", locale) : "an earlier date"}`}
                     className="max-h-72 w-full object-cover"
                   />
                 </figure>

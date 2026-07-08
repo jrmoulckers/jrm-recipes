@@ -17,10 +17,10 @@ import {
   subWeeks,
 } from "date-fns";
 
-export const DAYS_IN_WEEK = 7;
+import { DEFAULT_LOCALE } from "~/config/i18n";
+import { weekStartsOn } from "~/lib/dates";
 
-/** Planner weeks start on Sunday to match the default calendar grid. */
-export const WEEK_STARTS_ON = 0;
+export const DAYS_IN_WEEK = 7;
 
 const DATE_PARAM_FORMAT = "yyyy-MM-dd";
 
@@ -54,9 +54,16 @@ export function parseDateParam(param?: string | null): Date {
   return isValid(parsed) ? parsed : new Date();
 }
 
-/** The first day (Sunday) of the planner week containing `date`. */
-export function startOfPlannerWeek(date: Date): Date {
-  return startOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
+/**
+ * The first day of the planner week containing `date`. Which weekday that is
+ * comes from the locale (Sunday for `en`, Monday for `es`/`de`, …), defaulting
+ * to English so existing callers keep their Sunday-start grid.
+ */
+export function startOfPlannerWeek(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): Date {
+  return startOfWeek(date, { weekStartsOn: weekStartsOn(locale) });
 }
 
 export type PlannerWeek = {
@@ -68,8 +75,11 @@ export type PlannerWeek = {
 };
 
 /** The 7-day week (start, end, each day, and query params) containing `date`. */
-export function getPlannerWeek(date: Date): PlannerWeek {
-  const start = startOfPlannerWeek(date);
+export function getPlannerWeek(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): PlannerWeek {
+  const start = startOfPlannerWeek(date, locale);
   const days = Array.from({ length: DAYS_IN_WEEK }, (_, index) =>
     addDays(start, index),
   );
@@ -84,13 +94,19 @@ export function getPlannerWeek(date: Date): PlannerWeek {
 }
 
 /** `yyyy-MM-dd` for the start of the week after the one containing `date`. */
-export function nextWeekParam(date: Date): string {
-  return toDateParam(startOfPlannerWeek(addWeeks(date, 1)));
+export function nextWeekParam(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  return toDateParam(startOfPlannerWeek(addWeeks(date, 1), locale));
 }
 
 /** `yyyy-MM-dd` for the start of the week before the one containing `date`. */
-export function previousWeekParam(date: Date): string {
-  return toDateParam(startOfPlannerWeek(subWeeks(date, 1)));
+export function previousWeekParam(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  return toDateParam(startOfPlannerWeek(subWeeks(date, 1), locale));
 }
 
 /** True when the two dates fall on the same calendar day. */
@@ -103,40 +119,17 @@ export function isToday(date: Date): boolean {
   return dateFnsIsToday(date);
 }
 
-/** Human-friendly week range, e.g. "Jul 6 – 12, 2026" or "Jun 29 – Jul 5, 2026". */
-export function formatWeekRange(start: Date, end: Date): string {
-  const sameMonth = start.getMonth() === end.getMonth();
-  const sameYear = start.getFullYear() === end.getFullYear();
-  if (sameYear && sameMonth) {
-    return `${format(start, "MMM d")} – ${format(end, "d, yyyy")}`;
-  }
-  if (sameYear) {
-    return `${format(start, "MMM d")} – ${format(end, "MMM d, yyyy")}`;
-  }
-  return `${format(start, "MMM d, yyyy")} – ${format(end, "MMM d, yyyy")}`;
-}
-
-/** Short weekday name, e.g. "Sun". */
-export function formatDayName(date: Date): string {
-  return format(date, "EEE");
-}
-
-/** Day of month, e.g. "6". */
-export function formatDayNumber(date: Date): string {
-  return format(date, "d");
-}
-
-/** Full day label, e.g. "Sunday, Jul 6". */
-export function formatFullDay(date: Date): string {
-  return format(date, "EEEE, MMM d");
-}
-
-/** Full weekday name, e.g. "Monday" — used by the printable week menu (#438). */
-export function formatWeekdayLong(date: Date): string {
-  return format(date, "EEEE");
-}
-
-/** Month + day, e.g. "Jul 6" — used by the printable week menu (#438). */
-export function formatMonthDay(date: Date): string {
-  return format(date, "MMM d");
-}
+/**
+ * Locale-aware display formatters live in {@link ~/lib/dates}; re-exported here
+ * so planner callers have one import. Each defaults to English, so existing
+ * (locale-less) call sites and snapshots are unaffected. `formatWeekdayLong`
+ * and `formatMonthDay` back the printable week menu (#438).
+ */
+export {
+  formatWeekRange,
+  formatDayName,
+  formatDayNumber,
+  formatFullDay,
+  formatWeekdayLong,
+  formatMonthDay,
+} from "~/lib/dates";
