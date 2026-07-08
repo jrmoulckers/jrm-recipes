@@ -29,7 +29,8 @@ const TRIGGER_CLASS =
 
 function computeStandalone(): boolean {
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
+    (typeof window.matchMedia === "function" &&
+      window.matchMedia("(display-mode: standalone)").matches) ||
     (window.navigator as { standalone?: boolean }).standalone === true
   );
 }
@@ -69,14 +70,17 @@ export function InstallAppButton() {
       setDeferredPrompt(null);
     };
 
-    const mql = window.matchMedia("(display-mode: standalone)");
+    const mql =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(display-mode: standalone)")
+        : null;
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
-    mql.addEventListener("change", sync);
+    mql?.addEventListener("change", sync);
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
-      mql.removeEventListener("change", sync);
+      mql?.removeEventListener("change", sync);
     };
   }, []);
 
