@@ -9,9 +9,9 @@
   },
   "cook": {
     "timer": {
-      "complete": "Temporizador completado",
-      "remaining": "{time} restante",
-      "paused": "En pausa con {time} restante",
+      "complete": "¡Se acabó el tiempo!",
+      "remaining": "Queda {time}",
+      "paused": "En pausa · queda {time}",
       "ready": "{time} listo"
     },
     "a11y": {

@@ -9,9 +9,9 @@
   },
   "cook": {
     "timer": {
-      "complete": "انتهى المؤقّت",
-      "remaining": "{time} متبقٍّ",
-      "paused": "متوقّف مؤقّتًا، {time} متبقٍّ",
+      "complete": "انتهى الوقت!",
+      "remaining": "بقي {time}",
+      "paused": "متوقّف مؤقّتًا · بقي {time}",
       "ready": "{time} جاهز"
     },
     "a11y": {

@@ -9,9 +9,9 @@
   },
   "cook": {
     "timer": {
-      "complete": "Timer abgelaufen",
+      "complete": "Zeit ist um!",
       "remaining": "Noch {time}",
-      "paused": "Pausiert, noch {time}",
+      "paused": "Pausiert · noch {time}",
       "ready": "{time} bereit"
     },
     "a11y": {
