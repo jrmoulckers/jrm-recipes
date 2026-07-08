@@ -19,7 +19,10 @@ import { cn } from "~/lib/utils";
 import type { CookRecipe } from "./types";
 
 type IngredientsDrawerProps = {
-  recipe: Pick<CookRecipe, "ingredients" | "servings" | "servingsNoun">;
+  recipe: Pick<
+    CookRecipe,
+    "ingredients" | "servings" | "servingsNoun" | "nutrition"
+  >;
   className?: string;
   label?: string;
   /** When provided, ingredient scaling/units/checklist are lifted and shared. */
@@ -64,6 +67,7 @@ export function IngredientsDrawer({
               baseServings={recipe.servings}
               servingsNoun={recipe.servingsNoun}
               controls={controls}
+              nutrition={recipe.nutrition}
             />
           ) : (
             <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground">

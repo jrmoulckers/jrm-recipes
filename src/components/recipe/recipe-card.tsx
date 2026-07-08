@@ -9,6 +9,7 @@ import {
   ratingSummary,
   summaryFromAggregates,
 } from "~/lib/ratings";
+import { type Allergen } from "~/lib/allergens";
 import {
   matchFieldLabel,
   splitHighlight,
@@ -16,6 +17,10 @@ import {
 } from "~/lib/search-match";
 import { Badge } from "~/components/ui/badge";
 import { FavoriteButton } from "~/components/collections/favorite-button";
+import {
+  CardDietaryBadge,
+  type CardDietaryMember,
+} from "~/components/recipe/card-dietary-badge";
 
 export type CardRecipe = {
   id: string;
@@ -34,6 +39,12 @@ export type CardRecipe = {
   ratingSum?: number;
   /** Legacy raw ratings, used only when aggregates aren't provided. */
   ratings?: { value: number }[];
+  /**
+   * Detected allergens rolled up from ingredients (conservative direct+hidden
+   * union), for the safe-for badge. `null` = no structured ingredient data to
+   * analyze (badge withholds the "safe" verdict); `[]` = analyzed, none found.
+   */
+  allergens?: Allergen[] | null;
 };
 
 const GRADIENTS = [
@@ -55,6 +66,7 @@ export function RecipeCard({
   canFavorite = false,
   priority = false,
   matchReason,
+  members,
 }: {
   recipe: CardRecipe;
   /** Initial favorited state for the heart overlay. */
@@ -73,6 +85,12 @@ export function RecipeCard({
    * non-title matches. Omitted on browse/discover/collection cards.
    */
   matchReason?: RecipeMatchReason | null;
+  /**
+   * Family members to power the "safe for [name]" badge (#431). When supplied
+   * and one is active, the card shows an allergen safety signal; omit it (the
+   * default) and no badge renders.
+   */
+  members?: CardDietaryMember[];
 }) {
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
@@ -156,6 +174,12 @@ export function RecipeCard({
           <p className="line-clamp-2 text-sm text-muted-foreground">
             {recipe.description}
           </p>
+        )}
+        {members && members.length > 0 && (
+          <CardDietaryBadge
+            members={members}
+            recipeAllergens={recipe.allergens ?? null}
+          />
         )}
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
           {recipe.totalMinutes != null && (

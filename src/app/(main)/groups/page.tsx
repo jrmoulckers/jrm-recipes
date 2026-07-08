@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { UtensilsCrossed, Users } from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -31,7 +32,14 @@ export default async function GroupsPage() {
           </p>
         </div>
         {user && dbConfigured ? (
-          <CreateGroupDialog />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/settings/dietary">
+                <UtensilsCrossed /> Dietary profiles
+              </Link>
+            </Button>
+            <CreateGroupDialog />
+          </div>
         ) : (
           <Button size="lg" disabled>
             New group

@@ -33,6 +33,7 @@ function makeRecipe(overrides: Partial<CookRecipe> = {}): CookRecipe {
     totalMinutes: null,
     notes: null,
     householdId: null,
+    nutrition: {},
     ingredients: [],
     steps: [
       {

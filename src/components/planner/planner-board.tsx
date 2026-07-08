@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, Plus, Search, Trash2, UtensilsCrossed } from "lucide-react";
+import { AlertTriangle, Check, Plus, Search, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
 import { addEntryAction, removeEntryAction } from "~/server/planner/actions";
@@ -12,6 +12,9 @@ import {
   type MealSlotValue,
 } from "~/server/planner/validation";
 import { cn } from "~/lib/utils";
+import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
+import { allergenConflicts, type ActiveMemberOption } from "~/lib/dietary-match";
+import { useActiveMemberStore } from "~/lib/active-member-store";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -38,7 +41,7 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
-  recipe: { slug: string; title: string } | null;
+  recipe: { slug: string; title: string; allergens?: Allergen[] } | null;
 };
 
 export type BoardRecipe = {
@@ -57,12 +60,18 @@ export function PlannerBoard({
   days,
   entries,
   recipes,
+  members = [],
 }: {
   days: BoardDay[];
   entries: BoardEntry[];
   recipes: BoardRecipe[];
+  /** Family profiles, to flag entries unsafe for the active member (#432). */
+  members?: ActiveMemberOption[];
 }) {
   const [activeCell, setActiveCell] = React.useState<Cell | null>(null);
+  const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
+  const avoidAllergens =
+    members.find((m) => m.id === activeMemberId)?.allergens ?? [];
 
   const entriesByCell = React.useMemo(() => {
     const map = new Map<string, BoardEntry[]>();
@@ -118,7 +127,11 @@ export function PlannerBoard({
                     </p>
 
                     {cellEntries.map((entry) => (
-                      <EntryChip key={entry.id} entry={entry} />
+                      <EntryChip
+                        key={entry.id}
+                        entry={entry}
+                        avoidAllergens={avoidAllergens}
+                      />
                     ))}
 
                     <button
@@ -153,7 +166,13 @@ export function PlannerBoard({
   );
 }
 
-function EntryChip({ entry }: { entry: BoardEntry }) {
+function EntryChip({
+  entry,
+  avoidAllergens,
+}: {
+  entry: BoardEntry;
+  avoidAllergens: Allergen[];
+}) {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
 
@@ -170,12 +189,18 @@ function EntryChip({ entry }: { entry: BoardEntry }) {
   }
 
   const title = entry.recipe?.title ?? entry.note ?? "Untitled";
+  const alerts = allergenConflicts(avoidAllergens, entry.recipe?.allergens ?? []);
+  const alertText =
+    alerts.length > 0
+      ? `Contains ${alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()).join(", ")}`
+      : null;
 
   return (
     <div
       className={cn(
         "group flex items-start gap-1.5 rounded-lg border border-border bg-surface/60 px-2 py-1.5 text-xs",
         isPending && "opacity-50",
+        alertText && "border-warning/60 bg-warning/10",
       )}
     >
       <span className="mt-0.5 flex-1 leading-snug">
@@ -183,6 +208,15 @@ function EntryChip({ entry }: { entry: BoardEntry }) {
         {entry.recipe && entry.note ? (
           <span className="block text-muted-foreground">{entry.note}</span>
         ) : null}
+        {alertText && (
+          <span
+            className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
+            title="Best-effort from ingredient names — double-check labels and brands."
+          >
+            <AlertTriangle className="size-3 shrink-0" aria-hidden />
+            {alertText}
+          </span>
+        )}
       </span>
       <button
         type="button"

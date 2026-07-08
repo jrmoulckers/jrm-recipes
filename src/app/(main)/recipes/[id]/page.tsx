@@ -43,12 +43,17 @@ import {
   isFavorited,
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { pickNutrition } from "~/lib/nutrition";
+import { isAllergen } from "~/lib/allergens";
+import { isDietaryTag } from "~/lib/substitutions";
+import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
+import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
@@ -153,6 +158,7 @@ export default async function RecipePage({
     savedCollections,
     similar,
     favoriteIds,
+    memberProfiles,
   ] =
     await Promise.all([
       getRecipeVersions(recipe.id),
@@ -166,9 +172,22 @@ export default async function RecipePage({
       user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
       listSimilarRecipes(user, recipe.id),
       getFavoriteRecipeIds(user?.id),
+      user && dbEnabled
+        ? listMemberProfiles(user.id)
+        : Promise.resolve([]),
     ]);
   await recordView;
   const commentCount = countComments(comments);
+  // Family members drive the nutrition panel's calorie-goal indicator (#430)
+  // and the ingredient conflict flags (#429); narrow the stored string arrays
+  // back to the canonical unions here so the client gets typed data.
+  const calorieMembers = memberProfiles.map((m) => ({
+    id: m.id,
+    name: m.name,
+    calorieGoal: m.calorieGoal,
+    allergens: (m.allergens ?? []).filter(isAllergen),
+    diets: (m.diets ?? []).filter(isDietaryTag),
+  }));
 
   // schema.org structured data — public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
@@ -380,11 +399,19 @@ export default async function RecipePage({
                 <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
                   Ingredients
                 </h2>
+                {recipe.ingredients.length > 0 && (
+                  <AllergenSummary
+                    items={recipe.ingredients.map((ing) => ing.item)}
+                    className="mb-4"
+                  />
+                )}
                 {recipe.ingredients.length > 0 ? (
                   <IngredientsPanel
                     ingredients={recipe.ingredients}
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
+                    nutrition={pickNutrition(recipe)}
+                    members={calorieMembers}
                   />
                 ) : (
                   <p className="text-muted-foreground">

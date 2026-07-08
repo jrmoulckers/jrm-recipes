@@ -138,11 +138,93 @@ describe("recipeInput", () => {
         }).success,
       ).toBe(true);
     });
+  });
 
-    it("still accepts non-group visibility without a group", () => {
+  describe("per-serving nutrition (i414)", () => {
+    it("coerces nutrition form strings to numbers", () => {
       expect(
-        recipeInput.safeParse({ title: "Solo", visibility: "private" }).success,
-      ).toBe(true);
+        recipeInput.parse({
+          title: "Roast Chicken",
+          calories: "540",
+          proteinGrams: "42.5",
+          carbsGrams: "3",
+          fatGrams: "38",
+          saturatedFatGrams: "11.2",
+          sodiumMg: "620",
+          sugarGrams: "1.5",
+          fiberGrams: "0.5",
+        }),
+      ).toMatchObject({
+        calories: 540,
+        proteinGrams: 42.5,
+        carbsGrams: 3,
+        fatGrams: 38,
+        saturatedFatGrams: 11.2,
+        sodiumMg: 620,
+        sugarGrams: 1.5,
+        fiberGrams: 0.5,
+      });
+    });
+
+    it("leaves blank nutrition fields undefined", () => {
+      const parsed = recipeInput.parse({
+        title: "No Numbers",
+        calories: "",
+        proteinGrams: "",
+        sodiumMg: "",
+      });
+      expect(parsed.calories).toBeUndefined();
+      expect(parsed.proteinGrams).toBeUndefined();
+      expect(parsed.sodiumMg).toBeUndefined();
+    });
+
+    it("rejects negative and non-integer energy/sodium values", () => {
+      expect(() =>
+        recipeInput.parse({ title: "Bad", calories: "-1" }),
+      ).toThrow();
+      expect(() =>
+        recipeInput.parse({ title: "Bad", sodiumMg: "-5" }),
+      ).toThrow();
+      expect(() =>
+        recipeInput.parse({ title: "Bad", calories: "12.5" }),
+      ).toThrow();
+    });
+
+    it("rejects out-of-range macronutrients", () => {
+      expect(() =>
+        recipeInput.parse({ title: "Bad", proteinGrams: "-2" }),
+      ).toThrow();
+      expect(() =>
+        recipeInput.parse({ title: "Bad", fatGrams: "100001" }),
+      ).toThrow();
+    });
+  });
+
+  describe("structured dietary flags (i404)", () => {
+    it("defaults to an empty list when omitted", () => {
+      expect(recipeInput.parse({ title: "Plain" }).dietaryFlags).toEqual([]);
+    });
+
+    it("accepts the canonical dietary tags", () => {
+      const parsed = recipeInput.parse({
+        title: "Vegan Chili",
+        dietaryFlags: ["vegan", "gluten-free"],
+      });
+      expect(parsed.dietaryFlags).toEqual(["vegan", "gluten-free"]);
+    });
+
+    it("dedupes repeated flags", () => {
+      const parsed = recipeInput.parse({
+        title: "Dupes",
+        dietaryFlags: ["vegan", "vegan", "egg-free"],
+      });
+      expect(parsed.dietaryFlags).toEqual(["vegan", "egg-free"]);
+    });
+
+    it("rejects unknown dietary tags", () => {
+      expect(() =>
+        recipeInput.parse({ title: "Bad", dietaryFlags: ["keto"] }),
+      ).toThrow();
     });
   });
 });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { slugify } from "~/lib/utils";
+import { DIETARY_TAGS } from "~/lib/substitutions";
 
 /**
  * Validation contract for recipe input. The editor (client) and the server
@@ -69,6 +70,9 @@ export const recipeVisibility = z.enum([
 export const recipeStatus = z.enum(["draft", "published"]);
 export const recipeDifficulty = z.enum(["easy", "medium", "hard"]);
 
+/** A single structured dietary self-declaration (issue #404). */
+export const dietaryTag = z.enum(DIETARY_TAGS);
+
 export const recipeInput = z
   .object({
     title: z.string().trim().min(1, "Give your recipe a title").max(200),
@@ -84,12 +88,32 @@ export const recipeInput = z
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
     notes: optionalString(4000),
+    // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
+    // and sodium (mg) are whole numbers, macronutrients are grams and may be
+    // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
+    calories: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    proteinGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    carbsGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    fatGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    saturatedFatGrams: optionalNumber.pipe(
+      z.number().min(0).max(100000).optional(),
+    ),
+    sodiumMg: optionalNumber.pipe(z.number().int().min(0).max(1000000).optional()),
+    sugarGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    fiberGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     visibility: recipeVisibility.default("private"),
     status: recipeStatus.default("draft"),
     groupId: optionalString(24),
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
     tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+    // Structured dietary self-declaration (issue #404), aligned to the
+    // canonical DietaryTag set. Deduped; order-insensitive.
+    dietaryFlags: z
+      .array(dietaryTag)
+      .max(DIETARY_TAGS.length)
+      .default([])
+      .transform((tags) => [...new Set(tags)]),
   })
   .superRefine((val, ctx) => {
     // "Group" visibility only makes sense with a group; without one the recipe

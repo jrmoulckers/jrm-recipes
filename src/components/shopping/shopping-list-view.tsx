@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Check, Plus, Trash2, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import {
@@ -9,9 +8,12 @@ import {
   SHOPPING_CATEGORIES,
   type ShoppingCategory,
 } from "~/lib/shopping-list";
+import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
+import { allergenConflicts } from "~/lib/dietary-match";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
+import { AlertTriangle, Check, Plus, Trash2, X } from "lucide-react";
 
 export type ShoppingViewItem = {
   id: string;
@@ -23,6 +25,8 @@ export type ShoppingViewItem = {
   category: ShoppingCategory;
   optional?: boolean;
   checked: boolean;
+  /** Best-effort allergens detected in the item name (issue #432). */
+  allergens?: Allergen[];
 };
 
 export type ManualEntryDraft = {
@@ -47,18 +51,24 @@ function groupUnchecked(items: ShoppingViewItem[]) {
   }));
 }
 
+const ALLERGEN_DISCLAIMER =
+  "Best-effort from ingredient names — double-check labels and brands.";
+
 function ItemRow({
   item,
   disabled,
+  avoidAllergens,
   onToggle,
   onRemove,
 }: {
   item: ShoppingViewItem;
   disabled: boolean;
+  avoidAllergens: Allergen[];
   onToggle: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
 }) {
   const amount = describeQuantity(item);
+  const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
   return (
     <li className="group flex items-center gap-1">
       <button
@@ -97,6 +107,19 @@ function ItemRow({
               optional
             </Badge>
           )}
+          {alerts.length > 0 && (
+            <Badge
+              variant="warning"
+              className="ml-2 gap-1 align-middle"
+              title={ALLERGEN_DISCLAIMER}
+              aria-label={`Allergen warning: contains ${alerts
+                .map((a) => ALLERGEN_LABELS[a].toLowerCase())
+                .join(", ")}. ${ALLERGEN_DISCLAIMER}`}
+            >
+              <AlertTriangle className="size-3" aria-hidden />
+              {alerts.map((a) => ALLERGEN_LABELS[a]).join(", ")}
+            </Badge>
+          )}
         </span>
       </button>
       <button
@@ -116,6 +139,7 @@ export function ShoppingListView({
   items,
   disabled = false,
   storageNote,
+  avoidAllergens = [],
   onAddManual,
   onToggle,
   onRemove,
@@ -126,6 +150,11 @@ export function ShoppingListView({
   disabled?: boolean;
   /** Optional caption explaining where the list is stored. */
   storageNote?: string;
+  /**
+   * Allergens the active family member must avoid (issue #432). Lines whose
+   * detected allergens intersect this set get a best-effort warning marker.
+   */
+  avoidAllergens?: Allergen[];
   onAddManual: (entry: ManualEntryDraft) => void;
   onToggle: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
@@ -253,6 +282,7 @@ export function ShoppingListView({
                       key={item.id}
                       item={item}
                       disabled={disabled}
+                      avoidAllergens={avoidAllergens}
                       onToggle={onToggle}
                       onRemove={onRemove}
                     />
@@ -273,6 +303,7 @@ export function ShoppingListView({
                     key={item.id}
                     item={item}
                     disabled={disabled}
+                    avoidAllergens={avoidAllergens}
                     onToggle={onToggle}
                     onRemove={onRemove}
                   />

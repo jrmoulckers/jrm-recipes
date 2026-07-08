@@ -63,3 +63,22 @@ describe("IngredientSubstitutions dietary filters", () => {
     expect(screen.queryByText("Vegan mayo")).not.toBeInTheDocument();
   });
 });
+
+describe("IngredientSubstitutions allergen safety (#429)", () => {
+  it("hides swaps that carry one of the member's allergens", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    // Cooking for a dairy-allergic member: the dairy-based mayo swaps must not
+    // be offered as safe alternatives, even though they're valid swaps.
+    render(
+      <IngredientSubstitutions item="mayonnaise" avoidAllergens={["dairy"]} />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /substitutions for/i }),
+    );
+
+    // The dairy-free swap survives; the dairy-carrying ones are filtered out.
+    expect(await screen.findByText("Vegan mayo")).toBeInTheDocument();
+    expect(screen.queryByText("Plain Greek yogurt")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sour cream")).not.toBeInTheDocument();
+  });
+});

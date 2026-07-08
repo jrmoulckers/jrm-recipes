@@ -1,3 +1,5 @@
+import { type Nutrition } from "~/lib/nutrition";
+
 export type CookIngredient = {
   id: string;
   position: number;
@@ -36,6 +38,7 @@ export type CookRecipe = {
   /** Owning group id (household), or null for a personal recipe. Used to tag
    * cook events for per-household retention (#338). */
   householdId: string | null;
+  nutrition: Nutrition;
   ingredients: CookIngredient[];
   steps: CookStep[];
 };

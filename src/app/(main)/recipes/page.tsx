@@ -6,6 +6,7 @@ import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { type User } from "~/server/db/schema";
 import {
+  attachCardAllergens,
   listLibrary,
   listPublicRecipes,
   listRecentlyViewed,
@@ -15,6 +16,8 @@ import {
   suggestSearchTerm,
   type RecipeSearchResult,
 } from "~/server/recipes/queries";
+import { listMemberProfiles } from "~/server/dietary/queries";
+import { isAllergen } from "~/lib/allergens";
 import {
   isDefaultRecipeView,
   parseRecipeSearch,
@@ -24,6 +27,7 @@ import { getFavoriteRecipeIds } from "~/server/collections/queries";
 import { listMySavedSearches } from "~/server/searches/queries";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
+import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
@@ -49,12 +53,21 @@ export default async function RecipesPage({
   const user = await getCurrentUser();
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
+  const dbReady = isDbConfigured();
   const [facets, savedSearches] = await Promise.all([
-    isDbConfigured()
+    dbReady
       ? listRecipeFacets(user, search)
       : Promise.resolve({ cuisines: [], tags: [] }),
     listMySavedSearches(user?.id),
   ]);
+  const members: CardDietaryMember[] =
+    dbReady && user
+      ? (await listMemberProfiles(user.id)).map((m) => ({
+          id: m.id,
+          name: m.name,
+          allergens: (m.allergens ?? []).filter(isAllergen),
+        }))
+      : [];
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -81,7 +94,7 @@ export default async function RecipesPage({
         </div>
       </div>
 
-      {!isDbConfigured() ? (
+      {!dbReady ? (
         <ConnectDbNotice />
       ) : (
         <>
@@ -89,11 +102,12 @@ export default async function RecipesPage({
             search={search}
             facets={facets}
             savedSearches={savedSearches}
+            members={members}
           />
           {browsing ? (
-            <BrowseSections user={user} />
+            <BrowseSections user={user} members={members} />
           ) : (
-            <SearchResults user={user} search={search} />
+            <SearchResults user={user} search={search} members={members} />
           )}
         </>
       )}
@@ -102,7 +116,13 @@ export default async function RecipesPage({
 }
 
 /** Default browse view: the viewer's own cookbook plus a paginated discover feed. */
-async function BrowseSections({ user }: { user: User | null }) {
+async function BrowseSections({
+  user,
+  members,
+}: {
+  user: User | null;
+  members: CardDietaryMember[];
+}) {
   const [mine, discover, favoriteIds, tags, recentlyViewed] = await Promise.all([
     listLibrary(user),
     listPublicRecipes(),
@@ -116,6 +136,9 @@ async function BrowseSections({ user }: { user: User | null }) {
   const popularTags = [...tags]
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, POPULAR_BROWSE_TAG_COUNT);
+  // Only pay for allergen roll-up when a family member with allergies is active.
+  const showBadges = members.some((m) => m.allergens.length > 0);
+  const mineCards = showBadges ? await attachCardAllergens(mine) : mine;
 
   return (
     <>
@@ -174,13 +197,14 @@ async function BrowseSections({ user }: { user: User | null }) {
 
       {mine.length > 0 ? (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((recipe, i) => (
+          {mineCards.map((recipe, i) => (
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
               canFavorite={canFavorite}
               favorited={favoriteIds.has(recipe.id)}
               priority={i < LCP_PRIORITY_COUNT}
+              members={members}
             />
           ))}
         </section>
@@ -213,9 +237,11 @@ async function BrowseSections({ user }: { user: User | null }) {
 async function SearchResults({
   user,
   search,
+  members,
 }: {
   user: User | null;
   search: RecipeSearch;
+  members: CardDietaryMember[];
 }) {
   const [results, favoriteIds] = await Promise.all([
     searchRecipes(user, search),
@@ -235,6 +261,7 @@ async function SearchResults({
             results={corrected}
             favoriteIds={favoriteIds}
             canFavorite={canFavorite}
+            members={members}
             correction={{ from: search.q!, to: suggestion }}
           />
         );
@@ -248,22 +275,28 @@ async function SearchResults({
       results={results}
       favoriteIds={favoriteIds}
       canFavorite={canFavorite}
+      members={members}
     />
   );
 }
 
 /** Results header + card grid, with an optional "did you mean" correction note. */
-function ResultsGrid({
+async function ResultsGrid({
   results,
   favoriteIds,
   canFavorite,
+  members,
   correction,
 }: {
   results: RecipeSearchResult[];
   favoriteIds: Set<string>;
   canFavorite: boolean;
+  members: CardDietaryMember[];
   correction?: { from: string; to: string };
 }) {
+  // Only pay for allergen roll-up when a family member with allergies is active.
+  const showBadges = members.some((m) => m.allergens.length > 0);
+  const cards = showBadges ? await attachCardAllergens(results) : results;
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -290,7 +323,7 @@ function ResultsGrid({
         </span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {results.map((recipe, i) => (
+        {cards.map((recipe, i) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
@@ -298,6 +331,7 @@ function ResultsGrid({
             favorited={favoriteIds.has(recipe.id)}
             priority={i < LCP_PRIORITY_COUNT}
             matchReason={recipe.matchReason}
+            members={members}
           />
         ))}
       </div>

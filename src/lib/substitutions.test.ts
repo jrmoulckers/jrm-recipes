@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DIETARY_TAGS,
+  DIETARY_TAG_LABELS,
   SUBSTITUTIONS,
   filterSubstitutionsByDiet,
   getSubstitutions,
@@ -12,6 +14,18 @@ import {
   type DietaryTag,
   type Substitution,
 } from "./substitutions";
+
+describe("DIETARY_TAGS (i404 single source of truth)", () => {
+  it("has a human label for every tag and no orphan labels", () => {
+    expect(Object.keys(DIETARY_TAG_LABELS).sort()).toEqual(
+      [...DIETARY_TAGS].sort(),
+    );
+  });
+
+  it("contains no duplicates", () => {
+    expect(new Set(DIETARY_TAGS).size).toBe(DIETARY_TAGS.length);
+  });
+});
 
 describe("normalizeIngredient", () => {
   it("lowercases and collapses whitespace", () => {

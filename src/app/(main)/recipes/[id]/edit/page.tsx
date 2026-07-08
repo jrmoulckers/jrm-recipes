@@ -6,6 +6,7 @@ import {
   RecipeEditor,
   type RecipeEditorValue,
 } from "~/components/recipe/recipe-editor";
+import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 
 export const metadata = { title: "Edit recipe" };
 
@@ -31,6 +32,18 @@ export default async function EditRecipePage({
     servingsNoun: recipe.servingsNoun ?? "servings",
     prepMinutes: recipe.prepMinutes != null ? String(recipe.prepMinutes) : "",
     cookMinutes: recipe.cookMinutes != null ? String(recipe.cookMinutes) : "",
+    calories: recipe.calories != null ? String(recipe.calories) : "",
+    proteinGrams:
+      recipe.proteinGrams != null ? String(recipe.proteinGrams) : "",
+    carbsGrams: recipe.carbsGrams != null ? String(recipe.carbsGrams) : "",
+    fatGrams: recipe.fatGrams != null ? String(recipe.fatGrams) : "",
+    saturatedFatGrams:
+      recipe.saturatedFatGrams != null
+        ? String(recipe.saturatedFatGrams)
+        : "",
+    sodiumMg: recipe.sodiumMg != null ? String(recipe.sodiumMg) : "",
+    sugarGrams: recipe.sugarGrams != null ? String(recipe.sugarGrams) : "",
+    fiberGrams: recipe.fiberGrams != null ? String(recipe.fiberGrams) : "",
     difficulty: recipe.difficulty ?? "",
     cuisine: recipe.cuisine ?? "",
     sourceName: recipe.sourceName ?? "",
@@ -40,6 +53,9 @@ export default async function EditRecipePage({
     status: recipe.status,
     groupId: recipe.groupId ?? "",
     tags: recipe.tags.map(({ tag }) => tag.name).join(", "),
+    dietaryFlags: (recipe.dietaryFlags ?? []).filter(
+      (t): t is DietaryTag => (DIETARY_TAGS as readonly string[]).includes(t),
+    ),
     ingredients: recipe.ingredients.map((ing) => ({
       section: ing.section ?? "",
       quantity: ing.quantity != null ? String(ing.quantity) : "",

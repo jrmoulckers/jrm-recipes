@@ -4,6 +4,9 @@ import { ShoppingCart } from "lucide-react";
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { getShoppingList } from "~/server/shopping/queries";
+import { listMemberProfiles } from "~/server/dietary/queries";
+import { detectAllergensForSafety, isAllergen } from "~/lib/allergens";
+import { type ActiveMemberOption } from "~/lib/dietary-match";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import { DbShoppingList } from "~/components/shopping/db-shopping-list";
 import { LocalShoppingList } from "~/components/shopping/local-shopping-list";
@@ -14,7 +17,10 @@ export const metadata: Metadata = { title: "Shopping list" };
 export default async function ShoppingPage() {
   const dbEnabled = isDbConfigured();
   const user = dbEnabled ? await getCurrentUser() : null;
-  const list = await getShoppingList(user);
+  const [list, profiles] = await Promise.all([
+    getShoppingList(user),
+    user ? listMemberProfiles(user.id) : Promise.resolve([]),
+  ]);
 
   const items: ShoppingViewItem[] = (list?.items ?? []).map((row) => ({
     id: row.id,
@@ -25,6 +31,13 @@ export default async function ShoppingPage() {
     note: row.note,
     category: (row.category as ShoppingCategory | null) ?? "Other",
     checked: row.checked,
+    allergens: detectAllergensForSafety(row.item),
+  }));
+
+  const members: ActiveMemberOption[] = profiles.map((m) => ({
+    id: m.id,
+    name: m.name,
+    allergens: (m.allergens ?? []).filter(isAllergen),
   }));
 
   return (
@@ -44,7 +57,11 @@ export default async function ShoppingPage() {
         </p>
       </header>
 
-      {dbEnabled ? <DbShoppingList items={items} /> : <LocalShoppingList />}
+      {dbEnabled ? (
+        <DbShoppingList items={items} members={members} />
+      ) : (
+        <LocalShoppingList />
+      )}
     </div>
   );
 }

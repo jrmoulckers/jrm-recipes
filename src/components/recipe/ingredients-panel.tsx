@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Info, Minus, Plus } from "lucide-react";
+import { AlertTriangle, Info, Minus, Plus } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import {
@@ -11,10 +11,27 @@ import {
   toSystem,
 } from "~/lib/units";
 import { type UnitSystem } from "~/lib/cook-state";
-import { scalingNudge } from "~/lib/substitutions";
+import {
+  scalingNudge,
+  DIETARY_TAG_LABELS,
+  type DietaryTag,
+} from "~/lib/substitutions";
+import {
+  detectAllergensForSafety,
+  ALLERGEN_LABELS,
+  type Allergen,
+} from "~/lib/allergens";
+import {
+  detectIngredientConflict,
+  isIngredientConflict,
+  type MemberNeeds,
+} from "~/lib/dietary-match";
+import { useActiveMemberStore } from "~/lib/active-member-store";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
+import { NutritionPanel, type CalorieMember } from "~/components/recipe/nutrition-panel";
+import { type Nutrition } from "~/lib/nutrition";
 
 type PanelIngredient = {
   id: string;
@@ -25,6 +42,17 @@ type PanelIngredient = {
   item: string;
   note: string | null;
   optional: boolean;
+};
+
+/**
+ * A saved family member, carrying both their calorie goal (for the nutrition
+ * panel, #430) and their allergens + diets (for ingredient conflict flagging,
+ * #429). A superset of {@link CalorieMember}, so it drops straight into the
+ * nutrition panel too.
+ */
+export type DietaryMember = CalorieMember & {
+  allergens: Allergen[];
+  diets: DietaryTag[];
 };
 
 type System = UnitSystem;
@@ -68,11 +96,17 @@ export function IngredientsPanel({
   baseServings,
   servingsNoun,
   controls,
+  nutrition,
+  members,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
   servingsNoun: string | null;
   controls?: IngredientsPanelControls;
+  /** Optional per-serving nutrition; renders a facts panel that scales with servings. */
+  nutrition?: Nutrition;
+  /** Optional saved family members (calorie goals #430 + conflict flags #429). */
+  members?: DietaryMember[];
 }) {
   const canScale = baseServings != null && baseServings > 0;
   const [servingsInternal, setServingsInternal] = React.useState(
@@ -82,6 +116,21 @@ export function IngredientsPanel({
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
     new Set(),
   );
+
+  const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
+  const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
+
+  const memberList = members ?? [];
+  // The active restriction is only in effect when the cook has explicitly
+  // chosen a member — so the list stays clean by default (issue #429).
+  const activeMember =
+    memberList.find((m) => m.id === activeMemberId) ?? null;
+  const memberNeeds: MemberNeeds | null =
+    activeMember &&
+    (activeMember.allergens.length > 0 || activeMember.diets.length > 0)
+      ? { allergens: activeMember.allergens, diets: activeMember.diets }
+      : null;
+  const cookingForId = React.useId();
 
   const servings = controls ? controls.servings : servingsInternal;
   const system = controls ? controls.system : systemInternal;
@@ -192,6 +241,40 @@ export function IngredientsPanel({
         </div>
       </div>
 
+      {memberList.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2">
+          <label
+            htmlFor={cookingForId}
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Cooking for
+          </label>
+          <select
+            id={cookingForId}
+            value={activeMember?.id ?? ""}
+            onChange={(e) => setActiveMemberId(e.target.value || null)}
+            className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium"
+          >
+            <option value="">Everyone</option>
+            {memberList.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          {activeMember &&
+            (memberNeeds ? (
+              <span className="text-xs text-muted-foreground">
+                Flagging ingredients {activeMember.name} should avoid.
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                No restrictions saved for {activeMember.name}.
+              </span>
+            ))}
+        </div>
+      )}
+
       <ul className="flex flex-col gap-1">
         {sections.map(([section, items]) => (
           <li key={section || "default"}>
@@ -212,6 +295,29 @@ export function IngredientsPanel({
                         ing.item,
                       )
                     : null;
+                const conflict = memberNeeds
+                  ? detectIngredientConflict(
+                      detectAllergensForSafety(ing.item),
+                      memberNeeds,
+                    )
+                  : null;
+                const flagged = conflict != null && isIngredientConflict(conflict);
+                const reason = flagged
+                  ? [
+                      conflict.allergens.length > 0
+                        ? `contains ${conflict.allergens
+                            .map((a) => ALLERGEN_LABELS[a].toLowerCase())
+                            .join(", ")}`
+                        : null,
+                      conflict.diets.length > 0
+                        ? `not ${conflict.diets
+                            .map((d) => DIETARY_TAG_LABELS[d].toLowerCase())
+                            .join(", ")}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : "";
                 return (
                   <li key={ing.id} className="flex flex-col">
                     <div className="flex items-center gap-1">
@@ -226,7 +332,9 @@ export function IngredientsPanel({
                             "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 text-[10px] transition-colors",
                             isChecked
                               ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border",
+                              : flagged
+                                ? "border-warning"
+                                : "border-border",
                           )}
                           aria-hidden
                         >
@@ -258,8 +366,22 @@ export function IngredientsPanel({
                           )}
                         </span>
                       </button>
-                      <IngredientSubstitutions item={ing.item} />
+                      <IngredientSubstitutions
+                        item={ing.item}
+                        flagged={flagged}
+                        presetTags={conflict?.suggestedTags}
+                        avoidAllergens={memberNeeds?.allergens}
+                      />
                     </div>
+                    {flagged && (
+                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+                        <span>
+                          <span className="sr-only">Dietary warning — </span>
+                          {activeMember?.name}: {reason}.
+                        </span>
+                      </p>
+                    )}
                     {nudge && (
                       <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
@@ -273,6 +395,15 @@ export function IngredientsPanel({
           </li>
         ))}
       </ul>
+
+      {nutrition && (
+        <NutritionPanel
+          nutrition={nutrition}
+          servings={servings}
+          servingsNoun={servingsNoun}
+          members={memberList}
+        />
+      )}
     </div>
   );
 }

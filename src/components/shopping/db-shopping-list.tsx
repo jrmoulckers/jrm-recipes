@@ -12,6 +12,8 @@ import {
   setItemCheckedAction,
   type ActionResult,
 } from "~/server/shopping/actions";
+import { useActiveMemberStore } from "~/lib/active-member-store";
+import { type ActiveMemberOption } from "~/lib/dietary-match";
 import {
   ShoppingListView,
   type ManualEntryDraft,
@@ -19,10 +21,20 @@ import {
 } from "./shopping-list-view";
 
 /** DB-backed shopping list. Check-off / remove are optimistic; adds refresh. */
-export function DbShoppingList({ items }: { items: ShoppingViewItem[] }) {
+export function DbShoppingList({
+  items,
+  members = [],
+}: {
+  items: ShoppingViewItem[];
+  /** Family profiles, to warn on the active member's allergens (#432). */
+  members?: ActiveMemberOption[];
+}) {
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
+  const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
+  const avoidAllergens =
+    members.find((m) => m.id === activeMemberId)?.allergens ?? [];
 
   // Re-sync whenever the server sends fresh data (after revalidate/refresh).
   React.useEffect(() => setOptimistic(items), [items]);
@@ -73,6 +85,7 @@ export function DbShoppingList({ items }: { items: ShoppingViewItem[] }) {
     <ShoppingListView
       items={optimistic}
       storageNote="synced to your account"
+      avoidAllergens={avoidAllergens}
       onAddManual={onAddManual}
       onToggle={onToggle}
       onRemove={onRemove}
