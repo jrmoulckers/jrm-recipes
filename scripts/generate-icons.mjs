@@ -5,7 +5,7 @@
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -58,7 +58,63 @@ async function emit(name, opts) {
   console.log("wrote", name);
 }
 
+// --- iOS launch splash screens (#187) -------------------------------------
+// Flat launch screen matching the app's initial paint (brand cream) with the
+// centered brand mark in amber, so an installed iOS app shows a branded splash
+// instead of a blank white flash. One image per device × orientation.
+const SPLASH_BG = "#fffaf3"; // brand.backgroundColor — matches manifest + body
+const AMBER = "#b45309"; // brand.themeColor
+
+function splashSvg(width, height) {
+  const min = Math.min(width, height);
+  const mark = Math.round(min * 0.3);
+  const s = mark / 24;
+  const cx = width / 2;
+  const cy = height / 2;
+  const offX = cx - mark / 2;
+  const offY = cy - mark / 2;
+  const plateR = mark * 0.62;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${SPLASH_BG}"/>
+  <circle cx="${cx}" cy="${cy}" r="${plateR}" fill="none" stroke="${AMBER}" stroke-opacity="0.18" stroke-width="${min * 0.012}"/>
+  <g transform="translate(${offX} ${offY}) scale(${s})">
+    <path d="${HEART}" fill="${AMBER}"/>
+  </g>
+</svg>`;
+}
+
+// Filename + pixel formulas MUST match src/config/ios-splash.ts.
+function splashFileName(device, orientation) {
+  return `apple-splash-${device.w}-${device.h}-${device.dpr}x-${orientation}.png`;
+}
+
+function splashPixels(device, orientation) {
+  const long = device.h * device.dpr;
+  const short = device.w * device.dpr;
+  return orientation === "portrait"
+    ? { width: short, height: long }
+    : { width: long, height: short };
+}
+
+async function emitSplash(device, orientation) {
+  const { width, height } = splashPixels(device, orientation);
+  const buf = Buffer.from(splashSvg(width, height));
+  const name = splashFileName(device, orientation);
+  await sharp(buf).png({ palette: true }).toFile(join(outDir, name));
+  console.log("wrote", name, `(${width}x${height})`);
+}
+
 await emit("icon-192.png", { size: 192, mark: 100, radius: 42 });
 await emit("icon-512.png", { size: 512, mark: 260, radius: 112 });
 await emit("icon-maskable-512.png", { size: 512, mark: 200, radius: 0, bleed: true });
+// Opaque, full-bleed home-screen glyph for iOS (it applies its own rounding).
+await emit("apple-touch-icon.png", { size: 180, mark: 96, radius: 0, bleed: true });
+
+const splashDevices = JSON.parse(
+  readFileSync(join(root, "src/config/ios-splash-devices.json"), "utf8"),
+);
+for (const device of splashDevices) {
+  await emitSplash(device, "portrait");
+  await emitSplash(device, "landscape");
+}
 console.log("done");
