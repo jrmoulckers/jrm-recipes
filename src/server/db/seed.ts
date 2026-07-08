@@ -35,9 +35,14 @@ import postgres from "postgres";
 
 import * as schema from "~/server/db/schema";
 import {
+  collectionRecipes,
+  collections,
   comments,
+  cookLogEntries,
+  favorites,
   groupMembers,
   groups,
+  mealPlanEntries,
   ratings,
   recipeEvents,
   recipeIngredients,
@@ -45,12 +50,26 @@ import {
   recipeTags,
   recipeVersions,
   recipes,
+  shoppingListItems,
+  shoppingLists,
   tags,
   users,
   type User,
 } from "~/server/db/schema";
 import { DEV_USER } from "~/server/auth/dev-user";
 import type { RecipeInput } from "~/server/recipes/validation";
+import {
+  buildCollectionRecipeRows,
+  buildCollectionRows,
+  buildCookLogRows,
+  buildFavoriteRows,
+  buildMealPlanRows,
+  buildShoppingListItemRows,
+  buildShoppingListRow,
+  SEED_COLLECTION_IDS,
+  SEED_SHOPPING_LIST_ID,
+  type LibraryIds,
+} from "~/server/db/seed-library";
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -750,6 +769,25 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
       });
   }
 
+  // Keep the denormalized rating aggregates (issue #154) in sync with the rows
+  // we just seeded, mirroring the mutation path + migration backfill: a recipe's
+  // own author never counts toward its average, so we exclude owner ratings.
+  const aggregates = new Map<string, { count: number; sum: number }>();
+  for (const rt of ratingRows) {
+    if (rt.userId === ownerId) continue;
+    const agg = aggregates.get(rt.recipeId) ?? { count: 0, sum: 0 };
+    agg.count += 1;
+    agg.sum += rt.value;
+    aggregates.set(rt.recipeId, agg);
+  }
+  for (const recipeId of RECIPE_IDS) {
+    const agg = aggregates.get(recipeId) ?? { count: 0, sum: 0 };
+    await tx
+      .update(recipes)
+      .set({ ratingCount: agg.count, ratingSum: agg.sum })
+      .where(eq(recipes.id, recipeId));
+  }
+
   type CommentRow = {
     id: string;
     recipeId: string;
@@ -844,6 +882,121 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Library: cook log, collections + favorites, shopping list, meal planner.
+// ---------------------------------------------------------------------------
+
+/**
+ * Seed the personal-library surfaces (issue #185) so cook log, collections,
+ * favorites, shopping list, and the weekly planner all render non-empty on a
+ * fresh database. Idempotent: top-level rows upsert on their stable id/natural
+ * key, and pure child rows (shopping-list items, collection memberships) are
+ * rebuilt in place under their seed-owned parents so counts stay constant.
+ */
+async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
+  const ids: LibraryIds = {
+    ownerId,
+    groupId,
+    users: {
+      gran: "seed_usr_gran",
+      rosa: "seed_usr_rosa",
+      mateo: "seed_usr_mateo",
+    },
+    recipes: {
+      gravy: GRAVY.id,
+      marinara: MARINARA.id,
+      focaccia: FOCACCIA.id,
+    },
+  };
+
+  // Cook log — upsert each dated "I cooked this" entry on its stable id.
+  for (const row of buildCookLogRows(ids, daysAgo)) {
+    await tx
+      .insert(cookLogEntries)
+      .values(row)
+      .onConflictDoUpdate({
+        target: cookLogEntries.id,
+        set: {
+          cookedAt: row.cookedAt,
+          note: row.note ?? null,
+          photoUrl: row.photoUrl ?? null,
+          servingsMade: row.servingsMade ?? null,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  // Collections — upsert each cookbook, then rebuild its memberships in place.
+  for (const row of buildCollectionRows(ids)) {
+    await tx
+      .insert(collections)
+      .values(row)
+      .onConflictDoUpdate({
+        target: collections.id,
+        set: {
+          name: row.name,
+          description: row.description ?? null,
+          coverImageUrl: row.coverImageUrl ?? null,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  await tx
+    .delete(collectionRecipes)
+    .where(inArray(collectionRecipes.collectionId, [...SEED_COLLECTION_IDS]));
+  const collectionRecipeRows = buildCollectionRecipeRows(ids);
+  if (collectionRecipeRows.length > 0) {
+    await tx.insert(collectionRecipes).values(collectionRecipeRows);
+  }
+
+  // Favorites — one row per (user, recipe); the unique key makes this a no-op
+  // on re-run.
+  for (const row of buildFavoriteRows(ids)) {
+    await tx
+      .insert(favorites)
+      .values(row)
+      .onConflictDoNothing({
+        target: [favorites.userId, favorites.recipeId],
+      });
+  }
+
+  // Shopping list — upsert the list, then rebuild its lines in place.
+  const listRow = buildShoppingListRow(ids);
+  await tx
+    .insert(shoppingLists)
+    .values(listRow)
+    .onConflictDoUpdate({
+      target: shoppingLists.id,
+      set: { name: listRow.name ?? "Shopping list", updatedAt: new Date() },
+    });
+  await tx
+    .delete(shoppingListItems)
+    .where(eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID));
+  const itemRows = buildShoppingListItemRows(ids);
+  if (itemRows.length > 0) {
+    await tx.insert(shoppingListItems).values(itemRows);
+  }
+
+  // Meal planner — upsert each day/slot assignment on its stable id.
+  for (const row of buildMealPlanRows(ids, daysAgo)) {
+    await tx
+      .insert(mealPlanEntries)
+      .values(row)
+      .onConflictDoUpdate({
+        target: mealPlanEntries.id,
+        set: {
+          date: row.date,
+          slot: row.slot,
+          recipeId: row.recipeId ?? null,
+          groupId: row.groupId ?? null,
+          note: row.note ?? null,
+          position: row.position ?? 0,
+          updatedAt: new Date(),
+        },
+      });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Run.
 // ---------------------------------------------------------------------------
 
@@ -856,6 +1009,12 @@ async function countAll() {
     versionCount,
     suggestionCount,
     forkCount,
+    cookLogCount,
+    collectionCount,
+    collectionRecipeCount,
+    favoriteCount,
+    shoppingItemCount,
+    mealPlanCount,
   ] = await Promise.all([
     db.$count(recipes, inArray(recipes.id, RECIPE_IDS)),
     db.$count(recipeEvents, inArray(recipeEvents.recipeId, RECIPE_IDS)),
@@ -870,6 +1029,21 @@ async function countAll() {
         sql`${recipes.forkedFromId} is not null`,
       ),
     ),
+    db.$count(cookLogEntries, inArray(cookLogEntries.recipeId, RECIPE_IDS)),
+    db.$count(
+      collections,
+      inArray(collections.id, [...SEED_COLLECTION_IDS]),
+    ),
+    db.$count(
+      collectionRecipes,
+      inArray(collectionRecipes.collectionId, [...SEED_COLLECTION_IDS]),
+    ),
+    db.$count(favorites, inArray(favorites.recipeId, RECIPE_IDS)),
+    db.$count(
+      shoppingListItems,
+      eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID),
+    ),
+    db.$count(mealPlanEntries, inArray(mealPlanEntries.recipeId, RECIPE_IDS)),
   ]);
   return {
     recipeCount,
@@ -879,6 +1053,12 @@ async function countAll() {
     suggestionCount,
     versionCount,
     forkCount,
+    cookLogCount,
+    collectionCount,
+    collectionRecipeCount,
+    favoriteCount,
+    shoppingItemCount,
+    mealPlanCount,
   };
 }
 
@@ -891,6 +1071,7 @@ async function main() {
     await ensureMemberships(tx, owner.id);
     await seedRecipes(tx, owner.id, groupId);
     await seedEngagement(tx, owner.id);
+    await seedLibrary(tx, owner.id, groupId);
   });
 
   const c = await countAll();
@@ -902,6 +1083,14 @@ async function main() {
   console.log(
     `  ${c.ratingCount} ratings, ${c.commentCount} comments ` +
       `(${c.suggestionCount} suggestions)`,
+  );
+  console.log(
+    `  ${c.cookLogCount} cook-log entries, ${c.collectionCount} collections ` +
+      `(${c.collectionRecipeCount} recipes), ${c.favoriteCount} favorites`,
+  );
+  console.log(
+    `  ${c.shoppingItemCount} shopping-list items, ` +
+      `${c.mealPlanCount} recipe-linked meal-plan entries`,
   );
 
   await client.end();
