@@ -84,3 +84,73 @@ jobs:
 
       - name: E2E tests
         run: pnpm test:e2e
+
+  # Runtime performance gate (issue #205). Unlike the other jobs, this one needs
+  # real content on the recipe detail route, so it seeds an ephemeral, throwaway
+  # Postgres whose credentials are hard-coded here (a local service container —
+  # NOT a repo secret), keeping the "no secrets" property of the rest of CI. It
+  # builds, migrates + seeds, starts the app in dev-bypass mode, and runs
+  # Lighthouse against the key routes with the Core Web Vitals budgets in
+  # lighthouserc.cjs. Assertions fail the job on regression; reports upload as
+  # artifacts for inspection.
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: heirloom
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/heirloom"
+      SKIP_ENV_VALIDATION: "1"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.6.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        run: node scripts/migrate.mjs
+
+      - name: Seed demo data
+        run: pnpm db:seed
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lighthouse CI
+        run: pnpm exec lhci autorun --config=./lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          if-no-files-found: ignore
