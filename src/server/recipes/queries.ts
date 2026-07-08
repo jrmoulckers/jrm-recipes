@@ -331,9 +331,49 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
 const RECIPE_SEARCH_LIMIT = 60;
 
 /**
+ * Postgres text-search configuration for recipe search (issue #158). `english`
+ * gives us stemming ("tomatoes" matches "tomato") and stop-word removal. Kept as
+ * a single constant so the query and the generated `search_vector` column (see
+ * the FTS migration) always agree on the dictionary.
+ */
+const RECIPE_FTS_CONFIG = "english";
+
+/**
+ * Does a recipe's full-text `search_vector` match a user query? Uses
+ * `websearch_to_tsquery`, which accepts free-form input (quotes, `or`, `-term`)
+ * and never throws on syntax, unlike `to_tsquery`. `search_vector` is a
+ * generated, GIN-indexed `tsvector` maintained by Postgres (issue #158, added in
+ * the FTS migration), so this predicate is index-backed — no per-row seq scan.
+ * Referenced by raw column name because the vector is deliberately not mapped in
+ * the Drizzle schema (nothing selects it, and keeping it untracked avoids
+ * generated-column migration drift).
+ */
+export function recipeSearchMatchSql(q: string): SQL {
+  return sql`"recipes"."search_vector" @@ websearch_to_tsquery('${sql.raw(
+    RECIPE_FTS_CONFIG,
+  )}', ${q})`;
+}
+
+/**
+ * Relevance score for a text query, weighted title > description > cuisine (the
+ * weights live in the generated column). Only computed over rows that already
+ * passed the WHERE match, so it costs nothing on the unmatched majority. Used as
+ * the lead ORDER BY term for text searches so the best matches surface first.
+ */
+export function recipeSearchRankSql(q: string): SQL {
+  return sql`ts_rank("recipes"."search_vector", websearch_to_tsquery('${sql.raw(
+    RECIPE_FTS_CONFIG,
+  )}', ${q}))`;
+}
+
+/**
  * Search, filter, and sort recipes a viewer may see. All narrowing runs in SQL
- * against existing indexes; returns [] when the DB is off. The free-text query
- * matches title, description, cuisine, tag names, and ingredient item text.
+ * against existing indexes; returns [] when the DB is off. Free text is matched
+ * with Postgres full-text search over a weighted, GIN-indexed `search_vector`
+ * (title > description > cuisine, with stemming) plus trigram-accelerated
+ * substring matches on ingredient item text and tag names (issue #158). Text
+ * queries are ordered by relevance (`ts_rank`); everything else keeps the
+ * requested sort.
  */
 export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
   if (!isDbConfigured()) return [];
@@ -347,9 +387,7 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     const like = `%${escapeLike(search.q)}%`;
     conditions.push(
       or(
-        ilike(recipes.title, like),
-        ilike(recipes.description, like),
-        ilike(recipes.cuisine, like),
+        recipeSearchMatchSql(search.q),
         exists(
           db
             .select({ one: sql`1` })
@@ -401,10 +439,21 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     );
   }
 
+  const baseOrder =
+    search.sort === "top-rated"
+      ? topRatedOrderBy()
+      : recipeOrderBy(search.sort);
+  // For a text query, relevance leads: best full-text matches first, with the
+  // requested sort as the tie-breaker (and as the sole order for empty `q`).
+  // Ingredient-/tag-only matches score 0 on the vector, so they trail the
+  // title/description/cuisine hits but still appear.
+  const orderBy = search.q
+    ? [desc(recipeSearchRankSql(search.q)), ...baseOrder]
+    : baseOrder;
+
   const rows = await db.query.recipes.findMany({
     where: and(...conditions),
-    orderBy:
-      search.sort === "top-rated" ? topRatedOrderBy() : recipeOrderBy(search.sort),
+    orderBy,
     limit: RECIPE_SEARCH_LIMIT,
     with: { author: true, tags: { with: { tag: true } } },
   });

@@ -135,6 +135,21 @@ export const recipes = pgTable(
   ],
 );
 
+/**
+ * Full-text search (issue #158) is intentionally NOT modelled as Drizzle columns
+ * or indexes here. The FTS migration hand-adds:
+ *   - a generated, STORED `tsvector` column `recipes.search_vector`
+ *     (`setweight` A/B/C over title/description/cuisine, `english` config) with a
+ *     GIN index, queried via `search_vector @@ websearch_to_tsquery(...)` in
+ *     `searchRecipes` (see `recipeSearchMatchSql`); and
+ *   - `pg_trgm` GIN indexes on `recipe_ingredients.item` and `tags.name` so the
+ *     substring `ILIKE '%q%'` fallbacks are index-backed instead of seq scans.
+ * Keeping these untracked (like the `pg_trgm` extension itself) avoids
+ * drizzle-kit generated-column/opclass drift while still enforcing them in the
+ * database. Nothing in the app SELECTs `search_vector`, so the ORM never needs
+ * to know it exists.
+ */
+
 /** One ingredient line. `quantity`/`quantityMax` are numeric so we can scale. */
 export const recipeIngredients = pgTable(
   "recipe_ingredients",
