@@ -14,11 +14,11 @@ import * as React from "react";
 export const SIZE = { width: 1200, height: 630 } as const;
 export const ALT = "A recipe on Heirloom";
 
-const CREAM = "#fffaf3";
-const INK = "#3d2817";
-const TERRACOTTA = "#b45309";
-const TERRACOTTA_DEEP = "#7c3d06";
-const MUTED = "#6f5844";
+export const CREAM = "#fffaf3";
+export const INK = "#3d2817";
+export const TERRACOTTA = "#b45309";
+export const TERRACOTTA_DEEP = "#7c3d06";
+export const MUTED = "#6f5844";
 
 export type CardDifficulty = "easy" | "medium" | "hard";
 
@@ -81,7 +81,7 @@ function titleSize(title: string): number {
   return 40;
 }
 
-function Wordmark({ onDark }: { onDark: boolean }) {
+export function Wordmark({ onDark }: { onDark: boolean }) {
   const fg = onDark ? CREAM : TERRACOTTA_DEEP;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -192,7 +192,7 @@ function Byline({ data, onDark }: { data: CardData; onDark: boolean }) {
   );
 }
 
-function clampText(lines: number): React.CSSProperties {
+export function clampText(lines: number): React.CSSProperties {
   return {
     display: "-webkit-box",
     WebkitBoxOrient: "vertical",
@@ -408,7 +408,7 @@ function PlainCard({ data }: { data: CardData }) {
   );
 }
 
-function BrandCard() {
+export function BrandCard() {
   return (
     <div
       style={{
