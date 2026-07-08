@@ -10,6 +10,7 @@ import {
   setRatingAction,
 } from "~/server/engagement/actions";
 import { cn } from "~/lib/utils";
+import { useReducedMotion } from "~/lib/use-reduced-motion";
 
 type RatingSummary = { average: number; count: number };
 
@@ -54,6 +55,13 @@ export function RatingControl(props: {
   const [hoverRating, setHoverRating] = React.useState<number | null>(null);
   const [viewerRating, setViewerRating] = React.useState(props.viewerRating);
   const [summary, setSummary] = React.useState(props.summary);
+  const reducedMotion = useReducedMotion();
+  // The just-committed value (plus a retrigger key) that drives the staggered
+  // fill. Null except immediately after a rating is set, so hover, mount, and
+  // clearing never animate.
+  const [commit, setCommit] = React.useState<{ value: number; key: number } | null>(
+    null,
+  );
 
   React.useEffect(() => {
     setViewerRating(props.viewerRating);
@@ -77,6 +85,12 @@ export function RatingControl(props: {
     setViewerRating(nextRating);
     setSummary(nextSummary);
     setHoverRating(nextRating);
+    // Punctuate a *set* (not a clear) with a left-to-right staggered pop.
+    if (nextRating != null && !reducedMotion) {
+      setCommit((current) => ({ value: nextRating, key: (current?.key ?? 0) + 1 }));
+    } else {
+      setCommit(null);
+    }
 
     startTransition(async () => {
       const result =
@@ -117,6 +131,7 @@ export function RatingControl(props: {
         >
           {[1, 2, 3, 4, 5].map((value) => {
             const active = displayRating >= value;
+            const popping = commit != null && value <= commit.value;
             return (
               <button
                 key={value}
@@ -136,8 +151,15 @@ export function RatingControl(props: {
                 )}
               >
                 <Star
+                  key={popping ? `pop-${commit.key}-${value}` : `star-${value}`}
+                  style={
+                    popping
+                      ? { animationDelay: `${(value - 1) * 60}ms` }
+                      : undefined
+                  }
                   className={cn(
                     "size-6 transition-colors duration-150 motion-reduce:transition-none",
+                    popping && "motion-safe:animate-star-pop",
                     active
                       ? "fill-amber-400 text-amber-400"
                       : "fill-transparent text-muted-foreground",

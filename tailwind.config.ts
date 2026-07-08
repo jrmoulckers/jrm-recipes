@@ -155,6 +155,11 @@ const config = {
           "0%": { transform: "scale(0.5)", opacity: "0.7" },
           "100%": { transform: "scale(2.2)", opacity: "0" },
         },
+        "star-pop": {
+          "0%": { transform: "scale(0.6)", opacity: "0.4" },
+          "60%": { transform: "scale(1.15)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -179,6 +184,7 @@ const config = {
         "slide-out-to-right": "slide-out-to-right 0.2s var(--ease-standard)",
         "heart-pop": "heart-pop 0.4s var(--ease-emphasized)",
         "heart-burst": "heart-burst 0.45s var(--ease-standard)",
+        "star-pop": "star-pop 0.35s var(--ease-emphasized) both",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
