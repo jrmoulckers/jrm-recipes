@@ -83,7 +83,7 @@
   --accent-foreground: 24 45% 14%;
   --destructive: 4 65% 48%;
   --destructive-foreground: 0 0% 100%;
-  --success: 130 38% 38%;
+  --success: 130 42% 33%;
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 30 45% 12%;
@@ -115,7 +115,7 @@
   --destructive: 4 62% 52%;
   --destructive-foreground: 0 0% 100%;
   --success: 130 36% 46%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 38 88% 56%;
   --warning-foreground: 30 45% 10%;
   --info: 210 72% 42%;
@@ -156,7 +156,7 @@
   --destructive: 356 75% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 160 65% 40%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 40 95% 52%;
   --warning-foreground: 30 60% 12%;
   --info: 208 85% 41%;
@@ -187,7 +187,7 @@
   --destructive: 356 72% 52%;
   --destructive-foreground: 0 0% 100%;
   --success: 160 60% 50%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 40 92% 60%;
   --warning-foreground: 30 60% 10%;
   --info: 212 80% 42%;
@@ -259,7 +259,7 @@
   --destructive: 0 60% 54%;
   --destructive-foreground: 0 0% 100%;
   --success: 150 42% 46%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 36 82% 56%;
   --warning-foreground: 30 60% 10%;
   --info: 214 82% 42%;
@@ -307,7 +307,7 @@
   --destructive: 0 78% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 145 62% 40%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 42 100% 50%;
   --warning-foreground: 30 70% 12%;
   --info: 212 78% 40%;
@@ -338,7 +338,7 @@
   --destructive: 0 78% 51%;
   --destructive-foreground: 0 0% 100%;
   --success: 145 58% 50%;
-  --success-foreground: 0 0% 100%;
+  --success-foreground: 150 40% 10%;
   --warning: 42 100% 58%;
   --warning-foreground: 30 70% 10%;
   --info: 212 80% 42%;
@@ -388,7 +388,7 @@
   --success: 140 60% 28%;
   --success-foreground: 0 0% 100%;
   --warning: 40 90% 38%;
-  --warning-foreground: 0 0% 100%;
+  --warning-foreground: 0 0% 10%;
   --info: 214 82% 38%;
   --info-foreground: 0 0% 100%;
   --border: 0 0% 78%;
