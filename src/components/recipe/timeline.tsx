@@ -67,7 +67,7 @@ export function RecipeTimeline({
         </div>
       </div>
 
-      <ol className="relative space-y-4 before:absolute before:bottom-3 before:left-5 before:top-3 before:w-px before:bg-border">
+      <ol className="relative space-y-4 before:absolute before:bottom-3 before:start-5 before:top-3 before:w-px before:bg-border">
         {versions.map((version) => {
           const isLatest = version.versionNumber === latestVersion;
           const canRestore = canRevert && !isLatest && versions.length > 1;

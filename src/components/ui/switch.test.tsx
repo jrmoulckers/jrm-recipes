@@ -51,7 +51,7 @@ describe("Switch large-target sizing", () => {
   });
 
   it("still merges a caller-provided className", () => {
-    render(<Switch aria-label="notify" className="ml-3" />);
-    expect(screen.getByRole("switch").className).toContain("ml-3");
+    render(<Switch aria-label="notify" className="ms-3" />);
+    expect(screen.getByRole("switch").className).toContain("ms-3");
   });
 });

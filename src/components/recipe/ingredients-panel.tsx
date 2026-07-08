@@ -355,7 +355,7 @@ export function IngredientsPanel({
                         type="button"
                         onClick={() => toggle(ing.id)}
                         aria-pressed={isChecked}
-                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
+                        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted"
                       >
                         <span
                           className={cn(
@@ -390,7 +390,7 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {ing.optional && (
-                            <Badge variant="muted" className="ml-2 align-middle">
+                            <Badge variant="muted" className="ms-2 align-middle">
                               optional
                             </Badge>
                           )}
@@ -404,7 +404,7 @@ export function IngredientsPanel({
                       />
                     </div>
                     {flagged && (
-                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
                           <span className="sr-only">Dietary warning — </span>
@@ -413,7 +413,7 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {nudge && (
-                      <p className="ml-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
                       </p>

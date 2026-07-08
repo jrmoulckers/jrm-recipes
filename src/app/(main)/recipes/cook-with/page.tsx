@@ -43,7 +43,7 @@ export default async function CookWithPage({
           asChild
           variant="ghost"
           size="sm"
-          className="-ml-2 w-fit text-muted-foreground"
+          className="-ms-2 w-fit text-muted-foreground"
         >
           <Link href="/recipes">
             <ArrowLeft /> Back to recipes

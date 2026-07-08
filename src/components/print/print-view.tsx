@@ -327,7 +327,7 @@ function IngredientsList({
                     </span>
                   )}
                   {ingredient.optional && (
-                    <span className="ml-1 text-xs text-muted-foreground print:text-black">
+                    <span className="ms-1 text-xs text-muted-foreground print:text-black">
                       optional
                     </span>
                   )}
@@ -717,7 +717,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Button asChild variant="ghost" size="sm" className="-ml-2">
+              <Button asChild variant="ghost" size="sm" className="-ms-2">
                 <Link href={`/recipes/${recipe.slug}`}>
                   <ArrowLeft /> Back
                 </Link>

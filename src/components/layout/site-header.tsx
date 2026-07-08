@@ -25,7 +25,7 @@ export async function SiteHeader() {
           <MainNav />
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-2">
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">New recipe</Link>
           </Button>

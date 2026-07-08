@@ -714,7 +714,7 @@ function ActiveTimersPanel({
             >
               <button
                 type="button"
-                className="flex w-full items-center justify-between gap-3 text-left"
+                className="flex w-full items-center justify-between gap-3 text-start"
                 onClick={() => onSelect(stepIndex)}
                 aria-current={isCurrent ? "step" : undefined}
                 aria-label={`Jump to step ${stepIndex + 1}: ${
@@ -795,7 +795,7 @@ function OverviewDialog({
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b border-border p-5 pr-14 text-left">
+        <DialogHeader className="border-b border-border p-5 pe-14 text-start">
           <DialogTitle className="text-2xl">Recipe overview</DialogTitle>
           <DialogDescription>
             Jump to any step without stopping timers.
@@ -814,7 +814,7 @@ function OverviewDialog({
                     step.section ?? step.instruction
                   }`}
                   className={cn(
-                    "flex w-full gap-4 rounded-xl p-3 text-left transition-colors hover:bg-muted",
+                    "flex w-full gap-4 rounded-xl p-3 text-start transition-colors hover:bg-muted",
                     isCurrent && "bg-primary/10 text-foreground",
                   )}
                   onClick={() => {

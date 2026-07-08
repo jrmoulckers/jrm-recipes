@@ -801,7 +801,7 @@ export function RecipeEditor({
           <fieldset className="flex flex-col gap-3">
             <legend className="text-sm font-medium text-foreground">
               Nutrition
-              <span className="ml-1 font-normal text-muted-foreground">
+              <span className="ms-1 font-normal text-muted-foreground">
                 (per serving)
               </span>
             </legend>

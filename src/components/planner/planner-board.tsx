@@ -556,13 +556,13 @@ function AddEntryDialog({
             <div className="grid gap-2">
               <Label htmlFor={searchId}>Recipe</Label>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={searchId}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search your recipes…"
-                  className="pl-9"
+                  className="ps-9"
                   autoComplete="off"
                 />
               </div>
@@ -588,7 +588,7 @@ function AddEntryDialog({
                               setSelectedId(selected ? null : recipe.id)
                             }
                             className={cn(
-                              "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+                              "flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
                               selected && "bg-primary/10 text-foreground",
                             )}
                             aria-pressed={selected}

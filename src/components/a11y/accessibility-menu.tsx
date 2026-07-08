@@ -99,7 +99,7 @@ export function AccessibilityMenu() {
         >
           <Accessibility className="size-5" />
           {active && (
-            <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
+            <span className="absolute -end-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
           )}
         </Button>
       </DialogTrigger>

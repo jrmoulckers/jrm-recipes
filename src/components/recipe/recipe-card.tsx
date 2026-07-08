@@ -129,7 +129,7 @@ export function RecipeCard({
           recipeId={recipe.id}
           recipeSlug={recipe.slug}
           initialFavorited={favorited}
-          className="absolute right-2 top-2 z-10"
+          className="absolute end-2 top-2 z-10"
         />
       )}
       {quickPlan && (
@@ -169,7 +169,7 @@ export function RecipeCard({
           </div>
         )}
         {recipe.visibility !== "public" && (
-          <span className="absolute left-2 top-2">
+          <span className="absolute start-2 top-2">
             <Badge variant="muted" className="capitalize backdrop-blur">
               {recipe.visibility}
             </Badge>

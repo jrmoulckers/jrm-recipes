@@ -14,7 +14,7 @@ export default function MainLayout({
     <div className="flex min-h-dvh flex-col">
       <a
         href="#main-content"
-        className="sr-only z-[60] rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground shadow-token-lg outline-none focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:ring-2 focus-visible:ring-ring"
+        className="sr-only z-[60] rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground shadow-token-lg outline-none focus-visible:not-sr-only focus-visible:absolute focus-visible:start-4 focus-visible:top-4 focus-visible:ring-2 focus-visible:ring-ring"
       >
         Skip to content
       </a>

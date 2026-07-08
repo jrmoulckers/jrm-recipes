@@ -443,7 +443,7 @@ function CommentItem({
                     size="icon"
                     disabled={pending}
                     aria-label="Comment actions"
-                    className="ml-auto size-8 text-muted-foreground"
+                    className="ms-auto size-8 text-muted-foreground"
                   >
                     <MoreHorizontal className="size-4" />
                   </Button>
@@ -505,8 +505,8 @@ function CommentItem({
       {comment.replies.length > 0 ? (
         <div
           className={cn(
-            "mt-4 space-y-3 border-l border-border pl-4",
-            depth > 1 && "pl-3",
+            "mt-4 space-y-3 border-s border-border ps-4",
+            depth > 1 && "ps-3",
           )}
         >
           {comment.replies.map((reply) => (

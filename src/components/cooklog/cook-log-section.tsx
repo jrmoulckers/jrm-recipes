@@ -137,7 +137,7 @@ function CookLogTimeline({
 }) {
   const locale = useLocale();
   return (
-    <ol className="relative space-y-4 before:absolute before:bottom-3 before:left-[1.15rem] before:top-3 before:w-px before:bg-border">
+    <ol className="relative space-y-4 before:absolute before:bottom-3 before:start-[1.15rem] before:top-3 before:w-px before:bg-border">
       {entries.map((entry) => {
         const cookedAt = new Date(entry.cookedAt);
         const valid = !Number.isNaN(cookedAt.getTime());
