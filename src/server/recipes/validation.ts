@@ -84,6 +84,19 @@ export const recipeInput = z
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
     notes: optionalString(4000),
+    // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
+    // and sodium (mg) are whole numbers, macronutrients are grams and may be
+    // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
+    calories: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    proteinGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    carbsGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    fatGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    saturatedFatGrams: optionalNumber.pipe(
+      z.number().min(0).max(100000).optional(),
+    ),
+    sodiumMg: optionalNumber.pipe(z.number().int().min(0).max(1000000).optional()),
+    sugarGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    fiberGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     visibility: recipeVisibility.default("private"),
     status: recipeStatus.default("draft"),
     groupId: optionalString(24),

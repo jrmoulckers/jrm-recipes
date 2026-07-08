@@ -81,6 +81,20 @@ export const recipes = pgTable(
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),
 
+    // Optional per-serving nutrition (issue #414). All nullable — a recipe may
+    // carry none, some, or all of these. Energy in kcal and sodium in mg are
+    // whole numbers (integer); macronutrients are grams and may be fractional
+    // (real). Non-negativity is enforced by CHECK constraints below, mirroring
+    // the Zod `nutritionInput` bounds in src/server/recipes/validation.ts.
+    calories: integer(),
+    proteinGrams: real(),
+    carbsGrams: real(),
+    fatGrams: real(),
+    saturatedFatGrams: real(),
+    sodiumMg: integer(),
+    sugarGrams: real(),
+    fiberGrams: real(),
+
     // Adaptations / timelines. Nullable self-reference to the recipe this was
     // forked from; on parent deletion the fork survives as an original.
     forkedFromId: fk().references((): AnyPgColumn => recipes.id, {
@@ -132,6 +146,16 @@ export const recipes = pgTable(
     // migration backfills them and the mutations only ever += / -= real votes.
     check("recipes_rating_count_check", sql`${t.ratingCount} >= 0`),
     check("recipes_rating_sum_check", sql`${t.ratingSum} >= 0`),
+    // Per-serving nutrition is non-negative (issue #414). NULLs pass by SQL
+    // semantics, matching the "optional" Zod bounds.
+    check("recipes_calories_check", sql`${t.calories} >= 0`),
+    check("recipes_protein_grams_check", sql`${t.proteinGrams} >= 0`),
+    check("recipes_carbs_grams_check", sql`${t.carbsGrams} >= 0`),
+    check("recipes_fat_grams_check", sql`${t.fatGrams} >= 0`),
+    check("recipes_saturated_fat_grams_check", sql`${t.saturatedFatGrams} >= 0`),
+    check("recipes_sodium_mg_check", sql`${t.sodiumMg} >= 0`),
+    check("recipes_sugar_grams_check", sql`${t.sugarGrams} >= 0`),
+    check("recipes_fiber_grams_check", sql`${t.fiberGrams} >= 0`),
   ],
 );
 

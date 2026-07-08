@@ -57,6 +57,14 @@ export type RecipeEditorValue = {
   servingsNoun: string;
   prepMinutes: string;
   cookMinutes: string;
+  calories: string;
+  proteinGrams: string;
+  carbsGrams: string;
+  fatGrams: string;
+  saturatedFatGrams: string;
+  sodiumMg: string;
+  sugarGrams: string;
+  fiberGrams: string;
   difficulty: "" | "easy" | "medium" | "hard";
   cuisine: string;
   sourceName: string;
@@ -87,6 +95,40 @@ const EMPTY_STEP: Omit<StepRow, "key"> = {
   timerMinutes: "",
   techniques: "",
 };
+
+/**
+ * The per-serving nutrition keys shared by {@link RecipeEditorValue}, the editor
+ * form state, and the payload builder.
+ */
+type NutritionKey =
+  | "calories"
+  | "proteinGrams"
+  | "carbsGrams"
+  | "fatGrams"
+  | "saturatedFatGrams"
+  | "sodiumMg"
+  | "sugarGrams"
+  | "fiberGrams";
+
+/**
+ * Per-serving nutrition inputs (issue #414). Declared once so the editor state,
+ * payload builder, and UI stay in sync. `unit` is shown as a suffix hint so a
+ * cook knows whether a field wants grams or milligrams.
+ */
+const NUTRITION_FIELDS = [
+  { key: "calories", label: "Calories", unit: "kcal" },
+  { key: "proteinGrams", label: "Protein", unit: "g" },
+  { key: "carbsGrams", label: "Carbs", unit: "g" },
+  { key: "fatGrams", label: "Fat", unit: "g" },
+  { key: "saturatedFatGrams", label: "Saturated fat", unit: "g" },
+  { key: "sodiumMg", label: "Sodium", unit: "mg" },
+  { key: "sugarGrams", label: "Sugars", unit: "g" },
+  { key: "fiberGrams", label: "Fiber", unit: "g" },
+] as const satisfies readonly {
+  key: NutritionKey;
+  label: string;
+  unit: string;
+}[];
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim();
@@ -128,6 +170,14 @@ export function RecipeEditor({
     servingsNoun: initial?.servingsNoun ?? "servings",
     prepMinutes: initial?.prepMinutes ?? "",
     cookMinutes: initial?.cookMinutes ?? "",
+    calories: initial?.calories ?? "",
+    proteinGrams: initial?.proteinGrams ?? "",
+    carbsGrams: initial?.carbsGrams ?? "",
+    fatGrams: initial?.fatGrams ?? "",
+    saturatedFatGrams: initial?.saturatedFatGrams ?? "",
+    sodiumMg: initial?.sodiumMg ?? "",
+    sugarGrams: initial?.sugarGrams ?? "",
+    fiberGrams: initial?.fiberGrams ?? "",
     difficulty: initial?.difficulty ?? "",
     cuisine: initial?.cuisine ?? "",
     sourceName: initial?.sourceName ?? "",
@@ -233,6 +283,14 @@ export function RecipeEditor({
       prepMinutes: numOrUndef(form.prepMinutes),
       cookMinutes: numOrUndef(form.cookMinutes),
       totalMinutes: undefined,
+      calories: numOrUndef(form.calories),
+      proteinGrams: numOrUndef(form.proteinGrams),
+      carbsGrams: numOrUndef(form.carbsGrams),
+      fatGrams: numOrUndef(form.fatGrams),
+      saturatedFatGrams: numOrUndef(form.saturatedFatGrams),
+      sodiumMg: numOrUndef(form.sodiumMg),
+      sugarGrams: numOrUndef(form.sugarGrams),
+      fiberGrams: numOrUndef(form.fiberGrams),
       difficulty: form.difficulty || undefined,
       cuisine: form.cuisine.trim() || undefined,
       sourceName: form.sourceName.trim() || undefined,
@@ -634,6 +692,34 @@ export function RecipeEditor({
               placeholder="Italian"
             />
           </Field>
+
+          <div className="h-px bg-border" />
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-medium text-foreground">
+              Nutrition
+              <span className="ml-1 font-normal text-muted-foreground">
+                (per serving)
+              </span>
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Optional. Leave blank if you don&apos;t have the numbers.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {NUTRITION_FIELDS.map((f) => (
+                <Field key={f.key} label={`${f.label} (${f.unit})`}>
+                  <Input
+                    value={form[f.key]}
+                    onChange={(e) => set(f.key, e.target.value)}
+                    inputMode="decimal"
+                    placeholder="—"
+                  />
+                </Field>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="h-px bg-border" />
 
           <Field label="Tags" hint="Comma separated.">
             <Input

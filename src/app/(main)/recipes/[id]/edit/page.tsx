@@ -31,6 +31,18 @@ export default async function EditRecipePage({
     servingsNoun: recipe.servingsNoun ?? "servings",
     prepMinutes: recipe.prepMinutes != null ? String(recipe.prepMinutes) : "",
     cookMinutes: recipe.cookMinutes != null ? String(recipe.cookMinutes) : "",
+    calories: recipe.calories != null ? String(recipe.calories) : "",
+    proteinGrams:
+      recipe.proteinGrams != null ? String(recipe.proteinGrams) : "",
+    carbsGrams: recipe.carbsGrams != null ? String(recipe.carbsGrams) : "",
+    fatGrams: recipe.fatGrams != null ? String(recipe.fatGrams) : "",
+    saturatedFatGrams:
+      recipe.saturatedFatGrams != null
+        ? String(recipe.saturatedFatGrams)
+        : "",
+    sodiumMg: recipe.sodiumMg != null ? String(recipe.sodiumMg) : "",
+    sugarGrams: recipe.sugarGrams != null ? String(recipe.sugarGrams) : "",
+    fiberGrams: recipe.fiberGrams != null ? String(recipe.fiberGrams) : "",
     difficulty: recipe.difficulty ?? "",
     cuisine: recipe.cuisine ?? "",
     sourceName: recipe.sourceName ?? "",
