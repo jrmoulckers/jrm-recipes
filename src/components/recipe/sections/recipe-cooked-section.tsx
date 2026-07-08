@@ -1,5 +1,6 @@
 import { isDbConfigured } from "~/server/db";
 import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
+import { getReactionsForTargets } from "~/server/engagement/reactions";
 import { CookLogSection } from "~/components/cooklog/cook-log-section";
 
 /**
@@ -24,6 +25,14 @@ export async function RecipeCookedSection({
     getCookCount(recipeId, userId),
   ]);
 
+  // Reaction tallies for every cook-log entry in one query (#342).
+  const reactionMap = await getReactionsForTargets(
+    "cook_log",
+    entries.map((entry) => entry.id),
+    userId,
+  );
+  const reactionsByEntry = Object.fromEntries(reactionMap);
+
   return (
     <div className="mx-auto max-w-3xl">
       <CookLogSection
@@ -33,6 +42,8 @@ export async function RecipeCookedSection({
         entries={entries}
         cookCount={cookCount}
         canLog={canLog}
+        canReact={Boolean(userId)}
+        reactionsByEntry={reactionsByEntry}
         dbConfigured={isDbConfigured()}
       />
     </div>

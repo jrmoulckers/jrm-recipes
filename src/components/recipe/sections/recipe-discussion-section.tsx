@@ -4,10 +4,21 @@ import {
   getRecipeComments,
   getViewerRating,
 } from "~/server/engagement/queries";
+import { getReactionsForTargets } from "~/server/engagement/reactions";
+import type { ThreadedComment } from "~/server/engagement/queries";
 import type { User } from "~/server/db/schema";
 import { RatingControl } from "~/components/engagement/rating-control";
 import { RatingSummary } from "~/components/engagement/rating-summary";
 import { CommentsSection } from "~/components/engagement/comments-section";
+
+/** Flatten a threaded comment tree into a flat list of ids (all depths). */
+function collectCommentIds(nodes: ThreadedComment[], into: string[] = []): string[] {
+  for (const node of nodes) {
+    into.push(node.id);
+    if (node.replies.length > 0) collectCommentIds(node.replies, into);
+  }
+  return into;
+}
 
 /**
  * Discussion tab content (#176): rating + threaded comments. Fetches the
@@ -40,6 +51,14 @@ export async function RecipeDiscussionSection({
       getMentionCandidates(recipeId),
     ]);
 
+  // Reaction tallies for every comment (all thread depths) in one query (#342).
+  const reactionMap = await getReactionsForTargets(
+    "comment",
+    collectCommentIds(comments),
+    currentUserId,
+  );
+  const reactionsByComment = Object.fromEntries(reactionMap);
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <RatingControl
@@ -58,6 +77,7 @@ export async function RecipeDiscussionSection({
         isRecipeOwner={isRecipeOwner}
         canPost={canInteract}
         mentionCandidates={mentionCandidates}
+        reactionsByComment={reactionsByComment}
       />
     </div>
   );

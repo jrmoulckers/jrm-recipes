@@ -2,6 +2,7 @@ import {
   getViewerReview,
   listReviews,
 } from "~/server/engagement/reviews";
+import { getReactionsForTargets } from "~/server/engagement/reactions";
 import { ReviewsSection } from "~/components/engagement/reviews-section";
 
 /**
@@ -27,11 +28,19 @@ export async function RecipeReviewsSection({
     getViewerReview(recipeId, currentUserId),
   ]);
 
+  const reactionMap = await getReactionsForTargets(
+    "review",
+    reviews.map((review) => review.id),
+    currentUserId,
+  );
+  const reactionsByReview = Object.fromEntries(reactionMap);
+
   return (
     <ReviewsSection
       recipeId={recipeId}
       recipeSlug={recipeSlug}
       initialReviews={reviews}
+      reactionsByReview={reactionsByReview}
       viewerReview={
         viewerReview
           ? {

@@ -38,6 +38,14 @@ import {
   COOK_NOTE_MAX_LENGTH,
   COOK_NOTE_TOO_LONG_MESSAGE,
 } from "~/server/cooklog/validation";
+import { ReactionBar } from "~/components/engagement/reaction-bar";
+import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
+
+/** Per-entry reaction tally passed from the server (#342). */
+export type EntryReactions = {
+  counts: ReactionCount[];
+  reactors: Partial<Record<ReactionEmojiKey, string[]>>;
+};
 
 export function CookLogSection({
   recipeId,
@@ -46,6 +54,8 @@ export function CookLogSection({
   entries,
   cookCount,
   canLog,
+  canReact = false,
+  reactionsByEntry = {},
   dbConfigured,
 }: {
   recipeId: string;
@@ -54,6 +64,8 @@ export function CookLogSection({
   entries: CookLogItem[];
   cookCount: number;
   canLog: boolean;
+  canReact?: boolean;
+  reactionsByEntry?: Record<string, EntryReactions>;
   dbConfigured: boolean;
 }) {
   if (!dbConfigured) {
@@ -111,7 +123,12 @@ export function CookLogSection({
       </div>
 
       {entries.length > 0 ? (
-        <CookLogTimeline entries={entries} recipeSlug={recipeSlug} />
+        <CookLogTimeline
+          entries={entries}
+          recipeSlug={recipeSlug}
+          canReact={canReact}
+          reactionsByEntry={reactionsByEntry}
+        />
       ) : (
         <EmptyCookLog />
       )}
@@ -137,9 +154,13 @@ function EmptyCookLog() {
 function CookLogTimeline({
   entries,
   recipeSlug,
+  canReact,
+  reactionsByEntry,
 }: {
   entries: CookLogItem[];
   recipeSlug: string;
+  canReact: boolean;
+  reactionsByEntry: Record<string, EntryReactions>;
 }) {
   const locale = useLocale();
   return (
@@ -200,6 +221,17 @@ function CookLogTimeline({
                   />
                 </figure>
               )}
+
+              <div className="mt-3">
+                <ReactionBar
+                  targetType="cook_log"
+                  targetId={entry.id}
+                  recipeSlug={recipeSlug}
+                  initialCounts={reactionsByEntry[entry.id]?.counts ?? []}
+                  initialReactors={reactionsByEntry[entry.id]?.reactors ?? {}}
+                  canReact={canReact}
+                />
+              </div>
             </div>
           </li>
         );

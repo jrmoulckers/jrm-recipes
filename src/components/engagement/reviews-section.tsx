@@ -23,6 +23,8 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUploadField } from "~/components/ui/image-upload";
+import { ReactionBar } from "~/components/engagement/reaction-bar";
+import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
 
 type ViewerReview = {
   id: string;
@@ -85,6 +87,7 @@ export function ReviewsSection({
   recipeId,
   recipeSlug,
   initialReviews,
+  reactionsByReview = {},
   viewerReview,
   currentUserId,
   canReview,
@@ -93,6 +96,10 @@ export function ReviewsSection({
   recipeId: string;
   recipeSlug: string;
   initialReviews: ReviewListItem[];
+  reactionsByReview?: Record<
+    string,
+    { counts: ReactionCount[]; reactors: Partial<Record<ReactionEmojiKey, string[]>> }
+  >;
   viewerReview: ViewerReview | null;
   currentUserId: string | null;
   canReview: boolean;
@@ -331,6 +338,18 @@ export function ReviewsSection({
                         />
                       </figure>
                     ) : null}
+                    <div className="mt-3">
+                      <ReactionBar
+                        targetType="review"
+                        targetId={review.id}
+                        recipeSlug={recipeSlug}
+                        initialCounts={reactionsByReview[review.id]?.counts ?? []}
+                        initialReactors={
+                          reactionsByReview[review.id]?.reactors ?? {}
+                        }
+                        canReact={currentUserId != null}
+                      />
+                    </div>
                   </div>
                   {canDelete ? (
                     <Button

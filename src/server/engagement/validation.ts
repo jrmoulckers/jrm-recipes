@@ -65,6 +65,13 @@ export const deleteReviewInput = z.object({
   recipeSlug: idInput,
 });
 
+export const reactionInput = z.object({
+  targetType: z.enum(["comment", "review", "cook_log"]),
+  targetId: idInput,
+  emoji: z.enum(["love", "yum", "clap", "wow", "fire", "party"]),
+  recipeSlug: idInput,
+});
+
 export type CommentInput = z.infer<typeof commentInput>;
 export type RatingInput = z.infer<typeof ratingInput>;
 export type DeleteCommentInput = z.infer<typeof deleteCommentInput>;
@@ -73,3 +80,4 @@ export type ApplySuggestionInput = z.infer<typeof applySuggestionInput>;
 export type RemoveRatingInput = z.infer<typeof removeRatingInput>;
 export type ReviewInput = z.infer<typeof reviewInput>;
 export type DeleteReviewInput = z.infer<typeof deleteReviewInput>;
+export type ReactionInput = z.infer<typeof reactionInput>;

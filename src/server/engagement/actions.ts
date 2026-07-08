@@ -21,6 +21,7 @@ import {
   applySuggestionInput,
   reviewInput,
   deleteReviewInput,
+  reactionInput,
   type CommentInput,
   type DeleteCommentInput,
   type RatingInput,
@@ -29,6 +30,7 @@ import {
   type ApplySuggestionInput,
   type ReviewInput,
   type DeleteReviewInput,
+  type ReactionInput,
 } from "./validation";
 import {
   createComment,
@@ -39,6 +41,8 @@ import {
   setRating,
 } from "./mutations";
 import { deleteReview, upsertReview } from "./reviews";
+import { toggleReaction } from "./reactions";
+import { ok } from "~/server/action-result";
 
 export type ActionResult = BaseActionResult;
 
@@ -276,6 +280,41 @@ export async function deleteReviewAction(
           NOT_FOUND: "That review is already gone.",
         },
         "We couldn't delete that review.",
+      ),
+    );
+  }
+}
+
+export async function toggleReactionAction(
+  input: ReactionInput,
+): Promise<BaseActionResult<{ reacted: boolean }>> {
+  if (!isDbConfigured()) {
+    return { ok: false, error: "Reactions need a database." };
+  }
+  const parsed = reactionInput.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
+
+  const user = await requireUser();
+  try {
+    const { reacted } = await toggleReaction(
+      {
+        targetType: parsed.data.targetType,
+        targetId: parsed.data.targetId,
+        emoji: parsed.data.emoji,
+      },
+      user,
+    );
+    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    return ok({ reacted });
+  } catch (error) {
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "You don't have access to this recipe.",
+          NOT_FOUND: "We couldn't find what you're reacting to.",
+        },
+        "We couldn't save your reaction.",
       ),
     );
   }

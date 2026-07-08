@@ -25,6 +25,8 @@ import type { ThreadedComment } from "~/server/engagement/queries";
 import type { MentionCandidate } from "~/lib/mentions";
 import { MentionTextarea } from "~/components/engagement/mention-textarea";
 import { MentionText } from "~/components/engagement/mention-text";
+import { ReactionBar } from "~/components/engagement/reaction-bar";
+import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
 import {
   Avatar,
   AvatarFallback,
@@ -74,6 +76,11 @@ function relativeTime(date: Date, locale: string) {
   return formatRelativeTime(new Date(date), locale);
 }
 
+type CommentReactions = {
+  counts: ReactionCount[];
+  reactors: Partial<Record<ReactionEmojiKey, string[]>>;
+};
+
 export function CommentsSection(props: {
   recipeId: string;
   recipeSlug: string;
@@ -82,6 +89,7 @@ export function CommentsSection(props: {
   isRecipeOwner: boolean;
   canPost: boolean;
   mentionCandidates?: MentionCandidate[];
+  reactionsByComment?: Record<string, CommentReactions>;
 }) {
   const {
     recipeId,
@@ -91,6 +99,7 @@ export function CommentsSection(props: {
     isRecipeOwner,
     canPost,
     mentionCandidates = [],
+    reactionsByComment = {},
   } = props;
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -287,11 +296,13 @@ export function CommentsSection(props: {
             <li key={comment.id}>
               <CommentItem
                 comment={comment}
+                recipeSlug={recipeSlug}
                 currentUserId={currentUserId}
                 isRecipeOwner={isRecipeOwner}
                 canPost={canPost}
                 pending={pending}
                 mentionCandidates={mentionCandidates}
+                reactionsByComment={reactionsByComment}
                 onPostReply={postComment}
                 onDelete={deleteComment}
                 onResolve={resolveSuggestion}
@@ -307,11 +318,13 @@ export function CommentsSection(props: {
 
 function CommentItem({
   comment,
+  recipeSlug,
   currentUserId,
   isRecipeOwner,
   canPost,
   pending,
   mentionCandidates,
+  reactionsByComment,
   onPostReply,
   onDelete,
   onResolve,
@@ -319,11 +332,13 @@ function CommentItem({
   depth = 0,
 }: {
   comment: ThreadedComment;
+  recipeSlug: string;
   currentUserId: string | null;
   isRecipeOwner: boolean;
   canPost: boolean;
   pending: boolean;
   mentionCandidates: MentionCandidate[];
+  reactionsByComment: Record<string, CommentReactions>;
   onPostReply: PostComment;
   onDelete: (commentId: string) => void;
   onResolve: (commentId: string, resolved: boolean) => void;
@@ -413,6 +428,17 @@ function CommentItem({
           >
             <MentionText body={comment.body} candidates={mentionCandidates} />
           </p>
+
+          <div className="mt-2">
+            <ReactionBar
+              targetType="comment"
+              targetId={comment.id}
+              recipeSlug={recipeSlug}
+              initialCounts={reactionsByComment[comment.id]?.counts ?? []}
+              initialReactors={reactionsByComment[comment.id]?.reactors ?? {}}
+              canReact={currentUserId != null}
+            />
+          </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-1">
             {canPost ? (
@@ -534,11 +560,13 @@ function CommentItem({
             <CommentItem
               key={reply.id}
               comment={reply}
+              recipeSlug={recipeSlug}
               currentUserId={currentUserId}
               isRecipeOwner={isRecipeOwner}
               canPost={canPost}
               pending={pending}
               mentionCandidates={mentionCandidates}
+              reactionsByComment={reactionsByComment}
               onPostReply={onPostReply}
               onDelete={onDelete}
               onResolve={onResolve}
