@@ -1,0 +1,47 @@
+# CodeQL static analysis (#218). Runs GitHub's semantic SAST over the app's
+# JavaScript/TypeScript on every push/PR to main and on a weekly schedule, with
+# results surfaced in the repo's Security tab. Third-party/first-party actions
+# are SHA-pinned and the job runs with least-privilege token scopes.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly-published queries catch latent issues even without a push.
+    - cron: "27 3 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (javascript-typescript)
+    runs-on: ubuntu-latest
+    permissions:
+      # Required by CodeQL to upload results to the Security tab.
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@35632bdbd38dba649ce80e15482f7a399a32d400 # v3.27.9
+        with:
+          languages: javascript-typescript
+          # `security-and-quality` adds the broader query suite for a stricter gate.
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@35632bdbd38dba649ce80e15482f7a399a32d400 # v3.27.9
+        with:
+          category: "/language:javascript-typescript"

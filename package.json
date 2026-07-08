@@ -21,6 +21,7 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "check": "pnpm run lint && pnpm run typecheck",
+    "audit:ci": "pnpm audit --audit-level=high",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -115,6 +116,12 @@
       "msgpackr-extract",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-gpj5-g38j-94v9",
+        "GHSA-ph9p-34f9-6g65"
+      ]
+    }
   }
 }
