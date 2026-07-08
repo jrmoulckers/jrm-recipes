@@ -4,7 +4,11 @@ import Image from "next/image";
 import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
-import { ratingDisplay, ratingSummary } from "~/lib/ratings";
+import {
+  ratingDisplay,
+  ratingSummary,
+  summaryFromAggregates,
+} from "~/lib/ratings";
 import { Badge } from "~/components/ui/badge";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 
@@ -20,6 +24,10 @@ export type CardRecipe = {
   visibility: string;
   author?: { name: string | null } | null;
   tags?: { tag: { name: string } }[];
+  /** Denormalized, owner-excluded rating aggregates (issue #154). Preferred. */
+  ratingCount?: number;
+  ratingSum?: number;
+  /** Legacy raw ratings, used only when aggregates aren't provided. */
   ratings?: { value: number }[];
 };
 
@@ -54,7 +62,11 @@ export function RecipeCard({
    */
   priority?: boolean;
 }) {
-  const rating = ratingDisplay(ratingSummary(recipe.ratings ?? []));
+  const summary =
+    recipe.ratingCount != null && recipe.ratingSum != null
+      ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
+      : ratingSummary(recipe.ratings ?? []);
+  const rating = ratingDisplay(summary);
   const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
 
   return (

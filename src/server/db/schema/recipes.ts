@@ -89,6 +89,14 @@ export const recipes = pgTable(
     forkNote: varchar({ length: 300 }),
 
     publishedAt: timestamp({ withTimezone: true }),
+    // Denormalized, owner-excluded rating aggregates (issue #154). Maintained
+    // transactionally by the rating mutations (setRating/removeRating) and read
+    // directly by list/feed cards + the top-rated ordering, so a feed never has
+    // to pull every `ratings` row just to show a count + average. `ratingAvg` is
+    // derived (`ratingSum / ratingCount`) rather than stored to avoid rounding
+    // drift. Owners can't rate their own recipe, so these never count self-votes.
+    ratingCount: integer().notNull().default(0),
+    ratingSum: integer().notNull().default(0),
     // Soft-delete (issue #165): deleting a recipe tombstones it instead of
     // cascading away its versions/events/ratings/comments, so family history
     // survives and an owner can restore it. Children stay, hidden via the parent.
@@ -120,6 +128,10 @@ export const recipes = pgTable(
     check("recipes_prep_minutes_check", sql`${t.prepMinutes} >= 0`),
     check("recipes_cook_minutes_check", sql`${t.cookMinutes} >= 0`),
     check("recipes_total_minutes_check", sql`${t.totalMinutes} >= 0`),
+    // Denormalized rating aggregates can never be negative (issue #154); the
+    // migration backfills them and the mutations only ever += / -= real votes.
+    check("recipes_rating_count_check", sql`${t.ratingCount} >= 0`),
+    check("recipes_rating_sum_check", sql`${t.ratingSum} >= 0`),
   ],
 );
 

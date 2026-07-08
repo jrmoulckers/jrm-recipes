@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import { canViewRecipe } from "~/server/recipes/queries";
@@ -257,6 +257,17 @@ export async function setRating(
     // inflate both the average and the JSON-LD aggregateRating.
     if (recipe.authorId === user.id) throw new Error("SELF_RATING");
 
+    // Read the caller's prior rating (if any) so we can move the denormalized
+    // aggregates by the exact delta (issue #154): a brand-new vote bumps count
+    // and sum; changing an existing vote only shifts the sum.
+    const previous = await tx.query.ratings.findFirst({
+      where: and(
+        eq(ratings.recipeId, input.recipeId),
+        eq(ratings.userId, user.id),
+      ),
+      columns: { value: true },
+    });
+
     const [rating] = await tx
       .insert(ratings)
       .values({
@@ -269,6 +280,18 @@ export async function setRating(
         set: { value: input.value, updatedAt: new Date() },
       })
       .returning();
+
+    const countDelta = previous ? 0 : 1;
+    const sumDelta = input.value - (previous?.value ?? 0);
+    if (countDelta !== 0 || sumDelta !== 0) {
+      await tx
+        .update(recipes)
+        .set({
+          ratingCount: sql`${recipes.ratingCount} + ${countDelta}`,
+          ratingSum: sql`${recipes.ratingSum} + ${sumDelta}`,
+        })
+        .where(eq(recipes.id, input.recipeId));
+    }
 
     return rating;
   });
@@ -289,8 +312,27 @@ export async function removeRating(recipeId: string, user: User): Promise<void> 
       throw new Error("FORBIDDEN");
     }
 
+    // Find the caller's rating first so removing it can decrement the aggregates
+    // by the right amount (issue #154). Only non-owner ratings are counted, so a
+    // legacy owner self-rating (which the backfill excluded) is deleted without
+    // touching the aggregate.
+    const existing = await tx.query.ratings.findFirst({
+      where: and(eq(ratings.recipeId, recipeId), eq(ratings.userId, user.id)),
+      columns: { value: true },
+    });
+
     await tx
       .delete(ratings)
       .where(and(eq(ratings.recipeId, recipeId), eq(ratings.userId, user.id)));
+
+    if (existing && recipe && recipe.authorId !== user.id) {
+      await tx
+        .update(recipes)
+        .set({
+          ratingCount: sql`${recipes.ratingCount} - 1`,
+          ratingSum: sql`${recipes.ratingSum} - ${existing.value}`,
+        })
+        .where(eq(recipes.id, recipeId));
+    }
   });
 }

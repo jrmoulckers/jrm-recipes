@@ -22,6 +22,20 @@ export function ratingSummary(values: { value: number }[]): RatingSummary {
 }
 
 /**
+ * Build a {@link RatingSummary} from denormalized aggregates (issue #154):
+ * `recipes.ratingCount` + `recipes.ratingSum`. Same rounding as
+ * {@link ratingSummary} so a card fed by the stored aggregates and one fed by a
+ * raw ratings array render identically. Guards a zero/negative count.
+ */
+export function summaryFromAggregates(
+  count: number,
+  sum: number,
+): RatingSummary {
+  if (count <= 0) return { average: 0, count: 0 };
+  return { average: Math.round((sum / count) * 10) / 10, count };
+}
+
+/**
  * A recipe author can't rate their own recipe (blocked at the rating mutation),
  * so drop any owner rating from a set before aggregating. This keeps the average
  * and rank honest even for pre-existing self-ratings. Returns the list unchanged

@@ -21,13 +21,13 @@ import {
   compareByTopRated,
   excludeOwnerRatings,
   ratingSummary,
+  summaryFromAggregates,
   TOP_RATED_PRIOR_COUNT,
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from "~/lib/ratings";
 import {
   groupMembers,
-  ratings,
   recipeEvents,
   recipeIngredients,
   recipeSteps,
@@ -72,49 +72,40 @@ export type VersionListItem = Awaited<
 export { excludeOwnerRatings, ratingSummary };
 
 /**
- * Re-order a fetched list so the highest-rated recipes come first, excluding any
- * owner self-rating from each recipe's summary. Used for lists that are already
- * fully loaded (e.g. a viewer's library); paged/searched feeds order in SQL via
- * {@link topRatedOrderBy} instead so the ranking is global rather than
- * per-window. `"recent"` keeps the DB order untouched.
+ * Re-order a fetched list so the highest-rated recipes come first, using each
+ * recipe's denormalized, owner-excluded aggregates (issue #154). Used for lists
+ * that are already fully loaded (e.g. a viewer's library); paged/searched feeds
+ * order in SQL via {@link topRatedOrderBy} instead so the ranking is global
+ * rather than per-window. `"recent"` keeps the DB order untouched.
  */
 function applyRatingSort<
-  T extends { authorId: string; ratings: { value: number; userId: string }[] },
+  T extends { ratingCount: number; ratingSum: number },
 >(rows: T[], sort: RatingSort): T[] {
   if (sort !== "top-rated") return rows;
   return [...rows].sort((a, b) =>
     compareByTopRated(
-      ratingSummary(excludeOwnerRatings(a.ratings, a.authorId)),
-      ratingSummary(excludeOwnerRatings(b.ratings, b.authorId)),
+      summaryFromAggregates(a.ratingCount, a.ratingSum),
+      summaryFromAggregates(b.ratingCount, b.ratingSum),
     ),
   );
 }
 
 /**
- * Per-recipe weighted "top rated" score, computed in SQL over the recipe's FULL
- * set of ratings (excluding the owner's own), so ordering by it ranks globally
- * rather than within a fetched page. Mirrors `bayesianScore` in `~/lib/ratings`:
- * `(sum + prMean*prCount) / (count + prCount)`. Exported for unit assertions.
+ * Per-recipe weighted "top rated" score, read straight from the denormalized
+ * aggregates on `recipes` (issue #154) rather than a correlated subquery over
+ * `ratings`, so the feed no longer scans the ratings table per row. Mirrors
+ * `bayesianScore` in `~/lib/ratings`: `(sum + prMean*prCount) / (count +
+ * prCount)`. Exported for unit assertions.
  */
 export function topRatedScoreSql(): SQL {
   const priorSum = TOP_RATED_PRIOR_MEAN * TOP_RATED_PRIOR_COUNT;
-  return sql`(
-    select (coalesce(sum(${ratings.value}), 0) + ${priorSum})::float
-         / (count(*) + ${TOP_RATED_PRIOR_COUNT})::float
-    from ${ratings}
-    where ${ratings.recipeId} = ${recipes.id}
-      and ${ratings.userId} <> ${recipes.authorId}
-  )`;
+  return sql`((${recipes.ratingSum} + ${priorSum})::float
+     / (${recipes.ratingCount} + ${TOP_RATED_PRIOR_COUNT})::float)`;
 }
 
 /** Whether a recipe has any non-owner rating, so unrated recipes sort last. */
 function topRatedHasRatingsSql(): SQL {
-  return sql`(
-    select count(*) > 0
-    from ${ratings}
-    where ${ratings.recipeId} = ${recipes.id}
-      and ${ratings.userId} <> ${recipes.authorId}
-  )`;
+  return sql`(${recipes.ratingCount} > 0)`;
 }
 
 /**
@@ -158,7 +149,7 @@ export async function listMyRecipes(userId: string) {
   return db.query.recipes.findMany({
     where: and(notDeleted, eq(recipes.authorId, userId)),
     orderBy: [desc(recipes.updatedAt)],
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
 }
 
@@ -190,7 +181,7 @@ export async function listPublicRecipes({
         : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
     limit,
     offset,
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
   return {
     items: rows,
@@ -289,7 +280,7 @@ export async function listLibrary(
   const rows = await db.query.recipes.findMany({
     where: and(notDeleted, scope),
     orderBy: [desc(recipes.updatedAt)],
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
   return applyRatingSort(rows, sort);
 }
@@ -415,7 +406,7 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     orderBy:
       search.sort === "top-rated" ? topRatedOrderBy() : recipeOrderBy(search.sort),
     limit: RECIPE_SEARCH_LIMIT,
-    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+    with: { author: true, tags: { with: { tag: true } } },
   });
 
   // "top-rated" ordering (weighted, owner-excluded) is applied in SQL over the
