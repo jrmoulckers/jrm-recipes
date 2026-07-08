@@ -15,31 +15,26 @@ export const UI_THEMES = [
     id: "kitchen",
     label: "Kitchen",
     description: "Warm and cozy — creams, terracotta, and a little home-baked charm.",
-    swatch: ["#b45309", "#7d8c5c", "#fff7ed"],
   },
   {
     id: "whimsy",
     label: "Whimsy",
     description: "Playful and colorful — bubbly shapes and joyful accents.",
-    swatch: ["#a855f7", "#22d3ee", "#f472b6"],
   },
   {
     id: "professional",
     label: "Professional",
     description: "Clean and editorial — quiet, confident, magazine-grade.",
-    swatch: ["#1f2d3d", "#c2410c", "#ffffff"],
   },
   {
     id: "kids",
     label: "Kids",
     description: "Big, bright, and friendly — easy taps and cheerful colors.",
-    swatch: ["#2563eb", "#22c55e", "#f59e0b"],
   },
   {
     id: "barebones",
     label: "Simple",
     description: "Ultra-simple and high-contrast — just the essentials.",
-    swatch: ["#1d4ed8", "#111111", "#ffffff"],
   },
 ] as const;
 

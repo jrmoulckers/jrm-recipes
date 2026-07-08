@@ -1,5 +1,33 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * tailwind-merge doesn't know about the tokenized type scale (issue #98), so it
+ * would misclassify `text-h1`, `text-body`, `text-body-sm`, … as text *colors*
+ * and drop them when they sit next to a real `text-<color>` utility. Register
+ * them in the `font-size` group so size, colour, and `text-wrap` stay
+ * independent and all survive a merge.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [
+        {
+          text: [
+            "display",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "body",
+            "body-lg",
+            "body-sm",
+          ],
+        },
+      ],
+    },
+  },
+});
 
 /** Merge conditional class names and resolve Tailwind conflicts. */
 export function cn(...inputs: ClassValue[]) {

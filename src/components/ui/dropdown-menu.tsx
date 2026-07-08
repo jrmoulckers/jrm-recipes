@@ -5,6 +5,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "~/lib/utils";
+import { OVERLAY_PADDING, OVERLAY_SURFACE } from "./overlay-surface";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -22,7 +23,9 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[10rem] overflow-hidden rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-token-lg data-[state=open]:animate-pop-in",
+        "z-50 min-w-[10rem] overflow-hidden data-[state=open]:animate-pop-in",
+        OVERLAY_SURFACE,
+        OVERLAY_PADDING.menu,
         className,
       )}
       {...props}
@@ -151,7 +154,9 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-token-lg",
+      "z-50 min-w-[8rem] overflow-hidden",
+      OVERLAY_SURFACE,
+      OVERLAY_PADDING.menu,
       className,
     )}
     {...props}

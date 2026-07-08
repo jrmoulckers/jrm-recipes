@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { Heading, Text } from "./typography";
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -11,7 +12,7 @@ const Card = React.forwardRef<
     className={cn(
       "rounded-xl border border-border bg-card text-card-foreground shadow-token",
       interactive &&
-        "transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg",
+        "transition-[transform,box-shadow] duration-base ease-standard hover:-translate-y-0.5 hover:shadow-token-lg",
       className,
     )}
     {...props}
@@ -35,9 +36,11 @@ const CardTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h3
+  <Heading
     ref={ref}
-    className={cn("font-display text-lg font-semibold leading-tight", className)}
+    level={3}
+    size="h4"
+    className={cn("leading-tight", className)}
     {...props}
   />
 ));
@@ -47,11 +50,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
+  <Text ref={ref} variant="small" className={className} {...props} />
 ));
 CardDescription.displayName = "CardDescription";
 

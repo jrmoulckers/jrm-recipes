@@ -5,6 +5,7 @@ import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 
 import { COLOR_SCHEMES, UI_THEMES, type ColorScheme, type UITheme } from "~/config/themes";
 import { useTheme } from "~/components/theme/theme-provider";
+import { ThemeSwatch } from "~/components/theme/theme-swatch";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -71,15 +72,7 @@ export function ThemeSwitcher() {
                   active && "border-border bg-muted",
                 )}
               >
-                <span className="flex shrink-0 -space-x-1.5">
-                  {t.swatch.map((c, i) => (
-                    <span
-                      key={i}
-                      className="size-5 rounded-full border-2 border-card"
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </span>
+                <ThemeSwatch theme={t.id} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-sm font-medium">
                     {t.label}

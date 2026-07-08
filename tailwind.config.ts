@@ -55,6 +55,10 @@ const config = {
           DEFAULT: "hsl(var(--warning) / <alpha-value>)",
           foreground: "hsl(var(--warning-foreground) / <alpha-value>)",
         },
+        info: {
+          DEFAULT: "hsl(var(--info) / <alpha-value>)",
+          foreground: "hsl(var(--info-foreground) / <alpha-value>)",
+        },
         card: {
           DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground) / <alpha-value>)",
@@ -76,9 +80,37 @@ const config = {
         body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
+      /**
+       * Tokenized type scale (issue #98). Sizes are in `rem` so they inherit the
+       * root `font-size: calc(100% * --text-scale * --a11y-text-mult)` — i.e. the
+       * per-mode `--text-scale` and the a11y text-size axis both scale every step
+       * automatically. Each step ships a paired line-height (and tracking on the
+       * larger display steps) so hierarchy stays coherent across all five modes'
+       * display fonts. Consume via the `Heading` / `Text` primitives.
+       */
+      fontSize: {
+        display: ["3rem", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        h1: ["2.25rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        h2: ["1.75rem", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        h3: ["1.375rem", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
+        h4: ["1.125rem", { lineHeight: "1.4", letterSpacing: "-0.005em" }],
+        "body-lg": ["1.125rem", { lineHeight: "1.7" }],
+        body: ["1rem", { lineHeight: "1.6" }],
+        "body-sm": ["0.875rem", { lineHeight: "1.55" }],
+      },
       boxShadow: {
+        "token-sm": "var(--shadow-sm)",
         token: "var(--shadow)",
         "token-lg": "var(--shadow-lg)",
+      },
+      /**
+       * Focus rings are token-driven: `ring-2` resolves to `--ring-width`
+       * (2px by default, 3px in Kids / Simple / high-contrast) so every
+       * `focus-visible:ring-2` scales with the mode instead of being pinned to
+       * a literal 2px. This is the single canonical focus width (issue #85).
+       */
+      ringWidth: {
+        2: "var(--ring-width)",
       },
       keyframes: {
         "accordion-down": {
@@ -97,12 +129,25 @@ const config = {
           "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        standard: "var(--ease-standard)",
+        emphasized: "var(--ease-emphasized)",
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.2s ease-out",
-        "pop-in": "pop-in 0.18s ease-out",
+        "accordion-down": "accordion-down 0.2s var(--ease-standard)",
+        "accordion-up": "accordion-up 0.2s var(--ease-standard)",
+        "fade-in": "fade-in 0.2s var(--ease-standard)",
+        "pop-in": "pop-in 0.18s var(--ease-standard)",
+        shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
   },

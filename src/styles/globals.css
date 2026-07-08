@@ -27,7 +27,16 @@
     text-wrap: balance;
   }
 
-  /* Consistent, theme-aware focus ring everywhere. */
+  /* Canonical focus treatment (issue #85). Two tiers, one visual language:
+   *   1. This zero-specificity :where() rule is the theme-aware *fallback* for
+   *      any interactive element that doesn't opt into a token ring.
+   *   2. Primitives that need an offset ring against a filled surface (Button,
+   *      inputs, Switch, Slider, Tabs, Dialog close…) use
+   *      `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`
+   *      — `ring-2` resolves to `--ring-width` via Tailwind, and `outline-none`
+   *      suppresses this fallback so a control never shows a double ring.
+   * Both tiers are driven by `--ring` + `--ring-width`, so focus scales 2→3px
+   * consistently in Kids, Simple, and high-contrast. */
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {
     outline: var(--ring-width, 2px) solid hsl(var(--ring));
     outline-offset: 2px;
@@ -74,6 +83,22 @@
 [data-theme="barebones"] *::after {
   animation-duration: 0.001ms !important;
   transition-duration: 0.001ms !important;
+}
+
+/*
+ * Skeleton shimmer collapses to a static block wherever motion is undesired.
+ * The band relies on animation to read as a sweep; without it, hide the band so
+ * only the calm `bg-muted` base remains (see components/ui/skeleton.tsx).
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-skeleton-shimmer] {
+    display: none;
+  }
+}
+
+[data-theme="barebones"] [data-skeleton-shimmer],
+[data-motion="reduced"] [data-skeleton-shimmer] {
+  display: none;
 }
 
 /* Cook-mode / print helpers used across the app. */
