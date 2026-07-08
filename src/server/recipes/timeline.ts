@@ -5,6 +5,7 @@
  */
 import type { RecipeEventType } from "~/server/db/schema";
 import type { RecipeInput } from "./validation";
+import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 
 /** A source recipe with the related rows needed to deep-clone it into a fork. */
 export type AdaptationSource = {
@@ -21,6 +22,7 @@ export type AdaptationSource = {
   sourceName?: string | null;
   sourceUrl?: string | null;
   notes?: string | null;
+  dietaryFlags?: string[] | null;
   ingredients: {
     section?: string | null;
     quantity?: number | null;
@@ -78,6 +80,9 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
     sourceName: source.sourceName ?? undefined,
     sourceUrl: source.sourceUrl ?? undefined,
     notes: source.notes ?? undefined,
+    dietaryFlags: (source.dietaryFlags ?? []).filter((t): t is DietaryTag =>
+      (DIETARY_TAGS as readonly string[]).includes(t),
+    ),
     visibility: "private",
     status: "draft",
     groupId: undefined,

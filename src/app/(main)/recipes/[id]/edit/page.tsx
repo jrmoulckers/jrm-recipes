@@ -6,6 +6,7 @@ import {
   RecipeEditor,
   type RecipeEditorValue,
 } from "~/components/recipe/recipe-editor";
+import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 
 export const metadata = { title: "Edit recipe" };
 
@@ -52,6 +53,9 @@ export default async function EditRecipePage({
     status: recipe.status,
     groupId: recipe.groupId ?? "",
     tags: recipe.tags.map(({ tag }) => tag.name).join(", "),
+    dietaryFlags: (recipe.dietaryFlags ?? []).filter(
+      (t): t is DietaryTag => (DIETARY_TAGS as readonly string[]).includes(t),
+    ),
     ingredients: recipe.ingredients.map((ing) => ({
       section: ing.section ?? "",
       quantity: ing.quantity != null ? String(ing.quantity) : "",

@@ -20,6 +20,11 @@ import { recipeDetailPath } from "~/lib/recipe-path";
 import { track } from "~/lib/analytics";
 import { SUGGESTED_TAGS } from "~/lib/tag-taxonomy";
 import { type RecipeInput } from "~/server/recipes/validation";
+import {
+  DIETARY_TAGS,
+  DIETARY_TAG_LABELS,
+  type DietaryTag,
+} from "~/lib/substitutions";
 import { type ImportedRecipe } from "~/server/recipes/import";
 import {
   createRecipeAction,
@@ -74,6 +79,7 @@ export type RecipeEditorValue = {
   status: "draft" | "published";
   groupId: string;
   tags: string;
+  dietaryFlags: DietaryTag[];
   ingredients: Omit<IngRow, "key">[];
   steps: Omit<StepRow, "key">[];
 };
@@ -187,6 +193,7 @@ export function RecipeEditor({
     status: initial?.status ?? "published",
     groupId: initial?.groupId ?? "",
     tags: initial?.tags ?? "",
+    dietaryFlags: initial?.dietaryFlags ?? [],
   }));
 
   const [ingredients, setIngredients] = React.useState<IngRow[]>(() =>
@@ -218,6 +225,15 @@ export function RecipeEditor({
       ? tagList.filter((t) => t.toLowerCase() !== name.toLowerCase())
       : [...tagList, name];
     set("tags", next.join(", "));
+  }
+
+  function toggleDietaryFlag(tag: DietaryTag) {
+    setForm((f) => ({
+      ...f,
+      dietaryFlags: f.dietaryFlags.includes(tag)
+        ? f.dietaryFlags.filter((t) => t !== tag)
+        : [...f.dietaryFlags, tag],
+    }));
   }
 
   function applyImported(v: ImportedRecipe) {
@@ -304,6 +320,7 @@ export function RecipeEditor({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      dietaryFlags: form.dietaryFlags,
       ingredients: ingredients
         .filter((r) => r.item.trim() !== "")
         .map((r) => ({
@@ -716,6 +733,42 @@ export function RecipeEditor({
                   />
                 </Field>
               ))}
+            </div>
+          </fieldset>
+
+          <div className="h-px bg-border" />
+
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-sm font-medium text-foreground">
+              Dietary
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Declare what this recipe is suitable for. These power dietary
+              filters and “safe for” badges — leave unchecked if unsure.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {DIETARY_TAGS.map((tag) => {
+                const checked = form.dietaryFlags.includes(tag);
+                return (
+                  <label
+                    key={tag}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                      checked
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={checked}
+                      onChange={() => toggleDietaryFlag(tag)}
+                    />
+                    {DIETARY_TAG_LABELS[tag]}
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
 

@@ -77,6 +77,13 @@ export const recipes = pgTable(
     difficulty: recipeDifficulty(),
     cuisine: varchar({ length: 80 }),
 
+    // Structured, author-declared dietary flags (issue #404), stored as the
+    // canonical `DietaryTag` strings (vegan, vegetarian, dairy-free,
+    // gluten-free, egg-free). Separate from free-text `tags` so "safe for"
+    // filtering and badges have a trustworthy source; NULL/empty means the
+    // author made no declaration (not "unsafe").
+    dietaryFlags: text().array(),
+
     sourceName: varchar({ length: 200 }),
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),

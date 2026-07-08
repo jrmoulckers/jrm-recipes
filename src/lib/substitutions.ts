@@ -9,13 +9,30 @@
 
 import { formatQuantity, roundNice } from "./units";
 
+/**
+ * The canonical dietary tags, in display order. This is the single source of
+ * truth for both substitution badges and a recipe's structured dietary
+ * self-declaration (issue #404), so the two can never drift.
+ */
+export const DIETARY_TAGS = [
+  "vegan",
+  "vegetarian",
+  "dairy-free",
+  "gluten-free",
+  "egg-free",
+] as const;
+
 /** Dietary badges surfaced alongside a suggested swap. */
-export type DietaryTag =
-  | "vegan"
-  | "vegetarian"
-  | "dairy-free"
-  | "gluten-free"
-  | "egg-free";
+export type DietaryTag = (typeof DIETARY_TAGS)[number];
+
+/** Human-friendly labels for the dietary tags. */
+export const DIETARY_TAG_LABELS: Record<DietaryTag, string> = {
+  vegan: "Vegan",
+  vegetarian: "Vegetarian",
+  "dairy-free": "Dairy-free",
+  "gluten-free": "Gluten-free",
+  "egg-free": "Egg-free",
+};
 
 /** A single suggested swap for an ingredient. */
 export type Substitution = {

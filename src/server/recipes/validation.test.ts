@@ -199,6 +199,34 @@ describe("recipeInput", () => {
       ).toThrow();
     });
   });
+
+  describe("structured dietary flags (i404)", () => {
+    it("defaults to an empty list when omitted", () => {
+      expect(recipeInput.parse({ title: "Plain" }).dietaryFlags).toEqual([]);
+    });
+
+    it("accepts the canonical dietary tags", () => {
+      const parsed = recipeInput.parse({
+        title: "Vegan Chili",
+        dietaryFlags: ["vegan", "gluten-free"],
+      });
+      expect(parsed.dietaryFlags).toEqual(["vegan", "gluten-free"]);
+    });
+
+    it("dedupes repeated flags", () => {
+      const parsed = recipeInput.parse({
+        title: "Dupes",
+        dietaryFlags: ["vegan", "vegan", "egg-free"],
+      });
+      expect(parsed.dietaryFlags).toEqual(["vegan", "egg-free"]);
+    });
+
+    it("rejects unknown dietary tags", () => {
+      expect(() =>
+        recipeInput.parse({ title: "Bad", dietaryFlags: ["keto"] }),
+      ).toThrow();
+    });
+  });
 });
 
 describe("ingredientInput", () => {

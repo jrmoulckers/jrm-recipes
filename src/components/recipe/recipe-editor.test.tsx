@@ -64,6 +64,7 @@ describe("RecipeEditor native selects (iOS zoom guard)", () => {
       status: "published",
       groupId: "g1",
       tags: "",
+      dietaryFlags: [],
       ingredients: [],
       steps: [],
     };

@@ -199,6 +199,9 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
         : null),
     difficulty: input.difficulty ?? null,
     cuisine: input.cuisine ?? null,
+    // Persist declared dietary flags as a Postgres text[] (NULL when none) so
+    // "safe for" filtering has a trustworthy, structured source (issue #404).
+    dietaryFlags: input.dietaryFlags.length > 0 ? input.dietaryFlags : null,
     sourceName: input.sourceName ?? null,
     sourceUrl: input.sourceUrl ?? null,
     notes: input.notes ?? null,
