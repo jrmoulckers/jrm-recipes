@@ -145,6 +145,16 @@ const config = {
           "0%": { opacity: "1", transform: "translateX(0)" },
           "100%": { opacity: "0", transform: "translateX(100%)" },
         },
+        "heart-pop": {
+          "0%": { transform: "scale(1)" },
+          "25%": { transform: "scale(0.8)" },
+          "55%": { transform: "scale(1.2)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "heart-burst": {
+          "0%": { transform: "scale(0.5)", opacity: "0.7" },
+          "100%": { transform: "scale(2.2)", opacity: "0" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -167,6 +177,8 @@ const config = {
         "pop-out": "pop-out 0.15s var(--ease-standard)",
         "slide-in-from-right": "slide-in-from-right 0.24s var(--ease-standard)",
         "slide-out-to-right": "slide-out-to-right 0.2s var(--ease-standard)",
+        "heart-pop": "heart-pop 0.4s var(--ease-emphasized)",
+        "heart-burst": "heart-burst 0.45s var(--ease-standard)",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },
