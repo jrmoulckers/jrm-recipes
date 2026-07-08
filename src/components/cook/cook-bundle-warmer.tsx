@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -7,8 +8,21 @@ import { cloudinaryLoader } from "~/lib/cloudinary-loader";
 import {
   buildWarmCookBundleMessage,
   cookImageUrlsToWarm,
-  cookPagePath,
 } from "~/lib/cook-warm";
+
+/**
+ * The Cook route as a typed `Route` for `router.prefetch` (#483 enabled Next
+ * `typedRoutes`). Built as a template literal and asserted here — the same idiom
+ * as `recipe-path.ts` — so the SW-shared `cook-warm` module stays free of
+ * `next/*` imports. Asserting a template-literal type (not `cookPagePath`'s
+ * plain `string`) is what keeps `no-unnecessary-type-assertion` happy during
+ * lint, where the typed-routes augmentation isn't generated. Kept in step with
+ * `cookPagePath` in `cook-warm`, which builds the same path for the service
+ * worker.
+ */
+function cookRoute(slug: string): Route {
+  return `/recipes/${slug}/cook` as Route;
+}
 
 /**
  * Invisible, best-effort warmer for the offline Cook Mode bundle (issue #166).
@@ -40,7 +54,7 @@ export function CookBundleWarmer({
       if (cancelled) return;
 
       try {
-        router.prefetch(cookPagePath(slug));
+        router.prefetch(cookRoute(slug));
       } catch {
         // Prefetch is a bonus; ignore failures.
       }
