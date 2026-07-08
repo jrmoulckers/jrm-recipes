@@ -25,7 +25,7 @@ import {
 import { cn } from "~/lib/utils";
 import { useA11y } from "~/components/a11y/a11y-provider";
 import { useHousehold } from "~/components/household/household-provider";
-import { useTheme } from "~/components/theme/theme-provider";
+import { useKidsMode } from "~/components/theme/use-kids-mode";
 import { PrivacyToggle } from "~/components/privacy/privacy-toggle";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -84,10 +84,9 @@ function ToggleRow({
 export function AccessibilityMenu() {
   const t = useTranslations("accessibilityMenu");
   const { prefs, effective, update, reset } = useA11y();
-  const { theme, setKidsMode } = useTheme();
+  const { kidsOn, setKidsMode } = useKidsMode();
   const household = useHousehold();
   const active = isA11yActive(prefs);
-  const kidsOn = theme === "kids";
   const householdValue = household.size ?? DEFAULT_HOUSEHOLD;
 
   return (

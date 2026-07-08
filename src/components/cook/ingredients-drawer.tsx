@@ -6,6 +6,7 @@ import { ListChecks, Utensils } from "lucide-react";
 
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,12 @@ type IngredientsDrawerProps = {
   >;
   className?: string;
   label?: string;
+  /**
+   * Renders the trigger at the larger footer "primary action" baseline (taller
+   * than the header chip). The exact height still flexes with Kids mode's
+   * large-target flag, so all sizing lives in one place.
+   */
+  prominent?: boolean;
   /** When provided, ingredient scaling/units/checklist are lifted and shared. */
   controls?: IngredientsPanelControls;
 };
@@ -34,9 +41,21 @@ export function IngredientsDrawer({
   recipe,
   className,
   label = "Ingredients",
+  prominent = false,
   controls,
 }: IngredientsDrawerProps) {
   const t = useTranslations("ingredientsDrawer");
+  // Kids mode promises "big buttons" — honor behavior.largeTargets so the
+  // Ingredients trigger grows with the rest of Cook Mode's primary controls
+  // (#439). Sizing is centralized here so callers only pass layout/visibility.
+  const { largeTargets } = useThemeBehavior();
+  const sizeClasses = prominent
+    ? largeTargets
+      ? "h-[4.5rem] px-8 text-xl sm:h-20"
+      : "h-16 px-6 text-lg"
+    : largeTargets
+      ? "h-16 px-5 text-lg sm:h-[4.25rem]"
+      : "h-12 px-4 sm:h-14 sm:px-5";
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -45,7 +64,7 @@ export function IngredientsDrawer({
           variant="secondary"
           size="lg"
           aria-label={t("region", { label })}
-          className={cn("h-12 px-4 sm:h-14 sm:px-5", className)}
+          className={cn(sizeClasses, className)}
         >
           <ListChecks aria-hidden="true" />
           <span className="hidden sm:inline">{label}</span>

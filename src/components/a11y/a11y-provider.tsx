@@ -6,8 +6,11 @@ import {
   type A11yPrefs,
   A11Y_COOKIE,
   A11Y_MANAGED_ATTRS,
+  A11Y_PREVIOUS_COOKIE,
   DEFAULT_A11Y,
   a11yAttributes,
+  kidModeDefaults,
+  parseA11y,
   resolveTriState,
   serializeA11y,
 } from "~/config/a11y";
@@ -24,6 +27,13 @@ type A11yContextValue = {
   update: (patch: Partial<A11yPrefs>) => void;
   /** Restore every preference to its default. */
   reset: () => void;
+  /**
+   * Couple the a11y axis to the Kids-mode toggle (#445). Turning Kids mode ON
+   * snapshots the current prefs and bumps unset comfort defaults (large text +
+   * easy-reading type); turning it OFF restores that snapshot. Explicit grown-up
+   * choices are preserved. Idempotent: only the first ON snapshots.
+   */
+  setKidsDefaults: (on: boolean) => void;
 };
 
 const A11yContext = React.createContext<A11yContextValue | null>(null);
@@ -50,6 +60,36 @@ function persist(prefs: A11yPrefs) {
     document.cookie = `${A11Y_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
     /* storage unavailable (private mode) — settings still apply this session */
+  }
+}
+
+/** Read the raw pre-Kids snapshot, or null when none is stored. */
+function readPreviousRaw(): string | null {
+  try {
+    return localStorage.getItem(A11Y_PREVIOUS_COOKIE);
+  } catch {
+    return null;
+  }
+}
+
+/** Remember the prefs that were active before Kids mode bumped them (#445). */
+function persistPrevious(prefs: A11yPrefs) {
+  const value = serializeA11y(prefs);
+  try {
+    localStorage.setItem(A11Y_PREVIOUS_COOKIE, value);
+    document.cookie = `${A11Y_PREVIOUS_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
+  } catch {
+    /* storage unavailable — snapshot lives only in React state this session */
+  }
+}
+
+/** Drop the snapshot once Kids mode is off and its prefs have been restored. */
+function clearPrevious() {
+  try {
+    localStorage.removeItem(A11Y_PREVIOUS_COOKIE);
+    document.cookie = `${A11Y_PREVIOUS_COOKIE}=;path=/;max-age=0;samesite=lax`;
+  } catch {
+    /* nothing to clear */
   }
 }
 
@@ -113,6 +153,29 @@ export function A11yProvider({
     });
   }, []);
 
+  const setKidsDefaults = React.useCallback((on: boolean) => {
+    if (on) {
+      setPrefs((current) => {
+        // Snapshot once so a later toggle-off can restore the pre-Kids prefs.
+        // If a snapshot already exists (Kids already on), keep it and don't
+        // re-snapshot the already-bumped values.
+        if (readPreviousRaw() == null) persistPrevious(current);
+        const next = kidModeDefaults(current);
+        persist(next);
+        return next;
+      });
+      return;
+    }
+    const raw = readPreviousRaw();
+    clearPrevious();
+    if (raw == null) return; // nothing to restore (Kids mode was never coupled)
+    const restored = parseA11y(raw);
+    setPrefs(() => {
+      persist(restored);
+      return restored;
+    });
+  }, []);
+
   const effective = React.useMemo(
     () => ({
       motion: resolveTriState(prefs.motion, system.motion),
@@ -122,8 +185,8 @@ export function A11yProvider({
   );
 
   const value = React.useMemo<A11yContextValue>(
-    () => ({ prefs, effective, update, reset }),
-    [prefs, effective, update, reset],
+    () => ({ prefs, effective, update, reset, setKidsDefaults }),
+    [prefs, effective, update, reset, setKidsDefaults],
   );
 
   return <A11yContext.Provider value={value}>{children}</A11yContext.Provider>;

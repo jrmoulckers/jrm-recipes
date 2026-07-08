@@ -7,6 +7,8 @@ import { useLocale } from "next-intl";
 import { cn } from "~/lib/utils";
 import {
   displayUnit,
+  expandKidUnit,
+  formatKidAmount,
   formatQuantity,
   scaleQuantity,
   toSystem,
@@ -29,6 +31,8 @@ import {
   type MemberNeeds,
 } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
+import { ingredientIcon } from "~/lib/ingredient-icons";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
@@ -87,12 +91,28 @@ function amountLabel(
   factor: number,
   system: System,
   locale: string,
+  kid = false,
 ) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
   const m = measure(q, ing.unit, system);
   const mMax = qMax != null ? measure(qMax, ing.unit, system) : null;
-  if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null, locale) };
+  if (m.q == null) {
+    return {
+      number: "",
+      unit: kid
+        ? expandKidUnit(ing.unit, null, locale)
+        : displayUnit(ing.unit, null, locale),
+    };
+  }
+  if (kid) {
+    if (mMax?.q != null) {
+      const lo = formatKidAmount(m.q, undefined, locale).number;
+      const hi = formatKidAmount(mMax.q, m.unit, locale);
+      return { number: `${lo} to ${hi.number}`, unit: hi.unit };
+    }
+    return formatKidAmount(m.q, m.unit, locale);
+  }
   const number =
     mMax?.q != null
       ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
@@ -129,6 +149,8 @@ export function IngredientsPanel({
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
+  // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
+  const { kidSafe } = useThemeBehavior();
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
@@ -309,7 +331,13 @@ export function IngredientsPanel({
             )}
             <ul className="flex flex-col">
               {items.map((ing) => {
-                const { number, unit } = amountLabel(ing, factor, system, locale);
+                const { number, unit } = amountLabel(
+                  ing,
+                  factor,
+                  system,
+                  locale,
+                  kidSafe,
+                );
                 const isChecked = checked.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
@@ -370,6 +398,14 @@ export function IngredientsPanel({
                         >
                           {isChecked ? "✓" : ""}
                         </span>
+                        {kidSafe && (
+                          <span
+                            aria-hidden
+                            className="shrink-0 translate-y-0.5 text-xl leading-none"
+                          >
+                            {ingredientIcon(ing.item)}
+                          </span>
+                        )}
                         <span
                           className={cn(
                             "flex-1 text-[0.95rem]",

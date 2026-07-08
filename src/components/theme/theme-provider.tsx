@@ -186,4 +186,18 @@ export function useTheme() {
   return ctx;
 }
 
+/**
+ * Read just the active UI mode's behavior flags (`largeTargets`, `kidSafe`,
+ * `simplifiedChrome`, `reduceMotion`). Unlike {@link useTheme} this never throws
+ * outside a provider — it falls back to the default (non-kids) behavior — so
+ * leaf components can gate Kids-mode affordances without every consumer (or its
+ * unit tests) needing to mount the full theme provider. In the app the provider
+ * is always present and seeded from the cookie, so this returns the real flags
+ * with no flash.
+ */
+export function useThemeBehavior(): (typeof THEME_BEHAVIOR)[UITheme] {
+  const ctx = React.useContext(ThemeContext);
+  return ctx?.behavior ?? THEME_BEHAVIOR[DEFAULT_UI_THEME];
+}
+
 export { systemPrefersDark };

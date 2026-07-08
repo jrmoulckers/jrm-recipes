@@ -14,6 +14,12 @@ export type Technique = {
   shortTip: string;
   /** A couple of sentences with the why/how for the curious cook. */
   description: string;
+  /**
+   * Optional playful, pre-reader-friendly one-liner shown instead of `shortTip`
+   * when Kids mode is active (#446). Plain words a 9-year-old actually knows —
+   * no "emulsify" or "until ribbons form". Falls back to `shortTip` when unset.
+   */
+  kidTip?: string;
 };
 
 /** A fuzzy "did you mean …?" pointer to a known technique. */
@@ -27,6 +33,8 @@ export type TechniqueMatch = {
   known: boolean;
   shortTip?: string;
   description?: string;
+  /** Kid-friendly one-liner (see {@link Technique.kidTip}), when available. */
+  kidTip?: string;
   /**
    * For an unknown label, the closest known technique within a small edit
    * distance (e.g. "braize" -> "Braise"), so the UI can offer a gentle hint.
@@ -35,6 +43,36 @@ export type TechniqueMatch = {
 };
 
 type TechniqueSeed = Technique & { aliases?: string[] };
+
+/**
+ * Kid-friendly one-liners keyed by technique slug (#446). Seeded for the most
+ * common beginner techniques; anything unlisted simply falls back to the adult
+ * `shortTip`. Static + bundled, so the tutor still works offline.
+ */
+const KID_TIPS: Record<string, string> = {
+  dice: "Cut it into little squares, about the size of dice.",
+  mince: "Chop it up super tiny, into teeny-tiny bits.",
+  chop: "Cut it into bite-size pieces — not too fussy!",
+  julienne: "Cut it into skinny little sticks, like matchsticks.",
+  saute: "Cook it fast in a little oil and keep it moving!",
+  sear: "Cook one side in a hot pan so it gets brown and yummy.",
+  boil: "Heat the water until it's full of big, jumpy bubbles.",
+  simmer: "Keep it just below a boil — tiny, gentle bubbles.",
+  poach: "Cook it gently in water that's barely wiggling.",
+  steam: "Cook it over bubbly water, sitting up in a basket.",
+  roast: "Cook it in the oven until it's golden and yummy.",
+  grill: "Cook it over the hot grill to get tasty stripes.",
+  fold: "Mix it super gently so you don't squish out the air.",
+  whisk: "Beat it really fast in circles until it's fluffy!",
+  whip: "Beat it fast until it's light, puffy, and fluffy.",
+  cream: "Beat the butter and sugar until it's fluffy and pale.",
+  knead: "Push and squish the dough until it's smooth and stretchy.",
+  sift: "Shake the flour through a sieve so it's soft and lump-free.",
+  zest: "Grate just the colorful part of the lemon or orange skin.",
+  blanch: "Dip it in boiling water quickly, then into ice-cold water.",
+  puree: "Blend it until it's totally smooth, with no lumps.",
+  caramelize: "Cook it low and slow until it's golden and sweet.",
+};
 
 const SEED: TechniqueSeed[] = [
   {
@@ -280,7 +318,10 @@ const SEED: TechniqueSeed[] = [
 ];
 
 export const TECHNIQUES: Record<string, Technique> = Object.fromEntries(
-  SEED.map(({ aliases: _aliases, ...technique }) => [technique.slug, technique]),
+  SEED.map(({ aliases: _aliases, ...technique }) => [
+    technique.slug,
+    { ...technique, kidTip: KID_TIPS[technique.slug] },
+  ]),
 );
 
 /** Lowercase, strip accents, and collapse whitespace for tolerant matching. */
@@ -343,6 +384,7 @@ export function lookupTechnique(rawLabel: string): TechniqueMatch {
           known: true,
           shortTip: technique.shortTip,
           description: technique.description,
+          kidTip: technique.kidTip,
         };
       }
     }

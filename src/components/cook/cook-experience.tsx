@@ -15,12 +15,14 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Check,
   Clock3,
   ListOrdered,
   Pause,
   Play,
   Repeat,
   RotateCcw,
+  Square,
   Timer,
   Volume2,
   VolumeX,
@@ -49,23 +51,35 @@ import {
   type TimerStatus,
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
+import { detectStepHazards } from "~/lib/kid-safety";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
 import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
+import { KidSafetyCallout } from "./kid-safety-callout";
+import { PreCookChecklist } from "./pre-cook-checklist";
+import { CookCompletion } from "./cook-completion";
+import { KidsBadgeReward } from "./kids-badge-reward";
+import { awardForCompletion, type KidBadge } from "./kids-rewards";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
+import { useStepNarration } from "./use-step-narration";
 import { useOneHandedNav } from "./use-one-handed-nav";
 import { useHousehold } from "~/components/household/household-provider";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const wakeLockStatus = useScreenWakeLock();
   const speech = useSpeech();
   const household = useHousehold();
   const router = useRouter();
+  // Kids mode's large-target flag genuinely upsizes the primary controls (#439),
+  // and kidSafe drives the young-cook affordances (safety callout, get-ready
+  // gate). Both come from the active theme mode's behavior.
+  const { largeTargets, kidSafe } = useThemeBehavior();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
 
@@ -118,6 +132,61 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     });
     router.push(`/recipes/${recipe.slug}`);
   }, [clearSession, recipe.slug, recipe.title, router]);
+
+  // "Let's get ready!" pre-cook gate for Kids mode (#444). The grown-up-help
+  // line only shows when the recipe genuinely has hot/sharp steps, so we detect
+  // that once up front (reusing the safety-callout hazard logic, #423).
+  const recipeHasHazards = React.useMemo(
+    () =>
+      recipe.steps.some(
+        (step) =>
+          detectStepHazards({
+            text: step.instruction,
+            techniques: step.techniques,
+          }).length > 0,
+      ),
+    [recipe.steps],
+  );
+
+  // Remember "ready" per cook session so the checklist never nags twice. Seeded
+  // false (SSR-safe) and confirmed from sessionStorage on mount, so a resumed
+  // tab skips straight to the step it left off on.
+  const readyStorageKey = `heirloom-precook-ready:${recipe.id}`;
+  const [precookReady, setPrecookReady] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      if (sessionStorage.getItem(readyStorageKey) === "1") setPrecookReady(true);
+    } catch {
+      /* storage unavailable — the gate simply shows once this session */
+    }
+  }, [readyStorageKey]);
+  const confirmPrecookReady = React.useCallback(() => {
+    setPrecookReady(true);
+    try {
+      sessionStorage.setItem(readyStorageKey, "1");
+    } catch {
+      /* storage unavailable — proceeding still works for this session */
+    }
+  }, [readyStorageKey]);
+
+  // "You did it!" completion moment (#437): finishing opens a celebratory screen
+  // (photo capture + badges) instead of navigating away instantly. `handleFinish`
+  // is the real leave action, run when the child taps done/skip.
+  const [finished, setFinished] = React.useState(false);
+  const [earnedBadges, setEarnedBadges] = React.useState<KidBadge[]>([]);
+  const openCompletion = React.useCallback(() => {
+    // Kids collect an on-device badge each finish (#413); grown-up cooks don't.
+    if (kidSafe) {
+      try {
+        setEarnedBadges(
+          awardForCompletion(recipe.title, recipe.slug).newlyEarned,
+        );
+      } catch {
+        /* storage unavailable — celebrate without badges */
+      }
+    }
+    setFinished(true);
+  }, [kidSafe, recipe.title, recipe.slug]);
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -172,6 +241,19 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         recipe={recipe}
         wakeLockStatus={wakeLockStatus}
         ingredientControls={ingredientControls}
+      />
+    );
+  }
+
+  // Kids mode gets a friendly "Let's get ready!" screen before step 1 (#444).
+  // Grown-up modes go straight to cooking, exactly as before.
+  if (kidSafe && !precookReady) {
+    return (
+      <PreCookChecklist
+        recipeTitle={recipe.title}
+        hasHazards={recipeHasHazards}
+        largeTargets={largeTargets}
+        onReady={confirmPrecookReady}
       />
     );
   }
@@ -262,6 +344,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               )}
             </div>
 
+            <KidSafetyCallout
+              text={currentStep.instruction}
+              techniques={currentStep.techniques}
+            />
+
             <div className="flex flex-col gap-4">
               <p className="text-sm font-semibold text-muted-foreground">
                 Step {stepIndex + 1} of {totalSteps}
@@ -274,6 +361,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               >
                 {currentStep.instruction}
               </h1>
+              <StepNarrationButton
+                instruction={currentStep.instruction}
+                stepKey={currentStep.id}
+                prominent={kidSafe}
+              />
               {totalSteps > 1 && (
                 <p className="text-xs text-muted-foreground/80">
                   Tap the sides or swipe to move between steps.
@@ -317,7 +409,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             type="button"
             size="xl"
             variant="outline"
-            className="h-16 justify-start text-lg sm:h-[4.5rem]"
+            className={cn(
+              "justify-start",
+              largeTargets
+                ? "h-[4.5rem] text-xl sm:h-20"
+                : "h-16 text-lg sm:h-[4.5rem]",
+            )}
             onClick={goPrevious}
             disabled={!canGoPrevious}
           >
@@ -327,7 +424,8 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
           <IngredientsDrawer
             recipe={recipe}
-            className="hidden h-16 px-6 text-lg sm:inline-flex"
+            prominent
+            className="hidden sm:inline-flex"
             label="Ingredients"
             controls={ingredientControls}
           />
@@ -335,14 +433,29 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           <Button
             type="button"
             size="xl"
-            className="h-16 justify-end text-lg sm:h-[4.5rem]"
-            onClick={canGoNext ? goNext : handleFinish}
+            className={cn(
+              "justify-end",
+              largeTargets
+                ? "h-[4.5rem] text-xl sm:h-20"
+                : "h-16 text-lg sm:h-[4.5rem]",
+            )}
+            onClick={canGoNext ? goNext : openCompletion}
           >
             {canGoNext ? "Next" : "Done"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
           </Button>
         </div>
       </footer>
+
+      {finished && (
+        <CookCompletion
+          recipeTitle={recipe.title}
+          celebratory={kidSafe}
+          onDone={handleFinish}
+        >
+          {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
+        </CookCompletion>
+      )}
     </div>
   );
 }
@@ -367,6 +480,7 @@ function CookHeader({
   ingredientControls: IngredientsPanelControls;
 }) {
   const t = useTranslations("cook.a11y");
+  const { kidSafe } = useThemeBehavior();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
@@ -402,7 +516,7 @@ function CookHeader({
         />
         <IngredientsDrawer
           recipe={recipe}
-          className="h-12 px-3 md:hidden"
+          className="md:hidden"
           controls={ingredientControls}
         />
         <IngredientsDrawer
@@ -417,17 +531,89 @@ function CookHeader({
         </Button>
       </div>
 
-      <ProgressPrimitive.Root
-        value={progressValue}
-        className="h-2 w-full overflow-hidden bg-muted"
-        aria-label={t("progress")}
-      >
-        <ProgressPrimitive.Indicator
-          className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
-          style={{ width: `${progressValue}%` }}
+      {kidSafe ? (
+        <StepTrail
+          totalSteps={totalSteps}
+          currentIndex={currentIndex}
+          onStepSelect={onStepSelect}
+          label={t("progress")}
         />
-      </ProgressPrimitive.Root>
+      ) : (
+        <ProgressPrimitive.Root
+          value={progressValue}
+          className="h-2 w-full overflow-hidden bg-muted"
+          aria-label={t("progress")}
+        >
+          <ProgressPrimitive.Indicator
+            className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
+            style={{ width: `${progressValue}%` }}
+          />
+        </ProgressPrimitive.Root>
+      )}
     </header>
+  );
+}
+
+/**
+ * Kids-mode "step trail" (#441): a tappable row of stepping-stones replacing the
+ * thin progress bar. Each marker shows completed (✓), current (highlighted and
+ * gently bouncing under motion-safe), or upcoming (dim) state, and jumps to that
+ * step via the existing navigation. The row scrolls horizontally so long recipes
+ * never overflow on small screens. Non-Kids modes keep the Radix progress bar.
+ */
+function StepTrail({
+  totalSteps,
+  currentIndex,
+  onStepSelect,
+  label,
+}: {
+  totalSteps: number;
+  currentIndex: number;
+  onStepSelect: (index: number) => void;
+  label: string;
+}) {
+  return (
+    <nav
+      aria-label={label}
+      className="w-full overflow-x-auto px-3 py-2 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <ol className="mx-auto flex w-max items-center gap-1.5">
+        {Array.from({ length: totalSteps }, (_, i) => {
+          const isDone = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          return (
+            <li key={i} className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onStepSelect(i)}
+                aria-label={`Go to step ${i + 1} of ${totalSteps}`}
+                aria-current={isCurrent ? "step" : undefined}
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isDone && "border-success bg-success text-success-foreground",
+                  isCurrent &&
+                    "border-primary bg-primary/15 text-primary ring-2 ring-primary/40 motion-safe:animate-pulse",
+                  !isDone &&
+                    !isCurrent &&
+                    "border-border bg-muted text-muted-foreground",
+                )}
+              >
+                {isDone ? <Check className="size-5" /> : i + 1}
+              </button>
+              {i < totalSteps - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "h-1 w-4 shrink-0 rounded-full sm:w-6",
+                    i < currentIndex ? "bg-success" : "bg-border",
+                  )}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
@@ -466,6 +652,51 @@ function ReadAloudControls({
         </Button>
       )}
     </div>
+  );
+}
+
+/**
+ * Kid-facing "Read it to me" button (#411). Reads the current step aloud via the
+ * Web Speech API and flips to "Stop reading" while speaking; a second tap stops.
+ * Oversized in Kids mode (`prominent`) and unobtrusive otherwise. Hidden entirely
+ * when speech synthesis is unavailable so nothing breaks offline. The parent step
+ * `<section>` remounts per step (keyed on step id), which cancels narration on
+ * navigation; the `stepKey` effect makes that explicit and future-proof.
+ */
+function StepNarrationButton({
+  instruction,
+  stepKey,
+  prominent,
+}: {
+  instruction: string;
+  stepKey: string;
+  prominent: boolean;
+}) {
+  const narration = useStepNarration();
+  const { stop } = narration;
+
+  React.useEffect(() => {
+    stop();
+  }, [stepKey, stop]);
+
+  if (!narration.supported) return null;
+
+  const speaking = narration.speaking;
+  return (
+    <Button
+      type="button"
+      size={prominent ? "xl" : "sm"}
+      variant={speaking ? "secondary" : prominent ? "accent" : "ghost"}
+      aria-pressed={speaking}
+      onClick={() => narration.toggle(instruction)}
+      className={cn(
+        "gap-2 self-start",
+        prominent && "w-full justify-center gap-3 sm:w-auto",
+      )}
+    >
+      {speaking ? <Square /> : <Volume2 />}
+      {speaking ? "Stop reading" : "Read it to me"}
+    </Button>
   );
 }
 
@@ -514,6 +745,78 @@ function StepMedia({
   );
 }
 
+/**
+ * Kids-mode countdown ring (#442): a large SVG circle that depletes as the timer
+ * runs and shifts colour as it nears zero, with the digital readout kept in the
+ * centre. Reuses the existing timer state (duration/remaining/status) — no new
+ * timing logic. Ring animation is gated behind `motion-safe`, so reduced-motion /
+ * Simple mode shows a static proportion instead of a sweeping animation.
+ */
+function TimerRing({ timer }: { timer: TimerRecord }) {
+  const size = 168;
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const fraction =
+    timer.duration > 0
+      ? Math.min(1, Math.max(0, timer.remaining / timer.duration))
+      : 0;
+  const isComplete = timer.status === "complete";
+  const active = timer.status === "running" || timer.status === "paused";
+  const almostDone = active && fraction > 0 && fraction <= 0.15;
+  const ringColor = isComplete
+    ? "text-success"
+    : almostDone
+      ? "text-warning"
+      : "text-primary";
+  // Full ring when complete (celebratory); otherwise deplete with time left.
+  const offset = isComplete ? 0 : circumference * (1 - fraction);
+
+  return (
+    <div
+      data-testid="kids-timer-ring"
+      className="relative mx-auto flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90"
+        aria-hidden="true"
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-muted-foreground/15"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={cn(
+            "stroke-current motion-safe:transition-[stroke-dashoffset] motion-safe:duration-1000 motion-safe:ease-linear",
+            ringColor,
+          )}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="font-mono text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
+          {formatCountdown(timer.remaining)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function StepTimerCard({
   step,
   timer,
@@ -529,6 +832,7 @@ function StepTimerCard({
 }) {
   const t = useTranslations("cook.timer");
   const tA11y = useTranslations("cook.a11y");
+  const { kidSafe } = useThemeBehavior();
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
 
@@ -564,9 +868,13 @@ function StepTimerCard({
           time: formatCountdown(timer.remaining),
         })}
       >
-        <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
-          {formatCountdown(timer.remaining)}
-        </div>
+        {kidSafe ? (
+          <TimerRing timer={timer} />
+        ) : (
+          <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
+            {formatCountdown(timer.remaining)}
+          </div>
+        )}
         <p className="mt-2 text-sm text-muted-foreground">
           {timerStatusText(timer, (key, values) => t(key, values))}
         </p>

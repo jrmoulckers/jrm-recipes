@@ -59,6 +59,7 @@ import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
+import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
 import { RecipeStory } from "~/components/recipe/story";
@@ -340,8 +341,10 @@ export default async function RecipePage({
                 <Printer /> Print
               </Link>
             </Button>
-            <ShareButton title={recipe.title} />
-            <CreateReelButton reel={mapRecipeToReel(recipe)} />
+            <GrownUpControls>
+              <ShareButton title={recipe.title} />
+              <CreateReelButton reel={mapRecipeToReel(recipe)} />
+            </GrownUpControls>
             <AddToShoppingList
               dbEnabled={dbEnabled}
               recipe={{
@@ -358,11 +361,13 @@ export default async function RecipePage({
                 })),
               }}
             />
-            <AdaptButton
-              sourceId={recipe.id}
-              sourceTitle={recipe.title}
-              canAdapt={Boolean(user)}
-            />
+            <GrownUpControls>
+              <AdaptButton
+                sourceId={recipe.id}
+                sourceTitle={recipe.title}
+                canAdapt={Boolean(user)}
+              />
+            </GrownUpControls>
             <FavoriteButton
               recipeId={recipe.id}
               recipeSlug={recipe.slug}
@@ -376,13 +381,15 @@ export default async function RecipePage({
               canSave={Boolean(user)}
             />
             {isOwner && (
-              <Button asChild size="lg" variant="outline">
-                <Link href={`/recipes/${recipe.slug}/edit`}>
-                  <Pencil /> Edit
-                </Link>
-              </Button>
+              <GrownUpControls>
+                <Button asChild size="lg" variant="outline">
+                  <Link href={`/recipes/${recipe.slug}/edit`}>
+                    <Pencil /> Edit
+                  </Link>
+                </Button>
+                <DeleteRecipeButton id={recipe.id} />
+              </GrownUpControls>
             )}
-            {isOwner && <DeleteRecipeButton id={recipe.id} />}
           </div>
         </header>
 
