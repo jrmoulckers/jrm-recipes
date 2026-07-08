@@ -140,16 +140,22 @@ describe("formatCountdown (ck11)", () => {
 });
 
 describe("timerStatusText", () => {
-  it("describes each timer status", () => {
-    expect(timerStatusText(timer({ status: "complete" }))).toBe("Timer complete");
-    expect(timerStatusText(timer({ status: "running", remaining: 65 }))).toBe(
-      "1:05 remaining",
+  // A stand-in translator that echoes the message key with any interpolated
+  // time, so the test asserts key routing + countdown composition without
+  // hard-coding localized copy.
+  const t = (key: string, values?: { time: string }) =>
+    values ? `${key}:${values.time}` : key;
+
+  it("routes each timer status to its message key with a formatted countdown", () => {
+    expect(timerStatusText(timer({ status: "complete" }), t)).toBe("complete");
+    expect(timerStatusText(timer({ status: "running", remaining: 65 }), t)).toBe(
+      "remaining:1:05",
     );
-    expect(timerStatusText(timer({ status: "paused", remaining: 65 }))).toBe(
-      "Paused with 1:05 remaining",
+    expect(timerStatusText(timer({ status: "paused", remaining: 65 }), t)).toBe(
+      "paused:1:05",
     );
-    expect(timerStatusText(timer({ status: "idle", duration: 120 }))).toBe(
-      "2:00 ready",
+    expect(timerStatusText(timer({ status: "idle", duration: 120 }), t)).toBe(
+      "ready:2:00",
     );
   });
 });

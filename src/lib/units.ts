@@ -288,14 +288,42 @@ export function scaleQuantity(
   return roundNice(quantity * factor);
 }
 
-/** Pluralize a unit label for display given a quantity. */
+/**
+ * The CLDR plural category (`one`, `few`, `other`, …) for a count in a locale,
+ * via `Intl.PluralRules`. Used to pick the right spelled-out unit label instead
+ * of a hand-rolled `count !== 1` check, which is wrong for the many languages
+ * with more than two plural forms.
+ */
+function pluralCategory(count: number, locale: string): Intl.LDMLPluralRule {
+  try {
+    return new Intl.PluralRules(locale).select(count);
+  } catch {
+    return new Intl.PluralRules(DEFAULT_LOCALE).select(count);
+  }
+}
+
+/**
+ * Pluralize a spelled-out unit label for display, choosing the form by the
+ * active locale's plural rules. Unit *symbols* (g, ml, kg, tsp) have no spelled
+ * plural and are returned invariant; only labels with a configured `plural`
+ * (cups, pints, quarts, gallons) inflect. With just singular/plural English
+ * forms available we treat the `one` category as singular and every other
+ * category as plural.
+ */
 export function displayUnit(
   unit: string | null | undefined,
   quantity: number | null | undefined,
+  locale: string = DEFAULT_LOCALE,
 ): string {
   if (!unit) return "";
   const def = UNIT_INDEX.get(unit.trim().toLowerCase());
-  if (def?.plural && quantity != null && quantity !== 1) return def.plural;
+  if (
+    def?.plural &&
+    quantity != null &&
+    pluralCategory(quantity, locale) !== "one"
+  ) {
+    return def.plural;
+  }
   return def?.canonical ?? unit;
 }
 

@@ -4,5 +4,13 @@
     "recipes": "Rezepte",
     "family": "Familie",
     "create": "Erstellen"
+  },
+  "cook": {
+    "timer": {
+      "complete": "Timer abgelaufen",
+      "remaining": "Noch {time}",
+      "paused": "Pausiert, noch {time}",
+      "ready": "{time} bereit"
+    }
   }
 }

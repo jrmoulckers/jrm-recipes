@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import {
   ArrowLeft,
@@ -524,6 +525,7 @@ function StepTimerCard({
   onPause: (step: CookStep) => void;
   onReset: (step: CookStep) => void;
 }) {
+  const t = useTranslations("cook.timer");
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
 
@@ -561,7 +563,7 @@ function StepTimerCard({
           {formatCountdown(timer.remaining)}
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {timerStatusText(timer)}
+          {timerStatusText(timer, (key, values) => t(key, values))}
         </p>
       </div>
       <TimerAnnouncer timer={timer} />

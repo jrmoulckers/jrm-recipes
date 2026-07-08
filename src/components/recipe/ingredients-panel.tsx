@@ -91,12 +91,12 @@ function amountLabel(
   const qMax = scaleQuantity(ing.quantityMax, factor);
   const m = measure(q, ing.unit, system);
   const mMax = qMax != null ? measure(qMax, ing.unit, system) : null;
-  if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null) };
+  if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null, locale) };
   const number =
     mMax?.q != null
       ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
       : formatQuantity(m.q, undefined, locale);
-  return { number, unit: displayUnit(m.unit, m.q) };
+  return { number, unit: displayUnit(m.unit, m.q, locale) };
 }
 
 export function IngredientsPanel({

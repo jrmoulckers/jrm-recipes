@@ -4,5 +4,13 @@
     "recipes": "الوصفات",
     "family": "العائلة",
     "create": "إنشاء"
+  },
+  "cook": {
+    "timer": {
+      "complete": "انتهى المؤقّت",
+      "remaining": "{time} متبقٍّ",
+      "paused": "متوقّف مؤقّتًا، {time} متبقٍّ",
+      "ready": "{time} جاهز"
+    }
   }
 }

@@ -4,5 +4,13 @@
     "recipes": "Recetas",
     "family": "Familia",
     "create": "Crear"
+  },
+  "cook": {
+    "timer": {
+      "complete": "Temporizador completado",
+      "remaining": "{time} restante",
+      "paused": "En pausa con {time} restante",
+      "ready": "{time} listo"
+    }
   }
 }

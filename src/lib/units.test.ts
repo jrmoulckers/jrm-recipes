@@ -135,6 +135,32 @@ describe("displayUnit", () => {
     expect(displayUnit("Tablespoons", 3)).toBe("tbsp");
     expect(displayUnit(null, 3)).toBe("");
   });
+
+  it("selects the plural category by locale, not a count !== 1 check (#247)", () => {
+    // English: only 1 is the "one" category; 0 and 2 are "other" → plural.
+    expect(displayUnit("cup", 0, "en")).toBe("cups");
+    expect(displayUnit("cup", 1, "en")).toBe("cup");
+    expect(displayUnit("cup", 2, "en")).toBe("cups");
+    // French treats 0 and 1 as singular ("one").
+    expect(displayUnit("cup", 0, "fr")).toBe("cup");
+    expect(displayUnit("cup", 1, "fr")).toBe("cup");
+    expect(displayUnit("cup", 2, "fr")).toBe("cups");
+    // Arabic has more than two categories (zero/one/two/few/many/other); every
+    // non-"one" count resolves to the plural label.
+    expect(displayUnit("cup", 1, "ar")).toBe("cup"); // one
+    expect(displayUnit("cup", 2, "ar")).toBe("cups"); // two
+    expect(displayUnit("cup", 3, "ar")).toBe("cups"); // few
+    expect(displayUnit("cup", 11, "ar")).toBe("cups"); // many
+    expect(displayUnit("cup", 100, "ar")).toBe("cups"); // other
+  });
+
+  it("keeps unit symbols invariant and falls back safely for bad locales", () => {
+    // Symbols (no configured plural) never inflect, whatever the count/locale.
+    expect(displayUnit("g", 5, "ar")).toBe("g");
+    expect(displayUnit("ml", 2, "fr")).toBe("ml");
+    // An unparseable locale falls back to the default plural rules.
+    expect(displayUnit("cup", 2, "not a locale!!")).toBe("cups");
+  });
 });
 
 describe("normalizeUnit", () => {
