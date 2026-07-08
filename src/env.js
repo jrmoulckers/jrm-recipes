@@ -97,6 +97,10 @@ export const env = createEnv({
     // ~/server/billing/stripe `isBillingConfigured`).
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    // Stripe Price IDs (e.g. `price_123…`) for purchasable plans (#303). Optional
+    // — with these unset checkout reports a friendly "not available" instead of
+    // failing, so the app still builds and runs with no billing config.
+    STRIPE_PRICE_FAMILY: z.string().optional(),
   },
 
   client: {
@@ -140,6 +144,7 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRICE_FAMILY: process.env.STRIPE_PRICE_FAMILY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
