@@ -20,6 +20,11 @@ import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
+import {
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
+} from "~/lib/site-seo";
+import { serializeJsonLd } from "~/lib/recipe-seo";
 
 const features = [
   {
@@ -59,6 +64,18 @@ const features = [
 export default function HomePage() {
   return (
     <div className="flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(buildWebSiteJsonLd()),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(buildOrganizationJsonLd()),
+        }}
+      />
       <LandingViewedTracker />
       {/* Hero */}
       <section className="relative overflow-hidden">
