@@ -7,9 +7,7 @@ import {
   CornerDownRight,
   Lightbulb,
   MessageCircle,
-  MoreHorizontal,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -26,6 +24,7 @@ import type { MentionCandidate } from "~/lib/mentions";
 import { MentionTextarea } from "~/components/engagement/mention-textarea";
 import { MentionText } from "~/components/engagement/mention-text";
 import { ReactionBar } from "~/components/engagement/reaction-bar";
+import { ContentActionsMenu } from "~/components/moderation/content-actions-menu";
 import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
 import {
   Avatar,
@@ -34,12 +33,6 @@ import {
 } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { CharacterCounter } from "~/components/ui/character-counter";
@@ -486,30 +479,16 @@ function CommentItem({
               </Button>
             ) : null}
 
-            {canDelete ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={pending}
-                    aria-label="Comment actions"
-                    className="ms-auto size-8 text-muted-foreground"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() => onDelete(comment.id)}
-                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                  >
-                    <Trash2 /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
+            <ContentActionsMenu
+              targetType="comment"
+              targetId={comment.id}
+              authorId={comment.author?.id ?? null}
+              authorName={authorName}
+              currentUserId={currentUserId}
+              canDelete={canDelete}
+              onDelete={() => onDelete(comment.id)}
+              disabled={pending}
+            />
           </div>
 
           {replyOpen ? (

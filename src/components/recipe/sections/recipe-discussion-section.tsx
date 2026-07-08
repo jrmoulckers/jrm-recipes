@@ -5,6 +5,7 @@ import {
   getViewerRating,
 } from "~/server/engagement/queries";
 import { getReactionsForTargets } from "~/server/engagement/reactions";
+import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 import type { ThreadedComment } from "~/server/engagement/queries";
 import type { User } from "~/server/db/schema";
 import { RatingControl } from "~/components/engagement/rating-control";
@@ -43,11 +44,12 @@ export async function RecipeDiscussionSection({
   isRecipeOwner: boolean;
   canInteract: boolean;
 }) {
+  const hiddenAuthorIds = await getHiddenAuthorIds(currentUserId);
   const [viewerRating, breakdown, comments, mentionCandidates] =
     await Promise.all([
       getViewerRating(recipeId, currentUserId),
       getRatingBreakdown(recipeId, viewer),
-      getRecipeComments(recipeId),
+      getRecipeComments(recipeId, { hiddenAuthorIds }),
       getMentionCandidates(recipeId),
     ]);
 

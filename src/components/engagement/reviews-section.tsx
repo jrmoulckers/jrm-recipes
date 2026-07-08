@@ -24,6 +24,7 @@ import { Separator } from "~/components/ui/separator";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageUploadField } from "~/components/ui/image-upload";
 import { ReactionBar } from "~/components/engagement/reaction-bar";
+import { ContentActionsMenu } from "~/components/moderation/content-actions-menu";
 import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
 
 type ViewerReview = {
@@ -351,21 +352,18 @@ export function ReviewsSection({
                       />
                     </div>
                   </div>
-                  {canDelete ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Delete review"
-                      disabled={remove.pending}
-                      onClick={() =>
-                        remove.run({ reviewId: review.id, recipeSlug })
-                      }
-                      className="size-8 text-muted-foreground"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  ) : null}
+                  <ContentActionsMenu
+                    targetType="review"
+                    targetId={review.id}
+                    authorId={review.author?.id ?? null}
+                    authorName={name}
+                    currentUserId={currentUserId}
+                    canDelete={canDelete}
+                    onDelete={() =>
+                      remove.run({ reviewId: review.id, recipeSlug })
+                    }
+                    disabled={remove.pending}
+                  />
                 </div>
               </li>
             );

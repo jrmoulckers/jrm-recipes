@@ -42,6 +42,7 @@ function emptyToNull(value: string | undefined): string | null {
 export async function listReviews(
   recipeId: string,
   sort: ReviewSort = "recent",
+  hiddenAuthorIds: Set<string> = new Set(),
 ): Promise<ReviewListItem[]> {
   if (!isDbConfigured()) return [];
 
@@ -58,7 +59,9 @@ export async function listReviews(
     },
   });
 
-  return rows.map((row) => ({
+  return rows
+    .filter((row) => !row.userId || !hiddenAuthorIds.has(row.userId))
+    .map((row) => ({
     id: row.id,
     rating: row.rating,
     title: row.title,

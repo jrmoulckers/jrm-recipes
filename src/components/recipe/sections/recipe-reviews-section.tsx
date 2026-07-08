@@ -3,6 +3,7 @@ import {
   listReviews,
 } from "~/server/engagement/reviews";
 import { getReactionsForTargets } from "~/server/engagement/reactions";
+import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 import { ReviewsSection } from "~/components/engagement/reviews-section";
 
 /**
@@ -23,8 +24,9 @@ export async function RecipeReviewsSection({
   isRecipeOwner: boolean;
   canInteract: boolean;
 }) {
+  const hiddenAuthorIds = await getHiddenAuthorIds(currentUserId);
   const [reviews, viewerReview] = await Promise.all([
-    listReviews(recipeId),
+    listReviews(recipeId, "recent", hiddenAuthorIds),
     getViewerReview(recipeId, currentUserId),
   ]);
 

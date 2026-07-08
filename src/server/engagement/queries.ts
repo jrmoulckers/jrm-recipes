@@ -34,10 +34,17 @@ export type ThreadedComment = {
 /** Returns arbitrary-depth threads assembled from a single ordered comment query. */
 export async function getRecipeComments(
   recipeId: string,
+  options: {
+    /** Authors to hide from the viewer (personal blocks, #355). */
+    hiddenAuthorIds?: Set<string>;
+    /** Show moderation-hidden comments (owners/admins only, #357). */
+    includeHidden?: boolean;
+  } = {},
 ): Promise<ThreadedComment[]> {
   if (!isDbConfigured()) return [];
 
-  const rows = await db.query.comments.findMany({
+  const hiddenAuthorIds = options.hiddenAuthorIds ?? new Set<string>();
+  const allRows = await db.query.comments.findMany({
     where: eq(comments.recipeId, recipeId),
     orderBy: [
       desc(
@@ -55,6 +62,14 @@ export async function getRecipeComments(
         },
       },
     },
+  });
+
+  // Drop moderation-hidden comments (unless the viewer manages the group) and
+  // any comment authored by someone the viewer has blocked (#355/#357).
+  const rows = allRows.filter((row) => {
+    if (row.hiddenAt && !options.includeHidden) return false;
+    if (row.userId && hiddenAuthorIds.has(row.userId)) return false;
+    return true;
   });
 
   const byId = new Map<string, ThreadedComment>();
