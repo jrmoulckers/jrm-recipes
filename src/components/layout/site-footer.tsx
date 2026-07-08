@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { brand } from "~/config/brand";
 import { Logo } from "~/components/layout/logo";
+import { InstallAppButton } from "~/components/pwa/install-app-button";
 
 export function SiteFooter() {
   const t = useTranslations("footer");
@@ -40,6 +41,7 @@ export function SiteFooter() {
               GitHub
             </a>
           )}
+          <InstallAppButton />
         </nav>
       </div>
     </footer>
