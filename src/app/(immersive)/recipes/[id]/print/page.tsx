@@ -1,16 +1,9 @@
-import { cache } from "react";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { getCurrentUser } from "~/server/auth";
-import { getRecipe } from "~/server/recipes/queries";
+import { getRecipeForViewer } from "~/server/recipes/loaders";
 import { PrintView } from "~/components/print/print-view";
 import type { PrintRecipe } from "~/components/print/types";
-
-const load = cache(async (idOrSlug: string) => {
-  const user = await getCurrentUser();
-  return getRecipe(idOrSlug, user);
-});
 
 export async function generateMetadata({
   params,
@@ -18,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const recipe = await load(id);
+  const { recipe } = await getRecipeForViewer(id);
   return { title: recipe ? `Print · ${recipe.title}` : "Print recipe" };
 }
 
@@ -28,7 +21,7 @@ export default async function PrintPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const recipe = await load(id);
+  const { recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
   const serializableRecipe: PrintRecipe = {

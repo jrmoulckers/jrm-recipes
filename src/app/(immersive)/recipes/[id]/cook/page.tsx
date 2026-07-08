@@ -1,17 +1,11 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { getCurrentUser } from "~/server/auth";
-import { getRecipe, type FullRecipe } from "~/server/recipes/queries";
+import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { type FullRecipe } from "~/server/recipes/queries";
 import { pickNutrition } from "~/lib/nutrition";
 import { CookExperience } from "~/components/cook/cook-experience";
 import type { CookRecipe } from "~/components/cook/types";
-
-const load = cache(async (idOrSlug: string) => {
-  const user = await getCurrentUser();
-  return getRecipe(idOrSlug, user);
-});
 
 function serializeRecipe(recipe: FullRecipe): CookRecipe {
   return {
@@ -58,7 +52,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const recipe = await load(id);
+  const { recipe } = await getRecipeForViewer(id);
   return { title: recipe ? `Cook · ${recipe.title}` : "Cook mode" };
 }
 
@@ -68,7 +62,7 @@ export default async function CookPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const recipe = await load(id);
+  const { recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
   return <CookExperience recipe={serializeRecipe(recipe)} />;

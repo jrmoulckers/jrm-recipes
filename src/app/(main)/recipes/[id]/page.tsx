@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,10 +17,8 @@ import {
   Users,
 } from "lucide-react";
 
-import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
-  getRecipe,
   getRecipeLineage,
   getRecipeTimeline,
   getRecipeVersions,
@@ -71,12 +68,7 @@ import { TechniqueChips } from "~/components/cook/technique-chips";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
-
-const load = cache(async (idOrSlug: string) => {
-  const user = await getCurrentUser();
-  const recipe = await getRecipe(idOrSlug, user);
-  return { user, recipe };
-});
+import { getRecipeForViewer } from "~/server/recipes/loaders";
 
 export async function generateMetadata({
   params,
@@ -84,7 +76,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const { recipe } = await load(id);
+  const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? undefined;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
@@ -144,7 +136,7 @@ export default async function RecipePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { user, recipe } = await load(id);
+  const { user, recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
   const isOwner = Boolean(user?.id === recipe.authorId);
