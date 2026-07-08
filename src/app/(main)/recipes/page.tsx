@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ChefHat, Compass, SearchX, UtensilsCrossed } from "lucide-react";
+import { ChefHat, Compass, SearchX } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -20,6 +20,7 @@ import { getFavoriteRecipeIds } from "~/server/collections/queries";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
+import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 
 export const metadata: Metadata = { title: "Recipes" };
@@ -104,7 +105,7 @@ async function BrowseSections({ user }: { user: User | null }) {
           ))}
         </section>
       ) : (
-        <EmptyLibrary />
+        <EmptyLibraryCta />
       )}
 
       {discoverOnly.length > 0 && (
@@ -182,27 +183,6 @@ function NoResults() {
           hiding under another name.
         </p>
       </div>
-    </div>
-  );
-}
-
-function EmptyLibrary() {
-  return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-        <UtensilsCrossed className="size-7" />
-      </span>
-      <div>
-        <h2 className="font-display text-xl font-semibold">No recipes yet</h2>
-        <p className="mt-1 max-w-sm text-muted-foreground">
-          Add the dish everyone always asks you to make. It only takes a minute.
-        </p>
-      </div>
-      <Button asChild size="lg">
-        <Link href="/recipes/new">
-          <ChefHat /> Create your first recipe
-        </Link>
-      </Button>
     </div>
   );
 }
