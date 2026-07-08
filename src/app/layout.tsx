@@ -27,6 +27,7 @@ import { analyticsRequiresConsent } from "~/lib/analytics/config";
 import { getAllFlags } from "~/lib/analytics/server";
 import { atkinson } from "~/fonts/atkinson";
 import { localeDirection, resolveLocale } from "~/config/i18n";
+import { preconnectOrigins } from "~/config/resource-hints";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
@@ -115,6 +116,8 @@ export default async function RootLayout({
   // flicker on load (#335). Returns {} (all control) when analytics is off.
   const flags = await getAllFlags(currentUser?.id ?? "anonymous");
 
+  const authConfigured = isAuthConfigured();
+
   const tree = (
     <html
       lang={locale}
@@ -133,6 +136,14 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {preconnectOrigins(authConfigured).flatMap((origin) => [
+          <link key={`preconnect-${origin}`} rel="preconnect" href={origin} />,
+          <link
+            key={`dns-prefetch-${origin}`}
+            rel="dns-prefetch"
+            href={origin}
+          />,
+        ])}
         <ThemeScript />
         <A11yScript />
       </head>
@@ -153,5 +164,5 @@ export default async function RootLayout({
   );
 
   // Only mount ClerkProvider when auth is actually configured.
-  return isAuthConfigured() ? <ClerkProvider>{tree}</ClerkProvider> : tree;
+  return authConfigured ? <ClerkProvider>{tree}</ClerkProvider> : tree;
 }
