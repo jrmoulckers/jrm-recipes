@@ -28,6 +28,12 @@ type IngredientsDrawerProps = {
   className?: string;
   label?: string;
   /**
+   * Short label shown on phone-width triggers where horizontal space is tight
+   * (defaults to "List"). Callers with room in the thumb zone can pass the
+   * full label instead (issue #297).
+   */
+  compactLabel?: string;
+  /**
    * Renders the trigger at the larger footer "primary action" baseline (taller
    * than the header chip). The exact height still flexes with Kids mode's
    * large-target flag, so all sizing lives in one place.
@@ -41,6 +47,7 @@ export function IngredientsDrawer({
   recipe,
   className,
   label = "Ingredients",
+  compactLabel = "List",
   prominent = false,
   controls,
 }: IngredientsDrawerProps) {
@@ -68,7 +75,7 @@ export function IngredientsDrawer({
         >
           <ListChecks aria-hidden="true" />
           <span className="hidden sm:inline">{label}</span>
-          <span className="sm:hidden">List</span>
+          <span className="sm:hidden">{compactLabel}</span>
         </Button>
       </DialogTrigger>
       <DialogContent

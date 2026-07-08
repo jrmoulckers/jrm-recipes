@@ -512,6 +512,19 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             Previous
           </Button>
 
+          {/* Phone-only Ingredients trigger. On sm+ the Ingredients control
+              sits inline in the middle column (below); under sm that column is
+              dropped so Prev/Next stay full-width, so surface Ingredients here
+              spanning the row in the thumb zone (issue #297). */}
+          <IngredientsDrawer
+            recipe={recipe}
+            prominent
+            className="col-span-2 order-first mb-1 w-full justify-center sm:hidden"
+            label="Ingredients"
+            compactLabel="Ingredients"
+            controls={ingredientControls}
+          />
+
           <IngredientsDrawer
             recipe={recipe}
             prominent
