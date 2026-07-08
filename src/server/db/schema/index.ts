@@ -11,3 +11,5 @@ export * from "./cooklog";
 export * from "./shopping";
 export * from "./planner";
 export * from "./collections";
+export * from "./views";
+export * from "./searches";

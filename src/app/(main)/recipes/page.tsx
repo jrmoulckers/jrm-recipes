@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ChefHat, Compass, SearchX } from "lucide-react";
+import { ChefHat, Clock3, Compass, SearchX, Tags as TagIcon, UtensilsCrossed } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -8,8 +8,12 @@ import { type User } from "~/server/db/schema";
 import {
   listLibrary,
   listPublicRecipes,
+  listRecentlyViewed,
   listRecipeFacets,
+  listTagsWithCounts,
   searchRecipes,
+  suggestSearchTerm,
+  type RecipeSearchResult,
 } from "~/server/recipes/queries";
 import {
   isDefaultRecipeView,
@@ -17,6 +21,7 @@ import {
   type RecipeSearch,
 } from "~/server/recipes/search";
 import { getFavoriteRecipeIds } from "~/server/collections/queries";
+import { listMySavedSearches } from "~/server/searches/queries";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
@@ -33,6 +38,9 @@ export const metadata: Metadata = { title: "Recipes" };
  */
 const LCP_PRIORITY_COUNT = 3;
 
+/** How many popular tags to show in the browse-view "Browse by tag" strip. */
+const POPULAR_BROWSE_TAG_COUNT = 10;
+
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -41,9 +49,12 @@ export default async function RecipesPage({
   const user = await getCurrentUser();
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
-  const facets = isDbConfigured()
-    ? await listRecipeFacets(user)
-    : { cuisines: [], tags: [] };
+  const [facets, savedSearches] = await Promise.all([
+    isDbConfigured()
+      ? listRecipeFacets(user, search)
+      : Promise.resolve({ cuisines: [], tags: [] }),
+    listMySavedSearches(user?.id),
+  ]);
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -56,18 +67,29 @@ export default async function RecipesPage({
             Everything you and your family have saved.
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/recipes/new">
-            <ChefHat /> New recipe
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild size="lg" variant="outline">
+            <Link href="/recipes/cook-with">
+              <UtensilsCrossed /> Cook with what you have
+            </Link>
+          </Button>
+          <Button asChild size="lg">
+            <Link href="/recipes/new">
+              <ChefHat /> New recipe
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {!isDbConfigured() ? (
         <ConnectDbNotice />
       ) : (
         <>
-          <RecipeSearchControls search={search} facets={facets} />
+          <RecipeSearchControls
+            search={search}
+            facets={facets}
+            savedSearches={savedSearches}
+          />
           {browsing ? (
             <BrowseSections user={user} />
           ) : (
@@ -81,17 +103,75 @@ export default async function RecipesPage({
 
 /** Default browse view: the viewer's own cookbook plus a paginated discover feed. */
 async function BrowseSections({ user }: { user: User | null }) {
-  const [mine, discover, favoriteIds] = await Promise.all([
+  const [mine, discover, favoriteIds, tags, recentlyViewed] = await Promise.all([
     listLibrary(user),
     listPublicRecipes(),
     getFavoriteRecipeIds(user?.id),
+    listTagsWithCounts(user),
+    listRecentlyViewed(user),
   ]);
   const mineIds = new Set(mine.map((r) => r.id));
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
   const canFavorite = Boolean(user);
+  const popularTags = [...tags]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, POPULAR_BROWSE_TAG_COUNT);
 
   return (
     <>
+      {recentlyViewed.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Clock3 className="size-5 text-primary" />
+            <h2 className="font-display text-xl font-bold tracking-tight">
+              Recently viewed
+            </h2>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {recentlyViewed.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                canFavorite={canFavorite}
+                favorited={favoriteIds.has(recipe.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {popularTags.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <TagIcon className="size-5 text-primary" />
+              <h2 className="font-display text-lg font-bold tracking-tight">
+                Browse by tag
+              </h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/recipes/tags">All tags</Link>
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {popularTags.map((tag) => (
+              <Link
+                key={tag.slug}
+                href={`/recipes?tag=${encodeURIComponent(tag.slug)}`}
+                className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:border-primary/40 hover:bg-accent"
+              >
+                <span className="text-foreground group-hover:text-primary">
+                  #{tag.name}
+                </span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {tag.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {mine.length > 0 ? (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((recipe, i) => (
@@ -143,14 +223,68 @@ async function SearchResults({
   ]);
   const canFavorite = Boolean(user);
 
-  if (results.length === 0) return <NoResults />;
+  if (results.length === 0) {
+    // Typo-tolerant fallback: only for text queries, and only when a close
+    // trigram match exists *and* actually yields results.
+    const suggestion = search.q ? await suggestSearchTerm(user, search.q) : null;
+    if (suggestion) {
+      const corrected = await searchRecipes(user, { ...search, q: suggestion });
+      if (corrected.length > 0) {
+        return (
+          <ResultsGrid
+            results={corrected}
+            favoriteIds={favoriteIds}
+            canFavorite={canFavorite}
+            correction={{ from: search.q!, to: suggestion }}
+          />
+        );
+      }
+    }
+    return <NoResults />;
+  }
 
+  return (
+    <ResultsGrid
+      results={results}
+      favoriteIds={favoriteIds}
+      canFavorite={canFavorite}
+    />
+  );
+}
+
+/** Results header + card grid, with an optional "did you mean" correction note. */
+function ResultsGrid({
+  results,
+  favoriteIds,
+  canFavorite,
+  correction,
+}: {
+  results: RecipeSearchResult[];
+  favoriteIds: Set<string>;
+  canFavorite: boolean;
+  correction?: { from: string; to: string };
+}) {
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-2xl font-bold tracking-tight">
-          Results
-        </h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-2xl font-bold tracking-tight">
+            Results
+          </h2>
+          {correction && (
+            <p className="text-sm text-muted-foreground">
+              No exact matches for{" "}
+              <span className="font-medium text-foreground">
+                &ldquo;{correction.from}&rdquo;
+              </span>
+              . Showing results for{" "}
+              <span className="font-medium text-foreground">
+                &ldquo;{correction.to}&rdquo;
+              </span>
+              .
+            </p>
+          )}
+        </div>
         <span className="text-sm text-muted-foreground">
           {results.length} recipe{results.length === 1 ? "" : "s"}
         </span>
@@ -163,6 +297,7 @@ async function SearchResults({
             canFavorite={canFavorite}
             favorited={favoriteIds.has(recipe.id)}
             priority={i < LCP_PRIORITY_COUNT}
+            matchReason={recipe.matchReason}
           />
         ))}
       </div>

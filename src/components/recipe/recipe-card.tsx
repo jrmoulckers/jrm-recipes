@@ -9,6 +9,11 @@ import {
   ratingSummary,
   summaryFromAggregates,
 } from "~/lib/ratings";
+import {
+  matchFieldLabel,
+  splitHighlight,
+  type RecipeMatchReason,
+} from "~/lib/search-match";
 import { Badge } from "~/components/ui/badge";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 
@@ -49,6 +54,7 @@ export function RecipeCard({
   favorited = false,
   canFavorite = false,
   priority = false,
+  matchReason,
 }: {
   recipe: CardRecipe;
   /** Initial favorited state for the heart overlay. */
@@ -61,6 +67,12 @@ export function RecipeCard({
    * this for genuinely above-the-fold cards (e.g. the first row of the grid).
    */
   priority?: boolean;
+  /**
+   * Optional "why this matched" hint for search results. When set, the matched
+   * term is highlighted in the title and a subtle reason line is shown for
+   * non-title matches. Omitted on browse/discover/collection cards.
+   */
+  matchReason?: RecipeMatchReason | null;
 }) {
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
@@ -68,6 +80,9 @@ export function RecipeCard({
       : ratingSummary(recipe.ratings ?? []);
   const rating = ratingDisplay(summary);
   const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
+  const titleSegments = matchReason
+    ? splitHighlight(recipe.title, matchReason.term)
+    : null;
 
   return (
     <div className="relative">
@@ -114,8 +129,29 @@ export function RecipeCard({
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
-          {recipe.title}
+          {titleSegments
+            ? titleSegments.map((seg, i) =>
+                seg.hit ? (
+                  <mark
+                    key={i}
+                    className="rounded bg-primary/15 px-0.5 text-foreground"
+                  >
+                    {seg.text}
+                  </mark>
+                ) : (
+                  <React.Fragment key={i}>{seg.text}</React.Fragment>
+                ),
+              )
+            : recipe.title}
         </h3>
+        {matchReason && matchReason.field !== "title" && (
+          <p className="text-xs text-muted-foreground">
+            Matches {matchFieldLabel(matchReason.field)}:{" "}
+            <span className="font-medium text-foreground/80">
+              {matchReason.term}
+            </span>
+          </p>
+        )}
         {recipe.description && (
           <p className="line-clamp-2 text-sm text-muted-foreground">
             {recipe.description}

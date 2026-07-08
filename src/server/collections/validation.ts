@@ -40,6 +40,19 @@ export const collectionRecipeInput = z.object({
   recipeId: idInput,
 });
 
+export const collectionVisibilityValues = [
+  "private",
+  "unlisted",
+  "public",
+] as const;
+
+export const setCollectionVisibilityInput = z.object({
+  id: idInput,
+  visibility: z.enum(collectionVisibilityValues),
+});
+
 export type CollectionInput = z.infer<typeof collectionInput>;
 export type ToggleFavoriteInput = z.infer<typeof toggleFavoriteInput>;
 export type CollectionRecipeInput = z.infer<typeof collectionRecipeInput>;
+export type CollectionVisibilityValue =
+  (typeof collectionVisibilityValues)[number];

@@ -9,25 +9,45 @@ import { slugify } from "~/lib/utils";
  * can be shared by the server query (`searchRecipes`) and the client controls
  * that push URL params. State lives entirely in the querystring
  * (`?q=&cuisine=&difficulty=&maxTime=&tag=&sort=`) so results are shareable and
- * SSR-friendly.
+ * SSR-friendly. `cuisine` and `tag` may repeat (`?tag=quick&tag=vegan`) or be
+ * comma-joined (`?tag=quick,vegan`) to select several facet values at once,
+ * while a single value stays back-compatible with older shared links.
  */
 
 export const recipeSortValues = [
+  "relevance",
   "newest",
   "quickest",
   "az",
   "top-rated",
+  "popular",
 ] as const;
 export type RecipeSort = (typeof recipeSortValues)[number];
 
+/**
+ * The default sort for a *pure* browse/filter view (no text query). Text
+ * queries default to `relevance` instead — see {@link defaultSortFor}.
+ */
 export const DEFAULT_RECIPE_SORT: RecipeSort = "newest";
 
 export const recipeSortLabels: Record<RecipeSort, string> = {
+  relevance: "Best match",
   newest: "Newest",
   quickest: "Quickest",
   az: "A–Z",
   "top-rated": "Top rated",
+  popular: "Popular",
 };
+
+/**
+ * The sort applied when the URL carries no explicit `sort`: `relevance` when a
+ * text query is present (so the best match leads), otherwise {@link
+ * DEFAULT_RECIPE_SORT}. Relevance is meaningless without a query, so it's never
+ * the implicit default for a bare browse view.
+ */
+export function defaultSortFor(q: string | undefined | null): RecipeSort {
+  return q != null && q.length > 0 ? "relevance" : DEFAULT_RECIPE_SORT;
+}
 
 export const recipeDifficultyValues = ["easy", "medium", "hard"] as const;
 export type RecipeDifficultyFilter = (typeof recipeDifficultyValues)[number];
@@ -37,6 +57,36 @@ export type RawSearchParams = Record<string, string | string[] | undefined>;
 
 const first = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
+
+/** Upper bound on selected values for a single multi-select facet. */
+export const MAX_FACET_VALUES = 12;
+
+/**
+ * Parse a facet param that may repeat (`?tag=a&tag=b`) or be comma-joined
+ * (`?tag=a,b`) — or carry a single value for back-compat — into a trimmed,
+ * de-duped (case-insensitive), length-capped list. Order of first appearance is
+ * preserved so the URL round-trips predictably.
+ */
+export function parseFacetList(
+  value: string | string[] | undefined,
+  itemMax: number,
+): string[] {
+  const raw = Array.isArray(value) ? value : value == null ? [] : [value];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const chunk of raw) {
+    for (const part of chunk.split(",")) {
+      const item = part.trim();
+      if (item.length === 0 || item.length > itemMax) continue;
+      const key = item.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+      if (out.length >= MAX_FACET_VALUES) return out;
+    }
+  }
+  return out;
+}
 
 const trimmedOptional = (max: number) =>
   z
@@ -65,35 +115,45 @@ const positiveIntFromParam = z
 
 export const recipeSearchSchema = z.object({
   q: trimmedOptional(120),
-  cuisine: trimmedOptional(80),
   difficulty: z.enum(recipeDifficultyValues).optional().catch(undefined),
   maxTime: positiveIntFromParam,
-  tag: trimmedOptional(60),
-  sort: z.enum(recipeSortValues).catch(DEFAULT_RECIPE_SORT),
+  // Left optional here so the *contextual* default (relevance for a text query,
+  // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
+  sort: z.enum(recipeSortValues).optional().catch(undefined),
 });
 
-export type RecipeSearch = z.infer<typeof recipeSearchSchema>;
+export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
+  /** Selected cuisines (OR-matched). Empty when unfiltered. */
+  cuisines: string[];
+  /** Selected tags (AND-matched — a recipe must carry every one). */
+  tags: string[];
+  sort: RecipeSort;
+};
 
 /** Normalize raw Next.js search params into a validated `RecipeSearch`. */
 export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
-  return recipeSearchSchema.parse({
+  const parsed = recipeSearchSchema.parse({
     q: first(params.q),
-    cuisine: first(params.cuisine),
     difficulty: first(params.difficulty),
     maxTime: first(params.maxTime),
-    tag: first(params.tag),
-    sort: first(params.sort) ?? DEFAULT_RECIPE_SORT,
+    sort: first(params.sort),
   });
+  return {
+    ...parsed,
+    cuisines: parseFacetList(params.cuisine, 80),
+    tags: parseFacetList(params.tag, 60),
+    sort: parsed.sort ?? defaultSortFor(parsed.q),
+  };
 }
 
 /** True when any narrowing filter (not sort) is applied. */
 export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
   return (
     search.q != null ||
-    search.cuisine != null ||
+    search.cuisines.length > 0 ||
     search.difficulty != null ||
     search.maxTime != null ||
-    search.tag != null
+    search.tags.length > 0
   );
 }
 
@@ -115,11 +175,11 @@ export function recipeSearchToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
   if (search.q) params.set("q", search.q);
-  if (search.cuisine) params.set("cuisine", search.cuisine);
+  for (const cuisine of search.cuisines ?? []) params.append("cuisine", cuisine);
   if (search.difficulty) params.set("difficulty", search.difficulty);
   if (search.maxTime != null) params.set("maxTime", String(search.maxTime));
-  if (search.tag) params.set("tag", search.tag);
-  if (search.sort && search.sort !== DEFAULT_RECIPE_SORT)
+  for (const tag of search.tags ?? []) params.append("tag", tag);
+  if (search.sort && search.sort !== defaultSortFor(search.q))
     params.set("sort", search.sort);
   return params;
 }
@@ -134,4 +194,31 @@ export function recipeSearchToQueryString(
 /** Slug form used to match a `tag` filter against the `tags` table. */
 export function tagFilterSlug(tag: string): string {
   return slugify(tag).slice(0, 60) || tag.trim().toLowerCase();
+}
+
+/** Upper bound on pantry items accepted by the "cook with what you have" mode. */
+export const MAX_PANTRY_ITEMS = 15;
+
+/**
+ * Parse the `?have=` pantry list for the "cook with what you have" mode. Accepts
+ * a comma-joined value (`?have=chicken,rice`) or repeated params, trimming and
+ * de-duping (case-insensitive) into a length-capped list so the URL round-trips
+ * and stays shareable.
+ */
+export function parseHaveParam(value: string | string[] | undefined): string[] {
+  const raw = Array.isArray(value) ? value : value == null ? [] : [value];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const chunk of raw) {
+    for (const part of chunk.split(",")) {
+      const item = part.trim();
+      if (item.length === 0 || item.length > 60) continue;
+      const key = item.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+      if (out.length >= MAX_PANTRY_ITEMS) return out;
+    }
+  }
+  return out;
 }

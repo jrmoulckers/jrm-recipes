@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_RECIPE_SORT,
+  defaultSortFor,
   hasActiveRecipeFilters,
   isDefaultRecipeView,
   parseRecipeSearch,
@@ -14,10 +15,10 @@ describe("parseRecipeSearch", () => {
   it("returns defaults for empty params", () => {
     expect(parseRecipeSearch({})).toEqual({
       q: undefined,
-      cuisine: undefined,
+      cuisines: [],
       difficulty: undefined,
       maxTime: undefined,
-      tag: undefined,
+      tags: [],
       sort: "newest",
     });
   });
@@ -25,8 +26,24 @@ describe("parseRecipeSearch", () => {
   it("trims text and drops empty strings", () => {
     expect(parseRecipeSearch({ q: "  pasta  ", cuisine: "" })).toMatchObject({
       q: "pasta",
-      cuisine: undefined,
+      cuisines: [],
     });
+  });
+
+  it("parses repeated and comma-joined facets into de-duped lists (#271)", () => {
+    expect(
+      parseRecipeSearch({ tag: ["weeknight", "vegan,Weeknight"] }).tags,
+    ).toEqual(["weeknight", "vegan"]);
+    expect(
+      parseRecipeSearch({ cuisine: "Mexican, Thai , mexican" }).cuisines,
+    ).toEqual(["Mexican", "Thai"]);
+  });
+
+  it("keeps a single facet value back-compatible (#271)", () => {
+    expect(parseRecipeSearch({ tag: "quick" }).tags).toEqual(["quick"]);
+    expect(parseRecipeSearch({ cuisine: "Italian" }).cuisines).toEqual([
+      "Italian",
+    ]);
   });
 
   it("takes the first value when a param repeats", () => {
@@ -53,6 +70,19 @@ describe("parseRecipeSearch", () => {
     });
     expect(parseRecipeSearch({ sort: "bogus" })).toMatchObject({
       sort: DEFAULT_RECIPE_SORT,
+    });
+  });
+
+  it("defaults to relevance for a text query, newest otherwise (#260)", () => {
+    // No explicit sort + a query → "Best match" leads.
+    expect(parseRecipeSearch({ q: "chicken" })).toMatchObject({
+      sort: "relevance",
+    });
+    // No explicit sort + no query → classic newest browse.
+    expect(parseRecipeSearch({})).toMatchObject({ sort: "newest" });
+    // An explicit sort always wins over the contextual default.
+    expect(parseRecipeSearch({ q: "chicken", sort: "az" })).toMatchObject({
+      sort: "az",
     });
   });
 
@@ -98,13 +128,26 @@ describe("recipeSearchToParams", () => {
     expect(recipeSearchToParams(parseRecipeSearch({})).toString()).toBe("");
   });
 
+  it("omits the contextual default sort but keeps an explicit one (#260)", () => {
+    // relevance is the implicit default when a query is present → omitted.
+    expect(
+      recipeSearchToParams({ q: "chicken", sort: "relevance" }).get("sort"),
+    ).toBeNull();
+    // newest is the implicit default for a bare browse → omitted.
+    expect(recipeSearchToParams({ sort: "newest" }).get("sort")).toBeNull();
+    // A non-default sort alongside a query is preserved.
+    expect(
+      recipeSearchToParams({ q: "chicken", sort: "top-rated" }).get("sort"),
+    ).toBe("top-rated");
+  });
+
   it("serializes the set values", () => {
     const qs = recipeSearchToQueryString({
       q: "taco",
-      cuisine: "Mexican",
+      cuisines: ["Mexican"],
       difficulty: "easy",
       maxTime: 30,
-      tag: "weeknight",
+      tags: ["weeknight"],
       sort: "quickest",
     });
     const params = new URLSearchParams(qs);
@@ -114,6 +157,28 @@ describe("recipeSearchToParams", () => {
     expect(params.get("maxTime")).toBe("30");
     expect(params.get("tag")).toBe("weeknight");
     expect(params.get("sort")).toBe("quickest");
+  });
+
+  it("serializes multi-select facets as repeated params (#271)", () => {
+    const params = recipeSearchToParams({
+      cuisines: ["Mexican", "Thai"],
+      tags: ["vegan", "weeknight"],
+    });
+    expect(params.getAll("cuisine")).toEqual(["Mexican", "Thai"]);
+    expect(params.getAll("tag")).toEqual(["vegan", "weeknight"]);
+  });
+
+  it("round-trips multi-select facets through parseRecipeSearch (#271)", () => {
+    const original = parseRecipeSearch({
+      cuisine: ["Mexican", "Thai"],
+      tag: ["vegan", "weeknight"],
+    });
+    const params = recipeSearchToParams(original);
+    const reparsed = parseRecipeSearch({
+      cuisine: params.getAll("cuisine"),
+      tag: params.getAll("tag"),
+    });
+    expect(reparsed).toEqual(original);
   });
 
   it("round-trips through parseRecipeSearch", () => {
@@ -134,5 +199,14 @@ describe("tagFilterSlug", () => {
   it("slugifies free-text tags", () => {
     expect(tagFilterSlug("Kid Friendly")).toBe("kid-friendly");
     expect(tagFilterSlug("Grandma's")).toBe("grandmas");
+  });
+});
+
+describe("defaultSortFor", () => {
+  it("is relevance with a query, newest without one", () => {
+    expect(defaultSortFor("pasta")).toBe("relevance");
+    expect(defaultSortFor("")).toBe("newest");
+    expect(defaultSortFor(undefined)).toBe("newest");
+    expect(defaultSortFor(null)).toBe(DEFAULT_RECIPE_SORT);
   });
 });

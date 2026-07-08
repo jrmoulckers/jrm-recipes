@@ -35,8 +35,11 @@ import {
   recipeSteps,
   recipeTags,
   recipeVersions,
+  recipeViews,
   recipes,
   tags,
+  cookLogEntries,
+  favorites,
   type User,
 } from "~/server/db/schema";
 import { recipeInput, type RecipeInput } from "./validation";
@@ -49,6 +52,10 @@ import {
   TIMELINE_EVENT_PAGE_SIZE,
   VERSION_HISTORY_PAGE_SIZE,
 } from "./pagination";
+import { expandQueryTerms } from "~/lib/search-synonyms";
+import { deriveMatchReason } from "~/lib/search-match";
+import { rankBySimilarity, tokenizeIngredients } from "~/lib/related-recipes";
+import { rankByCoverage } from "~/lib/ingredient-coverage";
 import {
   tagFilterSlug,
   type RecipeSearch,
@@ -72,6 +79,9 @@ export type PublicRecipeListItem = Awaited<
 >["items"][number];
 export type RecipeSearchResult = Awaited<
   ReturnType<typeof searchRecipes>
+>[number];
+export type CookWithResult = Awaited<
+  ReturnType<typeof searchByIngredients>
 >[number];
 export type RecipeFacets = Awaited<ReturnType<typeof listRecipeFacets>>;
 /** One page of a recipe's saved versions, newest first (#159). */
@@ -127,6 +137,87 @@ export function topRatedOrderBy(): SQL[] {
   return [
     desc(topRatedHasRatingsSql()),
     desc(topRatedScoreSql()),
+    desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
+    desc(recipes.createdAt),
+  ];
+}
+
+/**
+ * Per-recipe weighted "best match" relevance score for a text query, computed
+ * in SQL so ordering is global across the whole candidate set rather than a
+ * re-sort of one page. Field weights encode intent: a title hit (5) beats a tag
+ * (4), cuisine (3), ingredient (2), and finally a description mention (1). A
+ * recipe that matches several fields sums their weights. `like` is the already
+ * LIKE-escaped `%term%` pattern. Exported for unit assertions.
+ */
+export function relevanceScoreSql(like: string): SQL {
+  return sql`(
+    (case when ${recipes.title} ilike ${like} then 5 else 0 end)
+    + (case when exists(
+        select 1 from ${recipeTags}
+        inner join ${tags} on ${recipeTags.tagId} = ${tags.id}
+        where ${recipeTags.recipeId} = ${recipes.id}
+          and ${tags.name} ilike ${like}
+      ) then 4 else 0 end)
+    + (case when ${recipes.cuisine} ilike ${like} then 3 else 0 end)
+    + (case when exists(
+        select 1 from ${recipeIngredients}
+        where ${recipeIngredients.recipeId} = ${recipes.id}
+          and ${recipeIngredients.item} ilike ${like}
+      ) then 2 else 0 end)
+    + (case when ${recipes.description} ilike ${like} then 1 else 0 end)
+  )`;
+}
+
+/**
+ * ORDER BY for the "Best match" feed: highest weighted field-match score first,
+ * tie-broken by the weighted rating score then recency for a stable walk. Since
+ * the score is a SQL expression over each row, `limit`/`offset` slice the true
+ * global ranking.
+ */
+export function relevanceOrderBy(like: string): SQL[] {
+  return [
+    desc(relevanceScoreSql(like)),
+    desc(topRatedScoreSql()),
+    desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
+    desc(recipes.createdAt),
+  ];
+}
+
+/**
+ * Per-recipe popularity score = number of times it was cooked + number of times
+ * it was saved (favorited), computed in SQL so the ranking is global across the
+ * candidate set. Popularity is a rating-independent signal of what the family
+ * actually makes and keeps. Exported for unit assertions.
+ */
+export function popularityScoreSql(): SQL {
+  return sql`(
+    (select count(*) from ${cookLogEntries}
+       where ${cookLogEntries.recipeId} = ${recipes.id})
+    + (select count(*) from ${favorites}
+       where ${favorites.recipeId} = ${recipes.id})
+  )`;
+}
+
+/** Whether a recipe has any cook-log or favorite, so inert recipes sort last. */
+function popularHasActivitySql(): SQL {
+  return sql`(
+    exists(select 1 from ${cookLogEntries}
+      where ${cookLogEntries.recipeId} = ${recipes.id})
+    or exists(select 1 from ${favorites}
+      where ${favorites.recipeId} = ${recipes.id})
+  )`;
+}
+
+/**
+ * ORDER BY for the "Popular" feed: recipes with any activity first, then by the
+ * cook+save score (descending, so a more-cooked/-saved recipe outranks a
+ * quieter one), tie-broken by recency.
+ */
+export function popularOrderBy(): SQL[] {
+  return [
+    desc(popularHasActivitySql()),
+    desc(popularityScoreSql()),
     desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
     desc(recipes.createdAt),
   ];
@@ -318,6 +409,40 @@ function escapeLike(term: string): string {
   return term.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 }
 
+/**
+ * OR of the free-text match across a recipe's title, description, cuisine,
+ * ingredient item text, and tag names for a single already-escaped `%term%`
+ * pattern. Factored out so a query can be matched against several
+ * synonym-expanded terms (see {@link expandQueryTerms}).
+ */
+function recipeMatchesTermSql(like: string): SQL {
+  return or(
+    ilike(recipes.title, like),
+    ilike(recipes.description, like),
+    ilike(recipes.cuisine, like),
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(recipeIngredients)
+        .where(
+          and(
+            eq(recipeIngredients.recipeId, recipes.id),
+            ilike(recipeIngredients.item, like),
+          ),
+        ),
+    ),
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(recipeTags)
+        .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+        .where(
+          and(eq(recipeTags.recipeId, recipes.id), ilike(tags.name, like)),
+        ),
+    ),
+  )!;
+}
+
 /** ORDER BY clause for a sort option. NULL times/omissions sort last. */
 function recipeOrderBy(sort: RecipeSort): SQL[] {
   switch (sort) {
@@ -377,6 +502,63 @@ export function recipeSearchRankSql(q: string): SQL {
 }
 
 /**
+ * The narrowing WHERE conditions for a search — the free-text (synonym-expanded)
+ * match plus the cuisine/difficulty/time/tag filters — *excluding* the viewer
+ * visibility scope (callers add that). `skip` omits one facet so scoped facet
+ * counts can answer "what if I also picked this?" (see {@link listRecipeFacets}).
+ */
+export function searchFilterConditions(
+  search: RecipeSearch,
+  opts: { skip?: "cuisine" | "tag" } = {},
+): SQL[] {
+  const conditions: (SQL | undefined)[] = [];
+
+  if (search.q) {
+    // Broaden recall two ways and OR them: Postgres FTS (`search_vector`, with
+    // stemming — "tomatoes" finds "tomato") plus a synonym-expanded substring
+    // match ("coriander" also finds "cilantro"). Relevance ordering still ranks
+    // the literal query first (see relevanceOrderBy).
+    const likes = expandQueryTerms(search.q).map(
+      (term) => `%${escapeLike(term)}%`,
+    );
+    conditions.push(
+      or(recipeSearchMatchSql(search.q), ...likes.map(recipeMatchesTermSql)),
+    );
+  }
+
+  if (opts.skip !== "cuisine" && search.cuisines.length > 0)
+    conditions.push(or(...search.cuisines.map((c) => ilike(recipes.cuisine, c))));
+  if (search.difficulty)
+    conditions.push(eq(recipes.difficulty, search.difficulty));
+  if (search.maxTime != null)
+    conditions.push(lte(recipes.totalMinutes, search.maxTime));
+
+  // Tags narrow conjunctively: a recipe must carry *every* selected tag, so each
+  // becomes its own EXISTS. Cuisines above are disjunctive (any-of).
+  if (opts.skip !== "tag") {
+    for (const tag of search.tags) {
+      const slug = tagFilterSlug(tag);
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(recipeTags)
+            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+            .where(
+              and(
+                eq(recipeTags.recipeId, recipes.id),
+                or(eq(tags.slug, slug), ilike(tags.name, tag)),
+              ),
+            ),
+        ),
+      );
+    }
+  }
+
+  return conditions.filter((c): c is SQL => c != null);
+}
+
+/**
  * Search, filter, and sort recipes a viewer may see. All narrowing runs in SQL
  * against existing indexes; returns [] when the DB is off. Free text is matched
  * with Postgres full-text search over a weighted, GIN-indexed `search_vector`
@@ -391,50 +573,327 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
 
   const conditions: (SQL | undefined)[] = [
     visibleRecipesScope(viewer, groupIds),
+    ...searchFilterConditions(search),
   ];
 
-  if (search.q) {
-    const like = `%${escapeLike(search.q)}%`;
-    conditions.push(
-      or(
-        recipeSearchMatchSql(search.q),
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(recipeIngredients)
-            .where(
-              and(
-                eq(recipeIngredients.recipeId, recipes.id),
-                ilike(recipeIngredients.item, like),
-              ),
+  const like = search.q ? `%${escapeLike(search.q)}%` : null;
+
+  // "Best match" ranks by the weighted field-match score, but only makes sense
+  // with a text query; without one it falls through to the newest ordering.
+  const orderBy =
+    search.sort === "relevance" && like != null
+      ? relevanceOrderBy(like)
+      : search.sort === "top-rated"
+        ? topRatedOrderBy()
+        : search.sort === "popular"
+          ? popularOrderBy()
+          : recipeOrderBy(search.sort);
+
+  const rows = await db.query.recipes.findMany({
+    where: and(...conditions),
+    orderBy,
+    limit: RECIPE_SEARCH_LIMIT,
+    with: {
+      author: true,
+      tags: { with: { tag: true } },
+      ratings: true,
+      // Ingredient item text is only needed to explain *why* a text query
+      // matched, so it's loaded (and shipped) only when there is a query.
+      ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
+    },
+  });
+
+  // Weighted "best match"/"top-rated" ordering is applied in SQL over the full
+  // candidate set above, so the returned rows are already globally ranked. Attach
+  // a lightweight match reason per row (and drop the ingredient text from the
+  // payload — it was only needed to derive that reason).
+  return rows.map((row) => {
+    const { ingredients, ...rest } = row as typeof row & {
+      ingredients?: { item: string }[];
+    };
+    const matchReason = search.q
+      ? deriveMatchReason(
+          {
+            title: rest.title,
+            description: rest.description,
+            cuisine: rest.cuisine,
+            tags: rest.tags.map((t) => t.tag.name),
+            ingredients: (ingredients ?? []).map((i) => i.item),
+          },
+          search.q,
+        )
+      : null;
+    return { ...rest, matchReason };
+  });
+}
+
+/** Candidate ceiling scored by "cook with what you have" before ranking. */
+const COOK_WITH_CANDIDATE_LIMIT = 200;
+
+/**
+ * "Cook with what you have" (#277). Ranks visible recipes by how well the
+ * viewer's pantry `items` cover their ingredient list — most matched first, then
+ * fewest missing. Candidates are prefiltered in SQL to recipes mentioning at
+ * least one pantry item (normalized substring), then scored precisely in JS via
+ * `rankByCoverage` (case/plural-normalized, reusing the substitutions matcher).
+ * Each result carries a `coverage: { matched, total, missing }` for the
+ * "you have 4 of 6" hint.
+ */
+export async function searchByIngredients(
+  viewer: User | null,
+  items: string[],
+  limit = RECIPE_SEARCH_LIMIT,
+) {
+  if (!isDbConfigured()) return [];
+  const pantry = items.map((i) => i.trim()).filter(Boolean);
+  if (pantry.length === 0) return [];
+
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  // Cheap prefilter: keep only recipes that mention at least one pantry item, so
+  // we don't load ingredient lists for the entire library.
+  const mentionsAny = or(
+    ...pantry.map((item) =>
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(recipeIngredients)
+          .where(
+            and(
+              eq(recipeIngredients.recipeId, recipes.id),
+              ilike(recipeIngredients.item, `%${escapeLike(item)}%`),
             ),
-        ),
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(recipeTags)
-            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-            .where(
-              and(
-                eq(recipeTags.recipeId, recipes.id),
-                ilike(tags.name, like),
-              ),
-            ),
-        ),
+          ),
+      ),
+    ),
+  );
+
+  const rows = await db.query.recipes.findMany({
+    where: and(scope, mentionsAny),
+    limit: COOK_WITH_CANDIDATE_LIMIT,
+    with: {
+      author: true,
+      tags: { with: { tag: true } },
+      ratings: true,
+      ingredients: { columns: { item: true } },
+    },
+  });
+
+  const ranked = rankByCoverage(
+    rows.map((recipe) => ({
+      recipe,
+      ingredients: recipe.ingredients.map((i) => i.item),
+    })),
+    pantry,
+  ).slice(0, limit);
+
+  return ranked.map(({ recipe, coverage }) => {
+    const { ingredients: _ingredients, ...card } = recipe;
+    return { ...card, coverage };
+  });
+}
+
+/** Minimum trigram similarity (pg_trgm's default) for a fuzzy suggestion. */
+const FUZZY_SIMILARITY_THRESHOLD = 0.3;
+
+/**
+ * Typo-tolerant "did you mean" for a text query that returned nothing. Finds the
+ * closest visible recipe title or tag name by trigram similarity (the `pg_trgm`
+ * index from #158) and returns it as a corrected term to re-search.
+ *
+ * Degrades gracefully: if the `pg_trgm` extension/`similarity()` isn't installed
+ * (zero-config dev), the query throws and we return `null` so the caller simply
+ * shows the normal empty state. Returns `null` for short queries or when the
+ * best candidate is just the original query.
+ */
+export async function suggestSearchTerm(
+  viewer: User | null,
+  query: string,
+): Promise<string | null> {
+  if (!isDbConfigured()) return null;
+  const q = query.trim();
+  if (q.length < 3) return null;
+
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  try {
+    const rows = (await db.execute(sql`
+      select term, similarity(term, ${q}) as sim
+      from (
+        select ${recipes.title} as term
+          from ${recipes}
+          where ${scope}
+        union
+        select ${tags.name} as term
+          from ${tags}
+          join ${recipeTags} on ${recipeTags.tagId} = ${tags.id}
+          join ${recipes} on ${recipes.id} = ${recipeTags.recipeId}
+          where ${scope}
+      ) as candidates
+      where similarity(term, ${q}) > ${FUZZY_SIMILARITY_THRESHOLD}
+      order by sim desc, term asc
+      limit 1
+    `)) as unknown as { term: string }[];
+
+    const best = rows[0]?.term?.trim();
+    if (!best || best.toLowerCase() === q.toLowerCase()) return null;
+    return best;
+  } catch {
+    // pg_trgm not available (or any DB error) — silently skip the suggestion.
+    return null;
+  }
+}
+
+/**
+ * Cuisines + tags present in a viewer's visible recipes, each with a result
+ * count scoped to the *other* active filters (the counted facet itself is
+ * excluded, so a count answers "how many if I also pick this?"). When `search`
+ * is omitted the counts are global. Empty when the DB is off.
+ *
+ * Any currently-selected facet value is always included — even at count 0 — so
+ * the UI can still display and clear it.
+ */
+export async function listRecipeFacets(
+  viewer: User | null,
+  search?: RecipeSearch,
+): Promise<{
+  cuisines: { value: string; count: number }[];
+  tags: { slug: string; name: string; count: number }[];
+}> {
+  if (!isDbConfigured()) return { cuisines: [], tags: [] };
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  // Count each facet against the active filters minus that same facet.
+  const cuisineWhere = and(
+    scope,
+    ...(search ? searchFilterConditions(search, { skip: "cuisine" }) : []),
+    isNotNull(recipes.cuisine),
+  );
+  const tagRecipeIds = db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(
+      and(
+        scope,
+        ...(search ? searchFilterConditions(search, { skip: "tag" }) : []),
       ),
     );
+
+  const [cuisineRows, tagRows] = await Promise.all([
+    db
+      .select({
+        value: recipes.cuisine,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(recipes)
+      .where(cuisineWhere)
+      .groupBy(recipes.cuisine)
+      .orderBy(asc(recipes.cuisine)),
+    db
+      .select({
+        slug: tags.slug,
+        name: tags.name,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tags)
+      .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+      .where(inArray(recipeTags.recipeId, tagRecipeIds))
+      .groupBy(tags.slug, tags.name)
+      .orderBy(asc(tags.name)),
+  ]);
+
+  const cuisines = cuisineRows
+    .filter((r): r is { value: string; count: number } => Boolean(r.value))
+    .map((r) => ({ value: r.value, count: r.count }));
+  const tags_ = tagRows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    count: r.count,
+  }));
+
+  // Keep any selected-but-now-zero facet visible so it can be cleared.
+  for (const selected of search?.cuisines ?? []) {
+    if (!cuisines.some((c) => c.value.toLowerCase() === selected.toLowerCase()))
+      cuisines.push({ value: selected, count: 0 });
   }
+  for (const selected of search?.tags ?? []) {
+    const slug = tagFilterSlug(selected);
+    if (!tags_.some((t) => t.slug === slug || t.name.toLowerCase() === selected.toLowerCase()))
+      tags_.push({ slug, name: selected, count: 0 });
+  }
+  cuisines.sort((a, b) => a.value.localeCompare(b.value));
+  tags_.sort((a, b) => a.name.localeCompare(b.name));
 
-  if (search.cuisine) conditions.push(ilike(recipes.cuisine, search.cuisine));
-  if (search.difficulty)
-    conditions.push(eq(recipes.difficulty, search.difficulty));
-  if (search.maxTime != null)
-    conditions.push(lte(recipes.totalMinutes, search.maxTime));
+  return { cuisines, tags: tags_ };
+}
 
-  if (search.tag) {
-    const slug = tagFilterSlug(search.tag);
-    conditions.push(
-      exists(
+/**
+ * All visible tags with their visible-recipe counts, for the tag directory.
+ * Empty tags (no recipes the viewer can see) are omitted. Ordered by name (A-Z);
+ * callers that want a "popular" view can re-sort by count.
+ */
+export async function listTagsWithCounts(
+  viewer: User | null,
+): Promise<{ slug: string; name: string; count: number }[]> {
+  if (!isDbConfigured()) return [];
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  const rows = await db
+    .select({
+      slug: tags.slug,
+      name: tags.name,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(tags)
+    .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+    .innerJoin(recipes, eq(recipes.id, recipeTags.recipeId))
+    .where(scope)
+    .groupBy(tags.slug, tags.name)
+    .orderBy(asc(tags.name));
+
+  return rows.map((r) => ({ slug: r.slug, name: r.name, count: r.count }));
+}
+
+/** How many recency-ordered candidates to score before trimming to `limit`. */
+const SIMILAR_CANDIDATE_LIMIT = 60;
+
+/**
+ * "You might also like" — visible recipes related to `recipeId`, ranked by shared
+ * tags, matching cuisine, and ingredient overlap (scoring in `~/lib/related-recipes`).
+ * The current recipe is excluded and the result is bounded by `limit`. Candidates
+ * are pre-filtered to those sharing a tag or the cuisine so the scan stays cheap.
+ */
+export async function listSimilarRecipes(
+  viewer: User | null,
+  recipeId: string,
+  limit = 6,
+) {
+  if (!isDbConfigured()) return [];
+  const groupIds = await viewerGroupIds(viewer);
+  const scope = visibleRecipesScope(viewer, groupIds);
+
+  const source = await db.query.recipes.findFirst({
+    where: eq(recipes.id, recipeId),
+    columns: { id: true, cuisine: true },
+    with: {
+      tags: { with: { tag: { columns: { slug: true } } } },
+      ingredients: { columns: { item: true } },
+    },
+  });
+  if (!source) return [];
+
+  const sourceSignals = {
+    tagSlugs: source.tags.map((t) => t.tag.slug),
+    cuisine: source.cuisine,
+    ingredientTokens: tokenizeIngredients(source.ingredients.map((i) => i.item)),
+  };
+
+  const sharesTag = sourceSignals.tagSlugs.length
+    ? exists(
         db
           .select({ one: sql`1` })
           .from(recipeTags)
@@ -442,69 +901,107 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
           .where(
             and(
               eq(recipeTags.recipeId, recipes.id),
-              or(eq(tags.slug, slug), ilike(tags.name, search.tag)),
+              inArray(tags.slug, sourceSignals.tagSlugs),
             ),
           ),
-      ),
-    );
-  }
+      )
+    : undefined;
+  const sharesCuisine = source.cuisine
+    ? ilike(recipes.cuisine, source.cuisine)
+    : undefined;
+  const related = or(sharesTag, sharesCuisine);
+  if (!related) return [];
 
-  const baseOrder =
-    search.sort === "top-rated"
-      ? topRatedOrderBy()
-      : recipeOrderBy(search.sort);
-  // For a text query, relevance leads: best full-text matches first, with the
-  // requested sort as the tie-breaker (and as the sole order for empty `q`).
-  // Ingredient-/tag-only matches score 0 on the vector, so they trail the
-  // title/description/cuisine hits but still appear.
-  const orderBy = search.q
-    ? [desc(recipeSearchRankSql(search.q)), ...baseOrder]
-    : baseOrder;
-
-  const rows = await db.query.recipes.findMany({
-    where: and(...conditions),
-    orderBy,
-    limit: RECIPE_SEARCH_LIMIT,
-    with: { author: true, tags: { with: { tag: true } } },
+  const candidates = await db.query.recipes.findMany({
+    where: and(scope, related),
+    orderBy: desc(recipes.createdAt),
+    limit: SIMILAR_CANDIDATE_LIMIT,
+    with: {
+      author: true,
+      tags: { with: { tag: true } },
+      ratings: true,
+      ingredients: { columns: { item: true } },
+    },
   });
 
-  // "top-rated" ordering (weighted, owner-excluded) is applied in SQL over the
-  // full candidate set above, so the returned rows are already globally ranked.
-  return rows;
+  const ranked = rankBySimilarity(
+    sourceSignals,
+    candidates
+      .filter((c) => c.id !== recipeId)
+      .map((recipe) => ({
+        recipe,
+        signals: {
+          tagSlugs: recipe.tags.map((t) => t.tag.slug),
+          cuisine: recipe.cuisine,
+          ingredientTokens: tokenizeIngredients(
+            recipe.ingredients.map((i) => i.item),
+          ),
+        },
+      })),
+    limit,
+  );
+
+  // Ingredient text was only needed for scoring; drop it from the card payload.
+  return ranked.map(({ recipe }) => {
+    const { ingredients: _ingredients, ...card } = recipe;
+    return card;
+  });
 }
 
 /**
- * Distinct cuisines + tags present in a viewer's visible recipes, used to
- * populate the filter menus. Empty when the DB is off.
+ * Record that `userId` opened `recipeId`, upserting the single (user, recipe) row
+ * so re-viewing just bumps `viewedAt`. Safe to call on every detail-page render;
+ * a no-op when the database isn't configured.
  */
-export async function listRecipeFacets(
-  viewer: User | null,
-): Promise<{ cuisines: string[]; tags: { slug: string; name: string }[] }> {
-  if (!isDbConfigured()) return { cuisines: [], tags: [] };
+export async function recordRecipeView(
+  userId: string,
+  recipeId: string,
+): Promise<void> {
+  if (!isDbConfigured()) return;
+  await db
+    .insert(recipeViews)
+    .values({ userId, recipeId })
+    .onConflictDoUpdate({
+      target: [recipeViews.userId, recipeViews.recipeId],
+      set: { viewedAt: new Date() },
+    });
+}
+
+/**
+ * The viewer's most-recently-viewed distinct recipes (newest first), for the
+ * "Recently viewed" rail. Visibility is re-checked at read time, so a recipe that
+ * has since gone private drops out. Returns `[]` for signed-out viewers.
+ */
+export async function listRecentlyViewed(viewer: User | null, limit = 6) {
+  if (!isDbConfigured() || !viewer) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope = visibleRecipesScope(viewer, groupIds);
 
-  const [cuisineRows, tagRows] = await Promise.all([
-    db
-      .selectDistinct({ cuisine: recipes.cuisine })
-      .from(recipes)
-      .where(and(scope, isNotNull(recipes.cuisine)))
-      .orderBy(asc(recipes.cuisine)),
-    db
-      .selectDistinct({ slug: tags.slug, name: tags.name })
-      .from(tags)
-      .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-      .innerJoin(recipes, eq(recipes.id, recipeTags.recipeId))
-      .where(scope)
-      .orderBy(asc(tags.name)),
-  ]);
+  // Pull a few extra ids so any now-invisible recipes can be filtered out
+  // without leaving the rail short.
+  const recent = await db
+    .select({ recipeId: recipeViews.recipeId })
+    .from(recipeViews)
+    .where(eq(recipeViews.userId, viewer.id))
+    .orderBy(desc(recipeViews.viewedAt))
+    .limit(limit * 3);
+  if (recent.length === 0) return [];
 
-  return {
-    cuisines: cuisineRows
-      .map((r) => r.cuisine)
-      .filter((c): c is string => Boolean(c)),
-    tags: tagRows,
-  };
+  const order = new Map(recent.map((r, i) => [r.recipeId, i]));
+  const rows = await db.query.recipes.findMany({
+    where: and(
+      scope,
+      inArray(
+        recipes.id,
+        recent.map((r) => r.recipeId),
+      ),
+    ),
+    with: { author: true, tags: { with: { tag: true } }, ratings: true },
+  });
+
+  return rows
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    .slice(0, limit);
 }
 
 /**

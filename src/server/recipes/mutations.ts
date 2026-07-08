@@ -15,7 +15,7 @@ import {
   type RecipeEventType,
   type User,
 } from "~/server/db/schema";
-import { slugify } from "~/lib/utils";
+import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { parseSnapshot } from "./queries";
 import { buildAdaptationInput } from "./timeline";
@@ -245,10 +245,15 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
   const unique = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
   if (unique.length === 0) return;
 
-  const slugs = unique.map((n) => ({
-    name: n,
-    slug: slugify(n).slice(0, 60) || n.toLowerCase(),
-  }));
+  // Fold known aliases onto their canonical tag, then de-dup by the resulting
+  // slug so e.g. "veggie" and "Vegetarian" collapse into one tag.
+  const bySlug = new Map<string, { slug: string; name: string }>();
+  for (const name of unique) {
+    const canonical = canonicalizeTag(name);
+    if (!bySlug.has(canonical.slug)) bySlug.set(canonical.slug, canonical);
+  }
+  const slugs = [...bySlug.values()];
+
   await tx
     .insert(tags)
     .values(slugs.map((s) => ({ slug: s.slug, name: s.name })))
