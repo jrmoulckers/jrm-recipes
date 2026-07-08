@@ -14,7 +14,7 @@ vi.mock("~/server/billing/entitlements", () => ({
 }));
 
 import type { MemberRole, User } from "~/server/db/schema";
-import { addMember, deleteGroup, updateMemberRole } from "./mutations";
+import { addMember, deleteGroup, transferOwnership, updateMemberRole } from "./mutations";
 
 type Membership = {
   id: string;
@@ -271,5 +271,68 @@ describe("deleteGroup downgrades group recipes (sp03)", () => {
       groupId: null,
     });
     expect(tx.delete).toHaveBeenCalled();
+  });
+});
+
+/**
+ * Cross-tenant / negative-authorization regression guards (issue #220). Each
+ * case asserts a privilege boundary and fails if the corresponding guard is
+ * removed — the class of access-control regression that otherwise slips through
+ * CI. Complements the positive role happy-paths above.
+ */
+describe("group authz regression guards (i220)", () => {
+  it("forbids an OWNER from promoting anyone straight to owner (use transfer)", async () => {
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        { id: "gm_target", role: "member", userId: "target_1", groupId: group.id },
+      ],
+    });
+    runWith(tx);
+
+    await expect(
+      updateMemberRole(group.slug, owner, "target_1", "owner"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("forbids an ADMIN from demoting/changing another member's role", async () => {
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
+      ],
+    });
+    runWith(tx);
+
+    await expect(
+      updateMemberRole(group.slug, admin, "target_1", "member"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("forbids a NON-OWNER (admin) from transferring ownership", async () => {
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
+      ],
+    });
+    runWith(tx);
+
+    await expect(
+      transferOwnership(group.slug, admin, "target_1"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("forbids a NON-MEMBER (stranger) from managing a group they don't belong to", async () => {
+    // membershipFor(actor) resolves to null → requireOwner throws FORBIDDEN.
+    const tx = fakeTx({ memberships: [null] });
+    runWith(tx);
+
+    const stranger = { id: "stranger_1" } as unknown as User;
+    await expect(
+      updateMemberRole(group.slug, stranger, "target_1", "admin"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
   });
 });
