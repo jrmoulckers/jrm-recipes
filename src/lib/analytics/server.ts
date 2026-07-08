@@ -16,6 +16,15 @@ import {
 } from "./config";
 import { type AnalyticsEventName, type EventProperties } from "./events";
 import { scrubProperties } from "./scrub";
+import { serverCaptureAllowed } from "./server-consent";
+
+/**
+ * Hard ceiling on how long a call may wait on the analytics provider. Every
+ * server post — capture *and* feature-flag `/decide` — aborts after this, so a
+ * slow or hung backend can never delay SSR or a server action. On abort the
+ * fetch rejects, is swallowed below, and callers fall back to control/no-op.
+ */
+const REQUEST_TIMEOUT_MS = 1500;
 
 async function post(path: string, body: Record<string, unknown>): Promise<Response | null> {
   const key = analyticsKey();
@@ -27,6 +36,7 @@ async function post(path: string, body: Record<string, unknown>): Promise<Respon
       body: JSON.stringify({ api_key: key, ...body }),
       cache: "no-store",
       keepalive: true,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch {
     return null;
@@ -44,6 +54,7 @@ export async function captureServer<K extends AnalyticsEventName>(
   properties: EventProperties[K],
 ): Promise<void> {
   if (!isAnalyticsConfigured()) return;
+  if (!(await serverCaptureAllowed())) return;
   await post("/capture/", {
     event: name,
     distinct_id: distinctId,
@@ -58,6 +69,7 @@ export async function identifyServer(
   setProperties?: Record<string, unknown>,
 ): Promise<void> {
   if (!isAnalyticsConfigured()) return;
+  if (!(await serverCaptureAllowed())) return;
   await post("/capture/", {
     event: "$identify",
     distinct_id: distinctId,
@@ -69,6 +81,7 @@ export async function identifyServer(
 /** Stitch an anonymous device id to the identified user id (funnel stitching). */
 export async function aliasServer(distinctId: string, aliasId: string): Promise<void> {
   if (!isAnalyticsConfigured()) return;
+  if (!(await serverCaptureAllowed())) return;
   await post("/capture/", {
     event: "$create_alias",
     distinct_id: distinctId,
@@ -79,8 +92,12 @@ export async function aliasServer(distinctId: string, aliasId: string): Promise<
 
 /**
  * Evaluate all feature flags for a distinct id (issue #335). Returns an empty
- * map when analytics is unconfigured or the request fails, so callers always
- * fall back to control and never block render.
+ * map when analytics is unconfigured, when the request fails, or when it exceeds
+ * {@link REQUEST_TIMEOUT_MS} (a slow provider must never stall SSR) — so callers
+ * always fall back to control and never block render.
+ *
+ * Note: flag evaluation is *read-only* (no event, no PII leaves the app), so it
+ * is intentionally not consent-gated; only capture/identify/alias are.
  */
 export async function getAllFlags(
   distinctId: string,

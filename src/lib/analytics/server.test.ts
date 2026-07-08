@@ -8,6 +8,12 @@ const configMock = vi.hoisted(() => ({
 
 vi.mock("./config", () => configMock);
 
+const consentMock = vi.hoisted(() => ({
+  serverCaptureAllowed: vi.fn(async () => true),
+}));
+
+vi.mock("./server-consent", () => consentMock);
+
 import {
   captureServer,
   identifyServer,
@@ -43,6 +49,7 @@ beforeEach(() => {
   configMock.isAnalyticsConfigured.mockReturnValue(true);
   configMock.analyticsKey.mockReturnValue("phc_test_key");
   configMock.analyticsHost.mockReturnValue("https://us.i.posthog.com");
+  consentMock.serverCaptureAllowed.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -137,6 +144,54 @@ describe("identifyServer / aliasServer", () => {
   });
 });
 
+describe("server consent gate (#471)", () => {
+  it("captureServer sends nothing when consent is not allowed", async () => {
+    consentMock.serverCaptureAllowed.mockResolvedValue(false);
+    const fetchFn = mockFetch({ ok: true });
+
+    await captureServer("user_1", "signup_completed", {});
+
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("identifyServer sends nothing when consent is not allowed", async () => {
+    consentMock.serverCaptureAllowed.mockResolvedValue(false);
+    const fetchFn = mockFetch({ ok: true });
+
+    await identifyServer("user_1", { group_count: 2 });
+
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("aliasServer sends nothing when consent is not allowed", async () => {
+    consentMock.serverCaptureAllowed.mockResolvedValue(false);
+    const fetchFn = mockFetch({ ok: true });
+
+    await aliasServer("user_1", "anon_device_1");
+
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("does not even consult consent when analytics is unconfigured", async () => {
+    configMock.isAnalyticsConfigured.mockReturnValue(false);
+    const fetchFn = mockFetch({ ok: true });
+
+    await captureServer("user_1", "signup_completed", {});
+
+    expect(consentMock.serverCaptureAllowed).not.toHaveBeenCalled();
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("captures normally once consent is allowed", async () => {
+    consentMock.serverCaptureAllowed.mockResolvedValue(true);
+    const fetchFn = mockFetch({ ok: true });
+
+    await captureServer("user_1", "signup_completed", {});
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("feature flags", () => {
   it("returns evaluated flags from the decide endpoint", async () => {
     mockFetch({
@@ -162,6 +217,29 @@ describe("feature flags", () => {
 
   it("falls back to control when the request fails", async () => {
     mockFetch({ ok: false, json: async () => ({}) });
+    await expect(getAllFlags("user_1")).resolves.toEqual({});
+  });
+
+  it("attaches an abort timeout signal to the decide request", async () => {
+    const fetchFn = mockFetch({
+      ok: true,
+      json: async () => ({ featureFlags: {} }),
+    });
+
+    await getAllFlags("user_1");
+
+    const init = fetchFn.mock.calls[0]![1]!;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("falls back to control when the decide request times out (aborts)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new DOMException("The operation timed out.", "TimeoutError");
+      }),
+    );
+
     await expect(getAllFlags("user_1")).resolves.toEqual({});
   });
 
