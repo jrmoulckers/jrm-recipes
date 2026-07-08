@@ -5,6 +5,7 @@ import { pk, timestamps } from "./_shared";
 import { groupMembers } from "./groups";
 import { recipes } from "./recipes";
 import { comments, ratings } from "./engagement";
+import { reviews } from "./reviews";
 
 /**
  * Application users. Mirrors the identity provider (Clerk) but is the source of
@@ -29,6 +30,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   recipes: many(recipes),
   ratings: many(ratings),
   comments: many(comments),
+  reviews: many(reviews),
 }));
 
 export type User = typeof users.$inferSelect;

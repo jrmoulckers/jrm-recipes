@@ -19,6 +19,7 @@ import { fk, pk, softDelete, timestamps } from "./_shared";
 import { users } from "./users";
 import { groups } from "./groups";
 import { comments, ratings, recipeTags } from "./engagement";
+import { reviews } from "./reviews";
 import type { RecipeInput } from "~/server/recipes/validation";
 
 export const recipeVisibility = pgEnum("recipe_visibility", [
@@ -264,6 +265,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   tags: many(recipeTags),
   ratings: many(ratings),
   comments: many(comments),
+  reviews: many(reviews),
 }));
 
 export const recipeIngredientsRelations = relations(
