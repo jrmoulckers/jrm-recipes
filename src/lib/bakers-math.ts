@@ -126,3 +126,57 @@ export function computeBakersFormula(
     hydration: totalLiquid > 0 ? (totalLiquid / totalFlour) * 100 : null,
   };
 }
+
+export type BatchYield = {
+  /** Total derivable batch weight in grams, scaled by `factor`. */
+  totalWeight: number;
+  /** Grams per unit when the yield is a countable number, else `null`. */
+  perUnit: number | null;
+};
+
+/**
+ * Total batch weight (grams) plus an optional per-unit target when the recipe
+ * yields a countable number of pieces (e.g. "12 rolls"). Returns `null` when no
+ * ingredient weight is derivable.
+ */
+export function computeBatchYield(
+  ingredients: WeighedIngredient[],
+  factor = 1,
+  pieces?: number | null,
+): BatchYield | null {
+  let totalWeight = 0;
+  let any = false;
+  for (const ing of ingredients) {
+    const scaled = scaleQuantity(ing.quantity, factor);
+    const grams = toWeight(scaled, ing.unit, ing.item);
+    if (grams == null || grams <= 0) continue;
+    any = true;
+    totalWeight += grams;
+  }
+  if (!any) return null;
+  return {
+    totalWeight,
+    perUnit: perPieceWeight(totalWeight, pieces),
+  };
+}
+
+/**
+ * Grams per piece when dividing a batch into `pieces` even portions. Returns
+ * `null` for a missing / non-positive count.
+ */
+export function perPieceWeight(
+  totalWeight: number | null | undefined,
+  pieces: number | null | undefined,
+): number | null {
+  if (
+    totalWeight == null ||
+    !Number.isFinite(totalWeight) ||
+    totalWeight <= 0 ||
+    pieces == null ||
+    !Number.isFinite(pieces) ||
+    pieces <= 0
+  ) {
+    return null;
+  }
+  return totalWeight / pieces;
+}

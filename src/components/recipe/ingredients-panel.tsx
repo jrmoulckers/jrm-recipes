@@ -19,6 +19,7 @@ import {
 } from "~/lib/units";
 import {
   computeBakersFormula,
+  computeBatchYield,
 } from "~/lib/bakers-math";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
@@ -188,6 +189,8 @@ export function IngredientsPanel({
 
   // Baker's percentages (#384). Surfaces only when weights are derivable.
   const [bakersView, setBakersView] = React.useState(false);
+  // Batch-weight math (#418): total + per-piece portioning.
+  const [pieceCount, setPieceCount] = React.useState<string>("");
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -258,6 +261,17 @@ export function IngredientsPanel({
   const bakersFormula = React.useMemo(
     () => computeBakersFormula(weighed, factor),
     [weighed, factor],
+  );
+  // A countable yield (e.g. "12 rolls") seeds the divide-into piece count.
+  const countableYield =
+    servingsNoun && Number.isFinite(servings) && servings > 0
+      ? Math.round(servings)
+      : null;
+  const pieces =
+    pieceCount.trim() === "" ? countableYield : Number(pieceCount);
+  const batchYield = React.useMemo(
+    () => computeBatchYield(weighed, factor, pieces),
+    [weighed, factor, pieces],
   );
   // Per-ingredient baker's percentage (weight ÷ total flour), keyed by id.
   const bakersPercentById = React.useMemo(() => {
@@ -553,21 +567,56 @@ export function IngredientsPanel({
         </form>
       )}
 
-      {bakersView && bakersFormula && (
+      {((bakersView && bakersFormula) || batchYield) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2 text-sm">
-          <span className="font-medium">
-            Total flour{" "}
-            <span className="tabular-nums">
-              {formatGrams(bakersFormula.totalFlour, locale)}
-            </span>
-          </span>
-          {bakersFormula.hydration != null && (
-            <span className="text-muted-foreground">
-              Hydration{" "}
-              <span className="tabular-nums text-foreground">
-                {Math.round(bakersFormula.hydration)}%
+          {bakersView && bakersFormula && (
+            <>
+              <span className="font-medium">
+                Total flour{" "}
+                <span className="tabular-nums">
+                  {formatGrams(bakersFormula.totalFlour, locale)}
+                </span>
               </span>
-            </span>
+              {bakersFormula.hydration != null && (
+                <span className="text-muted-foreground">
+                  Hydration{" "}
+                  <span className="tabular-nums text-foreground">
+                    {Math.round(bakersFormula.hydration)}%
+                  </span>
+                </span>
+              )}
+            </>
+          )}
+          {batchYield && (
+            <>
+              <span className="text-muted-foreground">
+                Batch weight{" "}
+                <span className="tabular-nums text-foreground">
+                  {formatGrams(batchYield.totalWeight, locale)}
+                </span>
+              </span>
+              <label className="flex items-center gap-1.5 text-muted-foreground">
+                Divide into
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step="1"
+                  value={pieceCount}
+                  onChange={(e) => setPieceCount(e.target.value)}
+                  placeholder={
+                    countableYield != null ? String(countableYield) : "N"
+                  }
+                  aria-label="Number of pieces"
+                  className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+                />
+                {batchYield.perUnit != null && (
+                  <span className="tabular-nums text-foreground">
+                    = {formatGrams(batchYield.perUnit, locale)} each
+                  </span>
+                )}
+              </label>
+            </>
           )}
         </div>
       )}

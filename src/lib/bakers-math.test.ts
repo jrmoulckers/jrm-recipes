@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   computeBakersFormula,
+  computeBatchYield,
   isFlour,
   isLiquid,
+  perPieceWeight,
   type WeighedIngredient,
 } from "./bakers-math";
 
@@ -69,5 +71,33 @@ describe("computeBakersFormula (#384)", () => {
         { item: "olive oil", quantity: 1, unit: "tbsp" },
       ]),
     ).toBeNull();
+  });
+});
+
+describe("computeBatchYield + perPieceWeight (#418)", () => {
+  it("totals derivable weight and derives per-piece grams", () => {
+    const y = computeBatchYield(dough, 1, 12)!;
+    expect(y.totalWeight).toBe(960); // 500 + 350 + 10 + 100
+    expect(y.perUnit).toBeCloseTo(80, 5);
+  });
+
+  it("scales the total with the factor", () => {
+    const y = computeBatchYield(dough, 2)!;
+    expect(y.totalWeight).toBe(1920);
+    expect(y.perUnit).toBeNull();
+  });
+
+  it("returns null when nothing is weighable", () => {
+    expect(
+      computeBatchYield([{ item: "eggs", quantity: 3, unit: null }]),
+    ).toBeNull();
+  });
+
+  it("perPieceWeight guards bad divisors", () => {
+    expect(perPieceWeight(900, 12)).toBe(75);
+    expect(perPieceWeight(900, 0)).toBeNull();
+    expect(perPieceWeight(900, -3)).toBeNull();
+    expect(perPieceWeight(0, 12)).toBeNull();
+    expect(perPieceWeight(null, 12)).toBeNull();
   });
 });
