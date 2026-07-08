@@ -44,6 +44,7 @@ import {
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { pickNutrition } from "~/lib/nutrition";
+import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -155,6 +156,7 @@ export default async function RecipePage({
     savedCollections,
     similar,
     favoriteIds,
+    memberProfiles,
   ] =
     await Promise.all([
       getRecipeVersions(recipe.id),
@@ -168,9 +170,19 @@ export default async function RecipePage({
       user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
       listSimilarRecipes(user, recipe.id),
       getFavoriteRecipeIds(user?.id),
+      user && dbEnabled
+        ? listMemberProfiles(user.id)
+        : Promise.resolve([]),
     ]);
   await recordView;
   const commentCount = countComments(comments);
+  // Family members with a calorie goal let the nutrition panel frame a serving
+  // against "today's budget" (issue #430).
+  const calorieMembers = memberProfiles.map((m) => ({
+    id: m.id,
+    name: m.name,
+    calorieGoal: m.calorieGoal,
+  }));
 
   // schema.org structured data — public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
@@ -394,6 +406,7 @@ export default async function RecipePage({
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
                     nutrition={pickNutrition(recipe)}
+                    calorieMembers={calorieMembers}
                   />
                 ) : (
                   <p className="text-muted-foreground">

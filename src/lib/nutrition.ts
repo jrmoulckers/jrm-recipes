@@ -181,3 +181,30 @@ export function nutritionFlags(perServing: Nutrition): DailyValueFlag[] {
     return flag ? [flag] : [];
   });
 }
+
+/**
+ * How a serving's calories fit a family member's daily calorie goal (issue
+ * #430). A bare calorie count doesn't answer the question a cook actually asks
+ * — "how much of today's budget is this?" — so we frame it against the goal set
+ * on a dietary profile.
+ *
+ * Returns a rounded percentage, or null when either input is missing or the
+ * goal is nonpositive, so the UI hides the indicator rather than rendering
+ * "NaN%" or a meaningless value. Zero calories is a legitimate 0%.
+ */
+export function caloriePercentOfGoal(
+  calories: number | null | undefined,
+  dailyGoal: number | null | undefined,
+): number | null {
+  if (typeof calories !== "number" || !Number.isFinite(calories) || calories < 0) {
+    return null;
+  }
+  if (
+    typeof dailyGoal !== "number" ||
+    !Number.isFinite(dailyGoal) ||
+    dailyGoal <= 0
+  ) {
+    return null;
+  }
+  return Math.round((calories / dailyGoal) * 100);
+}

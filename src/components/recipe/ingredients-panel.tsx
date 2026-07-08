@@ -15,7 +15,7 @@ import { scalingNudge } from "~/lib/substitutions";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
-import { NutritionPanel } from "~/components/recipe/nutrition-panel";
+import { NutritionPanel, type CalorieMember } from "~/components/recipe/nutrition-panel";
 import { type Nutrition } from "~/lib/nutrition";
 
 type PanelIngredient = {
@@ -71,6 +71,7 @@ export function IngredientsPanel({
   servingsNoun,
   controls,
   nutrition,
+  calorieMembers,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -78,6 +79,8 @@ export function IngredientsPanel({
   controls?: IngredientsPanelControls;
   /** Optional per-serving nutrition; renders a facts panel that scales with servings. */
   nutrition?: Nutrition;
+  /** Optional family members with calorie goals (issue #430). */
+  calorieMembers?: CalorieMember[];
 }) {
   const canScale = baseServings != null && baseServings > 0;
   const [servingsInternal, setServingsInternal] = React.useState(
@@ -284,6 +287,7 @@ export function IngredientsPanel({
           nutrition={nutrition}
           servings={servings}
           servingsNoun={servingsNoun}
+          members={calorieMembers}
         />
       )}
     </div>

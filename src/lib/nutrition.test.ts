@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   NUTRIENTS,
   assessDailyValue,
+  caloriePercentOfGoal,
   classifyLevel,
   formatNutrient,
   hasNutrition,
@@ -179,5 +180,35 @@ describe("nutritionFlags", () => {
       "sodiumMg",
     ]);
     expect(nutritionFlags({ calories: 400 })).toEqual([]);
+  });
+});
+
+describe("caloriePercentOfGoal", () => {
+  it("returns the rounded share of the daily goal", () => {
+    expect(caloriePercentOfGoal(500, 2000)).toBe(25);
+    // 640 / 1800 = 35.5…% rounds to 36
+    expect(caloriePercentOfGoal(640, 1800)).toBe(36);
+  });
+
+  it("treats zero calories as a legitimate 0%", () => {
+    expect(caloriePercentOfGoal(0, 2000)).toBe(0);
+  });
+
+  it("hides (null) when calories are missing", () => {
+    expect(caloriePercentOfGoal(null, 2000)).toBeNull();
+    expect(caloriePercentOfGoal(undefined, 2000)).toBeNull();
+  });
+
+  it("hides (null) when the goal is missing or nonpositive", () => {
+    expect(caloriePercentOfGoal(500, null)).toBeNull();
+    expect(caloriePercentOfGoal(500, undefined)).toBeNull();
+    expect(caloriePercentOfGoal(500, 0)).toBeNull();
+    expect(caloriePercentOfGoal(500, -100)).toBeNull();
+  });
+
+  it("hides (null) for non-finite or negative inputs rather than NaN", () => {
+    expect(caloriePercentOfGoal(Number.NaN, 2000)).toBeNull();
+    expect(caloriePercentOfGoal(Infinity, 2000)).toBeNull();
+    expect(caloriePercentOfGoal(-10, 2000)).toBeNull();
   });
 });

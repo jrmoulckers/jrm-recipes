@@ -5,7 +5,9 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
 import { Badge } from "~/components/ui/badge";
+import { useActiveMemberStore } from "~/lib/active-member-store";
 import {
+  caloriePercentOfGoal,
   formatNutrient,
   hasNutrition,
   nutritionFlags,
@@ -16,6 +18,13 @@ import {
 } from "~/lib/nutrition";
 
 type Basis = "serving" | "whole";
+
+/** A family member whose daily calorie goal a serving can be framed against. */
+export type CalorieMember = {
+  id: string;
+  name: string;
+  calorieGoal: number | null;
+};
 
 /** Badge variant + prose for each dietary band (issue #416). */
 const LEVEL_STYLE: Record<
@@ -43,6 +52,7 @@ export function NutritionPanel({
   servings,
   servingsNoun,
   className,
+  members,
 }: {
   /** Per-serving nutrition as stored on the recipe. */
   nutrition: Nutrition;
@@ -50,20 +60,41 @@ export function NutritionPanel({
   servings: number;
   servingsNoun?: string | null;
   className?: string;
+  /**
+   * Optional family members (issue #430). When any carry a calorie goal, the
+   * panel frames the shown calories against the active member's goal.
+   */
+  members?: CalorieMember[];
 }) {
   const [basis, setBasis] = React.useState<Basis>("serving");
+  const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
+  const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
 
   if (!hasNutrition(nutrition)) return null;
 
   const wholeServings =
     Number.isFinite(servings) && servings > 0 ? servings : 1;
-  const rows =
-    basis === "whole"
-      ? nutritionRows(scaleNutrition(nutrition, wholeServings))
-      : nutritionRows(nutrition);
+  const scaled =
+    basis === "whole" ? scaleNutrition(nutrition, wholeServings) : nutrition;
+  const rows = nutritionRows(scaled);
 
   const noun = servingsNoun ?? "servings";
   const flags = nutritionFlags(nutrition);
+
+  // Only members with a usable goal can produce a percentage; the active
+  // selection falls back to the first such member so an indicator shows without
+  // the cook having to pick one.
+  const calorieCandidates = (members ?? []).filter(
+    (m): m is CalorieMember & { calorieGoal: number } =>
+      typeof m.calorieGoal === "number" && m.calorieGoal > 0,
+  );
+  const activeMember =
+    calorieCandidates.find((m) => m.id === activeMemberId) ??
+    calorieCandidates[0] ??
+    null;
+  const caloriePercent = activeMember
+    ? caloriePercentOfGoal(scaled.calories, activeMember.calorieGoal)
+    : null;
 
   return (
     <section
@@ -106,6 +137,40 @@ export function NutritionPanel({
           ? `Whole recipe · ${formatQuantity(wholeServings)} ${noun}`
           : "Amounts are per serving"}
       </p>
+
+      {caloriePercent != null && activeMember && (
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          <span>
+            ≈{" "}
+            <span className="font-semibold tabular-nums text-foreground">
+              {caloriePercent}%
+            </span>{" "}
+            of
+          </span>
+          {calorieCandidates.length > 1 ? (
+            <select
+              aria-label="Family member for calorie goal"
+              value={activeMember.id}
+              onChange={(e) => setActiveMemberId(e.target.value)}
+              className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground"
+            >
+              {calorieCandidates.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="font-medium text-foreground">
+              {activeMember.name}
+            </span>
+          )}
+          <span>
+            {"'s "}daily calories
+            {basis === "whole" ? " (whole recipe)" : ""}
+          </span>
+        </p>
+      )}
 
       {flags.length > 0 && (
         <ul

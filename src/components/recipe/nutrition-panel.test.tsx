@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { NutritionPanel } from "./nutrition-panel";
+import { NutritionPanel, type CalorieMember } from "./nutrition-panel";
+import { useActiveMemberStore } from "~/lib/active-member-store";
 import { type Nutrition } from "~/lib/nutrition";
 
 afterEach(cleanup);
@@ -57,5 +58,75 @@ describe("NutritionPanel", () => {
     const flags = screen.getByRole("list", { name: /dietary flags/i });
     expect(within(flags).getByText(/sodium ·/i)).toBeInTheDocument();
     expect(within(flags).getByText(/low sugars · 4% dv/i)).toBeInTheDocument();
+  });
+});
+
+describe("NutritionPanel calorie goal (issue #430)", () => {
+  const MEMBERS: CalorieMember[] = [
+    { id: "mom", name: "Mom", calorieGoal: 2000 },
+    { id: "kid", name: "Kid", calorieGoal: 1000 },
+  ];
+
+  beforeEach(() => {
+    // The active-member selection is a persisted singleton; reset between tests.
+    useActiveMemberStore.setState({ activeMemberId: null });
+  });
+
+  it("frames a serving against the first member's goal by default", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        members={MEMBERS}
+      />,
+    );
+    // 500 / 2000 = 25% of Mom's daily calories.
+    expect(screen.getByText("25%")).toBeInTheDocument();
+    expect(screen.getByText(/daily calories/i)).toBeInTheDocument();
+  });
+
+  it("updates the percentage when a different member is selected", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        members={MEMBERS}
+      />,
+    );
+    fireEvent.change(
+      screen.getByRole("combobox", { name: /family member for calorie goal/i }),
+      { target: { value: "kid" } },
+    );
+    // 500 / 1000 = 50% of Kid's daily calories.
+    expect(screen.getByText("50%")).toBeInTheDocument();
+  });
+
+  it("recomputes against whole-recipe calories when the basis is toggled", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        members={MEMBERS}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /whole recipe/i }));
+    // 500 × 4 = 2000 calories = 100% of Mom's 2000 goal.
+    expect(screen.getByText("100%")).toBeInTheDocument();
+  });
+
+  it("shows no indicator when no members are provided", () => {
+    render(<NutritionPanel nutrition={PER_SERVING} servings={4} />);
+    expect(screen.queryByText(/daily calories/i)).not.toBeInTheDocument();
+  });
+
+  it("shows no indicator when no member has a calorie goal", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        members={[{ id: "dad", name: "Dad", calorieGoal: null }]}
+      />,
+    );
+    expect(screen.queryByText(/daily calories/i)).not.toBeInTheDocument();
   });
 });
