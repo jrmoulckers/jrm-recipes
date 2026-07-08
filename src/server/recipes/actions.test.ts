@@ -13,6 +13,7 @@ const {
   updateRecipeMock,
   forkRecipeMock,
   revertRecipeMock,
+  captureServerMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   requireUserMock: vi.fn(),
@@ -20,12 +21,14 @@ const {
   updateRecipeMock: vi.fn(),
   forkRecipeMock: vi.fn(),
   revertRecipeMock: vi.fn(),
+  captureServerMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
 vi.mock("~/server/db", () => ({ isDbConfigured: () => true }));
+vi.mock("~/lib/analytics/server", () => ({ captureServer: captureServerMock }));
 vi.mock("./import", () => ({ importRecipeFromUrl: vi.fn() }));
 vi.mock("./mutations", () => ({
   createRecipe: createRecipeMock,
@@ -111,5 +114,76 @@ describe("createRecipeAction revalidation", () => {
 
     expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+  });
+});
+
+describe("recipe funnel analytics (#310)", () => {
+  it("tracks recipe_created with a non-PII event shape on success", async () => {
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await createRecipeAction(
+      recipeInput.parse({
+        title: "Apple Pie",
+        coverImageUrl: "https://example.com/pie.jpg",
+        visibility: "public",
+        ingredients: [{ item: "apples" }, { item: "sugar" }],
+        steps: [{ instruction: "bake" }],
+      }),
+    );
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_created", {
+      recipeId: "rec_1",
+      ingredientCount: 2,
+      stepCount: 1,
+      hasPhoto: true,
+      visibility: "public",
+      source: "manual",
+    });
+  });
+
+  it("does not track when validation fails (success paths only)", async () => {
+    const res = await createRecipeAction({ title: "" } as never);
+
+    expect(res.ok).toBe(false);
+    expect(captureServerMock).not.toHaveBeenCalled();
+    expect(createRecipeMock).not.toHaveBeenCalled();
+  });
+
+  it("tracks recipe_updated on success", async () => {
+    updateRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await updateRecipeAction("rec_1", input);
+
+    expect(captureServerMock).toHaveBeenCalledWith(
+      "user_1",
+      "recipe_updated",
+      expect.objectContaining({ recipeId: "rec_1", visibility: "private" }),
+    );
+  });
+
+  it("tracks recipe_forked with the source id on success", async () => {
+    forkRecipeMock.mockResolvedValue({
+      id: "fork_1",
+      slug: "apple-pie-adaptation",
+      source: { id: "rec_1", slug: "apple-pie" },
+    });
+
+    await forkRecipeAction("rec_1");
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_forked", {
+      recipeId: "fork_1",
+      sourceId: "rec_1",
+    });
+  });
+
+  it("tracks recipe_reverted on success", async () => {
+    revertRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    await revertRecipeAction("rec_1", 3);
+
+    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_reverted", {
+      recipeId: "rec_1",
+      versionNumber: 3,
+    });
   });
 });
