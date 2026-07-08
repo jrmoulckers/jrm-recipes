@@ -18,6 +18,11 @@
       "stepTimer": "Temporizador del paso, {time} restante",
       "jumpToStep": "Ir al paso {position}: {title} — {time} restante",
       "goToStep": "Ir al paso {position}: {title}"
+    },
+    "readAloud": {
+      "toggle": "Leer en voz alta",
+      "repeat": "Repetir",
+      "repeatLabel": "Repetir este paso en voz alta"
     }
   },
   "metadata": {
@@ -43,7 +48,16 @@
   },
   "accessibilityMenu": {
     "trigger": "Ajustes de accesibilidad y comodidad",
-    "textSizeGroup": "Tamaño del texto"
+    "textSizeGroup": "Tamaño del texto",
+    "household": {
+      "label": "Cocinando para",
+      "decrement": "Menos personas",
+      "increment": "Más personas",
+      "people": "{count, plural, one {persona} other {personas}}",
+      "hintUnset": "Las recetas usan sus propias porciones. Ajústalo para escalar automáticamente el modo cocina y las listas de la compra.",
+      "hintSet": "El modo cocina y las listas de la compra empiezan ajustados a tu familia.",
+      "reset": "Usar las porciones de cada receta"
+    }
   },
   "saveToCollection": {
     "list": "Tus colecciones",

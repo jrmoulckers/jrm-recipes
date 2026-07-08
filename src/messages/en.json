@@ -18,6 +18,11 @@
       "stepTimer": "Step timer, {time} remaining",
       "jumpToStep": "Jump to step {position}: {title} — {time} remaining",
       "goToStep": "Go to step {position}: {title}"
+    },
+    "readAloud": {
+      "toggle": "Read aloud",
+      "repeat": "Repeat",
+      "repeatLabel": "Repeat this step aloud"
     }
   },
   "metadata": {
@@ -43,7 +48,16 @@
   },
   "accessibilityMenu": {
     "trigger": "Accessibility & comfort settings",
-    "textSizeGroup": "Text size"
+    "textSizeGroup": "Text size",
+    "household": {
+      "label": "Cooking for",
+      "decrement": "Fewer people",
+      "increment": "More people",
+      "people": "{count, plural, one {person} other {people}}",
+      "hintUnset": "Recipes use their own servings. Set this to auto-scale Cook Mode and shopping lists.",
+      "hintSet": "Cook Mode and shopping lists start scaled to your family.",
+      "reset": "Use each recipe's servings"
+    }
   },
   "saveToCollection": {
     "list": "Your collections",

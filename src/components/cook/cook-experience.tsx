@@ -440,6 +440,7 @@ function ReadAloudControls({
   onToggle: () => void;
   onRepeat: () => void;
 }) {
+  const t = useTranslations("cook.readAloud");
   return (
     <div className="ml-auto flex items-center gap-2">
       <Button
@@ -450,18 +451,18 @@ function ReadAloudControls({
         onClick={onToggle}
       >
         {enabled ? <Volume2 /> : <VolumeX />}
-        Read aloud
+        {t("toggle")}
       </Button>
       {enabled && (
         <Button
           type="button"
           size="sm"
           variant="outline"
-          aria-label="Repeat this step aloud"
+          aria-label={t("repeatLabel")}
           onClick={onRepeat}
         >
           <Repeat />
-          Repeat
+          {t("repeat")}
         </Button>
       )}
     </div>
