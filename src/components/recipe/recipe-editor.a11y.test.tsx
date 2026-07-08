@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("~/server/recipes/actions", () => ({
   createRecipeAction: vi.fn(),
@@ -17,6 +17,11 @@ vi.mock("sonner", () => ({
 }));
 
 import { RecipeEditor } from "./recipe-editor";
+
+beforeAll(() => {
+  // jsdom doesn't implement scrollIntoView; the summary links call it.
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 afterEach(cleanup);
 
@@ -54,5 +59,50 @@ describe("RecipeEditor label association (issue #123)", () => {
     expect(screen.getByLabelText(/^Description/)).not.toHaveAttribute(
       "aria-required",
     );
+  });
+});
+
+describe("RecipeEditor error summary (issue #124)", () => {
+  it("shows a focused alert summary linking to the invalid field on submit", async () => {
+    const user = userEvent.setup();
+    render(<RecipeEditor mode="create" />);
+
+    // Submit with an empty title -> client validation error.
+    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+
+    const alert = await screen.findByRole("alert");
+    // Summary receives focus so keyboard/SR users land on it.
+    expect(alert).toHaveFocus();
+
+    const link = within(alert).getByRole("link", { name: "Title" });
+    expect(link).toHaveAttribute("href", "#recipe-field-title");
+  });
+
+  it("ties the error message to the control via aria-invalid and aria-describedby", async () => {
+    const user = userEvent.setup();
+    render(<RecipeEditor mode="create" />);
+
+    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+    await screen.findByRole("alert");
+
+    const title = screen.getByLabelText(/^Title/);
+    expect(title).toHaveAttribute("aria-invalid", "true");
+    const describedBy = title.getAttribute("aria-describedby");
+    expect(describedBy).toBe("recipe-field-title-error");
+
+    // The referenced element actually holds the message text.
+    const message = document.getElementById(describedBy!);
+    expect(message).toHaveTextContent(/title/i);
+  });
+
+  it("moves focus to the offending control when a summary link is activated", async () => {
+    const user = userEvent.setup();
+    render(<RecipeEditor mode="create" />);
+
+    await user.click(screen.getByRole("button", { name: /save recipe/i }));
+    const alert = await screen.findByRole("alert");
+
+    await user.click(within(alert).getByRole("link", { name: "Title" }));
+    expect(screen.getByLabelText(/^Title/)).toHaveFocus();
   });
 });
