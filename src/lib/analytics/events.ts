@@ -121,6 +121,9 @@ export interface EventProperties {
   // conversion funnel can dedupe. No PII — the email is never an event property.
   waitlist_joined: { source: WaitlistSource; duplicate: boolean };
 
+  // --- Weekly digest retention loop (#354) ---
+  digest_opt_in_changed: { optedIn: boolean };
+
   // --- Experimentation (#335/#336) ---
   $feature_flag_called: {
     $feature_flag: string;
