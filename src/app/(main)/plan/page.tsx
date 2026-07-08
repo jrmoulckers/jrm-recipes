@@ -128,6 +128,7 @@ export default async function PlanPage({
     note: entry.note,
     recipe: entry.recipe
       ? {
+          id: entry.recipe.id,
           slug: entry.recipe.slug,
           title: entry.recipe.title,
           allergens: allergensByRecipe.get(entry.recipe.id) ?? [],

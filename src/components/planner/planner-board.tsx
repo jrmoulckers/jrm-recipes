@@ -2,10 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, Plus, Search, Trash2, UtensilsCrossed } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Plus,
+  Search,
+  Trash2,
+  UtensilsCrossed,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { addEntryAction, removeEntryAction } from "~/server/planner/actions";
+import { logCookAction } from "~/server/cooklog/actions";
 import {
   MEAL_SLOTS,
   MEAL_SLOT_LABELS,
@@ -41,7 +50,12 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
-  recipe: { slug: string; title: string; allergens?: Allergen[] } | null;
+  recipe: {
+    id: string;
+    slug: string;
+    title: string;
+    allergens?: Allergen[];
+  } | null;
 };
 
 export type BoardRecipe = {
@@ -175,6 +189,8 @@ function EntryChip({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
+  const [isCooking, startCooking] = React.useTransition();
+  const [cooked, setCooked] = React.useState(false);
 
   function remove() {
     startTransition(async () => {
@@ -182,6 +198,24 @@ function EntryChip({
       if (result.ok) {
         toast.success("Removed from your plan.");
         router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function cookedIt() {
+    if (cooked || !entry.recipe) return;
+    const recipe = entry.recipe;
+    startCooking(async () => {
+      const result = await logCookAction({
+        recipeId: recipe.id,
+        recipeSlug: recipe.slug,
+        cookedAt: entry.dateParam,
+      });
+      if (result.ok) {
+        setCooked(true);
+        toast.success("Logged to your journal.");
       } else {
         toast.error(result.error);
       }
@@ -198,35 +232,55 @@ function EntryChip({
   return (
     <div
       className={cn(
-        "group flex items-start gap-1.5 rounded-lg border border-border bg-surface/60 px-2 py-1.5 text-xs",
+        "group flex flex-col gap-1 rounded-lg border border-border bg-surface/60 px-2 py-1.5 text-xs",
         isPending && "opacity-50",
         alertText && "border-warning/60 bg-warning/10",
       )}
     >
-      <span className="mt-0.5 flex-1 leading-snug">
-        <span className="font-medium text-foreground">{title}</span>
-        {entry.recipe && entry.note ? (
-          <span className="block text-muted-foreground">{entry.note}</span>
-        ) : null}
-        {alertText && (
-          <span
-            className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
-            title="Best-effort from ingredient names — double-check labels and brands."
-          >
-            <AlertTriangle className="size-3 shrink-0" aria-hidden />
-            {alertText}
+      <div className="flex items-start gap-1.5">
+        <span className="mt-0.5 flex-1 leading-snug">
+          <span className="font-medium text-foreground">{title}</span>
+          {entry.recipe && entry.note ? (
+            <span className="block text-muted-foreground">{entry.note}</span>
+          ) : null}
+          {alertText && (
+            <span
+              className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
+              title="Best-effort from ingredient names — double-check labels and brands."
+            >
+              <AlertTriangle className="size-3 shrink-0" aria-hidden />
+              {alertText}
+            </span>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={remove}
+          disabled={isPending}
+          aria-label={`Remove ${title} from plan`}
+          className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+
+      {entry.recipe &&
+        (cooked ? (
+          <span className="inline-flex w-fit items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+            <CheckCircle2 className="size-3.5" aria-hidden />
+            Cooked
           </span>
-        )}
-      </span>
-      <button
-        type="button"
-        onClick={remove}
-        disabled={isPending}
-        aria-label={`Remove ${title} from plan`}
-        className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+        ) : (
+          <button
+            type="button"
+            onClick={cookedIt}
+            disabled={isCooking}
+            className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 disabled:cursor-wait disabled:opacity-70 motion-reduce:opacity-100"
+          >
+            <CheckCircle2 className="size-3.5" aria-hidden />
+            {isCooking ? "Logging…" : "Cooked it"}
+          </button>
+        ))}
     </div>
   );
 }
