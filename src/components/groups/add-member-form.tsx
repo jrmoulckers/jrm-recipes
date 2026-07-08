@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { addMemberAction } from "~/server/groups/actions";
 import { type AddMemberInput } from "~/server/groups/validation";
@@ -39,11 +40,11 @@ export function AddMemberForm({ slug }: { slug: string }) {
       void addMemberAction(slug, { identifier, role }).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
 
-        toast.success("They've been added to the group.");
+        toast.success("They've been added to the group");
         setIdentifier("");
         setRole("member");
         router.refresh();

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { track } from "~/lib/analytics";
+import { shareText, shareMessageWithUrl } from "~/lib/share-text";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +37,13 @@ function cardImageUrl(): string {
   return `${origin}${pathname.replace(/\/$/, "")}/opengraph-image`;
 }
 
-export function ShareButton({ title }: { title: string }) {
+export function ShareButton({
+  title,
+  author,
+}: {
+  title: string;
+  author?: string | null;
+}) {
   // Pre-fetched card image, kept ready so the native share call fires inside
   // the click gesture (Safari drops file sharing if you await first).
   const fileRef = React.useRef<File | null>(null);
@@ -44,6 +51,8 @@ export function ShareButton({ title }: { title: string }) {
 
   const nativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const text = shareText({ title, author });
 
   async function loadCardFile(): Promise<File | null> {
     if (fileRef.current) return fileRef.current;
@@ -84,12 +93,12 @@ export function ShareButton({ title }: { title: string }) {
       ) {
         // Track inside the gesture — never await before navigator.share (Safari).
         track("recipe_shared", { method: "file" });
-        await navigator.share({ files: [file], title, url });
+        await navigator.share({ files: [file], title, text, url });
         return;
       }
       if (nativeShare) {
         track("recipe_shared", { method: "native" });
-        await navigator.share({ title, url });
+        await navigator.share({ title, text, url });
         return;
       }
       await copyLink();
@@ -118,10 +127,12 @@ export function ShareButton({ title }: { title: string }) {
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(
+        shareMessageWithUrl({ title, author }, window.location.href),
+      );
       track("recipe_shared", { method: "copy_link" });
       track("share_link_copied", {});
-      toast.success("Link copied to clipboard");
+      toast.success("Recipe link copied");
     } catch {
       toast.error("Couldn't copy the link");
     }

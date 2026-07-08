@@ -28,7 +28,7 @@ export const dateParam = z
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
   .refine((value) => isValid(parse(value, "yyyy-MM-dd", new Date())), {
-    message: "That isn't a real date",
+    message: "Enter a valid date",
   });
 
 const noteInput = z

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check, Copy, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { createInviteLinkAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
@@ -50,12 +51,12 @@ export function InviteLinkManager({ slug }: { slug: string }) {
       void createInviteLinkAction(slug, { role, expiresInDays }).then(
         (result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           setUrl(result.url);
           setCopied(false);
-          toast.success("Invite link ready to share.");
+          toast.success("Invite link ready to share");
         },
       );
     });
@@ -66,7 +67,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Invite link copied.");
+      toast.success("Invite link copied");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Couldn't copy the link.");

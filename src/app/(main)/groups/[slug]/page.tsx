@@ -44,19 +44,20 @@ export async function generateMetadata({
   const description =
     group.description ??
     `A shared family cookbook on ${brand.name}.`;
+  const title = `${group.name} cookbook`;
   return {
-    title: group.name,
+    title,
     description,
     alternates: { canonical },
     openGraph: {
       type: "website",
-      title: `${group.name} · ${brand.name}`,
+      title: `${title} · ${brand.name}`,
       description,
       url: canonical,
     },
     twitter: {
       card: "summary_large_image",
-      title: group.name,
+      title,
       description,
     },
   };

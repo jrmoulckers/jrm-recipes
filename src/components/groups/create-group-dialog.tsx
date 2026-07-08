@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { createGroupAction } from "~/server/groups/actions";
 import { type GroupInput } from "~/server/groups/validation";
@@ -52,11 +53,11 @@ export function CreateGroupDialog({
       void createGroupAction(input).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
 
-        toast.success("Your group is ready for the family table.");
+        toast.success("Your group is ready for the family table");
         setOpen(false);
         resetForm();
         if (result.slug) router.push(`/groups/${result.slug}`);

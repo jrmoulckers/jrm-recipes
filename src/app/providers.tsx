@@ -19,6 +19,7 @@ import { PageviewTracker } from "~/components/analytics/pageview-tracker";
 import { ConsentNotice } from "~/components/privacy/consent-notice";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "~/components/ui/sonner";
+import { ConnectivityStatus } from "~/components/pwa/connectivity-status";
 
 /** Client-side providers shared across the whole app. */
 export function Providers({
@@ -56,6 +57,7 @@ export function Providers({
                 <TooltipProvider delayDuration={200}>
                   {children}
                   <ConsentNotice />
+                  <ConnectivityStatus />
                   <Toaster position="top-center" richColors closeButton />
                 </TooltipProvider>
               </FlagsProvider>

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Crown, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   removeMemberAction,
@@ -88,7 +89,7 @@ export function MemberList({
       void action()
         .then((result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           toast.success(successMessage);
@@ -159,7 +160,7 @@ export function MemberList({
                                   updateMemberRoleAction(slug, member.userId, {
                                     role,
                                   }),
-                                `${name} is now ${roleLabel(role).toLowerCase()}.`,
+                                `${name} is now ${roleLabel(role).toLowerCase()}`,
                               )
                             }
                           >
@@ -203,13 +204,17 @@ export function MemberList({
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
                           onSelect={() => {
-                            if (!window.confirm(`Remove ${name} from this group?`)) {
+                            if (
+                              !window.confirm(
+                                `Remove ${name} from this group? They'll lose access to the group's recipes. You can re-invite them anytime.`,
+                              )
+                            ) {
                               return;
                             }
                             runAction(
                               `${member.userId}:remove`,
                               () => removeMemberAction(slug, member.userId),
-                              `${name} was removed from the group.`,
+                              `${name} was removed from the group`,
                             );
                           }}
                         >

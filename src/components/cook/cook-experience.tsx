@@ -64,6 +64,7 @@ import { PreCookChecklist } from "./pre-cook-checklist";
 import { CookCompletion } from "./cook-completion";
 import { KidsBadgeReward } from "./kids-badge-reward";
 import { awardForCompletion, type KidBadge } from "./kids-rewards";
+import { OfflineReadyBadge } from "./offline-ready-badge";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -442,6 +443,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             <div className="flex flex-col gap-4">
               <p className="text-sm font-semibold text-muted-foreground">
                 Step {stepIndex + 1} of {totalSteps}
+                {!canGoNext && totalSteps > 1 && (
+                  <span className="ml-2 font-medium text-primary">· Last step</span>
+                )}
               </p>
               <h1
                 id="current-step-title"
@@ -546,7 +550,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             )}
             onClick={canGoNext ? navNext : handleFinish}
           >
-            {canGoNext ? "Next" : "Done"}
+            {canGoNext ? "Next" : "Finish cooking"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
           </Button>
         </div>
@@ -610,6 +614,7 @@ function CookHeader({
                 Screen awake
               </Badge>
             )}
+            <OfflineReadyBadge className="hidden md:inline-flex" />
           </div>
           <h2 className="truncate font-display text-lg font-semibold tracking-tight sm:text-2xl">
             {recipe.title}
@@ -1343,6 +1348,7 @@ function EmptyCookExperience({
                   Screen awake
                 </Badge>
               )}
+              <OfflineReadyBadge className="hidden md:inline-flex" />
             </div>
             <h1 className="truncate font-display text-xl font-semibold">
               {recipe.title}
@@ -1367,11 +1373,11 @@ function EmptyCookExperience({
             <ChefHat className="size-8" />
           </div>
           <h2 className="mt-6 font-display text-3xl font-semibold tracking-tight">
-            No cooking steps yet
+            No steps to cook through yet
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-muted-foreground">
-            This recipe is saved, but the method still needs step-by-step
-            instructions before cook mode can guide you through it.
+            This recipe is saved, but cook mode needs step-by-step instructions
+            to guide you. Head back and add a few steps to start cooking.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">

@@ -176,8 +176,8 @@ describe("Cook Mode large-target flag (issue #439)", () => {
   it("upsizes Previous/Next to kid-sized targets in Kids mode", () => {
     renderWithTheme(<CookExperience recipe={makeRecipe()} />, "kids");
     const previous = screen.getByRole("button", { name: "Previous" });
-    // makeRecipe has a single step, so the primary action reads "Done".
-    const done = screen.getByRole("button", { name: "Done" });
+    // makeRecipe has a single step, so the primary action reads "Finish cooking".
+    const done = screen.getByRole("button", { name: "Finish cooking" });
 
     // The kid target is taller than the default footer button on every width.
     expect(previous.className).toContain("sm:h-20");
@@ -258,7 +258,7 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
       screen.getByRole("heading", { name: /let's get ready/i }),
     ).toBeInTheDocument();
     // The step-1 chrome isn't rendered until the child proceeds.
-    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Finish cooking" })).toBeNull();
   });
 
   it("shows the grown-up-help item only when the recipe has risky steps", () => {
@@ -289,7 +289,7 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     renderKids(makeRecipe());
     fireEvent.click(screen.getByRole("button", { name: /let's cook/i }));
 
-    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
@@ -306,7 +306,7 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
-    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
   });
 
   it("remembers the choice for the session so it doesn't nag again", () => {
@@ -320,7 +320,7 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
-    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
   });
 });
 
@@ -537,7 +537,7 @@ describe("Cook Mode completion moment (issue #437)", () => {
 
   it("shows a celebratory moment instead of navigating on finish", () => {
     renderKids();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: /you did it/i }),
@@ -549,7 +549,7 @@ describe("Cook Mode completion moment (issue #437)", () => {
 
   it("previews a captured photo as a keepsake", () => {
     const { container } = renderKids();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     const input = container.querySelector<HTMLInputElement>(
       'input[type="file"]',
     )!;
@@ -564,7 +564,7 @@ describe("Cook Mode completion moment (issue #437)", () => {
     // @ts-expect-error simulate a browser without object-URL support
     URL.createObjectURL = undefined;
     const { container } = renderKids();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     const input = container.querySelector<HTMLInputElement>(
       'input[type="file"]',
     )!;
@@ -583,7 +583,7 @@ describe("Cook Mode completion moment (issue #437)", () => {
         </ThemeProvider>
       </IntlWrapper>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     expect(
       screen.getByRole("heading", { name: /nicely done/i }),
     ).toBeInTheDocument();
@@ -612,7 +612,7 @@ describe("Cook Mode collectible badges (issue #413)", () => {
 
   it("awards and reveals a badge when a kid finishes cooking", () => {
     renderKids();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     expect(screen.getByText(/new badges? earned/i)).toBeInTheDocument();
     // Shelf is still collapsed, so the sticker shows exactly once (the reveal).
     expect(screen.getAllByText("I made Sunday Sauce")).toHaveLength(1);
@@ -620,7 +620,7 @@ describe("Cook Mode collectible badges (issue #413)", () => {
 
   it("keeps earned badges on a revisitable shelf", () => {
     renderKids();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     const shelfToggle = screen.getByRole("button", { name: /my badges/i });
     fireEvent.click(shelfToggle);
     expect(shelfToggle).toHaveAttribute("aria-expanded", "true");
@@ -630,7 +630,7 @@ describe("Cook Mode collectible badges (issue #413)", () => {
 
   it("does not award or show badges in grown-up mode", () => {
     renderKids("kitchen");
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
     expect(screen.queryByText(/new badges? earned/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /my badges/i })).toBeNull();
     expect(window.localStorage.getItem("heirloom-kids-badges")).toBeNull();

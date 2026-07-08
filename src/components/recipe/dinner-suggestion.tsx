@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import type { DinnerCandidate } from "~/server/recipes/queries";
 import { addEntryAction } from "~/server/planner/actions";
@@ -78,10 +79,10 @@ export function DinnerSuggestion({
       });
       if (result.ok) {
         setPlanned(true);
-        toast.success(`${current.title} is on tonight's plan.`);
+        toast.success(`${current.title} is on tonight's plan`);
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

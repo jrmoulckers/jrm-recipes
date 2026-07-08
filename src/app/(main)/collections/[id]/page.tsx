@@ -12,6 +12,7 @@ import { CollectionActions } from "~/components/collections/collection-actions";
 import { RemoveFromCollectionButton } from "~/components/collections/remove-from-collection-button";
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
 import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
+import { brand } from "~/config/brand";
 
 const load = cache(async (id: string) => {
   const user = await getCurrentUser();
@@ -27,9 +28,21 @@ export async function generateMetadata({
   const { id } = await parseCollectionParams(params);
   const { collection } = await load(id);
   if (!collection) return { title: "Collection not found" };
+  const description =
+    collection.description ?? `A recipe collection on ${brand.name}.`;
   return {
     title: collection.name,
-    description: collection.description ?? undefined,
+    description,
+    openGraph: {
+      type: "website",
+      title: `${collection.name} · ${brand.name}`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: collection.name,
+      description,
+    },
   };
 }
 
@@ -132,12 +145,12 @@ export default async function CollectionPage({
           <div>
             <h2 className="font-display text-xl font-semibold">
               {collection.isOwner
-                ? "This collection is empty"
+                ? "Nothing saved here yet"
                 : "Nothing to see here yet"}
             </h2>
             <p className="mt-1 max-w-md text-muted-foreground">
               {collection.isOwner
-                ? "Open any recipe and use “Save to collection” to add it here."
+                ? "Open any recipe and choose “Save to collection” to start filling this shelf."
                 : "This collection doesn’t have any recipes you can view right now."}
             </p>
           </div>

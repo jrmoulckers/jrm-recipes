@@ -11,7 +11,10 @@ import { formatDate, formatRelativeTime } from "~/lib/dates";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-export const metadata: Metadata = { title: "Cooking journal" };
+export const metadata: Metadata = {
+  title: "Cook journal",
+  description: "A log of every dish you've cooked, with your notes and photos.",
+};
 
 export default async function JournalPage() {
   const user = await getCurrentUser();

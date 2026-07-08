@@ -17,6 +17,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
+import { pickKidCopy } from "~/config/kid-copy";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
@@ -177,6 +180,7 @@ export function RecipeEditor({
 }) {
   const router = useRouter();
   const t = useTranslations("recipeEditor");
+  const { kidSafe } = useThemeBehavior();
   const [upgrade, setUpgrade] = React.useState<string | null>(null);
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
   const [importUrl, setImportUrl] = React.useState("");
@@ -291,7 +295,7 @@ export function RecipeEditor({
         );
         setImportUrl("");
       } else {
-        toast.error(res.error);
+        toast.error(friendlyError(res.error));
       }
     } catch {
       toast.error("Something went wrong importing that link.");
@@ -385,12 +389,12 @@ export function RecipeEditor({
     ): Promise<Record<string, string[]>> => {
       const payload = buildPayloadRef.current();
       if (!payload.title) {
-        toast.error("Your recipe needs a title.");
+        toast.error(pickKidCopy(kidSafe, "validation.title", "Your recipe needs a title."));
         return { title: ["Give your recipe a title"] };
       }
       if (payload.visibility === "group" && !payload.groupId) {
         toast.error("Pick a group, or change the recipe's visibility.");
-        return { groupId: ["Choose a group for a group-visibility recipe"] };
+        return { groupId: ["Choose a group for this group recipe"] };
       }
       const res =
         mode === "edit" && recipeId
@@ -411,7 +415,7 @@ export function RecipeEditor({
       if (res.upgrade) {
         setUpgrade(res.error);
       } else {
-        toast.error(res.error);
+        toast.error(friendlyError(res.error));
       }
       return res.fieldErrors ?? NO_ERRORS;
     },
@@ -651,6 +655,7 @@ export function RecipeEditor({
                     />
                   </div>
                   <RowControls
+                    objectLabel={t("ingredientObject")}
                     onUp={() => setIngredients((l) => move(l, i, -1))}
                     onDown={() => setIngredients((l) => move(l, i, 1))}
                     onRemove={() =>
@@ -749,6 +754,7 @@ export function RecipeEditor({
                     />
                   </div>
                   <RowControls
+                    objectLabel={t("stepObject")}
                     onUp={() => setSteps((l) => move(l, i, -1))}
                     onDown={() => setSteps((l) => move(l, i, 1))}
                     onRemove={() =>
@@ -1031,23 +1037,31 @@ function RowControls({
   onUp,
   onDown,
   onRemove,
+  objectLabel,
 }: {
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
+  objectLabel: string;
 }) {
   const t = useTranslations("recipeEditor");
   return (
     <div className="flex shrink-0 items-center">
       <GripVertical className="hidden size-4 text-muted-foreground sm:block" />
-      <Button type="button" size="icon" variant="ghost" aria-label={t("moveUp")} onClick={onUp}>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        aria-label={t("moveUpNamed", { object: objectLabel })}
+        onClick={onUp}
+      >
         <ChevronUp />
       </Button>
       <Button
         type="button"
         size="icon"
         variant="ghost"
-        aria-label={t("moveDown")}
+        aria-label={t("moveDownNamed", { object: objectLabel })}
         onClick={onDown}
       >
         <ChevronDown />
@@ -1056,7 +1070,7 @@ function RowControls({
         type="button"
         size="icon"
         variant="ghost"
-        aria-label={t("remove")}
+        aria-label={t("removeNamed", { object: objectLabel })}
         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
       >

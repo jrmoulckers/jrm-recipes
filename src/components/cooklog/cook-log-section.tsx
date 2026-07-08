@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { deleteCookLogAction, logCookAction } from "~/server/cooklog/actions";
 import type { CookLogItem } from "~/server/cooklog/queries";
@@ -32,6 +33,11 @@ import { ImageUploadField } from "~/components/ui/image-upload";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { CharacterCounter } from "~/components/ui/character-counter";
+import {
+  COOK_NOTE_MAX_LENGTH,
+  COOK_NOTE_TOO_LONG_MESSAGE,
+} from "~/server/cooklog/validation";
 
 export function CookLogSection({
   recipeId,
@@ -243,7 +249,7 @@ function LogCookButton({
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   }
 
@@ -284,10 +290,19 @@ function LogCookButton({
               id="cook-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              maxLength={2000}
               placeholder="Doubled the garlic, baked 5 min longer, everyone went back for seconds…"
               disabled={pending}
             />
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Note any tweaks so next time is even better.
+              </p>
+              <CharacterCounter
+                value={note.length}
+                max={COOK_NOTE_MAX_LENGTH}
+                overMessage={COOK_NOTE_TOO_LONG_MESSAGE}
+              />
+            </div>
           </div>
 
           <ImageUploadField
@@ -343,6 +358,13 @@ function DeleteCookButton({
   const [pending, startTransition] = React.useTransition();
 
   function onDelete() {
+    if (
+      !window.confirm(
+        "Delete this cook from your journal? This can't be undone.",
+      )
+    ) {
+      return;
+    }
     startTransition(async () => {
       const result = await deleteCookLogAction({ entryId, recipeSlug });
       if (result.ok) {
@@ -350,7 +372,7 @@ function DeleteCookButton({
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   }
 

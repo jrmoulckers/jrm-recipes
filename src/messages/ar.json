@@ -9,9 +9,9 @@
   },
   "cook": {
     "timer": {
-      "complete": "انتهى المؤقّت",
-      "remaining": "{time} متبقٍّ",
-      "paused": "متوقّف مؤقّتًا، {time} متبقٍّ",
+      "complete": "انتهى الوقت!",
+      "remaining": "بقي {time}",
+      "paused": "متوقّف مؤقّتًا · بقي {time}",
       "ready": "{time} جاهز"
     },
     "a11y": {
@@ -75,11 +75,16 @@
     "quantity": "الكمية",
     "unit": "الوحدة",
     "ingredient": "المكوّن",
+    "ingredientObject": "المكوّن",
+    "stepObject": "الخطوة",
     "step": "الخطوة {position}",
     "timerMinutes": "المؤقّت بالدقائق",
     "techniques": "التقنيات",
     "moveUp": "تحريك لأعلى",
     "moveDown": "تحريك لأسفل",
-    "remove": "إزالة"
+    "moveUpNamed": "تحريك {object} لأعلى",
+    "moveDownNamed": "تحريك {object} لأسفل",
+    "remove": "إزالة",
+    "removeNamed": "إزالة {object}"
   }
 }

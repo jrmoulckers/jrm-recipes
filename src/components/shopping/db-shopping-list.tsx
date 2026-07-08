@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   addManualItemAction,
@@ -42,7 +43,7 @@ export function DbShoppingList({
   function run(action: () => Promise<ActionResult>) {
     startTransition(async () => {
       const result = await action();
-      if (!result.ok) toast.error(result.error);
+      if (!result.ok) toast.error(friendlyError(result.error));
       router.refresh();
     });
   }

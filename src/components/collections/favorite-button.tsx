@@ -40,7 +40,7 @@ export function FavoriteButton({
     onSuccess: (result) => setFavorited(result.favorited),
     onError: () => setFavorited(previousRef.current),
     successToast: (result) =>
-      result.favorited ? "Saved to favorites." : "Removed from favorites.",
+      result.favorited ? "Saved to favorites" : "Removed from favorites",
     errorToast: true,
     refresh: true,
   });

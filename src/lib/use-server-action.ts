@@ -10,6 +10,8 @@ import type {
   ActionSuccess,
   FieldErrors,
 } from "~/server/action-result";
+import { friendlyError } from "~/lib/error-copy";
+import { CONNECTIVITY_COPY, isOffline } from "~/lib/connectivity-copy";
 
 type SuccessToast<T, Args extends unknown[]> =
   | string
@@ -113,7 +115,9 @@ export function useServerAction<T, Args extends unknown[]>(
               ? opts.errorToast(result, ...args)
               : typeof opts.errorToast === "string"
                 ? opts.errorToast
-                : result.error,
+                : isOffline()
+                  ? CONNECTIVITY_COPY.actionBlocked
+                  : friendlyError(result.error),
           );
         }
         opts.onError?.(result, ...args);

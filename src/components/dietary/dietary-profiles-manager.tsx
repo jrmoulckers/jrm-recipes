@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   createMemberProfileAction,
@@ -133,10 +134,10 @@ export function DietaryProfilesManager({
       void run.then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(isAdd ? "Profile added." : "Profile updated.");
+        toast.success(isAdd ? "Profile added" : "Profile updated");
         setEditing(null);
         router.refresh();
       });
@@ -151,10 +152,10 @@ export function DietaryProfilesManager({
     startTransition(() => {
       void deleteMemberProfileAction(profile.id).then((result) => {
         if (!result.ok) {
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Profile removed.");
+        toast.success("Profile removed");
         router.refresh();
       });
     });

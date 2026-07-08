@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { setCollectionVisibilityAction } from "~/server/collections/actions";
 import { type CollectionVisibilityValue } from "~/server/collections/validation";
@@ -68,7 +69,7 @@ export function ShareCollectionControl({
       void setCollectionVisibilityAction(collectionId, next).then((result) => {
         if (!result.ok) {
           setVisibility(previous);
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
         setShareToken(result.shareToken);
@@ -82,7 +83,7 @@ export function ShareCollectionControl({
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success("Share link copied.");
+      toast.success("Share link copied");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Couldn't copy the link.");

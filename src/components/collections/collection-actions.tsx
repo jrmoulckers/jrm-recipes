@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   deleteCollectionAction,
@@ -66,10 +67,10 @@ export function CollectionActions({
       void renameCollectionAction(collection.id, input).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Collection updated.");
+        toast.success("Collection updated");
         setRenameOpen(false);
         router.refresh();
       });
@@ -78,16 +79,16 @@ export function CollectionActions({
 
   function onDelete() {
     const ok = window.confirm(
-      `Delete “${collection.name}”? The recipes stay in your library; only the collection is removed.`,
+      `Delete “${collection.name}”? Your recipes stay in your library — only this collection is removed.`,
     );
     if (!ok) return;
     startTransition(() => {
       void deleteCollectionAction(collection.id).then((result) => {
         if (!result.ok) {
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Collection deleted.");
+        toast.success("Collection deleted");
         router.push("/collections");
       });
     });

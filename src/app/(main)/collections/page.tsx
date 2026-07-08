@@ -13,7 +13,10 @@ import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CollectionCard } from "~/components/collections/collection-card";
 import { CreateCollectionDialog } from "~/components/collections/create-collection-dialog";
 
-export const metadata: Metadata = { title: "Saved" };
+export const metadata: Metadata = {
+  title: "Saved",
+  description: "Your recipe collections — shelves for the dishes you love.",
+};
 
 export default async function CollectionsPage() {
   const user = await getCurrentUser();

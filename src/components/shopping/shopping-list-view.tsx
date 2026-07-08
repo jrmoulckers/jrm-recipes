@@ -97,7 +97,7 @@ function ShareListButton({
         }
       }
       await navigator.clipboard.writeText(text);
-      toast.success("List copied — paste it into a message.");
+      toast.success("List copied — paste it into a message");
     } catch {
       toast.error("Couldn't share the list.");
     } finally {

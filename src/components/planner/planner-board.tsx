@@ -14,6 +14,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   addBatchCookAction,
@@ -261,12 +262,12 @@ function EntryChip({
       );
       const failed = results.find((result) => !result.ok);
       if (failed && !failed.ok) {
-        toast.error(failed.error);
+        toast.error(friendlyError(failed.error));
       } else {
         toast.success(
           alsoLeftovers && batch
-            ? "Removed the meal and its leftovers."
-            : "Removed from your plan.",
+            ? "Removed the meal and its leftovers"
+            : "Removed from your plan",
         );
         router.refresh();
       }
@@ -290,9 +291,9 @@ function EntryChip({
       });
       if (result.ok) {
         setCooked(true);
-        toast.success("Logged to your journal.");
+        toast.success("Logged to your journal");
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
@@ -532,13 +533,13 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          batching ? "Added — leftovers night booked too." : "Added to your plan.",
+          batching ? "Added — leftovers night booked too" : "Added to your plan",
         );
         onClose();
         router.refresh();
       } else {
         setError(result.error);
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }

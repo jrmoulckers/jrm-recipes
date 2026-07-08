@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { createCollectionAction } from "~/server/collections/actions";
 import { type CollectionInput } from "~/server/collections/validation";
@@ -52,11 +53,11 @@ export function CreateCollectionDialog({
       void createCollectionAction(input).then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
-          toast.error(result.error);
+          toast.error(friendlyError(result.error));
           return;
         }
 
-        toast.success("Collection created.");
+        toast.success("Collection created");
         setOpen(false);
         resetForm();
         router.push(`/collections/${result.id}`);

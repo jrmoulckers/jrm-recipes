@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CopyPlus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { copyPreviousWeekAction } from "~/server/planner/actions";
 import { Button } from "~/components/ui/button";
@@ -21,7 +22,7 @@ export function CopyLastWeekButton({ week }: { week: string }) {
     startTransition(async () => {
       const result = await copyPreviousWeekAction({ week });
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
         return;
       }
       if (result.previousEmpty) {
@@ -35,7 +36,7 @@ export function CopyLastWeekButton({ week }: { week: string }) {
       toast.success(
         `Copied ${result.copied} ${
           result.copied === 1 ? "meal" : "meals"
-        } from last week.`,
+        } from last week`,
       );
       router.refresh();
     });

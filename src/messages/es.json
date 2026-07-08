@@ -9,9 +9,9 @@
   },
   "cook": {
     "timer": {
-      "complete": "Temporizador completado",
-      "remaining": "{time} restante",
-      "paused": "En pausa con {time} restante",
+      "complete": "¡Se acabó el tiempo!",
+      "remaining": "Queda {time}",
+      "paused": "En pausa · queda {time}",
       "ready": "{time} listo"
     },
     "a11y": {
@@ -75,11 +75,16 @@
     "quantity": "Cantidad",
     "unit": "Unidad",
     "ingredient": "Ingrediente",
+    "ingredientObject": "ingrediente",
+    "stepObject": "paso",
     "step": "Paso {position}",
     "timerMinutes": "Temporizador en minutos",
     "techniques": "Técnicas",
     "moveUp": "Subir",
     "moveDown": "Bajar",
-    "remove": "Eliminar"
+    "moveUpNamed": "Subir {object}",
+    "moveDownNamed": "Bajar {object}",
+    "remove": "Eliminar",
+    "removeNamed": "Eliminar {object}"
   }
 }

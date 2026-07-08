@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { BookmarkPlus, Check, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   addRecipeToCollectionAction,
@@ -73,7 +74,7 @@ export function SaveToCollectionButton({
             c.id === collectionId ? { ...c, contains } : c,
           ),
         );
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
       setPendingId(null);
     })();
@@ -88,7 +89,7 @@ export function SaveToCollectionButton({
     void (async () => {
       const created = await createCollectionAction({ name });
       if (!created.ok) {
-        toast.error(created.error);
+        toast.error(friendlyError(created.error));
         setCreating(false);
         return;
       }
@@ -97,14 +98,14 @@ export function SaveToCollectionButton({
         recipeId,
       });
       if (!added.ok) {
-        toast.error(added.error);
+        toast.error(friendlyError(added.error));
         setCreating(false);
         return;
       }
       setItems((prev) => [{ id: created.id, name, contains: true }, ...prev]);
       setNewName("");
       setCreating(false);
-      toast.success(`Saved to “${name}”.`);
+      toast.success(`Saved to “${name}”`);
       router.refresh();
     })();
   }

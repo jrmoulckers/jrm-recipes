@@ -34,11 +34,15 @@ import {
 import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
+import { WelcomeChecklist } from "~/components/onboarding/welcome-checklist";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
 
-export const metadata: Metadata = { title: "Recipes" };
+export const metadata: Metadata = {
+  title: "Your recipes",
+  description: "Every recipe you've saved and created, together in one library.",
+};
 
 /**
  * Number of leading cards treated as above-the-fold for LCP: the first row of
@@ -226,7 +230,10 @@ async function BrowseSections({
           ))}
         </section>
       ) : (
-        <EmptyLibraryCta />
+        <>
+          {user && <WelcomeChecklist />}
+          <EmptyLibraryCta />
+        </>
       )}
 
       {discoverOnly.length > 0 && (

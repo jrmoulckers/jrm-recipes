@@ -32,6 +32,7 @@ import {
   isFavorited,
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { brand } from "~/config/brand";
 import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
@@ -72,7 +73,8 @@ export async function generateMetadata({
   const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
-  const description = recipe.description ?? undefined;
+  const description =
+    recipe.description ?? `A family recipe on ${brand.name}.`;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
   const isPublic = recipe.visibility === "public";
   return {
@@ -321,7 +323,7 @@ export default async function RecipePage({
               </Link>
             </Button>
             <GrownUpControls>
-              <ShareButton title={recipe.title} />
+              <ShareButton title={recipe.title} author={recipe.author?.name} />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>
             <AddToShoppingList
@@ -477,7 +479,26 @@ export default async function RecipePage({
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-muted-foreground">No steps yet.</p>
+                  <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
+                    <p className="font-medium">No steps yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {isOwner
+                        ? "Add the steps and this recipe is ready to cook."
+                        : "The steps haven’t been added to this recipe yet."}
+                    </p>
+                    {isOwner && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                      >
+                        <Link href={`/recipes/${recipe.slug}/edit`}>
+                          <Pencil /> Edit recipe
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (

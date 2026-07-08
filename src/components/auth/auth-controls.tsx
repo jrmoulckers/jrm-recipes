@@ -69,7 +69,7 @@ export function AuthControls({
           </SignInButton>
           <SignUpButton mode="modal">
             <Button size="sm" onClick={() => track("signup_started", {})}>
-              Get started
+              Start your cookbook
             </Button>
           </SignUpButton>
         </div>

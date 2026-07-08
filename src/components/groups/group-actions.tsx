@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import {
   deleteGroupAction,
@@ -42,7 +43,7 @@ export function GroupActions({
       void action()
         .then((result) => {
           if (!result.ok) {
-            toast.error(result.error);
+            toast.error(friendlyError(result.error));
             return;
           }
           toast.success(success);
@@ -61,8 +62,13 @@ export function GroupActions({
           variant="outline"
           onClick={() => {
             if (isSoleOwner) return;
-            if (!window.confirm(`Leave ${groupName}?`)) return;
-            run("leave", () => leaveGroupAction(slug), "You left the group.");
+            if (
+              !window.confirm(
+                `Leave ${groupName}? You'll lose access to its shared recipes. You can re-join with an invite.`,
+              )
+            )
+              return;
+            run("leave", () => leaveGroupAction(slug), "You left the group");
           }}
           disabled={isPending || isSoleOwner}
           title={isSoleOwner ? soleOwnerNote : undefined}
@@ -78,12 +84,12 @@ export function GroupActions({
             onClick={() => {
               if (
                 !window.confirm(
-                  `Delete ${groupName}? Recipes stay saved, but the group space will be removed.`,
+                  `Delete “${groupName}”? Everyone's recipes stay saved — only the shared group space is removed.`,
                 )
               ) {
                 return;
               }
-              run("delete", () => deleteGroupAction(slug), "The group was deleted.");
+              run("delete", () => deleteGroupAction(slug), "The group was deleted");
             }}
             disabled={isPending}
           >

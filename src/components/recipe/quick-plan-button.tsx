@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "~/lib/error-copy";
 
 import { addEntryAction } from "~/server/planner/actions";
 import {
@@ -86,11 +87,11 @@ export function QuickPlanButton({
       const result = await addEntryAction({ date, slot, recipeId });
       if (result.ok) {
         const dayLabel = days.find((d) => d.value === date)?.label ?? "your plan";
-        toast.success(`Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}.`);
+        toast.success(`Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}`);
         setOpen(false);
         router.refresh();
       } else {
-        toast.error(result.error);
+        toast.error(friendlyError(result.error));
       }
     });
   }
