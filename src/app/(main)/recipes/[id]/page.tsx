@@ -49,6 +49,7 @@ import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
+import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
@@ -380,6 +381,12 @@ export default async function RecipePage({
                 <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
                   Ingredients
                 </h2>
+                {recipe.ingredients.length > 0 && (
+                  <AllergenSummary
+                    items={recipe.ingredients.map((ing) => ing.item)}
+                    className="mb-4"
+                  />
+                )}
                 {recipe.ingredients.length > 0 ? (
                   <IngredientsPanel
                     ingredients={recipe.ingredients}
