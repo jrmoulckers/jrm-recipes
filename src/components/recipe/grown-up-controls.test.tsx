@@ -47,9 +47,11 @@ describe("GrownUpControls (issue #443)", () => {
     ).toBeInTheDocument();
   });
 
-  it("also hides them in other simplified-chrome modes", () => {
+  it("keeps controls visible in Simple/barebones mode (adult accessibility, not childproofing)", () => {
     renderIn("barebones");
-    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Delete" }),
+    ).toBeInTheDocument();
   });
 
   it("shows children by default outside a theme provider", () => {
