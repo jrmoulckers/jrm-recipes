@@ -81,7 +81,7 @@ describe("recipe read paths exclude soft-deleted rows (issue #165)", () => {
   });
 
   it("searchRecipes filters on deleted_at", async () => {
-    await searchRecipes(author, { sort: "newest" });
+    await searchRecipes(author, { cuisines: [], tags: [], sort: "newest" });
     expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
   });
 });

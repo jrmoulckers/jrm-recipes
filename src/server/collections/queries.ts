@@ -1,20 +1,32 @@
 import "server-only";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
   collectionRecipes,
   collections,
   favorites,
+  groupMembers,
   type User,
 } from "~/server/db/schema";
+import { canView } from "~/server/recipes/queries";
 
 const recipeCardWith = {
   author: true,
   tags: { with: { tag: true } },
   ratings: true,
 } as const;
+
+/** Group ids the viewer belongs to — for per-recipe visibility scoping. */
+async function viewerGroupIds(viewer: User | null): Promise<string[]> {
+  if (!viewer) return [];
+  const rows = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, viewer.id),
+    columns: { groupId: true },
+  });
+  return rows.map((r) => r.groupId);
+}
 
 export type CollectionSummary = Awaited<
   ReturnType<typeof listMyCollections>
@@ -86,6 +98,68 @@ export async function getCollection(id: string, viewer: User | null) {
     name: collection.name,
     description: collection.description,
     coverImageUrl: collection.coverImageUrl,
+    createdAt: collection.createdAt,
+    updatedAt: collection.updatedAt,
+    recipes,
+  };
+}
+
+/**
+ * Fetch a collection by its id *or* share token, enforcing collection-level
+ * visibility for the viewer:
+ *  - the owner always sees it (any visibility);
+ *  - `public` collections are visible to anyone;
+ *  - `unlisted` collections are visible only when reached via their share token.
+ *
+ * Recipes inside are additionally filtered by each recipe's own visibility, so a
+ * shared cookbook never leaks a private recipe. Returns `null` when missing or
+ * forbidden (callers should `notFound()`).
+ */
+export async function getSharedCollection(
+  idOrToken: string,
+  viewer: User | null,
+) {
+  if (!isDbConfigured()) return null;
+
+  const collection = await db.query.collections.findFirst({
+    where: or(
+      eq(collections.id, idOrToken),
+      eq(collections.shareToken, idOrToken),
+    ),
+    with: {
+      owner: { columns: { id: true, name: true } },
+      recipes: {
+        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
+        with: { recipe: { with: recipeCardWith } },
+      },
+    },
+  });
+  if (!collection) return null;
+
+  const isOwner = viewer?.id === collection.userId;
+  const matchedByToken =
+    collection.shareToken != null && collection.shareToken === idOrToken;
+  const permitted =
+    isOwner ||
+    collection.visibility === "public" ||
+    (collection.visibility === "unlisted" && matchedByToken);
+  if (!permitted) return null;
+
+  const groupIds = await viewerGroupIds(viewer);
+  const recipes = collection.recipes
+    .map((entry) => entry.recipe)
+    .filter((recipe): recipe is NonNullable<typeof recipe> => recipe != null)
+    .filter((recipe) => canView(recipe, viewer, groupIds));
+
+  return {
+    id: collection.id,
+    name: collection.name,
+    description: collection.description,
+    coverImageUrl: collection.coverImageUrl,
+    visibility: collection.visibility,
+    shareToken: collection.shareToken,
+    isOwner,
+    ownerName: collection.owner?.name ?? null,
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
     recipes,

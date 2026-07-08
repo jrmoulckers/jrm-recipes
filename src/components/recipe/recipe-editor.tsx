@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
 import { track } from "~/lib/analytics";
+import { SUGGESTED_TAGS } from "~/lib/tag-taxonomy";
 import { type RecipeInput } from "~/server/recipes/validation";
 import { type ImportedRecipe } from "~/server/recipes/import";
 import {
@@ -153,6 +154,20 @@ export function RecipeEditor({
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  // Parsed view of the comma-separated tags field, used by the quick-add chips.
+  const tagList = form.tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  function toggleTag(name: string) {
+    const has = tagList.some((t) => t.toLowerCase() === name.toLowerCase());
+    const next = has
+      ? tagList.filter((t) => t.toLowerCase() !== name.toLowerCase())
+      : [...tagList, name];
+    set("tags", next.join(", "));
   }
 
   function applyImported(v: ImportedRecipe) {
@@ -626,6 +641,29 @@ export function RecipeEditor({
               onChange={(e) => set("tags", e.target.value)}
               placeholder="dinner, weeknight"
             />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SUGGESTED_TAGS.map((tag) => {
+                const active = tagList.some(
+                  (t) => t.toLowerCase() === tag.name.toLowerCase(),
+                );
+                return (
+                  <button
+                    key={tag.slug}
+                    type="button"
+                    onClick={() => toggleTag(tag.name)}
+                    aria-pressed={active}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
 
           <ImageUploadField

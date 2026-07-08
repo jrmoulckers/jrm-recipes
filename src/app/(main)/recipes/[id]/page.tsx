@@ -26,6 +26,8 @@ import {
   getRecipeLineage,
   getRecipeTimeline,
   getRecipeVersions,
+  listSimilarRecipes,
+  recordRecipeView,
   excludeOwnerRatings,
   ratingSummary,
 } from "~/server/recipes/queries";
@@ -37,6 +39,7 @@ import {
 import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
 import {
   getCollectionsForRecipe,
+  getFavoriteRecipeIds,
   isFavorited,
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
@@ -61,6 +64,7 @@ import { CookLogSection } from "~/components/cooklog/cook-log-section";
 import { TechniqueChips } from "~/components/cook/technique-chips";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
+import { RecipeCard } from "~/components/recipe/recipe-card";
 
 const load = cache(async (idOrSlug: string) => {
   const user = await getCurrentUser();
@@ -131,6 +135,12 @@ export default async function RecipePage({
     excludeOwnerRatings(recipe.ratings, recipe.authorId),
   );
 
+  // Fire the "recently viewed" write concurrently with the reads below; a
+  // signed-out viewer records nothing.
+  const recordView = user
+    ? recordRecipeView(user.id, recipe.id)
+    : Promise.resolve();
+
   const [
     versions,
     lineage,
@@ -141,6 +151,8 @@ export default async function RecipePage({
     cookCount,
     favorited,
     savedCollections,
+    similar,
+    favoriteIds,
   ] =
     await Promise.all([
       getRecipeVersions(recipe.id),
@@ -152,7 +164,10 @@ export default async function RecipePage({
       getCookCount(recipe.id, user?.id ?? null),
       isFavorited(recipe.id, user?.id ?? null),
       user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
+      listSimilarRecipes(user, recipe.id),
+      getFavoriteRecipeIds(user?.id),
     ]);
+  await recordView;
   const commentCount = countComments(comments);
 
   // schema.org structured data — public recipes only, so we never expose the
@@ -538,6 +553,27 @@ export default async function RecipePage({
             </div>
           </TabsContent>
         </Tabs>
+
+        {similar.length > 0 && (
+          <section className="flex flex-col gap-5 border-t border-border pt-8">
+            <div className="flex items-center gap-2">
+              <CookingPot className="size-5 text-primary" />
+              <h2 className="font-display text-2xl font-bold tracking-tight">
+                You might also like
+              </h2>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {similar.map((related) => (
+                <RecipeCard
+                  key={related.id}
+                  recipe={related}
+                  canFavorite={Boolean(user)}
+                  favorited={favoriteIds.has(related.id)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </article>
   );

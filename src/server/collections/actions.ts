@@ -10,14 +10,17 @@ import {
   deleteCollection,
   removeRecipeFromCollection,
   renameCollection,
+  setCollectionVisibility,
   toggleFavorite,
 } from "./mutations";
 import {
   collectionInput,
   collectionRecipeInput,
+  setCollectionVisibilityInput,
   toggleFavoriteInput,
   type CollectionInput,
   type CollectionRecipeInput,
+  type CollectionVisibilityValue,
   type ToggleFavoriteInput,
 } from "./validation";
 
@@ -131,6 +134,40 @@ export async function deleteCollectionAction(id: string): Promise<ActionResult> 
     await deleteCollection(id, user);
     revalidatePath("/collections");
     return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export type SetVisibilityResult =
+  | { ok: true; visibility: CollectionVisibilityValue; shareToken: string | null }
+  | { ok: false; error: string };
+
+export async function setCollectionVisibilityAction(
+  id: string,
+  visibility: CollectionVisibilityValue,
+): Promise<SetVisibilityResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = setCollectionVisibilityInput.safeParse({ id, visibility });
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't update sharing for that collection." };
+  }
+
+  try {
+    const user = await requireUser();
+    const row = await setCollectionVisibility(
+      parsed.data.id,
+      parsed.data.visibility,
+      user,
+    );
+    revalidatePath("/collections");
+    revalidatePath(`/collections/${id}`);
+    return {
+      ok: true,
+      visibility: row.visibility,
+      shareToken: row.shareToken,
+    };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

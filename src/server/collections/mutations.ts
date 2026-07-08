@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
 
 import { db } from "~/server/db";
 import {
@@ -11,7 +12,10 @@ import {
   recipes,
   type User,
 } from "~/server/db/schema";
-import { type CollectionInput } from "./validation";
+import {
+  type CollectionInput,
+  type CollectionVisibilityValue,
+} from "./validation";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -138,6 +142,42 @@ export async function deleteCollection(id: string, user: User) {
     .returning({ id: collections.id });
   if (!row) throw new Error("NOT_FOUND");
   return row;
+}
+
+/**
+ * Change a collection's visibility. Minting an unguessable `shareToken` the
+ * first time it leaves `private`, and reusing it afterwards so a shared link
+ * stays stable even if the owner toggles back and forth.
+ */
+export async function setCollectionVisibility(
+  id: string,
+  visibility: CollectionVisibilityValue,
+  user: User,
+) {
+  return db.transaction(async (tx) => {
+    const existing = await tx.query.collections.findFirst({
+      where: and(eq(collections.id, id), eq(collections.userId, user.id)),
+      columns: { id: true, shareToken: true },
+    });
+    if (!existing) throw new Error("NOT_FOUND");
+
+    const shareToken =
+      visibility !== "private" && !existing.shareToken
+        ? createId()
+        : existing.shareToken;
+
+    const [row] = await tx
+      .update(collections)
+      .set({ visibility, shareToken, updatedAt: new Date() })
+      .where(and(eq(collections.id, id), eq(collections.userId, user.id)))
+      .returning({
+        id: collections.id,
+        visibility: collections.visibility,
+        shareToken: collections.shareToken,
+      });
+    if (!row) throw new Error("NOT_FOUND");
+    return row;
+  });
 }
 
 export async function addRecipeToCollection(

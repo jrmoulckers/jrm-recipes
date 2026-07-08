@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  pgEnum,
   pgTable,
   timestamp,
   unique,
@@ -35,6 +36,17 @@ export const favorites = pgTable(
   ],
 );
 
+/**
+ * How widely a collection can be seen. `unlisted` collections are reachable only
+ * via their unguessable `shareToken`; `public` ones are visible to anyone.
+ * (Collections aren't group-scoped, so there's no `group` value here.)
+ */
+export const collectionVisibility = pgEnum("collection_visibility", [
+  "private",
+  "unlisted",
+  "public",
+]);
+
 /** A user-named collection (a personal cookbook) of saved recipes. */
 export const collections = pgTable(
   "collections",
@@ -46,6 +58,9 @@ export const collections = pgTable(
     name: varchar({ length: 120 }).notNull(),
     description: varchar({ length: 500 }),
     coverImageUrl: varchar({ length: 2048 }),
+    visibility: collectionVisibility().notNull().default("private"),
+    // Unguessable share key, minted the first time the collection is shared.
+    shareToken: varchar({ length: 24 }).unique(),
     ...timestamps(),
   },
   (t) => [index("collections_user_idx").on(t.userId)],
@@ -112,5 +127,7 @@ export type Favorite = typeof favorites.$inferSelect;
 export type NewFavorite = typeof favorites.$inferInsert;
 export type Collection = typeof collections.$inferSelect;
 export type NewCollection = typeof collections.$inferInsert;
+export type CollectionVisibility =
+  (typeof collectionVisibility.enumValues)[number];
 export type CollectionRecipe = typeof collectionRecipes.$inferSelect;
 export type NewCollectionRecipe = typeof collectionRecipes.$inferInsert;

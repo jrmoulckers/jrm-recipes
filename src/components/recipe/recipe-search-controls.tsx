@@ -2,12 +2,17 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -15,30 +20,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { SavedSearches } from "~/components/recipe/saved-searches";
 import {
-  DEFAULT_RECIPE_SORT,
+  defaultSortFor,
   hasActiveRecipeFilters,
   recipeDifficultyValues,
   recipeSortLabels,
   recipeSortValues,
   type RecipeSearch,
 } from "~/server/recipes/search";
+import { type SavedSearch } from "~/server/searches/queries";
 
 /** Sentinel for "no filter" — Radix Select forbids empty-string item values. */
 const ANY = "any";
 
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
 
-type Facets = { cuisines: string[]; tags: { slug: string; name: string }[] };
+type Facets = {
+  cuisines: { value: string; count: number }[];
+  tags: { slug: string; name: string; count: number }[];
+};
 
 type ParamKey = "q" | "cuisine" | "difficulty" | "maxTime" | "tag" | "sort";
 
 export function RecipeSearchControls({
   search,
   facets,
+  savedSearches = [],
 }: {
   search: RecipeSearch;
   facets: Facets;
+  savedSearches?: SavedSearch[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -62,14 +74,44 @@ export function RecipeSearchControls({
           params.set(key, value);
         }
       }
-      // Keep the default sort out of the URL so shared links stay clean.
-      if (params.get("sort") === DEFAULT_RECIPE_SORT) params.delete("sort");
+      // Keep the contextual default sort out of the URL so shared links stay
+      // clean: `relevance` when a query is present, `newest` otherwise.
+      const effectiveDefault = defaultSortFor(params.get("q"));
+      if (params.get("sort") === effectiveDefault) params.delete("sort");
       const qs = params.toString();
       startTransition(() => {
         router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
       });
     },
     [currentParams, pathname, router],
+  );
+
+  // Multi-select facets (cuisine, tag) carry several repeated params; replace the
+  // whole set atomically so toggling one value never drops the others.
+  const pushListParam = React.useCallback(
+    (key: "cuisine" | "tag", values: string[]) => {
+      const params = new URLSearchParams(currentParams.toString());
+      params.delete(key);
+      for (const value of values) params.append(key, value);
+      const effectiveDefault = defaultSortFor(params.get("q"));
+      if (params.get("sort") === effectiveDefault) params.delete("sort");
+      const qs = params.toString();
+      startTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      });
+    },
+    [currentParams, pathname, router],
+  );
+
+  const toggleListValue = React.useCallback(
+    (key: "cuisine" | "tag", current: string[], value: string, on: boolean) => {
+      const lower = value.toLowerCase();
+      const next = on
+        ? [...current, value]
+        : current.filter((v) => v.toLowerCase() !== lower);
+      pushListParam(key, next);
+    },
+    [pushListParam],
   );
 
   // Debounce the free-text query so we navigate once the user pauses.
@@ -101,24 +143,26 @@ export function RecipeSearchControls({
 
       <div className="flex flex-wrap items-end gap-3">
         {facets.cuisines.length > 0 && (
-          <FilterField label="Cuisine">
-            <Select
-              value={search.cuisine ?? ANY}
-              onValueChange={(value) => pushParams({ cuisine: value })}
-            >
-              <SelectTrigger className="min-w-[9rem]">
-                <SelectValue placeholder="Any cuisine" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Any cuisine</SelectItem>
-                {facets.cuisines.map((cuisine) => (
-                  <SelectItem key={cuisine} value={cuisine}>
-                    {cuisine}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterField>
+          <FacetMultiSelect
+            label="Cuisine"
+            placeholder="Any cuisine"
+            selected={search.cuisines}
+            options={facets.cuisines
+              .filter(
+                (c) =>
+                  c.count > 0 ||
+                  search.cuisines.some(
+                    (s) => s.toLowerCase() === c.value.toLowerCase(),
+                  ),
+              )
+              .map((c) => ({
+                value: c.value,
+                label: `${c.value} (${c.count})`,
+              }))}
+            onToggle={(value, on) =>
+              toggleListValue("cuisine", search.cuisines, value, on)
+            }
+          />
         )}
 
         <FilterField label="Difficulty">
@@ -160,24 +204,24 @@ export function RecipeSearchControls({
         </FilterField>
 
         {facets.tags.length > 0 && (
-          <FilterField label="Tag">
-            <Select
-              value={search.tag ?? ANY}
-              onValueChange={(value) => pushParams({ tag: value })}
-            >
-              <SelectTrigger className="min-w-[9rem]">
-                <SelectValue placeholder="Any tag" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Any tag</SelectItem>
-                {facets.tags.map((tag) => (
-                  <SelectItem key={tag.slug} value={tag.slug}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterField>
+          <FacetMultiSelect
+            label="Tag"
+            placeholder="Any tag"
+            selected={search.tags}
+            options={facets.tags
+              .filter(
+                (t) =>
+                  t.count > 0 ||
+                  search.tags.some((s) => s.toLowerCase() === t.slug),
+              )
+              .map((t) => ({
+                value: t.slug,
+                label: `${t.name} (${t.count})`,
+              }))}
+            onToggle={(value, on) =>
+              toggleListValue("tag", search.tags, value, on)
+            }
+          />
         )}
 
         <FilterField label="Sort">
@@ -211,6 +255,14 @@ export function RecipeSearchControls({
             <X /> Clear
           </Button>
         )}
+
+        <div className="ms-auto">
+          <SavedSearches
+            savedSearches={savedSearches}
+            currentQuery={currentParams.toString()}
+            filtersActive={filtersActive}
+          />
+        </div>
       </div>
     </div>
   );
@@ -228,5 +280,78 @@ function FilterField({
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
+  );
+}
+
+/**
+ * A checkbox popover for a multi-value facet. Selection state lives in the URL
+ * (repeated params), so `onToggle` reports each add/remove and the parent
+ * rewrites the whole set. Matching is case-insensitive so URL-supplied values
+ * still light up their option.
+ */
+function FacetMultiSelect({
+  label,
+  placeholder,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  placeholder: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (value: string, on: boolean) => void;
+}) {
+  const selectedSet = React.useMemo(
+    () => new Set(selected.map((v) => v.toLowerCase())),
+    [selected],
+  );
+  const count = options.reduce(
+    (n, o) => n + (selectedSet.has(o.value.toLowerCase()) ? 1 : 0),
+    0,
+  );
+  return (
+    <FilterField label={label}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-w-[9rem] justify-between font-normal"
+            aria-label={`${label} filter, ${count} selected`}
+          >
+            <span className={cn(count === 0 && "text-muted-foreground")}>
+              {count === 0 ? placeholder : `${count} selected`}
+            </span>
+            <ChevronDown className="size-4 shrink-0 opacity-60" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="max-h-72 w-56 overflow-y-auto p-1.5"
+        >
+          <ul className="flex flex-col">
+            {options.map((option) => {
+              const checked = selectedSet.has(option.value.toLowerCase());
+              return (
+                <li key={option.value}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={checked}
+                      onChange={(event) =>
+                        onToggle(option.value, event.target.checked)
+                      }
+                    />
+                    <span className="truncate">{option.label}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </PopoverContent>
+      </Popover>
+    </FilterField>
   );
 }
