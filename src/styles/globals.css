@@ -43,9 +43,14 @@
     border-radius: calc(var(--radius) - 4px);
   }
 
-  /* Comfortable minimum tap targets (grows in Kids / Simple modes). */
+  /* Comfortable minimum tap targets (grows in Kids / Simple modes). The floor
+   * is 44x44px (WCAG 2.5.5 / Apple HIG) applied on both axes so icon-only and
+   * compact controls stay easy to hit. Scoped to real controls — inline text
+   * links (`a` without `.btn`) are intentionally excluded so prose isn't
+   * stretched; only link-styled buttons (`a.btn`, `label.btn`) opt in. */
   button, [role="button"], a.btn, label.btn {
-    min-height: var(--tap-min, 2.5rem);
+    min-height: var(--tap-min, 2.75rem);
+    min-width: var(--tap-min, 2.75rem);
   }
 
   ::selection {

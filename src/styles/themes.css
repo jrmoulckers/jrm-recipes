@@ -25,7 +25,7 @@
   --shadow-lg: 0 14px 44px -14px hsl(24 40% 20% / 0.26);
   --ring-width: 2px;
   --text-scale: 1;
-  --tap-min: 2.5rem;
+  --tap-min: 2.75rem;
   --motion-scale: 1;
   /* Motion vocabulary. Durations are scaled by --motion-scale, so Simple mode
    * (scale 0) collapses every tokenized transition to 0ms through the token
