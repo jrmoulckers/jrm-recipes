@@ -3,6 +3,8 @@ import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { Serwist } from "serwist";
 
+import { isOfflineFallbackRequest } from "../lib/offline-fallback";
+
 /**
  * Heirloom service worker (Serwist). Precaches the app shell and applies
  * sensible runtime caching so cook mode keeps working offline in the kitchen.
@@ -28,9 +30,10 @@ const serwist = new Serwist({
     entries: [
       {
         // Precached in next.config.js via `additionalPrecacheEntries`. Served
-        // whenever a page navigation can't be fulfilled from network or cache.
+        // whenever a navigation can't be fulfilled from network or cache —
+        // both hard document loads and soft (RSC) client-side navigations.
         url: "/~offline",
-        matcher: ({ request }) => request.destination === "document",
+        matcher: ({ request }) => isOfflineFallbackRequest(request),
       },
     ],
   },
