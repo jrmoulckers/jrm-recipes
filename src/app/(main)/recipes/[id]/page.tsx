@@ -285,9 +285,18 @@ export default async function RecipePage({
             {recipe.author?.name && (
               <span>
                 By{" "}
-                <span className="font-medium text-foreground">
-                  {recipe.author.name}
-                </span>
+                {recipe.author.handle ? (
+                  <Link
+                    href={`/cooks/${recipe.author.handle}`}
+                    className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                  >
+                    {recipe.author.name}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-foreground">
+                    {recipe.author.name}
+                  </span>
+                )}
               </span>
             )}
             {meta.map((m, i) => (
