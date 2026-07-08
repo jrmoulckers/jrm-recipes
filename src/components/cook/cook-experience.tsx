@@ -21,6 +21,7 @@ import {
   Play,
   Repeat,
   RotateCcw,
+  Square,
   Timer,
   Volume2,
   VolumeX,
@@ -61,6 +62,7 @@ import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
+import { useStepNarration } from "./use-step-narration";
 import { useOneHandedNav } from "./use-one-handed-nav";
 import { useHousehold } from "~/components/household/household-provider";
 import { useThemeBehavior } from "~/components/theme/theme-provider";
@@ -336,6 +338,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               >
                 {currentStep.instruction}
               </h1>
+              <StepNarrationButton
+                instruction={currentStep.instruction}
+                stepKey={currentStep.id}
+                prominent={kidSafe}
+              />
               {totalSteps > 1 && (
                 <p className="text-xs text-muted-foreground/80">
                   Tap the sides or swipe to move between steps.
@@ -539,6 +546,51 @@ function ReadAloudControls({
         </Button>
       )}
     </div>
+  );
+}
+
+/**
+ * Kid-facing "Read it to me" button (#411). Reads the current step aloud via the
+ * Web Speech API and flips to "Stop reading" while speaking; a second tap stops.
+ * Oversized in Kids mode (`prominent`) and unobtrusive otherwise. Hidden entirely
+ * when speech synthesis is unavailable so nothing breaks offline. The parent step
+ * `<section>` remounts per step (keyed on step id), which cancels narration on
+ * navigation; the `stepKey` effect makes that explicit and future-proof.
+ */
+function StepNarrationButton({
+  instruction,
+  stepKey,
+  prominent,
+}: {
+  instruction: string;
+  stepKey: string;
+  prominent: boolean;
+}) {
+  const narration = useStepNarration();
+  const { stop } = narration;
+
+  React.useEffect(() => {
+    stop();
+  }, [stepKey, stop]);
+
+  if (!narration.supported) return null;
+
+  const speaking = narration.speaking;
+  return (
+    <Button
+      type="button"
+      size={prominent ? "xl" : "sm"}
+      variant={speaking ? "secondary" : prominent ? "accent" : "ghost"}
+      aria-pressed={speaking}
+      onClick={() => narration.toggle(instruction)}
+      className={cn(
+        "gap-2 self-start",
+        prominent && "w-full justify-center gap-3 sm:w-auto",
+      )}
+    >
+      {speaking ? <Square /> : <Volume2 />}
+      {speaking ? "Stop reading" : "Read it to me"}
+    </Button>
   );
 }
 

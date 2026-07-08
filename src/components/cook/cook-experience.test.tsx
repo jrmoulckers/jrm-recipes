@@ -316,3 +316,80 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
   });
 });
+
+describe("Cook Mode 'Read it to me' narration (issue #411)", () => {
+  class FakeUtterance {
+    text: string;
+    rate = 1;
+    pitch = 1;
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    constructor(text: string) {
+      this.text = text;
+    }
+  }
+  let speakSpy: ReturnType<typeof vi.fn>;
+  let cancelSpy: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    speakSpy = vi.fn();
+    cancelSpy = vi.fn();
+    // This block's afterEach calls unstubAllGlobals, which also clears the
+    // shared matchMedia stub, so re-apply it here for every test in the block.
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+    vi.stubGlobal("speechSynthesis", { speak: speakSpy, cancel: cancelSpy });
+    vi.stubGlobal("SpeechSynthesisUtterance", FakeUtterance);
+    sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function renderKids(recipe: CookRecipe) {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kids">
+          <CookExperience recipe={recipe} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  it("reads the current step aloud and toggles to a stop control", () => {
+    renderKids(makeRecipe());
+    const button = screen.getByRole("button", { name: /read it to me/i });
+    fireEvent.click(button);
+
+    expect(speakSpy).toHaveBeenCalledTimes(1);
+    const utterance = speakSpy.mock.calls[0]![0] as FakeUtterance;
+    expect(utterance.text).toBe("Brown the sausage.");
+
+    const stopButton = screen.getByRole("button", { name: /stop reading/i });
+    expect(stopButton).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(stopButton);
+    expect(cancelSpy).toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: /read it to me/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the button when speech synthesis is unavailable", () => {
+    vi.stubGlobal("speechSynthesis", undefined);
+    vi.stubGlobal("SpeechSynthesisUtterance", undefined);
+    renderKids(makeRecipe());
+    expect(screen.queryByRole("button", { name: /read it to me/i })).toBeNull();
+  });
+});
