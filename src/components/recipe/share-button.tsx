@@ -5,6 +5,7 @@ import { Download, Link2, Share, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
+import { track } from "~/lib/analytics";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,10 +82,13 @@ export function ShareButton({ title }: { title: string }) {
         typeof navigator.canShare === "function" &&
         navigator.canShare({ files: [file] })
       ) {
+        // Track inside the gesture — never await before navigator.share (Safari).
+        track("recipe_shared", { method: "file" });
         await navigator.share({ files: [file], title, url });
         return;
       }
       if (nativeShare) {
+        track("recipe_shared", { method: "native" });
         await navigator.share({ title, url });
         return;
       }
@@ -108,12 +112,15 @@ export function ShareButton({ title }: { title: string }) {
     a.click();
     a.remove();
     URL.revokeObjectURL(href);
+    track("share_card_downloaded", {});
     toast.success("Share card downloaded");
   }
 
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
+      track("recipe_shared", { method: "copy_link" });
+      track("share_link_copied", {});
       toast.success("Link copied to clipboard");
     } catch {
       toast.error("Couldn't copy the link");
