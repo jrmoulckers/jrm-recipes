@@ -24,13 +24,19 @@ export function MainNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
-              active
-                ? "font-semibold text-foreground underline decoration-2 underline-offset-4"
-                : "text-muted-foreground",
+              "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
+              active ? "font-semibold text-foreground" : "text-muted-foreground",
             )}
           >
             {item.label}
+            {/* Underline wipes in from the start edge on the active link. */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-full bg-foreground transition-transform duration-base ease-standard motion-reduce:transition-none",
+                active ? "scale-x-100" : "scale-x-0",
+              )}
+            />
           </Link>
         );
       })}
@@ -44,12 +50,34 @@ export function BottomNav() {
   // Hide chrome in immersive routes (cook mode, print).
   if (pathname.includes("/cook") || pathname.includes("/print")) return null;
 
+  const count = primaryNav.length;
+  // First matching tab drives the sliding indicator. Computed from the pathname
+  // so it's correct on SSR, initial load, and back/forward — no flash.
+  const activeIndex = primaryNav.findIndex((item) => isActive(pathname, item));
+
   return (
     <nav
       aria-label="Primary mobile"
       className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur md:hidden"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+      <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+        {/* A pill that glides along the top edge to the active tab. */}
+        {activeIndex >= 0 && (
+          <li
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-2 top-0 flex h-0.5"
+          >
+            <span
+              className="flex h-full justify-center transition-transform duration-base ease-standard motion-reduce:transition-none"
+              style={{
+                width: `${100 / count}%`,
+                transform: `translateX(${activeIndex * 100}%)`,
+              }}
+            >
+              <span className="h-full w-8 rounded-full bg-primary" />
+            </span>
+          </li>
+        )}
         {primaryNav.map((item) => {
           const active = isActive(pathname, item);
           const Icon = item.icon;
@@ -63,7 +91,12 @@ export function BottomNav() {
                   active ? "font-semibold text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className="size-5" />
+                <Icon
+                  className={cn(
+                    "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
+                    active && "-translate-y-0.5 scale-110",
+                  )}
+                />
                 {item.label}
               </Link>
             </li>
