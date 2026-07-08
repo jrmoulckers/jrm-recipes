@@ -25,17 +25,32 @@ ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_token" varchar(32);--> sta
 ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_link_enabled" boolean DEFAULT true NOT NULL;--> statement-breakpoint
 ALTER TABLE "recipes" ADD COLUMN IF NOT EXISTS "share_token_rotated_at" timestamp with time zone;--> statement-breakpoint
 -- Backward-compat backfill (#204): every EXISTING unlisted recipe gets a random,
--- unguessable token so its `/r/<token>` link works immediately. Guarded on NULL
--- so it only ever fills gaps (idempotent + safe to re-run). New unlisted recipes
--- get their token from the app at write time.
+-- unguessable token so its `/r/<token>` link works immediately. Uses pgcrypto's
+-- CSPRNG (gen_random_bytes) rather than md5(random()) — random() is not
+-- cryptographically secure and this token is the whole confidentiality boundary
+-- for unlisted recipes. Truncated to the column's 32 chars (128 bits of entropy).
+-- Guarded on NULL so it only ever fills gaps (idempotent + safe to re-run). New
+-- unlisted recipes get a 256-bit Web Crypto token from the app at write time.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;--> statement-breakpoint
 UPDATE "recipes"
-  SET "share_token" = substr(md5(random()::text || clock_timestamp()::text || "id"), 1, 32)
+  SET "share_token" = substr(encode(gen_random_bytes(24), 'hex'), 1, 32)
   WHERE "visibility" = 'unlisted' AND "share_token" IS NULL;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+EXCEPTION
+ WHEN duplicate_object THEN null;
+ WHEN duplicate_table THEN null;
+END $$;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "audit_log_actor_idx" ON "audit_log" USING btree ("actor_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "audit_log_target_idx" ON "audit_log" USING btree ("target_type","target_id");--> statement-breakpoint
+-- Guard on BOTH duplicate_object (42710: constraint already present) AND
+-- duplicate_table (42P07: the constraint's backing index/relation name already
+-- exists). ADD CONSTRAINT ... UNIQUE raises the latter when a prior deploy on
+-- this SHARED DB already created it, so catching only duplicate_object is not
+-- enough for a re-runnable migration.
 DO $$ BEGIN
  ALTER TABLE "recipes" ADD CONSTRAINT "recipes_share_token_uq" UNIQUE("share_token");
-EXCEPTION WHEN duplicate_object THEN null; END $$;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+ WHEN duplicate_table THEN null;
+END $$;
