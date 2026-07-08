@@ -160,6 +160,20 @@ const config = {
           "60%": { transform: "scale(1.15)", opacity: "1" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        "check-pop": {
+          "0%": { transform: "scale(0)", opacity: "0" },
+          "60%": { transform: "scale(1.2)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "check-box-pop": {
+          "0%": { transform: "scale(1)" },
+          "45%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "strike-in": {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -185,6 +199,9 @@ const config = {
         "heart-pop": "heart-pop 0.4s var(--ease-emphasized)",
         "heart-burst": "heart-burst 0.45s var(--ease-standard)",
         "star-pop": "star-pop 0.35s var(--ease-emphasized) both",
+        "check-pop": "check-pop 0.28s var(--ease-emphasized) both",
+        "check-box-pop": "check-box-pop 0.3s var(--ease-emphasized)",
+        "strike-in": "strike-in 0.3s var(--ease-standard) both",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },

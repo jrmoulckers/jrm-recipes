@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Info, Minus, Plus, Users } from "lucide-react";
+import { AlertTriangle, Check, Info, Minus, Plus, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { cn } from "~/lib/utils";
@@ -145,6 +145,10 @@ export function IngredientsPanel({
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
     new Set(),
   );
+  // Gate check-off animations to post-mount so pre-checked items (e.g. a
+  // resumed cook session) render statically instead of animating on load.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -387,16 +391,25 @@ export function IngredientsPanel({
                       >
                         <span
                           className={cn(
-                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 text-[10px] transition-colors",
+                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 transition-colors",
                             isChecked
                               ? "border-primary bg-primary text-primary-foreground"
                               : flagged
                                 ? "border-warning"
                                 : "border-border",
+                            mounted && isChecked && "motion-safe:animate-check-box-pop",
                           )}
                           aria-hidden
                         >
-                          {isChecked ? "✓" : ""}
+                          {isChecked && (
+                            <Check
+                              className={cn(
+                                "size-3.5",
+                                mounted && "motion-safe:animate-check-pop",
+                              )}
+                              strokeWidth={3}
+                            />
+                          )}
                         </span>
                         {kidSafe && (
                           <span
@@ -408,10 +421,23 @@ export function IngredientsPanel({
                         )}
                         <span
                           className={cn(
-                            "flex-1 text-[0.95rem]",
-                            isChecked && "text-muted-foreground line-through",
+                            "relative flex-1 text-[0.95rem]",
+                            isChecked && "text-muted-foreground",
                           )}
                         >
+                          {isChecked && (
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 flex items-center"
+                            >
+                              <span
+                                className={cn(
+                                  "h-px w-full origin-left bg-current",
+                                  mounted && "motion-safe:animate-strike-in",
+                                )}
+                              />
+                            </span>
+                          )}
                           {(number || unit) && (
                             <span className="font-semibold tabular-nums">
                               {number}
