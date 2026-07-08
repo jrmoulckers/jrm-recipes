@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Check,
   Clock3,
   ListOrdered,
   Pause,
@@ -447,6 +448,7 @@ function CookHeader({
   ingredientControls: IngredientsPanelControls;
 }) {
   const t = useTranslations("cook.a11y");
+  const { kidSafe } = useThemeBehavior();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
@@ -497,17 +499,89 @@ function CookHeader({
         </Button>
       </div>
 
-      <ProgressPrimitive.Root
-        value={progressValue}
-        className="h-2 w-full overflow-hidden bg-muted"
-        aria-label={t("progress")}
-      >
-        <ProgressPrimitive.Indicator
-          className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
-          style={{ width: `${progressValue}%` }}
+      {kidSafe ? (
+        <StepTrail
+          totalSteps={totalSteps}
+          currentIndex={currentIndex}
+          onStepSelect={onStepSelect}
+          label={t("progress")}
         />
-      </ProgressPrimitive.Root>
+      ) : (
+        <ProgressPrimitive.Root
+          value={progressValue}
+          className="h-2 w-full overflow-hidden bg-muted"
+          aria-label={t("progress")}
+        >
+          <ProgressPrimitive.Indicator
+            className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
+            style={{ width: `${progressValue}%` }}
+          />
+        </ProgressPrimitive.Root>
+      )}
     </header>
+  );
+}
+
+/**
+ * Kids-mode "step trail" (#441): a tappable row of stepping-stones replacing the
+ * thin progress bar. Each marker shows completed (✓), current (highlighted and
+ * gently bouncing under motion-safe), or upcoming (dim) state, and jumps to that
+ * step via the existing navigation. The row scrolls horizontally so long recipes
+ * never overflow on small screens. Non-Kids modes keep the Radix progress bar.
+ */
+function StepTrail({
+  totalSteps,
+  currentIndex,
+  onStepSelect,
+  label,
+}: {
+  totalSteps: number;
+  currentIndex: number;
+  onStepSelect: (index: number) => void;
+  label: string;
+}) {
+  return (
+    <nav
+      aria-label={label}
+      className="w-full overflow-x-auto px-3 py-2 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <ol className="mx-auto flex w-max items-center gap-1.5">
+        {Array.from({ length: totalSteps }, (_, i) => {
+          const isDone = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          return (
+            <li key={i} className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onStepSelect(i)}
+                aria-label={`Go to step ${i + 1} of ${totalSteps}`}
+                aria-current={isCurrent ? "step" : undefined}
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isDone && "border-success bg-success text-success-foreground",
+                  isCurrent &&
+                    "border-primary bg-primary/15 text-primary ring-2 ring-primary/40 motion-safe:animate-pulse",
+                  !isDone &&
+                    !isCurrent &&
+                    "border-border bg-muted text-muted-foreground",
+                )}
+              >
+                {isDone ? <Check className="size-5" /> : i + 1}
+              </button>
+              {i < totalSteps - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "h-1 w-4 shrink-0 rounded-full sm:w-6",
+                    i < currentIndex ? "bg-success" : "bg-border",
+                  )}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 

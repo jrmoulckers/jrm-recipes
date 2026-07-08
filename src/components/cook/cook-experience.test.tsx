@@ -447,3 +447,60 @@ describe("Cook Mode Kids countdown ring (issue #442)", () => {
     expect(screen.getAllByText("5:00").length).toBeGreaterThan(0);
   });
 });
+
+describe("Cook Mode Kids step trail (issue #441)", () => {
+  function threeStepRecipe(): CookRecipe {
+    const step = (id: string, position: number, instruction: string) => ({
+      id,
+      position,
+      section: null,
+      instruction,
+      imageUrl: null,
+      videoUrl: null,
+      timerSeconds: null,
+      techniques: null,
+    });
+    return makeRecipe({
+      steps: [
+        step("step-1", 1, "Mix the batter."),
+        step("step-2", 2, "Pour into the pan."),
+        step("step-3", 3, "Let it cool."),
+      ],
+    });
+  }
+
+  it("shows a tappable step trail that navigates in Kids mode", () => {
+    sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+    rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kids">
+          <CookExperience recipe={threeStepRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    // One accessible marker per step; the bar is replaced by the trail.
+    expect(
+      screen.getByRole("button", { name: "Go to step 1 of 3" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Go to step 3 of 3" }));
+    expect(
+      screen.getByRole("heading", { name: "Let it cool." }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the plain progress bar in grown-up modes", () => {
+    rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kitchen">
+          <CookExperience recipe={threeStepRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Go to step 1 of 3" }),
+    ).toBeNull();
+  });
+});
