@@ -43,8 +43,11 @@ export interface ButtonProps
   asChild?: boolean;
   /**
    * Show a spinner, mark the button `aria-busy`, and block interaction without
-   * the "unavailable" dim of `disabled`. The label stays mounted (visually
-   * hidden) so the button keeps the exact same width between idle and loading.
+   * the "unavailable" dim of `disabled`. The label stays mounted and in the
+   * accessibility tree — hidden with `opacity-0`, never `visibility:hidden`,
+   * which would drop it from the accessible-name computation — so the button
+   * keeps both its accessible name and the exact same width between idle and
+   * loading.
    */
   loading?: boolean;
 }
@@ -90,7 +93,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             >
               <Spinner />
             </span>
-            <span className="inline-flex items-center gap-2 invisible">
+            <span className="inline-flex items-center gap-2 opacity-0">
               {children}
             </span>
           </>
