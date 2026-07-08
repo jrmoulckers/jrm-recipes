@@ -17,6 +17,9 @@ import {
   toSystem,
   toWeight,
 } from "~/lib/units";
+import {
+  computeBakersFormula,
+} from "~/lib/bakers-math";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
 import {
@@ -135,6 +138,17 @@ function amountLabel(
   return { number, unit: displayUnit(m.unit, m.q, locale) };
 }
 
+/** Whole-gram label for baker's / batch summaries, localized (e.g. "1,250 g"). */
+function formatGrams(grams: number, locale: string): string {
+  return `${new Intl.NumberFormat(locale).format(Math.round(grams))} g`;
+}
+
+/** Baker's percentage: whole numbers at scale, one decimal for small ratios. */
+function formatBakersPercent(pct: number): string {
+  const rounded = pct >= 10 ? Math.round(pct) : Math.round(pct * 10) / 10;
+  return `${rounded}%`;
+}
+
 export function IngredientsPanel({
   ingredients,
   baseServings,
@@ -171,6 +185,9 @@ export function IngredientsPanel({
   const [pinId, setPinId] = React.useState<string>("");
   const [pinAmount, setPinAmount] = React.useState<string>("");
   const [pinUnit, setPinUnit] = React.useState<string>("");
+
+  // Baker's percentages (#384). Surfaces only when weights are derivable.
+  const [bakersView, setBakersView] = React.useState(false);
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -225,6 +242,41 @@ export function IngredientsPanel({
   }, [ingredients, factor, system, locale, kidSafe]);
 
   const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
+
+  // Baker's-% formula + batch weight (#384, #418), derived from ingredient
+  // weights scaled by the current factor. Null until at least one flour weight
+  // (bakers) or any weight (batch) is derivable, so both features hide cleanly.
+  const weighed = React.useMemo(
+    () =>
+      ingredients.map((i) => ({
+        item: i.item,
+        quantity: i.quantity,
+        unit: i.unit,
+      })),
+    [ingredients],
+  );
+  const bakersFormula = React.useMemo(
+    () => computeBakersFormula(weighed, factor),
+    [weighed, factor],
+  );
+  // Per-ingredient baker's percentage (weight ÷ total flour), keyed by id.
+  const bakersPercentById = React.useMemo(() => {
+    const map = new Map<string, number>();
+    if (!bakersFormula || bakersFormula.totalFlour <= 0) return map;
+    for (const ing of ingredients) {
+      const grams = toWeight(
+        scaleQuantity(ing.quantity, factor),
+        ing.unit,
+        ing.item,
+      );
+      if (grams != null && grams > 0) {
+        map.set(ing.id, (grams / bakersFormula.totalFlour) * 100);
+      }
+    }
+    return map;
+  }, [ingredients, factor, bakersFormula]);
+
+
   const changedAmountIds = React.useMemo(() => {
     const changed = new Set<string>();
     const prev = prevAmountsRef.current;
@@ -385,6 +437,17 @@ export function IngredientsPanel({
                 Scale to…
               </Button>
             )}
+            {bakersFormula && (
+              <Button
+                type="button"
+                size="sm"
+                variant={bakersView ? "secondary" : "ghost"}
+                aria-pressed={bakersView}
+                onClick={() => setBakersView((v) => !v)}
+              >
+                Baker&apos;s %
+              </Button>
+            )}
           </div>
         ) : (
           <span className="text-sm text-muted-foreground">Ingredients</span>
@@ -488,6 +551,25 @@ export function IngredientsPanel({
             )}
           </p>
         </form>
+      )}
+
+      {bakersView && bakersFormula && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2 text-sm">
+          <span className="font-medium">
+            Total flour{" "}
+            <span className="tabular-nums">
+              {formatGrams(bakersFormula.totalFlour, locale)}
+            </span>
+          </span>
+          {bakersFormula.hydration != null && (
+            <span className="text-muted-foreground">
+              Hydration{" "}
+              <span className="tabular-nums text-foreground">
+                {Math.round(bakersFormula.hydration)}%
+              </span>
+            </span>
+          )}
+        </div>
       )}
 
       {scaledToHousehold && (
@@ -681,6 +763,16 @@ export function IngredientsPanel({
                           {ing.optional && (
                             <Badge variant="muted" className="ms-2 align-middle">
                               optional
+                            </Badge>
+                          )}
+                          {bakersView && bakersPercentById.has(ing.id) && (
+                            <Badge
+                              variant="secondary"
+                              className="ms-2 align-middle tabular-nums"
+                            >
+                              {formatBakersPercent(
+                                bakersPercentById.get(ing.id)!,
+                              )}
                             </Badge>
                           )}
                         </span>
