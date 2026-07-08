@@ -69,13 +69,24 @@ export interface EventProperties {
   editor_save_failed: { mode: "create" | "edit"; fieldCount: number };
 
   // --- Cook Mode lifecycle (#313) ---
-  cook_started: { recipeId: string; totalSteps: number };
+  // householdId (#338): the recipe's owning group, or null for a personal
+  // recipe — lets returning-cook retention roll up per family/household.
+  cook_started: {
+    recipeId: string;
+    totalSteps: number;
+    householdId: string | null;
+  };
   cook_step_advanced: {
     recipeId: string;
     stepIndex: number;
     totalSteps: number;
   };
-  cook_completed: { recipeId: string; totalSteps: number; durationMs: number };
+  cook_completed: {
+    recipeId: string;
+    totalSteps: number;
+    durationMs: number;
+    householdId: string | null;
+  };
   cook_timer_started: { recipeId: string };
   cook_timer_completed: { recipeId: string };
   cook_servings_scaled: { recipeId: string; servings: number };

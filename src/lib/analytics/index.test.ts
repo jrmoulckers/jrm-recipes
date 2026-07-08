@@ -76,12 +76,14 @@ describe("analytics client — dispatch to a registered backend", () => {
       recipeId: "rec_9",
       totalSteps: 6,
       durationMs: 1200,
+      householdId: null,
     });
 
     expect(mocks.capture).toHaveBeenCalledWith("cook_completed", {
       recipeId: "rec_9",
       totalSteps: 6,
       durationMs: 1200,
+      householdId: null,
     });
   });
 

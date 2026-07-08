@@ -24,6 +24,9 @@ export type IdentityTraits = {
   group_count: number;
   has_recipes: boolean;
   is_dev: boolean;
+  /** True when the user belongs to ≥1 group (household), so their cook activity
+   * rolls up to a family for per-household retention (#338). */
+  household_active: boolean;
 };
 
 /** Coerce a date-ish value to a `YYYY-MM-DD` string, or undefined if invalid. */
@@ -41,10 +44,12 @@ function toDateOnly(value: Date | string | null | undefined): string | undefined
  * count, and `created_at` is omitted entirely when unknown.
  */
 export function buildIdentityTraits(input: IdentityTraitsInput): IdentityTraits {
+  const groupCount = Math.max(0, Math.trunc(input.groupCount) || 0);
   const traits: IdentityTraits = {
-    group_count: Math.max(0, Math.trunc(input.groupCount) || 0),
+    group_count: groupCount,
     has_recipes: input.hasRecipes,
     is_dev: input.isDev ?? false,
+    household_active: groupCount > 0,
   };
   const createdAt = toDateOnly(input.createdAt);
   if (createdAt) traits.created_at = createdAt;

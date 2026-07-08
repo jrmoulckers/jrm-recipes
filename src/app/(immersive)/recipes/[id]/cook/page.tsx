@@ -25,6 +25,7 @@ function serializeRecipe(recipe: FullRecipe): CookRecipe {
     cookMinutes: recipe.cookMinutes,
     totalMinutes: recipe.totalMinutes,
     notes: recipe.notes,
+    householdId: recipe.groupId,
     ingredients: recipe.ingredients.map((ingredient) => ({
       id: ingredient.id,
       position: ingredient.position,

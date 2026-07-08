@@ -16,6 +16,7 @@ describe("buildIdentityTraits", () => {
       group_count: 3,
       has_recipes: true,
       is_dev: false,
+      household_active: true,
     });
   });
 
@@ -30,8 +31,18 @@ describe("buildIdentityTraits", () => {
       "created_at",
       "group_count",
       "has_recipes",
+      "household_active",
       "is_dev",
     ]);
+  });
+
+  it("marks household_active only when the user belongs to a group", () => {
+    expect(
+      buildIdentityTraits({ groupCount: 0, hasRecipes: false }).household_active,
+    ).toBe(false);
+    expect(
+      buildIdentityTraits({ groupCount: 2, hasRecipes: false }).household_active,
+    ).toBe(true);
   });
 
   it("defaults is_dev to false and records dev users when flagged", () => {

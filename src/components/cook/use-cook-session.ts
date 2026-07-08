@@ -174,12 +174,16 @@ export function useCookSession(recipe: CookRecipe) {
     startedRef.current = true;
     const { isNew } = beginCookSession(cookStorage(), recipe.id);
     if (isNew) {
-      track("cook_started", { recipeId: recipe.id, totalSteps });
+      track("cook_started", {
+        recipeId: recipe.id,
+        totalSteps,
+        householdId: recipe.householdId,
+      });
       // Activation funnel (#328): the user's first-ever cook on this device.
       const { isFirstEver } = markFirstCookStarted(cookStorage());
       if (isFirstEver) track("first_cook_started", { recipeId: recipe.id });
     }
-  }, [loaded, recipe.id, totalSteps]);
+  }, [loaded, recipe.id, recipe.householdId, totalSteps]);
 
   // cook_step_advanced / cook_completed: driven off step-index changes only, so
   // the 250ms timer tick (which only touches timers) never re-runs this.
@@ -205,9 +209,14 @@ export function useCookSession(recipe: CookRecipe) {
     ) {
       completedRef.current = true;
       const { durationMs } = endCookSession(cookStorage(), recipe.id);
-      track("cook_completed", { recipeId: recipe.id, totalSteps, durationMs });
+      track("cook_completed", {
+        recipeId: recipe.id,
+        totalSteps,
+        durationMs,
+        householdId: recipe.householdId,
+      });
     }
-  }, [loaded, state.stepIndex, totalSteps, recipe.id]);
+  }, [loaded, state.stepIndex, totalSteps, recipe.id, recipe.householdId]);
 
   const hasRunningTimers = React.useMemo(
     () => countRunningTimers(state.timers) > 0,
