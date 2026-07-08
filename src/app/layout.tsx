@@ -24,6 +24,7 @@ import {
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
 import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
 import { analyticsRequiresConsent } from "~/lib/analytics/config";
+import { getAllFlags } from "~/lib/analytics/server";
 import { atkinson } from "~/fonts/atkinson";
 import { localeDirection, resolveLocale } from "~/config/i18n";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
@@ -110,6 +111,9 @@ export default async function RootLayout({
   const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
   const locale = resolveLocale();
   const currentUser = await getCurrentUser();
+  // SSR-evaluate feature flags for the identified user so client variants don't
+  // flicker on load (#335). Returns {} (all control) when analytics is off.
+  const flags = await getAllFlags(currentUser?.id ?? "anonymous");
 
   const tree = (
     <html
@@ -140,6 +144,7 @@ export default async function RootLayout({
           initialUserId={currentUser?.id ?? null}
           initialConsent={consent}
           requireConsent={analyticsRequiresConsent()}
+          initialFlags={flags}
         >
           {children}
         </Providers>

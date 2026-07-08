@@ -63,14 +63,37 @@ export const noopBackend: AnalyticsBackend = {
 
 let clientBackend: AnalyticsBackend | null = null;
 
+/** Listeners notified whenever the registered client backend changes. */
+type BackendListener = () => void;
+const backendListeners = new Set<BackendListener>();
+
+function notifyBackendChange(): void {
+  for (const listener of backendListeners) listener();
+}
+
+/**
+ * Subscribe to client-backend (de)registration. Used by consumers that bind to
+ * the backend in an effect (e.g. the flags provider) so they can re-bind when
+ * the real backend finishes loading after an initial no-op. Returns an
+ * unsubscribe function.
+ */
+export function onClientBackendChange(listener: BackendListener): () => void {
+  backendListeners.add(listener);
+  return () => {
+    backendListeners.delete(listener);
+  };
+}
+
 /** Register the live client backend (called once by `<AnalyticsProvider>`). */
 export function setClientBackend(backend: AnalyticsBackend): void {
   clientBackend = backend;
+  notifyBackendChange();
 }
 
 /** Drop the registered backend (used on teardown and in tests). */
 export function clearClientBackend(): void {
   clientBackend = null;
+  notifyBackendChange();
 }
 
 /** The registered client backend, or the no-op when none is configured. */
