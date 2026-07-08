@@ -55,7 +55,9 @@ const paramsToSignSchema = z
           ts >= now - MAX_TIMESTAMP_AGE_SECONDS
         );
       }, "timestamp is missing or stale"),
-    folder: folderSchema.optional(),
+    // Required: a signature must never be issued without a heirloom-namespaced
+    // folder, so every signed upload stays inside our account's namespace.
+    folder: folderSchema,
     source: z
       .string()
       .regex(/^[a-z][a-z_]{0,31}$/)

@@ -153,6 +153,15 @@ describe("POST /api/cloudinary/sign", () => {
     expect(apiSignRequestMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a missing folder with 400 (never signs outside the namespace)", async () => {
+    const res = await POST(
+      makeRequest({ paramsToSign: { timestamp: freshTimestamp() } }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
+
   it("rejects a stale timestamp with 400", async () => {
     const res = await POST(
       makeRequest({
