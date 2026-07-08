@@ -21,12 +21,19 @@ export function DiscoverFeed({
   sort = "recent",
   canFavorite = false,
   favoritedIds = [],
+  priorityCount = 0,
 }: {
   initialItems: CardRecipe[];
   initialNextOffset: number | null;
   sort?: RatingSort;
   canFavorite?: boolean;
   favoritedIds?: string[];
+  /**
+   * Number of leading (initial) cards to render with LCP `priority`. Set > 0
+   * only when this feed is the above-the-fold grid; later paged-in items always
+   * stay lazy since they are appended after these indices.
+   */
+  priorityCount?: number;
 }) {
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
   const [nextOffset, setNextOffset] = React.useState<number | null>(
@@ -54,12 +61,13 @@ export function DiscoverFeed({
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((recipe) => (
+        {items.map((recipe, i) => (
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
             canFavorite={canFavorite}
             favorited={favoritedSet.has(recipe.id)}
+            priority={i < priorityCount}
           />
         ))}
       </div>
