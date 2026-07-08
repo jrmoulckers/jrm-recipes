@@ -44,6 +44,14 @@ describe("manifest", () => {
     expect(m.orientation).not.toBe("portrait");
   });
 
+  it("declares an app-like windowing profile", () => {
+    // Ordered fallback chain that degrades from standalone, never to a raw tab.
+    expect(m.display).toBe("standalone");
+    expect(m.display_override).toEqual(["standalone", "minimal-ui"]);
+    // Re-launches focus the existing window instead of duplicating it.
+    expect(m.launch_handler?.client_mode).toBe("navigate-existing");
+  });
+
   it("declares a well-formed GET share_target", () => {
     expect(m.share_target).toBeDefined();
     expect(m.share_target?.action).toBe("/import");
