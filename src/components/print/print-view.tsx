@@ -46,6 +46,7 @@ import {
   serializeRecipePlainText,
   serializeShareCaption,
 } from "~/components/print/export";
+import { PrintQr } from "~/components/print/qr-code";
 
 const FORMAT_ORDER = ["full", "compact", "card-4x6", "card-3x5"] as const;
 
@@ -173,54 +174,64 @@ function previewClass(format: PrintFormat): string {
   return "max-w-5xl";
 }
 
+/**
+ * A recipe only gets a scannable share QR on print when its URL resolves for
+ * anyone — i.e. public or unlisted. Private recipes print without a QR so we
+ * never advertise a link that 404s for the reader (issue #350).
+ */
+function canShareRecipe(visibility: string): boolean {
+  return visibility === "public" || visibility === "unlisted";
+}
+
 function SourceBlock({
   recipe,
   url,
+  shareUrl,
   className,
 }: {
   recipe: PrintRecipe;
   url: string;
+  shareUrl: string | null;
   className?: string;
 }) {
-  if (!recipe.sourceName && !recipe.sourceUrl) {
-    return (
-      <footer
-        className={cn(
-          "flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4 text-xs text-muted-foreground print:border-black/30 print:text-black",
-          className,
-        )}
-      >
+  const attribution =
+    !recipe.sourceName && !recipe.sourceUrl ? (
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground print:text-black">
         <span>{brand.name}</span>
         <span>{url}</span>
-      </footer>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-1 text-sm text-muted-foreground print:text-black">
+        <p>
+          <span className="font-medium text-foreground print:text-black">
+            Source:
+          </span>{" "}
+          {recipe.sourceUrl ? (
+            <a
+              href={recipe.sourceUrl}
+              className="text-primary underline-offset-4 hover:underline print:text-black"
+            >
+              {recipe.sourceName ?? recipe.sourceUrl}
+            </a>
+          ) : (
+            recipe.sourceName
+          )}
+        </p>
+        <p className="text-xs">
+          {brand.name} · {brand.tagline} · {url}
+        </p>
+      </div>
     );
-  }
 
   return (
     <footer
       className={cn(
-        "flex flex-col gap-1 border-t border-border pt-4 text-sm text-muted-foreground print:border-black/30 print:text-black",
+        "flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4 print:border-black/30",
         className,
       )}
     >
-      <p>
-        <span className="font-medium text-foreground print:text-black">
-          Source:
-        </span>{" "}
-        {recipe.sourceUrl ? (
-          <a
-            href={recipe.sourceUrl}
-            className="text-primary underline-offset-4 hover:underline print:text-black"
-          >
-            {recipe.sourceName ?? recipe.sourceUrl}
-          </a>
-        ) : (
-          recipe.sourceName
-        )}
-      </p>
-      <p className="text-xs">
-        {brand.name} · {brand.tagline} · {url}
-      </p>
+      <div className="min-w-0 flex-1">{attribution}</div>
+      {shareUrl ? <PrintQr url={shareUrl} size={84} /> : null}
     </footer>
   );
 }
@@ -413,7 +424,15 @@ function StepsList({
   );
 }
 
-function FullPage({ recipe, url }: { recipe: PrintRecipe; url: string }) {
+function FullPage({
+  recipe,
+  url,
+  shareUrl,
+}: {
+  recipe: PrintRecipe;
+  url: string;
+  shareUrl: string | null;
+}) {
   return (
     <article className="space-y-8 print:space-y-5">
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] print:block">
@@ -475,12 +494,20 @@ function FullPage({ recipe, url }: { recipe: PrintRecipe; url: string }) {
         </section>
       )}
 
-      <SourceBlock recipe={recipe} url={url} />
+      <SourceBlock recipe={recipe} url={url} shareUrl={shareUrl} />
     </article>
   );
 }
 
-function CompactPage({ recipe, url }: { recipe: PrintRecipe; url: string }) {
+function CompactPage({
+  recipe,
+  url,
+  shareUrl,
+}: {
+  recipe: PrintRecipe;
+  url: string;
+  shareUrl: string | null;
+}) {
   return (
     <article className="space-y-6 print:space-y-4">
       <header className="space-y-3 border-b border-border pb-5 print:border-black/30 print:pb-3">
@@ -529,12 +556,20 @@ function CompactPage({ recipe, url }: { recipe: PrintRecipe; url: string }) {
         </section>
       </div>
 
-      <SourceBlock recipe={recipe} url={url} />
+      <SourceBlock recipe={recipe} url={url} shareUrl={shareUrl} />
     </article>
   );
 }
 
-function IndexCard({ recipe, url }: { recipe: PrintRecipe; url: string }) {
+function IndexCard({
+  recipe,
+  url,
+  shareUrl,
+}: {
+  recipe: PrintRecipe;
+  url: string;
+  shareUrl: string | null;
+}) {
   const meta = formatRecipeMeta(recipe);
 
   return (
@@ -603,8 +638,11 @@ function IndexCard({ recipe, url }: { recipe: PrintRecipe; url: string }) {
         </section>
       </div>
 
-      <footer className="border-t border-border pt-2 text-[0.7rem] text-muted-foreground print:border-black/30 print:text-black">
-        {recipe.sourceName ?? brand.tagline} · {url}
+      <footer className="flex items-end justify-between gap-3 border-t border-border pt-2 text-[0.7rem] text-muted-foreground print:border-black/30 print:text-black">
+        <span className="min-w-0 flex-1">
+          {recipe.sourceName ?? brand.tagline} · {url}
+        </span>
+        {shareUrl ? <PrintQr url={shareUrl} size={64} caption={null} /> : null}
       </footer>
     </article>
   );
@@ -615,6 +653,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
   const [canNativeShare, setCanNativeShare] = React.useState(false);
   const activeFormat = FORMAT_DETAILS[format];
   const url = recipeUrl(recipe);
+  const shareUrl = canShareRecipe(recipe.visibility) ? url : null;
 
   React.useEffect(() => {
     setCanNativeShare(typeof navigator.share === "function");
@@ -825,10 +864,18 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
             previewClass(format),
           )}
         >
-          {format === "full" && <FullPage recipe={recipe} url={url} />}
-          {format === "compact" && <CompactPage recipe={recipe} url={url} />}
-          {format === "card-4x6" && <IndexCard recipe={recipe} url={url} />}
-          {format === "card-3x5" && <IndexCard recipe={recipe} url={url} />}
+          {format === "full" && (
+            <FullPage recipe={recipe} url={url} shareUrl={shareUrl} />
+          )}
+          {format === "compact" && (
+            <CompactPage recipe={recipe} url={url} shareUrl={shareUrl} />
+          )}
+          {format === "card-4x6" && (
+            <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />
+          )}
+          {format === "card-3x5" && (
+            <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />
+          )}
         </div>
       </main>
     </div>
