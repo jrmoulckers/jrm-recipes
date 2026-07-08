@@ -300,6 +300,29 @@ export async function listPublicRecipes({
 }
 
 /**
+ * Slim projection for the sitemap (issue #323): the slug and `updatedAt` of
+ * every public + published recipe, newest first. Selects only the two columns
+ * the sitemap needs (no over-fetch) and returns an empty list when the DB is
+ * unconfigured so the sitemap still renders its static routes.
+ */
+export async function listPublicRecipeSlugs(): Promise<
+  { slug: string; updatedAt: Date }[]
+> {
+  if (!isDbConfigured()) return [];
+  return db
+    .select({ slug: recipes.slug, updatedAt: recipes.updatedAt })
+    .from(recipes)
+    .where(
+      and(
+        notDeleted,
+        eq(recipes.visibility, "public"),
+        eq(recipes.status, "published"),
+      ),
+    )
+    .orderBy(desc(recipes.updatedAt));
+}
+
+/**
  * Pull just the ingredient `item` text for a set of recipes in one batched
  * query, grouped by recipe id. Recipes with no ingredient rows (or when the DB
  * is off) simply don't appear as keys — callers use that absence to tell
