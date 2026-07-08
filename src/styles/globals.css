@@ -13,6 +13,10 @@
   html {
     font-size: calc(100% * var(--text-scale, 1) * var(--a11y-text-mult, 1));
     -webkit-text-size-adjust: 100%;
+    /* Suppress the default grey/blue tap flash on iOS/Android; press feedback is
+     * provided by token-driven `:active` states instead, so it stays on-theme
+     * across all five UI modes (issue #289). */
+    -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
   }
 
