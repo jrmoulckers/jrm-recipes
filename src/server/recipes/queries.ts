@@ -9,6 +9,7 @@ import {
   ilike,
   inArray,
   isNotNull,
+  isNull,
   lte,
   or,
   sql,
@@ -44,6 +45,14 @@ import {
   type RecipeSort,
 } from "./search";
 import { assembleTimeline, type TimelineEntry } from "./timeline";
+
+/**
+ * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
+ * read path ANDs this in so tombstoned rows never surface in a list, detail,
+ * search, lineage, timeline, or facet — while their child history (versions,
+ * events, ratings, comments) is preserved and returns intact on restore.
+ */
+const notDeleted = isNull(recipes.deletedAt);
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
@@ -147,7 +156,7 @@ async function viewerGroupIds(viewer: User | null): Promise<string[]> {
 export async function listMyRecipes(userId: string) {
   if (!isDbConfigured()) return [];
   return db.query.recipes.findMany({
-    where: eq(recipes.authorId, userId),
+    where: and(notDeleted, eq(recipes.authorId, userId)),
     orderBy: [desc(recipes.updatedAt)],
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
@@ -171,6 +180,7 @@ export async function listPublicRecipes({
   if (!isDbConfigured()) return { items: [], nextOffset: null };
   const rows = await db.query.recipes.findMany({
     where: and(
+      notDeleted,
       eq(recipes.visibility, "public"),
       eq(recipes.status, "published"),
     ),
@@ -228,7 +238,7 @@ export async function canViewRecipe(
 export async function getRecipe(idOrSlug: string, viewer: User | null) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
-    where: or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
+    where: and(notDeleted, or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug))),
     with: {
       author: true,
       group: true,
@@ -249,6 +259,7 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
     where: and(
+      notDeleted,
       or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
       eq(recipes.authorId, userId),
     ),
@@ -276,7 +287,7 @@ export async function listLibrary(
       ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
       : eq(recipes.authorId, viewer.id);
   const rows = await db.query.recipes.findMany({
-    where: scope,
+    where: and(notDeleted, scope),
     orderBy: [desc(recipes.updatedAt)],
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
@@ -289,12 +300,15 @@ export async function listLibrary(
  * shows today (library + discover) so search never widens visibility.
  */
 function visibleRecipesScope(viewer: User | null, groupIds: string[]): SQL {
-  return or(
-    and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
-    viewer ? eq(recipes.authorId, viewer.id) : undefined,
-    groupIds.length > 0
-      ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
-      : undefined,
+  return and(
+    notDeleted,
+    or(
+      and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
+      viewer ? eq(recipes.authorId, viewer.id) : undefined,
+      groupIds.length > 0
+        ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
+        : undefined,
+    ),
   )!;
 }
 
@@ -509,13 +523,13 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
   if (!isDbConfigured()) return { parent: null, adaptations: [] };
 
   const recipe = await db.query.recipes.findFirst({
-    where: eq(recipes.id, recipeId),
+    where: and(notDeleted, eq(recipes.id, recipeId)),
     columns: { forkedFromId: true },
   });
 
   const parent = recipe?.forkedFromId
     ? ((await db.query.recipes.findFirst({
-        where: eq(recipes.id, recipe.forkedFromId),
+        where: and(notDeleted, eq(recipes.id, recipe.forkedFromId)),
         columns: { id: true, slug: true, title: true },
         with: { author: { columns: { name: true } } },
       })) ?? null)
@@ -523,7 +537,7 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
 
   const groupIds = await viewerGroupIds(viewer);
   const forks = await db.query.recipes.findMany({
-    where: eq(recipes.forkedFromId, recipeId),
+    where: and(notDeleted, eq(recipes.forkedFromId, recipeId)),
     orderBy: [desc(recipes.updatedAt)],
     columns: {
       id: true,
@@ -564,7 +578,7 @@ export async function getRecipeTimeline(
   if (!isDbConfigured()) return { entries: [], parent: null };
 
   const recipe = await db.query.recipes.findFirst({
-    where: eq(recipes.id, recipeId),
+    where: and(notDeleted, eq(recipes.id, recipeId)),
     columns: { id: true, forkedFromId: true, createdAt: true },
   });
   if (!recipe) return { entries: [], parent: null };
@@ -589,7 +603,7 @@ export async function getRecipeTimeline(
       },
     }),
     db.query.recipes.findMany({
-      where: eq(recipes.forkedFromId, recipeId),
+      where: and(notDeleted, eq(recipes.forkedFromId, recipeId)),
       columns: {
         id: true,
         slug: true,
@@ -603,7 +617,7 @@ export async function getRecipeTimeline(
     }),
     recipe.forkedFromId
       ? db.query.recipes.findFirst({
-          where: eq(recipes.id, recipe.forkedFromId),
+          where: and(notDeleted, eq(recipes.id, recipe.forkedFromId)),
           columns: { id: true, slug: true, title: true, createdAt: true },
           with: {
             author: { columns: { name: true, handle: true, avatarUrl: true } },

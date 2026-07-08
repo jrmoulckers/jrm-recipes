@@ -12,6 +12,7 @@ import {
   createRecipe,
   deleteRecipe,
   forkRecipe,
+  restoreRecipe,
   revertRecipe,
   updateRecipe,
 } from "./mutations";
@@ -162,4 +163,24 @@ export async function deleteRecipeAction(id: string): Promise<void> {
   }
   revalidatePath("/recipes");
   redirect("/recipes");
+}
+
+/**
+ * Restore a soft-deleted recipe (issue #165). Owner-guarded via
+ * {@link restoreRecipe}; on success the recipe and its preserved history return,
+ * so we revalidate the library and the recipe's detail page and send the owner
+ * back to it. A failed restore (not found / not owner) resolves to `false`.
+ */
+export async function restoreRecipeAction(id: string): Promise<boolean> {
+  if (!isDbConfigured()) return false;
+  const user = await requireUser();
+  let restored: { id: string; slug: string } | null = null;
+  try {
+    restored = await restoreRecipe(id, user);
+  } catch {
+    return false;
+  }
+  revalidatePath("/recipes");
+  revalidatePath(recipeDetailPath(restored));
+  return true;
 }

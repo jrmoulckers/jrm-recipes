@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { timestamp, varchar } from "drizzle-orm/pg-core";
+import { timestamp, varchar, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 /** Primary key: short, URL-safe, collision-resistant cuid2. */
 export const pk = () =>
@@ -17,4 +17,16 @@ export const timestamps = () => ({
     .defaultNow()
     .notNull()
     .$onUpdate(() => new Date()),
+});
+
+/**
+ * Soft-delete + audit pair (issue #165). `deletedAt IS NULL` means the row is
+ * live; a timestamp tombstones it while preserving child history (versions,
+ * events, ratings, comments). `deletedBy` records the actor and nulls out if
+ * that user is later removed. `userIdColumn` is passed in so this helper stays
+ * in `_shared` without importing the users table (which would be circular).
+ */
+export const softDelete = (userIdColumn: () => AnyPgColumn) => ({
+  deletedAt: timestamp({ withTimezone: true }),
+  deletedBy: fk().references(userIdColumn, { onDelete: "set null" }),
 });

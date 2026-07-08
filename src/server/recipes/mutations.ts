@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
@@ -550,11 +550,50 @@ export async function revertRecipe(
   });
 }
 
+/**
+ * Soft-delete a recipe (issue #165). Tombstones the row via `deleted_at` instead
+ * of physically deleting it, so its versions, events, ratings, and comments —
+ * the family history the product exists to preserve — survive and can be
+ * restored. Owner-guarded; the `deleted_at IS NULL` guard makes a repeat delete
+ * a no-op that reports NOT_FOUND rather than re-stamping the tombstone.
+ *
+ * Retention: tombstoned rows are kept indefinitely for now. A hard `purgeRecipe`
+ * (permanent removal after a retention window, e.g. 30 days) is intentionally
+ * deferred — when added it should be the only path that issues a real DELETE.
+ */
 export async function deleteRecipe(id: string, author: User) {
   const [row] = await db
-    .delete(recipes)
-    .where(and(eq(recipes.id, id), eq(recipes.authorId, author.id)))
+    .update(recipes)
+    .set({ deletedAt: new Date(), deletedBy: author.id })
+    .where(
+      and(
+        eq(recipes.id, id),
+        eq(recipes.authorId, author.id),
+        isNull(recipes.deletedAt),
+      ),
+    )
     .returning({ id: recipes.id });
+  if (!row) throw new Error("NOT_FOUND");
+  return row;
+}
+
+/**
+ * Restore a previously soft-deleted recipe (issue #165). Owner-guarded and only
+ * acts on a currently-tombstoned row, bringing back the recipe together with all
+ * of its preserved child history.
+ */
+export async function restoreRecipe(id: string, author: User) {
+  const [row] = await db
+    .update(recipes)
+    .set({ deletedAt: null, deletedBy: null })
+    .where(
+      and(
+        eq(recipes.id, id),
+        eq(recipes.authorId, author.id),
+        isNotNull(recipes.deletedAt),
+      ),
+    )
+    .returning({ id: recipes.id, slug: recipes.slug });
   if (!row) throw new Error("NOT_FOUND");
   return row;
 }

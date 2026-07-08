@@ -15,7 +15,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
-import { fk, pk, timestamps } from "./_shared";
+import { fk, pk, softDelete, timestamps } from "./_shared";
 import { users } from "./users";
 import { groups } from "./groups";
 import { comments, ratings, recipeTags } from "./engagement";
@@ -88,12 +88,24 @@ export const recipes = pgTable(
     forkNote: varchar({ length: 300 }),
 
     publishedAt: timestamp({ withTimezone: true }),
+    // Soft-delete (issue #165): deleting a recipe tombstones it instead of
+    // cascading away its versions/events/ratings/comments, so family history
+    // survives and an owner can restore it. Children stay, hidden via the parent.
+    ...softDelete(() => users.id),
     ...timestamps(),
   },
   (t) => [
-    index("recipes_author_idx").on(t.authorId),
-    index("recipes_group_idx").on(t.groupId),
-    index("recipes_visibility_idx").on(t.visibility),
+    // Every recipe read path filters `deleted_at IS NULL` (issue #165), so the
+    // hot lookup indexes are partial: they stay small and never scan tombstones.
+    index("recipes_author_idx")
+      .on(t.authorId)
+      .where(sql`${t.deletedAt} is null`),
+    index("recipes_group_idx")
+      .on(t.groupId)
+      .where(sql`${t.deletedAt} is null`),
+    index("recipes_visibility_idx")
+      .on(t.visibility)
+      .where(sql`${t.deletedAt} is null`),
     // Slugs are public lookup keys (getRecipe resolves by slug), so they must be
     // globally unique — matching groups.slug / tags.slug. The unique constraint
     // also provides the btree index that backs slug lookups, so no separate
