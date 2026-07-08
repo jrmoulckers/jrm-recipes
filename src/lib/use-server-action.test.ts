@@ -12,7 +12,14 @@ vi.mock("next/navigation", () => ({
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
 vi.mock("sonner", () => ({
-  toast: { success: (m: string) => toastSuccess(m), error: (m: string) => toastError(m) },
+  toast: {
+    success: (m: string) => {
+      toastSuccess(m);
+    },
+    error: (m: string) => {
+      toastError(m);
+    },
+  },
 }));
 
 beforeEach(() => {

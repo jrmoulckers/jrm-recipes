@@ -69,6 +69,8 @@ export function authedAction<
     const parsed = input.safeParse(raw);
     if (!parsed.success) return fromZodError(parsed.error);
     const user = await requireUser();
-    return handler(parsed.data, user, ...ctx);
+    // `safeParse` on the generic `ZodTypeAny` widens `data` to `any`; it is the
+    // schema's own output, so narrow it back to the handler's input type.
+    return handler(parsed.data as TypeOf<S>, user, ...ctx);
   };
 }

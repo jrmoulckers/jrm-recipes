@@ -44,9 +44,7 @@ export function ok<T extends object>(data: T): ActionResult<T>;
 export function ok<T extends object>(
   data?: T,
 ): ActionResult<T> | ActionResult<void> {
-  return (data === undefined ? { ok: true } : { ok: true, ...data }) as
-    | ActionResult<T>
-    | ActionResult<void>;
+  return data === undefined ? { ok: true } : { ok: true, ...data };
 }
 
 /** Build a failure result with a user-facing message and optional field errors. */
