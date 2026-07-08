@@ -52,6 +52,7 @@ import {
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
 import { detectStepHazards } from "~/lib/kid-safety";
+import { HAPTICS, vibrate } from "~/lib/haptics";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
@@ -103,9 +104,24 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     clearSession,
   } = useCookSession(recipe, { householdSize: household.size });
 
+  const canGoPrevious = stepIndex > 0;
+  const canGoNext = stepIndex < totalSteps - 1;
+
+  const navPrevious = React.useCallback(() => {
+    if (stepIndex <= 0) return;
+    vibrate(HAPTICS.stepNav);
+    goPrevious();
+  }, [goPrevious, stepIndex]);
+
+  const navNext = React.useCallback(() => {
+    if (stepIndex >= totalSteps - 1) return;
+    vibrate(HAPTICS.stepNav);
+    goNext();
+  }, [goNext, stepIndex, totalSteps]);
+
   const oneHandedNav = useOneHandedNav({
-    onNext: goNext,
-    onPrevious: goPrevious,
+    onNext: navNext,
+    onPrevious: navPrevious,
   });
 
   const ingredientControls = React.useMemo<IngredientsPanelControls>(
@@ -196,13 +212,13 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       if (!shortcut) return;
 
       event.preventDefault();
-      if (shortcut === "previous") goPrevious();
-      else goNext();
+      if (shortcut === "previous") navPrevious();
+      else navNext();
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goNext, goPrevious, totalSteps]);
+  }, [navNext, navPrevious, totalSteps]);
 
   const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
   const hasNavigatedRef = React.useRef(false);
@@ -264,8 +280,6 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       ? (timers[currentStep.id] ?? makeTimer(currentStep.timerSeconds))
       : null;
   const progressValue = ((stepIndex + 1) / totalSteps) * 100;
-  const canGoPrevious = stepIndex > 0;
-  const canGoNext = stepIndex < totalSteps - 1;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -415,7 +429,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={goPrevious}
+            onClick={navPrevious}
             disabled={!canGoPrevious}
           >
             <ArrowLeft />
@@ -439,7 +453,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={canGoNext ? goNext : openCompletion}
+            onClick={canGoNext ? navNext : openCompletion}
           >
             {canGoNext ? "Next" : "Done"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}

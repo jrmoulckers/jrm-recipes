@@ -65,3 +65,15 @@ export function useReducedMotion(): boolean {
 
   return reduced;
 }
+
+/**
+ * Imperative, non-reactive read of the *effective* reduced-motion state, for use
+ * in event handlers and one-shot side effects (e.g. {@link vibrate} haptics)
+ * where a hook isn't appropriate. Mirrors {@link useReducedMotion} and the
+ * globals.css / a11y.css contract. SSR-safe: returns `false` when there is no
+ * `window`/`matchMedia`.
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return computeReduced(window.matchMedia(MOTION_QUERY).matches);
+}

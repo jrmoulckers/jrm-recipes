@@ -5,6 +5,7 @@ import { AlertTriangle, Check, Info, Minus, Plus, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { cn } from "~/lib/utils";
+import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
   displayUnit,
   expandKidUnit,
@@ -234,6 +235,7 @@ export function IngredientsPanel({
   }
 
   function toggle(id: string) {
+    if (!checked.has(id)) vibrate(HAPTICS.select);
     if (controls) {
       controls.onToggleChecked(id);
       return;
