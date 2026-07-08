@@ -88,6 +88,31 @@ export function countRunningTimers(timers: Record<string, TimerRecord>): number 
   return count;
 }
 
+/** The read-only slice of the Storage API this module needs to scan sessions. */
+export type ReadableStorage = Pick<Storage, "length" | "key" | "getItem">;
+
+/**
+ * True when any persisted cook session (across every recipe) still has a timer
+ * actively counting down at `now`. Timers are reconciled against `now` first, so
+ * a "running" timer whose absolute end time has already passed is treated as
+ * complete and does not count. Used to defer the service-worker update prompt
+ * (#163) while someone is mid-recipe in Cook Mode. Storage is injected so this
+ * stays DOM-free and unit-testable.
+ */
+export function hasRunningCookTimers(
+  storage: ReadableStorage,
+  now: number,
+): boolean {
+  for (let i = 0; i < storage.length; i += 1) {
+    const key = storage.key(i);
+    if (!key?.startsWith(STORAGE_PREFIX)) continue;
+    const state = parseCookState(storage.getItem(key));
+    if (!state) continue;
+    if (countRunningTimers(reconcileTimers(state.timers, now)) > 0) return true;
+  }
+  return false;
+}
+
 /** Format seconds as a stable `m:ss` (or `h:mm:ss`) countdown string. */
 export function formatCountdown(totalSeconds: number): string {
   const safeSeconds = Math.max(0, Math.ceil(totalSeconds));

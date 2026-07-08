@@ -9,6 +9,7 @@ import { ThemeSwitcher } from "~/components/theme/theme-switcher";
 import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
 import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
 import { AccessibilityMenu } from "~/components/a11y/accessibility-menu";
+import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
 import { AuthControls } from "~/components/auth/auth-controls";
 
 /** Sticky top header with brand, primary nav, theme switcher, and auth. */
@@ -34,6 +35,7 @@ export async function SiteHeader() {
           <KidsModeToggle />
           <LocaleSwitcher />
           <AccessibilityMenu />
+          <OfflineStorageMenu />
           <AuthControls
             isConfigured={isConfigured}
             user={

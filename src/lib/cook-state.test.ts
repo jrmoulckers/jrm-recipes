@@ -5,6 +5,7 @@ import {
   countRunningTimers,
   cookStorageKey,
   formatCountdown,
+  hasRunningCookTimers,
   isInteractiveShortcutTarget,
   makeTimer,
   parseCookState,
@@ -19,6 +20,28 @@ import {
 
 function timer(overrides: Partial<TimerRecord> = {}): TimerRecord {
   return { duration: 300, remaining: 300, status: "idle", endsAt: null, ...overrides };
+}
+
+/** In-memory Storage stand-in exposing the `length`/`key`/`getItem` slice we scan. */
+function memoryStorage(entries: Record<string, string> = {}) {
+  const keys = Object.keys(entries);
+  return {
+    get length() {
+      return keys.length;
+    },
+    key: (i: number) => keys[i] ?? null,
+    getItem: (k: string) => entries[k] ?? null,
+  };
+}
+
+function cookState(timers: Record<string, TimerRecord>): string {
+  return serializeCookState({
+    stepIndex: 0,
+    servings: null,
+    system: "original",
+    checked: [],
+    timers,
+  });
 }
 
 describe("cookStorageKey", () => {
@@ -69,6 +92,54 @@ describe("countRunningTimers", () => {
 
   it("is zero for an empty map", () => {
     expect(countRunningTimers({})).toBe(0);
+  });
+});
+
+describe("hasRunningCookTimers (ck12)", () => {
+  const now = 10_000;
+
+  it("is true when any session has a live running timer", () => {
+    const storage = memoryStorage({
+      [cookStorageKey("soup")]: cookState({ a: timer({ status: "paused" }) }),
+      [cookStorageKey("bread")]: cookState({
+        b: timer({ status: "running", remaining: 30, endsAt: now + 30_000 }),
+      }),
+    });
+    expect(hasRunningCookTimers(storage, now)).toBe(true);
+  });
+
+  it("is false when nothing is running", () => {
+    const storage = memoryStorage({
+      [cookStorageKey("soup")]: cookState({
+        a: timer({ status: "paused" }),
+        b: timer({ status: "complete" }),
+        c: timer({ status: "idle" }),
+      }),
+    });
+    expect(hasRunningCookTimers(storage, now)).toBe(false);
+  });
+
+  it("treats a running timer whose end time has passed as not running", () => {
+    const storage = memoryStorage({
+      [cookStorageKey("soup")]: cookState({
+        a: timer({ status: "running", remaining: 5, endsAt: now - 1_000 }),
+      }),
+    });
+    expect(hasRunningCookTimers(storage, now)).toBe(false);
+  });
+
+  it("ignores foreign keys and malformed values", () => {
+    const storage = memoryStorage({
+      "unrelated:key": cookState({
+        a: timer({ status: "running", endsAt: now + 60_000 }),
+      }),
+      [cookStorageKey("broken")]: "not json",
+    });
+    expect(hasRunningCookTimers(storage, now)).toBe(false);
+  });
+
+  it("is false for empty storage", () => {
+    expect(hasRunningCookTimers(memoryStorage(), now)).toBe(false);
   });
 });
 

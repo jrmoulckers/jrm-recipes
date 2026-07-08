@@ -44,14 +44,41 @@ describe("manifest", () => {
     expect(m.orientation).not.toBe("portrait");
   });
 
-  it("declares a well-formed GET share_target", () => {
+  it("declares an app-like windowing profile", () => {
+    // Ordered fallback chain that degrades from standalone, never to a raw tab.
+    expect(m.display).toBe("standalone");
+    expect(m.display_override).toEqual(["standalone", "minimal-ui"]);
+    // Re-launches focus the existing window instead of duplicating it.
+    expect(m.launch_handler?.client_mode).toBe("navigate-existing");
+  });
+
+  it("advertises wide + narrow screenshots for the rich install dialog", () => {
+    const screenshots = m.screenshots ?? [];
+    expect(screenshots.some((s) => s.form_factor === "wide")).toBe(true);
+    expect(screenshots.some((s) => s.form_factor === "narrow")).toBe(true);
+    for (const shot of screenshots) {
+      expect(shot.src.startsWith("/screenshots/")).toBe(true);
+      expect(shot.type).toBe("image/png");
+      expect(shot.sizes).toMatch(/^\d+x\d+$/);
+      expect(shot.label).toBeTruthy();
+    }
+  });
+
+  it("declares a POST share_target that accepts shared photos", () => {
     expect(m.share_target).toBeDefined();
     expect(m.share_target?.action).toBe("/import");
-    expect(String(m.share_target?.method).toUpperCase()).toBe("GET");
-    expect(m.share_target?.params).toEqual({
-      title: "title",
-      text: "text",
-      url: "url",
-    });
+    expect(String(m.share_target?.method).toUpperCase()).toBe("POST");
+    expect(m.share_target?.enctype).toBe("multipart/form-data");
+    // Text/url fields stay for backward-compatible link shares.
+    expect(m.share_target?.params.title).toBe("title");
+    expect(m.share_target?.params.text).toBe("text");
+    expect(m.share_target?.params.url).toBe("url");
+    // Image files are declared so the OS offers Heirloom for photo shares.
+    const files = m.share_target?.params.files;
+    const file = Array.isArray(files) ? files[0] : files;
+    expect(file?.name).toBe("photo");
+    expect(Array.isArray(file?.accept) ? file?.accept : [file?.accept]).toContain(
+      "image/jpeg",
+    );
   });
 });

@@ -31,6 +31,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import { localeDirection, openGraphLocale } from "~/config/i18n";
+import { iosStartupImages } from "~/config/ios-splash";
 import { preconnectOrigins } from "~/config/resource-hints";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
@@ -110,10 +111,16 @@ export async function generateMetadata(): Promise<Metadata> {
       capable: true,
       statusBarStyle: "default",
       title: brand.name,
+      // Branded iOS launch screens (one per device × orientation) so an
+      // installed app never shows a blank white launch (#187).
+      startupImage: iosStartupImages(),
     },
     icons: {
       icon: "/favicon.ico",
-      apple: "/icons/icon-192.png",
+      // 180×180 opaque home-screen glyph iOS uses instead of the manifest icon.
+      apple: [
+        { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
     },
     openGraph: {
       type: "website",

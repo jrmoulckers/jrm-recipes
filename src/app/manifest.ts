@@ -29,6 +29,16 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
+    // Ordered fallback if a target can't honor "standalone": drop to the
+    // slimmer "minimal-ui" chrome rather than a full browser tab. (No
+    // "window-controls-overlay" — the desktop chrome isn't designed to draw
+    // into the titlebar, so requesting it would just leave an empty drag strip.)
+    display_override: ["standalone", "minimal-ui"],
+    // Re-launching the app or opening a shared link focuses/navigates the
+    // existing installed window instead of spawning a duplicate one.
+    launch_handler: {
+      client_mode: "navigate-existing",
+    },
     // "any" (not "portrait") so installed tablets/phones can rotate into
     // landscape cook mode instead of being locked upright.
     orientation: "any",
@@ -82,15 +92,48 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: shortcutIcons,
       },
     ],
-    // Receive a link/text shared from another app and forward it into the
-    // recipe importer. GET keeps it simple; the /import route does the routing.
+    // Unlocks Chromium's richer, taller install dialog. One wide (desktop) and
+    // one narrow (mobile) shot, generated on-brand by scripts/generate-screenshots.mjs.
+    screenshots: [
+      {
+        src: "/screenshots/cookbook-wide.png",
+        sizes: "1280x800",
+        type: "image/png",
+        form_factor: "wide",
+        label: "Browse your family cookbook",
+      },
+      {
+        src: "/screenshots/cook-mode-narrow.png",
+        sizes: "800x1280",
+        type: "image/png",
+        form_factor: "narrow",
+        label: "Hands-free Cook Mode with step timers",
+      },
+    ],
+    // Receive a link/text OR a shared photo from another app and forward it
+    // into the recipe importer. POST + multipart is required to accept files;
+    // the /import route uploads a shared image and routes text/url shares.
     share_target: {
       action: "/import",
-      method: "GET",
+      method: "POST",
+      enctype: "multipart/form-data",
       params: {
         title: "title",
         text: "text",
         url: "url",
+        files: [
+          {
+            name: "photo",
+            accept: [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic",
+              "image/heif",
+              "image/gif",
+            ],
+          },
+        ],
       },
     },
   };
