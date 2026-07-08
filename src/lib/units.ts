@@ -298,3 +298,23 @@ export function displayUnit(
   if (def?.plural && quantity != null && quantity !== 1) return def.plural;
   return def?.canonical ?? unit;
 }
+
+/** Regions that still cook in US customary / imperial units. */
+const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
+
+/**
+ * The measurement system a locale most likely expects, used as cook mode's
+ * initial default before the cook makes (and stores) an explicit choice. The US
+ * and the few US-adjacent imperial regions map to `"us"`; everyone else maps to
+ * `"metric"`. The locale is maximized first, so a region-less id like `en`
+ * resolves to its likely region (`en` → US → `"us"`, `de` → DE → `"metric"`).
+ */
+export function defaultSystemForLocale(locale: string): "us" | "metric" {
+  let region: string | undefined;
+  try {
+    region = new Intl.Locale(locale).maximize().region ?? undefined;
+  } catch {
+    region = undefined;
+  }
+  return region && US_CUSTOMARY_REGIONS.has(region) ? "us" : "metric";
+}

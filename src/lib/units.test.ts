@@ -3,6 +3,7 @@
 import {
   convertTemperature,
   convertUnit,
+  defaultSystemForLocale,
   displayUnit,
   formatQuantity,
   normalizeUnit,
@@ -258,5 +259,25 @@ describe("temperature (#249)", () => {
     expect(formatQuantity(212.5, "°C")).toBe("213");
     expect(formatQuantity(4.5, "°C", "de-DE")).toBe("4,5");
     expect(displayUnit("°C", 200)).toBe("°C");
+  });
+});
+
+describe("defaultSystemForLocale (#246)", () => {
+  it("maps US and US-adjacent locales to imperial", () => {
+    expect(defaultSystemForLocale("en")).toBe("us");
+    expect(defaultSystemForLocale("en-US")).toBe("us");
+  });
+
+  it("maps other locales to metric", () => {
+    expect(defaultSystemForLocale("de")).toBe("metric");
+    expect(defaultSystemForLocale("de-DE")).toBe("metric");
+    expect(defaultSystemForLocale("ar")).toBe("metric");
+    expect(defaultSystemForLocale("es")).toBe("metric");
+    expect(defaultSystemForLocale("en-GB")).toBe("metric");
+  });
+
+  it("falls back to metric for unparseable locales", () => {
+    expect(defaultSystemForLocale("")).toBe("metric");
+    expect(defaultSystemForLocale("not a locale!!")).toBe("metric");
   });
 });
