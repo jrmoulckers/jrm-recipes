@@ -1,6 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
 
 import {
+  convertTemperature,
   convertUnit,
   displayUnit,
   formatQuantity,
@@ -8,6 +9,7 @@ import {
   scaleQuantity,
   toSystem,
   toSystemRange,
+  unitDimension,
 } from "./units";
 
 describe("formatQuantity", () => {
@@ -203,5 +205,58 @@ describe("toSystemRange", () => {
       unit: "pinch",
     });
     expect(toSystemRange(1, 2, null, "metric")).toBeNull();
+  });
+});
+
+describe("temperature (#249)", () => {
+  it("recognizes temperature units and aliases", () => {
+    expect(unitDimension("°F")).toBe("temperature");
+    expect(unitDimension("°C")).toBe("temperature");
+    expect(unitDimension("fahrenheit")).toBe("temperature");
+    expect(unitDimension("Celsius")).toBe("temperature");
+    expect(unitDimension("centigrade")).toBe("temperature");
+    expect(normalizeUnit("Fahrenheit")).toBe("°F");
+    expect(normalizeUnit("celsius")).toBe("°C");
+  });
+
+  it("keeps the bare \"c\" alias meaning cups, not Celsius", () => {
+    expect(normalizeUnit("c")).toBe("cup");
+    expect(unitDimension("c")).toBe("volume");
+  });
+
+  it("converts Fahrenheit↔Celsius affinely and rounds to whole degrees", () => {
+    expect(convertTemperature(350, "°F", "°C")).toBe(177);
+    expect(convertTemperature(180, "°C", "°F")).toBe(356);
+    expect(convertTemperature(212, "°F", "°C")).toBe(100);
+    expect(convertTemperature(0, "°C", "°F")).toBe(32);
+    expect(convertTemperature(425, "fahrenheit", "celsius")).toBe(218);
+  });
+
+  it("returns the same value for identical units and null across dimensions", () => {
+    expect(convertTemperature(350, "°F", "°F")).toBe(350);
+    expect(convertTemperature(1, "°C", "g")).toBeNull();
+    expect(convertUnit(1, "°C", "cup")).toBeNull();
+  });
+
+  it("routes temperature through convertUnit's affine path", () => {
+    expect(convertUnit(350, "°F", "°C")).toBe(177);
+    expect(convertUnit(100, "°C", "°F")).toBe(212);
+  });
+
+  it("selects °F for US and °C for metric via toSystem", () => {
+    expect(toSystem(180, "°C", "us")).toEqual({ quantity: 356, unit: "°F" });
+    expect(toSystem(350, "°F", "metric")).toEqual({ quantity: 177, unit: "°C" });
+    // Already in the target system: value unchanged, unit canonicalized.
+    expect(toSystem(350, "°F", "us")).toEqual({ quantity: 350, unit: "°F" });
+  });
+
+  it("formats temperatures as plain locale-aware decimals, never fractions", () => {
+    expect(formatQuantity(350, "°F")).toBe("350");
+    expect(formatQuantity(177, "°C")).toBe("177");
+    // Large temperatures round to whole degrees; small ones keep one decimal
+    // and honor the locale separator.
+    expect(formatQuantity(212.5, "°C")).toBe("213");
+    expect(formatQuantity(4.5, "°C", "de-DE")).toBe("4,5");
+    expect(displayUnit("°C", 200)).toBe("°C");
   });
 });

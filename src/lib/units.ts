@@ -69,7 +69,8 @@ export function formatQuantity(
   locale: string = DEFAULT_LOCALE,
 ): string {
   if (value == null || Number.isNaN(value)) return "";
-  if (isMetricUnit(unit)) return formatMetricQuantity(value, locale);
+  if (isMetricUnit(unit) || unitDimension(unit) === "temperature")
+    return formatMetricQuantity(value, locale);
   const n = roundNice(value);
   if (n === 0) return formatDecimal(0, locale);
   const whole = Math.floor(n);
@@ -105,7 +106,7 @@ function formatMetricQuantity(value: number, locale: string): string {
 
 // --- Units --------------------------------------------------------------
 
-export type Dimension = "volume" | "mass" | "count";
+export type Dimension = "volume" | "mass" | "count" | "temperature";
 
 type UnitDef = {
   canonical: string;
@@ -132,6 +133,12 @@ const UNIT_DEFS: UnitDef[] = [
   { canonical: "lb", dimension: "mass", base: 453.592, system: "us", aliases: ["pound", "pounds", "lbs"], plural: "lb" },
   { canonical: "g", dimension: "mass", base: 1, system: "metric", aliases: ["gram", "grams", "gramme", "grammes"] },
   { canonical: "kg", dimension: "mass", base: 1000, system: "metric", aliases: ["kilogram", "kilograms", "kilo", "kilos"] },
+  // Temperature is affine (offset + scale), so `base` is unused — conversion
+  // goes through convertTemperature. The bare "c" alias is intentionally
+  // omitted: it already means "cup", and a recipe's "2 c" is far more likely
+  // cups than Celsius. Callers wanting Celsius should use "°C"/"celsius".
+  { canonical: "°F", dimension: "temperature", base: 1, system: "us", aliases: ["f", "fahrenheit"] },
+  { canonical: "°C", dimension: "temperature", base: 1, system: "metric", aliases: ["celsius", "centigrade"] },
 ];
 
 const UNIT_INDEX = new Map<string, UnitDef>();
@@ -168,7 +175,30 @@ export function convertUnit(
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!a || !b) return null;
   if (a.dimension !== b.dimension) return null;
+  if (a.dimension === "temperature")
+    return convertTemperature(quantity, a.canonical, b.canonical);
   return roundNice((quantity * a.base) / b.base);
+}
+
+/**
+ * Convert an affine temperature between °F and °C. Unlike mass/volume (a simple
+ * base-ratio), temperature carries an offset, so it needs its own path. Results
+ * are rounded to whole degrees — the precision recipes and ovens actually use.
+ * Returns null unless both units are temperatures.
+ */
+export function convertTemperature(
+  value: number,
+  from: string,
+  to: string,
+): number | null {
+  const a = UNIT_INDEX.get(from.trim().toLowerCase());
+  const b = UNIT_INDEX.get(to.trim().toLowerCase());
+  if (!a || !b) return null;
+  if (a.dimension !== "temperature" || b.dimension !== "temperature") return null;
+  if (a.canonical === b.canonical) return Math.round(value);
+  const celsius = a.canonical === "°F" ? ((value - 32) * 5) / 9 : value;
+  const result = b.canonical === "°F" ? (celsius * 9) / 5 + 32 : celsius;
+  return Math.round(result);
 }
 
 const VOLUME_LADDER_US = ["tsp", "tbsp", "cup", "quart", "gallon"];
@@ -199,6 +229,13 @@ export function toSystem(
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
   if (!def || def.dimension === "count") {
     return unit ? { quantity: roundNice(quantity), unit } : null;
+  }
+  if (def.dimension === "temperature") {
+    const target = system === "us" ? "°F" : "°C";
+    const converted = convertTemperature(quantity, def.canonical, target);
+    return converted == null
+      ? { quantity: roundNice(quantity), unit: def.canonical }
+      : { quantity: converted, unit: target };
   }
   const ladder = ladderFor(def.dimension, system);
   if (ladder.length === 0) return { quantity: roundNice(quantity), unit: def.canonical };
