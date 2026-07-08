@@ -1,5 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ReactElement } from "react";
+
+import { IntlWrapper } from "~/test/intl";
 
 type ActionResult = { ok: boolean; error?: string };
 const logCookAction = vi.fn<(input: unknown) => Promise<ActionResult>>();
@@ -23,6 +26,11 @@ vi.mock("~/server/planner/actions", () => ({
 
 import { PlannerBoard, type BoardDay, type BoardEntry } from "./planner-board";
 import { formatLeftoversNote } from "~/lib/planner-batch";
+
+/** Render inside the intl provider — PlannerBoard reads the locale via next-intl. */
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 afterEach(() => {
   cleanup();
