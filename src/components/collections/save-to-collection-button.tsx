@@ -123,7 +123,10 @@ export function SaveToCollectionButton({
         </DialogHeader>
 
         {items.length > 0 && (
-          <ul className="grid max-h-64 gap-1 overflow-y-auto">
+          <ul
+            aria-label="Your collections"
+            className="grid max-h-64 gap-1 overflow-y-auto"
+          >
             {items.map((collection) => (
               <li key={collection.id}>
                 <button
@@ -133,6 +136,9 @@ export function SaveToCollectionButton({
                   }
                   disabled={pendingId === collection.id}
                   aria-pressed={collection.contains}
+                  aria-label={`${
+                    collection.contains ? "Remove from" : "Add to"
+                  } collection ${collection.name}`}
                   className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                 >
                   <span className="line-clamp-1 font-medium">

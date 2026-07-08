@@ -72,7 +72,7 @@ function ToggleRow({
  * one-tap Kids mode that switches to the big, bright, simplified theme.
  */
 export function AccessibilityMenu() {
-  const { prefs, update, reset } = useA11y();
+  const { prefs, effective, update, reset } = useA11y();
   const { theme, setKidsMode } = useTheme();
   const active = isA11yActive(prefs);
   const kidsOn = theme === "kids";
@@ -155,17 +155,25 @@ export function AccessibilityMenu() {
               id="a11y-contrast"
               icon={Contrast}
               title="High contrast"
-              description="Stronger text and borders for easier reading."
-              checked={prefs.contrast}
-              onChange={(v) => update({ contrast: v })}
+              description={
+                prefs.contrast === undefined && effective.contrast
+                  ? "Following your system setting. Stronger text and borders."
+                  : "Stronger text and borders for easier reading."
+              }
+              checked={effective.contrast}
+              onChange={(v) => update({ contrast: v ? "on" : "off" })}
             />
             <ToggleRow
               id="a11y-motion"
               icon={Zap}
               title="Reduce motion"
-              description="Turn off animations and transitions."
-              checked={prefs.motion}
-              onChange={(v) => update({ motion: v })}
+              description={
+                prefs.motion === undefined && effective.motion
+                  ? "Following your system setting. Animations are turned off."
+                  : "Turn off animations and transitions."
+              }
+              checked={effective.motion}
+              onChange={(v) => update({ motion: v ? "on" : "off" })}
             />
             <ToggleRow
               id="a11y-reading"
