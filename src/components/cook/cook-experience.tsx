@@ -59,6 +59,7 @@ import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
 import { KidSafetyCallout } from "./kid-safety-callout";
 import { PreCookChecklist } from "./pre-cook-checklist";
+import { CookCompletion } from "./cook-completion";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -165,6 +166,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       /* storage unavailable — proceeding still works for this session */
     }
   }, [readyStorageKey]);
+
+  // "You did it!" completion moment (#437): finishing opens a celebratory screen
+  // (photo capture + badges) instead of navigating away instantly. `handleFinish`
+  // is the real leave action, run when the child taps done/skip.
+  const [finished, setFinished] = React.useState(false);
+  const openCompletion = React.useCallback(() => setFinished(true), []);
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -417,13 +424,21 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={canGoNext ? goNext : handleFinish}
+            onClick={canGoNext ? goNext : openCompletion}
           >
             {canGoNext ? "Next" : "Done"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
           </Button>
         </div>
       </footer>
+
+      {finished && (
+        <CookCompletion
+          recipeTitle={recipe.title}
+          celebratory={kidSafe}
+          onDone={handleFinish}
+        />
+      )}
     </div>
   );
 }

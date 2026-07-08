@@ -504,3 +504,83 @@ describe("Cook Mode Kids step trail (issue #441)", () => {
     ).toBeNull();
   });
 });
+
+describe("Cook Mode completion moment (issue #437)", () => {
+  const origCreate = URL.createObjectURL;
+  const origRevoke = URL.revokeObjectURL;
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => "blob:mock-photo");
+    URL.revokeObjectURL = vi.fn();
+    sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+  });
+
+  afterEach(() => {
+    URL.createObjectURL = origCreate;
+    URL.revokeObjectURL = origRevoke;
+  });
+
+  function renderKids() {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kids">
+          <CookExperience recipe={makeRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  it("shows a celebratory moment instead of navigating on finish", () => {
+    renderKids();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /you did it/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /take a photo/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("previews a captured photo as a keepsake", () => {
+    const { container } = renderKids();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    const input = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const file = new File(["x"], "cupcake.png", { type: "image/png" });
+    fireEvent.change(input, { target: { files: [file] } });
+    const img = screen.getByRole("img", { name: /my finished/i });
+    expect(img).toHaveAttribute("src", "blob:mock-photo");
+    expect(screen.getByText(/look what i made/i)).toBeInTheDocument();
+  });
+
+  it("does not crash when object URLs are unavailable", () => {
+    // @ts-expect-error simulate a browser without object-URL support
+    URL.createObjectURL = undefined;
+    const { container } = renderKids();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    const input = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const file = new File(["x"], "cupcake.png", { type: "image/png" });
+    expect(() =>
+      fireEvent.change(input, { target: { files: [file] } }),
+    ).not.toThrow();
+    expect(screen.queryByRole("img", { name: /my finished/i })).toBeNull();
+  });
+
+  it("still shows the moment (less loud) in grown-up modes", () => {
+    rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kitchen">
+          <CookExperience recipe={makeRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(
+      screen.getByRole("heading", { name: /nicely done/i }),
+    ).toBeInTheDocument();
+  });
+});
