@@ -117,6 +117,35 @@ describe("POST /api/stripe/webhook", () => {
     });
   });
 
+  it("mints a gift code on a one-time gift Checkout completion (#331)", async () => {
+    state.event = {
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_gift_1",
+          mode: "payment",
+          metadata: {
+            kind: "gift",
+            giftPlanId: "family",
+            durationMonths: "12",
+            purchaserUserId: "u1",
+          },
+        },
+      },
+    };
+    const res = await POST(post("raw", { "stripe-signature": "good" }));
+    expect(res.status).toBe(200);
+    expect(db.insert).toHaveBeenCalledTimes(1);
+    expect(state.upsertValues).toMatchObject({
+      status: "issued",
+      stripeSessionId: "cs_gift_1",
+      planId: "family",
+      durationMonths: 12,
+      purchaserUserId: "u1",
+    });
+    expect(typeof state.upsertValues?.code).toBe("string");
+  });
+
   it("acknowledges unknown event types with 200 and ignores them", async () => {
     state.event = { type: "customer.updated", data: { object: {} } };
     const res = await POST(post("raw", { "stripe-signature": "good" }));

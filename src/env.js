@@ -101,6 +101,11 @@ export const env = createEnv({
     // — with these unset checkout reports a friendly "not available" instead of
     // failing, so the app still builds and runs with no billing config.
     STRIPE_PRICE_FAMILY: z.string().optional(),
+    // Stripe one-time Price ID for a gift purchase (#331). Optional — with it
+    // unset the "Gift Heirloom" flow reports a friendly "not available" and the
+    // app still builds and runs. Redeeming an already-issued code needs only the
+    // database, never this key.
+    STRIPE_PRICE_GIFT_FAMILY: z.string().optional(),
   },
 
   client: {
@@ -145,6 +150,7 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_PRICE_FAMILY: process.env.STRIPE_PRICE_FAMILY,
+    STRIPE_PRICE_GIFT_FAMILY: process.env.STRIPE_PRICE_GIFT_FAMILY,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },

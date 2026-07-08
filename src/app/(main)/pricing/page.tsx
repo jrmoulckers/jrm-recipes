@@ -1,8 +1,8 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Gift } from "lucide-react";
 
-import { PLAN_LIST, type Plan } from "~/config/plans";
+import { PLAN_LIST, GIFT_CONFIG, getPlan, type Plan } from "~/config/plans";
 import { getCurrentUser } from "~/server/auth";
 import { getEffectivePlanId } from "~/server/billing/entitlements";
 import { isBillingConfigured } from "~/server/billing/stripe";
@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { CheckoutButton } from "~/components/billing/checkout-button";
+import { GiftButton } from "~/components/billing/gift-button";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -69,7 +70,54 @@ export default async function PricingPage() {
           />
         ))}
       </div>
+
+      <GiftSection billingReady={billingReady} />
     </div>
+  );
+}
+
+/**
+ * "Gift Heirloom" entry (issue #331). Gifting a year of Family is deeply
+ * on-brand for a family recipe app, so it gets its own warm card rather than
+ * hiding in a plan CTA. Buying routes through the one-time gift Checkout; a
+ * quiet link points recipients at `/redeem`. Degrades to a disabled note when
+ * billing is unconfigured, exactly like the paid CTAs above.
+ */
+function GiftSection({ billingReady }: { billingReady: boolean }) {
+  const family = getPlan(GIFT_CONFIG.planId);
+
+  return (
+    <Card className="mx-auto w-full max-w-4xl border-primary/30 bg-surface/40">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Gift className="size-5 text-primary" aria-hidden="true" />
+          <CardTitle>Gift Heirloom</CardTitle>
+        </div>
+        <CardDescription>
+          Give someone {GIFT_CONFIG.durationMonths} months of {family.name} — a
+          warm way to help a loved one keep every family recipe safe. One
+          payment, no subscription, delivered as a code they redeem.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="sm:max-w-xs">
+          {billingReady ? (
+            <GiftButton>Gift {GIFT_CONFIG.durationMonths} months</GiftButton>
+          ) : (
+            <Button className="w-full" disabled>
+              Gift {GIFT_CONFIG.durationMonths} months
+            </Button>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Have a code?{" "}
+          <Link href="/redeem" className="font-medium text-primary underline-offset-4 hover:underline">
+            Redeem your gift
+          </Link>
+          .
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 

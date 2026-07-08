@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 
 import {
   getPlanEntitlements,
@@ -20,6 +20,7 @@ import {
   type User,
 } from "~/server/db/schema";
 import { getUsage } from "./usage";
+import { getActiveGiftPlanId } from "./gifting";
 
 /**
  * Entitlements resolver (issue #302) — the single answer to "what may this user
@@ -89,25 +90,29 @@ export async function getEffectivePlanId(
     where: or(...ownerConds),
     columns: { id: true },
   });
-  if (customers.length === 0) return "free";
 
-  const subs = await db.query.subscriptions.findMany({
-    where: inArray(
-      subscriptions.customerId,
-      customers.map((c) => c.id),
-    ),
-    columns: { planId: true, status: true, currentPeriodEnd: true },
-  });
+  if (customers.length > 0) {
+    const subs = await db.query.subscriptions.findMany({
+      where: inArray(
+        subscriptions.customerId,
+        customers.map((c) => c.id),
+      ),
+      columns: { planId: true, status: true, currentPeriodEnd: true },
+    });
 
-  const active = subs.filter(
-    (s) =>
-      ENTITLED_STATUSES.includes(s.status) &&
-      (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
-  );
-  if (active.length === 0) return "free";
+    const active = subs.filter(
+      (s) =>
+        ENTITLED_STATUSES.includes(s.status) &&
+        (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
+    );
+    // Only free/family exist today; any paid plan beats Free.
+    if (active.some((s) => s.planId !== "free")) return "family";
+  }
 
-  // Only free/family exist today; any paid plan beats Free.
-  return active.some((s) => s.planId !== "free") ? "family" : "free";
+  // No entitling subscription — a redeemed, unexpired gift can still grant
+  // Family (#331), resolved here so no feature call site special-cases gifts.
+  const giftPlan = await getActiveGiftPlanId(user.id, now);
+  return giftPlan ?? "free";
 }
 
 /** The concrete entitlements for the caller's effective plan (Free by default). */

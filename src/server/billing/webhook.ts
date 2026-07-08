@@ -4,12 +4,14 @@ import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import type { PlanId } from "~/config/plans";
+import { GIFT_CONFIG } from "~/config/plans";
 import { db, isDbConfigured } from "~/server/db";
 import {
   billingCustomers,
   subscriptions,
   type SubscriptionStatus,
 } from "~/server/db/schema";
+import { mintGiftCode } from "./gifting";
 
 /**
  * Stripe → DB subscription sync (issue #304).
@@ -152,6 +154,23 @@ async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
   if (!isDbConfigured()) return;
+
+  // A one-time gift purchase (#331): mint the single-use redemption code instead
+  // of linking a customer. Keyed to the session id, so a retried event is a
+  // no-op rather than a second code.
+  if (session.mode === "payment" && session.metadata?.kind === "gift") {
+    const meta = session.metadata;
+    const planId: PlanId = meta.giftPlanId === "family" ? "family" : GIFT_CONFIG.planId;
+    const durationMonths = Number(meta.durationMonths) || GIFT_CONFIG.durationMonths;
+    await mintGiftCode({
+      stripeSessionId: session.id,
+      purchaserUserId: meta.purchaserUserId ?? null,
+      planId,
+      durationMonths,
+    });
+    return;
+  }
+
   const stripeCustomerId = customerIdOf(session.customer);
   if (!stripeCustomerId) return;
   await ensureCustomerLink(stripeCustomerId, session.metadata?.userId ?? undefined);
@@ -182,13 +201,13 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
-      await syncSubscription(event.data.object as Stripe.Subscription);
+      await syncSubscription(event.data.object);
       return;
     case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+      await handleCheckoutCompleted(event.data.object);
       return;
     case "invoice.payment_failed":
-      await handlePaymentFailed(event.data.object as Stripe.Invoice);
+      await handlePaymentFailed(event.data.object);
       return;
     default:
       // Acknowledge and ignore everything else.

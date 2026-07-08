@@ -8,18 +8,26 @@ type SubRow = {
   currentPeriodEnd: Date | null;
 };
 
+type GiftRow = {
+  planId: "free" | "family";
+  durationMonths: number;
+  redeemedAt: Date | null;
+};
+
 const { state, db } = vi.hoisted(() => {
   const state = {
     configured: true,
     memberships: [] as { groupId: string }[],
     customers: [] as { id: string }[],
     subs: [] as SubRow[],
+    gifts: [] as GiftRow[],
   };
   const db = {
     query: {
       groupMembers: { findMany: vi.fn(async () => state.memberships) },
       billingCustomers: { findMany: vi.fn(async () => state.customers) },
       subscriptions: { findMany: vi.fn(async () => state.subs) },
+      giftCodes: { findMany: vi.fn(async () => state.gifts) },
     },
   };
   return { state, db };
@@ -48,6 +56,7 @@ beforeEach(() => {
   state.memberships = [];
   state.customers = [];
   state.subs = [];
+  state.gifts = [];
   vi.clearAllMocks();
 });
 
@@ -99,6 +108,34 @@ describe("getEntitlements", () => {
       { planId: "family", status: "active", currentPeriodEnd: past },
     ];
     expect(await getEffectivePlanId(user)).toBe("free");
+  });
+
+  it("grants Family from a redeemed gift with no subscription (#331)", async () => {
+    state.customers = [];
+    state.gifts = [
+      { planId: "family", durationMonths: 12, redeemedAt: past },
+    ];
+    expect(await getEffectivePlanId(user)).toBe("family");
+    const ent = await getEntitlements(user);
+    expect(ent.aiGeneration).toBe(true);
+  });
+
+  it("ignores an expired gift and stays on Free (#331)", async () => {
+    state.customers = [];
+    const longAgo = new Date(Date.now() - 400 * 86_400_000); // >12 months
+    state.gifts = [
+      { planId: "family", durationMonths: 12, redeemedAt: longAgo },
+    ];
+    expect(await getEffectivePlanId(user)).toBe("free");
+  });
+
+  it("does not consult gifts when a subscription already grants Family (#331)", async () => {
+    state.customers = [{ id: "c1" }];
+    state.subs = [
+      { planId: "family", status: "active", currentPeriodEnd: future },
+    ];
+    expect(await getEffectivePlanId(user)).toBe("family");
+    expect(db.query.giftCodes.findMany).not.toHaveBeenCalled();
   });
 });
 

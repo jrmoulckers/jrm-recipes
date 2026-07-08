@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { state, db, stripeMock } = vi.hoisted(() => {
+const { state, db, stripeMock, giftMock } = vi.hoisted(() => {
   const state = {
     billing: true,
     db: true,
     price: "price_family" as string | undefined,
+    giftPrice: "price_gift" as string | undefined,
     customer: undefined as { stripeCustomerId: string } | undefined,
     user: { email: "a@b.com", name: "Ann" } as {
       email: string | null;
@@ -41,13 +42,23 @@ const { state, db, stripeMock } = vi.hoisted(() => {
       })),
     })),
   };
-  return { state, db, stripeMock };
+  const giftMock = {
+    redeemGiftCode: vi.fn(async () => ({
+      planId: "family" as const,
+      durationMonths: 12,
+      redeemedAt: new Date(),
+    })),
+  };
+  return { state, db, stripeMock, giftMock };
 });
 
 vi.mock("~/env", () => ({
   env: {
     get STRIPE_PRICE_FAMILY() {
       return state.price;
+    },
+    get STRIPE_PRICE_GIFT_FAMILY() {
+      return state.giftPrice;
     },
     NEXT_PUBLIC_APP_URL: "https://app.test",
   },
@@ -58,16 +69,24 @@ vi.mock("./stripe", () => ({
   isBillingConfigured: () => state.billing,
   getStripe: () => stripeMock,
 }));
+vi.mock("./gifting", () => ({
+  redeemGiftCode: giftMock.redeemGiftCode,
+  GIFT_NOT_FOUND: "GIFT_NOT_FOUND",
+  GIFT_ALREADY_REDEEMED: "GIFT_ALREADY_REDEEMED",
+}));
 
 import {
   createBillingPortalSessionAction,
   createCheckoutSessionAction,
+  createGiftCheckoutSessionAction,
+  redeemGiftAction,
 } from "./actions";
 
 beforeEach(() => {
   state.billing = true;
   state.db = true;
   state.price = "price_family";
+  state.giftPrice = "price_gift";
   state.customer = undefined;
   state.checkoutUrl = "https://stripe.test/checkout";
   vi.clearAllMocks();
@@ -140,5 +159,80 @@ describe("createBillingPortalSessionAction", () => {
       customer: "cus_1",
       return_url: "https://app.test/settings/billing",
     });
+  });
+});
+
+describe("createGiftCheckoutSessionAction (#331)", () => {
+  it("errors gracefully when billing is unconfigured", async () => {
+    state.billing = false;
+    const result = await createGiftCheckoutSessionAction();
+    expect(result.ok).toBe(false);
+  });
+
+  it("reports not-available when the gift price env var is unset", async () => {
+    state.giftPrice = undefined;
+    const result = await createGiftCheckoutSessionAction();
+    expect(result.ok).toBe(false);
+    expect(stripeMock.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it("creates a one-time Checkout stamped with gift metadata", async () => {
+    const result = await createGiftCheckoutSessionAction();
+    expect(result).toEqual({ ok: true, url: "https://stripe.test/checkout" });
+    const args = stripeMock.checkout.sessions.create.mock.calls[0]?.[0] as
+      | {
+          mode?: string;
+          metadata?: Record<string, string>;
+          success_url?: string;
+        }
+      | undefined;
+    expect(args?.mode).toBe("payment");
+    expect(args?.metadata).toMatchObject({
+      kind: "gift",
+      giftPlanId: "family",
+      durationMonths: "12",
+      purchaserUserId: "u1",
+    });
+    expect(args?.success_url).toContain("https://app.test/redeem");
+  });
+});
+
+describe("redeemGiftAction (#331)", () => {
+  it("errors gracefully when the DB is unconfigured", async () => {
+    state.db = false;
+    const result = await redeemGiftAction("GIFT-CODE");
+    expect(result.ok).toBe(false);
+    expect(giftMock.redeemGiftCode).not.toHaveBeenCalled();
+  });
+
+  it("rejects an empty code before touching the DB", async () => {
+    const result = await redeemGiftAction("   ");
+    expect(result.ok).toBe(false);
+    expect(giftMock.redeemGiftCode).not.toHaveBeenCalled();
+  });
+
+  it("grants Family on a valid redemption", async () => {
+    const result = await redeemGiftAction("gift-ab3d-7f9k-2qx4");
+    expect(result).toEqual({ ok: true, planId: "family", durationMonths: 12 });
+    expect(giftMock.redeemGiftCode).toHaveBeenCalledWith({
+      code: "gift-ab3d-7f9k-2qx4",
+      userId: "u1",
+    });
+  });
+
+  it("maps an already-redeemed code to a friendly message", async () => {
+    giftMock.redeemGiftCode.mockRejectedValueOnce(
+      new Error("GIFT_ALREADY_REDEEMED"),
+    );
+    const result = await redeemGiftAction("GIFT-USED");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/already been redeemed/i);
+  });
+
+  it("maps an unknown code to a friendly message", async () => {
+    giftMock.redeemGiftCode.mockRejectedValueOnce(new Error("GIFT_NOT_FOUND"));
+    const result = await redeemGiftAction("GIFT-NOPE");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/isn't valid/i);
   });
 });

@@ -3,11 +3,16 @@
 import { eq } from "drizzle-orm";
 
 import { env } from "~/env";
-import { getPlan, isPlanId } from "~/config/plans";
+import { getPlan, isPlanId, GIFT_CONFIG, type PlanId } from "~/config/plans";
 import { requireUser } from "~/server/auth";
 import { db, isDbConfigured } from "~/server/db";
 import { billingCustomers } from "~/server/db/schema";
 import { getStripe, isBillingConfigured } from "./stripe";
+import {
+  redeemGiftCode,
+  GIFT_NOT_FOUND,
+  GIFT_ALREADY_REDEEMED,
+} from "./gifting";
 
 /**
  * Stripe Checkout + Customer Portal server actions (issue #303).
@@ -32,6 +37,7 @@ const NO_CUSTOMER =
   "You don't have a billing account yet — start a plan from the pricing page first.";
 const GENERIC =
   "We couldn't reach Stripe just now. Please try again in a moment.";
+const GIFT_OFF = "Gifting isn't available in this environment yet.";
 
 /** App origin for Stripe redirect URLs (never a hard-coded host). */
 function appUrl(): string {
@@ -171,5 +177,87 @@ export async function createBillingPortalSessionAction(): Promise<BillingActionR
     return { ok: true, url: session.url };
   } catch {
     return { ok: false, error: GENERIC };
+  }
+}
+
+/**
+ * Create a one-time Stripe Checkout to *buy a gift* of Family (issue #331).
+ * Unlike the subscription flow this is `mode: "payment"` with no customer of our
+ * own — the buyer is purchasing for someone else. We stamp gift metadata so the
+ * webhook can mint a single-use redemption code on completion, and enable promo
+ * codes so seasonal gift offers work. Redeeming the resulting code needs only
+ * the DB, so gifts keep working even where checkout later goes offline.
+ */
+export async function createGiftCheckoutSessionAction(): Promise<BillingActionResult> {
+  if (!isBillingConfigured()) return { ok: false, error: BILLING_OFF };
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const priceId = env.STRIPE_PRICE_GIFT_FAMILY;
+  if (!priceId) return { ok: false, error: GIFT_OFF };
+
+  const user = await requireUser();
+  try {
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: priceId, quantity: 1 }],
+      client_reference_id: user.id,
+      allow_promotion_codes: true,
+      metadata: {
+        kind: "gift",
+        giftPlanId: GIFT_CONFIG.planId,
+        durationMonths: String(GIFT_CONFIG.durationMonths),
+        purchaserUserId: user.id,
+      },
+      success_url: `${appUrl()}/redeem?gift=purchased`,
+      cancel_url: `${appUrl()}/pricing?gift=cancelled`,
+    });
+    if (!session.url) return { ok: false, error: GENERIC };
+    return { ok: true, url: session.url };
+  } catch {
+    return { ok: false, error: GENERIC };
+  }
+}
+
+export type RedeemGiftResult =
+  | { ok: true; planId: PlanId; durationMonths: number }
+  | { ok: false; error: string };
+
+/**
+ * Redeem a gift code for the signed-in user (issue #331). DB-only — no Stripe
+ * round-trip — so a recipient can redeem anywhere the database is reachable.
+ * The heavy lifting (atomic single-use claim, expiry) lives in `gifting.ts`;
+ * here we translate its typed errors into friendly, actionable copy. The grant
+ * then flows through the normal entitlements resolver.
+ */
+export async function redeemGiftAction(rawCode: string): Promise<RedeemGiftResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const code = rawCode.trim();
+  if (!code) return { ok: false, error: "Enter a gift code to redeem." };
+
+  const user = await requireUser();
+  try {
+    const gift = await redeemGiftCode({ code, userId: user.id });
+    return {
+      ok: true,
+      planId: gift.planId,
+      durationMonths: gift.durationMonths,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === GIFT_NOT_FOUND) {
+      return {
+        ok: false,
+        error: "That gift code isn't valid. Double-check it and try again.",
+      };
+    }
+    if (message === GIFT_ALREADY_REDEEMED) {
+      return { ok: false, error: "This gift has already been redeemed." };
+    }
+    return {
+      ok: false,
+      error: "We couldn't redeem that just now. Please try again in a moment.",
+    };
   }
 }
