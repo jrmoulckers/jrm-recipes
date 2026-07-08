@@ -5,8 +5,8 @@ import {
   CacheableResponsePlugin,
   CacheFirst,
   ExpirationPlugin,
+  NetworkFirst,
   Serwist,
-  StaleWhileRevalidate,
 } from "serwist";
 
 import { isOfflineFallbackRequest } from "../lib/offline-fallback";
@@ -64,12 +64,20 @@ const recipeImageCache: RuntimeCaching = {
  * their RSC payloads. Prepended to `defaultCache` so recipe navigations use this
  * named, bounded cache instead of Serwist's generic page handling.
  *
- * StaleWhileRevalidate keeps opening a recipe instant and offline-capable once
- * it's been viewed online, while still refreshing it in the background whenever
- * there's a network. `CacheableResponsePlugin` stores only successful (200)
- * responses so we never cache an error/redirect, and `ExpirationPlugin` bounds
- * the cache by entries and age. This is what makes an already-opened recipe
- * survive an offline reload rather than hitting the `/~offline` fallback.
+ * NetworkFirst (deliberately NOT StaleWhileRevalidate): these pages are
+ * server-rendered PER VIEWER and access-controlled — `getRecipe()` returns a 404
+ * for a viewer who can't see a private/group recipe, and the HTML embeds
+ * personalized favorite/rating/cook-log state plus owner-only controls. This
+ * cache is keyed only by URL (the auth cookie is not in `Vary`), so serving it
+ * ahead of the network would, on a shared browser profile (a family kitchen
+ * tablet — exactly this app's threat model), show one user another user's
+ * authorized private page, and even the same user would see stale personalized
+ * state while online. NetworkFirst always fetches fresh, correctly-authorized
+ * content whenever there's a network and only falls back to the cache when
+ * offline (or after `networkTimeoutSeconds` on a stalled connection) — which is
+ * all that #157's "reopen an already-opened recipe offline" needs.
+ * `CacheableResponsePlugin` stores only successful (200) responses so we never
+ * cache an error/redirect, and `ExpirationPlugin` bounds the cache.
  */
 const recipePageCache: RuntimeCaching = {
   matcher: ({ url, request, sameOrigin }) =>
@@ -79,8 +87,11 @@ const recipePageCache: RuntimeCaching = {
       destination: request.destination,
       rscHeader: request.headers.get("RSC") === "1",
     }),
-  handler: new StaleWhileRevalidate({
+  handler: new NetworkFirst({
     cacheName: RECIPE_PAGE_CACHE_NAME,
+    // Prefer a fresh, correctly-authorized render, but don't hang a slow
+    // connection forever — fall back to the cached copy after a short timeout.
+    networkTimeoutSeconds: 3,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({

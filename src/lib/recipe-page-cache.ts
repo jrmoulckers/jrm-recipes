@@ -23,7 +23,7 @@ export const RECIPE_PAGE_CACHE_NAME = "heirloom-recipes";
  */
 export const RECIPE_PAGE_CACHE_MAX_ENTRIES = 64;
 
-/** ~30 days. StaleWhileRevalidate still refreshes entries whenever online. */
+/** ~30 days. NetworkFirst still refreshes entries whenever there's a network. */
 export const RECIPE_PAGE_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 /**
