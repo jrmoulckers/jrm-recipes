@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
 import { env } from "~/env";
+import { getCurrentUser } from "~/server/auth";
 import { isShareableImage, pickSharedUrl } from "~/lib/share-target";
 
 /**
@@ -81,6 +82,18 @@ export function GET(request: NextRequest): NextResponse {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const origin = request.nextUrl.origin;
+
+  // Require a signed-in user before doing ANY work. The photo branch uploads to
+  // Cloudinary (consuming storage + credits) and hands back a hosted secure_url,
+  // and the app's middleware is a bare `clerkMiddleware()` with no `.protect()`,
+  // so without this gate anyone could script `POST /import` in a loop to burn
+  // Cloudinary quota and get free image hosting. Checked up front, before the
+  // body is even parsed. In dev-bypass `getCurrentUser()` is never null, so
+  // local + e2e share-target flows are unaffected.
+  const user = await getCurrentUser();
+  if (!user) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
   let form: FormData;
   try {
