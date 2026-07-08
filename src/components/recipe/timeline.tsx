@@ -43,10 +43,14 @@ export function RecipeTimeline({
         className="rounded-xl border border-dashed border-border bg-card p-5 text-sm text-muted-foreground"
         aria-label={`Version history for ${recipeSlug}`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 font-medium text-foreground">
           <History className="size-4" aria-hidden="true" />
-          No saved versions yet.
+          No history yet
         </div>
+        <p className="mt-1">
+          Every time you save an edit, it&apos;ll show up here so you can look
+          back.
+        </p>
       </section>
     );
   }

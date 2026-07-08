@@ -132,12 +132,12 @@ export default async function CollectionPage({
           <div>
             <h2 className="font-display text-xl font-semibold">
               {collection.isOwner
-                ? "This collection is empty"
+                ? "Nothing saved here yet"
                 : "Nothing to see here yet"}
             </h2>
             <p className="mt-1 max-w-md text-muted-foreground">
               {collection.isOwner
-                ? "Open any recipe and use “Save to collection” to add it here."
+                ? "Open any recipe and choose “Save to collection” to start filling this shelf."
                 : "This collection doesn’t have any recipes you can view right now."}
             </p>
           </div>

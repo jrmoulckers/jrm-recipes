@@ -477,7 +477,26 @@ export default async function RecipePage({
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-muted-foreground">No steps yet.</p>
+                  <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
+                    <p className="font-medium">No steps yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {isOwner
+                        ? "Add the steps and this recipe is ready to cook."
+                        : "The steps haven’t been added to this recipe yet."}
+                    </p>
+                    {isOwner && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                      >
+                        <Link href={`/recipes/${recipe.slug}/edit`}>
+                          <Pencil /> Edit recipe
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (
