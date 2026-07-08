@@ -639,6 +639,78 @@ function StepMedia({
   );
 }
 
+/**
+ * Kids-mode countdown ring (#442): a large SVG circle that depletes as the timer
+ * runs and shifts colour as it nears zero, with the digital readout kept in the
+ * centre. Reuses the existing timer state (duration/remaining/status) — no new
+ * timing logic. Ring animation is gated behind `motion-safe`, so reduced-motion /
+ * Simple mode shows a static proportion instead of a sweeping animation.
+ */
+function TimerRing({ timer }: { timer: TimerRecord }) {
+  const size = 168;
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const fraction =
+    timer.duration > 0
+      ? Math.min(1, Math.max(0, timer.remaining / timer.duration))
+      : 0;
+  const isComplete = timer.status === "complete";
+  const active = timer.status === "running" || timer.status === "paused";
+  const almostDone = active && fraction > 0 && fraction <= 0.15;
+  const ringColor = isComplete
+    ? "text-success"
+    : almostDone
+      ? "text-warning"
+      : "text-primary";
+  // Full ring when complete (celebratory); otherwise deplete with time left.
+  const offset = isComplete ? 0 : circumference * (1 - fraction);
+
+  return (
+    <div
+      data-testid="kids-timer-ring"
+      className="relative mx-auto flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90"
+        aria-hidden="true"
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-muted-foreground/15"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={cn(
+            "stroke-current motion-safe:transition-[stroke-dashoffset] motion-safe:duration-1000 motion-safe:ease-linear",
+            ringColor,
+          )}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="font-mono text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
+          {formatCountdown(timer.remaining)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function StepTimerCard({
   step,
   timer,
@@ -654,6 +726,7 @@ function StepTimerCard({
 }) {
   const t = useTranslations("cook.timer");
   const tA11y = useTranslations("cook.a11y");
+  const { kidSafe } = useThemeBehavior();
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
 
@@ -689,9 +762,13 @@ function StepTimerCard({
           time: formatCountdown(timer.remaining),
         })}
       >
-        <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
-          {formatCountdown(timer.remaining)}
-        </div>
+        {kidSafe ? (
+          <TimerRing timer={timer} />
+        ) : (
+          <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
+            {formatCountdown(timer.remaining)}
+          </div>
+        )}
         <p className="mt-2 text-sm text-muted-foreground">
           {timerStatusText(timer, (key, values) => t(key, values))}
         </p>

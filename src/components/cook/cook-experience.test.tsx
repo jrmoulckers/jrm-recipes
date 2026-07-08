@@ -23,17 +23,10 @@ import type { CookRecipe } from "./types";
 
 afterEach(cleanup);
 
-// Isolate the per-session "get ready" gate memory (#444) between tests.
-beforeEach(() => {
-  try {
-    sessionStorage.clear();
-  } catch {
-    /* no-op */
-  }
-});
-
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
-beforeAll(() => {
+// Some blocks below call vi.unstubAllGlobals() (to drop a stubbed speechSynthesis),
+// which would also clear this — so (re)apply it before every test, not just once.
+function stubMatchMedia() {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
@@ -47,6 +40,20 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     })),
   );
+}
+
+// Isolate the per-session "get ready" gate memory (#444) between tests.
+beforeEach(() => {
+  stubMatchMedia();
+  try {
+    sessionStorage.clear();
+  } catch {
+    /* no-op */
+  }
+});
+
+beforeAll(() => {
+  stubMatchMedia();
 });
 
 // Cook mode reads the active locale (useCookSession → useLocale) to pick a
@@ -391,5 +398,52 @@ describe("Cook Mode 'Read it to me' narration (issue #411)", () => {
     vi.stubGlobal("SpeechSynthesisUtterance", undefined);
     renderKids(makeRecipe());
     expect(screen.queryByRole("button", { name: /read it to me/i })).toBeNull();
+  });
+});
+
+describe("Cook Mode Kids countdown ring (issue #442)", () => {
+  function timerRecipe(): CookRecipe {
+    return makeRecipe({
+      steps: [
+        {
+          id: "step-1",
+          position: 1,
+          section: null,
+          instruction: "Wait for the jelly to set.",
+          imageUrl: null,
+          videoUrl: null,
+          timerSeconds: 300,
+          techniques: null,
+        },
+      ],
+    });
+  }
+
+  it("renders the depleting ring and keeps the digital readout in Kids mode", () => {
+    sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+    const { container } = rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kids">
+          <CookExperience recipe={timerRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    expect(
+      container.querySelector('[data-testid="kids-timer-ring"]'),
+    ).not.toBeNull();
+    // Digital countdown is still present (nothing lost).
+    expect(screen.getAllByText("5:00").length).toBeGreaterThan(0);
+  });
+
+  it("does not render the ring in grown-up modes", () => {
+    const { container } = rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kitchen">
+          <CookExperience recipe={timerRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    expect(container.querySelector('[data-testid="kids-timer-ring"]')).toBeNull();
+    expect(screen.getAllByText("5:00").length).toBeGreaterThan(0);
   });
 });
