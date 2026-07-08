@@ -5,8 +5,10 @@ import {
   categorize,
   describeQuantity,
   groupByCategory,
+  isPantryStaple,
   mergeShoppingItems,
   normalizeItemName,
+  PANTRY_STAPLES,
   scaleFactor,
   toShoppingItems,
   type AggregatedItem,
@@ -438,3 +440,60 @@ describe("aggregated allergens (#432)", () => {
 
 const _sample: ShoppingItemInput = { item: "Water" };
 void _sample;
+
+describe("isPantryStaple", () => {
+  it.each([
+    "salt",
+    "Sea Salt",
+    "kosher salt",
+    "black pepper",
+    "peppercorns",
+    "water",
+    "warm water",
+    "oil",
+    "olive oil",
+    "Extra Virgin Olive Oil",
+    "vegetable oil",
+    "cooking spray",
+    "butter",
+    "garlic powder",
+    "onion powder",
+    "paprika",
+    "ground cumin",
+    "cinnamon",
+    "bay leaf",
+    "2 bay leaves",
+  ])("treats %s as a staple", (item) => {
+    expect(isPantryStaple(item)).toBe(true);
+  });
+
+  it.each([
+    "chicken thighs",
+    "flour",
+    "granulated sugar",
+    "fresh basil",
+    "fresh ginger",
+    "garlic clove",
+    "yellow onion",
+    "coconut milk",
+    "chicken stock",
+    "tomatoes",
+    "",
+  ])("does not treat %s as a staple", (item) => {
+    expect(isPantryStaple(item)).toBe(false);
+  });
+
+  it("matches whole words only (no substring false positives)", () => {
+    // "oil" must not fire on "boiled", "salt" must not fire on "salted"
+    expect(isPantryStaple("boiled potatoes")).toBe(false);
+    expect(isPantryStaple("salted caramel")).toBe(false);
+    // fresh aromatics are deliberately excluded so real produce is never hidden
+    expect(isPantryStaple("garlic")).toBe(false);
+    expect(isPantryStaple("basil")).toBe(false);
+  });
+
+  it("exposes a non-empty staple list", () => {
+    expect(PANTRY_STAPLES.length).toBeGreaterThan(0);
+    expect(PANTRY_STAPLES).toContain("salt");
+  });
+});

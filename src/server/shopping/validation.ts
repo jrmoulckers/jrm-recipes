@@ -39,6 +39,8 @@ export const addRecipeToListInput = z.object({
   desiredServings: optionalNumber.pipe(
     z.number().int().min(1).max(1000).optional(),
   ),
+  /** Keep pantry staples (salt, oil, …) instead of skipping them (#412). */
+  includeStaples: z.boolean().optional(),
 });
 
 export type ManualItemInput = z.infer<typeof manualItemInput>;

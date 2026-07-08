@@ -56,6 +56,7 @@ export async function addRecipeToShoppingListAction(
       user,
       parsed.data.recipeId,
       parsed.data.desiredServings,
+      parsed.data.includeStaples,
     );
     revalidatePath("/shopping");
     return { ok: true };

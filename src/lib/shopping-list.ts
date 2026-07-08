@@ -381,6 +381,66 @@ export function categorize(item: string): ShoppingCategory {
   return best?.category ?? "Other";
 }
 
+// --- Pantry staples -----------------------------------------------------
+
+/**
+ * The things a busy parent has never once needed to buy on a weeknight run
+ * (issue #412): salt, pepper, water, cooking oils, butter, and a few common
+ * dried spices. When a recipe is added to the list these are omitted by default
+ * so the list you actually shop from is short; an "include staples" override
+ * keeps them for the week you really are out of oil.
+ *
+ * Deliberately conservative — fresh herbs/aromatics (basil, cilantro, ginger,
+ * garlic, onion) are excluded so a real produce purchase is never auto-hidden.
+ */
+export const PANTRY_STAPLES = [
+  "salt",
+  "sea salt",
+  "kosher salt",
+  "table salt",
+  "pepper",
+  "black pepper",
+  "white pepper",
+  "peppercorn",
+  "water",
+  "cold water",
+  "warm water",
+  "hot water",
+  "oil",
+  "olive oil",
+  "extra virgin olive oil",
+  "vegetable oil",
+  "canola oil",
+  "sunflower oil",
+  "cooking oil",
+  "cooking spray",
+  "butter",
+  "garlic powder",
+  "onion powder",
+  "chili powder",
+  "paprika",
+  "cumin",
+  "cinnamon",
+  "cayenne",
+  "bay leaf",
+  "bay leaves",
+  "nutmeg",
+] as const;
+
+const STAPLE_MATCHERS: RegExp[] = PANTRY_STAPLES.map(keywordMatcher);
+
+/**
+ * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}).
+ * Pure and whole-word so "salt" never flags "salted caramel" and "oil" never
+ * flags "boiled egg". Used only when auto-building a list from a recipe —
+ * manually added items are never run through this.
+ */
+export function isPantryStaple(item: string): boolean {
+  const name = normalizeItemName(item);
+  if (!name) return false;
+  return STAPLE_MATCHERS.some((matcher) => matcher.test(name));
+}
+
 // --- Aggregation --------------------------------------------------------
 
 /** Metric canonical units, used to pick a display system for a combined line. */
