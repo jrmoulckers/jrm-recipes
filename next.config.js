@@ -31,10 +31,12 @@ const withSerwist = withSerwistInit({
   reloadOnOnline: true,
   // Root layout reads cookies() (for theme SSR), so every route renders
   // dynamically and nothing lands in the precache manifest automatically.
-  // Precache the offline fallback explicitly so it's available with no network.
-  // The revision is stamped per build so a new deploy refreshes the page.
+  // Precache the offline fallback + the offline recipe-image placeholder
+  // explicitly so they're available with no network. Revisions are stamped per
+  // build so a new deploy refreshes them.
   additionalPrecacheEntries: [
     { url: "/~offline", revision: buildRevision },
+    { url: "/img/recipe-image-placeholder.svg", revision: buildRevision },
   ],
 });
 

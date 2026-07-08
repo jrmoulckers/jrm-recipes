@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Recipe image unavailable offline" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7ec"/>
+      <stop offset="1" stop-color="#fbe9d2"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <g fill="none" stroke="#c2620a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55">
+    <rect x="132" y="104" width="136" height="104" rx="14"/>
+    <circle cx="170" cy="140" r="12"/>
+    <path d="M140 196l34-34 26 24 30-32 30 30"/>
+  </g>
+  <path d="M120 92l160 132" stroke="#a4490a" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+</svg>

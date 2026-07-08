@@ -4,6 +4,7 @@ import {
   isRecipeImageRequest,
   RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS,
   RECIPE_IMAGE_CACHE_MAX_ENTRIES,
+  RECIPE_IMAGE_PLACEHOLDER_URL,
   type RecipeImageRequest,
 } from "./recipe-image-cache";
 
@@ -117,5 +118,10 @@ describe("isRecipeImageRequest", () => {
   it("exposes bounded cache limits", () => {
     expect(RECIPE_IMAGE_CACHE_MAX_ENTRIES).toBeGreaterThan(0);
     expect(RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS).toBeGreaterThan(0);
+  });
+
+  it("exposes a bundled offline placeholder asset", () => {
+    // Must be a root-relative path that's precached in next.config.js.
+    expect(RECIPE_IMAGE_PLACEHOLDER_URL).toMatch(/^\/.+\.svg$/);
   });
 });

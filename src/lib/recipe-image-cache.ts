@@ -25,6 +25,14 @@ export const RECIPE_IMAGE_CACHE_MAX_ENTRIES = 128;
 export const RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 /**
+ * Bundled, precached placeholder returned when a recipe image can't be fetched
+ * offline and isn't in the cache. Keeps layouts from collapsing into a
+ * broken-image icon (see the `fallbacks` config + `catch` handling in
+ * `src/app/sw.ts`). A tiny inline SVG, so it costs almost nothing to precache.
+ */
+export const RECIPE_IMAGE_PLACEHOLDER_URL = "/img/recipe-image-placeholder.svg";
+
+/**
  * The subset of a `Request` the matcher reads. A real `Request` satisfies this,
  * and it keeps the function trivially constructable in tests (a constructed
  * `Request` can't carry an `"image"` destination, since the browser — not the

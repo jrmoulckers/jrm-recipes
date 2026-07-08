@@ -15,6 +15,7 @@ import {
   RECIPE_IMAGE_CACHE_MAX_AGE_SECONDS,
   RECIPE_IMAGE_CACHE_MAX_ENTRIES,
   RECIPE_IMAGE_CACHE_NAME,
+  RECIPE_IMAGE_PLACEHOLDER_URL,
 } from "../lib/recipe-image-cache";
 import {
   isRecipePageRequest,
@@ -112,6 +113,20 @@ const serwist = new Serwist({
         // both hard document loads and soft (RSC) client-side navigations.
         url: "/~offline",
         matcher: ({ request }) => isOfflineFallbackRequest(request),
+      },
+      {
+        // Bundled placeholder for a recipe image that isn't cached and can't be
+        // fetched offline. Returned via Serwist's handlerDidError fallback when
+        // the recipe-image CacheFirst route misses, so recipe/cook layouts show
+        // a tasteful placeholder instead of a broken-image icon. Scoped to
+        // recipe images (same predicate as the cache) so other images are left
+        // untouched.
+        url: RECIPE_IMAGE_PLACEHOLDER_URL,
+        matcher: ({ url, request }) =>
+          isRecipeImageRequest({
+            url: url.href,
+            destination: request.destination,
+          }),
       },
     ],
   },
