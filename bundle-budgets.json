@@ -1,7 +1,7 @@
 {
-  "//": "First-load JS budgets in kB per tracked route. CI (scripts/check-bundle-budget.mjs) fails when 'next build' reports a First Load JS above these. Bump a budget deliberately in the same PR that grows a route, with justification. Baselines at time of writing: / 120, /recipes 202, /recipes/[id] 234, /recipes/[id]/edit 157.",
+  "//": "First-load JS budgets in kB per tracked route. CI (scripts/check-bundle-budget.mjs) fails when 'next build' reports a First Load JS above these. Bump a budget deliberately in the same PR that grows a route, with justification. Baselines: /recipes 202, /recipes/[id] 234, /recipes/[id]/edit 157. The / route was re-baselined from ~120 to 199 kB when #477 (busy-parent) added the signed-in personalized home section (DinnerSuggestion + RotationRail quick-plan rails) to (main)/page.tsx; that feature landed on main before this gate existed, so it was never budget-checked. 210 leaves ~5% headroom and keeps the gate blocking for future regressions. Those rails are conditionally rendered for signed-in users but statically bundled — a follow-up PR could next/dynamic them (SSR kept) to trim anonymous first-load.",
   "routes": {
-    "/": 135,
+    "/": 210,
     "/recipes": 220,
     "/recipes/[id]": 255,
     "/recipes/[id]/edit": 175
