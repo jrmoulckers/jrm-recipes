@@ -62,7 +62,12 @@ export function GroupActions({
           variant="outline"
           onClick={() => {
             if (isSoleOwner) return;
-            if (!window.confirm(`Leave ${groupName}?`)) return;
+            if (
+              !window.confirm(
+                `Leave ${groupName}? You'll lose access to its shared recipes. You can re-join with an invite.`,
+              )
+            )
+              return;
             run("leave", () => leaveGroupAction(slug), "You left the group");
           }}
           disabled={isPending || isSoleOwner}
@@ -79,7 +84,7 @@ export function GroupActions({
             onClick={() => {
               if (
                 !window.confirm(
-                  `Delete ${groupName}? Recipes stay saved, but the group space will be removed.`,
+                  `Delete “${groupName}”? Everyone's recipes stay saved — only the shared group space is removed.`,
                 )
               ) {
                 return;

@@ -36,3 +36,19 @@ Rules:
 - Keep the icon (usually `ChefHat` for create/sign-up, `Compass` for browse) —
   only the label is standardized.
 - These are copy-only; never change the route or behavior to match a label.
+
+## Destructive-action confirmations
+
+Every confirm dialog for a delete / remove / leave follows one pattern:
+
+**Verb + what's affected → consequence → reversibility.**
+
+- Lead with the plain verb and the specific thing:
+  "Delete this recipe?", "Remove {name} from this group?", "Leave {group}?"
+- State the real consequence, and reassure about what is *not* lost when true:
+  "Everyone's recipes stay saved — only the shared group space is removed."
+- End with reversibility. If it can't be undone, say
+  "This can't be undone." If it can, say how: "You can re-invite them anytime."
+- Use an em dash (—) to pivot from consequence to reassurance; keep it to two
+  short sentences.
+

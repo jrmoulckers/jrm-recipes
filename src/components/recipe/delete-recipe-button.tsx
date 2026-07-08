@@ -12,7 +12,7 @@ export function DeleteRecipeButton({ id }: { id: string }) {
 
   function onDelete() {
     const ok = window.confirm(
-      "Delete this recipe? This can't be undone.",
+      "Delete this recipe? This permanently removes it and its steps, photos, and history. This can't be undone.",
     );
     if (!ok) return;
     startTransition(async () => {

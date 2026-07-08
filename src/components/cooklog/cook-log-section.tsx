@@ -344,6 +344,13 @@ function DeleteCookButton({
   const [pending, startTransition] = React.useTransition();
 
   function onDelete() {
+    if (
+      !window.confirm(
+        "Delete this cook from your journal? This can't be undone.",
+      )
+    ) {
+      return;
+    }
     startTransition(async () => {
       const result = await deleteCookLogAction({ entryId, recipeSlug });
       if (result.ok) {

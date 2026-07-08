@@ -204,7 +204,11 @@ export function MemberList({
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
                           onSelect={() => {
-                            if (!window.confirm(`Remove ${name} from this group?`)) {
+                            if (
+                              !window.confirm(
+                                `Remove ${name} from this group? They'll lose access to the group's recipes. You can re-invite them anytime.`,
+                              )
+                            ) {
                               return;
                             }
                             runAction(
