@@ -87,8 +87,6 @@ export function QuickCaptureDialog() {
     });
   }
 
-  const editHref = saved ? `/recipes/${saved.slug ?? saved.id}/edit` : "#";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -108,7 +106,7 @@ export function QuickCaptureDialog() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild className="sm:flex-1">
-                <Link href={editHref}>
+                <Link href={`/recipes/${saved.slug ?? saved.id}/edit`}>
                   <PencilLine /> Finish in full editor
                 </Link>
               </Button>

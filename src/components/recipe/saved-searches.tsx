@@ -21,6 +21,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { pathnameWithQuery } from "~/lib/routes";
 import {
   Popover,
   PopoverContent,
@@ -53,7 +54,7 @@ export function SavedSearches({
 
   function apply(query: string) {
     setListOpen(false);
-    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.push(pathnameWithQuery(pathname, query), { scroll: false });
   }
 
   function onDelete(id: string) {

@@ -10,6 +10,7 @@ import {
 } from "~/server/groups/queries";
 import { GroupSettingsForm } from "~/components/groups/group-settings-form";
 import { Button } from "~/components/ui/button";
+import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -20,9 +21,9 @@ const load = cache(async (slug: string) => {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<SlugRouteParams>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
   if (!group) return { title: "Group settings" };
   return { title: `${group.name} settings` };
@@ -31,9 +32,9 @@ export async function generateMetadata({
 export default async function GroupSettingsPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<SlugRouteParams>;
 }) {
-  const { slug } = await params;
+  const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
   if (!group || !canManageGroup(group.viewerRole)) notFound();
 

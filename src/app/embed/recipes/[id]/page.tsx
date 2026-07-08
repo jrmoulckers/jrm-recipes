@@ -6,6 +6,7 @@ import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
 import { brand } from "~/config/brand";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { getPublicRecipeCard } from "~/server/recipes/queries";
+import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
 // A recipe can be unpublished/made private at any time, so never cache the
 // public/private decision at build time.
@@ -14,9 +15,9 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id } = await parseRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   return {
     title: recipe ? `${recipe.title} · Embed` : "Recipe",
@@ -35,9 +36,9 @@ export async function generateMetadata({
 export default async function EmbedRecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await params;
+  const { id } = await parseRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   if (!recipe) notFound();
 

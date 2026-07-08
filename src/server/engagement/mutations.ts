@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
+import { DomainError } from "~/server/errors";
 import { canViewRecipe } from "~/server/recipes/queries";
 import {
   comments,
@@ -52,8 +53,8 @@ export async function createComment(
         groupId: true,
       },
     });
-    if (!recipe) throw new Error("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
+    if (!recipe) throw new DomainError("NOT_FOUND");
+    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
 
     if (input.parentId) {
       const parent = await tx.query.comments.findFirst({
@@ -63,7 +64,7 @@ export async function createComment(
         ),
         columns: { id: true },
       });
-      if (!parent) throw new Error("NOT_FOUND");
+      if (!parent) throw new DomainError("NOT_FOUND");
     }
 
     const [created] = await tx
@@ -100,12 +101,12 @@ export async function deleteComment(
       },
     });
 
-    if (!comment) throw new Error("NOT_FOUND");
+    if (!comment) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(comment.recipe, user))) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
     if (comment.userId !== user.id && comment.recipe.authorId !== user.id) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
 
     const descendants = await collectDescendantIds(tx, [commentId]);
@@ -136,17 +137,17 @@ export async function resolveComment(
       },
     });
 
-    if (!comment) throw new Error("NOT_FOUND");
+    if (!comment) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(comment.recipe, user))) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
     if (comment.kind !== "suggestion" || comment.recipe.authorId !== user.id) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
 
     // A suggestion that's already been folded into the recipe can't be reopened
     // (resolved=false); doing so would leave an applied-but-unresolved entry.
-    if (!resolved && comment.appliedAt) throw new Error("ALREADY_APPLIED");
+    if (!resolved && comment.appliedAt) throw new DomainError("ALREADY_APPLIED");
 
     await tx
       .update(comments)
@@ -196,17 +197,17 @@ export async function applySuggestion(
       },
     });
 
-    if (!suggestion) throw new Error("NOT_FOUND");
+    if (!suggestion) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(suggestion.recipe, user))) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
     if (
       suggestion.kind !== "suggestion" ||
       suggestion.recipe.authorId !== user.id
     ) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
-    if (suggestion.appliedAt) throw new Error("ALREADY_APPLIED");
+    if (suggestion.appliedAt) throw new DomainError("ALREADY_APPLIED");
 
     const contributor = contributorLabel(suggestion.user);
     const mergedNotes = mergeSuggestionIntoNotes(
@@ -251,11 +252,11 @@ export async function setRating(
         groupId: true,
       },
     });
-    if (!recipe) throw new Error("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new Error("FORBIDDEN");
+    if (!recipe) throw new DomainError("NOT_FOUND");
+    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
     // Integrity: authors can't rate their own recipe — a self-rating would
     // inflate both the average and the JSON-LD aggregateRating.
-    if (recipe.authorId === user.id) throw new Error("SELF_RATING");
+    if (recipe.authorId === user.id) throw new DomainError("SELF_RATING");
 
     // Read the caller's prior rating (if any) so we can move the denormalized
     // aggregates by the exact delta (issue #154): a brand-new vote bumps count
@@ -309,7 +310,7 @@ export async function removeRating(recipeId: string, user: User): Promise<void> 
       },
     });
     if (recipe && !(await canViewRecipe(recipe, user))) {
-      throw new Error("FORBIDDEN");
+      throw new DomainError("FORBIDDEN");
     }
 
     // Find the caller's rating first so removing it can decrement the aggregates

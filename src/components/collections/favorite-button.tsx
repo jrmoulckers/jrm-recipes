@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 
 import { toggleFavoriteAction } from "~/server/collections/actions";
 import { cn } from "~/lib/utils";
 import { useReducedMotion } from "~/lib/use-reduced-motion";
+import { useServerAction } from "~/lib/use-server-action";
 import { Button } from "~/components/ui/button";
 
 type FavoriteButtonProps = {
@@ -29,13 +29,22 @@ export function FavoriteButton({
   canFavorite = true,
   className,
 }: FavoriteButtonProps) {
-  const router = useRouter();
   const [favorited, setFavorited] = React.useState(initialFavorited);
-  const [pending, startTransition] = React.useTransition();
+  // Snapshot of the pre-click state so a failed toggle can roll the icon back.
+  const previousRef = React.useRef(initialFavorited);
   const reducedMotion = useReducedMotion();
   // Bumped only when the user favorites (never on mount, prop-sync, or
   // un-favorite), which remounts the glyph so the pop/burst replays once.
   const [burstKey, setBurstKey] = React.useState(0);
+  const toggle = useServerAction(toggleFavoriteAction, {
+    onSuccess: (result) => setFavorited(result.favorited),
+    onError: () => setFavorited(previousRef.current),
+    successToast: (result) =>
+      result.favorited ? "Saved to favorites." : "Removed from favorites.",
+    errorToast: true,
+    refresh: true,
+  });
+  const pending = toggle.pending;
 
   React.useEffect(() => {
     setFavorited(initialFavorited);
@@ -51,24 +60,13 @@ export function FavoriteButton({
       return;
     }
 
-    const previous = favorited;
     const next = !favorited;
+    previousRef.current = favorited;
     setFavorited(next);
     if (next && !reducedMotion) {
       setBurstKey((key) => key + 1);
     }
-
-    startTransition(async () => {
-      const result = await toggleFavoriteAction({ recipeId, recipeSlug });
-      if (result.ok) {
-        setFavorited(result.favorited);
-        toast.success(result.favorited ? "Saved to favorites." : "Removed from favorites.");
-        router.refresh();
-      } else {
-        setFavorited(previous);
-        toast.error(result.error);
-      }
-    });
+    toggle.run({ recipeId, recipeSlug });
   }
 
   const label = favorited ? "Saved to favorites" : "Save to favorites";

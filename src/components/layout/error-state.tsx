@@ -18,6 +18,7 @@ export function ErrorState({
   digest,
   onReset,
   className,
+  as: Wrapper = "main",
 }: {
   title?: string;
   description?: string;
@@ -26,9 +27,15 @@ export function ErrorState({
   /** When provided, renders a "Try again" button wired to this callback. */
   onReset?: () => void;
   className?: string;
+  /**
+   * Root element. Defaults to `main` for the root/global boundaries that own the
+   * page's only landmark. Segment boundaries that render *inside* a layout's
+   * existing `<main>` pass `"div"` to avoid nesting a second `main` landmark.
+   */
+  as?: "main" | "div";
 }) {
   return (
-    <main
+    <Wrapper
       className={cn(
         "relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center",
         className,
@@ -78,6 +85,6 @@ export function ErrorState({
           </p>
         )}
       </div>
-    </main>
+    </Wrapper>
   );
 }

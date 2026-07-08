@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { eq } from "drizzle-orm";
 
 import { env } from "~/env";
@@ -177,12 +178,23 @@ async function resolveCurrentUser(): Promise<User | null> {
   return syncClerkUser(userId);
 }
 
-/** The current app user, or null if not signed in (never null in dev-bypass). */
-export async function getCurrentUser(): Promise<User | null> {
+/**
+ * The current app user, or null if not signed in (never null in dev-bypass).
+ *
+ * Wrapped in React `cache()` so the many callers within a single server render
+ * — the root layout's `getAuthState`, each page's `load = cache(...)`,
+ * `SiteHeader`, and the per-domain `queries.ts` that resolve the viewer — all
+ * collapse to one `auth()` resolution + one `users` lookup per request. Because
+ * `getAuthState` and `requireUser` delegate here, they inherit the dedupe. The
+ * memoization is request-scoped (module is `server-only`), so it never leaks a
+ * viewer across requests, and the best-effort `identifyUser` side effect fires
+ * at most once per request too.
+ */
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   const user = await resolveCurrentUser();
   if (user) void identifyUser(user);
   return user;
-}
+});
 
 /** Full auth snapshot for UI (header, guards). */
 export async function getAuthState(): Promise<AuthState> {

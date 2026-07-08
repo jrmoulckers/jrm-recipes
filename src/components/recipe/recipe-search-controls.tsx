@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { SavedSearches } from "~/components/recipe/saved-searches";
+import { pathnameWithQuery } from "~/lib/routes";
 import {
   RECIPE_PRESETS,
   isPresetActive,
@@ -98,7 +99,7 @@ export function RecipeSearchControls({
       if (params.get("sort") === effectiveDefault) params.delete("sort");
       const qs = params.toString();
       startTransition(() => {
-        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
       });
     },
     [currentParams, pathname, router],
@@ -115,7 +116,7 @@ export function RecipeSearchControls({
       if (params.get("sort") === effectiveDefault) params.delete("sort");
       const qs = params.toString();
       startTransition(() => {
-        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
       });
     },
     [currentParams, pathname, router],
@@ -146,7 +147,7 @@ export function RecipeSearchControls({
       if (params.get("sort") === effectiveDefault) params.delete("sort");
       const qs = params.toString();
       startTransition(() => {
-        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
       });
     },
     [currentParams, pathname, router],
@@ -340,7 +341,7 @@ export function RecipeSearchControls({
             variant="ghost"
             onClick={() => {
               setQuery("");
-              startTransition(() => router.push(pathname, { scroll: false }));
+              startTransition(() => router.push(pathnameWithQuery(pathname), { scroll: false }));
             }}
             className={cn("text-muted-foreground")}
           >

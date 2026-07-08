@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
-import { toast } from "sonner";
 
 import {
   removeRatingAction,
@@ -11,6 +9,7 @@ import {
 } from "~/server/engagement/actions";
 import { cn } from "~/lib/utils";
 import { useReducedMotion } from "~/lib/use-reduced-motion";
+import { useServerAction } from "~/lib/use-server-action";
 
 type RatingSummary = { average: number; count: number };
 
@@ -50,8 +49,6 @@ export function RatingControl(props: {
   canRate: boolean;
 }) {
   const { recipeId, recipeSlug, canRate } = props;
-  const router = useRouter();
-  const [pending, startTransition] = React.useTransition();
   const [hoverRating, setHoverRating] = React.useState<number | null>(null);
   const [viewerRating, setViewerRating] = React.useState(props.viewerRating);
   const [summary, setSummary] = React.useState(props.summary);
@@ -62,6 +59,35 @@ export function RatingControl(props: {
   const [commit, setCommit] = React.useState<{ value: number; key: number } | null>(
     null,
   );
+  // Snapshot of pre-click state so a failed submit can roll the stars back.
+  const rollbackRef = React.useRef<{
+    rating: number | null;
+    summary: RatingSummary;
+  }>({ rating: props.viewerRating, summary: props.summary });
+  const submitRating = useServerAction(
+    (input: { recipeId: string; recipeSlug: string; value: number | null }) =>
+      input.value == null
+        ? removeRatingAction({
+            recipeId: input.recipeId,
+            recipeSlug: input.recipeSlug,
+          })
+        : setRatingAction({
+            recipeId: input.recipeId,
+            recipeSlug: input.recipeSlug,
+            value: input.value,
+          }),
+    {
+      successToast: (_result, input) =>
+        input.value == null ? "Rating cleared." : "Rating saved.",
+      errorToast: true,
+      refresh: true,
+      onError: () => {
+        setViewerRating(rollbackRef.current.rating);
+        setSummary(rollbackRef.current.summary);
+      },
+    },
+  );
+  const pending = submitRating.pending;
 
   React.useEffect(() => {
     setViewerRating(props.viewerRating);
@@ -78,9 +104,8 @@ export function RatingControl(props: {
     if (!canRate || pending) return;
 
     const nextRating = viewerRating === value ? null : value;
-    const previousRating = viewerRating;
-    const previousSummary = summary;
-    const nextSummary = updateSummary(summary, previousRating, nextRating);
+    rollbackRef.current = { rating: viewerRating, summary };
+    const nextSummary = updateSummary(summary, viewerRating, nextRating);
 
     setViewerRating(nextRating);
     setSummary(nextSummary);
@@ -92,21 +117,7 @@ export function RatingControl(props: {
       setCommit(null);
     }
 
-    startTransition(async () => {
-      const result =
-        nextRating == null
-          ? await removeRatingAction({ recipeId, recipeSlug })
-          : await setRatingAction({ recipeId, recipeSlug, value: nextRating });
-
-      if (result.ok) {
-        toast.success(nextRating == null ? "Rating cleared." : "Rating saved.");
-        router.refresh();
-      } else {
-        setViewerRating(previousRating);
-        setSummary(previousSummary);
-        toast.error(result.error);
-      }
-    });
+    submitRating.run({ recipeId, recipeSlug, value: nextRating });
   }
 
   return (

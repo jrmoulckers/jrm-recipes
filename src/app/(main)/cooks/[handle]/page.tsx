@@ -8,6 +8,7 @@ import { brand } from "~/config/brand";
 import { absoluteUrl, displayNameFrom } from "~/lib/utils";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { parseHandleParams, type HandleRouteParams } from "~/lib/route-params";
 
 const load = cache((handle: string) => getPublicProfileByHandle(handle));
 
@@ -25,9 +26,9 @@ function initials(name: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ handle: string }>;
+  params: Promise<HandleRouteParams>;
 }): Promise<Metadata> {
-  const { handle } = await params;
+  const { handle } = await parseHandleParams(params);
   const profile = await load(handle);
   if (!profile) return { title: "Cook not found", robots: { index: false } };
 
@@ -54,9 +55,9 @@ export async function generateMetadata({
 export default async function CookProfilePage({
   params,
 }: {
-  params: Promise<{ handle: string }>;
+  params: Promise<HandleRouteParams>;
 }) {
-  const { handle } = await params;
+  const { handle } = await parseHandleParams(params);
   const profile = await load(handle);
   if (!profile) notFound();
 

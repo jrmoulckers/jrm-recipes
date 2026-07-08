@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { ArrowLeft, CalendarDays, Link2, Printer, Repeat } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,7 +56,7 @@ export function WeekMenuPrintView({
 }: {
   weekLabel: string;
   days: WeekMenuDay[];
-  backHref: string;
+  backHref: Route;
 }) {
   function copyLink() {
     const url = typeof window === "undefined" ? "" : window.location.href;

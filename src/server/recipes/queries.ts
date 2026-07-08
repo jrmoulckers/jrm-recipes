@@ -510,7 +510,13 @@ export async function canViewRecipe(
   return canView(recipe, viewer, groupIds);
 }
 
-/** Fetch a full recipe by id or slug, enforcing visibility for the viewer. */
+/**
+ * Fetch a full recipe by id or slug, enforcing visibility for the viewer.
+ *
+ * Viewer-scoped (access depends on the caller's group memberships), so it is
+ * intentionally left dynamic rather than wrapped in `unstable_cache`; only the
+ * non-personalized public feed ({@link listPublicRecipes}) is cached (#160).
+ */
 export async function getRecipe(idOrSlug: string, viewer: User | null) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
@@ -817,6 +823,9 @@ export function searchFilterConditions(
  * substring matches on ingredient item text and tag names (issue #158). Text
  * queries are ordered by relevance (`ts_rank`); everything else keeps the
  * requested sort.
+ *
+ * Viewer-scoped, so left dynamic (uncached); the cached public surface is
+ * {@link listPublicRecipes} (#160).
  */
 export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
   if (!isDbConfigured()) return [];
@@ -1046,6 +1055,9 @@ export async function suggestSearchTerm(
  *
  * Any currently-selected facet value is always included — even at count 0 — so
  * the UI can still display and clear it.
+ *
+ * Viewer-scoped, so left dynamic (uncached); see {@link listPublicRecipes} for
+ * the cached public feed (#160).
  */
 export async function listRecipeFacets(
   viewer: User | null,

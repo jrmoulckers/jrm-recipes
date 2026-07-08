@@ -16,6 +16,7 @@ import {
 } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { brand } from "~/config/brand";
+import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 
 // Invite links are private, single-purpose URLs — never index them.
 export const metadata: Metadata = {
@@ -89,9 +90,9 @@ function StatusCard({
 export default async function JoinPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<TokenRouteParams>;
 }) {
-  const { token } = await params;
+  const { token } = await parseTokenParams(params);
 
   const preview = isDbConfigured() ? await getInviteLinkPreview(token) : null;
 

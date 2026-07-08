@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
+import { DomainError } from "~/server/errors";
 import {
   groupMembers,
   recipeEvents,
@@ -179,7 +180,7 @@ export async function resolveGroupId(
   });
   if (membership) return groupId;
 
-  if (input.visibility === "group") throw new Error("FORBIDDEN");
+  if (input.visibility === "group") throw new DomainError("FORBIDDEN");
   return null;
 }
 
@@ -422,7 +423,7 @@ export async function updateRecipe(
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
       columns: { id: true, slug: true, publishedAt: true, status: true },
     });
-    if (!current) throw new Error("NOT_FOUND");
+    if (!current) throw new DomainError("NOT_FOUND");
 
     const result = await applyRecipeInput(
       tx,
@@ -462,14 +463,14 @@ export async function forkRecipe(
         },
       });
 
-      if (!source) throw new Error("NOT_FOUND");
+      if (!source) throw new DomainError("NOT_FOUND");
 
       const groupIds =
         source.visibility === "group"
           ? await viewerGroupIds(tx, author.id)
           : [];
       if (!canForkSource(source, author, groupIds))
-        throw new Error("NOT_FOUND");
+        throw new DomainError("NOT_FOUND");
 
       const input = buildAdaptationInput(source);
 
@@ -534,7 +535,7 @@ export async function revertRecipe(
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
       columns: { id: true, slug: true, publishedAt: true, status: true },
     });
-    if (!current) throw new Error("NOT_FOUND");
+    if (!current) throw new DomainError("NOT_FOUND");
 
     const version = await tx.query.recipeVersions.findFirst({
       where: and(
@@ -543,10 +544,10 @@ export async function revertRecipe(
       ),
       columns: { snapshot: true },
     });
-    if (!version) throw new Error("NOT_FOUND");
+    if (!version) throw new DomainError("NOT_FOUND");
 
     const input = parseSnapshot(version.snapshot);
-    if (!input) throw new Error("BAD_SNAPSHOT");
+    if (!input) throw new DomainError("BAD_SNAPSHOT");
 
     const result = await applyRecipeInput(
       tx,
@@ -589,7 +590,7 @@ export async function deleteRecipe(id: string, author: User) {
       ),
     )
     .returning({ id: recipes.id });
-  if (!row) throw new Error("NOT_FOUND");
+  if (!row) throw new DomainError("NOT_FOUND");
   return row;
 }
 
@@ -610,6 +611,6 @@ export async function restoreRecipe(id: string, author: User) {
       ),
     )
     .returning({ id: recipes.id, slug: recipes.slug });
-  if (!row) throw new Error("NOT_FOUND");
+  if (!row) throw new DomainError("NOT_FOUND");
   return row;
 }

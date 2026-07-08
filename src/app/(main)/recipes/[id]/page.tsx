@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { Suspense } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,24 +18,14 @@ import {
   Users,
 } from "lucide-react";
 
-import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
-  getRecipe,
   getRecipeLineage,
-  getRecipeTimeline,
-  getRecipeVersions,
   listSimilarRecipes,
   recordRecipeView,
   excludeOwnerRatings,
   ratingSummary,
 } from "~/server/recipes/queries";
-import {
-  getRecipeComments,
-  getViewerRating,
-  type ThreadedComment,
-} from "~/server/engagement/queries";
-import { getCookCount, getRecipeCookLog } from "~/server/cooklog/queries";
 import {
   getCollectionsForRecipe,
   getFavoriteRecipeIds,
@@ -62,29 +52,24 @@ import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
-import { RecipeStory } from "~/components/recipe/story";
-import { RecipeTimeline } from "~/components/recipe/timeline";
-import { RatingControl } from "~/components/engagement/rating-control";
-import { CommentsSection } from "~/components/engagement/comments-section";
-import { CookLogSection } from "~/components/cooklog/cook-log-section";
 import { TechniqueChips } from "~/components/cook/technique-chips";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
-
-const load = cache(async (idOrSlug: string) => {
-  const user = await getCurrentUser();
-  const recipe = await getRecipe(idOrSlug, user);
-  return { user, recipe };
-});
+import { RecipeTimelineSection } from "~/components/recipe/sections/recipe-timeline-section";
+import { RecipeCookedSection } from "~/components/recipe/sections/recipe-cooked-section";
+import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-discussion-section";
+import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
+import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const { recipe } = await load(id);
+  const { id } = await parseRecipeParams(params);
+  const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? undefined;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
@@ -134,17 +119,13 @@ function formatTimer(seconds: number): string {
   return `${seconds}s`;
 }
 
-function countComments(list: ThreadedComment[]): number {
-  return list.reduce((total, c) => total + 1 + countComments(c.replies), 0);
-}
-
 export default async function RecipePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await params;
-  const { user, recipe } = await load(id);
+  const { id } = await parseRecipeParams(params);
+  const { user, recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
   const isOwner = Boolean(user?.id === recipe.authorId);
@@ -161,38 +142,27 @@ export default async function RecipePage({
     ? recordRecipeView(user.id, recipe.id)
     : Promise.resolve();
 
+  // Secondary reads that still gate first paint are kept lean: lineage sits
+  // above the tabs, favorite / saved / similar power the action bar and the
+  // "you might also like" rail, and member profiles feed the ingredient panel.
+  // The heavier below-the-fold tab sections (timeline, cook log, discussion)
+  // now stream in via <Suspense> instead of blocking here (#176).
   const [
-    versions,
     lineage,
-    timeline,
-    comments,
-    viewerRating,
-    cookLog,
-    cookCount,
     favorited,
     savedCollections,
     similar,
     favoriteIds,
     memberProfiles,
-  ] =
-    await Promise.all([
-      getRecipeVersions(recipe.id),
-      getRecipeLineage(recipe.id, user),
-      getRecipeTimeline(recipe.id, user),
-      getRecipeComments(recipe.id),
-      getViewerRating(recipe.id, user?.id ?? null),
-      getRecipeCookLog(recipe.id, user?.id ?? null),
-      getCookCount(recipe.id, user?.id ?? null),
-      isFavorited(recipe.id, user?.id ?? null),
-      user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
-      listSimilarRecipes(user, recipe.id),
-      getFavoriteRecipeIds(user?.id),
-      user && dbEnabled
-        ? listMemberProfiles(user.id)
-        : Promise.resolve([]),
-    ]);
+  ] = await Promise.all([
+    getRecipeLineage(recipe.id, user),
+    isFavorited(recipe.id, user?.id ?? null),
+    user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
+    listSimilarRecipes(user, recipe.id),
+    getFavoriteRecipeIds(user?.id),
+    user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
+  ]);
   await recordView;
-  const commentCount = countComments(comments);
   // Family members drive the nutrition panel's calorie-goal indicator (#430)
   // and the ingredient conflict flags (#429); narrow the stored string arrays
   // back to the canonical unions here so the client gets typed data.
@@ -407,27 +377,12 @@ export default async function RecipePage({
             </TabsTrigger>
             <TabsTrigger value="timeline">
               <History className="size-4" /> Timeline
-              {versions.items.length > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {versions.items.length}
-                </span>
-              )}
             </TabsTrigger>
             <TabsTrigger value="cooked">
               <CookingPot className="size-4" /> Cooked it
-              {cookCount > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {cookCount}
-                </span>
-              )}
             </TabsTrigger>
             <TabsTrigger value="discussion">
               <MessageCircle className="size-4" /> Discussion
-              {commentCount > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {commentCount}
-                </span>
-              )}
             </TabsTrigger>
           </TabsList>
 
@@ -565,58 +520,40 @@ export default async function RecipePage({
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-6">
-            <div className="mx-auto flex max-w-3xl flex-col gap-8">
-              <RecipeStory
-                entries={timeline.entries}
+            <Suspense fallback={<TabSectionSkeleton />}>
+              <RecipeTimelineSection
+                recipeId={recipe.id}
+                recipeSlug={recipe.slug}
                 recipeTitle={recipe.title}
+                canRevert={isOwner}
+                user={user}
               />
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                  <History className="size-4" aria-hidden="true" />
-                  Saved versions
-                </div>
-                <RecipeTimeline
-                  versions={versions.items}
-                  recipeSlug={recipe.slug}
-                  recipeId={recipe.id}
-                  canRevert={isOwner}
-                />
-              </div>
-            </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="cooked" className="mt-6">
-            <div className="mx-auto max-w-3xl">
-              <CookLogSection
+            <Suspense fallback={<TabSectionSkeleton />}>
+              <RecipeCookedSection
                 recipeId={recipe.id}
                 recipeSlug={recipe.slug}
                 recipeTitle={recipe.title}
-                entries={cookLog}
-                cookCount={cookCount}
+                userId={user?.id ?? null}
                 canLog={Boolean(user)}
-                dbConfigured={isDbConfigured()}
               />
-            </div>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="discussion" className="mt-6">
-            <div className="mx-auto flex max-w-3xl flex-col gap-6">
-              <RatingControl
+            <Suspense fallback={<TabSectionSkeleton />}>
+              <RecipeDiscussionSection
                 recipeId={recipe.id}
                 recipeSlug={recipe.slug}
                 summary={{ average, count }}
-                viewerRating={viewerRating}
-                canRate={Boolean(user)}
-              />
-              <CommentsSection
-                recipeId={recipe.id}
-                recipeSlug={recipe.slug}
-                initialComments={comments}
                 currentUserId={user?.id ?? null}
                 isRecipeOwner={isOwner}
-                canPost={Boolean(user)}
+                canInteract={Boolean(user)}
               />
-            </div>
+            </Suspense>
           </TabsContent>
         </Tabs>
 

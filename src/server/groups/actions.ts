@@ -9,6 +9,13 @@ import { absoluteUrl } from "~/lib/utils";
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
+  type ActionFailure,
+  type ActionResult as BaseActionResult,
+  fail,
+  fromZodError,
+} from "~/server/action-result";
+import { messageForError, type DomainMessages } from "~/server/errors";
+import {
   acceptInviteLink,
   addMember,
   createGroup,
@@ -31,36 +38,27 @@ import {
   type UpdateRoleInput,
 } from "./validation";
 
-export type ActionResult =
-  | { ok: true; slug?: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+export type ActionResult = BaseActionResult<{ slug?: string }>;
 
 const NO_DB = "Groups need a database.";
 
-function messageFor(error: unknown): string {
-  const code = error instanceof Error ? error.message : "";
-  switch (code) {
-    case "USER_NOT_FOUND":
-      return "No cook found with that handle or email — ask them to sign up first.";
-    case "ALREADY_MEMBER":
-      return "They're already in this group.";
-    case "FORBIDDEN":
-      return "You don't have permission to do that.";
-    case "OWNER_CANT_LEAVE":
-      return "Transfer ownership or delete the group first.";
-    case "NOT_FOUND":
-      return "We couldn't find that group.";
-    case "REVOKED":
-      return "This invite link has been turned off. Ask for a fresh one.";
-    case "EXPIRED":
-      return "This invite link has expired. Ask for a fresh one.";
-    case "EXHAUSTED":
-      return "This invite link has reached its limit. Ask for a fresh one.";
-    case "CONFLICT":
-      return "That change couldn't be completed. Please refresh and try again.";
-    default:
-      return "We couldn't save that group change.";
-  }
+/** Group-specific copy for the shared domain-error mapper (#168). */
+const GROUP_MESSAGES: DomainMessages = {
+  USER_NOT_FOUND:
+    "No cook found with that handle or email — ask them to sign up first.",
+  ALREADY_MEMBER: "They're already in this group.",
+  FORBIDDEN: "You don't have permission to do that.",
+  OWNER_CANT_LEAVE: "Transfer ownership or delete the group first.",
+  NOT_FOUND: "We couldn't find that group.",
+  REVOKED: "This invite link has been turned off. Ask for a fresh one.",
+  EXPIRED: "This invite link has expired. Ask for a fresh one.",
+  EXHAUSTED: "This invite link has reached its limit. Ask for a fresh one.",
+  CONFLICT: "That change couldn't be completed. Please refresh and try again.",
+};
+const GROUP_FALLBACK = "We couldn't save that group change.";
+
+function groupError(error: unknown): ActionFailure {
+  return fail(messageForError(error, GROUP_MESSAGES, GROUP_FALLBACK));
 }
 
 function revalidateGroup(slug?: string) {
@@ -72,13 +70,7 @@ export async function createGroupAction(input: GroupInput): Promise<ActionResult
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = groupInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -91,7 +83,7 @@ export async function createGroupAction(input: GroupInput): Promise<ActionResult
     });
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -102,13 +94,7 @@ export async function updateGroupAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = groupInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -117,7 +103,7 @@ export async function updateGroupAction(
     revalidatePath(`/groups/${group.slug}/settings`);
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -128,13 +114,7 @@ export async function addMemberAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = addMemberInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -157,7 +137,7 @@ export async function addMemberAction(
     });
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -169,13 +149,7 @@ export async function updateMemberRoleAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = updateRoleInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -187,7 +161,7 @@ export async function updateMemberRoleAction(
     });
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -203,7 +177,7 @@ export async function removeMemberAction(
     revalidateGroup(group.slug);
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -217,7 +191,7 @@ export async function leaveGroupAction(slug: string): Promise<ActionResult> {
     void captureServer(user.id, "group_left", { groupId: group.groupId });
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -231,7 +205,7 @@ export async function deleteGroupAction(slug: string): Promise<ActionResult> {
     void captureServer(user.id, "group_deleted", { groupId: group.groupId });
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
@@ -246,13 +220,7 @@ export async function transferOwnershipAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = transferOwnershipInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please choose a new owner.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error, "Please choose a new owner.");
 
   const user = await requireUser();
   try {
@@ -260,13 +228,11 @@ export async function transferOwnershipAction(
     revalidateGroup(group.slug);
     return { ok: true, slug: group.slug };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
-export type InviteLinkResult =
-  | { ok: true; url: string; token: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+export type InviteLinkResult = BaseActionResult<{ url: string; token: string }>;
 
 /**
  * Mint a shareable invite link and hand back its absolute URL (issue #343).
@@ -280,13 +246,7 @@ export async function createInviteLinkAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = createInviteLinkInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -297,13 +257,14 @@ export async function createInviteLinkAction(
     });
     return { ok: true, url: absoluteUrl(`/join/${link.token}`), token: link.token };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }
 
-export type AcceptInviteLinkResult =
-  | { ok: true; slug: string; alreadyMember: boolean }
-  | { ok: false; error: string };
+export type AcceptInviteLinkResult = BaseActionResult<{
+  slug: string;
+  alreadyMember: boolean;
+}>;
 
 /**
  * Join a group from an invite-link token (issue #343). Used by the `/join`
@@ -330,6 +291,6 @@ export async function acceptInviteLinkAction(
     }
     return { ok: true, slug: result.slug, alreadyMember: result.alreadyMember };
   } catch (error) {
-    return { ok: false, error: messageFor(error) };
+    return groupError(error);
   }
 }

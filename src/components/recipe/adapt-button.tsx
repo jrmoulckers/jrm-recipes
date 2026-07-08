@@ -6,7 +6,8 @@ import { ChefHat, GitFork, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createAdaptationAction } from "~/server/recipes/actions";
-import { recipeDetailPath } from "~/lib/recipe-path";
+import { recipeEditPath } from "~/lib/recipe-path";
+import { useServerAction } from "~/lib/use-server-action";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -33,27 +34,23 @@ export function AdaptButton({
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [note, setNote] = React.useState("");
-  const [pending, startTransition] = React.useTransition();
+  const adapt = useServerAction(createAdaptationAction, {
+    successToast: "Adaptation created",
+    errorToast: true,
+    onSuccess: (result) => {
+      setOpen(false);
+      router.push(recipeEditPath(result));
+    },
+  });
+  const pending = adapt.pending;
 
   function onSignedOutClick() {
     toast("Sign in to adapt this recipe");
   }
 
   function onAdapt() {
-    startTransition(async () => {
-      const trimmed = note.trim();
-      const result = await createAdaptationAction(
-        sourceId,
-        trimmed.length > 0 ? trimmed : undefined,
-      );
-      if (result.ok) {
-        toast.success("Adaptation created");
-        setOpen(false);
-        router.push(`${recipeDetailPath(result)}/edit`);
-        return;
-      }
-      toast.error(result.error);
-    });
+    const trimmed = note.trim();
+    adapt.run(sourceId, trimmed.length > 0 ? trimmed : undefined);
   }
 
   if (!canAdapt) {
