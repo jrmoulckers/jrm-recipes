@@ -47,9 +47,29 @@ export const removeRatingInput = z.object({
   recipeSlug: idInput,
 });
 
+export const reviewInput = z.object({
+  recipeId: idInput,
+  recipeSlug: idInput,
+  rating: z.number().int().min(1).max(5),
+  title: z.string().trim().max(200).optional(),
+  body: z
+    .string()
+    .trim()
+    .max(4000, "Keep reviews under 4,000 characters.")
+    .optional(),
+  photoUrl: z.string().trim().max(2048).optional(),
+});
+
+export const deleteReviewInput = z.object({
+  reviewId: idInput,
+  recipeSlug: idInput,
+});
+
 export type CommentInput = z.infer<typeof commentInput>;
 export type RatingInput = z.infer<typeof ratingInput>;
 export type DeleteCommentInput = z.infer<typeof deleteCommentInput>;
 export type ResolveCommentInput = z.infer<typeof resolveCommentInput>;
 export type ApplySuggestionInput = z.infer<typeof applySuggestionInput>;
 export type RemoveRatingInput = z.infer<typeof removeRatingInput>;
+export type ReviewInput = z.infer<typeof reviewInput>;
+export type DeleteReviewInput = z.infer<typeof deleteReviewInput>;

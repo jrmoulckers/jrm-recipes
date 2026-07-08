@@ -19,12 +19,16 @@ import {
   removeRatingInput,
   resolveCommentInput,
   applySuggestionInput,
+  reviewInput,
+  deleteReviewInput,
   type CommentInput,
   type DeleteCommentInput,
   type RatingInput,
   type RemoveRatingInput,
   type ResolveCommentInput,
   type ApplySuggestionInput,
+  type ReviewInput,
+  type DeleteReviewInput,
 } from "./validation";
 import {
   createComment,
@@ -34,6 +38,7 @@ import {
   applySuggestion,
   setRating,
 } from "./mutations";
+import { deleteReview, upsertReview } from "./reviews";
 
 export type ActionResult = BaseActionResult;
 
@@ -215,6 +220,62 @@ export async function removeRatingAction(
         error,
         { FORBIDDEN: "You don't have access to this recipe." },
         "We couldn't remove your rating.",
+      ),
+    );
+  }
+}
+
+export async function upsertReviewAction(
+  input: ReviewInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) {
+    return { ok: false, error: "Reviews need a database." };
+  }
+  const parsed = reviewInput.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
+
+  const user = await requireUser();
+  try {
+    await upsertReview(parsed.data, user);
+    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    return { ok: true };
+  } catch (error) {
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "You don't have access to this recipe.",
+          NOT_FOUND: "We couldn't find that recipe.",
+        },
+        "We couldn't save your review.",
+      ),
+    );
+  }
+}
+
+export async function deleteReviewAction(
+  input: DeleteReviewInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) {
+    return { ok: false, error: "Reviews need a database." };
+  }
+  const parsed = deleteReviewInput.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
+
+  const user = await requireUser();
+  try {
+    await deleteReview(parsed.data.reviewId, user);
+    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    return { ok: true };
+  } catch (error) {
+    return fail(
+      messageForError(
+        error,
+        {
+          FORBIDDEN: "Only the review author or recipe owner can delete that.",
+          NOT_FOUND: "That review is already gone.",
+        },
+        "We couldn't delete that review.",
       ),
     );
   }
