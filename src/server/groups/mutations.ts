@@ -514,6 +514,12 @@ export async function acceptInvitation(token: string, user: User) {
       return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
     }
 
+    // Seat enforcement (#325): invite-accept is a primary join path, so the cap
+    // must hold here too — not just in addMember. Runs after the duplicate guard
+    // above so an existing member is still idempotent, and inside this tx so a
+    // rejection leaves the invitation pending.
+    await assertSeatAvailable(tx, invitation.groupId, invitation.role);
+
     await tx.insert(groupMembers).values({
       groupId: invitation.groupId,
       userId: user.id,
@@ -672,6 +678,11 @@ export async function acceptInviteLink(token: string, user: User) {
       )
       .returning({ id: groupInviteLinks.id });
     if (claimed.length === 0) throw new DomainError("EXHAUSTED");
+
+    // Seat enforcement (#325): re-check Family seats AFTER the use-claim but
+    // BEFORE seating, so a seat rejection throws and rolls the useCount bump back
+    // in this same tx (no use is spent when the group is full).
+    await assertSeatAvailable(tx, link.groupId, link.role);
 
     await tx.insert(groupMembers).values({
       groupId: link.groupId,

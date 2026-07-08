@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
+const { transactionMock, getGroupSeatLimitMock } = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  getGroupSeatLimitMock: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: { transaction: transactionMock },
+}));
+
+vi.mock("~/server/billing/entitlements", () => ({
+  getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
 import {
@@ -46,6 +53,7 @@ function fakeTx(opts: {
   targetUser?: unknown;
   invitation?: unknown;
   returning?: unknown[];
+  groupMemberRoles?: { role: MemberRole }[];
 }) {
   const chain = {
     set: vi.fn((_arg?: unknown) => chain),
@@ -66,7 +74,7 @@ function fakeTx(opts: {
         findFirst: vi.fn(async () =>
           memberships.length ? memberships.shift() : null,
         ),
-        findMany: vi.fn(async () => []),
+        findMany: vi.fn(async () => opts.groupMemberRoles ?? []),
       },
       users: { findFirst: vi.fn(async () => opts.targetUser ?? null) },
       groupInvitations: {
@@ -85,6 +93,9 @@ function runWith(tx: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: unlimited seats so existing invite tests are unaffected by the
+  // #325 seat check. Seat-specific tests override this.
+  getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
 describe("createInvitation (issue #181)", () => {
@@ -308,5 +319,63 @@ describe("revokeInvitation (issue #181)", () => {
     await expect(
       revokeInvitation("family", admin, "inv_1"),
     ).rejects.toThrow("FORBIDDEN");
+  });
+});
+
+describe("acceptInvitation seat enforcement (#325)", () => {
+  const pendingInvite = (role: MemberRole) => ({
+    id: "inv_1",
+    groupId: "group_1",
+    status: "pending" as const,
+    role,
+    expiresAt: future(),
+  });
+
+  it("rejects joining beyond the seat limit and seats nobody", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [null],
+      invitation: pendingInvite("member"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInvitation("tok_1", joiner)).rejects.toThrow(
+      "SEAT_LIMIT_REACHED",
+    );
+    expect(tx.insert).not.toHaveBeenCalled();
+  });
+
+  it("lets a member join when a seat is available", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(5);
+    const tx = fakeTx({
+      memberships: [null],
+      invitation: pendingInvite("member"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInvitation("tok_1", joiner)).resolves.toMatchObject({
+      role: "member",
+      alreadyMember: false,
+    });
+    expect(tx.insert).toHaveBeenCalledWith(groupMembers);
+  });
+
+  it("never counts a kid invite against seats, even at the limit", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [null],
+      invitation: pendingInvite("kid"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInvitation("tok_1", joiner)).resolves.toMatchObject({
+      role: "kid",
+      alreadyMember: false,
+    });
+    expect(tx.insert).toHaveBeenCalledWith(groupMembers);
+    expect(getGroupSeatLimitMock).not.toHaveBeenCalled();
   });
 });
