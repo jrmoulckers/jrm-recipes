@@ -54,6 +54,7 @@ import type { IngredientsPanelControls } from "~/components/recipe/ingredients-p
 import { IngredientsDrawer } from "./ingredients-drawer";
 import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
+import { KidSafetyCallout } from "./kid-safety-callout";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -264,6 +265,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 />
               )}
             </div>
+
+            <KidSafetyCallout
+              text={currentStep.instruction}
+              techniques={currentStep.techniques}
+            />
 
             <div className="flex flex-col gap-4">
               <p className="text-sm font-semibold text-muted-foreground">

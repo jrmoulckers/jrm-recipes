@@ -173,3 +173,46 @@ describe("Cook Mode large-target flag (issue #439)", () => {
     expect(previous.className).not.toContain("sm:h-20");
   });
 });
+
+describe("Cook Mode kid-safety callout (issue #423)", () => {
+  function renderWithTheme(ui: React.ReactElement, theme: "kitchen" | "kids") {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme={theme}>{ui}</ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  const hotRecipe = () =>
+    makeRecipe({
+      steps: [
+        {
+          id: "step-1",
+          position: 1,
+          section: null,
+          instruction: "Fry the onions in the hot pan.",
+          imageUrl: null,
+          videoUrl: null,
+          timerSeconds: null,
+          techniques: ["Sauté"],
+        },
+      ],
+    });
+
+  it("warns to ask a grown-up on a hot step in Kids mode", () => {
+    renderWithTheme(<CookExperience recipe={hotRecipe()} />, "kids");
+    expect(
+      screen.getByRole("note", { name: /this step is hot/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the callout outside Kids mode", () => {
+    renderWithTheme(<CookExperience recipe={hotRecipe()} />, "kitchen");
+    expect(screen.queryByRole("note", { name: /hot|sharp/i })).toBeNull();
+  });
+
+  it("shows no callout on a plain step in Kids mode (no false alarms)", () => {
+    renderWithTheme(<CookExperience recipe={makeRecipe()} />, "kids");
+    expect(screen.queryByRole("note", { name: /hot|sharp/i })).toBeNull();
+  });
+});
