@@ -224,6 +224,25 @@ export function IngredientsPanel({
     }
   }, [amounts]);
 
+  // Only animate a check-off when a row actually flips unchecked -> checked in
+  // this render. Rows already checked on first paint (a resumed cook session)
+  // are absorbed into the seeded ref and never replay their pop/strike motion.
+  const prevCheckedRef = React.useRef<Set<string> | null>(null);
+  const justCheckedIds = React.useMemo(() => {
+    const just = new Set<string>();
+    const prev = prevCheckedRef.current;
+    if (prev) {
+      for (const id of checked) {
+        if (!prev.has(id)) just.add(id);
+      }
+    }
+    return just;
+  }, [checked]);
+
+  React.useEffect(() => {
+    prevCheckedRef.current = new Set(checked);
+  }, [checked]);
+
   function updateServings(next: number) {
     if (controls) controls.onServingsChange(next);
     else setServingsInternal(next);
@@ -382,6 +401,7 @@ export function IngredientsPanel({
                 };
                 const amountChanged = changedAmountIds.has(ing.id);
                 const isChecked = checked.has(ing.id);
+                const justChecked = justCheckedIds.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
                     ? scalingNudge(
@@ -436,7 +456,7 @@ export function IngredientsPanel({
                               : flagged
                                 ? "border-warning"
                                 : "border-border",
-                            mounted && isChecked && "motion-safe:animate-check-box-pop",
+                            justChecked && isChecked && "motion-safe:animate-check-box-pop",
                           )}
                           aria-hidden
                         >
@@ -444,7 +464,7 @@ export function IngredientsPanel({
                             <Check
                               className={cn(
                                 "size-3.5",
-                                mounted && "motion-safe:animate-check-pop",
+                                justChecked && "motion-safe:animate-check-pop",
                               )}
                               strokeWidth={3}
                             />
@@ -472,7 +492,7 @@ export function IngredientsPanel({
                               <span
                                 className={cn(
                                   "h-px w-full origin-left bg-current",
-                                  mounted && "motion-safe:animate-strike-in",
+                                  justChecked && "motion-safe:animate-strike-in",
                                 )}
                               />
                             </span>
