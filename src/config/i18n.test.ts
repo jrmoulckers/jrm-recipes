@@ -5,6 +5,7 @@ import {
   SUPPORTED_LOCALES,
   isLocale,
   localeDirection,
+  openGraphLocale,
   resolveLocale,
 } from "./i18n";
 
@@ -68,5 +69,20 @@ describe("resolveLocale", () => {
     expect(resolveLocale("fr")).toBe(DEFAULT_LOCALE);
     expect(resolveLocale(null)).toBe(DEFAULT_LOCALE);
     expect(resolveLocale(undefined)).toBe(DEFAULT_LOCALE);
+  });
+});
+
+describe("openGraphLocale", () => {
+  it("maps each supported locale to a language_TERRITORY value", () => {
+    expect(openGraphLocale("en")).toBe("en_US");
+    expect(openGraphLocale("es")).toBe("es_ES");
+    expect(openGraphLocale("de")).toBe("de_DE");
+    expect(openGraphLocale("ar")).toBe("ar_AR");
+  });
+
+  it("falls back to the default locale's value for unsupported input", () => {
+    expect(openGraphLocale("fr")).toBe(openGraphLocale(DEFAULT_LOCALE));
+    expect(openGraphLocale(null)).toBe(openGraphLocale(DEFAULT_LOCALE));
+    expect(openGraphLocale(undefined)).toBe(openGraphLocale(DEFAULT_LOCALE));
   });
 });

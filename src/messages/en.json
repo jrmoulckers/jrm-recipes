@@ -12,5 +12,26 @@
       "paused": "Paused with {time} remaining",
       "ready": "{time} ready"
     }
+  },
+  "metadata": {
+    "tagline": "Family recipes, kept alive.",
+    "description": "Create, cook, and pass down the recipes your family loves — beautifully, together.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "New recipe",
+        "short_name": "New recipe",
+        "description": "Start a new recipe or import one from a link."
+      },
+      "plan": {
+        "name": "Meal plan",
+        "short_name": "Plan",
+        "description": "Plan meals for the week ahead."
+      },
+      "shopping": {
+        "name": "Shopping list",
+        "short_name": "Shopping",
+        "description": "Review and check off your shopping list."
+      }
+    }
   }
 }

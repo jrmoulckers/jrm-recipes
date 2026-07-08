@@ -64,6 +64,26 @@ export const LOCALE_ENDONYMS: Record<Locale, string> = {
   ar: "العربية",
 };
 
+/**
+ * OpenGraph `og:locale` values (BCP-47 with an underscore territory) for each
+ * supported locale. Crawlers/social cards expect the `language_TERRITORY` form
+ * rather than the bare language subtag the app routes on.
+ */
+export const OPEN_GRAPH_LOCALES: Record<Locale, string> = {
+  en: "en_US",
+  es: "es_ES",
+  de: "de_DE",
+  ar: "ar_AR",
+};
+
+/**
+ * Map a requested locale to its OpenGraph locale string, falling back to the
+ * default locale's value for anything unsupported.
+ */
+export function openGraphLocale(requested?: string | null): string {
+  return OPEN_GRAPH_LOCALES[resolveLocale(requested)];
+}
+
 /** True when `value` is one of the supported locales. */
 export function isLocale(value: unknown): value is Locale {
   return (

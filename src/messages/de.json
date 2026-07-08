@@ -12,5 +12,26 @@
       "paused": "Pausiert, noch {time}",
       "ready": "{time} bereit"
     }
+  },
+  "metadata": {
+    "tagline": "Familienrezepte, lebendig bewahrt.",
+    "description": "Erstelle, koche und gib die Lieblingsrezepte deiner Familie weiter – schön, gemeinsam.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "Neues Rezept",
+        "short_name": "Neu",
+        "description": "Beginne ein neues Rezept oder importiere es über einen Link."
+      },
+      "plan": {
+        "name": "Essensplan",
+        "short_name": "Plan",
+        "description": "Plane die Mahlzeiten für die kommende Woche."
+      },
+      "shopping": {
+        "name": "Einkaufsliste",
+        "short_name": "Einkauf",
+        "description": "Überprüfe und hake deine Einkaufsliste ab."
+      }
+    }
   }
 }

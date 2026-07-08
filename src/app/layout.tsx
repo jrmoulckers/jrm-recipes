@@ -28,9 +28,9 @@ import { analyticsRequiresConsent } from "~/lib/analytics/config";
 import { getAllFlags } from "~/lib/analytics/server";
 import { atkinson } from "~/fonts/atkinson";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
-import { localeDirection } from "~/config/i18n";
+import { localeDirection, openGraphLocale } from "~/config/i18n";
 import { isAuthConfigured, getCurrentUser } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
@@ -63,31 +63,42 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  applicationName: brand.name,
-  title: {
-    default: `${brand.name} — ${brand.tagline}`,
-    template: `%s · ${brand.name}`,
-  },
-  description: brand.description,
-  manifest: "/manifest.webmanifest",
-  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: brand.name,
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/icons/icon-192.png",
-  },
-  openGraph: {
-    type: "website",
-    title: `${brand.name} — ${brand.tagline}`,
-    description: brand.description,
-    siteName: brand.name,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Localize to the active locale (resolved from the NEXT_LOCALE cookie by the
+  // i18n request config). Title/description/OpenGraph read from the catalog; the
+  // brand wordmark, colors, and URLs stay in the single brand/env config.
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  const title = `${brand.name} — ${t("tagline")}`;
+  const description = t("description");
+
+  return {
+    applicationName: brand.name,
+    title: {
+      default: title,
+      template: `%s · ${brand.name}`,
+    },
+    description,
+    manifest: "/manifest.webmanifest",
+    metadataBase: new URL(env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: brand.name,
+    },
+    icons: {
+      icon: "/favicon.ico",
+      apple: "/icons/icon-192.png",
+    },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      siteName: brand.name,
+      locale: openGraphLocale(locale),
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

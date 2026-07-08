@@ -12,5 +12,26 @@
       "paused": "En pausa con {time} restante",
       "ready": "{time} listo"
     }
+  },
+  "metadata": {
+    "tagline": "Recetas de familia, siempre vivas.",
+    "description": "Crea, cocina y transmite las recetas que tu familia adora, juntos y con cariño.",
+    "shortcuts": {
+      "newRecipe": {
+        "name": "Nueva receta",
+        "short_name": "Nueva",
+        "description": "Empieza una receta nueva o impórtala desde un enlace."
+      },
+      "plan": {
+        "name": "Menú semanal",
+        "short_name": "Menú",
+        "description": "Planifica las comidas de la semana."
+      },
+      "shopping": {
+        "name": "Lista de la compra",
+        "short_name": "Compra",
+        "description": "Revisa y marca tu lista de la compra."
+      }
+    }
   }
 }
