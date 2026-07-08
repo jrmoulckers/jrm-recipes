@@ -34,30 +34,54 @@ import { Providers } from "~/app/providers";
 import { ThemeScript } from "~/components/theme/theme-script";
 import { A11yScript } from "~/components/a11y/a11y-script";
 
+// Font loading is tuned for the multi-theme setup (#182). Only ONE family — the
+// shared body font (Nunito) — is preloaded, because it paints on the default and
+// most other themes. The four display/decorative families are `preload: false`:
+// their `@font-face` rules stay in the document (so a client-side theme switch
+// can still apply the right font with no flash), but the browser only downloads
+// each one when the active theme's CSS actually paints it. On the default
+// (kitchen) theme that means just two families (Nunito + Fraunces) instead of
+// all five. Every family gets a size-matched `fallback` stack + `adjustFontFallback`
+// so the swap-in stays within CLS budget.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
+  preload: false,
+  fallback: ["ui-serif", "Georgia", "serif"],
+  adjustFontFallback: true,
 });
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
   display: "swap",
+  preload: true,
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  adjustFontFallback: true,
 });
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: false,
+  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  adjustFontFallback: true,
 });
 const baloo = Baloo_2({
   subsets: ["latin"],
   variable: "--font-baloo",
   display: "swap",
+  preload: false,
+  fallback: ["ui-rounded", "Segoe UI", "sans-serif"],
+  adjustFontFallback: true,
 });
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   display: "swap",
+  preload: false,
+  fallback: ["ui-monospace", "monospace"],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
