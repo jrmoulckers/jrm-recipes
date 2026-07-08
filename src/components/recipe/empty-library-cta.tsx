@@ -4,7 +4,9 @@ import Link from "next/link";
 import { ChefHat, UtensilsCrossed } from "lucide-react";
 
 import { useFeatureFlag } from "~/components/analytics/flags-provider";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
+import { pickKidCopy } from "~/config/kid-copy";
 
 /** Feature-flag key for the empty-library CTA experiment (issue #336). */
 export const EMPTY_LIBRARY_CTA_FLAG = "empty-library-cta";
@@ -48,7 +50,14 @@ export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
  */
 export function EmptyLibraryCta() {
   const variant = useFeatureFlag(EMPTY_LIBRARY_CTA_FLAG, "control");
-  const copy = emptyLibraryCopy(variant);
+  const { kidSafe } = useThemeBehavior();
+  const base = emptyLibraryCopy(variant);
+  // Kids mode overrides the A/B copy with simpler words, regardless of variant.
+  const copy = {
+    heading: pickKidCopy(kidSafe, "empty.recipes.title", base.heading),
+    body: pickKidCopy(kidSafe, "empty.recipes.body", base.body),
+    cta: pickKidCopy(kidSafe, "cta.create", base.cta),
+  };
 
   return (
     <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">

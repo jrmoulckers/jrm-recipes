@@ -52,3 +52,23 @@ Every confirm dialog for a delete / remove / leave follows one pattern:
 - Use an em dash (—) to pivot from consequence to reassurance; keep it to two
   short sentences.
 
+## Kids mode
+
+Kids mode (`THEME_BEHAVIOR.kids.kidSafe`) is a first-class experience: bigger
+targets, simpler chrome — and simpler *words*. Adult microcopy stays put unless a
+surface opts in through `src/config/kid-copy.ts`.
+
+Guidelines for Kids variants:
+
+- **Aim for a ~grade-2 reading level.** Short words, short sentences, one idea.
+- **Be warm and encouraging.** "You did it! 🎉", "Let's add your favorite food."
+- **Prefer concrete nouns.** "food" over "ingredient", "day" over "date".
+- **One exclamation is plenty.** Enthusiasm, not shouting.
+- Keep the map tiny — only core flows (create CTA, library empty state, cook
+  completion headline, top validation messages). It is not a full i18n layer.
+
+Current variants live in `KID_COPY`; read them with `pickKidCopy(kidSafe, …)`
+(client, paired with `useThemeBehavior`) or `pickCopy(theme, …)`. Non-Kids modes
+must be byte-for-byte unchanged.
+
+

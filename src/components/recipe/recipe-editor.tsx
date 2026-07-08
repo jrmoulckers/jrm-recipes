@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
+import { pickKidCopy } from "~/config/kid-copy";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
@@ -178,6 +180,7 @@ export function RecipeEditor({
 }) {
   const router = useRouter();
   const t = useTranslations("recipeEditor");
+  const { kidSafe } = useThemeBehavior();
   const [upgrade, setUpgrade] = React.useState<string | null>(null);
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
   const [importUrl, setImportUrl] = React.useState("");
@@ -386,7 +389,7 @@ export function RecipeEditor({
     ): Promise<Record<string, string[]>> => {
       const payload = buildPayloadRef.current();
       if (!payload.title) {
-        toast.error("Your recipe needs a title.");
+        toast.error(pickKidCopy(kidSafe, "validation.title", "Your recipe needs a title."));
         return { title: ["Give your recipe a title"] };
       }
       if (payload.visibility === "group" && !payload.groupId) {
