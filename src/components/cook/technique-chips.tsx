@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { getTechnique, lookupTechnique } from "~/lib/techniques";
 import { cn } from "~/lib/utils";
 
@@ -48,10 +49,15 @@ function TechniqueChip({
   className?: string;
 }) {
   const match = lookupTechnique(rawLabel);
+  // In Kids mode, prefer the playful kid-friendly tip and skip the adult
+  // description (full of grown-up words a pre-reader can't decode yet) (#446).
+  const { kidSafe } = useThemeBehavior();
 
   if (!match.known) {
     if (match.suggestion) {
       const suggested = getTechnique(match.suggestion.slug);
+      const suggestedTip =
+        (kidSafe && suggested?.kidTip) || suggested?.shortTip;
       return (
         <Popover>
           <PopoverTrigger asChild>
@@ -73,9 +79,9 @@ function TechniqueChip({
               Did you mean{" "}
               <span className="font-semibold">{match.suggestion.label}</span>?
             </p>
-            {suggested?.shortTip && (
+            {suggestedTip && (
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {suggested.shortTip}
+                {suggestedTip}
               </p>
             )}
           </PopoverContent>
@@ -88,6 +94,9 @@ function TechniqueChip({
       </Badge>
     );
   }
+
+  const kidMode = kidSafe && Boolean(match.kidTip);
+  const primaryTip = kidMode ? match.kidTip : match.shortTip;
 
   return (
     <Popover>
@@ -114,10 +123,10 @@ function TechniqueChip({
             Technique
           </Badge>
         </div>
-        {match.shortTip && (
-          <p className="text-sm font-medium text-foreground">{match.shortTip}</p>
+        {primaryTip && (
+          <p className="text-sm font-medium text-foreground">{primaryTip}</p>
         )}
-        {match.description && (
+        {!kidMode && match.description && (
           <p className="text-sm leading-relaxed text-muted-foreground">
             {match.description}
           </p>

@@ -55,6 +55,19 @@ describe("lookupTechnique", () => {
     expect(lookupTechnique("whisked")).toMatchObject({ slug: "whisk" });
   });
 
+  it("exposes a kid-friendly tip for common beginner techniques (#446)", () => {
+    const whisk = lookupTechnique("whisk");
+    expect(whisk.kidTip).toBeTypeOf("string");
+    expect(whisk.kidTip).not.toBe(whisk.shortTip);
+    // Resolves through aliases/inflections too, so a recipe's "whisking" works.
+    expect(lookupTechnique("whisking").kidTip).toBe(whisk.kidTip);
+  });
+
+  it("leaves kidTip undefined for techniques without a kid version", () => {
+    // `temper` is intentionally unseeded — the popover falls back to shortTip.
+    expect(lookupTechnique("temper").kidTip).toBeUndefined();
+  });
+
   it("resolves curated aliases and alternate spellings", () => {
     expect(lookupTechnique("caramelise")).toMatchObject({ slug: "caramelize" });
     expect(lookupTechnique("reduction")).toMatchObject({ slug: "reduce" });
