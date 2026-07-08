@@ -102,6 +102,58 @@ export function resolveLocale(requested?: string | null): Locale {
 }
 
 /**
+ * Negotiate the best supported locale from an `Accept-Language` header value.
+ *
+ * Parses the comma-separated language ranges with their optional quality
+ * weights (`;q=`), orders them by descending preference, and returns the first
+ * whose primary subtag matches a supported locale (so `de-DE` matches `de`). A
+ * `*` range, an empty/absent header, or no supported match all fall back to
+ * {@link DEFAULT_LOCALE}. Kept pure and framework-free so it runs both at the
+ * edge (middleware) and on the server (request config), and is unit testable.
+ */
+export function negotiateAcceptLanguage(header?: string | null): Locale {
+  if (!header) return DEFAULT_LOCALE;
+
+  const ranges = header
+    .split(",")
+    .map((part) => {
+      const segments = part.trim().split(";");
+      const tag = (segments[0] ?? "").trim().toLowerCase();
+      const quality = segments
+        .slice(1)
+        .map((param) => param.trim())
+        .find((param) => param.toLowerCase().startsWith("q="));
+      const parsed = quality ? Number.parseFloat(quality.slice(2)) : 1;
+      return { tag, q: Number.isNaN(parsed) ? 1 : parsed };
+    })
+    .filter((entry) => entry.tag.length > 0 && entry.q > 0)
+    .sort((a, b) => b.q - a.q);
+
+  for (const entry of ranges) {
+    if (entry.tag === "*") return DEFAULT_LOCALE;
+    const primary = entry.tag.split("-")[0] ?? entry.tag;
+    if (isLocale(primary)) return primary;
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+/**
+ * Resolve the active locale for a request using the app's precedence: a valid
+ * `NEXT_LOCALE` cookie wins (an explicit choice persisted by the switcher),
+ * otherwise the `Accept-Language` header is negotiated for first-time visitors,
+ * otherwise {@link DEFAULT_LOCALE}. Pure so the request config and middleware
+ * share one source of truth.
+ */
+export function resolveRequestLocale(
+  cookieValue?: string | null,
+  acceptLanguage?: string | null,
+): Locale {
+  if (isLocale(cookieValue)) return cookieValue;
+  return negotiateAcceptLanguage(acceptLanguage);
+}
+
+/**
  * Map a BCP-47 locale (or bare language code) to its writing direction.
  * Unknown or empty locales fall back to `ltr`, the safe default for the Latin
  * script the app ships with.
