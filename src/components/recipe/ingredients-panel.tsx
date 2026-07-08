@@ -569,7 +569,7 @@ export function IngredientsPanel({
         </form>
       )}
 
-      {((bakersView && bakersFormula) || batchYield) && (
+      {((bakersView && !!bakersFormula) || !!batchYield) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2 text-sm">
           {bakersView && bakersFormula && (
             <>

@@ -517,7 +517,7 @@ export function decomposeMeasure(
     return null;
   }
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
-  if (!def || def.dimension !== "volume" || def.system !== "us") return null;
+  if (def?.dimension !== "volume" || def.system !== "us") return null;
 
   const tspBase = UNIT_INDEX.get("tsp")!.base;
   // Snap to the nearest measuring-spoon quarter-teaspoon up front so float dust
