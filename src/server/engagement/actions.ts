@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { PUBLIC_RECIPES_TAG } from "~/server/recipes/cache";
 import {
   commentInput,
   deleteCommentInput,
@@ -207,6 +208,9 @@ export async function setRatingAction(
   try {
     await setRating(parsed.data, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    // The cached public "top-rated" feed ranks by live rating score, so a
+    // rating change must invalidate the feed tag, not just the detail path.
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
     const code = errorCode(error);
@@ -242,6 +246,8 @@ export async function removeRatingAction(
   try {
     await removeRating(parsed.data.recipeId, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    // Removing a rating likewise re-ranks the cached public feed.
+    revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
   } catch (error) {
     if (errorCode(error) === "FORBIDDEN") {
