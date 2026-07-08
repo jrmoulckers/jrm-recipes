@@ -33,6 +33,9 @@ export default async function EditRecipePage({
     servingsNoun: recipe.servingsNoun ?? "servings",
     prepMinutes: recipe.prepMinutes != null ? String(recipe.prepMinutes) : "",
     cookMinutes: recipe.cookMinutes != null ? String(recipe.cookMinutes) : "",
+    restMinutes: recipe.restMinutes != null ? String(recipe.restMinutes) : "",
+    makeAheadNote: recipe.makeAheadNote ?? "",
+    equipment: (recipe.equipment ?? []).join(", "),
     calories: recipe.calories != null ? String(recipe.calories) : "",
     proteinGrams:
       recipe.proteinGrams != null ? String(recipe.proteinGrams) : "",
@@ -63,6 +66,8 @@ export default async function EditRecipePage({
       unit: ing.unit ?? "",
       item: ing.item,
       note: ing.note ?? "",
+      prep: ing.prep ?? "",
+      stepPosition: ing.stepPosition != null ? String(ing.stepPosition) : "",
       optional: ing.optional,
     })),
     steps: recipe.steps.map((step) => ({
@@ -72,6 +77,8 @@ export default async function EditRecipePage({
         step.timerSeconds != null
           ? String(Math.round((step.timerSeconds / 60) * 100) / 100)
           : "",
+      targetTempC: step.targetTempC != null ? String(step.targetTempC) : "",
+      doneness: step.doneness ?? "",
       techniques: (step.techniques ?? []).join(", "),
     })),
   };

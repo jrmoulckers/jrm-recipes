@@ -93,14 +93,30 @@ export function formatQuantity(
 }
 
 /**
- * Round a metric quantity to a precision a cook can actually measure and render
- * it as a locale-aware decimal (never a vulgar fraction): whole grams/millilitres
- * for amounts ≥ 10, otherwise a single decimal place.
+ * The magnitude at or above which a metric amount is rendered as a whole
+ * number. Below it — the small doses where a tenth of a gram is a real
+ * measurement (yeast, salt, baking soda, spices, #403) — a single decimal
+ * place is kept so scaling "12.5 g" shows "12.5", not a rounded "13".
  */
-function formatMetricQuantity(value: number, locale: string): string {
+const METRIC_WHOLE_THRESHOLD = 50;
+
+/**
+ * Round a metric quantity to a precision a cook can actually measure and render
+ * it as a locale-aware decimal (never a vulgar fraction). Large amounts (≥
+ * {@link METRIC_WHOLE_THRESHOLD}, e.g. 500 g flour) stay clean whole numbers;
+ * small doses keep one decimal place so measurable precision isn't rounded away
+ * (#403). A value that lands on a whole number renders without a trailing `.0`.
+ */
+export function formatMetricQuantity(
+  value: number,
+  locale: string = DEFAULT_LOCALE,
+): string {
   const n = roundNice(value);
   if (n === 0) return formatDecimal(0, locale);
-  const rounded = Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
+  const rounded =
+    Math.abs(n) >= METRIC_WHOLE_THRESHOLD
+      ? Math.round(n)
+      : Math.round(n * 10) / 10;
   return formatDecimal(rounded, locale);
 }
 
@@ -289,6 +305,161 @@ export function scaleQuantity(
 }
 
 /**
+ * Derive the scale factor that turns a recipe's base amount of one ingredient
+ * into a target amount the cook actually has or needs (#390) — e.g. "500 g of
+ * bananas" from a recipe that calls for 250 g gives ×2. The target may be given
+ * in the ingredient's own unit or any convertible one (grams → the base's cups,
+ * etc.). Returns `null` when either amount is missing / non-positive or the
+ * units don't convert, so callers can fall back to servings scaling.
+ */
+export function deriveScaleFactor(
+  baseQuantity: number | null | undefined,
+  targetQuantity: number | null | undefined,
+  baseUnit?: string | null,
+  targetUnit?: string | null,
+): number | null {
+  if (
+    baseQuantity == null ||
+    !Number.isFinite(baseQuantity) ||
+    baseQuantity <= 0 ||
+    targetQuantity == null ||
+    !Number.isFinite(targetQuantity) ||
+    targetQuantity <= 0
+  ) {
+    return null;
+  }
+  let target = targetQuantity;
+  const from = normalizeUnit(targetUnit);
+  const to = normalizeUnit(baseUnit);
+  if (from && to && from !== to) {
+    const converted = convertUnit(targetQuantity, from, to);
+    if (converted == null) return null;
+    target = converted;
+  }
+  const factor = target / baseQuantity;
+  return Number.isFinite(factor) && factor > 0 ? factor : null;
+}
+
+// --- Weigh-based cooking: volume → weight by density (#385) ---------------
+
+/**
+ * Approximate densities (grams per millilitre) for the staples a home baker
+ * weighs most. Values are typical kitchen references — coverage matters more
+ * than a perfect number, and any density beats guessing at a scooped cup. Each
+ * entry lists normalized match phrases; the longest matching phrase wins so
+ * "brown sugar" beats "sugar" and "bread flour" beats "flour".
+ */
+type DensityEntry = { gPerMl: number; phrases: string[] };
+
+const INGREDIENT_DENSITIES: DensityEntry[] = [
+  { gPerMl: 1.0, phrases: ["water"] },
+  { gPerMl: 1.03, phrases: ["milk", "buttermilk"] },
+  { gPerMl: 1.0, phrases: ["cream", "heavy cream", "sour cream"] },
+  { gPerMl: 1.03, phrases: ["yogurt", "yoghurt"] },
+  {
+    gPerMl: 0.53,
+    phrases: ["flour", "all purpose flour", "plain flour", "bread flour"],
+  },
+  { gPerMl: 0.55, phrases: ["whole wheat flour", "wholemeal flour"] },
+  { gPerMl: 0.85, phrases: ["sugar", "granulated sugar", "caster sugar"] },
+  { gPerMl: 0.9, phrases: ["brown sugar"] },
+  {
+    gPerMl: 0.5,
+    phrases: ["powdered sugar", "confectioners sugar", "icing sugar"],
+  },
+  { gPerMl: 0.96, phrases: ["butter"] },
+  { gPerMl: 0.92, phrases: ["oil", "olive oil", "vegetable oil", "canola oil"] },
+  { gPerMl: 1.42, phrases: ["honey"] },
+  { gPerMl: 1.37, phrases: ["maple syrup"] },
+  { gPerMl: 0.45, phrases: ["cocoa", "cocoa powder"] },
+  { gPerMl: 0.54, phrases: ["cornstarch", "corn starch", "cornflour"] },
+  { gPerMl: 1.2, phrases: ["salt"] },
+];
+
+/**
+ * Normalize an ingredient's free-text `item` into whole-word tokens for density
+ * matching. Mirrors the tolerant normalizer in `substitutions.ts` (lowercase,
+ * strip accents/parentheticals, keep the part before the first comma), but is
+ * kept local so `units.ts` stays dependency-free (substitutions imports units).
+ */
+function densityTokens(item: string | null | undefined): string[] {
+  if (!item) return [];
+  let s = item.toLowerCase();
+  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = s.replace(/\([^)]*\)/g, " ");
+  s = s.split(",")[0] ?? s;
+  s = s.replace(/[^a-z0-9]+/g, " ");
+  return s.split(" ").filter(Boolean);
+}
+
+/** True when `phrase` appears as a contiguous run of whole words in `haystack`. */
+function containsWholePhrase(haystack: string[], phrase: string[]): boolean {
+  if (phrase.length === 0 || phrase.length > haystack.length) return false;
+  for (let i = 0; i + phrase.length <= haystack.length; i++) {
+    let matched = true;
+    for (let j = 0; j < phrase.length; j++) {
+      if (haystack[i + j] !== phrase[j]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return true;
+  }
+  return false;
+}
+
+const DENSITY_INDEX = INGREDIENT_DENSITIES.flatMap((entry) =>
+  entry.phrases.map((phrase) => ({
+    gPerMl: entry.gPerMl,
+    tokens: phrase.split(" "),
+  })),
+);
+
+/**
+ * Resolve an ingredient's density (grams per millilitre) from its `item` text,
+ * or `null` when nothing in the static table matches. Prefers the most specific
+ * (longest) phrase so "brown sugar" and "olive oil" beat "sugar" and "oil".
+ */
+export function densityForItem(item: string | null | undefined): number | null {
+  const tokens = densityTokens(item);
+  if (tokens.length === 0) return null;
+  let best: { gPerMl: number; len: number } | null = null;
+  for (const { gPerMl, tokens: phrase } of DENSITY_INDEX) {
+    if (!containsWholePhrase(tokens, phrase)) continue;
+    if (!best || phrase.length > best.len) best = { gPerMl, len: phrase.length };
+  }
+  return best ? best.gPerMl : null;
+}
+
+/**
+ * Convert a measured ingredient amount to grams so a cook can weigh straight
+ * onto a scale (#385). Mass units convert directly; volume units resolve a
+ * density from the `item` text and multiply. Returns `null` — meaning "render
+ * unchanged" — for count/unitless amounts ("1 egg", "pinch"), temperatures, or
+ * a volume whose ingredient has no known density (so callers never show "NaN g").
+ */
+export function toWeight(
+  quantity: number | null | undefined,
+  unit: string | null | undefined,
+  item: string | null | undefined,
+): number | null {
+  if (quantity == null || Number.isNaN(quantity)) return null;
+  const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
+  if (!def) return null;
+  if (def.dimension === "mass") {
+    // `base` is grams for mass units, so this also converts oz/lb/kg → g.
+    return roundNice(quantity * def.base);
+  }
+  if (def.dimension === "volume") {
+    const density = densityForItem(item);
+    if (density == null) return null;
+    // `base` is millilitres for volume units.
+    return roundNice(quantity * def.base * density);
+  }
+  return null;
+}
+
+/**
  * The CLDR plural category (`one`, `few`, `other`, …) for a count in a locale,
  * via `Intl.PluralRules`. Used to pick the right spelled-out unit label instead
  * of a hand-rolled `count !== 1` check, which is wrong for the many languages
@@ -327,7 +498,52 @@ export function displayUnit(
   return def?.canonical ?? unit;
 }
 
-// --- Kid-friendly amounts (#447) ---------------------------------------------
+// --- Practical measure decomposition (#391) ------------------------------
+
+/**
+ * Break an awkward US-volume amount into a minimal set of measures a cook
+ * actually owns — whole cups, whole tablespoons, and a rounded teaspoon — e.g.
+ * "1 tbsp + 1 tsp" for 1.37 tbsp or "6 tbsp + 2 tsp" for 0.42 cup. Returns
+ * `null` for non-US-volume units (metric/weight stay clean decimals) and for
+ * amounts that already land on a single clean measure (½ cup, 2 tbsp), so the
+ * hint only appears when it adds value. Pure and offline-safe.
+ */
+export function decomposeMeasure(
+  quantity: number | null | undefined,
+  unit: string | null | undefined,
+  locale: string = DEFAULT_LOCALE,
+): string | null {
+  if (quantity == null || !Number.isFinite(quantity) || quantity <= 0) {
+    return null;
+  }
+  const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
+  if (def?.dimension !== "volume" || def.system !== "us") return null;
+
+  const tspBase = UNIT_INDEX.get("tsp")!.base;
+  // Snap to the nearest measuring-spoon quarter-teaspoon up front so float dust
+  // (a "clean" 2 cups arriving as 95.999… tsp) can't leak an extra measure.
+  let remaining = Math.round(((quantity * def.base) / tspBase) * 4) / 4;
+
+  const cups = Math.floor(remaining / 48 + 1e-9);
+  remaining -= cups * 48;
+  let tbsp = Math.floor(remaining / 3 + 1e-9);
+  remaining -= tbsp * 3;
+  let tsp = remaining;
+  if (tsp >= 3) {
+    tbsp += 1;
+    tsp -= 3;
+  }
+
+  const parts: string[] = [];
+  if (cups >= 1) {
+    parts.push(`${formatDecimal(cups, locale)} ${displayUnit("cup", cups, locale)}`);
+  }
+  if (tbsp >= 1) parts.push(`${formatDecimal(tbsp, locale)} tbsp`);
+  if (tsp > 0) parts.push(`${formatQuantity(tsp, undefined, locale)} tsp`);
+
+  // Only worth showing when it decomposes into more than one practical measure.
+  return parts.length >= 2 ? parts.join(" + ") : null;
+}
 // A display layer only: spoken-style fraction words + spelled-out units for
 // Kids mode. It reuses the same scaled/measured values as the compact display
 // (no new math), and non-Kids modes never call it, so their output is unchanged.

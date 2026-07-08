@@ -30,6 +30,9 @@ export function toCookRecipe(recipe: FullRecipe): CookRecipe {
     prepMinutes: recipe.prepMinutes,
     cookMinutes: recipe.cookMinutes,
     totalMinutes: recipe.totalMinutes,
+    restMinutes: recipe.restMinutes,
+    makeAheadNote: recipe.makeAheadNote,
+    equipment: recipe.equipment,
     notes: recipe.notes,
     householdId: recipe.groupId,
     nutrition: pickNutrition(recipe),
@@ -42,6 +45,8 @@ export function toCookRecipe(recipe: FullRecipe): CookRecipe {
       unit: ingredient.unit,
       item: ingredient.item,
       note: ingredient.note,
+      prep: ingredient.prep,
+      stepPosition: ingredient.stepPosition,
       optional: ingredient.optional,
     })),
     steps: recipe.steps.map((step) => ({
@@ -52,6 +57,8 @@ export function toCookRecipe(recipe: FullRecipe): CookRecipe {
       imageUrl: step.imageUrl,
       videoUrl: step.videoUrl,
       timerSeconds: step.timerSeconds,
+      targetTempC: step.targetTempC,
+      doneness: step.doneness,
       techniques: step.techniques,
     })),
   };

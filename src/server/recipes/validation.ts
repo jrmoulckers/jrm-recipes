@@ -49,6 +49,10 @@ export const ingredientInput = z.object({
   unit: optionalString(40),
   item: z.string().trim().min(1, "Add an ingredient").max(300),
   note: optionalString(300),
+  // Structured prep state, separate from free-text note (#401).
+  prep: optionalString(200),
+  // Optional link to the step that uses this ingredient, by ordinal (#425).
+  stepPosition: optionalNumber.pipe(z.number().int().min(0).max(999).optional()),
   optional: z.boolean().optional().default(false),
 });
 
@@ -58,6 +62,12 @@ export const stepInput = z.object({
   imageUrl: optionalUrl,
   videoUrl: optionalUrl,
   timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
+  // Target internal/doneness temperature in °C + a short doneness cue (#417).
+  // Bounds cover freezer (-50) through a very hot oven (400 °C); NULL passes.
+  targetTempC: optionalNumber.pipe(
+    z.number().int().min(-50).max(400).optional(),
+  ),
+  doneness: optionalString(200),
   techniques: z.array(z.string().trim().min(1).max(80)).optional().default([]),
 });
 
@@ -83,6 +93,9 @@ export const recipeInput = z
     prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
     cookMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
     totalMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    // Inactive/rest time + make-ahead callout (#409).
+    restMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    makeAheadNote: optionalString(500),
     difficulty: recipeDifficulty.optional(),
     cuisine: optionalString(80),
     sourceName: optionalString(200),
@@ -107,6 +120,12 @@ export const recipeInput = z
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
     tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+    // Required tools/equipment (#410); deduped, trimmed, order-preserving.
+    equipment: z
+      .array(z.string().trim().min(1).max(120))
+      .max(50)
+      .default([])
+      .transform((items) => [...new Set(items)]),
     // Structured dietary self-declaration (issue #404), aligned to the
     // canonical DietaryTag set. Deduped; order-insensitive.
     dietaryFlags: z

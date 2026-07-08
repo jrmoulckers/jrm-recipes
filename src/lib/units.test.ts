@@ -3,15 +3,20 @@
 import {
   convertTemperature,
   convertUnit,
+  decomposeMeasure,
   defaultSystemForLocale,
+  densityForItem,
+  deriveScaleFactor,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
+  formatMetricQuantity,
   formatQuantity,
   normalizeUnit,
   scaleQuantity,
   toSystem,
   toSystemRange,
+  toWeight,
   unitDimension,
 } from "./units";
 
@@ -33,8 +38,10 @@ describe("formatQuantity", () => {
   it("formats metric quantities as measurable decimals, not vulgar fractions (ck06)", () => {
     // Awkward imperial→metric conversions must round to sensible precision and
     // render as decimals — never as a vulgar fraction of a gram/millilitre.
-    expect(formatQuantity(28.35, "g")).toBe("28");
-    expect(formatQuantity(14.17, "g")).toBe("14");
+    // Small metric masses keep a decimal of measurable precision (#403), so
+    // an oz→g conversion of a small dose is no longer rounded to a whole gram.
+    expect(formatQuantity(28.35, "g")).toBe("28.4");
+    expect(formatQuantity(14.17, "g")).toBe("14.2");
     expect(formatQuantity(236.588, "ml")).toBe("237");
     // Small amounts keep a single decimal place.
     expect(formatQuantity(0.5, "g")).toBe("0.5");
@@ -80,6 +87,33 @@ describe("formatQuantity", () => {
   });
 });
 
+describe("formatMetricQuantity (#403 small-dose precision)", () => {
+  it("keeps one decimal for small masses instead of rounding to whole grams", () => {
+    // A scaled 12.5 g dose of salt must not collapse to 13 g.
+    expect(formatMetricQuantity(12.5)).toBe("12.5");
+    expect(formatMetricQuantity(2.4)).toBe("2.4");
+    expect(formatMetricQuantity(0.6)).toBe("0.6");
+    expect(formatMetricQuantity(49.9)).toBe("49.9");
+  });
+
+  it("renders large clean amounts as whole numbers without a trailing .0", () => {
+    expect(formatMetricQuantity(50)).toBe("50");
+    expect(formatMetricQuantity(500)).toBe("500");
+    expect(formatMetricQuantity(1000)).toBe("1000");
+    // At/above the threshold, precision rounds to whole grams.
+    expect(formatMetricQuantity(500.4)).toBe("500");
+  });
+
+  it("drops a trailing zero for small whole values and handles zero", () => {
+    expect(formatMetricQuantity(12)).toBe("12");
+    expect(formatMetricQuantity(0)).toBe("0");
+  });
+
+  it("localizes the decimal separator", () => {
+    expect(formatMetricQuantity(12.5, "de-DE")).toBe("12,5");
+  });
+});
+
 describe("scaleQuantity", () => {
   it("scales quantities with cooking-friendly rounding", () => {
     expect(scaleQuantity(1.3333, 3)).toBe(4);
@@ -89,6 +123,99 @@ describe("scaleQuantity", () => {
   it("preserves nullable quantities", () => {
     expect(scaleQuantity(null, 2)).toBeNull();
     expect(scaleQuantity(undefined, 2)).toBeNull();
+  });
+});
+
+describe("densityForItem / toWeight (#385 weigh-based cooking)", () => {
+  it("resolves densities for common staples and prefers the specific phrase", () => {
+    expect(densityForItem("all-purpose flour")).toBe(0.53);
+    expect(densityForItem("granulated sugar")).toBe(0.85);
+    // "brown sugar" must win over the bare "sugar" entry.
+    expect(densityForItem("brown sugar, packed")).toBe(0.9);
+    expect(densityForItem("extra-virgin olive oil")).toBe(0.92);
+    expect(densityForItem("water")).toBe(1);
+  });
+
+  it("returns null for ingredients with no known density", () => {
+    expect(densityForItem("dragonfruit")).toBeNull();
+    expect(densityForItem("")).toBeNull();
+    expect(densityForItem(null)).toBeNull();
+  });
+
+  it("converts volume ingredients to grams via density", () => {
+    // 1 cup (236.588 ml) flour × 0.53 ≈ 125 g.
+    expect(toWeight(1, "cup", "all-purpose flour")).toBeCloseTo(125.39, 1);
+    // 1 cup water ≈ 236.6 g.
+    expect(toWeight(1, "cup", "water")).toBeCloseTo(236.59, 1);
+  });
+
+  it("converts mass units to grams directly, no density needed", () => {
+    expect(toWeight(1, "oz", "anything")).toBeCloseTo(28.35, 2);
+    expect(toWeight(1, "lb", "butter")).toBeCloseTo(453.59, 1);
+    expect(toWeight(2, "kg", "flour")).toBe(2000);
+  });
+
+  it("leaves count/unknown/undensity amounts unconverted (no NaN g)", () => {
+    expect(toWeight(1, null, "egg")).toBeNull();
+    expect(toWeight(1, "", "pinch")).toBeNull();
+    // A volume of something with no known density can't be weighed.
+    expect(toWeight(2, "cup", "diced tomatoes")).toBeNull();
+    expect(toWeight(null, "cup", "flour")).toBeNull();
+  });
+});
+
+describe("deriveScaleFactor (#390 scale to target)", () => {
+  it("derives a factor from a target amount in the same unit", () => {
+    expect(deriveScaleFactor(250, 500, "g", "g")).toBe(2);
+    expect(deriveScaleFactor(4, 3, "cup", "cup")).toBe(0.75);
+  });
+
+  it("converts the target through a compatible unit", () => {
+    // Recipe base 2 cups; cook has 1 quart (= 4 cups) → ×2.
+    expect(deriveScaleFactor(2, 1, "cup", "quart")).toBe(2);
+    // 500 g target against a 1 lb (453.592 g) base ≈ ×1.1.
+    expect(deriveScaleFactor(1, 500, "lb", "g")).toBeCloseTo(1.1023, 3);
+  });
+
+  it("treats a missing unit on either side as same-unit", () => {
+    expect(deriveScaleFactor(12, 24, null, null)).toBe(2);
+    expect(deriveScaleFactor(12, 24, "cup", null)).toBe(2);
+  });
+
+  it("returns null for incompatible units or bad input", () => {
+    expect(deriveScaleFactor(2, 3, "cup", "g")).toBeNull();
+    expect(deriveScaleFactor(null, 3, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(0, 3, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(2, 0, "g", "g")).toBeNull();
+    expect(deriveScaleFactor(2, -3, "g", "g")).toBeNull();
+  });
+});
+
+describe("decomposeMeasure (#391 practical measures)", () => {
+  it("breaks awkward tablespoons into tbsp + tsp", () => {
+    expect(decomposeMeasure(1.37, "tbsp")).toBe("1 tbsp + 1 tsp");
+    expect(decomposeMeasure(2.33, "tbsp")).toBe("2 tbsp + 1 tsp");
+  });
+
+  it("breaks awkward cups into a practical mix", () => {
+    // 0.42 cup ≈ 20.16 tsp → 6 tbsp + ~2¼ tsp (nearest quarter teaspoon).
+    expect(decomposeMeasure(0.42, "cup")).toBe("6 tbsp + 2¼ tsp");
+    // 1⅓ cups → 1 cup + a remainder in tablespoons.
+    expect(decomposeMeasure(1 + 1 / 3, "cup")).toBe("1 cup + 5 tbsp + 1 tsp");
+  });
+
+  it("returns null for clean single measures", () => {
+    expect(decomposeMeasure(2, "tbsp")).toBeNull();
+    expect(decomposeMeasure(0.5, "cup")).toBeNull();
+    expect(decomposeMeasure(2, "cup")).toBeNull();
+    expect(decomposeMeasure(1, "tsp")).toBeNull();
+  });
+
+  it("leaves metric and weight amounts alone", () => {
+    expect(decomposeMeasure(1.37, "ml")).toBeNull();
+    expect(decomposeMeasure(125, "g")).toBeNull();
+    expect(decomposeMeasure(1.5, null)).toBeNull();
+    expect(decomposeMeasure(0, "tbsp")).toBeNull();
   });
 });
 

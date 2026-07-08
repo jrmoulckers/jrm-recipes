@@ -7,13 +7,20 @@ import { useLocale } from "next-intl";
 import { cn } from "~/lib/utils";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
+  decomposeMeasure,
+  deriveScaleFactor,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
   formatQuantity,
   scaleQuantity,
   toSystem,
+  toWeight,
 } from "~/lib/units";
+import {
+  computeBakersFormula,
+  computeBatchYield,
+} from "~/lib/bakers-math";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
 import {
@@ -48,6 +55,8 @@ type PanelIngredient = {
   unit: string | null;
   item: string;
   note: string | null;
+  prep?: string | null;
+  stepPosition?: number | null;
   optional: boolean;
 };
 
@@ -80,9 +89,20 @@ export type IngredientsPanelControls = {
   householdSize?: number | null;
 };
 
-function measure(q: number | null, unit: string | null, system: System) {
+function measure(
+  q: number | null,
+  unit: string | null,
+  system: System,
+  item: string,
+) {
   if (q == null) return { q: null as number | null, unit: unit ?? "" };
   if (system === "original" || !unit) return { q, unit: unit ?? "" };
+  if (system === "grams") {
+    // Weigh-based cooking (#385): render convertible volumes/masses in grams,
+    // leaving count/unknown ingredients (e.g. "1 egg", "pinch") untouched.
+    const grams = toWeight(q, unit, item);
+    return grams != null ? { q: grams, unit: "g" } : { q, unit };
+  }
   const converted = toSystem(q, unit, system);
   return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
@@ -96,8 +116,8 @@ function amountLabel(
 ) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
-  const m = measure(q, ing.unit, system);
-  const mMax = qMax != null ? measure(qMax, ing.unit, system) : null;
+  const m = measure(q, ing.unit, system, ing.item);
+  const mMax = qMax != null ? measure(qMax, ing.unit, system, ing.item) : null;
   if (m.q == null) {
     return {
       number: "",
@@ -116,9 +136,20 @@ function amountLabel(
   }
   const number =
     mMax?.q != null
-      ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
-      : formatQuantity(m.q, undefined, locale);
+      ? `${formatQuantity(m.q, m.unit, locale)}–${formatQuantity(mMax.q, m.unit, locale)}`
+      : formatQuantity(m.q, m.unit, locale);
   return { number, unit: displayUnit(m.unit, m.q, locale) };
+}
+
+/** Whole-gram label for baker's / batch summaries, localized (e.g. "1,250 g"). */
+function formatGrams(grams: number, locale: string): string {
+  return `${new Intl.NumberFormat(locale).format(Math.round(grams))} g`;
+}
+
+/** Baker's percentage: whole numbers at scale, one decimal for small ratios. */
+function formatBakersPercent(pct: number): string {
+  const rounded = pct >= 10 ? Math.round(pct) : Math.round(pct * 10) / 10;
+  return `${rounded}%`;
 }
 
 export function IngredientsPanel({
@@ -150,6 +181,18 @@ export function IngredientsPanel({
   // resumed cook session) render statically instead of animating on load.
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+
+  // "Scale to…" (#390): pin one ingredient to a target amount and derive the
+  // scale factor from it, then feed it back through the normal servings lever.
+  const [scaleToOpen, setScaleToOpen] = React.useState(false);
+  const [pinId, setPinId] = React.useState<string>("");
+  const [pinAmount, setPinAmount] = React.useState<string>("");
+  const [pinUnit, setPinUnit] = React.useState<string>("");
+
+  // Baker's percentages (#384). Surfaces only when weights are derivable.
+  const [bakersView, setBakersView] = React.useState(false);
+  // Batch-weight math (#418): total + per-piece portioning.
+  const [pieceCount, setPieceCount] = React.useState<string>("");
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -204,6 +247,52 @@ export function IngredientsPanel({
   }, [ingredients, factor, system, locale, kidSafe]);
 
   const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
+
+  // Baker's-% formula + batch weight (#384, #418), derived from ingredient
+  // weights scaled by the current factor. Null until at least one flour weight
+  // (bakers) or any weight (batch) is derivable, so both features hide cleanly.
+  const weighed = React.useMemo(
+    () =>
+      ingredients.map((i) => ({
+        item: i.item,
+        quantity: i.quantity,
+        unit: i.unit,
+      })),
+    [ingredients],
+  );
+  const bakersFormula = React.useMemo(
+    () => computeBakersFormula(weighed, factor),
+    [weighed, factor],
+  );
+  // A countable yield (e.g. "12 rolls") seeds the divide-into piece count.
+  const countableYield =
+    servingsNoun && Number.isFinite(servings) && servings > 0
+      ? Math.round(servings)
+      : null;
+  const pieces =
+    pieceCount.trim() === "" ? countableYield : Number(pieceCount);
+  const batchYield = React.useMemo(
+    () => computeBatchYield(weighed, factor, pieces),
+    [weighed, factor, pieces],
+  );
+  // Per-ingredient baker's percentage (weight ÷ total flour), keyed by id.
+  const bakersPercentById = React.useMemo(() => {
+    const map = new Map<string, number>();
+    if (!bakersFormula || bakersFormula.totalFlour <= 0) return map;
+    for (const ing of ingredients) {
+      const grams = toWeight(
+        scaleQuantity(ing.quantity, factor),
+        ing.unit,
+        ing.item,
+      );
+      if (grams != null && grams > 0) {
+        map.set(ing.id, (grams / bakersFormula.totalFlour) * 100);
+      }
+    }
+    return map;
+  }, [ingredients, factor, bakersFormula]);
+
+
   const changedAmountIds = React.useMemo(() => {
     const changed = new Set<string>();
     const prev = prevAmountsRef.current;
@@ -251,6 +340,41 @@ export function IngredientsPanel({
   function updateSystem(next: System) {
     if (controls) controls.onSystemChange(next);
     else setSystemInternal(next);
+  }
+
+  // Ingredients that carry a numeric amount are the only ones we can pin a
+  // target to (#390); "1 pinch" or "to taste" fall back gracefully by absence.
+  const pinnable = React.useMemo(
+    () => ingredients.filter((i) => i.quantity != null && i.quantity > 0),
+    [ingredients],
+  );
+  const pinIngredient =
+    pinnable.find((i) => i.id === pinId) ?? pinnable[0] ?? null;
+  const pinFactor = pinIngredient
+    ? deriveScaleFactor(
+        pinIngredient.quantity,
+        pinAmount.trim() === "" ? null : Number(pinAmount),
+        pinIngredient.unit,
+        pinUnit.trim() === "" ? pinIngredient.unit : pinUnit,
+      )
+    : null;
+  const pinServings =
+    pinFactor != null && canScale && baseServings
+      ? Math.min(1000, Math.max(1, Math.round(baseServings * pinFactor * 100) / 100))
+      : null;
+
+  function openScaleTo() {
+    const seed = pinnable[0] ?? null;
+    setPinId(seed?.id ?? "");
+    setPinUnit(seed?.unit ?? "");
+    setPinAmount("");
+    setScaleToOpen(true);
+  }
+
+  function applyScaleTo() {
+    if (pinServings == null) return;
+    updateServings(pinServings);
+    setScaleToOpen(false);
   }
 
   function toggle(id: string) {
@@ -316,6 +440,30 @@ export function IngredientsPanel({
                 Reset
               </Button>
             )}
+            {pinnable.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-expanded={scaleToOpen}
+                onClick={() =>
+                  scaleToOpen ? setScaleToOpen(false) : openScaleTo()
+                }
+              >
+                Scale to…
+              </Button>
+            )}
+            {bakersFormula && (
+              <Button
+                type="button"
+                size="sm"
+                variant={bakersView ? "secondary" : "ghost"}
+                aria-pressed={bakersView}
+                onClick={() => setBakersView((v) => !v)}
+              >
+                Baker&apos;s %
+              </Button>
+            )}
           </div>
         ) : (
           <span className="text-sm text-muted-foreground">Ingredients</span>
@@ -326,7 +474,7 @@ export function IngredientsPanel({
           aria-label="Measurement system"
           className="inline-flex rounded-lg border border-border p-0.5 text-sm"
         >
-          {(["original", "us", "metric"] as const).map((s) => (
+          {(["original", "us", "metric", "grams"] as const).map((s) => (
             <button
               key={s}
               type="button"
@@ -343,6 +491,137 @@ export function IngredientsPanel({
           ))}
         </div>
       </div>
+
+      {scaleToOpen && pinIngredient && (
+        <form
+          className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface/50 px-3 py-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyScaleTo();
+          }}
+        >
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Ingredient
+            <select
+              value={pinIngredient.id}
+              onChange={(e) => {
+                const next = pinnable.find((i) => i.id === e.target.value);
+                setPinId(e.target.value);
+                setPinUnit(next?.unit ?? "");
+              }}
+              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+            >
+              {pinnable.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.item}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            Target amount
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={pinAmount}
+              onChange={(e) => setPinAmount(e.target.value)}
+              placeholder={formatQuantity(
+                pinIngredient.quantity ?? 0,
+                undefined,
+                locale,
+              )}
+              className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+            />
+          </label>
+          {pinIngredient.unit && (
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+              Unit
+              <input
+                type="text"
+                value={pinUnit}
+                onChange={(e) => setPinUnit(e.target.value)}
+                className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+              />
+            </label>
+          )}
+          <Button type="submit" size="sm" disabled={pinServings == null}>
+            Apply
+          </Button>
+          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+            {pinAmount.trim() === "" ? (
+              <>Pin one ingredient to what you have and rescale the whole recipe.</>
+            ) : pinFactor != null && pinServings != null ? (
+              <>
+                ≈ {formatQuantity(pinFactor, undefined, locale)}× the recipe
+                {servingsNoun ? (
+                  <>
+                    {" "}— {formatQuantity(pinServings, undefined, locale)}{" "}
+                    {servingsNoun}
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>That amount can’t be converted to this ingredient’s unit.</>
+            )}
+          </p>
+        </form>
+      )}
+
+      {((bakersView && !!bakersFormula) || !!batchYield) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-surface/50 px-3 py-2 text-sm">
+          {bakersView && bakersFormula && (
+            <>
+              <span className="font-medium">
+                Total flour{" "}
+                <span className="tabular-nums">
+                  {formatGrams(bakersFormula.totalFlour, locale)}
+                </span>
+              </span>
+              {bakersFormula.hydration != null && (
+                <span className="text-muted-foreground">
+                  Hydration{" "}
+                  <span className="tabular-nums text-foreground">
+                    {Math.round(bakersFormula.hydration)}%
+                  </span>
+                </span>
+              )}
+            </>
+          )}
+          {batchYield && (
+            <>
+              <span className="text-muted-foreground">
+                Batch weight{" "}
+                <span className="tabular-nums text-foreground">
+                  {formatGrams(batchYield.totalWeight, locale)}
+                </span>
+              </span>
+              <label className="flex items-center gap-1.5 text-muted-foreground">
+                Divide into
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step="1"
+                  value={pieceCount}
+                  onChange={(e) => setPieceCount(e.target.value)}
+                  placeholder={
+                    countableYield != null ? String(countableYield) : "N"
+                  }
+                  aria-label="Number of pieces"
+                  className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+                />
+                {batchYield.perUnit != null && (
+                  <span className="tabular-nums text-foreground">
+                    = {formatGrams(batchYield.perUnit, locale)} each
+                  </span>
+                )}
+              </label>
+            </>
+          )}
+        </div>
+      )}
 
       {scaledToHousehold && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -410,6 +689,21 @@ export function IngredientsPanel({
                         ing.item,
                       )
                     : null;
+                // Practical decomposition of a messy US-volume amount (#391),
+                // e.g. "≈ 1 tbsp + 1 tsp". Uses the displayed (scaled + system-
+                // converted) measure, so metric/grams amounts never decompose.
+                const displayed =
+                  ing.quantityMax == null
+                    ? measure(
+                        scaleQuantity(ing.quantity, factor),
+                        ing.unit,
+                        system,
+                        ing.item,
+                      )
+                    : null;
+                const breakdown = displayed
+                  ? decomposeMeasure(displayed.q, displayed.unit, locale)
+                  : null;
                 const conflict = memberNeeds
                   ? detectIngredientConflict(
                       detectAllergensForSafety(ing.item),
@@ -511,15 +805,38 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {ing.item}
+                          {ing.prep && (
+                            <Badge
+                              variant="secondary"
+                              className="ms-2 align-middle"
+                            >
+                              {ing.prep}
+                            </Badge>
+                          )}
                           {ing.note && (
                             <span className="text-muted-foreground">
                               {" "}
                               — {ing.note}
                             </span>
                           )}
+                          {ing.stepPosition != null && (
+                            <Badge variant="muted" className="ms-2 align-middle">
+                              Step {ing.stepPosition}
+                            </Badge>
+                          )}
                           {ing.optional && (
                             <Badge variant="muted" className="ms-2 align-middle">
                               optional
+                            </Badge>
+                          )}
+                          {bakersView && bakersPercentById.has(ing.id) && (
+                            <Badge
+                              variant="secondary"
+                              className="ms-2 align-middle tabular-nums"
+                            >
+                              {formatBakersPercent(
+                                bakersPercentById.get(ing.id)!,
+                              )}
                             </Badge>
                           )}
                         </span>
@@ -544,6 +861,15 @@ export function IngredientsPanel({
                       <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
+                      </p>
+                    )}
+                    {breakdown && (
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <Info className="mt-0.5 size-3 shrink-0 text-primary" />
+                        <span>
+                          <span className="sr-only">Measure as </span>≈{" "}
+                          {breakdown}
+                        </span>
                       </p>
                     )}
                   </li>

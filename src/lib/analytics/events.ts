@@ -21,7 +21,7 @@ export type RecipeVisibility = "private" | "group" | "unlisted" | "public";
 export type RecipeSource = "manual" | "import";
 
 /** Cook Mode ingredient unit system. */
-export type CookUnitSystem = "original" | "us" | "metric";
+export type CookUnitSystem = "original" | "us" | "metric" | "grams";
 
 /** How a recipe was shared. */
 export type ShareMethod = "native" | "file" | "copy_link";

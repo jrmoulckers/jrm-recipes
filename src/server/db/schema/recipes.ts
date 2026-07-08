@@ -74,6 +74,16 @@ export const recipes = pgTable(
     prepMinutes: integer(),
     cookMinutes: integer(),
     totalMinutes: integer(),
+    // Inactive / hands-off time — overnight ferments, brines, chilling, resting
+    // (#409). Kept separate from prep/cook so "30 min work, 12 h waiting" reads
+    // honestly and totals can split active vs total. `makeAheadNote` is a short
+    // free-text callout ("Make the dough a day ahead").
+    restMinutes: integer(),
+    makeAheadNote: varchar({ length: 500 }),
+    // Required tools/equipment (#410), stored as a simple ordered text[] (NULL
+    // when none) — a Dutch oven, bench scraper, probe thermometer, etc. Optional
+    // so existing recipes are unaffected.
+    equipment: text().array(),
     difficulty: recipeDifficulty(),
     cuisine: varchar({ length: 80 }),
 
@@ -149,6 +159,8 @@ export const recipes = pgTable(
     check("recipes_prep_minutes_check", sql`${t.prepMinutes} >= 0`),
     check("recipes_cook_minutes_check", sql`${t.cookMinutes} >= 0`),
     check("recipes_total_minutes_check", sql`${t.totalMinutes} >= 0`),
+    // Inactive/rest time is non-negative too (#409); NULL passes by SQL semantics.
+    check("recipes_rest_minutes_check", sql`${t.restMinutes} >= 0`),
     // Denormalized rating aggregates can never be negative (issue #154); the
     // migration backfills them and the mutations only ever += / -= real votes.
     check("recipes_rating_count_check", sql`${t.ratingCount} >= 0`),
@@ -196,6 +208,14 @@ export const recipeIngredients = pgTable(
     unit: varchar({ length: 40 }),
     item: varchar({ length: 300 }).notNull(),
     note: varchar({ length: 300 }),
+    // Structured prep state — "softened", "finely diced", "room temperature"
+    // (#401). Separate from free-text `note` so it can be emphasized, pulled
+    // into a mise en place list, and shown distinctly in Cook Mode.
+    prep: varchar({ length: 200 }),
+    // Optional link to the step that uses this ingredient (#425), by the step's
+    // ordinal position. Positional (not a step id) because steps are rewritten
+    // wholesale on every edit; NULL keeps the ingredient in the overall list only.
+    stepPosition: integer(),
     optional: boolean().notNull().default(false),
   },
   (t) => [
@@ -207,6 +227,11 @@ export const recipeIngredients = pgTable(
     check(
       "recipe_ingredients_quantity_range_check",
       sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
+    ),
+    // A step link, when present, points at a non-negative step ordinal (#425).
+    check(
+      "recipe_ingredients_step_position_check",
+      sql`${t.stepPosition} is null or ${t.stepPosition} >= 0`,
     ),
   ],
 );
@@ -225,6 +250,12 @@ export const recipeSteps = pgTable(
     imageUrl: varchar({ length: 2048 }),
     videoUrl: varchar({ length: 2048 }),
     timerSeconds: integer(),
+    // Target internal / doneness temperature in Celsius (#417) — the truth a
+    // timer only approximates ("crumb at 96°C", "chicken at 74°C"). Stored in °C
+    // and converted for display to honor the cook's °F/°C choice. `doneness` is
+    // a short visual cue ("deep golden, springs back") for when temp isn't apt.
+    targetTempC: integer(),
+    doneness: varchar({ length: 200 }),
     // Techniques referenced in this step (Phase 3 "learn to cook" tutor).
     techniques: text().array(),
   },

@@ -15,7 +15,7 @@ export type TimerRecord = {
   endsAt: number | null;
 };
 
-export type UnitSystem = "original" | "us" | "metric";
+export type UnitSystem = "original" | "us" | "metric" | "grams";
 
 /** The persisted shape of a single recipe's cook session. */
 export type StoredCookState = {
@@ -199,7 +199,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isUnitSystem(value: unknown): value is UnitSystem {
-  return value === "original" || value === "us" || value === "metric";
+  return (
+    value === "original" ||
+    value === "us" ||
+    value === "metric" ||
+    value === "grams"
+  );
 }
 
 function isTimerStatus(value: unknown): value is TimerStatus {

@@ -198,6 +198,10 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
       (input.prepMinutes != null && input.cookMinutes != null
         ? input.prepMinutes + input.cookMinutes
         : null),
+    // Inactive/rest time + make-ahead callout (#409); equipment list (#410).
+    restMinutes: input.restMinutes ?? null,
+    makeAheadNote: input.makeAheadNote ?? null,
+    equipment: input.equipment.length > 0 ? input.equipment : null,
     difficulty: input.difficulty ?? null,
     cuisine: input.cuisine ?? null,
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
@@ -232,6 +236,8 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
         unit: ing.unit ?? null,
         item: ing.item,
         note: ing.note ?? null,
+        prep: ing.prep ?? null,
+        stepPosition: ing.stepPosition ?? null,
         optional: ing.optional,
       })),
     );
@@ -246,6 +252,8 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
         imageUrl: step.imageUrl ?? null,
         videoUrl: step.videoUrl ?? null,
         timerSeconds: step.timerSeconds ?? null,
+        targetTempC: step.targetTempC ?? null,
+        doneness: step.doneness ?? null,
         techniques: step.techniques.length > 0 ? step.techniques : null,
       })),
     );
