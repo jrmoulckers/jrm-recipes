@@ -53,6 +53,15 @@
     min-width: var(--tap-min, 2.75rem);
   }
 
+  /* Remove the legacy double-tap-zoom gesture (and its ~300ms tap delay) from
+   * interactive controls so rapid taps — e.g. Cook Mode Next/Previous with wet
+   * hands — register instantly. `manipulation` still allows panning/scrolling
+   * from these elements; pinch-to-zoom on page content and images is untouched,
+   * preserving accessibility (issue #288). */
+  button, a, [role="button"], [role="tab"], summary {
+    touch-action: manipulation;
+  }
+
   ::selection {
     background: hsl(var(--primary) / 0.2);
   }
