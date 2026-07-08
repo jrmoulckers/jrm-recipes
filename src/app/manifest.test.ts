@@ -52,6 +52,18 @@ describe("manifest", () => {
     expect(m.launch_handler?.client_mode).toBe("navigate-existing");
   });
 
+  it("advertises wide + narrow screenshots for the rich install dialog", () => {
+    const screenshots = m.screenshots ?? [];
+    expect(screenshots.some((s) => s.form_factor === "wide")).toBe(true);
+    expect(screenshots.some((s) => s.form_factor === "narrow")).toBe(true);
+    for (const shot of screenshots) {
+      expect(shot.src.startsWith("/screenshots/")).toBe(true);
+      expect(shot.type).toBe("image/png");
+      expect(shot.sizes).toMatch(/^\d+x\d+$/);
+      expect(shot.label).toBeTruthy();
+    }
+  });
+
   it("declares a well-formed GET share_target", () => {
     expect(m.share_target).toBeDefined();
     expect(m.share_target?.action).toBe("/import");

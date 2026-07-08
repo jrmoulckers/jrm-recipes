@@ -92,6 +92,24 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: shortcutIcons,
       },
     ],
+    // Unlocks Chromium's richer, taller install dialog. One wide (desktop) and
+    // one narrow (mobile) shot, generated on-brand by scripts/generate-screenshots.mjs.
+    screenshots: [
+      {
+        src: "/screenshots/cookbook-wide.png",
+        sizes: "1280x800",
+        type: "image/png",
+        form_factor: "wide",
+        label: "Browse your family cookbook",
+      },
+      {
+        src: "/screenshots/cook-mode-narrow.png",
+        sizes: "800x1280",
+        type: "image/png",
+        form_factor: "narrow",
+        label: "Hands-free Cook Mode with step timers",
+      },
+    ],
     // Receive a link/text shared from another app and forward it into the
     // recipe importer. GET keeps it simple; the /import route does the routing.
     share_target: {
