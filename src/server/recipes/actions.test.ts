@@ -17,6 +17,7 @@ const {
   captureServerMock,
   isAnalyticsConfiguredMock,
   dbCountMock,
+  getLimitStatusMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   revalidateTagMock: vi.fn(),
@@ -28,6 +29,7 @@ const {
   captureServerMock: vi.fn(),
   isAnalyticsConfiguredMock: vi.fn(),
   dbCountMock: vi.fn(),
+  getLimitStatusMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -46,6 +48,9 @@ vi.mock("~/lib/analytics/config", () => ({
   isAnalyticsConfigured: isAnalyticsConfiguredMock,
 }));
 vi.mock("~/lib/analytics/server", () => ({ captureServer: captureServerMock }));
+vi.mock("~/server/billing/entitlements", () => ({
+  getLimitStatus: getLimitStatusMock,
+}));
 vi.mock("./import", () => ({ importRecipeFromUrl: vi.fn() }));
 vi.mock("./mutations", () => ({
   createRecipe: createRecipeMock,
@@ -74,6 +79,15 @@ beforeEach(() => {
   // existing revalidation/funnel tests exercise the fast path unchanged.
   isAnalyticsConfiguredMock.mockReturnValue(false);
   dbCountMock.mockResolvedValue(1);
+  // Default: under the recipe cap, so creates flow through unblocked. The
+  // soft-limit tests below override this per case.
+  getLimitStatusMock.mockResolvedValue({
+    limit: 50,
+    used: 1,
+    remaining: 49,
+    ratio: 0.02,
+    state: "ok",
+  });
 });
 
 describe("updateRecipeAction revalidation", () => {
@@ -137,6 +151,63 @@ describe("createRecipeAction revalidation", () => {
 
     expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+  });
+});
+
+// #318 — the free plan caps saved recipes. Creating is refused (with an upgrade
+// flag) only once at/over the cap; edits and under-cap creates are untouched.
+describe("createRecipeAction soft limit (#318)", () => {
+  it("allows the create when under the recipe cap", async () => {
+    getLimitStatusMock.mockResolvedValue({
+      limit: 50,
+      used: 10,
+      remaining: 40,
+      ratio: 0.2,
+      state: "ok",
+    });
+    createRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    const res = await createRecipeAction(input);
+
+    expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
+    expect(getLimitStatusMock).toHaveBeenCalledWith(
+      { id: "user_1" },
+      "maxRecipes",
+      "recipes",
+    );
+    expect(createRecipeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks the create at the cap and flags an upgrade without writing", async () => {
+    getLimitStatusMock.mockResolvedValue({
+      limit: 50,
+      used: 50,
+      remaining: 0,
+      ratio: 1,
+      state: "blocked",
+    });
+
+    const res = await createRecipeAction(input);
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.upgrade).toBe(true);
+    expect(createRecipeMock).not.toHaveBeenCalled();
+  });
+
+  it("never soft-limits an update, even at the cap", async () => {
+    getLimitStatusMock.mockResolvedValue({
+      limit: 50,
+      used: 50,
+      remaining: 0,
+      ratio: 1,
+      state: "blocked",
+    });
+    updateRecipeMock.mockResolvedValue({ id: "rec_1", slug: "apple-pie" });
+
+    const res = await updateRecipeAction("rec_1", input);
+
+    expect(res).toEqual({ ok: true, id: "rec_1", slug: "apple-pie" });
+    expect(updateRecipeMock).toHaveBeenCalledTimes(1);
   });
 });
 

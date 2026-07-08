@@ -16,8 +16,10 @@ import {
   groupMembers,
   subscriptions,
   type SubscriptionStatus,
+  type UsageMetric,
   type User,
 } from "~/server/db/schema";
+import { getUsage } from "./usage";
 
 /**
  * Entitlements resolver (issue #302) — the single answer to "what may this user
@@ -151,4 +153,57 @@ export async function requireEntitlement(
     throw new UpgradeRequiredError(key);
   }
   return entitlements;
+}
+
+/**
+ * Fraction of a limit at which we start warning the user (issue #318). Chosen so
+ * families get a gentle heads-up *before* a hard stop — never a surprise wall.
+ */
+export const USAGE_WARN_RATIO = 0.8;
+
+/** Where a user sits against a numeric cap. */
+export type LimitState = "ok" | "warn" | "blocked";
+
+/** Live snapshot of usage vs. a plan limit, for soft-limit checks + meters. */
+export interface LimitStatus {
+  /** The plan's cap for this metric; `null` means unlimited. */
+  limit: LimitValue;
+  /** Current usage in the active period. */
+  used: number;
+  /** Headroom left before the cap; `null` when unlimited. */
+  remaining: number | null;
+  /** `used / limit`, clamped to `0` for unlimited plans. */
+  ratio: number;
+  /** `ok` under the warn line, `warn` approaching it, `blocked` at/over cap. */
+  state: LimitState;
+}
+
+/**
+ * Resolve a user's usage against one of their plan limits (issue #318). Pairs a
+ * {@link LimitKey} (the cap, from `src/config/plans.ts`) with its measured
+ * {@link UsageMetric} (from `usage.ts`). Unlimited plans are always `ok`; a
+ * `0` cap is treated as immediately `blocked`. This is the shared source of
+ * truth for both the create/upload soft-limits and the billing usage meters.
+ */
+export async function getLimitStatus(
+  user: User,
+  limitKey: LimitKey,
+  metric: UsageMetric,
+  now: Date = new Date(),
+): Promise<LimitStatus> {
+  const [limit, used] = await Promise.all([
+    getLimit(user, limitKey, now),
+    getUsage(user, metric, now),
+  ]);
+
+  if (limit === null) {
+    return { limit: null, used, remaining: null, ratio: 0, state: "ok" };
+  }
+
+  const remaining = Math.max(0, limit - used);
+  const ratio = limit === 0 ? 1 : used / limit;
+  const state: LimitState =
+    used >= limit ? "blocked" : ratio >= USAGE_WARN_RATIO ? "warn" : "ok";
+
+  return { limit, used, remaining, ratio, state };
 }

@@ -17,6 +17,7 @@ import { recipeDetailPath } from "~/lib/recipe-path";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
+import { getLimitStatus } from "~/server/billing/entitlements";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
 import { recipeMutationTags, recipeTag } from "./cache-tags";
@@ -61,6 +62,18 @@ function revalidateRecipeTags(id: string) {
 const runCreateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user): Promise<ActionResult> => {
+    // Soft-limit (issue #318): free tiers cap the number of saved recipes. Refuse
+    // only *new* creates once at/over the cap and hand the UI an upgrade-flagged
+    // result — existing recipes stay fully editable/viewable, and an unlimited plan
+    // (or unconfigured billing) resolves to `ok`, so nothing is ever hard-blocked.
+    const limit = await getLimitStatus(user, "maxRecipes", "recipes");
+    if (limit.state === "blocked") {
+      return {
+        ok: false,
+        upgrade: true,
+        error: `You've reached the free plan's limit of ${limit.limit} saved recipes. Upgrade to Family for unlimited recipes — everything you've already saved stays exactly where it is.`,
+      };
+    }
     try {
       const recipe = await createRecipe(data, user);
       void captureServer(user.id, "recipe_created", {

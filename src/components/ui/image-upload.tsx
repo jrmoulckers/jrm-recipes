@@ -7,6 +7,7 @@ import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 import { env } from "~/env";
 import { cn } from "~/lib/utils";
+import { recordStorageUsageAction } from "~/server/billing/usage-actions";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
@@ -89,6 +90,12 @@ export function ImageUploadField({
               const info = result.info;
               if (info && typeof info !== "string") {
                 onChange(info.secure_url);
+                // Meter storage against the plan cap (#318). Fire-and-forget:
+                // the upload already succeeded, so a metering failure must never
+                // surface to the user.
+                if (typeof info.bytes === "number" && info.bytes > 0) {
+                  void recordStorageUsageAction(info.bytes);
+                }
               }
             }}
           >
