@@ -75,11 +75,16 @@
     "quantity": "Cantidad",
     "unit": "Unidad",
     "ingredient": "Ingrediente",
+    "ingredientObject": "ingrediente",
+    "stepObject": "paso",
     "step": "Paso {position}",
     "timerMinutes": "Temporizador en minutos",
     "techniques": "Técnicas",
     "moveUp": "Subir",
     "moveDown": "Bajar",
-    "remove": "Eliminar"
+    "moveUpNamed": "Subir {object}",
+    "moveDownNamed": "Bajar {object}",
+    "remove": "Eliminar",
+    "removeNamed": "Eliminar {object}"
   }
 }

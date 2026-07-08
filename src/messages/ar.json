@@ -75,11 +75,16 @@
     "quantity": "الكمية",
     "unit": "الوحدة",
     "ingredient": "المكوّن",
+    "ingredientObject": "المكوّن",
+    "stepObject": "الخطوة",
     "step": "الخطوة {position}",
     "timerMinutes": "المؤقّت بالدقائق",
     "techniques": "التقنيات",
     "moveUp": "تحريك لأعلى",
     "moveDown": "تحريك لأسفل",
-    "remove": "إزالة"
+    "moveUpNamed": "تحريك {object} لأعلى",
+    "moveDownNamed": "تحريك {object} لأسفل",
+    "remove": "إزالة",
+    "removeNamed": "إزالة {object}"
   }
 }

@@ -75,11 +75,16 @@
     "quantity": "Menge",
     "unit": "Einheit",
     "ingredient": "Zutat",
+    "ingredientObject": "Zutat",
+    "stepObject": "Schritt",
     "step": "Schritt {position}",
     "timerMinutes": "Timer in Minuten",
     "techniques": "Techniken",
     "moveUp": "Nach oben verschieben",
     "moveDown": "Nach unten verschieben",
-    "remove": "Entfernen"
+    "moveUpNamed": "{object} nach oben verschieben",
+    "moveDownNamed": "{object} nach unten verschieben",
+    "remove": "Entfernen",
+    "removeNamed": "{object} entfernen"
   }
 }

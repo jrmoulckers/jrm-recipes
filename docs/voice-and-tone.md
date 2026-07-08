@@ -89,5 +89,22 @@ never arrive as a naked URL.
 The templates live in `src/lib/share-text.ts` so every share surface reads the
 same voice.
 
+## Accessibility microcopy (screen-reader text & aria-labels)
+
+Screen-reader-only text and `aria-label`s are the entire interface for people
+who can't see the screen — treat them as first-class copy, not afterthoughts.
+
+- **`{verb} {specific object}`.** Every icon-only control names what it acts on,
+  so it's self-describing out of context. Say "Remove ingredient", not
+  "Remove"; "Move step up", not "Move up". A screen reader should never
+  announce a bare verb like "Remove, button".
+- Prefer the concrete instance when it's available: "Remove {item}",
+  "Remove {title} from plan", "Delete this journal entry".
+- Localize these the same way as visible copy — route them through the i18n
+  catalog (e.g. `recipeEditor.removeNamed` = "Remove {object}"), never hardcode.
+- Keep visually-hidden helpers (`<span className="sr-only">…</span>`) consistent
+  with this convention when an icon needs extra spoken context.
+
+
 
 

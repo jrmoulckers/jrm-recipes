@@ -655,6 +655,7 @@ export function RecipeEditor({
                     />
                   </div>
                   <RowControls
+                    objectLabel={t("ingredientObject")}
                     onUp={() => setIngredients((l) => move(l, i, -1))}
                     onDown={() => setIngredients((l) => move(l, i, 1))}
                     onRemove={() =>
@@ -753,6 +754,7 @@ export function RecipeEditor({
                     />
                   </div>
                   <RowControls
+                    objectLabel={t("stepObject")}
                     onUp={() => setSteps((l) => move(l, i, -1))}
                     onDown={() => setSteps((l) => move(l, i, 1))}
                     onRemove={() =>
@@ -1035,23 +1037,31 @@ function RowControls({
   onUp,
   onDown,
   onRemove,
+  objectLabel,
 }: {
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
+  objectLabel: string;
 }) {
   const t = useTranslations("recipeEditor");
   return (
     <div className="flex shrink-0 items-center">
       <GripVertical className="hidden size-4 text-muted-foreground sm:block" />
-      <Button type="button" size="icon" variant="ghost" aria-label={t("moveUp")} onClick={onUp}>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        aria-label={t("moveUpNamed", { object: objectLabel })}
+        onClick={onUp}
+      >
         <ChevronUp />
       </Button>
       <Button
         type="button"
         size="icon"
         variant="ghost"
-        aria-label={t("moveDown")}
+        aria-label={t("moveDownNamed", { object: objectLabel })}
         onClick={onDown}
       >
         <ChevronDown />
@@ -1060,7 +1070,7 @@ function RowControls({
         type="button"
         size="icon"
         variant="ghost"
-        aria-label={t("remove")}
+        aria-label={t("removeNamed", { object: objectLabel })}
         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
       >
