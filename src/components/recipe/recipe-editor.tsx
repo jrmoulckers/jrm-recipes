@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   AlertCircle,
   ChevronDown,
@@ -38,6 +39,15 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
+
+/**
+ * The upgrade prompt is only needed when a create hits the plan's recipe cap
+ * (#318), so it's code-split out of the editor's first-load JS and fetched lazily
+ * the first time it's shown.
+ */
+const UpgradeDialog = dynamic(() =>
+  import("~/components/billing/upgrade-dialog").then((m) => m.UpgradeDialog),
+);
 
 type IngRow = {
   key: string;
@@ -167,6 +177,7 @@ export function RecipeEditor({
 }) {
   const router = useRouter();
   const t = useTranslations("recipeEditor");
+  const [upgrade, setUpgrade] = React.useState<string | null>(null);
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
   const [importUrl, setImportUrl] = React.useState("");
   const [importing, setImporting] = React.useState(false);
@@ -395,7 +406,13 @@ export function RecipeEditor({
         mode,
         fieldCount: Object.keys(res.fieldErrors ?? {}).length,
       });
-      toast.error(res.error);
+      // Plan-limit failures (#318) get a dedicated upgrade prompt instead of a
+      // bare error toast, so the path forward is obvious and non-punitive.
+      if (res.upgrade) {
+        setUpgrade(res.error);
+      } else {
+        toast.error(res.error);
+      }
       return res.fieldErrors ?? NO_ERRORS;
     },
     NO_ERRORS,
@@ -412,6 +429,17 @@ export function RecipeEditor({
 
   return (
     <form action={formAction} className="container flex flex-col gap-8 py-8">
+      {upgrade !== null ? (
+        <UpgradeDialog
+          feature="advancedCollaboration"
+          open
+          onOpenChange={(next) => {
+            if (!next) setUpgrade(null);
+          }}
+          title="You've reached your plan's limit"
+          description={upgrade}
+        />
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight">
           {mode === "edit" ? "Edit recipe" : "New recipe"}

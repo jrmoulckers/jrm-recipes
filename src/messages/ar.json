@@ -3,7 +3,9 @@
     "landmark": "تذييل",
     "recipes": "الوصفات",
     "family": "العائلة",
-    "create": "إنشاء"
+    "create": "إنشاء",
+    "pricing": "الأسعار",
+    "billing": "الفوترة"
   },
   "cook": {
     "timer": {

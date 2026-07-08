@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { brand } from "~/config/brand";
+import { footerNav } from "~/config/nav";
 import { Logo } from "~/components/layout/logo";
 import { InstallAppButton } from "~/components/pwa/install-app-button";
 
@@ -31,6 +32,15 @@ export function SiteFooter() {
           <Link href="/recipes/new" className="hover:text-foreground">
             {t("create")}
           </Link>
+          {footerNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="hover:text-foreground"
+            >
+              {t(item.labelKey)}
+            </Link>
+          ))}
           {brand.links.github && (
             <a
               href={brand.links.github}

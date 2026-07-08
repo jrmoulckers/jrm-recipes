@@ -48,6 +48,8 @@ const GROUP_MESSAGES: DomainMessages = {
     "No cook found with that handle or email — ask them to sign up first.",
   ALREADY_MEMBER: "They're already in this group.",
   FORBIDDEN: "You don't have permission to do that.",
+  SEAT_LIMIT_REACHED:
+    "Your family plan is full. Upgrade to add more members — no one is removed.",
   OWNER_CANT_LEAVE: "Transfer ownership or delete the group first.",
   NOT_FOUND: "We couldn't find that group.",
   REVOKED: "This invite link has been turned off. Ask for a fresh one.",

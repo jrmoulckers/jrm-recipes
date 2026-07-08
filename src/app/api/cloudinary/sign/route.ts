@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { env } from "~/env";
 import { requireUser } from "~/server/auth";
+import { getLimitStatus } from "~/server/billing/entitlements";
+import { type User } from "~/server/db/schema";
 
 // The Cloudinary SDK relies on Node crypto for signing, so keep this off the
 // edge runtime.
@@ -120,8 +122,9 @@ export async function POST(request: Request) {
   }
 
   // 2. Never act as a signing oracle for anonymous callers.
+  let user: User;
   try {
-    await requireUser();
+    user = await requireUser();
   } catch {
     return Response.json({ error: "Sign in to upload." }, { status: 401 });
   }
@@ -134,6 +137,21 @@ export async function POST(request: Request) {
     return Response.json(
       { error: "Cloudinary is not configured." },
       { status: 501 },
+    );
+  }
+
+  // 2b. Soft storage cap (issue #318): refuse to sign *new* uploads once the
+  //     account is at/over its plan's storage allowance. Existing assets are
+  //     never touched; an unconfigured DB or unlimited plan resolves to `ok`.
+  const storage = await getLimitStatus(user, "maxStorageMb", "storage_mb");
+  if (storage.state === "blocked") {
+    return Response.json(
+      {
+        error:
+          "You've reached your plan's photo storage limit. Upgrade to Family for more space — your existing photos stay safe and accessible.",
+        upgrade: true,
+      },
+      { status: 402 },
     );
   }
 

@@ -3,7 +3,9 @@
     "landmark": "Fußzeile",
     "recipes": "Rezepte",
     "family": "Familie",
-    "create": "Erstellen"
+    "create": "Erstellen",
+    "pricing": "Preise",
+    "billing": "Abrechnung"
   },
   "cook": {
     "timer": {

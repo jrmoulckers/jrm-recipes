@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
+const { transactionMock, getGroupSeatLimitMock } = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  getGroupSeatLimitMock: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: { transaction: transactionMock },
+}));
+
+vi.mock("~/server/billing/entitlements", () => ({
+  getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
 import {
@@ -38,6 +45,7 @@ function fakeTx(opts: {
   memberships?: Membership[];
   link?: unknown;
   returning?: unknown[];
+  groupMemberRoles?: { role: MemberRole }[];
 }) {
   const chain = {
     set: vi.fn((_arg?: unknown) => chain),
@@ -64,7 +72,7 @@ function fakeTx(opts: {
         findFirst: vi.fn(async () =>
           memberships.length ? memberships.shift() : null,
         ),
-        findMany: vi.fn(async () => []),
+        findMany: vi.fn(async () => opts.groupMemberRoles ?? []),
       },
       groupInviteLinks: {
         findFirst: vi.fn(async () => opts.link ?? null),
@@ -82,6 +90,9 @@ function runWith(tx: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: unlimited seats so existing invite-link tests are unaffected by the
+  // #325 seat check. Seat-specific tests override this.
+  getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
 describe("createInviteLink (issue #343)", () => {
@@ -314,5 +325,69 @@ describe("acceptInviteLink (issue #343)", () => {
     const tx = fakeTx({ link: null });
     runWith(tx);
     await expect(acceptInviteLink("nope", joiner)).rejects.toThrow("NOT_FOUND");
+  });
+});
+
+describe("acceptInviteLink seat enforcement (#325)", () => {
+  const openLink = (role: MemberRole) => ({
+    id: "link_1",
+    groupId: "group_1",
+    role,
+    token: "tok_link",
+    expiresAt: null,
+    maxUses: null,
+    useCount: 0,
+    revokedAt: null,
+  });
+
+  it("rejects joining a full group and rolls the use-claim back", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [null],
+      link: openLink("member"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInviteLink("tok_link", joiner)).rejects.toThrow(
+      "SEAT_LIMIT_REACHED",
+    );
+    // The seat check runs after the atomic use-claim but before seating, and it
+    // throws inside the tx — so no member is inserted and the useCount bump is
+    // rolled back with the transaction.
+    expect(tx.insert).not.toHaveBeenCalled();
+  });
+
+  it("lets a member join via link when a seat is available", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(5);
+    const tx = fakeTx({
+      memberships: [null],
+      link: openLink("member"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInviteLink("tok_link", joiner)).resolves.toMatchObject({
+      role: "member",
+      alreadyMember: false,
+    });
+    expect(tx.insert).toHaveBeenCalledWith(groupMembers);
+  });
+
+  it("never counts a kid joining via link against seats", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [null],
+      link: openLink("kid"),
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(acceptInviteLink("tok_link", joiner)).resolves.toMatchObject({
+      role: "kid",
+      alreadyMember: false,
+    });
+    expect(tx.insert).toHaveBeenCalledWith(groupMembers);
+    expect(getGroupSeatLimitMock).not.toHaveBeenCalled();
   });
 });

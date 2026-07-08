@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { transactionMock } = vi.hoisted(() => ({ transactionMock: vi.fn() }));
+const { transactionMock, getGroupSeatLimitMock } = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  getGroupSeatLimitMock: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: { transaction: transactionMock },
+}));
+
+vi.mock("~/server/billing/entitlements", () => ({
+  getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
 import type { MemberRole, User } from "~/server/db/schema";
@@ -27,6 +34,7 @@ function fakeTx(opts: {
   memberships?: Membership[];
   targetUser?: unknown;
   memberWithUser?: unknown;
+  groupMemberRoles?: { role: MemberRole }[];
 }) {
   const chain = {
     set: vi.fn(() => chain),
@@ -54,7 +62,7 @@ function fakeTx(opts: {
           }
           return memberships.length ? memberships.shift() : null;
         }),
-        findMany: vi.fn(async () => []),
+        findMany: vi.fn(async () => opts.groupMemberRoles ?? []),
       },
       users: {
         findFirst: vi.fn(async () => opts.targetUser ?? null),
@@ -72,6 +80,9 @@ function runWith(tx: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: unlimited seats, so existing add/role tests are unaffected by the
+  // #325 seat check. Seat-specific tests override this.
+  getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
 const owner = { id: "owner_1" } as unknown as User;
@@ -134,6 +145,74 @@ describe("addMember role authorization (sp01)", () => {
       addMember(group.slug, admin, "aunt-mary", "member"),
     ).resolves.toMatchObject({ role: "member" });
     expect(tx.insert).toHaveBeenCalled();
+  });
+});
+
+describe("addMember seat enforcement (#325)", () => {
+  it("blocks adding a member beyond the seat limit with SEAT_LIMIT_REACHED", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        null,
+      ],
+      targetUser,
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+    });
+    runWith(tx);
+
+    await expect(
+      addMember(group.slug, owner, "aunt-mary", "member"),
+    ).rejects.toThrow("SEAT_LIMIT_REACHED");
+    expect(tx.insert).not.toHaveBeenCalled();
+  });
+
+  it("allows an add that stays within the seat limit", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(5);
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        null,
+      ],
+      targetUser,
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      memberWithUser: {
+        id: "gm_new",
+        role: "member",
+        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+      },
+    });
+    runWith(tx);
+
+    await expect(
+      addMember(group.slug, owner, "aunt-mary", "member"),
+    ).resolves.toMatchObject({ role: "member" });
+    expect(tx.insert).toHaveBeenCalled();
+  });
+
+  it("never counts a kid against seats, even at the limit", async () => {
+    getGroupSeatLimitMock.mockResolvedValue(2);
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
+        null,
+      ],
+      targetUser,
+      groupMemberRoles: [{ role: "owner" }, { role: "member" }],
+      memberWithUser: {
+        id: "gm_kid",
+        role: "kid",
+        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+      },
+    });
+    runWith(tx);
+
+    await expect(
+      addMember(group.slug, owner, "aunt-mary", "kid"),
+    ).resolves.toMatchObject({ role: "kid" });
+    expect(tx.insert).toHaveBeenCalled();
+    // Kids ride free, so we don't even resolve the seat limit for them.
+    expect(getGroupSeatLimitMock).not.toHaveBeenCalled();
   });
 });
 

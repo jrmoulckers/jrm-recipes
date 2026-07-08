@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 
 import { slugify } from "~/lib/utils";
+import { SEAT_RULES } from "~/config/plans";
 import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
 import {
@@ -17,6 +18,7 @@ import {
   type MemberRole,
   type User,
 } from "~/server/db/schema";
+import { getGroupSeatLimit } from "~/server/billing/entitlements";
 import {
   type CreateInviteLinkInput,
   createInviteLinkInput,
@@ -94,6 +96,40 @@ async function requireOwner(tx: Tx, groupId: string, actor: User) {
   const role = await requireActorRole(tx, groupId, actor);
   if (role !== "owner") throw new DomainError("FORBIDDEN");
   return role;
+}
+
+/**
+ * Enforce Family seats before adding a member (#325). Kids ride free (per
+ * `SEAT_RULES`), so adding one is always allowed; otherwise we count the group's
+ * current seat-consuming members and reject with a `SEAT_LIMIT_REACHED`
+ * {@link DomainError} once
+ * they're at the seat limit. Fail-open by design: any error resolving the limit
+ * (e.g. a billing hiccup) lets the add through rather than blocking a family.
+ */
+async function assertSeatAvailable(
+  tx: Tx,
+  groupId: string,
+  newRole: MemberRole,
+): Promise<void> {
+  if (newRole === "kid" && !SEAT_RULES.kidsCountAsSeats) return;
+
+  let limit: number | null;
+  try {
+    limit = await getGroupSeatLimit(groupId);
+  } catch {
+    return;
+  }
+  if (limit === null) return;
+
+  const members = await tx.query.groupMembers.findMany({
+    where: eq(groupMembers.groupId, groupId),
+    columns: { role: true },
+  });
+  const consuming = SEAT_RULES.kidsCountAsSeats
+    ? members.length
+    : members.filter((m) => m.role !== "kid").length;
+
+  if (consuming >= limit) throw new DomainError("SEAT_LIMIT_REACHED");
 }
 
 async function findUserByIdentifier(tx: Tx, identifier: string) {
@@ -195,6 +231,11 @@ export async function addMember(
 
     const existing = await membershipFor(tx, group.id, target.id);
     if (existing) throw new DomainError("ALREADY_MEMBER");
+
+    // Seat enforcement (#325): block adds beyond the group's Family seats with a
+    // typed error the UI turns into an upgrade prompt. Runs after the role and
+    // duplicate guards so those errors still take precedence.
+    await assertSeatAvailable(tx, group.id, role);
 
     const [inserted] = await tx
       .insert(groupMembers)
@@ -473,6 +514,12 @@ export async function acceptInvitation(token: string, user: User) {
       return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
     }
 
+    // Seat enforcement (#325): invite-accept is a primary join path, so the cap
+    // must hold here too — not just in addMember. Runs after the duplicate guard
+    // above so an existing member is still idempotent, and inside this tx so a
+    // rejection leaves the invitation pending.
+    await assertSeatAvailable(tx, invitation.groupId, invitation.role);
+
     await tx.insert(groupMembers).values({
       groupId: invitation.groupId,
       userId: user.id,
@@ -631,6 +678,11 @@ export async function acceptInviteLink(token: string, user: User) {
       )
       .returning({ id: groupInviteLinks.id });
     if (claimed.length === 0) throw new DomainError("EXHAUSTED");
+
+    // Seat enforcement (#325): re-check Family seats AFTER the use-claim but
+    // BEFORE seating, so a seat rejection throws and rolls the useCount bump back
+    // in this same tx (no use is spent when the group is full).
+    await assertSeatAvailable(tx, link.groupId, link.role);
 
     await tx.insert(groupMembers).values({
       groupId: link.groupId,

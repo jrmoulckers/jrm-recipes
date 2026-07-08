@@ -91,6 +91,21 @@ export const env = createEnv({
     // unset the endpoint is disabled (503) so it can never be triggered
     // anonymously; Vercel Cron sends it as `Authorization: Bearer <secret>`.
     CRON_SECRET: z.string().optional(),
+    // Billing (Stripe) — optional (#299). Like every other external service,
+    // billing degrades gracefully: with these unset the app boots, builds, and
+    // stays fully clickable, and all billing code paths no-op (see
+    // ~/server/billing/stripe `isBillingConfigured`).
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    // Stripe Price IDs (e.g. `price_123…`) for purchasable plans (#303). Optional
+    // — with these unset checkout reports a friendly "not available" instead of
+    // failing, so the app still builds and runs with no billing config.
+    STRIPE_PRICE_FAMILY: z.string().optional(),
+    // Stripe one-time Price ID for a gift purchase (#331). Optional — with it
+    // unset the "Gift Heirloom" flow reports a friendly "not available" and the
+    // app still builds and runs. Redeeming an already-issued code needs only the
+    // database, never this key.
+    STRIPE_PRICE_GIFT_FAMILY: z.string().optional(),
   },
 
   client: {
@@ -108,6 +123,9 @@ export const env = createEnv({
     // Consent model for analytics. Set to "1" to require explicit opt-in
     // consent before any capture (GDPR-style); unset/other = opt-out model.
     NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: z.string().optional(),
+    // Stripe publishable key (client-safe) — optional (#299). Used only by the
+    // billing UI; absent by default so the app runs with zero billing config.
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -129,6 +147,12 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT:
       process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRICE_FAMILY: process.env.STRIPE_PRICE_FAMILY,
+    STRIPE_PRICE_GIFT_FAMILY: process.env.STRIPE_PRICE_GIFT_FAMILY,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
 
   skipValidation,

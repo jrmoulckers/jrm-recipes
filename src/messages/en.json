@@ -3,7 +3,9 @@
     "landmark": "Footer",
     "recipes": "Recipes",
     "family": "Family",
-    "create": "Create"
+    "create": "Create",
+    "pricing": "Pricing",
+    "billing": "Billing"
   },
   "cook": {
     "timer": {

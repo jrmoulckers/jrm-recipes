@@ -12,6 +12,8 @@ import {
   type User,
 } from "~/server/db/schema";
 import { DEV_USER } from "~/server/auth/dev-user";
+import { getEntitlements } from "~/server/billing/entitlements";
+import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { buildIdentityTraits } from "~/lib/analytics/identity";
 import { captureServer, identifyServer } from "~/lib/analytics/server";
@@ -214,4 +216,18 @@ export async function requireUser(): Promise<User> {
     throw new Error("UNAUTHENTICATED");
   }
   return user;
+}
+
+/**
+ * Convenience for premium-gated actions: the signed-in user plus their resolved
+ * entitlements in one call, so an action can check a flag/limit without wiring
+ * the billing resolver itself. Throws `UNAUTHENTICATED` when signed out.
+ */
+export async function requireUserWithEntitlements(): Promise<{
+  user: User;
+  entitlements: Entitlements;
+}> {
+  const user = await requireUser();
+  const entitlements = await getEntitlements(user);
+  return { user, entitlements };
 }

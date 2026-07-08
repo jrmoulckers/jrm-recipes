@@ -24,6 +24,12 @@ export type ActionFailure = {
   ok: false;
   error: string;
   fieldErrors?: FieldErrors;
+  /**
+   * Set when the failure is a plan/usage limit (#318), so the UI can surface an
+   * upgrade prompt instead of a bare error toast. Optional and defaulted-off, so
+   * every existing `fail(...)` result is unaffected.
+   */
+  upgrade?: boolean;
 };
 
 /**

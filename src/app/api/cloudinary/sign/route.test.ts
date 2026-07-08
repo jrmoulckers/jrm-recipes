@@ -1,13 +1,20 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { requireUserMock, apiSignRequestMock } = vi.hoisted(() => ({
-  requireUserMock: vi.fn(),
-  apiSignRequestMock: vi.fn(() => "test-signature"),
-}));
+const { requireUserMock, apiSignRequestMock, getLimitStatusMock } = vi.hoisted(
+  () => ({
+    requireUserMock: vi.fn(),
+    apiSignRequestMock: vi.fn(() => "test-signature"),
+    getLimitStatusMock: vi.fn(),
+  }),
+);
 
 vi.mock("~/server/auth", () => ({
   requireUser: requireUserMock,
+}));
+
+vi.mock("~/server/billing/entitlements", () => ({
+  getLimitStatus: getLimitStatusMock,
 }));
 
 vi.mock("cloudinary", () => ({
@@ -58,6 +65,15 @@ beforeEach(() => {
   apiSignRequestMock.mockReturnValue("test-signature");
   // Default to a signed-in user; individual tests override as needed.
   requireUserMock.mockResolvedValue({ id: "user_1" });
+  // Default: under the storage cap, so signing proceeds. The cap test overrides.
+  getLimitStatusMock.mockReset();
+  getLimitStatusMock.mockResolvedValue({
+    limit: 200,
+    used: 10,
+    remaining: 190,
+    ratio: 0.05,
+    state: "ok",
+  });
 });
 
 describe("POST /api/cloudinary/sign", () => {
@@ -183,6 +199,27 @@ describe("POST /api/cloudinary/sign", () => {
 
     expect(res.status).toBe(400);
     expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses to sign a new upload once over the storage cap (402, #318)", async () => {
+    getLimitStatusMock.mockResolvedValue({
+      limit: 200,
+      used: 200,
+      remaining: 0,
+      ratio: 1,
+      state: "blocked",
+    });
+
+    const res = await POST(
+      makeRequest({
+        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+      }),
+    );
+
+    expect(res.status).toBe(402);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+    const json = (await res.json()) as { upgrade?: boolean };
+    expect(json.upgrade).toBe(true);
   });
 
   it("signs only allowlisted params for a signed-in user (happy path)", async () => {
