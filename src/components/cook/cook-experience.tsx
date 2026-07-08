@@ -590,7 +590,7 @@ function CookHeader({
   const { kidSafe } = useThemeBehavior();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] short-landscape:py-1.5 sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] short-landscape:py-1.5 sm:gap-3 sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline" className="hidden sm:inline-flex">
@@ -1219,7 +1219,7 @@ function CookNotes({ notes }: { notes: string }) {
         <ChevronDown className="size-5 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
       </summary>
       <Separator className="my-4" />
-      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+      <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">
         {notes}
       </p>
     </details>

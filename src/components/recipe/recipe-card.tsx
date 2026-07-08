@@ -178,7 +178,7 @@ export function RecipeCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+        <h3 className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight">
           {titleSegments
             ? titleSegments.map((seg, i) =>
                 seg.hit ? (
@@ -203,7 +203,7 @@ export function RecipeCard({
           </p>
         )}
         {recipe.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
+          <p className="line-clamp-2 break-words text-sm text-muted-foreground">
             {recipe.description}
           </p>
         )}

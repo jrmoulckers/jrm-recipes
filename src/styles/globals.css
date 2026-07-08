@@ -24,6 +24,13 @@
     @apply bg-background font-body text-foreground antialiased;
     min-height: 100dvh;
     text-rendering: optimizeLegibility;
+    /* Minimum supported width is 320px (iPhone SE / small Android). Clip any
+     * stray wide element so a single overflowing node can never introduce a
+     * horizontal page scrollbar at that width. `clip` (unlike `hidden`) does
+     * not create a scroll container, so `position: sticky` chrome keeps working
+     * (issue #293). User-generated text is additionally wrapped at the source
+     * with `break-words` / `overflow-wrap: anywhere`. */
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4, h5 {
