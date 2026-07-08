@@ -186,7 +186,12 @@ export const recipeVersions = pgTable(
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
-    index("recipe_versions_recipe_idx").on(t.recipeId, t.versionNumber),
+    // (recipe_id, version_number) is unique at the DB level (issue #151). Version
+    // numbers are allocated as max+1, but READ COMMITTED lets two concurrent edits
+    // read the same max and write the same number. The constraint makes the DB the
+    // arbiter; its btree also backs the version-ordered history reads that the old
+    // non-unique `recipe_versions_recipe_idx` used to serve.
+    unique("recipe_versions_recipe_version_uq").on(t.recipeId, t.versionNumber),
     // Covering index for the authorId foreign key (issue #153): the
     // `ON DELETE set null` on user delete otherwise scans every version row.
     index("recipe_versions_author_idx").on(t.authorId),

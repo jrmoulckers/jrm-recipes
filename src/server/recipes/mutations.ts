@@ -28,20 +28,22 @@ const PG_UNIQUE_VIOLATION = "23505";
 /** DB-level unique constraint guarding `recipes.slug` (see schema/recipes.ts). */
 const RECIPES_SLUG_CONSTRAINT = "recipes_slug_uq";
 
+/** DB-level unique constraint on `recipe_versions (recipe_id, version_number)`. */
+const RECIPE_VERSIONS_VERSION_CONSTRAINT = "recipe_versions_recipe_version_uq";
+
 /** Max attempts for a create/fork that races another writer for the same slug. */
 const MAX_SLUG_ATTEMPTS = 5;
 
+/** Max attempts to allocate a version number that races a concurrent edit. */
+const MAX_VERSION_ATTEMPTS = 5;
+
 /**
- * True when `err` is a Postgres unique-violation on the `recipes.slug`
- * constraint. {@link uniqueSlug} pre-checks for a free slug, but two concurrent
- * transactions can both pass that check and only collide at COMMIT-time on the
- * DB constraint — that lost race surfaces here so callers can retry.
- *
- * The `postgres` driver exposes `.code` and `.constraint`; we fall back to the
- * constraint name embedded in the message, and unwrap a single `cause` level in
- * case an intermediate layer rewraps the driver error.
+ * True when `err` is a Postgres unique-violation on `constraint`. The `postgres`
+ * driver exposes `.code` and `.constraint`; we fall back to the constraint name
+ * embedded in the message, and unwrap a single `cause` level in case an
+ * intermediate layer rewraps the driver error.
  */
-export function isSlugConflict(err: unknown): boolean {
+function matchesUniqueViolation(err: unknown, constraint: string): boolean {
   if (typeof err !== "object" || err === null) return false;
   const e = err as {
     code?: unknown;
@@ -51,14 +53,34 @@ export function isSlugConflict(err: unknown): boolean {
     cause?: unknown;
   };
   if (e.code === PG_UNIQUE_VIOLATION) {
-    const constraint = e.constraint ?? e.constraint_name;
-    if (constraint === RECIPES_SLUG_CONSTRAINT) return true;
-    if (constraint == null && typeof e.message === "string")
-      return e.message.includes(RECIPES_SLUG_CONSTRAINT);
+    const name = e.constraint ?? e.constraint_name;
+    if (name === constraint) return true;
+    if (name == null && typeof e.message === "string")
+      return e.message.includes(constraint);
     return false;
   }
-  if (e.cause != null && e.cause !== err) return isSlugConflict(e.cause);
+  if (e.cause != null && e.cause !== err)
+    return matchesUniqueViolation(e.cause, constraint);
   return false;
+}
+
+/**
+ * True when `err` is a Postgres unique-violation on the `recipes.slug`
+ * constraint. {@link uniqueSlug} pre-checks for a free slug, but two concurrent
+ * transactions can both pass that check and only collide at COMMIT-time on the
+ * DB constraint — that lost race surfaces here so callers can retry.
+ */
+export function isSlugConflict(err: unknown): boolean {
+  return matchesUniqueViolation(err, RECIPES_SLUG_CONSTRAINT);
+}
+
+/**
+ * True when `err` is a Postgres unique-violation on the
+ * `recipe_versions (recipe_id, version_number)` constraint, i.e. two edits
+ * raced for the same version number (issue #151). {@link journal} retries.
+ */
+export function isVersionConflict(err: unknown): boolean {
+  return matchesUniqueViolation(err, RECIPE_VERSIONS_VERSION_CONSTRAINT);
 }
 
 /**
@@ -247,6 +269,17 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
   }
 }
 
+/**
+ * Append an immutable snapshot to a recipe's version history.
+ *
+ * `version_number` is allocated as `max+1`, but under READ COMMITTED two
+ * concurrent edits can read the same max and try to write the same number. The
+ * `recipe_versions_recipe_version_uq` constraint (issue #151) rejects the loser;
+ * we retry inside a SAVEPOINT (`tx.transaction`) so the surrounding recipe
+ * transaction survives the rolled-back attempt and the recomputed max reflects
+ * the now-committed sibling — yielding sequential, gap-tolerant version numbers
+ * without locking the whole table.
+ */
 async function journal(
   tx: Tx,
   recipeId: string,
@@ -254,19 +287,29 @@ async function journal(
   input: RecipeInput,
   label?: string,
 ) {
-  const [{ next } = { next: 1 }] = await tx
-    .select({
-      next: sql<number>`coalesce(max(${recipeVersions.versionNumber}), 0) + 1`,
-    })
-    .from(recipeVersions)
-    .where(eq(recipeVersions.recipeId, recipeId));
-  await tx.insert(recipeVersions).values({
-    recipeId,
-    authorId,
-    versionNumber: next,
-    label: label ?? null,
-    snapshot: input,
-  });
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await tx.transaction(async (sp) => {
+        const [{ next } = { next: 1 }] = await sp
+          .select({
+            next: sql<number>`coalesce(max(${recipeVersions.versionNumber}), 0) + 1`,
+          })
+          .from(recipeVersions)
+          .where(eq(recipeVersions.recipeId, recipeId));
+        await sp.insert(recipeVersions).values({
+          recipeId,
+          authorId,
+          versionNumber: next,
+          label: label ?? null,
+          snapshot: input,
+        });
+      });
+      return;
+    } catch (err) {
+      if (attempt < MAX_VERSION_ATTEMPTS && isVersionConflict(err)) continue;
+      throw err;
+    }
+  }
 }
 
 async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {

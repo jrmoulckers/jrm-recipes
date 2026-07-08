@@ -15,12 +15,13 @@ vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
 }));
 
-import { recipes, type User } from "~/server/db/schema";
+import { recipes, recipeVersions, type User } from "~/server/db/schema";
 import { recipeInput } from "./validation";
 import {
   createRecipe,
   forkRecipe,
   isSlugConflict,
+  isVersionConflict,
   resolveGroupId,
   updateRecipe,
   uniqueSlug,
@@ -36,6 +37,16 @@ function slugConflict(): Error {
       'duplicate key value violates unique constraint "recipes_slug_uq"',
     ),
     { code: "23505", constraint: "recipes_slug_uq" },
+  );
+}
+
+/** A Postgres unique-violation on the recipe_versions (recipe_id, version_number) constraint. */
+function versionConflict(): Error {
+  return Object.assign(
+    new Error(
+      'duplicate key value violates unique constraint "recipe_versions_recipe_version_uq"',
+    ),
+    { code: "23505", constraint: "recipe_versions_recipe_version_uq" },
   );
 }
 
@@ -253,6 +264,18 @@ function chainable(result: unknown) {
   };
 }
 
+/** Like {@link chainable} but the awaited insert rejects — models a DB error. */
+function rejecting(err: unknown) {
+  return {
+    returning: vi.fn(() => Promise.reject(err)),
+    onConflictDoNothing: vi.fn(() => Promise.reject(err)),
+    then: (
+      onFulfilled: (value: unknown) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) => Promise.reject(err).then(onFulfilled, onRejected),
+  };
+}
+
 /** Fake tx that drives a full `createRecipe` transaction without a database. */
 function createTx(opts: { member: boolean }) {
   const recipeValues = vi.fn();
@@ -262,7 +285,7 @@ function createTx(opts: { member: boolean }) {
       return chainable(table === recipes ? [{ id: "r1", slug: "apple-pie" }] : undefined);
     },
   }));
-  const tx = {
+  const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
         findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
@@ -275,6 +298,9 @@ function createTx(opts: { member: boolean }) {
       from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
     })),
   };
+  // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
+  // run the callback against the same fake surface so a create writes one version.
+  tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
   return { tx, insert, recipeValues };
 }
 
@@ -335,7 +361,7 @@ function updateTx(opts: { member: boolean }) {
       return { where: vi.fn(() => Promise.resolve(undefined)) };
     },
   }));
-  const tx = {
+  const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
         findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
@@ -356,6 +382,9 @@ function updateTx(opts: { member: boolean }) {
       from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
     })),
   };
+  // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
+  // run the callback against the same fake surface so an update writes one version.
+  tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
   return { tx, update, setValues };
 }
 
@@ -390,5 +419,75 @@ describe("updateRecipe group-membership enforcement", () => {
       "FORBIDDEN",
     );
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+// --- Version-number allocation race (issue #151) -----------------------------
+
+/**
+ * A fake `updateRecipe` tx whose version-history INSERT collides on the
+ * `recipe_versions_recipe_version_uq` constraint the first time (a lost race
+ * with a concurrent edit) and succeeds the second time. `select max+1` returns
+ * an increasing value across attempts, modelling the sibling's now-committed row.
+ */
+function versionRaceTx() {
+  const nextValues = [2, 3];
+  const versionRows: Array<{ versionNumber: number }> = [];
+  let conflictPending = true;
+  const insert = vi.fn((table: unknown) => ({
+    values: (vals: unknown) => {
+      if (table !== recipeVersions) return chainable(undefined);
+      versionRows.push(vals as { versionNumber: number });
+      if (conflictPending) {
+        conflictPending = false;
+        return rejecting(versionConflict());
+      }
+      return chainable(undefined);
+    },
+  }));
+  const tx: Record<string, unknown> = {
+    query: {
+      groupMembers: { findFirst: vi.fn().mockResolvedValue({ id: "gm_1" }) },
+      recipes: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "r1",
+          slug: "apple-pie",
+          publishedAt: null,
+          status: "draft",
+        }),
+      },
+    },
+    update: vi.fn(() => ({
+      set: () => ({ where: vi.fn(() => Promise.resolve(undefined)) }),
+    })),
+    insert,
+    delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() =>
+          Promise.resolve([{ next: nextValues.shift() ?? 99 }]),
+        ),
+      })),
+    })),
+  };
+  tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
+  return { tx, versionRows };
+}
+
+describe("journal version-number allocation (issue #151)", () => {
+  it("flags a version-number unique-violation for retry", () => {
+    expect(isVersionConflict(versionConflict())).toBe(true);
+    expect(isVersionConflict(slugConflict())).toBe(false);
+    expect(isVersionConflict(new Error("nope"))).toBe(false);
+  });
+
+  it("retries on a version-number collision so concurrent edits get distinct numbers", async () => {
+    const { tx, versionRows } = versionRaceTx();
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), author);
+
+    // First attempt took v2 and lost the race; the retry recomputed max+1 → v3.
+    expect(versionRows.map((r) => r.versionNumber)).toEqual([2, 3]);
   });
 });

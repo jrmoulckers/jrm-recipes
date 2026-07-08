@@ -18,3 +18,30 @@ describe("recipe_versions.snapshot column (issue #170)", () => {
     expect(snapshot?.notNull).toBe(true);
   });
 });
+
+/**
+ * Issue #151 — `(recipe_id, version_number)` is unique at the database level so
+ * two concurrent edits can't both claim the same version number. The btree the
+ * constraint creates also serves the version-ordered history reads that the old
+ * non-unique `recipe_versions_recipe_idx` index used to back.
+ */
+describe("recipe_versions version-number uniqueness (issue #151)", () => {
+  it("has a unique constraint on (recipe_id, version_number)", () => {
+    const { uniqueConstraints } = getTableConfig(recipeVersions);
+    const uq = uniqueConstraints.find(
+      (u) => u.name === "recipe_versions_recipe_version_uq",
+    );
+    expect(uq, "expected a unique constraint").toBeDefined();
+    expect(uq?.columns.map((c) => c.name)).toEqual([
+      "recipeId",
+      "versionNumber",
+    ]);
+  });
+
+  it("no longer declares the redundant non-unique recipe index", () => {
+    const { indexes } = getTableConfig(recipeVersions);
+    expect(
+      indexes.some((i) => i.config.name === "recipe_versions_recipe_idx"),
+    ).toBe(false);
+  });
+});
