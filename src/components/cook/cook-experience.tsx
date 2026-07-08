@@ -433,6 +433,7 @@ function StepTimerCard({
         className="mt-5 rounded-2xl bg-muted px-4 py-5 text-center"
         role="timer"
         aria-live="off"
+        aria-label={`Step timer, ${formatCountdown(timer.remaining)} remaining`}
       >
         <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
           {formatCountdown(timer.remaining)}
@@ -591,6 +592,10 @@ function ActiveTimersPanel({
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-left"
                 onClick={() => onSelect(stepIndex)}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`Jump to step ${stepIndex + 1}: ${
+                  step.section ?? step.instruction
+                } — ${formatCountdown(timer.remaining)} remaining`}
               >
                 <span className="min-w-0">
                   <span className="block font-medium">Step {stepIndex + 1}</span>
@@ -680,6 +685,10 @@ function OverviewDialog({
               <li key={step.id}>
                 <button
                   type="button"
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={`Go to step ${index + 1}: ${
+                    step.section ?? step.instruction
+                  }`}
                   className={cn(
                     "flex w-full gap-4 rounded-xl p-3 text-left transition-colors hover:bg-muted",
                     isCurrent && "bg-primary/10 text-foreground",
