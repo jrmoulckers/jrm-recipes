@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "./dialog";
+import { OVERLAY_SURFACE } from "./overlay-surface";
 
 afterEach(cleanup);
 
@@ -14,6 +15,18 @@ function renderDialog(className?: string) {
   render(
     <Dialog open>
       <DialogContent className={className}>
+        <DialogTitle>Title</DialogTitle>
+        <DialogDescription>Body</DialogDescription>
+      </DialogContent>
+    </Dialog>,
+  );
+  return screen.getByRole("dialog");
+}
+
+function renderSized(size: "sm" | "md" | "lg" | "xl") {
+  render(
+    <Dialog open>
+      <DialogContent size={size}>
         <DialogTitle>Title</DialogTitle>
         <DialogDescription>Body</DialogDescription>
       </DialogContent>
@@ -51,5 +64,27 @@ describe("DialogContent mobile-safe defaults", () => {
     );
     expect(content.className).toContain("max-h-dvh");
     expect(content.className).not.toContain("max-h-[calc(100dvh-2rem)]");
+  });
+});
+
+describe("DialogContent size variants", () => {
+  it("defaults to the historical max-w-lg width", () => {
+    expect(renderDialog().className).toContain("max-w-lg");
+  });
+
+  it.each([
+    ["sm", "max-w-sm"],
+    ["md", "max-w-md"],
+    ["lg", "max-w-lg"],
+    ["xl", "max-w-3xl"],
+  ] as const)("maps size=%s to %s", (size, expected) => {
+    expect(renderSized(size).className).toContain(expected);
+  });
+
+  it("uses the shared overlay surface chrome", () => {
+    const content = renderDialog();
+    for (const cls of OVERLAY_SURFACE.split(" ")) {
+      expect(content.className).toContain(cls);
+    }
   });
 });
