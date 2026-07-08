@@ -18,6 +18,13 @@ export const runtime = "nodejs";
 const ROOT_FOLDER = "heirloom";
 
 /**
+ * Upper bound on the signing request body (issue #222). The allowlisted params
+ * are a few short strings and a timestamp, so a few KB is generous; anything
+ * larger is refused before it is buffered into memory.
+ */
+const MAX_SIGN_BODY_BYTES = 4_096;
+
+/**
  * Matches `heirloom`, `heirloom/cooks`, `heirloom/a/b`, … but never a foreign
  * root, a leading/trailing slash, an empty segment, or path traversal (`..`),
  * because `.` is not part of the permitted per-segment character set.
@@ -155,9 +162,27 @@ export async function POST(request: Request) {
     );
   }
 
+  // 2c. Bound the request body (issue #222). The signed payload is a handful of
+  //     short fields; anything large is abuse, so refuse to buffer it. Guard on
+  //     the declared length up front and hard-cap the bytes we actually read.
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_SIGN_BODY_BYTES) {
+    return Response.json({ error: "Request body too large." }, { status: 413 });
+  }
+
+  let raw: string;
+  try {
+    raw = await request.text();
+  } catch {
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+  if (raw.length > MAX_SIGN_BODY_BYTES) {
+    return Response.json({ error: "Request body too large." }, { status: 413 });
+  }
+
   let json: unknown;
   try {
-    json = await request.json();
+    json = JSON.parse(raw);
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }

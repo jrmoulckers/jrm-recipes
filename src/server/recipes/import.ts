@@ -628,6 +628,14 @@ const IMPORT_FETCH_HEADERS = {
 
 const MAX_IMPORT_REDIRECTS = 5;
 
+/**
+ * Hard cap on bytes read from an imported page (issue #222). A malicious or
+ * misbehaving server could stream an unbounded response; buffering it whole
+ * before slicing would exhaust memory. We reject on an over-large
+ * `Content-Length` up front and otherwise stop reading once the cap is hit.
+ */
+const MAX_IMPORT_BYTES = 3_000_000;
+
 /** Raised when a redirect points at a non-public or invalid host (SSRF guard). */
 class BlockedRedirectError extends Error {}
 
@@ -729,6 +737,42 @@ async function fetchGuardingRedirects(
   throw new BlockedRedirectError("too many redirects");
 }
 
+/**
+ * Read a response body as text, stopping once `maxBytes` have been consumed so
+ * an unbounded stream cannot exhaust memory (issue #222). The excess is dropped
+ * and the underlying stream cancelled rather than buffered.
+ */
+async function readCappedText(res: Response, maxBytes: number): Promise<string> {
+  const body = res.body;
+  if (!body) return (await res.text()).slice(0, maxBytes);
+
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let out = "";
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        const remaining = value.byteLength - (total - maxBytes);
+        out += decoder.decode(value.subarray(0, Math.max(0, remaining)), {
+          stream: true,
+        });
+        await reader.cancel();
+        break;
+      }
+      out += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  out += decoder.decode();
+  return out;
+}
+
 /** Fetch a URL and extract a recipe. Returns friendly errors, never throws. */
 export async function importRecipeFromUrl(
   rawUrl: string,
@@ -766,7 +810,16 @@ export async function importRecipeFromUrl(
     };
   }
 
-  const html = (await res.text()).slice(0, 3_000_000);
+  const declaredLength = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_IMPORT_BYTES) {
+    await res.body?.cancel();
+    return {
+      ok: false,
+      error: "That page is too large to import. Try adding it by hand.",
+    };
+  }
+
+  const html = await readCappedText(res, MAX_IMPORT_BYTES);
   const recipe = parseRecipeFromHtml(html, url.toString());
   if (!recipe)
     return {

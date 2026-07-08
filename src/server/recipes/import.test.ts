@@ -388,3 +388,51 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe("importRecipeFromUrl response size limits (i222)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects a response whose Content-Length exceeds the cap", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response("x", {
+          status: 200,
+          headers: { "content-length": String(10_000_000) },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await importRecipeFromUrl("https://example.com/huge");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/too large/i);
+  });
+
+  it("stops reading a streamed body once the byte cap is hit", async () => {
+    // A body that would stream far more than the 3 MB cap if fully consumed.
+    let pulls = 0;
+    const chunk = new TextEncoder().encode("a".repeat(1_000_000));
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        if (pulls > 100) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(chunk);
+      },
+    });
+    const fetchMock = vi.fn(
+      async () => new Response(stream, { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    // No structured recipe in the garbage body, so it reports "not found" —
+    // the point is that it returns promptly without buffering the whole stream.
+    const result = await importRecipeFromUrl("https://example.com/stream");
+    expect(result.ok).toBe(false);
+    // We never pulled anywhere near the full (100 MB) body.
+    expect(pulls).toBeLessThanOrEqual(5);
+  });
+});

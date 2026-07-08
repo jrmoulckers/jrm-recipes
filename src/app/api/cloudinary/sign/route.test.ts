@@ -240,4 +240,31 @@ describe("POST /api/cloudinary/sign", () => {
       "top-secret",
     );
   });
+
+  it("rejects an oversized declared body with 413 and signs nothing (i222)", async () => {
+    const res = await POST(
+      makeRequest(
+        { paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" } },
+        { "content-length": String(1_000_000) },
+      ),
+    );
+
+    expect(res.status).toBe(413);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an oversized actual body with 413 (i222)", async () => {
+    const res = await POST(
+      makeRequest({
+        paramsToSign: {
+          timestamp: freshTimestamp(),
+          folder: "heirloom",
+          source: "x".repeat(8_000),
+        },
+      }),
+    );
+
+    expect(res.status).toBe(413);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
 });
