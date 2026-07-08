@@ -10,7 +10,7 @@ const recipe = {
   servings: 4,
   servingsNoun: null,
   nutrition: {},
-} as const;
+};
 
 describe("IngredientsDrawer trigger name (issue #120)", () => {
   it("exposes one stable accessible name at every breakpoint", () => {
