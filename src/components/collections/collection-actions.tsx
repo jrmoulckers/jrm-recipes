@@ -69,7 +69,7 @@ export function CollectionActions({
           toast.error(result.error);
           return;
         }
-        toast.success("Collection updated.");
+        toast.success("Collection updated");
         setRenameOpen(false);
         router.refresh();
       });
@@ -87,7 +87,7 @@ export function CollectionActions({
           toast.error(result.error);
           return;
         }
-        toast.success("Collection deleted.");
+        toast.success("Collection deleted");
         router.push("/collections");
       });
     });

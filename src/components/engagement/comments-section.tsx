@@ -111,10 +111,10 @@ export function CommentsSection(props: {
       if (result.ok) {
         toast.success(
           parentId
-            ? "Reply posted."
+            ? "Reply posted"
             : nextKind === "suggestion"
-              ? "Suggestion shared."
-              : "Comment posted.",
+              ? "Suggestion shared"
+              : "Comment posted",
         );
         onSuccess?.();
         router.refresh();
@@ -128,7 +128,7 @@ export function CommentsSection(props: {
     startTransition(async () => {
       const result = await deleteCommentAction({ commentId, recipeSlug });
       if (result.ok) {
-        toast.success("Comment deleted.");
+        toast.success("Comment deleted");
         router.refresh();
       } else {
         toast.error(result.error);
@@ -144,7 +144,7 @@ export function CommentsSection(props: {
         resolved,
       });
       if (result.ok) {
-        toast.success(resolved ? "Suggestion resolved." : "Suggestion reopened.");
+        toast.success(resolved ? "Suggestion resolved" : "Suggestion reopened");
         router.refresh();
       } else {
         toast.error(result.error);
@@ -160,7 +160,7 @@ export function CommentsSection(props: {
         suggestionId,
       });
       if (result.ok) {
-        toast.success("Suggestion applied to the recipe.");
+        toast.success("Suggestion applied");
         router.refresh();
       } else {
         toast.error(result.error);

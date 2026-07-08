@@ -82,7 +82,7 @@ export function ShareCollectionControl({
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success("Share link copied.");
+      toast.success("Share link copied");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Couldn't copy the link.");

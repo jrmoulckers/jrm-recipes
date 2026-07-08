@@ -31,7 +31,7 @@ export function RemoveFromCollectionButton({
         recipeId,
       });
       if (result.ok) {
-        toast.success("Removed from collection.");
+        toast.success("Removed from collection");
         router.refresh();
       } else {
         toast.error(result.error);

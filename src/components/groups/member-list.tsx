@@ -159,7 +159,7 @@ export function MemberList({
                                   updateMemberRoleAction(slug, member.userId, {
                                     role,
                                   }),
-                                `${name} is now ${roleLabel(role).toLowerCase()}.`,
+                                `${name} is now ${roleLabel(role).toLowerCase()}`,
                               )
                             }
                           >
@@ -209,7 +209,7 @@ export function MemberList({
                             runAction(
                               `${member.userId}:remove`,
                               () => removeMemberAction(slug, member.userId),
-                              `${name} was removed from the group.`,
+                              `${name} was removed from the group`,
                             );
                           }}
                         >

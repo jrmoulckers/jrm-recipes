@@ -78,7 +78,7 @@ export function DinnerSuggestion({
       });
       if (result.ok) {
         setPlanned(true);
-        toast.success(`${current.title} is on tonight's plan.`);
+        toast.success(`${current.title} is on tonight's plan`);
         router.refresh();
       } else {
         toast.error(result.error);

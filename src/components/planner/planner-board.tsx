@@ -265,8 +265,8 @@ function EntryChip({
       } else {
         toast.success(
           alsoLeftovers && batch
-            ? "Removed the meal and its leftovers."
-            : "Removed from your plan.",
+            ? "Removed the meal and its leftovers"
+            : "Removed from your plan",
         );
         router.refresh();
       }
@@ -290,7 +290,7 @@ function EntryChip({
       });
       if (result.ok) {
         setCooked(true);
-        toast.success("Logged to your journal.");
+        toast.success("Logged to your journal");
       } else {
         toast.error(result.error);
       }
@@ -532,7 +532,7 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          batching ? "Added — leftovers night booked too." : "Added to your plan.",
+          batching ? "Added — leftovers night booked too" : "Added to your plan",
         );
         onClose();
         router.refresh();

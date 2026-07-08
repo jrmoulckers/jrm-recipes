@@ -55,7 +55,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
           }
           setUrl(result.url);
           setCopied(false);
-          toast.success("Invite link ready to share.");
+          toast.success("Invite link ready to share");
         },
       );
     });
@@ -66,7 +66,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Invite link copied.");
+      toast.success("Invite link copied");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Couldn't copy the link.");

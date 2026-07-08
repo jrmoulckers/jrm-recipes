@@ -64,7 +64,7 @@ export function SavedSearches({
           toast.error(result.error);
           return;
         }
-        toast.success("Saved search removed.");
+        toast.success("Saved search removed");
         router.refresh();
       });
     });
@@ -81,7 +81,7 @@ export function SavedSearches({
             toast.error(result.error);
             return;
           }
-          toast.success("Search saved.");
+          toast.success("Search saved");
           setSaveOpen(false);
           setName("");
           router.refresh();

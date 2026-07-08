@@ -35,7 +35,7 @@ export function CopyLastWeekButton({ week }: { week: string }) {
       toast.success(
         `Copied ${result.copied} ${
           result.copied === 1 ? "meal" : "meals"
-        } from last week.`,
+        } from last week`,
       );
       router.refresh();
     });

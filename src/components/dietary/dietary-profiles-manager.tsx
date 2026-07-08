@@ -136,7 +136,7 @@ export function DietaryProfilesManager({
           toast.error(result.error);
           return;
         }
-        toast.success(isAdd ? "Profile added." : "Profile updated.");
+        toast.success(isAdd ? "Profile added" : "Profile updated");
         setEditing(null);
         router.refresh();
       });
@@ -154,7 +154,7 @@ export function DietaryProfilesManager({
           toast.error(result.error);
           return;
         }
-        toast.success("Profile removed.");
+        toast.success("Profile removed");
         router.refresh();
       });
     });

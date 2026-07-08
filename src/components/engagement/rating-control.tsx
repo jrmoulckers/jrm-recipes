@@ -78,7 +78,7 @@ export function RatingControl(props: {
           }),
     {
       successToast: (_result, input) =>
-        input.value == null ? "Rating cleared." : "Rating saved.",
+        input.value == null ? "Rating cleared" : "Rating saved",
       errorToast: true,
       refresh: true,
       onError: () => {

@@ -56,7 +56,7 @@ export function CreateCollectionDialog({
           return;
         }
 
-        toast.success("Collection created.");
+        toast.success("Collection created");
         setOpen(false);
         resetForm();
         router.push(`/collections/${result.id}`);

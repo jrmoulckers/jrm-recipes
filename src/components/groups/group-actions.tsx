@@ -62,7 +62,7 @@ export function GroupActions({
           onClick={() => {
             if (isSoleOwner) return;
             if (!window.confirm(`Leave ${groupName}?`)) return;
-            run("leave", () => leaveGroupAction(slug), "You left the group.");
+            run("leave", () => leaveGroupAction(slug), "You left the group");
           }}
           disabled={isPending || isSoleOwner}
           title={isSoleOwner ? soleOwnerNote : undefined}
@@ -83,7 +83,7 @@ export function GroupActions({
               ) {
                 return;
               }
-              run("delete", () => deleteGroupAction(slug), "The group was deleted.");
+              run("delete", () => deleteGroupAction(slug), "The group was deleted");
             }}
             disabled={isPending}
           >

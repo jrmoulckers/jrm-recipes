@@ -43,7 +43,7 @@ export function AddMemberForm({ slug }: { slug: string }) {
           return;
         }
 
-        toast.success("They've been added to the group.");
+        toast.success("They've been added to the group");
         setIdentifier("");
         setRole("member");
         router.refresh();

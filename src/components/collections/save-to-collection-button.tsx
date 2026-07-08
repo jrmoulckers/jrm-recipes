@@ -104,7 +104,7 @@ export function SaveToCollectionButton({
       setItems((prev) => [{ id: created.id, name, contains: true }, ...prev]);
       setNewName("");
       setCreating(false);
-      toast.success(`Saved to “${name}”.`);
+      toast.success(`Saved to “${name}”`);
       router.refresh();
     })();
   }

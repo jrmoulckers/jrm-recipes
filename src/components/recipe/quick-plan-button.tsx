@@ -86,7 +86,7 @@ export function QuickPlanButton({
       const result = await addEntryAction({ date, slot, recipeId });
       if (result.ok) {
         const dayLabel = days.find((d) => d.value === date)?.label ?? "your plan";
-        toast.success(`Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}.`);
+        toast.success(`Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}`);
         setOpen(false);
         router.refresh();
       } else {

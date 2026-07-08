@@ -46,7 +46,7 @@ export function JoinGroupPanel({
         }
         toast.success(
           result.alreadyMember
-            ? `You're already in ${groupName}.`
+            ? `You're already in ${groupName}`
             : `Welcome to ${groupName}!`,
         );
         router.push(`/groups/${result.slug}`);

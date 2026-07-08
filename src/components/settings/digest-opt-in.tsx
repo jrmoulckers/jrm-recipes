@@ -27,8 +27,8 @@ export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
       }
       toast.success(
         next
-          ? "You're subscribed to the weekly family digest."
-          : "You've unsubscribed from the weekly family digest.",
+          ? "You're subscribed to the weekly family digest"
+          : "You've unsubscribed from the weekly family digest",
       );
     });
   }

@@ -47,7 +47,7 @@ export function GroupSettingsForm({
           return;
         }
 
-        toast.success("Group settings saved.");
+        toast.success("Group settings saved");
         router.refresh();
       });
     });

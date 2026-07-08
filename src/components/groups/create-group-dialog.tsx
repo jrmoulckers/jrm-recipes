@@ -56,7 +56,7 @@ export function CreateGroupDialog({
           return;
         }
 
-        toast.success("Your group is ready for the family table.");
+        toast.success("Your group is ready for the family table");
         setOpen(false);
         resetForm();
         if (result.slug) router.push(`/groups/${result.slug}`);
