@@ -251,6 +251,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     if (readAloud && currentInstruction) speak(currentInstruction);
   }, [readAloud, currentStepId, currentInstruction, speak]);
 
+  // Step-transition direction refs (#76) are declared before the empty-state
+  // early return below so hooks always run in the same order.
+  const prevStepIndexRef = React.useRef(stepIndex);
+  const stepDirectionRef = React.useRef<"forward" | "back" | null>(null);
+
   if (!firstStep) {
     return (
       <EmptyCookExperience
@@ -281,6 +286,23 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       : null;
   const progressValue = ((stepIndex + 1) / totalSteps) * 100;
 
+  // Directional step transition (#76): compare the live step index to the
+  // previous render's to classify a nav as forward/back, so the re-mounted step
+  // card slides in from the matching edge. First render (and resumed restores)
+  // has no direction yet and simply fades. Reduced motion is handled globally by
+  // the `motion-safe:` prefix + globals.css / a11y.css.
+  if (prevStepIndexRef.current !== stepIndex) {
+    stepDirectionRef.current =
+      stepIndex > prevStepIndexRef.current ? "forward" : "back";
+    prevStepIndexRef.current = stepIndex;
+  }
+  const stepEnterAnimation =
+    stepDirectionRef.current === "forward"
+      ? "motion-safe:animate-step-in-from-right"
+      : stepDirectionRef.current === "back"
+        ? "motion-safe:animate-step-in-from-left"
+        : "motion-safe:animate-fade-in";
+
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <CookHeader
@@ -307,7 +329,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           onClick={oneHandedNav.onClick}
           onTouchStart={oneHandedNav.onTouchStart}
           onTouchEnd={oneHandedNav.onTouchEnd}
-          className="relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
+          className={cn(
+            "relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg",
+            stepEnterAnimation,
+          )}
         >
           {canGoPrevious && (
             <span
