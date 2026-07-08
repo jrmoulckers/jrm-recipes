@@ -296,6 +296,44 @@ export async function listPublicRecipes({
 }
 
 /**
+ * Attach best-effort detected allergens to card rows for the "safe for my
+ * family" badge (#431). Pulls just the ingredient `item` text for the given
+ * recipes in one batched query and rolls it up per recipe with
+ * `summarizeAllergens` — the same detector the recipe page uses, so there's no
+ * second knowledge base. Returns the rows widened with an `allergens` field;
+ * callers only bother when a family profile with allergies is active.
+ */
+export async function attachCardAllergens<T extends { id: string }>(
+  rows: T[],
+): Promise<(T & { allergens: Allergen[] })[]> {
+  if (rows.length === 0 || !isDbConfigured()) {
+    return rows.map((row) => ({ ...row, allergens: [] }));
+  }
+  const ingredientRows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      item: recipeIngredients.item,
+    })
+    .from(recipeIngredients)
+    .where(
+      inArray(
+        recipeIngredients.recipeId,
+        rows.map((row) => row.id),
+      ),
+    );
+  const itemsByRecipe = new Map<string, string[]>();
+  for (const { recipeId, item } of ingredientRows) {
+    const list = itemsByRecipe.get(recipeId) ?? [];
+    list.push(item);
+    itemsByRecipe.set(recipeId, list);
+  }
+  return rows.map((row) => ({
+    ...row,
+    allergens: summarizeAllergens(itemsByRecipe.get(row.id) ?? []),
+  }));
+}
+
+/**
  * Pure visibility predicate shared by every read/write access check. A recipe
  * is viewable when it's public/unlisted, authored by the viewer, or a group
  * recipe the viewer belongs to. Exported so the rule can be unit-tested and

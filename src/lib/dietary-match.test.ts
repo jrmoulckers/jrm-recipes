@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  allergenConflicts,
   detectIngredientConflict,
   hasAllergenConflict,
   isIngredientConflict,
@@ -79,6 +80,22 @@ describe("isRecipeSafeFor", () => {
         { allergens: ["peanut", "dairy"], dietaryFlags: [] },
       ),
     ).toBe(true);
+  });
+});
+
+describe("allergenConflicts", () => {
+  it("returns nothing when the member avoids nothing", () => {
+    expect(allergenConflicts([], ["peanut", "dairy"])).toEqual([]);
+  });
+
+  it("returns the avoided allergens the recipe carries, in member order", () => {
+    expect(
+      allergenConflicts(["dairy", "peanut"], ["peanut", "soy", "dairy"]),
+    ).toEqual(["dairy", "peanut"]);
+  });
+
+  it("returns nothing when there is no overlap", () => {
+    expect(allergenConflicts(["shellfish"], ["dairy", "wheat"])).toEqual([]);
   });
 });
 

@@ -31,9 +31,22 @@ export function hasAllergenConflict(
   memberAllergens: readonly Allergen[],
   recipeAllergens: readonly Allergen[],
 ): boolean {
-  if (memberAllergens.length === 0) return false;
-  const avoid = new Set<Allergen>(memberAllergens);
-  return recipeAllergens.some((a) => avoid.has(a));
+  return allergenConflicts(memberAllergens, recipeAllergens).length > 0;
+}
+
+/**
+ * The member allergens a recipe actually carries, in the member's own order.
+ * Powers the recipe-card badge (#431): an empty list reads as "looks safe for
+ * <name>", a non-empty one names the conflicts ("Contains dairy"). Detection is
+ * text-based and best-effort, so callers pair it with a "double-check" tooltip.
+ */
+export function allergenConflicts(
+  memberAllergens: readonly Allergen[],
+  recipeAllergens: readonly Allergen[],
+): Allergen[] {
+  if (memberAllergens.length === 0) return [];
+  const present = new Set<Allergen>(recipeAllergens);
+  return memberAllergens.filter((a) => present.has(a));
 }
 
 /**
