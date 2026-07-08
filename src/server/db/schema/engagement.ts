@@ -9,6 +9,7 @@ import {
   timestamp,
   unique,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { fk, pk, timestamps } from "./_shared";
@@ -72,7 +73,13 @@ export const comments = pgTable(
     userId: fk()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    parentId: fk(),
+    // Self-referential thread link. `cascade` so deleting a parent comment also
+    // removes its replies (thread hygiene) — prevents orphaned threads rooted at
+    // a missing parent. Uses the `AnyPgColumn` self-reference pattern from
+    // recipes.forkedFromId / recipeEvents.relatedRecipeId.
+    parentId: fk().references((): AnyPgColumn => comments.id, {
+      onDelete: "cascade",
+    }),
     kind: commentKind().notNull().default("comment"),
     body: text().notNull(),
     // Set when a suggestion has been addressed/closed by the recipe owner.
