@@ -1,3 +1,5 @@
+import type { Route } from "next";
+
 /** Minimal shape needed to build a recipe's canonical detail path. */
 export type RecipeDetailRef = { id: string; slug: string | null };
 
@@ -13,6 +15,14 @@ export type RecipeDetailRef = { id: string; slug: string | null };
  * This is the single source of truth for that path so the id and slug forms
  * can't diverge again. It falls back to the id only when a recipe has no slug.
  */
-export function recipeDetailPath(recipe: RecipeDetailRef): string {
-  return `/recipes/${recipe.slug ?? recipe.id}`;
+export function recipeDetailPath(recipe: RecipeDetailRef): Route {
+  // A slug/id is a single URL segment (no slashes), so this resolves to the
+  // real `/recipes/[id]` route. TS can't prove a runtime string is slash-free,
+  // so this builder is the one place that asserts the typed Route (#189).
+  return `/recipes/${recipe.slug ?? recipe.id}` as Route;
+}
+
+/** The editor route for a recipe, built from the same canonical segment. */
+export function recipeEditPath(recipe: RecipeDetailRef): Route {
+  return `/recipes/${recipe.slug ?? recipe.id}/edit` as Route;
 }

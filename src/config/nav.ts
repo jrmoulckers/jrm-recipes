@@ -10,9 +10,10 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import type { Route } from "next";
 
 export type NavItem = {
-  href: string;
+  href: Route;
   label: string;
   icon: LucideIcon;
   /** Match nested routes (e.g. /recipes/*) for active state. */

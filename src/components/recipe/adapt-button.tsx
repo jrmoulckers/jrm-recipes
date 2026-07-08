@@ -6,7 +6,7 @@ import { ChefHat, GitFork, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createAdaptationAction } from "~/server/recipes/actions";
-import { recipeDetailPath } from "~/lib/recipe-path";
+import { recipeEditPath } from "~/lib/recipe-path";
 import { useServerAction } from "~/lib/use-server-action";
 import { Button } from "~/components/ui/button";
 import {
@@ -39,7 +39,7 @@ export function AdaptButton({
     errorToast: true,
     onSuccess: (result) => {
       setOpen(false);
-      router.push(`${recipeDetailPath(result)}/edit`);
+      router.push(recipeEditPath(result));
     },
   });
   const pending = adapt.pending;

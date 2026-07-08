@@ -41,6 +41,9 @@ const withSerwist = withSerwistInit({
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
+  // Statically type all internal hrefs/router pushes against the app's real
+  // route tree so a typo or renamed segment fails at compile time (#189).
+  typedRoutes: true,
   // PostHog's proxied endpoints are sensitive to trailing-slash redirects.
   skipTrailingSlashRedirect: true,
   images: imageConfig,

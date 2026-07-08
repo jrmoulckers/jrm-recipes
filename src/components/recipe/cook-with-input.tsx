@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { pathnameWithQuery } from "~/lib/routes";
 import { MAX_PANTRY_ITEMS } from "~/server/recipes/search";
 
 /**
@@ -29,7 +30,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
       if (next.length > 0) params.set("have", next.join(","));
       const qs = params.toString();
       startTransition(() =>
-        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }),
+        router.replace(pathnameWithQuery(pathname, qs), { scroll: false }),
       );
     },
     [pathname, router],
