@@ -186,6 +186,11 @@ const config = {
           "0%, 100%": { opacity: "0", transform: "scale(1)" },
           "50%": { opacity: "1", transform: "scale(1.02)" },
         },
+        "tick-pulse": {
+          "0%": { transform: "scale(1)" },
+          "30%": { transform: "scale(1.08)" },
+          "100%": { transform: "scale(1)" },
+        },
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
@@ -217,6 +222,7 @@ const config = {
         "number-roll": "number-roll 0.28s var(--ease-emphasized)",
         "amount-flash": "amount-flash 0.9s var(--ease-standard) both",
         "timer-done-pulse": "timer-done-pulse 0.9s var(--ease-emphasized) 3",
+        "tick-pulse": "tick-pulse 0.5s var(--ease-emphasized)",
         shimmer: "shimmer 1.6s var(--ease-standard) infinite",
       },
     },

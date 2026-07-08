@@ -835,6 +835,9 @@ function StepTimerCard({
   const { kidSafe } = useThemeBehavior();
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
+  // Rising-tension cue in the final seconds of a *running* countdown only.
+  const urgent = isRunning && timer.remaining > 0 && timer.remaining <= 10;
+  const critical = urgent && timer.remaining <= 5;
 
   return (
     <section
@@ -877,8 +880,18 @@ function StepTimerCard({
         {kidSafe ? (
           <TimerRing timer={timer} />
         ) : (
-          <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
-            {formatCountdown(timer.remaining)}
+          <div
+            className={cn(
+              "font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl",
+              critical ? "text-destructive" : urgent ? "text-warning" : undefined,
+            )}
+          >
+            <span
+              key={urgent ? timer.remaining : "steady"}
+              className={cn("inline-block", urgent && "motion-safe:animate-tick-pulse")}
+            >
+              {formatCountdown(timer.remaining)}
+            </span>
           </div>
         )}
         <p className="mt-2 text-sm text-muted-foreground">
