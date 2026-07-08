@@ -59,6 +59,13 @@ const ALLERGEN_ORDER = new Map<Allergen, number>(
   ALLERGENS.map((a, i) => [a, i]),
 );
 
+const ALLERGEN_SET: ReadonlySet<string> = new Set(ALLERGENS);
+
+/** Narrow an arbitrary string (e.g. a DB row value) to a canonical Allergen. */
+export function isAllergen(value: string): value is Allergen {
+  return ALLERGEN_SET.has(value);
+}
+
 /**
  * One knowledge-base rule: normalized whole-word phrases that indicate one or
  * more allergens. `unless` phrases suppress the rule when present (handling

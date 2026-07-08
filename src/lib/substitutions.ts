@@ -34,6 +34,13 @@ export const DIETARY_TAG_LABELS: Record<DietaryTag, string> = {
   "egg-free": "Egg-free",
 };
 
+const DIETARY_TAG_SET: ReadonlySet<string> = new Set(DIETARY_TAGS);
+
+/** Narrow an arbitrary string (e.g. a DB row value) to a canonical DietaryTag. */
+export function isDietaryTag(value: string): value is DietaryTag {
+  return DIETARY_TAG_SET.has(value);
+}
+
 /** A single suggested swap for an ingredient. */
 export type Substitution = {
   /** Short name of the replacement, e.g. "Milk + acid". */

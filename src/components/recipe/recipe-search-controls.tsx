@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Search, ShieldCheck, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -41,16 +42,28 @@ type Facets = {
   tags: { slug: string; name: string; count: number }[];
 };
 
-type ParamKey = "q" | "cuisine" | "difficulty" | "maxTime" | "tag" | "sort";
+/** A saved family member the results can be filtered "safe for". */
+type SafeForMember = { id: string; name: string };
+
+type ParamKey =
+  | "q"
+  | "cuisine"
+  | "difficulty"
+  | "maxTime"
+  | "tag"
+  | "safeFor"
+  | "sort";
 
 export function RecipeSearchControls({
   search,
   facets,
   savedSearches = [],
+  members = [],
 }: {
   search: RecipeSearch;
   facets: Facets;
   savedSearches?: SavedSearch[];
+  members?: SafeForMember[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -224,6 +237,33 @@ export function RecipeSearchControls({
           />
         )}
 
+        <FilterField label="Safe for">
+          {members.length > 0 ? (
+            <Select
+              value={search.safeFor ?? ANY}
+              onValueChange={(value) => pushParams({ safeFor: value })}
+            >
+              <SelectTrigger className="min-w-[9rem]">
+                <SelectValue placeholder="Anyone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Anyone</SelectItem>
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Button asChild variant="outline" className="min-w-[9rem] justify-start font-normal">
+              <Link href="/settings/dietary">
+                <ShieldCheck className="text-muted-foreground" /> Add a profile
+              </Link>
+            </Button>
+          )}
+        </FilterField>
+
         <FilterField label="Sort">
           <Select
             value={search.sort}
@@ -264,6 +304,14 @@ export function RecipeSearchControls({
           />
         </div>
       </div>
+
+      {search.safeFor != null && (
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-primary" />
+          Best-effort filtering from ingredient names and declared diets. Always
+          double-check labels for allergies.
+        </p>
+      )}
     </div>
   );
 }

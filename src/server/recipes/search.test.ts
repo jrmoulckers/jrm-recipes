@@ -19,6 +19,7 @@ describe("parseRecipeSearch", () => {
       difficulty: undefined,
       maxTime: undefined,
       tags: [],
+      safeFor: undefined,
       sort: "newest",
     });
   });
@@ -101,6 +102,15 @@ describe("parseRecipeSearch", () => {
       maxTime: undefined,
     });
   });
+
+  it("keeps a safeFor member id and drops an empty one", () => {
+    expect(parseRecipeSearch({ safeFor: "mbr123" })).toMatchObject({
+      safeFor: "mbr123",
+    });
+    expect(parseRecipeSearch({ safeFor: "  " })).toMatchObject({
+      safeFor: undefined,
+    });
+  });
 });
 
 describe("hasActiveRecipeFilters / isDefaultRecipeView", () => {
@@ -112,6 +122,12 @@ describe("hasActiveRecipeFilters / isDefaultRecipeView", () => {
 
   it("detects an active filter", () => {
     const search = parseRecipeSearch({ tag: "weeknight" });
+    expect(hasActiveRecipeFilters(search)).toBe(true);
+    expect(isDefaultRecipeView(search)).toBe(false);
+  });
+
+  it("treats a safeFor member as an active filter", () => {
+    const search = parseRecipeSearch({ safeFor: "mbr123" });
     expect(hasActiveRecipeFilters(search)).toBe(true);
     expect(isDefaultRecipeView(search)).toBe(false);
   });
@@ -148,6 +164,7 @@ describe("recipeSearchToParams", () => {
       difficulty: "easy",
       maxTime: 30,
       tags: ["weeknight"],
+      safeFor: "mbr123",
       sort: "quickest",
     });
     const params = new URLSearchParams(qs);
@@ -156,6 +173,7 @@ describe("recipeSearchToParams", () => {
     expect(params.get("difficulty")).toBe("easy");
     expect(params.get("maxTime")).toBe("30");
     expect(params.get("tag")).toBe("weeknight");
+    expect(params.get("safeFor")).toBe("mbr123");
     expect(params.get("sort")).toBe("quickest");
   });
 

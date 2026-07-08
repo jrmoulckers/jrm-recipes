@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   and,
+  arrayContains,
   asc,
   desc,
   eq,
@@ -28,8 +29,12 @@ import {
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
 } from "~/lib/ratings";
+import { summarizeAllergens, isAllergen, type Allergen } from "~/lib/allergens";
+import { isDietaryTag } from "~/lib/substitutions";
+import { hasAllergenConflict } from "~/lib/dietary-match";
 import {
   groupMembers,
+  memberDietaryProfiles,
   recipeEvents,
   recipeIngredients,
   recipeSteps,
@@ -576,6 +581,28 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     ...searchFilterConditions(search),
   ];
 
+  // "Safe for <member>" (#405): resolve the chosen profile (owner-scoped) into
+  // the allergens they must avoid and the diets they follow. Diets are declared
+  // structurally on the recipe, so they filter in SQL; allergens are detected
+  // from ingredient text, so they filter in JS after the rows load.
+  let avoidAllergens: Allergen[] = [];
+  if (search.safeFor && viewer) {
+    const profile = await db.query.memberDietaryProfiles.findFirst({
+      where: and(
+        eq(memberDietaryProfiles.id, search.safeFor),
+        eq(memberDietaryProfiles.userId, viewer.id),
+      ),
+      columns: { allergens: true, diets: true },
+    });
+    if (profile) {
+      avoidAllergens = (profile.allergens ?? []).filter(isAllergen);
+      const requiredDiets = (profile.diets ?? []).filter(isDietaryTag);
+      if (requiredDiets.length > 0) {
+        conditions.push(arrayContains(recipes.dietaryFlags, requiredDiets));
+      }
+    }
+  }
+
   const like = search.q ? `%${escapeLike(search.q)}%` : null;
 
   // "Best match" ranks by the weighted field-match score, but only makes sense
@@ -603,11 +630,43 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
     },
   });
 
+  // "Safe for <member>" allergen filtering (#405) is best-effort text detection,
+  // so it runs in JS: pull the candidate rows' ingredients in one query and drop
+  // any recipe that carries an allergen the member must avoid.
+  let safeRows = rows;
+  if (avoidAllergens.length > 0 && rows.length > 0) {
+    const ingredientRows = await db
+      .select({
+        recipeId: recipeIngredients.recipeId,
+        item: recipeIngredients.item,
+      })
+      .from(recipeIngredients)
+      .where(
+        inArray(
+          recipeIngredients.recipeId,
+          rows.map((r) => r.id),
+        ),
+      );
+    const itemsByRecipe = new Map<string, string[]>();
+    for (const { recipeId, item } of ingredientRows) {
+      const list = itemsByRecipe.get(recipeId) ?? [];
+      list.push(item);
+      itemsByRecipe.set(recipeId, list);
+    }
+    safeRows = rows.filter(
+      (row) =>
+        !hasAllergenConflict(
+          avoidAllergens,
+          summarizeAllergens(itemsByRecipe.get(row.id) ?? []),
+        ),
+    );
+  }
+
   // Weighted "best match"/"top-rated" ordering is applied in SQL over the full
   // candidate set above, so the returned rows are already globally ranked. Attach
   // a lightweight match reason per row (and drop the ingredient text from the
   // payload — it was only needed to derive that reason).
-  return rows.map((row) => {
+  return safeRows.map((row) => {
     const { ingredients, ...rest } = row as typeof row & {
       ingredients?: { item: string }[];
     };

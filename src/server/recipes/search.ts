@@ -117,6 +117,8 @@ export const recipeSearchSchema = z.object({
   q: trimmedOptional(120),
   difficulty: z.enum(recipeDifficultyValues).optional().catch(undefined),
   maxTime: positiveIntFromParam,
+  // A saved family member's id — filters to recipes "safe for" them (#405).
+  safeFor: trimmedOptional(24),
   // Left optional here so the *contextual* default (relevance for a text query,
   // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
   sort: z.enum(recipeSortValues).optional().catch(undefined),
@@ -136,6 +138,7 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     q: first(params.q),
     difficulty: first(params.difficulty),
     maxTime: first(params.maxTime),
+    safeFor: first(params.safeFor),
     sort: first(params.sort),
   });
   return {
@@ -153,7 +156,8 @@ export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
     search.cuisines.length > 0 ||
     search.difficulty != null ||
     search.maxTime != null ||
-    search.tags.length > 0
+    search.tags.length > 0 ||
+    search.safeFor != null
   );
 }
 
@@ -179,6 +183,7 @@ export function recipeSearchToParams(
   if (search.difficulty) params.set("difficulty", search.difficulty);
   if (search.maxTime != null) params.set("maxTime", String(search.maxTime));
   for (const tag of search.tags ?? []) params.append("tag", tag);
+  if (search.safeFor) params.set("safeFor", search.safeFor);
   if (search.sort && search.sort !== defaultSortFor(search.q))
     params.set("sort", search.sort);
   return params;

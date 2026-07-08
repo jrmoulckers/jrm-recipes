@@ -15,6 +15,7 @@ import {
   suggestSearchTerm,
   type RecipeSearchResult,
 } from "~/server/recipes/queries";
+import { listMemberProfiles } from "~/server/dietary/queries";
 import {
   isDefaultRecipeView,
   parseRecipeSearch,
@@ -49,12 +50,20 @@ export default async function RecipesPage({
   const user = await getCurrentUser();
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
+  const dbReady = isDbConfigured();
   const [facets, savedSearches] = await Promise.all([
-    isDbConfigured()
+    dbReady
       ? listRecipeFacets(user, search)
       : Promise.resolve({ cuisines: [], tags: [] }),
     listMySavedSearches(user?.id),
   ]);
+  const members =
+    dbReady && user
+      ? (await listMemberProfiles(user.id)).map((m) => ({
+          id: m.id,
+          name: m.name,
+        }))
+      : [];
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -81,7 +90,7 @@ export default async function RecipesPage({
         </div>
       </div>
 
-      {!isDbConfigured() ? (
+      {!dbReady ? (
         <ConnectDbNotice />
       ) : (
         <>
@@ -89,6 +98,7 @@ export default async function RecipesPage({
             search={search}
             facets={facets}
             savedSearches={savedSearches}
+            members={members}
           />
           {browsing ? (
             <BrowseSections user={user} />
