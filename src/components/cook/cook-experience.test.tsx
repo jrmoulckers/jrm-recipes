@@ -584,3 +584,50 @@ describe("Cook Mode completion moment (issue #437)", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("Cook Mode collectible badges (issue #413)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  function renderKids(theme: "kids" | "kitchen" = "kids") {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme={theme}>
+          <CookExperience recipe={makeRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  it("awards and reveals a badge when a kid finishes cooking", () => {
+    renderKids();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.getByText(/new badges? earned/i)).toBeInTheDocument();
+    // Shelf is still collapsed, so the sticker shows exactly once (the reveal).
+    expect(screen.getAllByText("I made Sunday Sauce")).toHaveLength(1);
+  });
+
+  it("keeps earned badges on a revisitable shelf", () => {
+    renderKids();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    const shelfToggle = screen.getByRole("button", { name: /my badges/i });
+    fireEvent.click(shelfToggle);
+    expect(shelfToggle).toHaveAttribute("aria-expanded", "true");
+    // Now the sticker appears twice: the reveal and the shelf.
+    expect(screen.getAllByText("I made Sunday Sauce")).toHaveLength(2);
+  });
+
+  it("does not award or show badges in grown-up mode", () => {
+    renderKids("kitchen");
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.queryByText(/new badges? earned/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /my badges/i })).toBeNull();
+    expect(window.localStorage.getItem("heirloom-kids-badges")).toBeNull();
+  });
+});

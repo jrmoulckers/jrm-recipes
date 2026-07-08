@@ -60,6 +60,8 @@ import { TechniqueChips } from "./technique-chips";
 import { KidSafetyCallout } from "./kid-safety-callout";
 import { PreCookChecklist } from "./pre-cook-checklist";
 import { CookCompletion } from "./cook-completion";
+import { KidsBadgeReward } from "./kids-badge-reward";
+import { awardForCompletion, type KidBadge } from "./kids-rewards";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -171,7 +173,20 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   // (photo capture + badges) instead of navigating away instantly. `handleFinish`
   // is the real leave action, run when the child taps done/skip.
   const [finished, setFinished] = React.useState(false);
-  const openCompletion = React.useCallback(() => setFinished(true), []);
+  const [earnedBadges, setEarnedBadges] = React.useState<KidBadge[]>([]);
+  const openCompletion = React.useCallback(() => {
+    // Kids collect an on-device badge each finish (#413); grown-up cooks don't.
+    if (kidSafe) {
+      try {
+        setEarnedBadges(
+          awardForCompletion(recipe.title, recipe.slug).newlyEarned,
+        );
+      } catch {
+        /* storage unavailable — celebrate without badges */
+      }
+    }
+    setFinished(true);
+  }, [kidSafe, recipe.title, recipe.slug]);
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -437,7 +452,9 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           recipeTitle={recipe.title}
           celebratory={kidSafe}
           onDone={handleFinish}
-        />
+        >
+          {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
+        </CookCompletion>
       )}
     </div>
   );
