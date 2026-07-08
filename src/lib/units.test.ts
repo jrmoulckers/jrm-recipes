@@ -47,6 +47,32 @@ describe("formatQuantity", () => {
     expect(formatQuantity(0.5)).toBe("½");
     expect(formatQuantity(0.5, "pinch")).toBe("½");
   });
+
+  it("defaults to the app default locale (Western digits, dot decimal)", () => {
+    expect(formatQuantity(1.2)).toBe("1.2");
+    expect(formatQuantity(1.5, "ml")).toBe("1.5");
+  });
+
+  it("uses the locale's decimal separator for comma-decimal locales", () => {
+    expect(formatQuantity(1.2, undefined, "de-DE")).toBe("1,2");
+    expect(formatQuantity(1.5, "ml", "de-DE")).toBe("1,5");
+    // Whole numbers gain no thousands separator (grouping is disabled).
+    expect(formatQuantity(237, "ml", "de-DE")).toBe("237");
+  });
+
+  it("uses the locale's numbering system for non-Latin-digit locales", () => {
+    const out = formatQuantity(1.2, undefined, "ar");
+    // Arabic-Indic digits, not Western — and different from the en rendering.
+    expect(out).not.toBe("1.2");
+    expect(out).toMatch(/[\u0660-\u0669]/);
+    expect(formatQuantity(3, undefined, "ar")).toMatch(/[\u0660-\u0669]/);
+  });
+
+  it("keeps vulgar-fraction glyphs invariant, localizing only the whole part", () => {
+    expect(formatQuantity(0.5, "cup", "de-DE")).toBe("½");
+    expect(formatQuantity(2.5, "oz", "de-DE")).toBe("2½");
+    expect(formatQuantity(0.5, "cup", "ar")).toBe("½");
+  });
 });
 
 describe("scaleQuantity", () => {

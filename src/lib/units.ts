@@ -1,8 +1,12 @@
 /**
  * Ingredient quantity math: pretty fraction formatting, serving scaling, and
- * unit conversion. Pure and dependency-free so it's shared by the editor, the
- * recipe view, and offline cook mode — and easy to unit-test.
+ * unit conversion. Pure and side-effect-free so it's shared by the editor, the
+ * recipe view, and offline cook mode — and easy to unit-test. Decimal output is
+ * locale-aware (separators + numbering system); an optional `locale` argument
+ * defaults to {@link DEFAULT_LOCALE} so existing callers are unaffected.
  */
+
+import { DEFAULT_LOCALE } from "~/config/i18n";
 
 const VULGAR: Array<[number, string]> = [
   [1 / 8, "⅛"],
@@ -24,6 +28,30 @@ export function roundNice(n: number): number {
 }
 
 /**
+ * Map an app locale id to a BCP-47 tag suitable for `Intl` number formatting.
+ * Current CLDR resolves a region-less `ar` to Western ("latn") digits, but
+ * Heirloom's Arabic UI expects Arabic-Indic numerals, so pin the numbering
+ * system for the bare `ar` id. Every other locale (including region- or
+ * numbering-qualified Arabic like `ar-EG`) passes through unchanged.
+ */
+function numberingLocale(locale: string): string {
+  return locale === "ar" ? "ar-u-nu-arab" : locale;
+}
+
+/**
+ * Render a number with the active locale's decimal separator and numbering
+ * system (e.g. `1.5` → "1,5" in de-DE, Arabic-Indic digits in ar). Grouping is
+ * disabled so cooking quantities never gain a thousands separator. Values are
+ * pre-rounded by the callers, so three fraction digits is a safe ceiling.
+ */
+function formatDecimal(value: number, locale: string): string {
+  return new Intl.NumberFormat(numberingLocale(locale), {
+    useGrouping: false,
+    maximumFractionDigits: 3,
+  }).format(value);
+}
+
+/**
  * Format a number the way a recipe would: whole numbers plainly, common
  * fractions as vulgar glyphs (1.5 → "1½"), everything else to 2 decimals.
  *
@@ -31,40 +59,48 @@ export function roundNice(n: number): number {
  * rendered as plain decimals at a measurable precision instead of vulgar
  * fractions — a cook can't measure "⅓ g" or "½ ml". Omitting `unit` keeps the
  * imperial/fraction behavior, so existing callers are unaffected.
+ *
+ * Decimal and whole-number output is rendered through the active `locale`'s
+ * number formatter; the vulgar-fraction glyphs themselves stay locale-invariant.
  */
 export function formatQuantity(
   value: number | null | undefined,
   unit?: string | null,
+  locale: string = DEFAULT_LOCALE,
 ): string {
   if (value == null || Number.isNaN(value)) return "";
-  if (isMetricUnit(unit)) return formatMetricQuantity(value);
+  if (isMetricUnit(unit)) return formatMetricQuantity(value, locale);
   const n = roundNice(value);
-  if (n === 0) return "0";
+  if (n === 0) return formatDecimal(0, locale);
   const whole = Math.floor(n);
   const frac = n - whole;
-  if (frac < 0.02) return String(whole);
+  if (frac < 0.02) return formatDecimal(whole, locale);
 
   let best: { glyph: string; diff: number } | null = null;
   for (const [f, glyph] of VULGAR) {
     const diff = Math.abs(frac - f);
     if (diff < 0.03 && (!best || diff < best.diff)) best = { glyph, diff };
   }
-  if (best) return whole > 0 ? `${whole}${best.glyph}` : best.glyph;
+  if (best) {
+    return whole > 0
+      ? `${formatDecimal(whole, locale)}${best.glyph}`
+      : best.glyph;
+  }
 
   const rounded = Math.round(n * 100) / 100;
-  return String(rounded);
+  return formatDecimal(rounded, locale);
 }
 
 /**
  * Round a metric quantity to a precision a cook can actually measure and render
- * it as a decimal (never a vulgar fraction): whole grams/millilitres for
- * amounts ≥ 10, otherwise a single decimal place.
+ * it as a locale-aware decimal (never a vulgar fraction): whole grams/millilitres
+ * for amounts ≥ 10, otherwise a single decimal place.
  */
-function formatMetricQuantity(value: number): string {
+function formatMetricQuantity(value: number, locale: string): string {
   const n = roundNice(value);
-  if (n === 0) return "0";
+  if (n === 0) return formatDecimal(0, locale);
   const rounded = Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
-  return String(rounded);
+  return formatDecimal(rounded, locale);
 }
 
 // --- Units --------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AlertTriangle, Info, Minus, Plus, Users } from "lucide-react";
+import { useLocale } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import {
@@ -80,7 +81,12 @@ function measure(q: number | null, unit: string | null, system: System) {
   return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
 
-function amountLabel(ing: PanelIngredient, factor: number, system: System) {
+function amountLabel(
+  ing: PanelIngredient,
+  factor: number,
+  system: System,
+  locale: string,
+) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
   const m = measure(q, ing.unit, system);
@@ -88,8 +94,8 @@ function amountLabel(ing: PanelIngredient, factor: number, system: System) {
   if (m.q == null) return { number: "", unit: displayUnit(ing.unit, null) };
   const number =
     mMax?.q != null
-      ? `${formatQuantity(m.q)}–${formatQuantity(mMax.q)}`
-      : formatQuantity(m.q);
+      ? `${formatQuantity(m.q, undefined, locale)}–${formatQuantity(mMax.q, undefined, locale)}`
+      : formatQuantity(m.q, undefined, locale);
   return { number, unit: displayUnit(m.unit, m.q) };
 }
 
@@ -121,6 +127,7 @@ export function IngredientsPanel({
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
+  const locale = useLocale();
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
@@ -197,7 +204,7 @@ export function IngredientsPanel({
             </Button>
             <div className="min-w-24 text-center">
               <div className="font-display text-xl font-semibold tabular-nums">
-                {formatQuantity(servings)}
+                {formatQuantity(servings, undefined, locale)}
               </div>
               <div className="text-xs text-muted-foreground">
                 {servingsNoun ?? "servings"}
@@ -301,7 +308,7 @@ export function IngredientsPanel({
             )}
             <ul className="flex flex-col">
               {items.map((ing) => {
-                const { number, unit } = amountLabel(ing, factor, system);
+                const { number, unit } = amountLabel(ing, factor, system, locale);
                 const isChecked = checked.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
