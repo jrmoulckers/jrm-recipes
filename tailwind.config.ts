@@ -81,6 +81,15 @@ const config = {
         token: "var(--shadow)",
         "token-lg": "var(--shadow-lg)",
       },
+      /**
+       * Focus rings are token-driven: `ring-2` resolves to `--ring-width`
+       * (2px by default, 3px in Kids / Simple / high-contrast) so every
+       * `focus-visible:ring-2` scales with the mode instead of being pinned to
+       * a literal 2px. This is the single canonical focus width (issue #85).
+       */
+      ringWidth: {
+        2: "var(--ring-width)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
