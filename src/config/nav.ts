@@ -71,3 +71,19 @@ export const primaryNav: NavItem[] = [
     match: (p) => p === "/recipes/new",
   },
 ];
+
+/** A marketing/informational link surfaced in the site footer. */
+export type FooterNavItem = {
+  href: Route;
+  /** Key into the `footer` message namespace (see src/messages/*.json). */
+  labelKey: "pricing";
+};
+
+/**
+ * Secondary links shown in the footer (issue #312). Kept here so the pricing
+ * surface has a single source of truth for its route; labels stay localized via
+ * the `footer` message namespace.
+ */
+export const footerNav: FooterNavItem[] = [
+  { href: "/pricing", labelKey: "pricing" },
+];
