@@ -110,15 +110,30 @@ export default function manifest(): MetadataRoute.Manifest {
         label: "Hands-free Cook Mode with step timers",
       },
     ],
-    // Receive a link/text shared from another app and forward it into the
-    // recipe importer. GET keeps it simple; the /import route does the routing.
+    // Receive a link/text OR a shared photo from another app and forward it
+    // into the recipe importer. POST + multipart is required to accept files;
+    // the /import route uploads a shared image and routes text/url shares.
     share_target: {
       action: "/import",
-      method: "GET",
+      method: "POST",
+      enctype: "multipart/form-data",
       params: {
         title: "title",
         text: "text",
         url: "url",
+        files: [
+          {
+            name: "photo",
+            accept: [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic",
+              "image/heif",
+              "image/gif",
+            ],
+          },
+        ],
       },
     },
   };

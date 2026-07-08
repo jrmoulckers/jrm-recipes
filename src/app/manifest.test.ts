@@ -64,14 +64,21 @@ describe("manifest", () => {
     }
   });
 
-  it("declares a well-formed GET share_target", () => {
+  it("declares a POST share_target that accepts shared photos", () => {
     expect(m.share_target).toBeDefined();
     expect(m.share_target?.action).toBe("/import");
-    expect(String(m.share_target?.method).toUpperCase()).toBe("GET");
-    expect(m.share_target?.params).toEqual({
-      title: "title",
-      text: "text",
-      url: "url",
-    });
+    expect(String(m.share_target?.method).toUpperCase()).toBe("POST");
+    expect(m.share_target?.enctype).toBe("multipart/form-data");
+    // Text/url fields stay for backward-compatible link shares.
+    expect(m.share_target?.params.title).toBe("title");
+    expect(m.share_target?.params.text).toBe("text");
+    expect(m.share_target?.params.url).toBe("url");
+    // Image files are declared so the OS offers Heirloom for photo shares.
+    const files = m.share_target?.params.files;
+    const file = Array.isArray(files) ? files[0] : files;
+    expect(file?.name).toBe("photo");
+    expect(Array.isArray(file?.accept) ? file?.accept : [file?.accept]).toContain(
+      "image/jpeg",
+    );
   });
 });
