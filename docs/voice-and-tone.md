@@ -105,6 +105,22 @@ who can't see the screen — treat them as first-class copy, not afterthoughts.
 - Keep visually-hidden helpers (`<span className="sr-only">…</span>`) consistent
   with this convention when an icon needs extra spoken context.
 
+## Onboarding & first-run
+
+A first-time, empty account gets a short, encouraging welcome — not a wall of
+instructions. Orient people to the core loop, then get out of the way.
+
+- Lead with warmth and the payoff: "Welcome to Heirloom 👋" /
+  "Three little steps to keep your family's recipes alive."
+- Frame the loop as **create → cook → share**, one friendly line each. Keep
+  step bodies to a single sentence and lead with a verb.
+- One primary CTA ("Create your first recipe"); everything else is quiet.
+- Always dismissible ("Maybe later"), and dismissal sticks — never nag on
+  return visits, and never show once the user has content.
+- Centralize the strings (`src/config/onboarding-copy.ts`) so the moment can be
+  localized or mode-adapted later.
+
+
 
 
 
