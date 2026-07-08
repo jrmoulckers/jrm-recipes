@@ -22,6 +22,38 @@ export function ratingSummary(values: { value: number }[]): RatingSummary {
 }
 
 /**
+ * A per-star rating distribution, ordered 5→1 for display. Each entry is the
+ * number of ratings at that star value.
+ */
+export type RatingDistributionRow = { star: number; count: number };
+
+/** Average + count + the 5→1 per-star distribution for a breakdown UI (#334). */
+export type RatingBreakdown = RatingSummary & {
+  distribution: RatingDistributionRow[];
+};
+
+/**
+ * Aggregate 1–5 ratings into an average, a count, and a 5→1 per-star
+ * distribution. Values are rounded to the nearest star and out-of-range values
+ * are ignored, mirroring the DB range check. Always returns all five rows (a
+ * star with no ratings has `count: 0`) so the bar chart renders consistently.
+ */
+export function ratingBreakdown(values: { value: number }[]): RatingBreakdown {
+  const summary = ratingSummary(values);
+  const counts = [0, 0, 0, 0, 0]; // index 0 → 1 star … index 4 → 5 stars
+  for (const { value } of values) {
+    const star = Math.round(value);
+    if (star >= 1 && star <= 5) counts[star - 1]! += 1;
+  }
+  const distribution: RatingDistributionRow[] = [5, 4, 3, 2, 1].map((star) => ({
+    star,
+    count: counts[star - 1]!,
+  }));
+  return { average: summary.average, count: summary.count, distribution };
+}
+
+
+/**
  * Build a {@link RatingSummary} from denormalized aggregates (issue #154):
  * `recipes.ratingCount` + `recipes.ratingSum`. Same rounding as
  * {@link ratingSummary} so a card fed by the stored aggregates and one fed by a

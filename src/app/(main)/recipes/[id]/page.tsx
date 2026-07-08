@@ -662,6 +662,7 @@ export default async function RecipePage({
                   recipeId={recipe.id}
                   recipeSlug={recipe.slug}
                   summary={{ average, count }}
+                  viewer={user ?? null}
                   currentUserId={user?.id ?? null}
                   isRecipeOwner={isOwner}
                   canInteract={Boolean(user)}
