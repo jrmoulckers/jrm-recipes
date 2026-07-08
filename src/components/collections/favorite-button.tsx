@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { toggleFavoriteAction } from "~/server/collections/actions";
 import { cn } from "~/lib/utils";
+import { useReducedMotion } from "~/lib/use-reduced-motion";
 import { Button } from "~/components/ui/button";
 
 type FavoriteButtonProps = {
@@ -31,6 +32,10 @@ export function FavoriteButton({
   const router = useRouter();
   const [favorited, setFavorited] = React.useState(initialFavorited);
   const [pending, startTransition] = React.useTransition();
+  const reducedMotion = useReducedMotion();
+  // Bumped only when the user favorites (never on mount, prop-sync, or
+  // un-favorite), which remounts the glyph so the pop/burst replays once.
+  const [burstKey, setBurstKey] = React.useState(0);
 
   React.useEffect(() => {
     setFavorited(initialFavorited);
@@ -49,6 +54,9 @@ export function FavoriteButton({
     const previous = favorited;
     const next = !favorited;
     setFavorited(next);
+    if (next && !reducedMotion) {
+      setBurstKey((key) => key + 1);
+    }
 
     startTransition(async () => {
       const result = await toggleFavoriteAction({ recipeId, recipeSlug });
@@ -75,12 +83,7 @@ export function FavoriteButton({
         aria-pressed={favorited}
         className={className}
       >
-        <Heart
-          className={cn(
-            "transition-colors",
-            favorited && "fill-primary text-primary",
-          )}
-        />
+        <HeartGlyph favorited={favorited} burstKey={burstKey} />
         {favorited ? "Saved" : "Save"}
       </Button>
     );
@@ -101,7 +104,45 @@ export function FavoriteButton({
         className,
       )}
     >
-      <Heart className={cn("size-5", favorited && "fill-primary text-primary")} />
+      <HeartGlyph favorited={favorited} burstKey={burstKey} iconClassName="size-5" />
     </button>
+  );
+}
+
+/**
+ * The heart icon plus a one-shot radiating ring. `burstKey` is the retrigger
+ * handle: while it's 0 nothing animates (safe on first render / already-saved),
+ * and each increment remounts the glyph so the heartbeat pop + burst play once.
+ */
+function HeartGlyph({
+  favorited,
+  burstKey,
+  iconClassName,
+}: {
+  favorited: boolean;
+  burstKey: number;
+  iconClassName?: string;
+}) {
+  return (
+    <span className="relative inline-flex shrink-0 items-center justify-center">
+      {burstKey > 0 && (
+        <span
+          key={burstKey}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+        >
+          <span className="size-full rounded-full border border-primary/70 motion-safe:animate-heart-burst" />
+        </span>
+      )}
+      <Heart
+        key={`heart-${burstKey}`}
+        className={cn(
+          "relative z-10 transition-colors",
+          favorited && "fill-primary text-primary",
+          burstKey > 0 && "motion-safe:animate-heart-pop",
+          iconClassName,
+        )}
+      />
+    </span>
   );
 }

@@ -52,6 +52,8 @@ import {
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
 import { detectStepHazards } from "~/lib/kid-safety";
+import { HAPTICS, vibrate } from "~/lib/haptics";
+import { useReducedMotion } from "~/lib/use-reduced-motion";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
@@ -103,9 +105,28 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     clearSession,
   } = useCookSession(recipe, { householdSize: household.size });
 
+  const canGoPrevious = stepIndex > 0;
+  const canGoNext = stepIndex < totalSteps - 1;
+  const reducedMotion = useReducedMotion();
+
+  const navPrevious = React.useCallback(() => {
+    if (stepIndex <= 0) return;
+    vibrate(HAPTICS.stepNav);
+    goPrevious();
+  }, [goPrevious, stepIndex]);
+
+  const navNext = React.useCallback(() => {
+    if (stepIndex >= totalSteps - 1) return;
+    vibrate(HAPTICS.stepNav);
+    goNext();
+  }, [goNext, stepIndex, totalSteps]);
+
   const oneHandedNav = useOneHandedNav({
-    onNext: goNext,
-    onPrevious: goPrevious,
+    onNext: navNext,
+    onPrevious: navPrevious,
+    canNext: canGoNext,
+    canPrevious: canGoPrevious,
+    reduced: reducedMotion,
   });
 
   const ingredientControls = React.useMemo<IngredientsPanelControls>(
@@ -121,7 +142,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
   );
 
-  const handleFinish = React.useCallback(() => {
+  const [celebrating, setCelebrating] = React.useState(false);
+  const celebrationTimeoutRef = React.useRef<number | null>(null);
+
+  const finishAndLeave = React.useCallback(() => {
     clearSession();
     toast.success("Nicely done — recipe complete!", {
       description: `Log this cook to add ${recipe.title} to your journal.`,
@@ -170,7 +194,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   }, [readyStorageKey]);
 
   // "You did it!" completion moment (#437): finishing opens a celebratory screen
-  // (photo capture + badges) instead of navigating away instantly. `handleFinish`
+  // (photo capture + badges) instead of navigating away instantly. `finishAndLeave`
   // is the real leave action, run when the child taps done/skip.
   const [finished, setFinished] = React.useState(false);
   const [earnedBadges, setEarnedBadges] = React.useState<KidBadge[]>([]);
@@ -188,6 +212,32 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     setFinished(true);
   }, [kidSafe, recipe.title, recipe.slug]);
 
+  // Completion celebration (#121): finishing plays a short success beat (progress
+  // flourish + a checkmark burst layered above the completion screen) as the
+  // "You did it!" screen (#437) opens. Under reduced motion — OS,
+  // data-motion="reduced", or Simple mode — skip the beat and open the screen
+  // straight away so nothing is delayed.
+  const handleFinish = React.useCallback(() => {
+    if (!reducedMotion) {
+      setCelebrating(true);
+      vibrate(HAPTICS.timerComplete);
+      celebrationTimeoutRef.current = window.setTimeout(
+        () => setCelebrating(false),
+        750,
+      );
+    }
+    openCompletion();
+  }, [reducedMotion, openCompletion]);
+
+  React.useEffect(
+    () => () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   React.useEffect(() => {
     if (totalSteps === 0) return;
 
@@ -196,13 +246,13 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       if (!shortcut) return;
 
       event.preventDefault();
-      if (shortcut === "previous") goPrevious();
-      else goNext();
+      if (shortcut === "previous") navPrevious();
+      else navNext();
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goNext, goPrevious, totalSteps]);
+  }, [navNext, navPrevious, totalSteps]);
 
   const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
   const hasNavigatedRef = React.useRef(false);
@@ -235,6 +285,11 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     if (readAloud && currentInstruction) speak(currentInstruction);
   }, [readAloud, currentStepId, currentInstruction, speak]);
 
+  // Step-transition direction refs (#76) are declared before the empty-state
+  // early return below so hooks always run in the same order.
+  const prevStepIndexRef = React.useRef(stepIndex);
+  const stepDirectionRef = React.useRef<"forward" | "back" | null>(null);
+
   if (!firstStep) {
     return (
       <EmptyCookExperience
@@ -264,17 +319,45 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       ? (timers[currentStep.id] ?? makeTimer(currentStep.timerSeconds))
       : null;
   const progressValue = ((stepIndex + 1) / totalSteps) * 100;
-  const canGoPrevious = stepIndex > 0;
-  const canGoNext = stepIndex < totalSteps - 1;
+
+  // Directional step transition (#76): compare the live step index to the
+  // previous render's to classify a nav as forward/back, so the re-mounted step
+  // card slides in from the matching edge. First render (and resumed restores)
+  // has no direction yet and simply fades. Reduced motion is handled globally by
+  // the `motion-safe:` prefix + globals.css / a11y.css.
+  if (prevStepIndexRef.current !== stepIndex) {
+    stepDirectionRef.current =
+      stepIndex > prevStepIndexRef.current ? "forward" : "back";
+    prevStepIndexRef.current = stepIndex;
+  }
+  const stepEnterAnimation =
+    stepDirectionRef.current === "forward"
+      ? "motion-safe:animate-step-in-from-right"
+      : stepDirectionRef.current === "back"
+        ? "motion-safe:animate-step-in-from-left"
+        : "motion-safe:animate-fade-in";
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      {celebrating && (
+        <div
+          className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
+          aria-hidden="true"
+        >
+          <span className="relative flex items-center justify-center">
+            <span className="absolute inline-flex size-28 rounded-full bg-success/25 motion-safe:animate-celebrate-burst" />
+            <span className="absolute inline-flex size-40 rounded-full bg-success/10 motion-safe:animate-celebrate-burst [animation-delay:80ms]" />
+            <CheckCircle2 className="relative size-24 text-success drop-shadow-lg motion-safe:animate-celebrate-pop" />
+          </span>
+        </div>
+      )}
       <CookHeader
         recipe={recipe}
         runningTimerCount={runningTimerCount}
         currentIndex={stepIndex}
         totalSteps={totalSteps}
         progressValue={progressValue}
+        celebrating={celebrating}
         wakeLockStatus={wakeLockStatus}
         onStepSelect={goToStep}
         ingredientControls={ingredientControls}
@@ -291,9 +374,16 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           key={currentStep.id}
           aria-labelledby="current-step-title"
           onClick={oneHandedNav.onClick}
-          onTouchStart={oneHandedNav.onTouchStart}
-          onTouchEnd={oneHandedNav.onTouchEnd}
-          className="relative min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg motion-safe:animate-fade-in"
+          onPointerDown={oneHandedNav.onPointerDown}
+          onPointerMove={oneHandedNav.onPointerMove}
+          onPointerUp={oneHandedNav.onPointerUp}
+          onPointerCancel={oneHandedNav.onPointerCancel}
+          style={oneHandedNav.dragStyle}
+          className={cn(
+            "relative min-w-0 touch-pan-y overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-token-lg",
+            stepEnterAnimation,
+            oneHandedNav.dragging && "cursor-grabbing select-none",
+          )}
         >
           {canGoPrevious && (
             <span
@@ -415,7 +505,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={goPrevious}
+            onClick={navPrevious}
             disabled={!canGoPrevious}
           >
             <ArrowLeft />
@@ -439,7 +529,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
             )}
-            onClick={canGoNext ? goNext : openCompletion}
+            onClick={canGoNext ? navNext : handleFinish}
           >
             {canGoNext ? "Next" : "Done"}
             {canGoNext ? <ArrowRight /> : <CheckCircle2 />}
@@ -451,7 +541,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         <CookCompletion
           recipeTitle={recipe.title}
           celebratory={kidSafe}
-          onDone={handleFinish}
+          onDone={finishAndLeave}
         >
           {kidSafe ? <KidsBadgeReward newlyEarned={earnedBadges} /> : null}
         </CookCompletion>
@@ -466,6 +556,7 @@ function CookHeader({
   currentIndex,
   totalSteps,
   progressValue,
+  celebrating,
   wakeLockStatus,
   onStepSelect,
   ingredientControls,
@@ -475,6 +566,7 @@ function CookHeader({
   currentIndex: number;
   totalSteps: number;
   progressValue: number;
+  celebrating: boolean;
   wakeLockStatus: string;
   onStepSelect: (index: number) => void;
   ingredientControls: IngredientsPanelControls;
@@ -545,7 +637,10 @@ function CookHeader({
           aria-label={t("progress")}
         >
           <ProgressPrimitive.Indicator
-            className="h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none"
+            className={cn(
+              "h-full bg-primary transition-[width] duration-200 ease-out motion-reduce:transition-none",
+              celebrating && "motion-safe:animate-progress-flourish",
+            )}
             style={{ width: `${progressValue}%` }}
           />
         </ProgressPrimitive.Root>
@@ -835,15 +930,24 @@ function StepTimerCard({
   const { kidSafe } = useThemeBehavior();
   const isRunning = timer.status === "running";
   const isComplete = timer.status === "complete";
+  // Rising-tension cue in the final seconds of a *running* countdown only.
+  const urgent = isRunning && timer.remaining > 0 && timer.remaining <= 10;
+  const critical = urgent && timer.remaining <= 5;
 
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token",
+        "relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token",
         isComplete && "border-success/40 bg-success/10 ring-2 ring-success/20",
       )}
       aria-labelledby="step-timer-title"
     >
+      {isComplete && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
+        />
+      )}
       <div className="flex items-center justify-between gap-3">
         <h2
           id="step-timer-title"
@@ -871,8 +975,18 @@ function StepTimerCard({
         {kidSafe ? (
           <TimerRing timer={timer} />
         ) : (
-          <div className="font-mono text-5xl font-bold tabular-nums tracking-tight sm:text-6xl">
-            {formatCountdown(timer.remaining)}
+          <div
+            className={cn(
+              "font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl",
+              critical ? "text-destructive" : urgent ? "text-warning" : undefined,
+            )}
+          >
+            <span
+              key={urgent ? timer.remaining : "steady"}
+              className={cn("inline-block", urgent && "motion-safe:animate-tick-pulse")}
+            >
+              {formatCountdown(timer.remaining)}
+            </span>
           </div>
         )}
         <p className="mt-2 text-sm text-muted-foreground">
@@ -1021,11 +1135,17 @@ function ActiveTimersPanel({
             <div
               key={step.id}
               className={cn(
-                "rounded-xl border border-border bg-background p-3",
+                "relative rounded-xl border border-border bg-background p-3",
                 isCurrent && "border-primary/40 bg-primary/10",
                 timer.status === "complete" && "border-success/40 bg-success/10",
               )}
             >
+              {timer.status === "complete" && (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
+                />
+              )}
               <button
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-start"

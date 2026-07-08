@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Info, Minus, Plus, Users } from "lucide-react";
+import { AlertTriangle, Check, Info, Minus, Plus, Users } from "lucide-react";
 import { useLocale } from "next-intl";
 
 import { cn } from "~/lib/utils";
+import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
   displayUnit,
   expandKidUnit,
@@ -145,6 +146,10 @@ export function IngredientsPanel({
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
     new Set(),
   );
+  // Gate check-off animations to post-mount so pre-checked items (e.g. a
+  // resumed cook session) render statically instead of animating on load.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -188,6 +193,56 @@ export function IngredientsPanel({
     return [...map.entries()];
   }, [ingredients]);
 
+  // Displayed amount per ingredient for the current servings/system, plus the
+  // set that changed since the last render so only recomputed rows flash.
+  const amounts = React.useMemo(() => {
+    const map = new Map<string, { number: string; unit: string }>();
+    for (const ing of ingredients) {
+      map.set(ing.id, amountLabel(ing, factor, system, locale, kidSafe));
+    }
+    return map;
+  }, [ingredients, factor, system, locale, kidSafe]);
+
+  const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
+  const changedAmountIds = React.useMemo(() => {
+    const changed = new Set<string>();
+    const prev = prevAmountsRef.current;
+    for (const [id, { number, unit }] of amounts) {
+      const key = `${number}\u0000${unit}`;
+      const before = prev.get(id);
+      if (before !== undefined && before !== key && number !== "") {
+        changed.add(id);
+      }
+    }
+    return changed;
+  }, [amounts]);
+
+  React.useEffect(() => {
+    const map = prevAmountsRef.current;
+    for (const [id, { number, unit }] of amounts) {
+      map.set(id, `${number}\u0000${unit}`);
+    }
+  }, [amounts]);
+
+  // Only animate a check-off when a row actually flips unchecked -> checked in
+  // this render. Rows already checked on first paint (a resumed cook session)
+  // are absorbed into the seeded ref and never replay their pop/strike motion.
+  const prevCheckedRef = React.useRef<Set<string> | null>(null);
+  const justCheckedIds = React.useMemo(() => {
+    const just = new Set<string>();
+    const prev = prevCheckedRef.current;
+    if (prev) {
+      for (const id of checked) {
+        if (!prev.has(id)) just.add(id);
+      }
+    }
+    return just;
+  }, [checked]);
+
+  React.useEffect(() => {
+    prevCheckedRef.current = new Set(checked);
+  }, [checked]);
+
   function updateServings(next: number) {
     if (controls) controls.onServingsChange(next);
     else setServingsInternal(next);
@@ -199,6 +254,7 @@ export function IngredientsPanel({
   }
 
   function toggle(id: string) {
+    if (!checked.has(id)) vibrate(HAPTICS.select);
     if (controls) {
       controls.onToggleChecked(id);
       return;
@@ -226,8 +282,16 @@ export function IngredientsPanel({
               <Minus />
             </Button>
             <div className="min-w-24 text-center">
-              <div className="font-display text-xl font-semibold tabular-nums">
-                {formatQuantity(servings, undefined, locale)}
+              <div className="overflow-hidden font-display text-xl font-semibold tabular-nums">
+                <span
+                  key={servings}
+                  className={cn(
+                    "inline-block",
+                    mounted && "motion-safe:animate-number-roll",
+                  )}
+                >
+                  {formatQuantity(servings, undefined, locale)}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground">
                 {servingsNoun ?? "servings"}
@@ -331,14 +395,13 @@ export function IngredientsPanel({
             )}
             <ul className="flex flex-col">
               {items.map((ing) => {
-                const { number, unit } = amountLabel(
-                  ing,
-                  factor,
-                  system,
-                  locale,
-                  kidSafe,
-                );
+                const { number, unit } = amounts.get(ing.id) ?? {
+                  number: "",
+                  unit: "",
+                };
+                const amountChanged = changedAmountIds.has(ing.id);
                 const isChecked = checked.has(ing.id);
+                const justChecked = justCheckedIds.has(ing.id);
                 const nudge =
                   ing.quantityMax == null
                     ? scalingNudge(
@@ -387,16 +450,25 @@ export function IngredientsPanel({
                       >
                         <span
                           className={cn(
-                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 text-[10px] transition-colors",
+                            "flex size-5 shrink-0 translate-y-0.5 items-center justify-center rounded-md border-2 transition-colors",
                             isChecked
                               ? "border-primary bg-primary text-primary-foreground"
                               : flagged
                                 ? "border-warning"
                                 : "border-border",
+                            justChecked && isChecked && "motion-safe:animate-check-box-pop",
                           )}
                           aria-hidden
                         >
-                          {isChecked ? "✓" : ""}
+                          {isChecked && (
+                            <Check
+                              className={cn(
+                                "size-3.5",
+                                justChecked && "motion-safe:animate-check-pop",
+                              )}
+                              strokeWidth={3}
+                            />
+                          )}
                         </span>
                         {kidSafe && (
                           <span
@@ -408,12 +480,32 @@ export function IngredientsPanel({
                         )}
                         <span
                           className={cn(
-                            "flex-1 text-[0.95rem]",
-                            isChecked && "text-muted-foreground line-through",
+                            "relative flex-1 text-[0.95rem]",
+                            isChecked && "text-muted-foreground",
                           )}
                         >
+                          {isChecked && (
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 flex items-center"
+                            >
+                              <span
+                                className={cn(
+                                  "h-px w-full origin-left bg-current",
+                                  justChecked && "motion-safe:animate-strike-in",
+                                )}
+                              />
+                            </span>
+                          )}
                           {(number || unit) && (
-                            <span className="font-semibold tabular-nums">
+                            <span
+                              key={amountChanged ? `amt-${servings}-${system}` : "amt"}
+                              className={cn(
+                                "font-semibold tabular-nums",
+                                amountChanged &&
+                                  "-mx-1 rounded px-1 motion-safe:animate-amount-flash",
+                              )}
+                            >
                               {number}
                               {unit ? ` ${unit}` : ""}{" "}
                             </span>

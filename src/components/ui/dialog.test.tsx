@@ -88,3 +88,31 @@ describe("DialogContent size variants", () => {
     }
   });
 });
+
+describe("DialogContent sheet variant motion", () => {
+  it("slides in a direction-aware axis so the sheet hugs its end-anchored edge", () => {
+    render(
+      <Dialog open>
+        <DialogContent variant="sheet">
+          <DialogTitle>Title</DialogTitle>
+          <DialogDescription>Body</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    );
+    const content = screen.getByRole("dialog");
+    // LTR: dock + slide on the right edge.
+    expect(content.className).toContain(
+      "ltr:data-[state=open]:animate-slide-in-from-right",
+    );
+    expect(content.className).toContain(
+      "ltr:data-[state=closed]:animate-slide-out-to-right",
+    );
+    // RTL: end-0 resolves to the left, so the slide must flip too (issue #93).
+    expect(content.className).toContain(
+      "rtl:data-[state=open]:animate-slide-in-from-left",
+    );
+    expect(content.className).toContain(
+      "rtl:data-[state=closed]:animate-slide-out-to-left",
+    );
+  });
+});

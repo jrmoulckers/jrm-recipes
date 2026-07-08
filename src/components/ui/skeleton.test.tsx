@@ -41,6 +41,28 @@ describe("Skeleton", () => {
     const base = container.firstElementChild as HTMLElement;
     expect(base.className).toContain("rounded-none");
   });
+
+  it("exposes a non-visual loading status (aria-busy) so it isn't purely visual", () => {
+    const { container } = render(<Skeleton />);
+    const base = container.firstElementChild as HTMLElement;
+    expect(base).toHaveAttribute("role", "status");
+    expect(base).toHaveAttribute("aria-busy", "true");
+    expect(base).toHaveAttribute("aria-label", "Loading…");
+  });
+
+  it("accepts a custom loading label", () => {
+    const { container } = render(<Skeleton label="Loading photo…" />);
+    const base = container.firstElementChild as HTMLElement;
+    expect(base).toHaveAttribute("aria-label", "Loading photo…");
+  });
+
+  it("drops the status when decorative, marking the block aria-hidden", () => {
+    const { container } = render(<Skeleton decorative />);
+    const base = container.firstElementChild as HTMLElement;
+    expect(base).not.toHaveAttribute("role");
+    expect(base).not.toHaveAttribute("aria-busy");
+    expect(base).toHaveAttribute("aria-hidden", "true");
+  });
 });
 
 describe("composed skeletons", () => {
@@ -51,6 +73,16 @@ describe("composed skeletons", () => {
     expect(card.className).toContain("border-border");
     // image + 3 text lines + 3 meta chips = 7 skeleton blocks.
     expect(container.querySelectorAll("[data-skeleton-shimmer]")).toHaveLength(7);
+  });
+
+  it("exposes exactly one loading status per composed skeleton", () => {
+    const { container } = render(<RecipeCardSkeleton />);
+    const card = container.firstElementChild as HTMLElement;
+    // Root carries the single status; the inner blocks are decorative so a card
+    // announces "loading" once, not seven times.
+    expect(card).toHaveAttribute("role", "status");
+    expect(card).toHaveAttribute("aria-busy", "true");
+    expect(container.querySelectorAll('[role="status"]')).toHaveLength(1);
   });
 
   it("ListRowSkeleton mirrors a media-and-text row", () => {

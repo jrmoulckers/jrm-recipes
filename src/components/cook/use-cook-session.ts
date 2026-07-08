@@ -18,6 +18,7 @@ import {
 } from "~/lib/cook-state";
 import { defaultSystemForLocale } from "~/lib/units";
 import { track } from "~/lib/analytics";
+import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
   beginCookSession,
   endCookSession,
@@ -260,6 +261,7 @@ export function useCookSession(
 
       announcedTimersRef.current.add(step.id);
       playTimerTone();
+      vibrate(HAPTICS.timerComplete);
       track("cook_timer_completed", { recipeId: recipe.id });
       toast.success(`Step ${index + 1} timer is done`, {
         description: step.section ?? recipe.title,
