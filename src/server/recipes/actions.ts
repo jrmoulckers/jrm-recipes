@@ -22,6 +22,27 @@ export type ActionResult =
 const NO_DB =
   "Recipes need a database. Set DATABASE_URL (see .env.example) to start saving.";
 
+/**
+ * Message shown when a recipe is assigned to a group its author doesn't belong
+ * to. Mirrors the `FORBIDDEN` guard in {@link createRecipe}/{@link updateRecipe}
+ * back onto the `groupId` field so the editor highlights the group picker.
+ */
+const GROUP_FORBIDDEN =
+  "You can only share a recipe with a group you belong to.";
+
+/** True when a mutation rejected a group assignment for lack of membership. */
+function isForbidden(error: unknown): boolean {
+  return error instanceof Error && error.message === "FORBIDDEN";
+}
+
+function groupForbiddenResult(): ActionResult {
+  return {
+    ok: false,
+    error: GROUP_FORBIDDEN,
+    fieldErrors: { groupId: [GROUP_FORBIDDEN] },
+  };
+}
+
 export async function createRecipeAction(
   input: RecipeInput,
 ): Promise<ActionResult> {
@@ -35,10 +56,15 @@ export async function createRecipeAction(
     };
   }
   const user = await requireUser();
-  const recipe = await createRecipe(parsed.data, user);
-  revalidatePath("/recipes");
-  revalidatePath("/");
-  return { ok: true, id: recipe.id, slug: recipe.slug };
+  try {
+    const recipe = await createRecipe(parsed.data, user);
+    revalidatePath("/recipes");
+    revalidatePath("/");
+    return { ok: true, id: recipe.id, slug: recipe.slug };
+  } catch (error) {
+    if (isForbidden(error)) return groupForbiddenResult();
+    throw error;
+  }
 }
 
 export async function updateRecipeAction(
@@ -60,7 +86,8 @@ export async function updateRecipeAction(
     revalidatePath("/recipes");
     revalidatePath(`/recipes/${id}`);
     return { ok: true, id, slug: recipe.slug };
-  } catch {
+  } catch (error) {
+    if (isForbidden(error)) return groupForbiddenResult();
     return { ok: false, error: "We couldn't find that recipe to update." };
   }
 }
