@@ -29,6 +29,8 @@ import {
   type MemberNeeds,
 } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
+import { ingredientIcon } from "~/lib/ingredient-icons";
+import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
@@ -129,6 +131,8 @@ export function IngredientsPanel({
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
+  // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
+  const { kidSafe } = useThemeBehavior();
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
@@ -370,6 +374,14 @@ export function IngredientsPanel({
                         >
                           {isChecked ? "✓" : ""}
                         </span>
+                        {kidSafe && (
+                          <span
+                            aria-hidden
+                            className="shrink-0 translate-y-0.5 text-xl leading-none"
+                          >
+                            {ingredientIcon(ing.item)}
+                          </span>
+                        )}
                         <span
                           className={cn(
                             "flex-1 text-[0.95rem]",
