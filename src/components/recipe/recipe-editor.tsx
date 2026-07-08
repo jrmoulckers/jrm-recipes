@@ -104,6 +104,9 @@ const EMPTY_STEP: Omit<StepRow, "key"> = {
   techniques: "",
 };
 
+/** Stable empty field-error map — the initial/cleared useActionState value. */
+const NO_ERRORS: Record<string, string[]> = {};
+
 /**
  * The per-serving nutrition keys shared by {@link RecipeEditorValue}, the editor
  * form state, and the payload builder.
@@ -161,18 +164,7 @@ export function RecipeEditor({
 }) {
   const router = useRouter();
   const t = useTranslations("recipeEditor");
-  const [pending, startTransition] = React.useTransition();
-  const [errors, setErrors] = React.useState<Record<string, string[]>>({});
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
-  const errorKeys = Object.keys(errors);
-
-  // Move focus to the summary whenever a submit attempt produces errors so
-  // screen-reader and keyboard users land on the list of what needs fixing.
-  React.useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      errorSummaryRef.current?.focus();
-    }
-  }, [errors]);
   const [importUrl, setImportUrl] = React.useState("");
   const [importing, setImporting] = React.useState(false);
 
@@ -363,21 +355,29 @@ export function RecipeEditor({
     };
   }
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErrors({});
-    const payload = buildPayload();
-    if (!payload.title) {
-      setErrors({ title: ["Give your recipe a title"] });
-      toast.error("Your recipe needs a title.");
-      return;
-    }
-    if (payload.visibility === "group" && !payload.groupId) {
-      setErrors({ groupId: ["Choose a group for a group-visibility recipe"] });
-      toast.error("Pick a group, or change the recipe's visibility.");
-      return;
-    }
-    startTransition(async () => {
+  // Keep the payload builder fresh for the action closure without recreating
+  // the action each render — buildPayload closes over the latest form /
+  // ingredient / step state on every render.
+  const buildPayloadRef = React.useRef(buildPayload);
+  buildPayloadRef.current = buildPayload;
+
+  // #197: submit through useActionState + <form action>. Pending comes from the
+  // hook and the server's Zod field errors flow back as the returned state, so
+  // there's no manual useTransition or setErrors bookkeeping to keep in sync.
+  const [errors, formAction, pending] = React.useActionState(
+    async (
+      _prev: Record<string, string[]>,
+      _formData: FormData,
+    ): Promise<Record<string, string[]>> => {
+      const payload = buildPayloadRef.current();
+      if (!payload.title) {
+        toast.error("Your recipe needs a title.");
+        return { title: ["Give your recipe a title"] };
+      }
+      if (payload.visibility === "group" && !payload.groupId) {
+        toast.error("Pick a group, or change the recipe's visibility.");
+        return { groupId: ["Choose a group for a group-visibility recipe"] };
+      }
       const res =
         mode === "edit" && recipeId
           ? await updateRecipeAction(recipeId, payload)
@@ -386,19 +386,29 @@ export function RecipeEditor({
         toast.success(mode === "edit" ? "Recipe updated" : "Recipe created");
         router.push(recipeDetailPath(res));
         router.refresh();
-      } else {
-        setErrors(res.fieldErrors ?? {});
-        track("editor_save_failed", {
-          mode,
-          fieldCount: Object.keys(res.fieldErrors ?? {}).length,
-        });
-        toast.error(res.error);
+        return NO_ERRORS;
       }
-    });
-  }
+      track("editor_save_failed", {
+        mode,
+        fieldCount: Object.keys(res.fieldErrors ?? {}).length,
+      });
+      toast.error(res.error);
+      return res.fieldErrors ?? NO_ERRORS;
+    },
+    NO_ERRORS,
+  );
+  const errorKeys = Object.keys(errors);
+
+  // Move focus to the summary whenever a submit attempt produces errors so
+  // screen-reader and keyboard users land on the list of what needs fixing.
+  React.useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      errorSummaryRef.current?.focus();
+    }
+  }, [errors]);
 
   return (
-    <form onSubmit={onSubmit} className="container flex flex-col gap-8 py-8">
+    <form action={formAction} className="container flex flex-col gap-8 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight">
           {mode === "edit" ? "Edit recipe" : "New recipe"}
