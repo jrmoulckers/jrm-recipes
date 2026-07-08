@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { getCurrentUser } from "~/server/auth";
 import { getRecipe, type FullRecipe } from "~/server/recipes/queries";
+import { pickNutrition } from "~/lib/nutrition";
 import { CookExperience } from "~/components/cook/cook-experience";
 import type { CookRecipe } from "~/components/cook/types";
 
@@ -26,6 +27,7 @@ function serializeRecipe(recipe: FullRecipe): CookRecipe {
     totalMinutes: recipe.totalMinutes,
     notes: recipe.notes,
     householdId: recipe.groupId,
+    nutrition: pickNutrition(recipe),
     ingredients: recipe.ingredients.map((ingredient) => ({
       id: ingredient.id,
       position: ingredient.position,

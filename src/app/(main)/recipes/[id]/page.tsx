@@ -43,6 +43,7 @@ import {
   isFavorited,
 } from "~/server/collections/queries";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { pickNutrition } from "~/lib/nutrition";
 import { buildRecipeJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -392,6 +393,7 @@ export default async function RecipePage({
                     ingredients={recipe.ingredients}
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
+                    nutrition={pickNutrition(recipe)}
                   />
                 ) : (
                   <p className="text-muted-foreground">
