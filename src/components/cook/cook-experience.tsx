@@ -49,12 +49,14 @@ import {
   type TimerStatus,
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
+import { detectStepHazards } from "~/lib/kid-safety";
 import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
 
 import { IngredientsDrawer } from "./ingredients-drawer";
 import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
 import { KidSafetyCallout } from "./kid-safety-callout";
+import { PreCookChecklist } from "./pre-cook-checklist";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
@@ -68,8 +70,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
   const speech = useSpeech();
   const household = useHousehold();
   const router = useRouter();
-  // Kids mode's large-target flag genuinely upsizes the primary controls (#439).
-  const { largeTargets } = useThemeBehavior();
+  // Kids mode's large-target flag genuinely upsizes the primary controls (#439),
+  // and kidSafe drives the young-cook affordances (safety callout, get-ready
+  // gate). Both come from the active theme mode's behavior.
+  const { largeTargets, kidSafe } = useThemeBehavior();
   const totalSteps = recipe.steps.length;
   const firstStep = recipe.steps[0];
 
@@ -122,6 +126,42 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
     });
     router.push(`/recipes/${recipe.slug}`);
   }, [clearSession, recipe.slug, recipe.title, router]);
+
+  // "Let's get ready!" pre-cook gate for Kids mode (#444). The grown-up-help
+  // line only shows when the recipe genuinely has hot/sharp steps, so we detect
+  // that once up front (reusing the safety-callout hazard logic, #423).
+  const recipeHasHazards = React.useMemo(
+    () =>
+      recipe.steps.some(
+        (step) =>
+          detectStepHazards({
+            text: step.instruction,
+            techniques: step.techniques,
+          }).length > 0,
+      ),
+    [recipe.steps],
+  );
+
+  // Remember "ready" per cook session so the checklist never nags twice. Seeded
+  // false (SSR-safe) and confirmed from sessionStorage on mount, so a resumed
+  // tab skips straight to the step it left off on.
+  const readyStorageKey = `heirloom-precook-ready:${recipe.id}`;
+  const [precookReady, setPrecookReady] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      if (sessionStorage.getItem(readyStorageKey) === "1") setPrecookReady(true);
+    } catch {
+      /* storage unavailable — the gate simply shows once this session */
+    }
+  }, [readyStorageKey]);
+  const confirmPrecookReady = React.useCallback(() => {
+    setPrecookReady(true);
+    try {
+      sessionStorage.setItem(readyStorageKey, "1");
+    } catch {
+      /* storage unavailable — proceeding still works for this session */
+    }
+  }, [readyStorageKey]);
 
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -176,6 +216,19 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         recipe={recipe}
         wakeLockStatus={wakeLockStatus}
         ingredientControls={ingredientControls}
+      />
+    );
+  }
+
+  // Kids mode gets a friendly "Let's get ready!" screen before step 1 (#444).
+  // Grown-up modes go straight to cooking, exactly as before.
+  if (kidSafe && !precookReady) {
+    return (
+      <PreCookChecklist
+        recipeTitle={recipe.title}
+        hasHazards={recipeHasHazards}
+        largeTargets={largeTargets}
+        onReady={confirmPrecookReady}
       />
     );
   }

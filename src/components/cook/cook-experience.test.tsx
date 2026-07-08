@@ -1,5 +1,5 @@
-import { cleanup, render as rtlRender, screen } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render as rtlRender, screen } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as React from "react";
 
 import { IntlWrapper } from "~/test/intl";
@@ -22,6 +22,15 @@ import { CookExperience } from "./cook-experience";
 import type { CookRecipe } from "./types";
 
 afterEach(cleanup);
+
+// Isolate the per-session "get ready" gate memory (#444) between tests.
+beforeEach(() => {
+  try {
+    sessionStorage.clear();
+  } catch {
+    /* no-op */
+  }
+});
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
 beforeAll(() => {
@@ -146,6 +155,10 @@ describe("Cook Mode chrome safe-area insets (issue #283)", () => {
 
 describe("Cook Mode large-target flag (issue #439)", () => {
   function renderWithTheme(ui: React.ReactElement, theme: "kitchen" | "kids") {
+    // Skip the Kids-mode "get ready" gate (#444) so these assert step-1 chrome.
+    if (theme === "kids") {
+      sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+    }
     return rtlRender(
       <IntlWrapper>
         <ThemeProvider initialTheme={theme}>{ui}</ThemeProvider>
@@ -176,6 +189,10 @@ describe("Cook Mode large-target flag (issue #439)", () => {
 
 describe("Cook Mode kid-safety callout (issue #423)", () => {
   function renderWithTheme(ui: React.ReactElement, theme: "kitchen" | "kids") {
+    // Skip the Kids-mode "get ready" gate (#444) so these assert step-1 chrome.
+    if (theme === "kids") {
+      sessionStorage.setItem("heirloom-precook-ready:recipe-1", "1");
+    }
     return rtlRender(
       <IntlWrapper>
         <ThemeProvider initialTheme={theme}>{ui}</ThemeProvider>
@@ -214,5 +231,88 @@ describe("Cook Mode kid-safety callout (issue #423)", () => {
   it("shows no callout on a plain step in Kids mode (no false alarms)", () => {
     renderWithTheme(<CookExperience recipe={makeRecipe()} />, "kids");
     expect(screen.queryByRole("note", { name: /hot|sharp/i })).toBeNull();
+  });
+});
+
+describe("Cook Mode get-ready gate (issue #444)", () => {
+  function renderKids(recipe: CookRecipe) {
+    return rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kids">
+          <CookExperience recipe={recipe} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+  }
+
+  it("shows the 'Let's get ready!' checklist before step 1 in Kids mode", () => {
+    renderKids(makeRecipe());
+    expect(
+      screen.getByRole("heading", { name: /let's get ready/i }),
+    ).toBeInTheDocument();
+    // The step-1 chrome isn't rendered until the child proceeds.
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+  });
+
+  it("shows the grown-up-help item only when the recipe has risky steps", () => {
+    const { unmount } = renderKids(makeRecipe()); // "Brown the sausage." — safe
+    expect(screen.queryByText(/cook with a grown-up/i)).toBeNull();
+    unmount();
+
+    renderKids(
+      makeRecipe({
+        steps: [
+          {
+            id: "step-1",
+            position: 1,
+            section: null,
+            instruction: "Fry the onions.",
+            imageUrl: null,
+            videoUrl: null,
+            timerSeconds: null,
+            techniques: null,
+          },
+        ],
+      }),
+    );
+    expect(screen.getByText(/cook with a grown-up/i)).toBeInTheDocument();
+  });
+
+  it("proceeds into step 1 when the child taps the ready button", () => {
+    renderKids(makeRecipe());
+    fireEvent.click(screen.getByRole("button", { name: /let's cook/i }));
+
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /let's get ready/i }),
+    ).toBeNull();
+  });
+
+  it("goes straight to step 1 in grown-up modes (no gate)", () => {
+    rtlRender(
+      <IntlWrapper>
+        <ThemeProvider initialTheme="kitchen">
+          <CookExperience recipe={makeRecipe()} />
+        </ThemeProvider>
+      </IntlWrapper>,
+    );
+    expect(
+      screen.queryByRole("heading", { name: /let's get ready/i }),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+  });
+
+  it("remembers the choice for the session so it doesn't nag again", () => {
+    const recipe = makeRecipe();
+    const first = renderKids(recipe);
+    fireEvent.click(screen.getByRole("button", { name: /let's cook/i }));
+    first.unmount();
+
+    // Re-entering the same recipe's cook session skips the gate.
+    renderKids(recipe);
+    expect(
+      screen.queryByRole("heading", { name: /let's get ready/i }),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
   });
 });
