@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, Search, ShieldCheck, X } from "lucide-react";
+import { Check, ChevronDown, Search, ShieldCheck, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,11 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { SavedSearches } from "~/components/recipe/saved-searches";
+import {
+  RECIPE_PRESETS,
+  isPresetActive,
+  togglePreset,
+} from "~/lib/recipe-presets";
 import {
   defaultSortFor,
   hasActiveRecipeFilters,
@@ -127,6 +132,26 @@ export function RecipeSearchControls({
     [pushListParam],
   );
 
+  // Preset chips (#378): compose several existing params in one tap. Reuses the
+  // pure toggle from recipe-presets so the result stays a shareable URL.
+  const pushPreset = React.useCallback(
+    (presetId: string) => {
+      const preset = RECIPE_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return;
+      const params = togglePreset(
+        new URLSearchParams(currentParams.toString()),
+        preset,
+      );
+      const effectiveDefault = defaultSortFor(params.get("q"));
+      if (params.get("sort") === effectiveDefault) params.delete("sort");
+      const qs = params.toString();
+      startTransition(() => {
+        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      });
+    },
+    [currentParams, pathname, router],
+  );
+
   // Debounce the free-text query so we navigate once the user pauses.
   React.useEffect(() => {
     const next = query.trim();
@@ -139,6 +164,33 @@ export function RecipeSearchControls({
 
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Quick filters">
+        <span className="text-xs font-medium text-muted-foreground">
+          Quick picks
+        </span>
+        {RECIPE_PRESETS.map((preset) => {
+          const active = isPresetActive(currentParams, preset);
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => pushPreset(preset.id)}
+              aria-pressed={active}
+              title={preset.description}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent",
+              )}
+            >
+              {active && <Check className="size-3.5" aria-hidden />}
+              {preset.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Label htmlFor={searchId} className="sr-only">
