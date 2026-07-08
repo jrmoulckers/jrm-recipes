@@ -6,6 +6,7 @@ import {
   CacheFirst,
   ExpirationPlugin,
   Serwist,
+  StaleWhileRevalidate,
 } from "serwist";
 
 import { isOfflineFallbackRequest } from "../lib/offline-fallback";
@@ -15,6 +16,12 @@ import {
   RECIPE_IMAGE_CACHE_MAX_ENTRIES,
   RECIPE_IMAGE_CACHE_NAME,
 } from "../lib/recipe-image-cache";
+import {
+  isRecipePageRequest,
+  RECIPE_PAGE_CACHE_MAX_AGE_SECONDS,
+  RECIPE_PAGE_CACHE_MAX_ENTRIES,
+  RECIPE_PAGE_CACHE_NAME,
+} from "../lib/recipe-page-cache";
 
 /**
  * Durable, offline-first cache for Cloudinary-backed recipe / cook-mode images.
@@ -44,6 +51,39 @@ const recipeImageCache: RuntimeCaching = {
 };
 
 /**
+ * Runtime cache for recipe *pages*: the recipe detail + Cook Mode documents and
+ * their RSC payloads. Prepended to `defaultCache` so recipe navigations use this
+ * named, bounded cache instead of Serwist's generic page handling.
+ *
+ * StaleWhileRevalidate keeps opening a recipe instant and offline-capable once
+ * it's been viewed online, while still refreshing it in the background whenever
+ * there's a network. `CacheableResponsePlugin` stores only successful (200)
+ * responses so we never cache an error/redirect, and `ExpirationPlugin` bounds
+ * the cache by entries and age. This is what makes an already-opened recipe
+ * survive an offline reload rather than hitting the `/~offline` fallback.
+ */
+const recipePageCache: RuntimeCaching = {
+  matcher: ({ url, request, sameOrigin }) =>
+    sameOrigin &&
+    isRecipePageRequest({
+      url: url.href,
+      destination: request.destination,
+      rscHeader: request.headers.get("RSC") === "1",
+    }),
+  handler: new StaleWhileRevalidate({
+    cacheName: RECIPE_PAGE_CACHE_NAME,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [200] }),
+      new ExpirationPlugin({
+        maxEntries: RECIPE_PAGE_CACHE_MAX_ENTRIES,
+        maxAgeSeconds: RECIPE_PAGE_CACHE_MAX_AGE_SECONDS,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+};
+
+/**
  * Heirloom service worker (Serwist). Precaches the app shell and applies
  * sensible runtime caching so cook mode keeps working offline in the kitchen.
  *
@@ -63,7 +103,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [recipeImageCache, ...defaultCache],
+  runtimeCaching: [recipeImageCache, recipePageCache, ...defaultCache],
   fallbacks: {
     entries: [
       {
