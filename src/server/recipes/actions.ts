@@ -7,6 +7,12 @@ import { requireUser } from "~/server/auth";
 import { db, isDbConfigured } from "~/server/db";
 import { recipes } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import {
+  type ActionResult as BaseActionResult,
+  fail,
+  fromZodError,
+  ok,
+} from "~/server/action-result";
 import { recipeDetailPath } from "~/lib/recipe-path";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
@@ -22,9 +28,8 @@ import {
   updateRecipe,
 } from "./mutations";
 
-export type ActionResult =
-  | { ok: true; id: string; slug: string | null }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+/** Recipe mutations resolve to the new/affected recipe's id + slug. */
+export type ActionResult = BaseActionResult<{ id: string; slug: string | null }>;
 
 const NO_DB =
   "Recipes need a database. Set DATABASE_URL (see .env.example) to start saving.";
@@ -43,24 +48,16 @@ function isForbidden(error: unknown): boolean {
 }
 
 function groupForbiddenResult(): ActionResult {
-  return {
-    ok: false,
-    error: GROUP_FORBIDDEN,
-    fieldErrors: { groupId: [GROUP_FORBIDDEN] },
-  };
+  return fail(GROUP_FORBIDDEN, { groupId: [GROUP_FORBIDDEN] });
 }
 
 export async function createRecipeAction(
   input: RecipeInput,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  if (!isDbConfigured()) return fail(NO_DB);
   const parsed = recipeInput.safeParse(input);
   if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
+    return fromZodError(parsed.error);
   }
   const user = await requireUser();
   try {
@@ -88,7 +85,7 @@ export async function createRecipeAction(
     revalidatePath("/");
     revalidatePath(recipeDetailPath(recipe));
     revalidateTag(PUBLIC_RECIPES_TAG);
-    return { ok: true, id: recipe.id, slug: recipe.slug };
+    return ok({ id: recipe.id, slug: recipe.slug });
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
     throw error;
@@ -99,14 +96,10 @@ export async function updateRecipeAction(
   id: string,
   input: RecipeInput,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  if (!isDbConfigured()) return fail(NO_DB);
   const parsed = recipeInput.safeParse(input);
   if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
+    return fromZodError(parsed.error);
   }
   const user = await requireUser();
   try {
@@ -121,10 +114,10 @@ export async function updateRecipeAction(
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe));
     revalidateTag(PUBLIC_RECIPES_TAG);
-    return { ok: true, id, slug: recipe.slug };
+    return ok({ id, slug: recipe.slug });
   } catch (error) {
     if (isForbidden(error)) return groupForbiddenResult();
-    return { ok: false, error: "We couldn't find that recipe to update." };
+    return fail("We couldn't find that recipe to update.");
   }
 }
 
@@ -132,7 +125,7 @@ export async function forkRecipeAction(
   sourceId: string,
   forkNote?: string,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  if (!isDbConfigured()) return fail(NO_DB);
   try {
     const user = await requireUser();
     const recipe = await forkRecipe(sourceId, user, forkNote);
@@ -143,12 +136,9 @@ export async function forkRecipeAction(
     revalidatePath("/recipes");
     revalidatePath(recipeDetailPath(recipe.source));
     revalidateTag(PUBLIC_RECIPES_TAG);
-    return { ok: true, id: recipe.id, slug: recipe.slug };
+    return ok({ id: recipe.id, slug: recipe.slug });
   } catch {
-    return {
-      ok: false,
-      error: "We couldn't find that recipe to adapt.",
-    };
+    return fail("We couldn't find that recipe to adapt.");
   }
 }
 
@@ -167,7 +157,7 @@ export async function revertRecipeAction(
   recipeId: string,
   versionNumber: number,
 ): Promise<ActionResult> {
-  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  if (!isDbConfigured()) return fail(NO_DB);
   try {
     const user = await requireUser();
     const recipe = await revertRecipe(recipeId, versionNumber, user);
@@ -178,13 +168,13 @@ export async function revertRecipeAction(
     revalidatePath(recipeDetailPath(recipe));
     revalidatePath("/recipes");
     revalidateTag(PUBLIC_RECIPES_TAG);
-    return { ok: true, id: recipe.id, slug: recipe.slug };
+    return ok({ id: recipe.id, slug: recipe.slug });
   } catch (error) {
     const message =
       error instanceof Error && error.message === "BAD_SNAPSHOT"
         ? "That saved version can't be restored."
         : "We couldn't restore that recipe version.";
-    return { ok: false, error: message };
+    return fail(message);
   }
 }
 

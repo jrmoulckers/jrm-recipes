@@ -9,6 +9,10 @@ import { absoluteUrl } from "~/lib/utils";
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
+  type ActionResult as BaseActionResult,
+  fromZodError,
+} from "~/server/action-result";
+import {
   acceptInviteLink,
   addMember,
   createGroup,
@@ -31,9 +35,7 @@ import {
   type UpdateRoleInput,
 } from "./validation";
 
-export type ActionResult =
-  | { ok: true; slug?: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+export type ActionResult = BaseActionResult<{ slug?: string }>;
 
 const NO_DB = "Groups need a database.";
 
@@ -72,13 +74,7 @@ export async function createGroupAction(input: GroupInput): Promise<ActionResult
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = groupInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -102,13 +98,7 @@ export async function updateGroupAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = groupInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -128,13 +118,7 @@ export async function addMemberAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = addMemberInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -169,13 +153,7 @@ export async function updateMemberRoleAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = updateRoleInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -246,13 +224,7 @@ export async function transferOwnershipAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = transferOwnershipInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please choose a new owner.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error, "Please choose a new owner.");
 
   const user = await requireUser();
   try {
@@ -264,9 +236,7 @@ export async function transferOwnershipAction(
   }
 }
 
-export type InviteLinkResult =
-  | { ok: true; url: string; token: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+export type InviteLinkResult = BaseActionResult<{ url: string; token: string }>;
 
 /**
  * Mint a shareable invite link and hand back its absolute URL (issue #343).
@@ -280,13 +250,7 @@ export async function createInviteLinkAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = createInviteLinkInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -301,9 +265,10 @@ export async function createInviteLinkAction(
   }
 }
 
-export type AcceptInviteLinkResult =
-  | { ok: true; slug: string; alreadyMember: boolean }
-  | { ok: false; error: string };
+export type AcceptInviteLinkResult = BaseActionResult<{
+  slug: string;
+  alreadyMember: boolean;
+}>;
 
 /**
  * Join a group from an invite-link token (issue #343). Used by the `/join`

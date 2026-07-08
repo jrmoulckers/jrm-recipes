@@ -6,6 +6,10 @@ import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { PUBLIC_RECIPES_TAG } from "~/server/recipes/cache";
 import {
+  type ActionResult as BaseActionResult,
+  fromZodError,
+} from "~/server/action-result";
+import {
   commentInput,
   deleteCommentInput,
   ratingInput,
@@ -28,9 +32,7 @@ import {
   setRating,
 } from "./mutations";
 
-export type ActionResult =
-  | { ok: true }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+export type ActionResult = BaseActionResult;
 
 function errorCode(error: unknown) {
   return error instanceof Error ? error.message : "";
@@ -43,13 +45,7 @@ export async function addCommentAction(
     return { ok: false, error: "Comments need a database." };
   }
   const parsed = commentInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -75,13 +71,7 @@ export async function deleteCommentAction(
     return { ok: false, error: "Comments need a database." };
   }
   const parsed = deleteCommentInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -110,13 +100,7 @@ export async function resolveCommentAction(
     return { ok: false, error: "Suggestions need a database." };
   }
   const parsed = resolveCommentInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -155,13 +139,7 @@ export async function applySuggestionAction(
     return { ok: false, error: "Suggestions need a database." };
   }
   const parsed = applySuggestionInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -196,13 +174,7 @@ export async function setRatingAction(
     return { ok: false, error: "Ratings need a database." };
   }
   const parsed = ratingInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
@@ -234,13 +206,7 @@ export async function removeRatingAction(
     return { ok: false, error: "Ratings need a database." };
   }
   const parsed = removeRatingInput.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Please fix the highlighted fields.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
+  if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
   try {
