@@ -71,13 +71,15 @@
 
 /* ---------------------------------------------------------------------------
  * Readable / dyslexia-friendly — roomier rhythm and the most legible type
- * available. Atkinson Hyperlegible if the reader has it; otherwise the spacing
- * and line-height do the heavy lifting on a clean system sans.
+ * available. Atkinson Hyperlegible is self-hosted via next/font and exposed as
+ * --font-atkinson (see src/fonts/atkinson.ts + src/app/layout.tsx), so it ships
+ * with the app and works offline instead of relying on the reader having it
+ * installed. The system-sans fallbacks cover the brief swap window.
  * ------------------------------------------------------------------------- */
 [data-reading="readable"] {
-  --font-body: "Atkinson Hyperlegible", "Segoe UI", ui-sans-serif, system-ui,
+  --font-body: var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui,
     sans-serif;
-  --font-display: "Atkinson Hyperlegible", "Segoe UI", ui-sans-serif, system-ui,
+  --font-display: var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui,
     sans-serif;
 }
 

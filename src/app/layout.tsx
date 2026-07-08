@@ -22,6 +22,7 @@ import {
   isUITheme,
 } from "~/config/themes";
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
+import { atkinson } from "~/fonts/atkinson";
 import { localeDirection, resolveLocale } from "~/config/i18n";
 import { isAuthConfigured } from "~/server/auth";
 import { cn } from "~/lib/utils";
@@ -118,6 +119,7 @@ export default async function RootLayout({
         inter.variable,
         baloo.variable,
         jetbrains.variable,
+        atkinson.variable,
         scheme === "dark" && "dark",
       )}
       suppressHydrationWarning
