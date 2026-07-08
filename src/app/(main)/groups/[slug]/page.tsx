@@ -13,6 +13,7 @@ import {
 } from "~/server/groups/queries";
 import { AddMemberForm } from "~/components/groups/add-member-form";
 import { GroupActions } from "~/components/groups/group-actions";
+import { InviteLinkManager } from "~/components/groups/invite-link-manager";
 import {
   MemberList,
   type MemberListMember,
@@ -21,6 +22,8 @@ import { RoleBadge } from "~/components/groups/role-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { brand } from "~/config/brand";
+import { absoluteUrl } from "~/lib/utils";
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -36,9 +39,25 @@ export async function generateMetadata({
   const { slug } = await params;
   const { group } = await load(slug);
   if (!group) return { title: "Group not found" };
+  const canonical = absoluteUrl(`/groups/${group.slug}`);
+  const description =
+    group.description ??
+    `A shared family cookbook on ${brand.name}.`;
   return {
     title: group.name,
-    description: group.description ?? undefined,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: `${group.name} · ${brand.name}`,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: group.name,
+      description,
+    },
   };
 }
 
@@ -132,13 +151,16 @@ export default async function GroupPage({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <main className="flex min-w-0 flex-col gap-8">
           <section className="flex flex-col gap-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold tracking-tight">
-                Members
-              </h2>
-              <p className="mt-1 text-muted-foreground">
-                The cooks and keepers gathered around this table.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-2xl font-bold tracking-tight">
+                  Members
+                </h2>
+                <p className="mt-1 text-muted-foreground">
+                  The cooks and keepers gathered around this table.
+                </p>
+              </div>
+              {canManage ? <InviteLinkManager slug={group.slug} /> : null}
             </div>
             {canManage ? <AddMemberForm slug={group.slug} /> : null}
             <MemberList

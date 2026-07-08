@@ -2,12 +2,13 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 
 import { slugify } from "~/lib/utils";
 import { db } from "~/server/db";
 import {
   groupInvitations,
+  groupInviteLinks,
   groupMembers,
   groups,
   recipes,
@@ -15,7 +16,13 @@ import {
   type MemberRole,
   type User,
 } from "~/server/db/schema";
-import { type GroupInput, type InviteInput, inviteInput } from "./validation";
+import {
+  type CreateInviteLinkInput,
+  createInviteLinkInput,
+  type GroupInput,
+  type InviteInput,
+  inviteInput,
+} from "./validation";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -510,5 +517,131 @@ export async function revokeInvitation(
       .set({ status: "revoked" })
       .where(eq(groupInvitations.id, invitation.id));
     return { id: invitation.id, status: "revoked" as const };
+  });
+}
+
+/**
+ * Create a shareable, multi-use invite link for a group (issue #343). Owner/
+ * admin only. Unlike {@link createInvitation} the link carries no invitee — it's
+ * a URL anyone can open to join at `role`. Role is capped to member/kid by the
+ * validator so a forwarded link can never mint managers. Optional `expiresAt`
+ * and `maxUses` bound its lifetime; both null = evergreen + unlimited.
+ */
+export async function createInviteLink(
+  groupSlugOrId: string,
+  actor: User,
+  input: CreateInviteLinkInput,
+) {
+  const data = createInviteLinkInput.parse(input);
+
+  return db.transaction(async (tx) => {
+    const group = await findGroup(tx, groupSlugOrId);
+    if (!group) throw new Error("NOT_FOUND");
+
+    await requireManager(tx, group.id, actor);
+
+    const [link] = await tx
+      .insert(groupInviteLinks)
+      .values({
+        groupId: group.id,
+        createdById: actor.id,
+        role: data.role,
+        token: generateInviteToken(),
+        expiresAt:
+          data.expiresInDays != null
+            ? new Date(Date.now() + data.expiresInDays * DAY_MS)
+            : null,
+        maxUses: data.maxUses ?? null,
+      })
+      .returning({
+        id: groupInviteLinks.id,
+        token: groupInviteLinks.token,
+        role: groupInviteLinks.role,
+        expiresAt: groupInviteLinks.expiresAt,
+        maxUses: groupInviteLinks.maxUses,
+      });
+
+    if (!link) throw new Error("CONFLICT");
+    return { ...link, groupId: group.id, slug: group.slug };
+  });
+}
+
+/**
+ * Join a group via an invite link's token (issue #343). Transactionally creates
+ * the membership at the link's role and bumps `useCount`. Fully guarded:
+ * missing → NOT_FOUND, revoked → REVOKED, past expiry → EXPIRED, at the cap →
+ * EXHAUSTED. Idempotent: an existing member is returned as-is and does *not*
+ * consume a use, so refreshing the join page (or re-sharing to a member) never
+ * duplicates rows or drains the cap.
+ */
+export async function acceptInviteLink(token: string, user: User) {
+  return db.transaction(async (tx) => {
+    const link = await tx.query.groupInviteLinks.findFirst({
+      where: eq(groupInviteLinks.token, token),
+    });
+    if (!link) throw new Error("NOT_FOUND");
+    if (link.revokedAt != null) throw new Error("REVOKED");
+    if (link.expiresAt != null && link.expiresAt.getTime() <= Date.now()) {
+      throw new Error("EXPIRED");
+    }
+
+    const group = await tx.query.groups.findFirst({
+      where: eq(groups.id, link.groupId),
+      columns: { id: true, slug: true },
+    });
+    if (!group) throw new Error("NOT_FOUND");
+
+    const existing = await membershipFor(tx, link.groupId, user.id);
+    if (existing) {
+      // Already in — idempotent, and crucially we don't spend a use.
+      return {
+        groupId: link.groupId,
+        slug: group.slug,
+        role: existing.role,
+        alreadyMember: true,
+      };
+    }
+
+    // Claim a use with a single conditional bump. The WHERE re-checks the cap
+    // (plus revocation/expiry) against the *current* row under its write lock,
+    // so two users redeeming a maxUses=1 link concurrently serialize here: the
+    // loser matches 0 rows (useCount has already reached maxUses) and is
+    // rejected. The read-time guards above only produce friendlier errors; this
+    // atomic UPDATE is what actually enforces the cap, closing the
+    // check-then-insert race. Seat the member only after the bump succeeds, in
+    // the same tx so any later failure rolls the increment back.
+    const now = new Date();
+    const claimed = await tx
+      .update(groupInviteLinks)
+      .set({ useCount: sql`${groupInviteLinks.useCount} + 1` })
+      .where(
+        and(
+          eq(groupInviteLinks.id, link.id),
+          isNull(groupInviteLinks.revokedAt),
+          or(
+            isNull(groupInviteLinks.expiresAt),
+            gt(groupInviteLinks.expiresAt, now),
+          ),
+          or(
+            isNull(groupInviteLinks.maxUses),
+            lt(groupInviteLinks.useCount, groupInviteLinks.maxUses),
+          ),
+        ),
+      )
+      .returning({ id: groupInviteLinks.id });
+    if (claimed.length === 0) throw new Error("EXHAUSTED");
+
+    await tx.insert(groupMembers).values({
+      groupId: link.groupId,
+      userId: user.id,
+      role: link.role,
+    });
+
+    return {
+      groupId: link.groupId,
+      slug: group.slug,
+      role: link.role,
+      alreadyMember: false,
+    };
   });
 }

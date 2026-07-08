@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, varchar } from "drizzle-orm/pg-core";
 
 import { pk, timestamps } from "./_shared";
 import { groupMembers } from "./groups";
@@ -20,6 +20,9 @@ export const users = pgTable(
     name: varchar({ length: 120 }),
     handle: varchar({ length: 60 }).unique(),
     avatarUrl: varchar({ length: 2048 }),
+    // Opt-in (default off) for the weekly family recipe digest email (#354).
+    // Off by default so we never email anyone who hasn't asked for it.
+    weeklyDigestOptIn: boolean().notNull().default(false),
     ...timestamps(),
   },
   (t) => [index("users_clerk_id_idx").on(t.clerkId)],

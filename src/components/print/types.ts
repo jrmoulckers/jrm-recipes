@@ -29,6 +29,7 @@ export type PrintRecipe = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  visibility: string;
   servings: number | null;
   servingsNoun: string | null;
   prepMinutes: number | null;

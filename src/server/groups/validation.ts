@@ -61,7 +61,23 @@ export const inviteInput = z
     path: ["email"],
   });
 
+/**
+ * A shareable group invite link (issue #343). Unlike a targeted invitation this
+ * link can be forwarded to anyone, so its role is deliberately limited to the
+ * non-privileged set (`member`/`kid`) — a link that mints admins is a footgun.
+ * `expiresInDays`/`maxUses` are optional caps; omitting both makes an evergreen,
+ * unlimited link.
+ */
+export const inviteLinkRole = z.enum(["member", "kid"]);
+
+export const createInviteLinkInput = z.object({
+  role: inviteLinkRole.default("member"),
+  expiresInDays: z.coerce.number().int().min(1).max(365).optional(),
+  maxUses: z.coerce.number().int().min(1).max(1000).optional(),
+});
+
 export type GroupInput = z.infer<typeof groupInput>;
 export type AddMemberInput = z.infer<typeof addMemberInput>;
 export type UpdateRoleInput = z.infer<typeof updateRoleInput>;
 export type InviteInput = z.input<typeof inviteInput>;
+export type CreateInviteLinkInput = z.input<typeof createInviteLinkInput>;
