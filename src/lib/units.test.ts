@@ -3,6 +3,7 @@
 import {
   convertTemperature,
   convertUnit,
+  decomposeMeasure,
   defaultSystemForLocale,
   densityForItem,
   displayUnit,
@@ -159,6 +160,34 @@ describe("densityForItem / toWeight (#385 weigh-based cooking)", () => {
     // A volume of something with no known density can't be weighed.
     expect(toWeight(2, "cup", "diced tomatoes")).toBeNull();
     expect(toWeight(null, "cup", "flour")).toBeNull();
+  });
+});
+
+describe("decomposeMeasure (#391 practical measures)", () => {
+  it("breaks awkward tablespoons into tbsp + tsp", () => {
+    expect(decomposeMeasure(1.37, "tbsp")).toBe("1 tbsp + 1 tsp");
+    expect(decomposeMeasure(2.33, "tbsp")).toBe("2 tbsp + 1 tsp");
+  });
+
+  it("breaks awkward cups into a practical mix", () => {
+    // 0.42 cup ≈ 20.16 tsp → 6 tbsp + ~2¼ tsp (nearest quarter teaspoon).
+    expect(decomposeMeasure(0.42, "cup")).toBe("6 tbsp + 2¼ tsp");
+    // 1⅓ cups → 1 cup + a remainder in tablespoons.
+    expect(decomposeMeasure(1 + 1 / 3, "cup")).toBe("1 cup + 5 tbsp + 1 tsp");
+  });
+
+  it("returns null for clean single measures", () => {
+    expect(decomposeMeasure(2, "tbsp")).toBeNull();
+    expect(decomposeMeasure(0.5, "cup")).toBeNull();
+    expect(decomposeMeasure(2, "cup")).toBeNull();
+    expect(decomposeMeasure(1, "tsp")).toBeNull();
+  });
+
+  it("leaves metric and weight amounts alone", () => {
+    expect(decomposeMeasure(1.37, "ml")).toBeNull();
+    expect(decomposeMeasure(125, "g")).toBeNull();
+    expect(decomposeMeasure(1.5, null)).toBeNull();
+    expect(decomposeMeasure(0, "tbsp")).toBeNull();
   });
 });
 

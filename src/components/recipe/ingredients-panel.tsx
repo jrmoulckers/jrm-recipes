@@ -7,6 +7,7 @@ import { useLocale } from "next-intl";
 import { cn } from "~/lib/utils";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
+  decomposeMeasure,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
@@ -422,6 +423,21 @@ export function IngredientsPanel({
                         ing.item,
                       )
                     : null;
+                // Practical decomposition of a messy US-volume amount (#391),
+                // e.g. "≈ 1 tbsp + 1 tsp". Uses the displayed (scaled + system-
+                // converted) measure, so metric/grams amounts never decompose.
+                const displayed =
+                  ing.quantityMax == null
+                    ? measure(
+                        scaleQuantity(ing.quantity, factor),
+                        ing.unit,
+                        system,
+                        ing.item,
+                      )
+                    : null;
+                const breakdown = displayed
+                  ? decomposeMeasure(displayed.q, displayed.unit, locale)
+                  : null;
                 const conflict = memberNeeds
                   ? detectIngredientConflict(
                       detectAllergensForSafety(ing.item),
@@ -556,6 +572,15 @@ export function IngredientsPanel({
                       <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
+                      </p>
+                    )}
+                    {breakdown && (
+                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <Info className="mt-0.5 size-3 shrink-0 text-primary" />
+                        <span>
+                          <span className="sr-only">Measure as </span>≈{" "}
+                          {breakdown}
+                        </span>
                       </p>
                     )}
                   </li>

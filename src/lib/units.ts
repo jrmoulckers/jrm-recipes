@@ -462,7 +462,52 @@ export function displayUnit(
   return def?.canonical ?? unit;
 }
 
-// --- Kid-friendly amounts (#447) ---------------------------------------------
+// --- Practical measure decomposition (#391) ------------------------------
+
+/**
+ * Break an awkward US-volume amount into a minimal set of measures a cook
+ * actually owns — whole cups, whole tablespoons, and a rounded teaspoon — e.g.
+ * "1 tbsp + 1 tsp" for 1.37 tbsp or "6 tbsp + 2 tsp" for 0.42 cup. Returns
+ * `null` for non-US-volume units (metric/weight stay clean decimals) and for
+ * amounts that already land on a single clean measure (½ cup, 2 tbsp), so the
+ * hint only appears when it adds value. Pure and offline-safe.
+ */
+export function decomposeMeasure(
+  quantity: number | null | undefined,
+  unit: string | null | undefined,
+  locale: string = DEFAULT_LOCALE,
+): string | null {
+  if (quantity == null || !Number.isFinite(quantity) || quantity <= 0) {
+    return null;
+  }
+  const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
+  if (!def || def.dimension !== "volume" || def.system !== "us") return null;
+
+  const tspBase = UNIT_INDEX.get("tsp")!.base;
+  // Snap to the nearest measuring-spoon quarter-teaspoon up front so float dust
+  // (a "clean" 2 cups arriving as 95.999… tsp) can't leak an extra measure.
+  let remaining = Math.round(((quantity * def.base) / tspBase) * 4) / 4;
+
+  const cups = Math.floor(remaining / 48 + 1e-9);
+  remaining -= cups * 48;
+  let tbsp = Math.floor(remaining / 3 + 1e-9);
+  remaining -= tbsp * 3;
+  let tsp = remaining;
+  if (tsp >= 3) {
+    tbsp += 1;
+    tsp -= 3;
+  }
+
+  const parts: string[] = [];
+  if (cups >= 1) {
+    parts.push(`${formatDecimal(cups, locale)} ${displayUnit("cup", cups, locale)}`);
+  }
+  if (tbsp >= 1) parts.push(`${formatDecimal(tbsp, locale)} tbsp`);
+  if (tsp > 0) parts.push(`${formatQuantity(tsp, undefined, locale)} tsp`);
+
+  // Only worth showing when it decomposes into more than one practical measure.
+  return parts.length >= 2 ? parts.join(" + ") : null;
+}
 // A display layer only: spoken-style fraction words + spelled-out units for
 // Kids mode. It reuses the same scaled/measured values as the compact display
 // (no new math), and non-Kids modes never call it, so their output is unchanged.
