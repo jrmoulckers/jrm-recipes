@@ -145,6 +145,33 @@ const serwist = new Serwist({
   },
 });
 
+/**
+ * Global offline fallback for navigations that Serwist's per-route
+ * `fallbacks` plugin doesn't cover.
+ *
+ * Serwist only attaches its precache-fallback plugin to a runtime route whose
+ * handler is an `instanceof` *its own* `Strategy` class. The routes provided by
+ * `@serwist/next`'s `defaultCache` — including the catch-all `others`
+ * navigation route — are constructed from a separate installed copy of
+ * `serwist` (a duplicate pulled in through a differing `browserslist` peer), so
+ * that `instanceof` check fails and the `/~offline` fallback never attaches to
+ * them. As a result a hard navigation to a route that was never visited online
+ * would fail outright offline instead of showing the offline page.
+ *
+ * A global catch handler runs whenever a matched route's handler rejects
+ * (network miss + cache miss) regardless of which `serwist` copy owns the
+ * route, so it reliably serves the precached `/~offline` document for both hard
+ * and soft (RSC) navigations. Non-navigation failures fall through to a normal
+ * network error, preserving existing behavior.
+ */
+serwist.setCatchHandler(async ({ request }) => {
+  if (isOfflineFallbackRequest(request)) {
+    const offlineResponse = await serwist.matchPrecache("/~offline");
+    if (offlineResponse) return offlineResponse;
+  }
+  return Response.error();
+});
+
 serwist.addEventListeners();
 
 /**

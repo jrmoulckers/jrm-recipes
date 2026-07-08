@@ -55,11 +55,37 @@ jobs:
       - name: Bundle size budget
         run: node scripts/check-bundle-budget.mjs bundle-build.log
 
-  # End-to-end smoke test. Playwright builds + starts the app (see
-  # playwright.config.ts) with dev-bypass auth and no database, so pages degrade
-  # gracefully and no secrets are required — mirroring how the build job runs.
+  # End-to-end tests, including offline PWA coverage (issue #171). Playwright
+  # builds + starts the app in production mode (see playwright.config.ts), so the
+  # Serwist service worker is ACTIVE during the run — `next dev` disables it, so
+  # offline behavior can only be verified against a production build. A throwaway
+  # Postgres (a local service container with hard-coded credentials — NOT a repo
+  # secret, mirroring the lighthouse job) is migrated + seeded so the offline
+  # spec can open a real recipe and enter Cook Mode; the smoke spec is
+  # database-agnostic.
   e2e:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: heirloom
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/heirloom"
+      SKIP_ENV_VALIDATION: "1"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
 
     steps:
       - name: Checkout
@@ -78,6 +104,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        run: node scripts/migrate.mjs
+
+      - name: Seed demo data
+        run: pnpm db:seed
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
