@@ -12,7 +12,9 @@ import {
   type GroupRecipe,
 } from "~/server/groups/queries";
 import { getOpenReportCount } from "~/server/moderation/queries";
+import { getGroupActivity } from "~/server/activity/queries";
 import { AddMemberForm } from "~/components/groups/add-member-form";
+import { ActivityFeed } from "~/components/groups/activity-feed";
 import { GroupActions } from "~/components/groups/group-actions";
 import { InviteLinkManager } from "~/components/groups/invite-link-manager";
 import {
@@ -80,13 +82,20 @@ export default async function GroupPage({
   params: Promise<SlugRouteParams>;
 }) {
   const { slug } = await parseSlugParams(params);
-  const { group } = await load(slug);
+  const { viewer, group } = await load(slug);
   if (!group) notFound();
 
   const canManage = canManageGroup(group.viewerRole);
   const openReportCount = canManage
     ? await getOpenReportCount(group.id, group.viewerRole)
     : 0;
+  const activity =
+    group.viewerRole && viewer
+      ? await getGroupActivity(group.id, {
+          id: viewer.id,
+          role: group.viewerRole,
+        })
+      : null;
   const members = group.members.map<MemberListMember>((member) => ({
     id: member.id,
     userId: member.userId,
@@ -169,6 +178,26 @@ export default async function GroupPage({
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <main className="flex min-w-0 flex-col gap-8">
+          {activity ? (
+            <section className="flex flex-col gap-4">
+              <div>
+                <h2 className="font-display text-2xl font-bold tracking-tight">
+                  Activity
+                </h2>
+                <p className="mt-1 text-muted-foreground">
+                  What the family&apos;s been cooking, adding, and saying.
+                </p>
+              </div>
+              <ActivityFeed
+                groupId={group.id}
+                initialEvents={activity.events}
+                initialCursor={activity.nextCursor}
+              />
+            </section>
+          ) : null}
+
+          {activity ? <Separator /> : null}
+
           <section className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div>
