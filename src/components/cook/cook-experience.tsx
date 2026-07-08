@@ -222,7 +222,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         </aside>
       </main>
 
-      <footer className="sticky bottom-0 z-30 border-t border-border bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
+      <footer className="sticky bottom-0 z-30 border-t border-border bg-background/95 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pt-3 backdrop-blur sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-3 sm:grid-cols-[1fr_auto_1fr]">
           <Button
             type="button"
@@ -278,8 +278,8 @@ function CookHeader({
   ingredientControls: IngredientsPanelControls;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-3 py-3 sm:px-5">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline" className="hidden sm:inline-flex">
@@ -743,8 +743,8 @@ function EmptyCookExperience({
 }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Badge variant="outline">Cook mode</Badge>
