@@ -49,9 +49,9 @@ describe("ThemeSwatch", () => {
     const wrapper = container.querySelector('[data-theme="kitchen"]')!;
     const dots = wrapper.querySelectorAll("span");
     expect(dots).toHaveLength(3);
-    expect(dots[0].className).toContain("bg-primary");
-    expect(dots[1].className).toContain("bg-secondary");
-    expect(dots[2].className).toContain("bg-accent");
+    expect(dots[0]!.className).toContain("bg-primary");
+    expect(dots[1]!.className).toContain("bg-secondary");
+    expect(dots[2]!.className).toContain("bg-accent");
   });
 
   it("uses zero hex literals — colors come from tokens only", () => {

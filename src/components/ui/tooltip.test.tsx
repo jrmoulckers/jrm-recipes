@@ -12,9 +12,15 @@ import {
 // Radix's arrow measures itself via ResizeObserver, which jsdom doesn't provide.
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+      // no-op: element measurements are irrelevant in jsdom
+    }
+    unobserve() {
+      // no-op
+    }
+    disconnect() {
+      // no-op
+    }
   } as unknown as typeof ResizeObserver;
 });
 
@@ -72,7 +78,7 @@ describe("TooltipContent", () => {
       </TooltipProvider>,
     );
     expect(document.querySelector("svg.fill-popover")).not.toBeNull();
-    const content = screen.getAllByText(/longer, multiline explanation/)[0];
+    const content = screen.getAllByText(/longer, multiline explanation/)[0]!;
     expect(content.className).toContain("max-w-xs");
   });
 });

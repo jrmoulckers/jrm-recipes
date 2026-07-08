@@ -77,7 +77,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         data-loading={loading ? "" : undefined}
         aria-disabled={asChild && loading ? true : undefined}
-        {...(asChild ? {} : { disabled: disabled || loading })}
+        {...(asChild ? {} : { disabled: Boolean(disabled) || loading })}
         {...props}
       >
         {asChild || !loading ? (

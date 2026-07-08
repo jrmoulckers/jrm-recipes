@@ -36,7 +36,7 @@ describe("elevation tokens (issue #86)", () => {
     for (const theme of UI_THEME_IDS) {
       const block = new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]*)\\}`);
       const match = block.exec(THEMES_CSS);
-      if (match && match[1]?.includes("--shadow:")) {
+      if (match?.[1]?.includes("--shadow:")) {
         expect(
           match[1].includes("--shadow-sm:"),
           `[data-theme="${theme}"] tunes --shadow but not --shadow-sm`,
