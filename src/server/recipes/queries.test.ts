@@ -197,11 +197,15 @@ describe("getRecipeTimeline pagination (#159)", () => {
     expect(entries.map((e) => e.id)).toEqual(["e1", "e2"]);
     expect(nextCursor).toEqual({ createdAt: new Date(2024, 0, 2), id: "e2" });
 
-    const eventArg = dbMock.query.recipeEvents.findMany.mock.calls[0]![0];
+    const eventArg = dbMock.query.recipeEvents.findMany.mock.calls[0]![0] as {
+      limit?: number;
+    };
     expect(eventArg.limit).toBe(3);
 
     // First page folds in descendant forks, hard-capped for safety.
-    const forkArg = dbMock.query.recipes.findMany.mock.calls[0]![0];
+    const forkArg = dbMock.query.recipes.findMany.mock.calls[0]![0] as {
+      limit?: number;
+    };
     expect(forkArg.limit).toBe(FORK_LIST_CAP);
   });
 

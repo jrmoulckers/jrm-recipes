@@ -19,7 +19,6 @@ vi.mock("~/server/db", () => ({
 }));
 
 import { recipes, type User } from "~/server/db/schema";
-import type { RecipeSearch } from "./search";
 import { deleteRecipe, restoreRecipe } from "./mutations";
 import {
   getOwnedRecipe,
@@ -82,7 +81,7 @@ describe("recipe read paths exclude soft-deleted rows (issue #165)", () => {
   });
 
   it("searchRecipes filters on deleted_at", async () => {
-    await searchRecipes(author, { sort: "newest" } as RecipeSearch);
+    await searchRecipes(author, { sort: "newest" });
     expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
   });
 });

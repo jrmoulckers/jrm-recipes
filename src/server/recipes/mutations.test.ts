@@ -265,7 +265,7 @@ function chainable(result: unknown) {
 }
 
 /** Like {@link chainable} but the awaited insert rejects — models a DB error. */
-function rejecting(err: unknown) {
+function rejecting(err: Error) {
   return {
     returning: vi.fn(() => Promise.reject(err)),
     onConflictDoNothing: vi.fn(() => Promise.reject(err)),

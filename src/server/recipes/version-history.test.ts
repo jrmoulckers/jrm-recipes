@@ -19,6 +19,9 @@ vi.mock("~/server/db", () => ({
 import { getRecipeVersions } from "./queries";
 import { VERSION_HISTORY_PAGE_SIZE } from "./pagination";
 
+/** Shape of the `findMany` options object we assert against. */
+type FindManyArg = { columns?: unknown; limit?: number; where?: unknown };
+
 /** Build `n` fake history rows numbered high→low (newest first). */
 function versionRows(n: number, from = n) {
   return Array.from({ length: n }, (_, i) => ({
@@ -62,7 +65,7 @@ describe("getRecipeVersions pagination (#159)", () => {
 
     await getRecipeVersions("r1", { limit: 5 });
 
-    const arg = dbMock.query.recipeVersions.findMany.mock.calls[0]![0];
+    const arg = dbMock.query.recipeVersions.findMany.mock.calls[0]![0] as FindManyArg;
     expect(arg.columns).toEqual({ snapshot: false });
     expect(arg.limit).toBe(6);
     expect(arg.where).toBeDefined();
@@ -71,14 +74,16 @@ describe("getRecipeVersions pagination (#159)", () => {
   it("defaults to the version-history page size and clamps hostile input", async () => {
     dbMock.query.recipeVersions.findMany.mockResolvedValue(versionRows(1, 1));
     await getRecipeVersions("r1");
-    expect(dbMock.query.recipeVersions.findMany.mock.calls[0]![0].limit).toBe(
-      VERSION_HISTORY_PAGE_SIZE + 1,
-    );
+    const defaultArg = dbMock.query.recipeVersions.findMany.mock
+      .calls[0]![0] as FindManyArg;
+    expect(defaultArg.limit).toBe(VERSION_HISTORY_PAGE_SIZE + 1);
 
     dbMock.query.recipeVersions.findMany.mockClear();
     await getRecipeVersions("r1", { limit: 0 });
     // 0 clamps up to a 1-row page, so the over-fetch asks for 2.
-    expect(dbMock.query.recipeVersions.findMany.mock.calls[0]![0].limit).toBe(2);
+    const clampedArg = dbMock.query.recipeVersions.findMany.mock
+      .calls[0]![0] as FindManyArg;
+    expect(clampedArg.limit).toBe(2);
   });
 
   it("passes a keyset predicate when a cursor is supplied", async () => {
@@ -88,6 +93,8 @@ describe("getRecipeVersions pagination (#159)", () => {
 
     // The where clause ANDs the recipe filter with the versionNumber < cursor
     // keyset seek; we can only assert it is present without a live dialect.
-    expect(dbMock.query.recipeVersions.findMany.mock.calls[0]![0].where).toBeDefined();
+    const cursorArg = dbMock.query.recipeVersions.findMany.mock
+      .calls[0]![0] as FindManyArg;
+    expect(cursorArg.where).toBeDefined();
   });
 });
