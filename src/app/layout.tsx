@@ -22,6 +22,7 @@ import {
   isUITheme,
 } from "~/config/themes";
 import { A11Y_COOKIE, a11yAttributes, parseA11y } from "~/config/a11y";
+import { localeDirection, resolveLocale } from "~/config/i18n";
 import { isAuthConfigured } from "~/server/auth";
 import { cn } from "~/lib/utils";
 import { Providers } from "~/app/providers";
@@ -103,10 +104,12 @@ export default async function RootLayout({
     ? schemeCookie
     : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
+  const locale = resolveLocale();
 
   const tree = (
     <html
-      lang="en"
+      lang={locale}
+      dir={localeDirection(locale)}
       data-theme={theme}
       {...a11yAttributes(a11y)}
       className={cn(
