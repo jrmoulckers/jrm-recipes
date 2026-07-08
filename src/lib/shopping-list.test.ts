@@ -4,6 +4,7 @@ import {
   aggregateShoppingList,
   categorize,
   describeQuantity,
+  formatShoppingListText,
   groupByCategory,
   isPantryStaple,
   mergeShoppingItems,
@@ -14,6 +15,7 @@ import {
   type AggregatedItem,
   type ShoppingCategory,
   type ShoppingItemInput,
+  type ShoppingTextItem,
 } from "./shopping-list";
 
 function byItem<T extends { item: string }>(items: T[], name: string) {
@@ -495,5 +497,70 @@ describe("isPantryStaple", () => {
   it("exposes a non-empty staple list", () => {
     expect(PANTRY_STAPLES.length).toBeGreaterThan(0);
     expect(PANTRY_STAPLES).toContain("salt");
+  });
+});
+
+describe("formatShoppingListText", () => {
+  function item(
+    over: Partial<ShoppingTextItem> & Pick<ShoppingTextItem, "item" | "category">,
+  ): ShoppingTextItem {
+    return {
+      quantity: null,
+      quantityMax: null,
+      unit: null,
+      checked: false,
+      ...over,
+    };
+  }
+
+  const sample: ShoppingTextItem[] = [
+    item({ item: "Chicken thighs", quantity: 2, unit: "lb", category: "Meat & Seafood" }),
+    item({ item: "Spinach", quantity: 1, unit: "bunch", category: "Produce" }),
+    item({ item: "Apples", quantity: 6, category: "Produce" }),
+    item({ item: "Milk", quantity: 1, unit: "gal", category: "Dairy & Eggs", checked: true }),
+  ];
+
+  it("groups by aisle with markdown checkboxes, excluding checked items", () => {
+    const text = formatShoppingListText(sample);
+    expect(text).toContain("Produce:");
+    expect(text).toContain("- [ ] 6 Apples");
+    expect(text).toContain("- [ ] 1 bunch Spinach");
+    expect(text).toContain("Meat & Seafood:");
+    expect(text).toContain("- [ ] 2 lb Chicken thighs");
+    // checked "Milk" is excluded by default, so its aisle never appears
+    expect(text).not.toContain("Milk");
+    expect(text).not.toContain("Dairy & Eggs:");
+  });
+
+  it("orders categories by aisle and items alphabetically within one", () => {
+    const text = formatShoppingListText(sample);
+    expect(text.indexOf("Produce:")).toBeLessThan(text.indexOf("Meat & Seafood:"));
+    expect(text.indexOf("Apples")).toBeLessThan(text.indexOf("Spinach"));
+  });
+
+  it("includes checked items (as [x]) when asked", () => {
+    const text = formatShoppingListText(sample, { includeChecked: true });
+    expect(text).toContain("- [x] 1 gallon Milk");
+  });
+
+  it("prepends an optional title", () => {
+    const text = formatShoppingListText(sample, { title: "Weeknight run" });
+    expect(text.startsWith("Weeknight run\n")).toBe(true);
+  });
+
+  it("appends notes to the line", () => {
+    const text = formatShoppingListText([
+      item({ item: "Bread", category: "Bakery", note: "the seeded one" }),
+    ]);
+    expect(text).toContain("- [ ] Bread — the seeded one");
+  });
+
+  it("returns an empty string when there is nothing to send", () => {
+    expect(formatShoppingListText([])).toBe("");
+    expect(
+      formatShoppingListText([
+        item({ item: "Milk", category: "Dairy & Eggs", checked: true }),
+      ]),
+    ).toBe("");
   });
 });

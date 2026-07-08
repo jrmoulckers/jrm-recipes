@@ -668,3 +668,66 @@ export function describeQuantity(
   const unit = displayUnit(item.unit, item.quantityMax ?? item.quantity);
   return unit ? `${number} ${unit}` : number;
 }
+
+/** Minimal shape needed to render one list line as shareable text. */
+export type ShoppingTextItem = Pick<
+  AggregatedItem,
+  "item" | "quantity" | "quantityMax" | "unit"
+> & {
+  note?: string | null;
+  category: ShoppingCategory;
+  checked?: boolean;
+};
+
+export type FormatShoppingListOptions = {
+  /** Include already-checked ("in cart") items. Default false. */
+  includeChecked?: boolean;
+  /** Optional heading placed at the top of the text. */
+  title?: string;
+};
+
+function shareLine(item: ShoppingTextItem): string {
+  const amount = describeQuantity(item);
+  const base = amount ? `${amount} ${item.item}` : item.item;
+  return item.note ? `${base} — ${item.note}` : base;
+}
+
+/**
+ * Serialize a shopping list to tidy, human-readable plain text grouped by aisle
+ * with Markdown-style checkboxes ("- [ ] 2 lb chicken") so it pastes cleanly
+ * into Messages/WhatsApp/Notes (issue #408). Already-checked items are excluded
+ * by default. Pure — no DOM — so it is unit-testable and safe on the server.
+ */
+export function formatShoppingListText(
+  items: ShoppingTextItem[],
+  options: FormatShoppingListOptions = {},
+): string {
+  const { includeChecked = false, title } = options;
+  const visible = items.filter((item) => includeChecked || !item.checked);
+  if (visible.length === 0) return "";
+
+  const byCategory = new Map<ShoppingCategory, ShoppingTextItem[]>();
+  for (const item of visible) {
+    const category = CATEGORY_INDEX.has(item.category) ? item.category : "Other";
+    const list = byCategory.get(category) ?? [];
+    list.push(item);
+    byCategory.set(category, list);
+  }
+
+  const lines: string[] = [];
+  if (title && title.trim()) lines.push(title.trim(), "");
+
+  for (const category of SHOPPING_CATEGORIES) {
+    const group = byCategory.get(category);
+    if (!group || group.length === 0) continue;
+    lines.push(`${category}:`);
+    for (const item of group
+      .slice()
+      .sort((a, b) => a.item.localeCompare(b.item))) {
+      lines.push(`- [${item.checked ? "x" : " "}] ${shareLine(item)}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n").trimEnd();
+}
