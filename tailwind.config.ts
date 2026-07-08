@@ -1,4 +1,5 @@
 import { type Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 /**
  * Every color is driven by a CSS variable (see src/styles/themes.css) so the
@@ -280,7 +281,22 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    /**
+     * `short-landscape:` — phones (and small tablets) held sideways, where
+     * vertical space is scarce. Cook Mode uses it to drop into a side-by-side
+     * layout and cap step-media height so the instruction and controls stay on
+     * screen without scrolling (issue #292). The 640px height ceiling keeps
+     * full-height landscape tablets/desktops on the normal layout.
+     */
+    plugin(({ addVariant }) => {
+      addVariant(
+        "short-landscape",
+        "@media (orientation: landscape) and (max-height: 640px)",
+      );
+    }),
+  ],
 } satisfies Config;
 
 export default config;

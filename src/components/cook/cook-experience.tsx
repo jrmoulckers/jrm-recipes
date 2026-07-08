@@ -369,7 +369,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
         {stepAnnouncement}
       </p>
 
-      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section
           key={currentStep.id}
           aria-labelledby="current-step-title"
@@ -408,7 +408,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
             recipeTitle={recipe.title}
           />
 
-          <div className="flex flex-col gap-8 p-5 sm:p-8 lg:p-10">
+          <div className="flex flex-col gap-8 p-5 sm:p-8 short-landscape:gap-4 short-landscape:p-4 lg:p-10">
             <div className="flex flex-wrap items-center gap-2">
               {currentStep.section && (
                 <Badge variant="secondary" className="text-sm">
@@ -447,7 +447,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 id="current-step-title"
                 ref={stepHeadingRef}
                 tabIndex={-1}
-                className="max-w-4xl text-pretty font-display text-3xl font-semibold leading-tight tracking-tight focus:outline-none sm:text-4xl lg:text-5xl"
+                className="max-w-4xl text-pretty font-display text-3xl font-semibold leading-tight tracking-tight focus:outline-none short-landscape:text-2xl sm:text-4xl lg:text-5xl"
               >
                 {currentStep.instruction}
               </h1>
@@ -504,6 +504,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               largeTargets
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
+              "short-landscape:h-12 short-landscape:text-base",
             )}
             onClick={navPrevious}
             disabled={!canGoPrevious}
@@ -541,6 +542,7 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
               largeTargets
                 ? "h-[4.5rem] text-xl sm:h-20"
                 : "h-16 text-lg sm:h-[4.5rem]",
+              "short-landscape:h-12 short-landscape:text-base",
             )}
             onClick={canGoNext ? navNext : handleFinish}
           >
@@ -588,7 +590,7 @@ function CookHeader({
   const { kidSafe } = useThemeBehavior();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 py-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] short-landscape:py-1.5 sm:pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(1.25rem,env(safe-area-inset-right))]">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline" className="hidden sm:inline-flex">
@@ -827,7 +829,7 @@ function StepMedia({
       )}
     >
       {step.imageUrl && (
-        <div className="relative aspect-video overflow-hidden rounded-xl bg-background">
+        <div className="relative aspect-video overflow-hidden rounded-xl bg-background short-landscape:aspect-auto short-landscape:h-[28dvh]">
           <CloudinaryImage
             src={step.imageUrl}
             alt={`Step ${stepNumber} visual for ${recipeTitle}`}
@@ -843,7 +845,7 @@ function StepMedia({
           controls
           playsInline
           preload="metadata"
-          className="aspect-video w-full rounded-xl bg-background"
+          className="aspect-video w-full rounded-xl bg-background short-landscape:aspect-auto short-landscape:h-[28dvh]"
         >
           <source src={step.videoUrl} />
           Your browser does not support embedded recipe videos.
