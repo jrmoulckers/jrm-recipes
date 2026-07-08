@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
 import { ThemeSwitcher } from "~/components/theme/theme-switcher";
+import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
 import { AccessibilityMenu } from "~/components/a11y/accessibility-menu";
 import { AuthControls } from "~/components/auth/auth-controls";
 
@@ -29,6 +30,7 @@ export async function SiteHeader() {
             <Link href="/recipes/new">New recipe</Link>
           </Button>
           <ThemeSwitcher />
+          <LocaleSwitcher />
           <AccessibilityMenu />
           <AuthControls
             isConfigured={isConfigured}
