@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { slugify } from "~/lib/utils";
 import { track } from "~/lib/analytics";
+import { useReducedMotion } from "~/lib/use-reduced-motion";
 import {
   buildReelScenes,
   type ReelExportMode,
@@ -33,20 +34,6 @@ import {
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
-/** Detect the user's reduced-motion preference (SSR-safe). */
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(false);
-  React.useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mql.matches);
-    const onChange = (event: MediaQueryListEvent) => setReduced(event.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
-}
-
 /**
  * The reel/video studio: canvas preview + MediaRecorder export. Split out of
  * {@link CreateReelButton} so the heavy `reel/renderer` (canvas + MediaRecorder)
@@ -64,7 +51,7 @@ export function ReelStudio({
   reel: ReelRecipe;
   busyRef: React.RefObject<boolean>;
 }) {
-  const reducedMotion = usePrefersReducedMotion();
+  const reducedMotion = useReducedMotion();
   const scenes = React.useMemo(() => buildReelScenes(reel), [reel]);
 
   const [state, setState] = React.useState<LoadState>("idle");
