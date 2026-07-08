@@ -526,6 +526,7 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
       techniques: step.techniques ?? [],
     })),
     tags: r.tags,
+    equipment: [],
     dietaryFlags: [],
   };
 }

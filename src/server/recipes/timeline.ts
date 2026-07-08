@@ -17,6 +17,9 @@ export type AdaptationSource = {
   prepMinutes?: number | null;
   cookMinutes?: number | null;
   totalMinutes?: number | null;
+  restMinutes?: number | null;
+  makeAheadNote?: string | null;
+  equipment?: string[] | null;
   difficulty?: RecipeInput["difficulty"] | null;
   cuisine?: string | null;
   sourceName?: string | null;
@@ -30,6 +33,8 @@ export type AdaptationSource = {
     unit?: string | null;
     item: string;
     note?: string | null;
+    prep?: string | null;
+    stepPosition?: number | null;
     optional: boolean;
   }[];
   steps: {
@@ -38,6 +43,8 @@ export type AdaptationSource = {
     imageUrl?: string | null;
     videoUrl?: string | null;
     timerSeconds?: number | null;
+    targetTempC?: number | null;
+    doneness?: string | null;
     techniques?: string[] | null;
   }[];
   tags: { tag: { name: string } }[];
@@ -75,6 +82,9 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
     prepMinutes: source.prepMinutes ?? undefined,
     cookMinutes: source.cookMinutes ?? undefined,
     totalMinutes: source.totalMinutes ?? undefined,
+    restMinutes: source.restMinutes ?? undefined,
+    makeAheadNote: source.makeAheadNote ?? undefined,
+    equipment: source.equipment ?? [],
     difficulty: source.difficulty ?? undefined,
     cuisine: source.cuisine ?? undefined,
     sourceName: source.sourceName ?? undefined,
@@ -93,6 +103,8 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
       unit: ing.unit ?? undefined,
       item: ing.item,
       note: ing.note ?? undefined,
+      prep: ing.prep ?? undefined,
+      stepPosition: ing.stepPosition ?? undefined,
       optional: ing.optional,
     })),
     steps: source.steps.map((step) => ({
@@ -101,6 +113,8 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
       imageUrl: step.imageUrl ?? undefined,
       videoUrl: step.videoUrl ?? undefined,
       timerSeconds: step.timerSeconds ?? undefined,
+      targetTempC: step.targetTempC ?? undefined,
+      doneness: step.doneness ?? undefined,
       techniques: step.techniques ?? [],
     })),
     tags: source.tags.map((recipeTag) => recipeTag.tag.name),

@@ -59,6 +59,8 @@ type IngRow = {
   unit: string;
   item: string;
   note: string;
+  prep: string;
+  stepPosition: string;
   optional: boolean;
 };
 type StepRow = {
@@ -66,6 +68,8 @@ type StepRow = {
   instruction: string;
   imageUrl: string;
   timerMinutes: string;
+  targetTempC: string;
+  doneness: string;
   techniques: string;
 };
 
@@ -77,6 +81,9 @@ export type RecipeEditorValue = {
   servingsNoun: string;
   prepMinutes: string;
   cookMinutes: string;
+  restMinutes?: string;
+  makeAheadNote?: string;
+  equipment?: string;
   calories: string;
   proteinGrams: string;
   carbsGrams: string;
@@ -108,12 +115,16 @@ const EMPTY_ING: Omit<IngRow, "key"> = {
   unit: "",
   item: "",
   note: "",
+  prep: "",
+  stepPosition: "",
   optional: false,
 };
 const EMPTY_STEP: Omit<StepRow, "key"> = {
   instruction: "",
   imageUrl: "",
   timerMinutes: "",
+  targetTempC: "",
+  doneness: "",
   techniques: "",
 };
 
@@ -199,6 +210,9 @@ export function RecipeEditor({
     servingsNoun: initial?.servingsNoun ?? "servings",
     prepMinutes: initial?.prepMinutes ?? "",
     cookMinutes: initial?.cookMinutes ?? "",
+    restMinutes: initial?.restMinutes ?? "",
+    makeAheadNote: initial?.makeAheadNote ?? "",
+    equipment: initial?.equipment ?? "",
     calories: initial?.calories ?? "",
     proteinGrams: initial?.proteinGrams ?? "",
     carbsGrams: initial?.carbsGrams ?? "",
@@ -275,9 +289,11 @@ export function RecipeEditor({
       tags: v.tags || f.tags,
     }));
     if (v.ingredients.length)
-      setIngredients(v.ingredients.map((r) => ({ ...r, key: nextKey() })));
+      setIngredients(
+        v.ingredients.map((r) => ({ ...EMPTY_ING, ...r, key: nextKey() })),
+      );
     if (v.steps.length)
-      setSteps(v.steps.map((r) => ({ ...r, key: nextKey() })));
+      setSteps(v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })));
   }
 
   async function handleImport() {
@@ -321,6 +337,12 @@ export function RecipeEditor({
       servingsNoun: form.servingsNoun.trim() || undefined,
       prepMinutes: numOrUndef(form.prepMinutes),
       cookMinutes: numOrUndef(form.cookMinutes),
+      restMinutes: numOrUndef(form.restMinutes),
+      makeAheadNote: form.makeAheadNote.trim() || undefined,
+      equipment: form.equipment
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
       totalMinutes: undefined,
       calories: numOrUndef(form.calories),
       proteinGrams: numOrUndef(form.proteinGrams),
@@ -353,6 +375,8 @@ export function RecipeEditor({
           unit: r.unit.trim() || undefined,
           item: r.item.trim(),
           note: r.note.trim() || undefined,
+          prep: r.prep.trim() || undefined,
+          stepPosition: numOrUndef(r.stepPosition),
           optional: r.optional,
         })),
       steps: steps
@@ -365,6 +389,8 @@ export function RecipeEditor({
           timerSeconds: r.timerMinutes.trim()
             ? Math.round(Number(r.timerMinutes) * 60)
             : undefined,
+          targetTempC: numOrUndef(r.targetTempC),
+          doneness: r.doneness.trim() || undefined,
           techniques: r.techniques
             .split(",")
             .map((t) => t.trim())
@@ -609,7 +635,8 @@ export function RecipeEditor({
                   key={row.key}
                   className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
                 >
-                  <div className="grid flex-1 gap-2 sm:grid-cols-[4rem_5rem_1fr]">
+                  <div className="flex flex-1 flex-col gap-2">
+                    <div className="grid gap-2 sm:grid-cols-[4rem_5rem_1fr]">
                     <Input
                       aria-label={t("quantity")}
                       value={row.quantity}
@@ -653,6 +680,44 @@ export function RecipeEditor({
                       }
                       placeholder="all-purpose flour"
                     />
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-[1fr_9rem]">
+                      <Input
+                        aria-label="Ingredient prep"
+                        value={row.prep}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, prep: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="Prep — diced, softened…"
+                      />
+                      <select
+                        className={selectClass}
+                        aria-label="Step that uses this ingredient"
+                        value={row.stepPosition}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, stepPosition: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">Any step</option>
+                        {steps.map((_, si) => (
+                          <option key={si} value={String(si + 1)}>
+                            Step {si + 1}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <RowControls
                     objectLabel={t("ingredientObject")}
@@ -740,6 +805,37 @@ export function RecipeEditor({
                         placeholder="Techniques (comma sep.)"
                       />
                     </div>
+                    <div className="grid gap-2 sm:grid-cols-[8rem_1fr]">
+                      <Input
+                        aria-label="Target temperature in °C"
+                        value={row.targetTempC}
+                        onChange={(e) =>
+                          setSteps((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, targetTempC: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="Target °C"
+                        inputMode="numeric"
+                      />
+                      <Input
+                        aria-label="Doneness cue"
+                        value={row.doneness}
+                        onChange={(e) =>
+                          setSteps((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, doneness: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="Doneness — golden brown, springs back…"
+                      />
+                    </div>
                     <ImageUploadField
                       size="compact"
                       label={`Step ${i + 1} photo`}
@@ -820,7 +916,46 @@ export function RecipeEditor({
                 inputMode="numeric"
               />
             </Field>
+            <Field
+              label="Rest / inactive (min)"
+              name="restMinutes"
+              hint="Chilling, proving, resting — inactive time."
+              error={errors.restMinutes}
+            >
+              <Input
+                value={form.restMinutes}
+                onChange={(e) => set("restMinutes", e.target.value)}
+                inputMode="numeric"
+              />
+            </Field>
           </div>
+
+          <Field
+            label="Make-ahead"
+            name="makeAheadNote"
+            hint="What can be done in advance, and how far ahead."
+            error={errors.makeAheadNote}
+          >
+            <Textarea
+              value={form.makeAheadNote}
+              onChange={(e) => set("makeAheadNote", e.target.value)}
+              placeholder="Dough can be made up to 2 days ahead and kept chilled."
+              rows={2}
+            />
+          </Field>
+
+          <Field
+            label="Equipment & tools"
+            name="equipment"
+            hint="Comma-separated. Shown as a gather-your-tools pass in Cook Mode."
+            error={errors.equipment}
+          >
+            <Input
+              value={form.equipment}
+              onChange={(e) => set("equipment", e.target.value)}
+              placeholder="stand mixer, 9-inch cake tin, bench scraper"
+            />
+          </Field>
 
           <Field label="Difficulty" name="difficulty" error={errors.difficulty}>
             <select

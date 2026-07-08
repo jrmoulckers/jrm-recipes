@@ -10,12 +10,15 @@ import {
   CookingPot,
   Flame,
   History,
+  Hourglass,
   MessageCircle,
   Pencil,
   Play,
   Printer,
+  Thermometer,
   Timer,
   Users,
+  Wrench,
 } from "lucide-react";
 
 import { isDbConfigured } from "~/server/db";
@@ -191,6 +194,10 @@ export default async function RecipePage({
     recipe.prepMinutes != null && {
       icon: Timer,
       label: `${formatMinutes(recipe.prepMinutes)} prep`,
+    },
+    recipe.restMinutes != null && {
+      icon: Hourglass,
+      label: `${formatMinutes(recipe.restMinutes)} resting`,
     },
     recipe.servings != null && {
       icon: Users,
@@ -423,6 +430,38 @@ export default async function RecipePage({
                     No ingredients listed.
                   </p>
                 )}
+
+                {recipe.makeAheadNote && (
+                  <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold">
+                      <Hourglass className="size-4 text-primary" />
+                      Make ahead
+                    </h3>
+                    <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                      {recipe.makeAheadNote}
+                    </p>
+                  </div>
+                )}
+
+                {recipe.equipment && recipe.equipment.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
+                      <Wrench className="size-4 text-primary" />
+                      Equipment
+                    </h3>
+                    <ul className="flex flex-col gap-1.5 text-sm">
+                      {recipe.equipment.map((tool) => (
+                        <li key={tool} className="flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className="size-1.5 shrink-0 rounded-full bg-primary/60"
+                          />
+                          {tool}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Steps */}
@@ -470,6 +509,17 @@ export default async function RecipePage({
                               <Badge variant="secondary" className="gap-1">
                                 <Timer className="size-3" />
                                 {formatTimer(step.timerSeconds)}
+                              </Badge>
+                            )}
+                            {step.targetTempC != null && (
+                              <Badge variant="secondary" className="gap-1">
+                                <Thermometer className="size-3" />
+                                {step.targetTempC}°C
+                              </Badge>
+                            )}
+                            {step.doneness && (
+                              <Badge variant="muted" className="gap-1">
+                                {step.doneness}
                               </Badge>
                             )}
                             <TechniqueChips techniques={step.techniques} />

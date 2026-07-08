@@ -39,8 +39,10 @@ describe("RecipeEditor native selects (iOS zoom guard)", () => {
     const { container } = render(<RecipeEditor mode="create" />);
     const selects = Array.from(container.querySelectorAll("select"));
 
-    // Difficulty, Visibility and Status share selectClass and show by default.
-    expect(selects).toHaveLength(3);
+    // Difficulty, Visibility and Status share selectClass and show by default;
+    // each ingredient row also renders a "used in step" select (#425). The iOS
+    // zoom guard below must hold for every one of them.
+    expect(selects.length).toBeGreaterThanOrEqual(3);
     for (const select of selects) expectNoIosZoom(select);
   });
 
@@ -84,9 +86,10 @@ describe("RecipeEditor native selects (iOS zoom guard)", () => {
     );
     const selects = Array.from(container.querySelectorAll("select"));
 
-    // Group visibility reveals the fourth select (Difficulty, Visibility,
-    // Group, Status) — all four are guarded.
-    expect(selects).toHaveLength(4);
+    // Group visibility reveals the fourth base select (Difficulty, Visibility,
+    // Group, Status); ingredient rows add "used in step" selects (#425). Every
+    // one of them is guarded.
+    expect(selects.length).toBeGreaterThanOrEqual(4);
     for (const select of selects) expectNoIosZoom(select);
   });
 });

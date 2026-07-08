@@ -55,6 +55,8 @@ type PanelIngredient = {
   unit: string | null;
   item: string;
   note: string | null;
+  prep?: string | null;
+  stepPosition?: number | null;
   optional: boolean;
 };
 
@@ -803,11 +805,24 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {ing.item}
+                          {ing.prep && (
+                            <Badge
+                              variant="secondary"
+                              className="ms-2 align-middle"
+                            >
+                              {ing.prep}
+                            </Badge>
+                          )}
                           {ing.note && (
                             <span className="text-muted-foreground">
                               {" "}
                               — {ing.note}
                             </span>
+                          )}
+                          {ing.stepPosition != null && (
+                            <Badge variant="muted" className="ms-2 align-middle">
+                              Step {ing.stepPosition}
+                            </Badge>
                           )}
                           {ing.optional && (
                             <Badge variant="muted" className="ms-2 align-middle">

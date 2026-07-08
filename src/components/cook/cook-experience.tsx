@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import {
   ArrowLeft,
@@ -23,7 +23,9 @@ import {
   Repeat,
   RotateCcw,
   Square,
+  Thermometer,
   Timer,
+  Utensils,
   Volume2,
   VolumeX,
   X,
@@ -51,6 +53,11 @@ import {
   type TimerStatus,
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
+import {
+  displayUnit,
+  formatQuantity,
+  scaleQuantity,
+} from "~/lib/units";
 import { detectStepHazards } from "~/lib/kid-safety";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import { useReducedMotion } from "~/lib/use-reduced-motion";
@@ -67,6 +74,10 @@ import { awardForCompletion, type KidBadge } from "./kids-rewards";
 import { OfflineReadyBadge } from "./offline-ready-badge";
 import type { CookRecipe, CookStep } from "./types";
 import { useCookSession, type ActiveTimer } from "./use-cook-session";
+import {
+  findPreheatCue,
+  formatStepTemperature,
+} from "~/lib/cook-cues";
 import { useScreenWakeLock } from "./use-screen-wake-lock";
 import { useSpeech } from "./use-speech";
 import { useStepNarration } from "./use-step-narration";
@@ -321,6 +332,16 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       : null;
   const progressValue = ((stepIndex + 1) / totalSteps) * 100;
 
+  // Early preheat reminder (#424): if a later step warms the oven, surface it up
+  // front so the oven is hot by the time the cook gets there. Hidden once the
+  // cook reaches (or passes) that step, since the badge takes over from there.
+  const preheatCue = findPreheatCue(recipe.steps);
+  const showPreheatCue =
+    preheatCue != null && stepIndex < preheatCue.stepNumber - 1;
+  const preheatTemp = preheatCue
+    ? formatStepTemperature(preheatCue.targetTempC, system)
+    : null;
+
   // Directional step transition (#76): compare the live step index to the
   // previous render's to classify a nav as forward/back, so the re-mounted step
   // card slides in from the matching edge. First render (and resumed restores)
@@ -365,6 +386,19 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
       />
 
       <CookAllergenBanner recipe={recipe} />
+
+      {showPreheatCue && preheatCue && (
+        <div className="mx-auto w-full max-w-7xl px-3 pt-3 sm:px-5">
+          <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
+            <Bell className="size-4 shrink-0 text-primary" />
+            <p>
+              <span className="font-semibold">Preheat now</span> — step{" "}
+              {preheatCue.stepNumber} needs the oven
+              {preheatTemp ? ` at ${preheatTemp}` : ""}.
+            </p>
+          </div>
+        </div>
+      )}
 
       <p className="sr-only" role="status" aria-live="polite">
         {stepAnnouncement}
@@ -426,6 +460,18 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                   {formatCountdown(currentStep.timerSeconds)}
                 </Badge>
               )}
+              {formatStepTemperature(currentStep.targetTempC, system) && (
+                <Badge variant="accent" className="gap-1 text-sm">
+                  <Thermometer className="size-3.5" />
+                  {formatStepTemperature(currentStep.targetTempC, system)}
+                </Badge>
+              )}
+              {currentStep.doneness && (
+                <Badge variant="secondary" className="gap-1 text-sm">
+                  <CheckCircle2 className="size-3.5" />
+                  {currentStep.doneness}
+                </Badge>
+              )}
               {speech.supported && (
                 <ReadAloudControls
                   enabled={speech.enabled}
@@ -466,6 +512,12 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
                 </p>
               )}
             </div>
+
+            <StepIngredients
+              recipe={recipe}
+              step={currentStep}
+              servings={servings}
+            />
           </div>
         </section>
 
@@ -482,6 +534,10 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
 
           <RecipeAtAGlance recipe={recipe} />
 
+          {recipe.equipment && recipe.equipment.length > 0 && (
+            <EquipmentPanel equipment={recipe.equipment} />
+          )}
+
           {activeTimers.length > 0 && (
             <ActiveTimersPanel
               activeTimers={activeTimers}
@@ -494,6 +550,8 @@ export function CookExperience({ recipe }: { recipe: CookRecipe }) {
           )}
 
           {recipe.notes && <CookNotes notes={recipe.notes} />}
+
+          <CookNotepad recipeId={recipe.id} />
         </aside>
       </main>
 
@@ -1068,6 +1126,161 @@ function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
     <p className="sr-only" role="status">
       {message}
     </p>
+  );
+}
+
+/**
+ * Ingredients linked to the current step (#425), with amounts scaled to the
+ * live serving count so the cook sees exactly what to add without flipping back
+ * to the full list.
+ */
+function StepIngredients({
+  recipe,
+  step,
+  servings,
+}: {
+  recipe: CookRecipe;
+  step: CookStep;
+  servings: number;
+}) {
+  const locale = useLocale();
+  const linked = recipe.ingredients.filter(
+    (ing) => ing.stepPosition === step.position,
+  );
+  if (linked.length === 0) return null;
+  const base = recipe.servings ?? servings;
+  const factor = base > 0 ? servings / base : 1;
+  return (
+    <div className="rounded-xl border border-border bg-muted/40 p-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+        <ListOrdered className="size-4 text-primary" />
+        For this step
+      </h2>
+      <ul className="mt-2 flex flex-col gap-1.5 text-base">
+        {linked.map((ing) => {
+          const scaled = scaleQuantity(ing.quantity, factor);
+          const amount = formatQuantity(scaled, ing.unit, locale);
+          const unit = displayUnit(ing.unit, scaled, locale);
+          return (
+            <li key={ing.id} className="flex flex-wrap items-baseline gap-x-1.5">
+              {amount && (
+                <span className="font-semibold tabular-nums text-foreground">
+                  {amount}
+                  {unit ? ` ${unit}` : ""}
+                </span>
+              )}
+              <span>{ing.item}</span>
+              {ing.prep && (
+                <span className="text-muted-foreground">— {ing.prep}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * "Gather your tools" pass (#410): the equipment a recipe needs, with a local
+ * check-off so a cook can lay everything out before starting. The checklist is
+ * ephemeral (per mount) — it's a staging aid, not persisted state.
+ */
+function EquipmentPanel({ equipment }: { equipment: string[] }) {
+  const [checked, setChecked] = React.useState<Set<string>>(new Set());
+  if (equipment.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
+      <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
+        <Utensils className="size-5 text-primary" />
+        Gather your tools
+      </h2>
+      <ul className="mt-4 flex flex-col gap-1.5">
+        {equipment.map((tool) => {
+          const isChecked = checked.has(tool);
+          return (
+            <li key={tool}>
+              <button
+                type="button"
+                onClick={() =>
+                  setChecked((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(tool)) next.delete(tool);
+                    else next.add(tool);
+                    return next;
+                  })
+                }
+                className="flex w-full items-center gap-3 rounded-lg px-1 py-1.5 text-start text-sm"
+                aria-pressed={isChecked}
+              >
+                <span
+                  className={cn(
+                    "flex size-5 shrink-0 items-center justify-center rounded-md border border-input",
+                    isChecked && "border-primary bg-primary text-primary-foreground",
+                  )}
+                  aria-hidden="true"
+                >
+                  {isChecked && <Check className="size-3.5" />}
+                </span>
+                <span className={cn(isChecked && "text-muted-foreground line-through")}>
+                  {tool}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Private, per-cook adjustment notes (#419): jotted while cooking and kept in
+ * the browser keyed by recipe, so tweaks ("needed 5 more min", "used honey")
+ * survive a reload but never touch the shared recipe or leave the device.
+ */
+function CookNotepad({ recipeId }: { recipeId: string }) {
+  const storageKey = `cook-notes:${recipeId}`;
+  const [note, setNote] = React.useState("");
+  const [loaded, setLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      setNote(window.localStorage.getItem(storageKey) ?? "");
+    } catch {
+      // Private mode / storage disabled — notes just won't persist.
+    }
+    setLoaded(true);
+  }, [storageKey]);
+
+  React.useEffect(() => {
+    if (!loaded) return;
+    try {
+      if (note.trim()) window.localStorage.setItem(storageKey, note);
+      else window.localStorage.removeItem(storageKey);
+    } catch {
+      // Ignore write failures; the field still works in-session.
+    }
+  }, [note, loaded, storageKey]);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
+      <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
+        <BookOpen className="size-5 text-primary" />
+        My notes
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Private to this device. Only you can see these.
+      </p>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={4}
+        placeholder="Needed 5 more minutes; used honey instead of sugar…"
+        aria-label="Private per-cook notes"
+        className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
+      />
+    </section>
   );
 }
 
