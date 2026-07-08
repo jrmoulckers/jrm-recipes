@@ -123,7 +123,45 @@ export async function uniqueSlug(
   return `${base}-${Date.now().toString(36)}`;
 }
 
-function scalarFields(input: RecipeInput) {
+/**
+ * Resolve the group a recipe may be persisted with, enforcing membership.
+ *
+ * A recipe must only ever carry a `groupId` its author actually belongs to.
+ * This is the write-side guard for the group trust boundary: without it a
+ * signed-in user could set `visibility: "group"` + an arbitrary `groupId` and
+ * plant a recipe in a family cookbook they were never invited to — a broken
+ * access control / IDOR. Membership is checked against `group_members` inside
+ * the caller's transaction so a rejection rolls back the whole write.
+ *
+ * - Member of the target group → keep the `groupId`.
+ * - Non-member, `group` visibility → reject (`FORBIDDEN`): the recipe *requires*
+ *   a group, so we refuse rather than silently strand it.
+ * - Non-member, any other visibility → drop the stray `groupId` (persist
+ *   `null`). It's a leftover from the picker that grants no access, so we don't
+ *   fail an otherwise-valid save over it.
+ */
+export async function resolveGroupId(
+  tx: Tx,
+  input: RecipeInput,
+  author: User,
+): Promise<string | null> {
+  const groupId = input.groupId ?? null;
+  if (!groupId) return null;
+
+  const membership = await tx.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, author.id),
+    ),
+    columns: { id: true },
+  });
+  if (membership) return groupId;
+
+  if (input.visibility === "group") throw new Error("FORBIDDEN");
+  return null;
+}
+
+function scalarFields(input: RecipeInput, groupId: string | null) {
   return {
     title: input.title,
     description: input.description ?? null,
@@ -144,7 +182,7 @@ function scalarFields(input: RecipeInput) {
     notes: input.notes ?? null,
     visibility: input.visibility,
     status: input.status,
-    groupId: input.groupId ?? null,
+    groupId,
   };
 }
 
@@ -262,13 +300,14 @@ async function applyRecipeInput(
   label: string,
   current: { slug: string; publishedAt: Date | null },
 ) {
+  const groupId = await resolveGroupId(tx, input, author);
   const nowPublished = input.status === "published";
   const publishedAt =
     nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
 
   await tx
     .update(recipes)
-    .set({ ...scalarFields(input), publishedAt })
+    .set({ ...scalarFields(input, groupId), publishedAt })
     .where(eq(recipes.id, id));
 
   await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
@@ -282,11 +321,12 @@ async function applyRecipeInput(
 export async function createRecipe(input: RecipeInput, author: User) {
   return withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      const groupId = await resolveGroupId(tx, input, author);
       const slug = await uniqueSlug(tx, recipeSlug(input.title));
       const [row] = await tx
         .insert(recipes)
         .values({
-          ...scalarFields(input),
+          ...scalarFields(input, groupId),
           slug,
           authorId: author.id,
           publishedAt: input.status === "published" ? new Date() : null,
@@ -380,7 +420,9 @@ export async function forkRecipe(
       const [row] = await tx
         .insert(recipes)
         .values({
-          ...scalarFields(input),
+          // Adaptations always start private with no group (see
+          // buildAdaptationInput), so there's no membership to vet here.
+          ...scalarFields(input, input.groupId ?? null),
           slug,
           authorId: author.id,
           forkedFromId: source.id,

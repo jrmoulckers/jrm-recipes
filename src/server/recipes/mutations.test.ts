@@ -21,6 +21,8 @@ import {
   createRecipe,
   forkRecipe,
   isSlugConflict,
+  resolveGroupId,
+  updateRecipe,
   uniqueSlug,
 } from "./mutations";
 
@@ -164,5 +166,229 @@ describe("forkRecipe slug-conflict resilience", () => {
 
     expect(result).toEqual(created);
     expect(dbMock.transaction).toHaveBeenCalledTimes(2);
+  });
+});
+
+// --- Group-membership enforcement (issue #180 — IDOR on groupId) -------------
+
+/** A tx stand-in exposing just the `group_members` lookup `resolveGroupId` does. */
+function membershipTx(member: { id: string } | undefined) {
+  const findFirst = vi.fn().mockResolvedValue(member);
+  const tx = {
+    query: { groupMembers: { findFirst } },
+  } as unknown as Parameters<typeof resolveGroupId>[0];
+  return { tx, findFirst };
+}
+
+describe("resolveGroupId (group-membership guard)", () => {
+  it("keeps a groupId the author is a member of", async () => {
+    const { tx, findFirst } = membershipTx({ id: "gm_1" });
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_1",
+    });
+
+    await expect(resolveGroupId(tx, parsed, author)).resolves.toBe("grp_1");
+    expect(findFirst).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a group-visibility recipe assigned to a group the author isn't in", async () => {
+    const { tx } = membershipTx(undefined);
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_x",
+    });
+
+    await expect(resolveGroupId(tx, parsed, author)).rejects.toThrow(
+      "FORBIDDEN",
+    );
+  });
+
+  it("nulls a stray groupId on a non-group recipe when the author isn't a member", async () => {
+    const { tx } = membershipTx(undefined);
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "private",
+      groupId: "grp_x",
+    });
+
+    await expect(resolveGroupId(tx, parsed, author)).resolves.toBeNull();
+  });
+
+  it("keeps a groupId a member attaches to a non-group recipe", async () => {
+    const { tx } = membershipTx({ id: "gm_1" });
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "private",
+      groupId: "grp_1",
+    });
+
+    await expect(resolveGroupId(tx, parsed, author)).resolves.toBe("grp_1");
+  });
+
+  it("returns null without a membership lookup when no groupId is set", async () => {
+    const { tx, findFirst } = membershipTx({ id: "gm_1" });
+    const parsed = recipeInput.parse({ title: "Apple Pie" });
+
+    await expect(resolveGroupId(tx, parsed, author)).resolves.toBeNull();
+    expect(findFirst).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A resolved-then-chainable stand-in: `await tx.insert(t).values(v)` resolves,
+ * while `tx.insert(t).values(v).returning(...)` / `.onConflictDoNothing()` also
+ * work — matching the fluent drizzle surface the mutation code walks.
+ */
+function chainable(result: unknown) {
+  return {
+    returning: vi.fn(() => Promise.resolve(result)),
+    onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
+    then: (
+      onFulfilled: (value: unknown) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+  };
+}
+
+/** Fake tx that drives a full `createRecipe` transaction without a database. */
+function createTx(opts: { member: boolean }) {
+  const recipeValues = vi.fn();
+  const insert = vi.fn((table: unknown) => ({
+    values: (vals: unknown) => {
+      if (table === recipes) recipeValues(vals);
+      return chainable(table === recipes ? [{ id: "r1", slug: "apple-pie" }] : undefined);
+    },
+  }));
+  const tx = {
+    query: {
+      groupMembers: {
+        findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
+      },
+      recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+    },
+    insert,
+    delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
+    })),
+  };
+  return { tx, insert, recipeValues };
+}
+
+describe("createRecipe group-membership enforcement", () => {
+  it("persists a groupId the author belongs to", async () => {
+    const { tx, recipeValues } = createTx({ member: true });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_1",
+    });
+
+    const result = await createRecipe(parsed, author);
+
+    expect(result).toEqual({ id: "r1", slug: "apple-pie" });
+    expect(recipeValues).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: "grp_1", visibility: "group" }),
+    );
+  });
+
+  it("rejects (FORBIDDEN) and persists nothing when the author isn't a member", async () => {
+    const { tx, insert } = createTx({ member: false });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_x",
+    });
+
+    await expect(createRecipe(parsed, author)).rejects.toThrow("FORBIDDEN");
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("nulls a stray groupId on a private recipe from a non-member", async () => {
+    const { tx, recipeValues } = createTx({ member: false });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "private",
+      groupId: "grp_x",
+    });
+
+    await createRecipe(parsed, author);
+
+    expect(recipeValues).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: null, visibility: "private" }),
+    );
+  });
+});
+
+/** Fake tx that drives a full `updateRecipe` transaction without a database. */
+function updateTx(opts: { member: boolean }) {
+  const setValues = vi.fn();
+  const update = vi.fn(() => ({
+    set: (vals: unknown) => {
+      setValues(vals);
+      return { where: vi.fn(() => Promise.resolve(undefined)) };
+    },
+  }));
+  const tx = {
+    query: {
+      groupMembers: {
+        findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
+      },
+      recipes: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "r1",
+          slug: "apple-pie",
+          publishedAt: null,
+          status: "draft",
+        }),
+      },
+    },
+    update,
+    insert: vi.fn(() => ({ values: () => chainable(undefined) })),
+    delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
+    })),
+  };
+  return { tx, update, setValues };
+}
+
+describe("updateRecipe group-membership enforcement", () => {
+  it("allows an update assigning a group the author belongs to", async () => {
+    const { tx, setValues } = updateTx({ member: true });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_1",
+    });
+
+    const result = await updateRecipe("r1", parsed, author);
+
+    expect(result).toEqual({ id: "r1", slug: "apple-pie" });
+    expect(setValues).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: "grp_1" }),
+    );
+  });
+
+  it("rejects (FORBIDDEN) an update assigning a group the author isn't in", async () => {
+    const { tx, update } = updateTx({ member: false });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    const parsed = recipeInput.parse({
+      title: "Apple Pie",
+      visibility: "group",
+      groupId: "grp_x",
+    });
+
+    await expect(updateRecipe("r1", parsed, author)).rejects.toThrow(
+      "FORBIDDEN",
+    );
+    expect(update).not.toHaveBeenCalled();
   });
 });
