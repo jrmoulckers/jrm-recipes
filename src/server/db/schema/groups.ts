@@ -1,9 +1,12 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   pgEnum,
   pgTable,
+  timestamp,
   unique,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -57,8 +60,64 @@ export const groupMembers = pgTable(
   ],
 );
 
+/** Lifecycle of a group invitation (issue #181). */
+export const invitationStatus = pgEnum("invitation_status", [
+  "pending",
+  "accepted",
+  "revoked",
+  "expired",
+]);
+
+/**
+ * A pending (or resolved) invitation for someone to join a group (issue #181).
+ * `group_members` only records people who are *already* in; this table carries
+ * the not-yet-accepted state: who was invited (by email and/or handle, plus a
+ * `userId` once they have an account), who invited them, the role they'll get
+ * on accept, an opaque `token` for the accept link, and an optional expiry.
+ */
+export const groupInvitations = pgTable(
+  "group_invitations",
+  {
+    id: pk(),
+    groupId: fk()
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    // Who sent the invite; nulls out if that user is later removed so the
+    // invitation record (and any membership it produced) survives.
+    invitedById: fk().references(() => users.id, { onDelete: "set null" }),
+    // The invitee's account once known — set at invite time if the email/handle
+    // already maps to a user, otherwise stamped on accept.
+    userId: fk().references(() => users.id, { onDelete: "set null" }),
+    email: varchar({ length: 320 }),
+    handle: varchar({ length: 60 }),
+    role: memberRole().notNull().default("member"),
+    token: varchar({ length: 64 }).notNull().unique(),
+    status: invitationStatus().notNull().default("pending"),
+    expiresAt: timestamp({ withTimezone: true }),
+    ...timestamps(),
+  },
+  (t) => [
+    // At most one *pending* invite per (group, email): prevents duplicate
+    // outstanding invites while still allowing a fresh invite after a prior one
+    // is revoked/expired/accepted. Partial so it ignores handle-only invites
+    // (email IS NULL) and resolved rows. The unique `token` already covers
+    // accept-link lookups, so no separate token index is needed.
+    uniqueIndex("group_invitations_pending_email_uq")
+      .on(t.groupId, t.email)
+      .where(sql`${t.status} = 'pending' and ${t.email} is not null`),
+    index("group_invitations_group_idx").on(t.groupId),
+    // Must be reachable by at least one of email or handle (mirrors the Zod
+    // `inviteInput` refine) so an invite can never be created with no invitee.
+    check(
+      "group_invitations_contact_check",
+      sql`${t.email} is not null or ${t.handle} is not null`,
+    ),
+  ],
+);
+
 export const groupsRelations = relations(groups, ({ many, one }) => ({
   members: many(groupMembers),
+  invitations: many(groupInvitations),
   recipes: many(recipes),
   createdBy: one(users, {
     fields: [groups.createdById],
@@ -77,7 +136,30 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
   }),
 }));
 
+export const groupInvitationsRelations = relations(
+  groupInvitations,
+  ({ one }) => ({
+    group: one(groups, {
+      fields: [groupInvitations.groupId],
+      references: [groups.id],
+    }),
+    invitedBy: one(users, {
+      fields: [groupInvitations.invitedById],
+      references: [users.id],
+      relationName: "invitedBy",
+    }),
+    user: one(users, {
+      fields: [groupInvitations.userId],
+      references: [users.id],
+      relationName: "invitee",
+    }),
+  }),
+);
+
 export type Group = typeof groups.$inferSelect;
 export type NewGroup = typeof groups.$inferInsert;
 export type GroupMember = typeof groupMembers.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
+export type GroupInvitation = typeof groupInvitations.$inferSelect;
+export type NewGroupInvitation = typeof groupInvitations.$inferInsert;
+export type InvitationStatus = (typeof invitationStatus.enumValues)[number];

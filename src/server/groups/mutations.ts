@@ -1,10 +1,13 @@
 import "server-only";
 
+import { randomBytes } from "node:crypto";
+
 import { and, eq, or, sql } from "drizzle-orm";
 
 import { slugify } from "~/lib/utils";
 import { db } from "~/server/db";
 import {
+  groupInvitations,
   groupMembers,
   groups,
   recipes,
@@ -12,11 +15,25 @@ import {
   type MemberRole,
   type User,
 } from "~/server/db/schema";
-import { type GroupInput } from "./validation";
+import { type GroupInput, type InviteInput, inviteInput } from "./validation";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const MANAGER_ROLES = new Set<MemberRole>(["owner", "admin"]);
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Opaque, URL-safe bearer token for an invitation's accept link (issue #181). */
+function generateInviteToken(): string {
+  return randomBytes(24).toString("base64url");
+}
+
+/** Strip a leading `@` and l-case a handle so it matches the stored form. */
+function normalizeHandle(handle: string | undefined): string | null {
+  if (!handle) return null;
+  const normalized = handle.replace(/^@/, "").toLowerCase();
+  return normalized.length ? normalized : null;
+}
 
 function groupSlug(name: string): string {
   const base = slugify(name).slice(0, 72);
@@ -319,5 +336,172 @@ export async function transferOwnership(
       .where(eq(groupMembers.id, currentOwner.id));
 
     return { slug: group.slug };
+  });
+}
+
+/**
+ * Invite someone to a group (issue #181). Only owner/admin may invite, and only
+ * an owner may invite as an admin. Creates a `pending` invitation carrying an
+ * opaque accept token and an expiry; if the invitee's email/handle already maps
+ * to an account it's pre-linked (and rejected if they're already a member). A
+ * duplicate *pending* invite for the same contact is refused (also enforced at
+ * the DB for email via the partial unique index).
+ */
+export async function createInvitation(
+  groupSlugOrId: string,
+  actor: User,
+  input: InviteInput,
+) {
+  const data = inviteInput.parse(input);
+  const email = data.email ?? null;
+  const handle = normalizeHandle(data.handle);
+  if (!email && !handle) throw new Error("INVALID");
+
+  return db.transaction(async (tx) => {
+    const group = await findGroup(tx, groupSlugOrId);
+    if (!group) throw new Error("NOT_FOUND");
+
+    const actorRole = await requireManager(tx, group.id, actor);
+    // Mirror addMember: an admin can invite members/kids but not fellow admins.
+    if (data.role === "admin" && actorRole !== "owner") {
+      throw new Error("FORBIDDEN");
+    }
+
+    // Pre-link an existing account (and reject inviting a current member).
+    const target = await findUserByIdentifier(tx, email ?? handle!);
+    if (target) {
+      const existingMember = await membershipFor(tx, group.id, target.id);
+      if (existingMember) throw new Error("ALREADY_MEMBER");
+    }
+
+    const duplicate = await tx.query.groupInvitations.findFirst({
+      where: and(
+        eq(groupInvitations.groupId, group.id),
+        eq(groupInvitations.status, "pending"),
+        email
+          ? eq(groupInvitations.email, email)
+          : eq(groupInvitations.handle, handle!),
+      ),
+      columns: { id: true },
+    });
+    if (duplicate) throw new Error("ALREADY_INVITED");
+
+    const [invitation] = await tx
+      .insert(groupInvitations)
+      .values({
+        groupId: group.id,
+        invitedById: actor.id,
+        userId: target?.id ?? null,
+        email,
+        handle,
+        role: data.role,
+        token: generateInviteToken(),
+        status: "pending",
+        expiresAt: new Date(Date.now() + data.expiresInDays * DAY_MS),
+      })
+      .returning({
+        id: groupInvitations.id,
+        token: groupInvitations.token,
+        status: groupInvitations.status,
+        expiresAt: groupInvitations.expiresAt,
+      });
+
+    if (!invitation) throw new Error("CONFLICT");
+    return invitation;
+  });
+}
+
+/**
+ * Accept an invitation by its token (issue #181). Transactionally creates the
+ * membership with the invited role and marks the invite `accepted`. Idempotent:
+ * if the accepting user is already a member no duplicate row is created
+ * (respecting `group_members_group_user_uq`). Lazily expires an overdue invite.
+ */
+export async function acceptInvitation(token: string, user: User) {
+  return db.transaction(async (tx) => {
+    const invitation = await tx.query.groupInvitations.findFirst({
+      where: eq(groupInvitations.token, token),
+    });
+    if (!invitation) throw new Error("NOT_FOUND");
+    if (invitation.status === "revoked") throw new Error("REVOKED");
+
+    const overdue =
+      invitation.expiresAt != null &&
+      invitation.expiresAt.getTime() <= Date.now();
+    if (invitation.status === "expired" || (invitation.status === "pending" && overdue)) {
+      if (invitation.status === "pending") {
+        await tx
+          .update(groupInvitations)
+          .set({ status: "expired" })
+          .where(eq(groupInvitations.id, invitation.id));
+      }
+      throw new Error("EXPIRED");
+    }
+
+    const existing = await membershipFor(tx, invitation.groupId, user.id);
+
+    if (invitation.status === "accepted") {
+      // Already consumed. Idempotent only if this user is still the member it
+      // produced; otherwise the (single-use) token can't mint a new membership.
+      if (existing) {
+        return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
+      }
+      throw new Error("ALREADY_ACCEPTED");
+    }
+
+    // status === "pending"
+    if (existing) {
+      await tx
+        .update(groupInvitations)
+        .set({ status: "accepted", userId: user.id })
+        .where(eq(groupInvitations.id, invitation.id));
+      return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
+    }
+
+    await tx.insert(groupMembers).values({
+      groupId: invitation.groupId,
+      userId: user.id,
+      role: invitation.role,
+    });
+    await tx
+      .update(groupInvitations)
+      .set({ status: "accepted", userId: user.id })
+      .where(eq(groupInvitations.id, invitation.id));
+
+    return { groupId: invitation.groupId, role: invitation.role, alreadyMember: false };
+  });
+}
+
+/**
+ * Revoke a pending invitation (issue #181). Owner/admin only. Idempotent for an
+ * already-revoked invite; refuses to revoke one that's been accepted/expired.
+ */
+export async function revokeInvitation(
+  groupSlugOrId: string,
+  actor: User,
+  invitationId: string,
+) {
+  return db.transaction(async (tx) => {
+    const group = await findGroup(tx, groupSlugOrId);
+    if (!group) throw new Error("NOT_FOUND");
+    await requireManager(tx, group.id, actor);
+
+    const invitation = await tx.query.groupInvitations.findFirst({
+      where: and(
+        eq(groupInvitations.id, invitationId),
+        eq(groupInvitations.groupId, group.id),
+      ),
+    });
+    if (!invitation) throw new Error("NOT_FOUND");
+    if (invitation.status === "revoked") {
+      return { id: invitation.id, status: "revoked" as const };
+    }
+    if (invitation.status !== "pending") throw new Error("NOT_PENDING");
+
+    await tx
+      .update(groupInvitations)
+      .set({ status: "revoked" })
+      .where(eq(groupInvitations.id, invitation.id));
+    return { id: invitation.id, status: "revoked" as const };
   });
 }
