@@ -40,9 +40,15 @@ export const reviews = pgTable(
     rating: integer().notNull(),
     title: varchar({ length: 200 }),
     body: text(),
+    // Optional "how it turned out" photo attached to the written review (#341).
+    photoUrl: varchar({ length: 2048 }),
     // Set when the author edits their review after first publishing it; NULL on
     // the original write so the UI can show an "edited" marker.
     editedAt: timestamp({ withTimezone: true }),
+    // Moderation hide (issue #357): a set timestamp removes this from member
+    // (and always kid) views. `hiddenBy` records the actioning moderator.
+    hiddenAt: timestamp({ withTimezone: true }),
+    hiddenBy: fk().references(() => users.id, { onDelete: "set null" }),
     ...timestamps(),
   },
   (t) => [

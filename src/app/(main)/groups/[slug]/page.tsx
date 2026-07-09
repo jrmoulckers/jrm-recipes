@@ -3,7 +3,7 @@ import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus, Settings, Users } from "lucide-react";
+import { Plus, ShieldAlert, Settings, Users } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -11,7 +11,15 @@ import {
   getGroupBySlug,
   type GroupRecipe,
 } from "~/server/groups/queries";
+import { getOpenReportCount } from "~/server/moderation/queries";
+import { getGroupActivity } from "~/server/activity/queries";
+import {
+  getRecentCookAlongsToLog,
+  getUpcomingCookAlongs,
+} from "~/server/cookalong/queries";
 import { AddMemberForm } from "~/components/groups/add-member-form";
+import { ActivityFeed } from "~/components/groups/activity-feed";
+import { CookAlongSection } from "~/components/groups/cook-along-section";
 import { GroupActions } from "~/components/groups/group-actions";
 import { InviteLinkManager } from "~/components/groups/invite-link-manager";
 import {
@@ -79,10 +87,32 @@ export default async function GroupPage({
   params: Promise<SlugRouteParams>;
 }) {
   const { slug } = await parseSlugParams(params);
-  const { group } = await load(slug);
+  const { viewer, group } = await load(slug);
   if (!group) notFound();
 
   const canManage = canManageGroup(group.viewerRole);
+  const openReportCount = canManage
+    ? await getOpenReportCount(group.id, group.viewerRole)
+    : 0;
+  const activity =
+    group.viewerRole && viewer
+      ? await getGroupActivity(group.id, {
+          id: viewer.id,
+          role: group.viewerRole,
+        })
+      : null;
+  const isMember = Boolean(group.viewerRole);
+  const [upcomingCookAlongs, cookAlongsToLog] =
+    isMember && viewer
+      ? await Promise.all([
+          getUpcomingCookAlongs(group.id, viewer.id),
+          getRecentCookAlongsToLog(group.id, viewer.id),
+        ])
+      : [[], []];
+  const cookAlongRecipes = group.recipes.map((recipe) => ({
+    id: recipe.id,
+    title: recipe.title,
+  }));
   const members = group.members.map<MemberListMember>((member) => ({
     id: member.id,
     userId: member.userId,
@@ -140,6 +170,19 @@ export default async function GroupPage({
           <div className="flex flex-wrap gap-2">
             {canManage ? (
               <Button asChild variant="outline">
+                <Link href={`/groups/${group.slug}/moderation`}>
+                  <ShieldAlert />
+                  Moderation
+                  {openReportCount > 0 ? (
+                    <Badge variant="destructive" className="ms-1">
+                      {openReportCount}
+                    </Badge>
+                  ) : null}
+                </Link>
+              </Button>
+            ) : null}
+            {canManage ? (
+              <Button asChild variant="outline">
                 <Link href={`/groups/${group.slug}/settings`}>
                   <Settings />
                   Settings
@@ -152,6 +195,40 @@ export default async function GroupPage({
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <main className="flex min-w-0 flex-col gap-8">
+          {activity ? (
+            <section className="flex flex-col gap-4">
+              <div>
+                <h2 className="font-display text-2xl font-bold tracking-tight">
+                  Activity
+                </h2>
+                <p className="mt-1 text-muted-foreground">
+                  What the family&apos;s been cooking, adding, and saying.
+                </p>
+              </div>
+              <ActivityFeed
+                groupId={group.id}
+                initialEvents={activity.events}
+                initialCursor={activity.nextCursor}
+              />
+            </section>
+          ) : null}
+
+          {activity ? <Separator /> : null}
+
+          {isMember ? (
+            <>
+              <CookAlongSection
+                groupSlug={group.slug}
+                groupId={group.id}
+                isMember={isMember}
+                recipes={cookAlongRecipes}
+                upcoming={upcomingCookAlongs}
+                toLog={cookAlongsToLog}
+              />
+              <Separator />
+            </>
+          ) : null}
+
           <section className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div>

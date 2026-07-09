@@ -7,9 +7,7 @@ import {
   CornerDownRight,
   Lightbulb,
   MessageCircle,
-  MoreHorizontal,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +20,12 @@ import {
   resolveCommentAction,
 } from "~/server/engagement/actions";
 import type { ThreadedComment } from "~/server/engagement/queries";
+import type { MentionCandidate } from "~/lib/mentions";
+import { MentionTextarea } from "~/components/engagement/mention-textarea";
+import { MentionText } from "~/components/engagement/mention-text";
+import { ReactionBar } from "~/components/engagement/reaction-bar";
+import { ContentActionsMenu } from "~/components/moderation/content-actions-menu";
+import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
 import {
   Avatar,
   AvatarFallback,
@@ -29,15 +33,8 @@ import {
 } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import { Textarea } from "~/components/ui/textarea";
 import { CharacterCounter } from "~/components/ui/character-counter";
 import {
   COMMENT_MAX_LENGTH,
@@ -72,14 +69,23 @@ function relativeTime(date: Date, locale: string) {
   return formatRelativeTime(new Date(date), locale);
 }
 
-export function CommentsSection(props: {
+type CommentReactions = {
+  counts: ReactionCount[];
+  reactors: Partial<Record<ReactionEmojiKey, string[]>>;
+};
+
+export type CommentsSectionProps = {
   recipeId: string;
   recipeSlug: string;
   initialComments: ThreadedComment[];
   currentUserId: string | null;
   isRecipeOwner: boolean;
   canPost: boolean;
-}) {
+  mentionCandidates?: MentionCandidate[];
+  reactionsByComment?: Record<string, CommentReactions>;
+};
+
+export function CommentsSection(props: CommentsSectionProps) {
   const {
     recipeId,
     recipeSlug,
@@ -87,6 +93,8 @@ export function CommentsSection(props: {
     currentUserId,
     isRecipeOwner,
     canPost,
+    mentionCandidates = [],
+    reactionsByComment = {},
   } = props;
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -226,14 +234,15 @@ export function CommentsSection(props: {
             <Label htmlFor="comment-body" className="sr-only">
               Comment body
             </Label>
-            <Textarea
+            <MentionTextarea
               id="comment-body"
               value={body}
-              onChange={(event) => setBody(event.target.value)}
+              onChange={setBody}
+              candidates={mentionCandidates}
               placeholder={
                 kind === "suggestion"
                   ? "Suggest a change the recipe owner can resolve…"
-                  : "Leave a note for the family table…"
+                  : "Leave a note for the family table… use @ to mention someone"
               }
               className="min-h-28 resize-y bg-background"
               disabled={pending}
@@ -282,10 +291,13 @@ export function CommentsSection(props: {
             <li key={comment.id}>
               <CommentItem
                 comment={comment}
+                recipeSlug={recipeSlug}
                 currentUserId={currentUserId}
                 isRecipeOwner={isRecipeOwner}
                 canPost={canPost}
                 pending={pending}
+                mentionCandidates={mentionCandidates}
+                reactionsByComment={reactionsByComment}
                 onPostReply={postComment}
                 onDelete={deleteComment}
                 onResolve={resolveSuggestion}
@@ -301,10 +313,13 @@ export function CommentsSection(props: {
 
 function CommentItem({
   comment,
+  recipeSlug,
   currentUserId,
   isRecipeOwner,
   canPost,
   pending,
+  mentionCandidates,
+  reactionsByComment,
   onPostReply,
   onDelete,
   onResolve,
@@ -312,10 +327,13 @@ function CommentItem({
   depth = 0,
 }: {
   comment: ThreadedComment;
+  recipeSlug: string;
   currentUserId: string | null;
   isRecipeOwner: boolean;
   canPost: boolean;
   pending: boolean;
+  mentionCandidates: MentionCandidate[];
+  reactionsByComment: Record<string, CommentReactions>;
   onPostReply: PostComment;
   onDelete: (commentId: string) => void;
   onResolve: (commentId: string, resolved: boolean) => void;
@@ -384,6 +402,12 @@ function CommentItem({
                 Suggestion
               </Badge>
             ) : null}
+            {isSuggestion && comment.anchorLabel ? (
+              <Badge variant="muted" title={`Anchored to ${comment.anchorLabel}`}>
+                {comment.anchorType === "ingredient" ? "Ingredient" : "Step"}:{" "}
+                {comment.anchorLabel}
+              </Badge>
+            ) : null}
             {isApplied ? (
               <Badge variant="default">
                 <Sparkles className="size-3" />
@@ -403,8 +427,19 @@ function CommentItem({
               isResolved && "text-muted-foreground",
             )}
           >
-            {comment.body}
+            <MentionText body={comment.body} candidates={mentionCandidates} />
           </p>
+
+          <div className="mt-2">
+            <ReactionBar
+              targetType="comment"
+              targetId={comment.id}
+              recipeSlug={recipeSlug}
+              initialCounts={reactionsByComment[comment.id]?.counts ?? []}
+              initialReactors={reactionsByComment[comment.id]?.reactors ?? {}}
+              canReact={currentUserId != null}
+            />
+          </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-1">
             {canPost ? (
@@ -446,30 +481,16 @@ function CommentItem({
               </Button>
             ) : null}
 
-            {canDelete ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={pending}
-                    aria-label="Comment actions"
-                    className="ms-auto size-8 text-muted-foreground"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() => onDelete(comment.id)}
-                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                  >
-                    <Trash2 /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
+            <ContentActionsMenu
+              targetType="comment"
+              targetId={comment.id}
+              authorId={comment.author?.id ?? null}
+              authorName={authorName}
+              currentUserId={currentUserId}
+              canDelete={canDelete}
+              onDelete={() => onDelete(comment.id)}
+              disabled={pending}
+            />
           </div>
 
           {replyOpen ? (
@@ -480,11 +501,12 @@ function CommentItem({
               <Label htmlFor={`reply-${comment.id}`} className="sr-only">
                 Reply
               </Label>
-              <Textarea
+              <MentionTextarea
                 id={`reply-${comment.id}`}
                 value={replyBody}
-                onChange={(event) => setReplyBody(event.target.value)}
-                placeholder="Write a reply…"
+                onChange={setReplyBody}
+                candidates={mentionCandidates}
+                placeholder="Write a reply… use @ to mention someone"
                 className="min-h-20 bg-background"
                 maxLength={4000}
                 disabled={pending}
@@ -525,10 +547,13 @@ function CommentItem({
             <CommentItem
               key={reply.id}
               comment={reply}
+              recipeSlug={recipeSlug}
               currentUserId={currentUserId}
               isRecipeOwner={isRecipeOwner}
               canPost={canPost}
               pending={pending}
+              mentionCandidates={mentionCandidates}
+              reactionsByComment={reactionsByComment}
               onPostReply={onPostReply}
               onDelete={onDelete}
               onResolve={onResolve}

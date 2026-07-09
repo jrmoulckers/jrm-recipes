@@ -22,8 +22,16 @@ export default async function CookPage({
   params: Promise<RecipeRouteParams>;
 }) {
   const { id } = await parseRecipeParams(params);
-  const { recipe } = await getRecipeForViewer(id);
+  const { user, recipe } = await getRecipeForViewer(id);
   if (!recipe) notFound();
 
-  return <CookExperience recipe={toCookRecipe(recipe)} />;
+  return (
+    <CookExperience
+      recipe={toCookRecipe(recipe)}
+      feedback={{
+        canRate: Boolean(user),
+        isOwner: user?.id === recipe.authorId,
+      }}
+    />
+  );
 }

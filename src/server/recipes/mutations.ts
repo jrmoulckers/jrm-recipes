@@ -18,6 +18,7 @@ import {
 } from "~/server/db/schema";
 import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import { AuditAction, recordAudit } from "~/server/audit";
+import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
@@ -178,9 +179,16 @@ export async function resolveGroupId(
       eq(groupMembers.groupId, groupId),
       eq(groupMembers.userId, author.id),
     ),
-    columns: { id: true },
+    columns: { id: true, role: true },
   });
-  if (membership) return groupId;
+  if (membership) {
+    // Kid-safe (issue #345): a kid-role member can keep a recipe inside the
+    // family group but must never publish it to the open web.
+    if (input.visibility === "public") {
+      assertKidAllowed(membership.role, "make_recipe_public");
+    }
+    return groupId;
+  }
 
   if (input.visibility === "group") throw new DomainError("FORBIDDEN");
   return null;

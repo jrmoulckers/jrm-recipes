@@ -71,6 +71,16 @@ export const ratings = pgTable(
  */
 export const commentKind = pgEnum("comment_kind", ["comment", "suggestion"]);
 
+/**
+ * What a suggestion is anchored to (issue #346). NULL for a whole-recipe comment
+ * or suggestion; set to `ingredient`/`step` when a member suggests an edit tied
+ * to a specific ingredient row or method step.
+ */
+export const commentAnchorType = pgEnum("comment_anchor_type", [
+  "ingredient",
+  "step",
+]);
+
 /** Threaded comments / suggestions on a recipe. */
 export const comments = pgTable(
   "comments",
@@ -91,10 +101,22 @@ export const comments = pgTable(
     }),
     kind: commentKind().notNull().default("comment"),
     body: text().notNull(),
+    // Anchored suggestions (issue #346): the ingredient/step the suggestion
+    // refers to, plus a snapshot label so it still reads sensibly if the target
+    // is later edited or removed. No FK — the id is a soft pointer.
+    anchorType: commentAnchorType(),
+    anchorId: fk(),
+    anchorLabel: varchar({ length: 200 }),
     // Set when a suggestion has been addressed/closed by the recipe owner.
     resolvedAt: timestamp({ withTimezone: true }),
     // Set when the owner folded a suggestion's change into the recipe itself.
     appliedAt: timestamp({ withTimezone: true }),
+    // Moderation hide (issue #357): a set timestamp removes this from member
+    // (and always kid) views. `hiddenBy` records the actioning moderator.
+    hiddenAt: timestamp({ withTimezone: true }),
+    hiddenBy: fk().references((): AnyPgColumn => users.id, {
+      onDelete: "set null",
+    }),
     ...timestamps(),
   },
   (t) => [
@@ -155,3 +177,4 @@ export type Rating = typeof ratings.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type CommentKind = (typeof commentKind.enumValues)[number];
+export type CommentAnchorType = (typeof commentAnchorType.enumValues)[number];

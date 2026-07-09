@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isCloudinaryUrl } from "~/lib/cloudinary-loader";
+
 const idInput = z.string().trim().min(1);
 
 /** Max length for a comment/suggestion body. Imported by the UI counter (#144). */
@@ -17,6 +19,10 @@ export const commentInput = z.object({
     .trim()
     .min(1, "Write a comment before posting")
     .max(COMMENT_MAX_LENGTH, COMMENT_TOO_LONG_MESSAGE),
+  // Anchored suggestions (#346): tie a suggestion to a specific ingredient/step.
+  anchorType: z.enum(["ingredient", "step"]).optional(),
+  anchorId: idInput.optional(),
+  anchorLabel: z.string().trim().max(200).optional(),
 });
 
 export const ratingInput = z.object({
@@ -47,9 +53,47 @@ export const removeRatingInput = z.object({
   recipeSlug: idInput,
 });
 
+export const reviewInput = z.object({
+  recipeId: idInput,
+  recipeSlug: idInput,
+  rating: z.number().int().min(1).max(5),
+  title: z.string().trim().max(200).optional(),
+  body: z
+    .string()
+    .trim()
+    .max(4000, "Keep reviews under 4,000 characters.")
+    .optional(),
+  // A review photo must be an uploaded Cloudinary delivery URL (#341/#355):
+  // require a real https URL on our image host so an arbitrary/off-host URL
+  // can't be stored and rendered as a tracking beacon against viewers.
+  photoUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2048)
+    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+});
+
+export const deleteReviewInput = z.object({
+  reviewId: idInput,
+  recipeSlug: idInput,
+});
+
+export const reactionInput = z.object({
+  targetType: z.enum(["comment", "review", "cook_log"]),
+  targetId: idInput,
+  emoji: z.enum(["love", "yum", "clap", "wow", "fire", "party"]),
+  recipeSlug: idInput,
+});
+
 export type CommentInput = z.infer<typeof commentInput>;
 export type RatingInput = z.infer<typeof ratingInput>;
 export type DeleteCommentInput = z.infer<typeof deleteCommentInput>;
 export type ResolveCommentInput = z.infer<typeof resolveCommentInput>;
 export type ApplySuggestionInput = z.infer<typeof applySuggestionInput>;
 export type RemoveRatingInput = z.infer<typeof removeRatingInput>;
+export type ReviewInput = z.infer<typeof reviewInput>;
+export type DeleteReviewInput = z.infer<typeof deleteReviewInput>;
+export type ReactionInput = z.infer<typeof reactionInput>;

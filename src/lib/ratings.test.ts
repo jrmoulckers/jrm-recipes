@@ -6,11 +6,65 @@ import {
   excludeOwnerRatings,
   filledStars,
   parseRatingSort,
+  ratingBreakdown,
   ratingDisplay,
   ratingSummary,
   summaryFromAggregates,
   TOP_RATED_PRIOR_MEAN,
 } from "./ratings";
+
+describe("ratingBreakdown (issue #334)", () => {
+  it("returns an all-zero 5→1 distribution when empty", () => {
+    const result = ratingBreakdown([]);
+    expect(result).toEqual({
+      average: 0,
+      count: 0,
+      distribution: [
+        { star: 5, count: 0 },
+        { star: 4, count: 0 },
+        { star: 3, count: 0 },
+        { star: 2, count: 0 },
+        { star: 1, count: 0 },
+      ],
+    });
+  });
+
+  it("counts ratings per star in 5→1 order and keeps the average/count", () => {
+    const result = ratingBreakdown([
+      { value: 5 },
+      { value: 5 },
+      { value: 4 },
+      { value: 1 },
+    ]);
+    expect(result.count).toBe(4);
+    expect(result.average).toBe(3.8);
+    expect(result.distribution).toEqual([
+      { star: 5, count: 2 },
+      { star: 4, count: 1 },
+      { star: 3, count: 0 },
+      { star: 2, count: 0 },
+      { star: 1, count: 1 },
+    ]);
+  });
+
+  it("rounds fractional values to the nearest star and ignores out-of-range", () => {
+    const result = ratingBreakdown([
+      { value: 4.6 },
+      { value: 2.4 },
+      { value: 0 },
+      { value: 6 },
+    ]);
+    // 4.6 → 5, 2.4 → 2; 0 and 6 are dropped from the distribution.
+    expect(result.distribution).toEqual([
+      { star: 5, count: 1 },
+      { star: 4, count: 0 },
+      { star: 3, count: 0 },
+      { star: 2, count: 1 },
+      { star: 1, count: 0 },
+    ]);
+  });
+});
+
 
 describe("ratingSummary", () => {
   it("returns an empty summary when there are no ratings", () => {

@@ -4,9 +4,11 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
+import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { canViewRecipe } from "~/server/recipes/queries";
 import {
   comments,
+  groupMembers,
   ratings,
   recipeEvents,
   recipes,
@@ -16,6 +18,9 @@ import {
 } from "~/server/db/schema";
 import type { CommentInput, RatingInput } from "./validation";
 import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
+import { loadMentionCandidates } from "./mention-targets";
+import { notify } from "~/server/notifications/notify";
+import { resolveMentions } from "~/lib/mentions";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -48,6 +53,7 @@ export async function createComment(
       where: eq(recipes.id, input.recipeId),
       columns: {
         id: true,
+        title: true,
         authorId: true,
         visibility: true,
         groupId: true,
@@ -56,16 +62,29 @@ export async function createComment(
     if (!recipe) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
 
+    let parentAuthorId: string | null = null;
     if (input.parentId) {
       const parent = await tx.query.comments.findFirst({
         where: and(
           eq(comments.id, input.parentId),
           eq(comments.recipeId, input.recipeId),
         ),
-        columns: { id: true },
+        columns: { id: true, userId: true },
       });
       if (!parent) throw new DomainError("NOT_FOUND");
+      parentAuthorId = parent.userId;
     }
+
+    // Anchor a suggestion to a specific ingredient/step (#346). Only stored for
+    // suggestions; a plain comment is always whole-recipe. The label is a
+    // snapshot so the reference still reads sensibly if the target is later
+    // edited or removed.
+    const isSuggestion = input.kind === "suggestion";
+    const anchorType =
+      isSuggestion && input.anchorType ? input.anchorType : null;
+    const anchorId = anchorType && input.anchorId ? input.anchorId : null;
+    const anchorLabel =
+      anchorType && input.anchorLabel ? input.anchorLabel : null;
 
     const [created] = await tx
       .insert(comments)
@@ -75,8 +94,42 @@ export async function createComment(
         parentId: input.parentId ?? null,
         kind: input.kind,
         body: input.body,
+        anchorType,
+        anchorId,
+        anchorLabel,
       })
       .returning();
+
+    // Social notifications (#340/#348), written in the same tx so they land
+    // atomically with the comment. notify() no-ops on self-actions.
+    const mentioned = resolveMentions(
+      input.body,
+      await loadMentionCandidates(tx, input.recipeId),
+    );
+    const mentionedIds = new Set<string>();
+    for (const target of mentioned) {
+      mentionedIds.add(target.id);
+      await notify(tx, {
+        recipientId: target.id,
+        actorId: user.id,
+        type: "mention",
+        recipeId: input.recipeId,
+        entityId: created!.id,
+        context: recipe.title,
+      });
+    }
+    // Notify the parent comment's author of a reply — unless they were already
+    // @mentioned in the same comment (avoid a double ping).
+    if (parentAuthorId && !mentionedIds.has(parentAuthorId)) {
+      await notify(tx, {
+        recipientId: parentAuthorId,
+        actorId: user.id,
+        type: "comment_reply",
+        recipeId: input.recipeId,
+        entityId: created!.id,
+        context: recipe.title,
+      });
+    }
 
     return created!;
   });
@@ -107,6 +160,18 @@ export async function deleteComment(
     }
     if (comment.userId !== user.id && comment.recipe.authorId !== user.id) {
       throw new DomainError("FORBIDDEN");
+    }
+    // Kid-safe (issue #345): the kid role can comment but never delete — not even
+    // their own — so a child can't quietly erase family conversation.
+    if (comment.recipe.groupId) {
+      const membership = await tx.query.groupMembers.findFirst({
+        where: and(
+          eq(groupMembers.groupId, comment.recipe.groupId),
+          eq(groupMembers.userId, user.id),
+        ),
+        columns: { role: true },
+      });
+      if (membership) assertKidAllowed(membership.role, "delete_comment");
     }
 
     const descendants = await collectDescendantIds(tx, [commentId]);

@@ -4,6 +4,7 @@ import { index, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/p
 import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
 import { recipes } from "./recipes";
+import { groups } from "./groups";
 
 /**
  * A single "I cooked this" entry — one row each time a user makes a recipe.
@@ -25,6 +26,14 @@ export const cookLogEntries = pgTable(
     note: text(),
     photoUrl: varchar({ length: 2048 }),
     servingsMade: integer(),
+    // Share to family (issue #352): when set, this cook is shared to the given
+    // group and surfaces in that group's activity feed + the recipe's "Made by
+    // your family" strip. NULL keeps the cook private to the cook.
+    sharedToGroupId: fk().references(() => groups.id, { onDelete: "set null" }),
+    // Moderation hide (issue #357): a set timestamp removes this from member
+    // (and always kid) views. `hiddenBy` records the actioning moderator.
+    hiddenAt: timestamp({ withTimezone: true }),
+    hiddenBy: fk().references(() => users.id, { onDelete: "set null" }),
     ...timestamps(),
   },
   (t) => [
@@ -32,6 +41,8 @@ export const cookLogEntries = pgTable(
     index("cook_log_entries_user_idx").on(t.userId),
     // Fast "my recent cooks" feed (newest first per user).
     index("cook_log_entries_user_cooked_idx").on(t.userId, t.cookedAt),
+    // Fast "cooks shared to this family" feed for the group activity view.
+    index("cook_log_entries_shared_group_idx").on(t.sharedToGroupId),
   ],
 );
 

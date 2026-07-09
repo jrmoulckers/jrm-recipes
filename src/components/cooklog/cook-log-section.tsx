@@ -32,12 +32,21 @@ import {
 import { ImageUploadField } from "~/components/ui/image-upload";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { CharacterCounter } from "~/components/ui/character-counter";
 import {
   COOK_NOTE_MAX_LENGTH,
   COOK_NOTE_TOO_LONG_MESSAGE,
 } from "~/server/cooklog/validation";
+import { ReactionBar } from "~/components/engagement/reaction-bar";
+import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
+
+/** Per-entry reaction tally passed from the server (#342). */
+export type EntryReactions = {
+  counts: ReactionCount[];
+  reactors: Partial<Record<ReactionEmojiKey, string[]>>;
+};
 
 export function CookLogSection({
   recipeId,
@@ -46,6 +55,9 @@ export function CookLogSection({
   entries,
   cookCount,
   canLog,
+  canReact = false,
+  reactionsByEntry = {},
+  shareGroup = null,
   dbConfigured,
 }: {
   recipeId: string;
@@ -54,6 +66,9 @@ export function CookLogSection({
   entries: CookLogItem[];
   cookCount: number;
   canLog: boolean;
+  canReact?: boolean;
+  reactionsByEntry?: Record<string, EntryReactions>;
+  shareGroup?: { id: string; name: string } | null;
   dbConfigured: boolean;
 }) {
   if (!dbConfigured) {
@@ -106,12 +121,18 @@ export function CookLogSection({
             recipeSlug={recipeSlug}
             recipeTitle={recipeTitle}
             canLog={canLog}
+            shareGroup={shareGroup}
           />
         </div>
       </div>
 
       {entries.length > 0 ? (
-        <CookLogTimeline entries={entries} recipeSlug={recipeSlug} />
+        <CookLogTimeline
+          entries={entries}
+          recipeSlug={recipeSlug}
+          canReact={canReact}
+          reactionsByEntry={reactionsByEntry}
+        />
       ) : (
         <EmptyCookLog />
       )}
@@ -137,9 +158,13 @@ function EmptyCookLog() {
 function CookLogTimeline({
   entries,
   recipeSlug,
+  canReact,
+  reactionsByEntry,
 }: {
   entries: CookLogItem[];
   recipeSlug: string;
+  canReact: boolean;
+  reactionsByEntry: Record<string, EntryReactions>;
 }) {
   const locale = useLocale();
   return (
@@ -200,6 +225,17 @@ function CookLogTimeline({
                   />
                 </figure>
               )}
+
+              <div className="mt-3">
+                <ReactionBar
+                  targetType="cook_log"
+                  targetId={entry.id}
+                  recipeSlug={recipeSlug}
+                  initialCounts={reactionsByEntry[entry.id]?.counts ?? []}
+                  initialReactors={reactionsByEntry[entry.id]?.reactors ?? {}}
+                  canReact={canReact}
+                />
+              </div>
             </div>
           </li>
         );
@@ -213,23 +249,27 @@ function LogCookButton({
   recipeSlug,
   recipeTitle,
   canLog,
+  shareGroup = null,
 }: {
   recipeId: string;
   recipeSlug: string;
   recipeTitle: string;
   canLog: boolean;
+  shareGroup?: { id: string; name: string } | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [note, setNote] = React.useState("");
   const [photoUrl, setPhotoUrl] = React.useState("");
   const [servingsMade, setServingsMade] = React.useState("");
+  const [shareWithFamily, setShareWithFamily] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
   function reset() {
     setNote("");
     setPhotoUrl("");
     setServingsMade("");
+    setShareWithFamily(false);
   }
 
   function onSubmit(event: React.FormEvent) {
@@ -241,9 +281,14 @@ function LogCookButton({
         note,
         photoUrl,
         servingsMade,
+        shareWithFamily: shareGroup ? shareWithFamily : undefined,
       });
       if (result.ok) {
-        toast.success("Logged to your journal");
+        toast.success(
+          shareGroup && shareWithFamily
+            ? `Logged and shared with ${shareGroup.name}`
+            : "Logged to your journal",
+        );
         reset();
         setOpen(false);
         router.refresh();
@@ -329,6 +374,27 @@ function LogCookButton({
               className="max-w-32"
             />
           </div>
+
+          {shareGroup && (
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/40 p-3">
+              <div className="grid gap-0.5">
+                <Label htmlFor="cook-share" className="cursor-pointer">
+                  Share with my family
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Post this cook to {shareGroup.name}&apos;s activity feed and the
+                  recipe&apos;s family photo strip.
+                </p>
+              </div>
+              <Switch
+                id="cook-share"
+                checked={shareWithFamily}
+                onCheckedChange={setShareWithFamily}
+                disabled={pending}
+                aria-label={`Share this cook with ${shareGroup.name}`}
+              />
+            </div>
+          )}
 
           <DialogFooter>
             <DialogClose asChild>
