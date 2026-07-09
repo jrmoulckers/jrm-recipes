@@ -102,17 +102,22 @@ CREATE TABLE IF NOT EXISTS "user_blocks" (
 	CONSTRAINT "user_blocks_pair_uq" UNIQUE("blocker_id","blocked_id")
 );
 --> statement-breakpoint
-ALTER TABLE "comments" ADD COLUMN IF NOT EXISTS "anchor_type" "comment_anchor_type";--> statement-breakpoint
-ALTER TABLE "comments" ADD COLUMN IF NOT EXISTS "anchor_id" varchar(24);--> statement-breakpoint
-ALTER TABLE "comments" ADD COLUMN IF NOT EXISTS "anchor_label" varchar(200);--> statement-breakpoint
-ALTER TABLE "comments" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "comments" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
-ALTER TABLE "reviews" ADD COLUMN IF NOT EXISTS "photo_url" varchar(2048);--> statement-breakpoint
-ALTER TABLE "reviews" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "reviews" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
-ALTER TABLE "cook_log_entries" ADD COLUMN IF NOT EXISTS "shared_to_group_id" varchar(24);--> statement-breakpoint
-ALTER TABLE "cook_log_entries" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "cook_log_entries" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
+-- Column adds target PRE-EXISTING tables (comments/reviews/cook_log_entries, created by
+-- earlier migrations). Use ALTER TABLE IF EXISTS so a shared/preview DB that is missing one
+-- of those base tables skips gracefully (Postgres raises a NOTICE, not an error) instead of
+-- aborting the whole migration with undefined_table (42P01). On a correctly-migrated DB the
+-- table is always present, so the columns are added exactly as before.
+ALTER TABLE IF EXISTS "comments" ADD COLUMN IF NOT EXISTS "anchor_type" "comment_anchor_type";--> statement-breakpoint
+ALTER TABLE IF EXISTS "comments" ADD COLUMN IF NOT EXISTS "anchor_id" varchar(24);--> statement-breakpoint
+ALTER TABLE IF EXISTS "comments" ADD COLUMN IF NOT EXISTS "anchor_label" varchar(200);--> statement-breakpoint
+ALTER TABLE IF EXISTS "comments" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE IF EXISTS "comments" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
+ALTER TABLE IF EXISTS "reviews" ADD COLUMN IF NOT EXISTS "photo_url" varchar(2048);--> statement-breakpoint
+ALTER TABLE IF EXISTS "reviews" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE IF EXISTS "reviews" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
+ALTER TABLE IF EXISTS "cook_log_entries" ADD COLUMN IF NOT EXISTS "shared_to_group_id" varchar(24);--> statement-breakpoint
+ALTER TABLE IF EXISTS "cook_log_entries" ADD COLUMN IF NOT EXISTS "hidden_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE IF EXISTS "cook_log_entries" ADD COLUMN IF NOT EXISTS "hidden_by" varchar(24);--> statement-breakpoint
 DO $$ BEGIN
   ALTER TABLE "reactions" ADD CONSTRAINT "reactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
@@ -159,16 +164,16 @@ DO $$ BEGIN
   ALTER TABLE "user_blocks" ADD CONSTRAINT "user_blocks_blocked_id_users_id_fk" FOREIGN KEY ("blocked_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
 DO $$ BEGIN
-  ALTER TABLE "comments" ADD CONSTRAINT "comments_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE IF EXISTS "comments" ADD CONSTRAINT "comments_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
 DO $$ BEGIN
-  ALTER TABLE "reviews" ADD CONSTRAINT "reviews_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE IF EXISTS "reviews" ADD CONSTRAINT "reviews_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
 DO $$ BEGIN
-  ALTER TABLE "cook_log_entries" ADD CONSTRAINT "cook_log_entries_shared_to_group_id_groups_id_fk" FOREIGN KEY ("shared_to_group_id") REFERENCES "public"."groups"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE IF EXISTS "cook_log_entries" ADD CONSTRAINT "cook_log_entries_shared_to_group_id_groups_id_fk" FOREIGN KEY ("shared_to_group_id") REFERENCES "public"."groups"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
 DO $$ BEGIN
-  ALTER TABLE "cook_log_entries" ADD CONSTRAINT "cook_log_entries_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE IF EXISTS "cook_log_entries" ADD CONSTRAINT "cook_log_entries_hidden_by_users_id_fk" FOREIGN KEY ("hidden_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION WHEN duplicate_object THEN null; WHEN duplicate_table THEN null; END $$;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "reactions_target_idx" ON "reactions" USING btree ("target_type","target_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "reactions_user_idx" ON "reactions" USING btree ("user_id");--> statement-breakpoint
@@ -188,4 +193,6 @@ CREATE INDEX IF NOT EXISTS "content_reports_reporter_idx" ON "content_reports" U
 CREATE INDEX IF NOT EXISTS "content_reports_resolved_by_idx" ON "content_reports" USING btree ("resolved_by_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_blocks_blocker_idx" ON "user_blocks" USING btree ("blocker_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "user_blocks_blocked_idx" ON "user_blocks" USING btree ("blocked_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "cook_log_entries_shared_group_idx" ON "cook_log_entries" USING btree ("shared_to_group_id");
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS "cook_log_entries_shared_group_idx" ON "cook_log_entries" USING btree ("shared_to_group_id");
+EXCEPTION WHEN undefined_table THEN null; END $$;
