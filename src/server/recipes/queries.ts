@@ -1492,6 +1492,185 @@ export async function getRecipeLineage(recipeId: string, viewer: User | null) {
   return { parent, adaptations };
 }
 
+/** How many generations of ancestors/descendants a family tree renders (#359). */
+const TREE_MAX_UP = 3;
+const TREE_MAX_DOWN = 3;
+/** Hard cap on total nodes so a wildly-forked recipe can't blow up one read (#359). */
+const TREE_MAX_NODES = 40;
+/** Per-node child fan-out cap; extra siblings collapse into a "+N more" hint (#359). */
+const TREE_CHILD_CAP = 8;
+
+/** The display columns + visibility fields needed to shape and gate a tree node. */
+const TREE_NODE_COLUMNS = {
+  id: true,
+  slug: true,
+  title: true,
+  visibility: true,
+  authorId: true,
+  groupId: true,
+  forkedFromId: true,
+} as const;
+
+/** A node in a recipe's adaptation family tree, safe to send to the client. */
+export type FamilyTreeNode = {
+  id: string;
+  slug: string;
+  title: string;
+  author: { name: string | null } | null;
+  /** The recipe the tree was built for; rendered highlighted, not linked. */
+  isCurrent: boolean;
+  /** Direct adaptations of this node the viewer may see. */
+  children: FamilyTreeNode[];
+  /** Adaptations omitted from `children` by the fan-out/node caps. */
+  hiddenChildren: number;
+};
+
+/** A multi-generation adaptation tree for a recipe (#359). */
+export type RecipeFamilyTree = {
+  /** The highest visible ancestor (or the recipe itself when it has no parent). */
+  root: FamilyTreeNode;
+  /** Total nodes materialized across the tree. */
+  nodeCount: number;
+  /** Generations of ancestors above the current recipe (0 = current is the root). */
+  ancestorDepth: number;
+  /** Deepest chain of descendants below the current recipe. */
+  descendantDepth: number;
+  /** True when depth/node/fan-out caps hid part of the real tree. */
+  truncated: boolean;
+  /**
+   * Whether the tree spans more than one generation in either direction, i.e.
+   * there is a grandparent or grandchild. When false, callers render the simple
+   * single-generation lineage view instead (#359 acceptance).
+   */
+  multiGeneration: boolean;
+};
+
+type TreeRow = {
+  id: string;
+  slug: string;
+  title: string;
+  visibility: string;
+  authorId: string;
+  groupId: string | null;
+  forkedFromId: string | null;
+  author: { name: string | null } | null;
+};
+
+function toTreeNode(row: TreeRow, isCurrent: boolean): FamilyTreeNode {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    author: row.author ?? null,
+    isCurrent,
+    children: [],
+    hiddenChildren: 0,
+  };
+}
+
+/**
+ * Build a bounded, cycle-safe adaptation family tree for a recipe (#359): walk
+ * `forkedFromId` up to the highest visible ancestor (capped at {@link TREE_MAX_UP}
+ * generations) and adaptations down ({@link TREE_MAX_DOWN} generations), rendering
+ * an ancestor spine with the current recipe's descendants fanned out beneath it.
+ *
+ * Every node is gated with {@link canView} for `viewer`, so a public recipe's
+ * tree never leaks a private adaptation; the walk stops at the first non-visible
+ * ancestor rather than exposing its existence. Total work is bounded by
+ * {@link TREE_MAX_NODES} DB reads and guarded against cyclic/self-referential
+ * `forkedFromId` data with a visited set.
+ */
+export async function getRecipeFamilyTree(
+  recipeId: string,
+  viewer: User | null,
+): Promise<RecipeFamilyTree | null> {
+  if (!isDbConfigured()) return null;
+
+  const current = await db.query.recipes.findFirst({
+    where: and(notDeleted, eq(recipes.id, recipeId)),
+    columns: TREE_NODE_COLUMNS,
+    with: { author: { columns: { name: true } } },
+  });
+  if (!current) return null;
+
+  const groupIds = await viewerGroupIds(viewer);
+  const visited = new Set<string>([current.id]);
+  let truncated = false;
+
+  const currentNode = toTreeNode(current, true);
+
+  // Walk up the fork chain to the highest visible ancestor, building the spine
+  // root → … → parent → current. Stops at a cycle or a non-visible ancestor.
+  let ancestorDepth = 0;
+  let topNode = currentNode;
+  let cursorForkedFrom = current.forkedFromId;
+  while (cursorForkedFrom && ancestorDepth < TREE_MAX_UP) {
+    if (visited.has(cursorForkedFrom)) break;
+    const parentRow: TreeRow | undefined = await db.query.recipes.findFirst({
+      where: and(notDeleted, eq(recipes.id, cursorForkedFrom)),
+      columns: TREE_NODE_COLUMNS,
+      with: { author: { columns: { name: true } } },
+    });
+    if (!parentRow || !canView(parentRow, viewer, groupIds)) break;
+    visited.add(parentRow.id);
+    const parentNode = toTreeNode(parentRow, false);
+    parentNode.children = [topNode];
+    topNode = parentNode;
+    ancestorDepth += 1;
+    cursorForkedFrom = parentRow.forkedFromId;
+    if (cursorForkedFrom && ancestorDepth === TREE_MAX_UP) truncated = true;
+  }
+
+  // Walk down from the current recipe, breadth-first, fanning out adaptations.
+  let nodeCount = ancestorDepth + 1;
+  let descendantDepth = 0;
+  const queue: { node: FamilyTreeNode; depth: number }[] = [
+    { node: currentNode, depth: 0 },
+  ];
+  while (queue.length > 0) {
+    const { node, depth } = queue.shift()!;
+    if (depth >= TREE_MAX_DOWN) continue;
+    if (nodeCount >= TREE_MAX_NODES) {
+      truncated = true;
+      break;
+    }
+
+    const forks = await db.query.recipes.findMany({
+      where: and(notDeleted, eq(recipes.forkedFromId, node.id)),
+      orderBy: [desc(recipes.updatedAt)],
+      columns: TREE_NODE_COLUMNS,
+      with: { author: { columns: { name: true } } },
+      limit: FORK_LIST_CAP,
+    });
+    const visibleForks = forks.filter(
+      (fork) => !visited.has(fork.id) && canView(fork, viewer, groupIds),
+    );
+
+    for (const fork of visibleForks) {
+      if (node.children.length >= TREE_CHILD_CAP || nodeCount >= TREE_MAX_NODES) {
+        node.hiddenChildren += 1;
+        truncated = true;
+        continue;
+      }
+      visited.add(fork.id);
+      const childNode = toTreeNode(fork, false);
+      node.children.push(childNode);
+      nodeCount += 1;
+      descendantDepth = Math.max(descendantDepth, depth + 1);
+      queue.push({ node: childNode, depth: depth + 1 });
+    }
+  }
+
+  return {
+    root: topNode,
+    nodeCount,
+    ancestorDepth,
+    descendantDepth,
+    truncated,
+    multiGeneration: ancestorDepth >= 2 || descendantDepth >= 2,
+  };
+}
+
 export type RecipeTimeline = Awaited<ReturnType<typeof getRecipeTimeline>>;
 
 /**

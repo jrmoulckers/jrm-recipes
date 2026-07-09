@@ -25,6 +25,7 @@ import {
 import { isDbConfigured } from "~/server/db";
 import {
   getRecipeLineage,
+  getRecipeFamilyTree,
   listSimilarRecipes,
   recordRecipeView,
   excludeOwnerRatings,
@@ -59,6 +60,7 @@ import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
 import { RecipeLineage } from "~/components/recipe/lineage";
+import { RecipeFamilyTree } from "~/components/recipe/family-tree";
 import { TechniqueChips } from "~/components/cook/technique-chips";
 import { CookBundleWarmer } from "~/components/cook/cook-bundle-warmer";
 import { FavoriteButton } from "~/components/collections/favorite-button";
@@ -184,6 +186,7 @@ export default async function RecipePage({
   // now stream in via <Suspense> instead of blocking here (#176).
   const [
     lineage,
+    familyTree,
     favorited,
     savedCollections,
     similar,
@@ -192,6 +195,7 @@ export default async function RecipePage({
     anchoredSuggestions,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
+    getRecipeFamilyTree(recipe.id, user),
     isFavorited(recipe.id, user?.id ?? null),
     user ? getCollectionsForRecipe(user.id, recipe.id) : Promise.resolve([]),
     listSimilarRecipes(user, recipe.id),
@@ -462,10 +466,14 @@ export default async function RecipePage({
 
         <Separator />
 
-        <RecipeLineage
-          parent={lineage.parent}
-          adaptations={lineage.adaptations}
-        />
+        {familyTree?.multiGeneration ? (
+          <RecipeFamilyTree tree={familyTree} />
+        ) : (
+          <RecipeLineage
+            parent={lineage.parent}
+            adaptations={lineage.adaptations}
+          />
+        )}
 
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
           <TabsList className="self-start">
