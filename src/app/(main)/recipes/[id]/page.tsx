@@ -53,6 +53,7 @@ import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
 import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
+import { HandDownButton } from "~/components/recipe/hand-down-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
@@ -409,6 +410,11 @@ export default async function RecipePage({
                 recipeId={recipe.id}
                 manageable={isOwner && recipe.visibility === "unlisted"}
                 shareEnabled={recipe.shareLinkEnabled}
+              />
+              <HandDownButton
+                slug={recipe.slug}
+                defaultFrom={user?.name ?? recipe.author?.name}
+                token={shareUrl ? recipe.shareToken : undefined}
               />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>
