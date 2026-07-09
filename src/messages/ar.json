@@ -110,5 +110,56 @@
     "moveDownNamed": "تحريك {object} لأسفل",
     "remove": "إزالة",
     "removeNamed": "إزالة {object}"
+  },
+  "recipeDetail": {
+    "backToRecipes": "الوصفات",
+    "by": "بواسطة",
+    "servingsNoun": "حصص",
+    "opensInNewTab": "يفتح في علامة تبويب جديدة",
+    "notes": "ملاحظات",
+    "source": "المصدر:",
+    "similar": "قد يعجبك أيضًا",
+    "visibility": {
+      "private": "خاصة",
+      "unlisted": "غير مُدرَجة",
+      "group": "مجموعة"
+    },
+    "difficulty": {
+      "easy": "سهلة",
+      "medium": "متوسطة",
+      "hard": "صعبة"
+    },
+    "meta": {
+      "prep": "{time} تحضير",
+      "resting": "{time} راحة"
+    },
+    "ratingLabel": "قُيّمت بـ {average} من 5 — {count, plural, zero {# تقييم} one {# تقييم} two {# تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+    "actions": {
+      "cook": "اطبخ",
+      "print": "طباعة",
+      "edit": "تعديل",
+      "cookMode": "وضع الطهي"
+    },
+    "ingredients": {
+      "heading": "المكوّنات",
+      "empty": "لا توجد مكوّنات مُدرَجة.",
+      "makeAhead": "التحضير المسبق",
+      "equipment": "الأدوات"
+    },
+    "method": {
+      "heading": "طريقة التحضير",
+      "emptyTitle": "لا توجد خطوات بعد",
+      "emptyOwner": "أضِف الخطوات لتصبح هذه الوصفة جاهزة للطهي.",
+      "emptyViewer": "لم تُضَف خطوات هذه الوصفة بعد.",
+      "editRecipe": "تعديل الوصفة",
+      "stepLabel": "الخطوة {position}",
+      "stepImageAlt": "{title} — الخطوة {position}"
+    },
+    "tabs": {
+      "recipe": "الوصفة",
+      "timeline": "السجل",
+      "cooked": "طُبِخت",
+      "discussion": "النقاش"
+    }
   }
 }

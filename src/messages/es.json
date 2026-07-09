@@ -110,5 +110,56 @@
     "moveDownNamed": "Bajar {object}",
     "remove": "Eliminar",
     "removeNamed": "Eliminar {object}"
+  },
+  "recipeDetail": {
+    "backToRecipes": "Recetas",
+    "by": "Por",
+    "servingsNoun": "raciones",
+    "opensInNewTab": "se abre en una pestaña nueva",
+    "notes": "Notas",
+    "source": "Fuente:",
+    "similar": "También te puede gustar",
+    "visibility": {
+      "private": "Privada",
+      "unlisted": "No listada",
+      "group": "Grupo"
+    },
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    },
+    "meta": {
+      "prep": "{time} de preparación",
+      "resting": "{time} de reposo"
+    },
+    "ratingLabel": "Valorada con {average} sobre 5 — {count, plural, one {# reseña} other {# reseñas}}",
+    "actions": {
+      "cook": "Cocinar",
+      "print": "Imprimir",
+      "edit": "Editar",
+      "cookMode": "Modo cocina"
+    },
+    "ingredients": {
+      "heading": "Ingredientes",
+      "empty": "No hay ingredientes.",
+      "makeAhead": "Preparar con antelación",
+      "equipment": "Equipamiento"
+    },
+    "method": {
+      "heading": "Preparación",
+      "emptyTitle": "Aún no hay pasos",
+      "emptyOwner": "Añade los pasos y esta receta estará lista para cocinar.",
+      "emptyViewer": "Todavía no se han añadido los pasos a esta receta.",
+      "editRecipe": "Editar receta",
+      "stepLabel": "Paso {position}",
+      "stepImageAlt": "{title} — paso {position}"
+    },
+    "tabs": {
+      "recipe": "Receta",
+      "timeline": "Historial",
+      "cooked": "Cocinada",
+      "discussion": "Comentarios"
+    }
   }
 }
