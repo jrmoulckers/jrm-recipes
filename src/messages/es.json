@@ -7,6 +7,26 @@
     "pricing": "Precios",
     "billing": "Facturación"
   },
+  "nav": {
+    "home": "Inicio",
+    "recipes": "Recetas",
+    "discover": "Descubrir",
+    "saved": "Guardados",
+    "plan": "Planificar",
+    "journal": "Diario",
+    "shopping": "Compra",
+    "family": "Familia",
+    "create": "Crear",
+    "more": "Más",
+    "skipToContent": "Saltar al contenido",
+    "newRecipe": "Nueva receta",
+    "homeLink": "Inicio de Heirloom",
+    "landmarks": {
+      "primary": "Principal",
+      "primaryMobile": "Principal móvil",
+      "breadcrumb": "Ruta de navegación"
+    }
+  },
   "cook": {
     "timer": {
       "complete": "¡Se acabó el tiempo!",

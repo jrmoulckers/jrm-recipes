@@ -7,6 +7,26 @@
     "pricing": "الأسعار",
     "billing": "الفوترة"
   },
+  "nav": {
+    "home": "الرئيسية",
+    "recipes": "الوصفات",
+    "discover": "استكشاف",
+    "saved": "المحفوظات",
+    "plan": "التخطيط",
+    "journal": "اليوميات",
+    "shopping": "التسوق",
+    "family": "العائلة",
+    "create": "إنشاء",
+    "more": "المزيد",
+    "skipToContent": "تخطّي إلى المحتوى",
+    "newRecipe": "وصفة جديدة",
+    "homeLink": "الصفحة الرئيسية لـ Heirloom",
+    "landmarks": {
+      "primary": "التنقّل الرئيسي",
+      "primaryMobile": "التنقّل الرئيسي للجوال",
+      "breadcrumb": "مسار التنقّل"
+    }
+  },
   "cook": {
     "timer": {
       "complete": "انتهى الوقت!",
