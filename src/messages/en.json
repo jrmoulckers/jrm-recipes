@@ -7,6 +7,26 @@
     "pricing": "Pricing",
     "billing": "Billing"
   },
+  "nav": {
+    "home": "Home",
+    "recipes": "Recipes",
+    "discover": "Discover",
+    "saved": "Saved",
+    "plan": "Plan",
+    "journal": "Journal",
+    "shopping": "Shopping",
+    "family": "Family",
+    "create": "Create",
+    "more": "More",
+    "skipToContent": "Skip to content",
+    "newRecipe": "New recipe",
+    "homeLink": "Heirloom home",
+    "landmarks": {
+      "primary": "Primary",
+      "primaryMobile": "Primary mobile",
+      "breadcrumb": "Breadcrumb"
+    }
+  },
   "cook": {
     "timer": {
       "complete": "Time's up!",

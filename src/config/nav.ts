@@ -12,65 +12,109 @@ import {
 } from "lucide-react";
 import type { Route } from "next";
 
+/**
+ * Keys into the `nav` message namespace (see src/messages/*.json). Every primary
+ * destination is localized rather than shipping a hardcoded English `label`, so
+ * the header, mobile tab bar, and "More" menu all read in the active locale.
+ */
+export type NavLabelKey =
+  | "home"
+  | "recipes"
+  | "discover"
+  | "saved"
+  | "plan"
+  | "journal"
+  | "shopping"
+  | "family"
+  | "create";
+
 export type NavItem = {
   href: Route;
-  label: string;
+  /** Key into the `nav` message namespace. */
+  labelKey: NavLabelKey;
   icon: LucideIcon;
   /** Match nested routes (e.g. /recipes/*) for active state. */
   match?: (pathname: string) => boolean;
+  /**
+   * Surface this destination as a dedicated tab in the mobile bottom bar.
+   * A phone bottom bar reads best with ~4 primary tabs plus a "More" menu, so
+   * only the highest-traffic destinations are flagged; the rest fall into More.
+   */
+  mobile?: boolean;
 };
 
 export const primaryNav: NavItem[] = [
-  { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
+  {
+    href: "/",
+    labelKey: "home",
+    icon: Home,
+    match: (p) => p === "/",
+    mobile: true,
+  },
   {
     href: "/recipes",
-    label: "Recipes",
+    labelKey: "recipes",
     icon: BookOpen,
-    match: (p) => p.startsWith("/recipes"),
+    // Exclude the create route so "Recipes" and "Create" never both read as
+    // active on /recipes/new.
+    match: (p) => p.startsWith("/recipes") && p !== "/recipes/new",
+    mobile: true,
   },
   {
     href: "/discover",
-    label: "Discover",
+    labelKey: "discover",
     icon: Compass,
     match: (p) => p.startsWith("/discover"),
   },
   {
     href: "/collections",
-    label: "Saved",
+    labelKey: "saved",
     icon: Heart,
     match: (p) => p.startsWith("/collections"),
   },
   {
     href: "/plan",
-    label: "Plan",
+    labelKey: "plan",
     icon: CalendarDays,
     match: (p) => p.startsWith("/plan"),
+    mobile: true,
   },
   {
     href: "/journal",
-    label: "Journal",
+    labelKey: "journal",
     icon: CookingPot,
     match: (p) => p.startsWith("/journal"),
   },
   {
     href: "/shopping",
-    label: "Shopping",
+    labelKey: "shopping",
     icon: ShoppingCart,
     match: (p) => p.startsWith("/shopping"),
+    mobile: true,
   },
   {
     href: "/groups",
-    label: "Family",
+    labelKey: "family",
     icon: Users,
     match: (p) => p.startsWith("/groups"),
   },
   {
     href: "/recipes/new",
-    label: "Create",
+    labelKey: "create",
     icon: ChefHat,
     match: (p) => p === "/recipes/new",
   },
 ];
+
+/** Destinations shown as dedicated tabs in the mobile bottom bar. */
+export const mobilePrimaryNav: NavItem[] = primaryNav.filter(
+  (item) => item.mobile,
+);
+
+/** Destinations that overflow into the mobile "More" menu. */
+export const mobileMoreNav: NavItem[] = primaryNav.filter(
+  (item) => !item.mobile,
+);
 
 /** A marketing/informational link surfaced in the site footer. */
 export type FooterNavItem = {
