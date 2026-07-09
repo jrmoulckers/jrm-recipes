@@ -1,16 +1,20 @@
 import { cache } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, BookMarked, Globe, Link2, Lock, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, BookMarked, Globe, Link2, Lock, Users, UtensilsCrossed } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getCurrentUser } from "~/server/auth";
-import { getSharedCollection } from "~/server/collections/queries";
+import {
+  getSharedCollection,
+  listShareTargetsForCollection,
+} from "~/server/collections/queries";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CollectionActions } from "~/components/collections/collection-actions";
 import { RemoveFromCollectionButton } from "~/components/collections/remove-from-collection-button";
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
+import { ShareWithGroupControl } from "~/components/collections/share-with-group-control";
 import { PrintCookbookButton } from "~/components/collections/print-cookbook-button";
 import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
 import { brand } from "~/config/brand";
@@ -53,8 +57,13 @@ export default async function CollectionPage({
   params: Promise<CollectionRouteParams>;
 }) {
   const { id } = await parseCollectionParams(params);
-  const { collection } = await load(id);
+  const { user, collection } = await load(id);
   if (!collection) notFound();
+
+  const shareTargets =
+    collection.isOwner && user
+      ? await listShareTargetsForCollection(collection.id, user)
+      : [];
 
   const visibilityBadge =
     collection.visibility === "public"
@@ -87,6 +96,13 @@ export default async function CollectionPage({
                 {visibilityBadge.label}
               </span>
             )}
+            {!collection.isOwner &&
+              collection.sharedWithGroups.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">
+                  <Users className="size-3" />
+                  Shared with {collection.sharedWithGroups[0]!.name}
+                </span>
+              )}
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             {collection.name}
@@ -109,6 +125,10 @@ export default async function CollectionPage({
             {collection.recipes.length > 0 && (
               <PrintCookbookButton collectionId={collection.id} />
             )}
+            <ShareWithGroupControl
+              collectionId={collection.id}
+              groups={shareTargets}
+            />
             <ShareCollectionControl
               collectionId={collection.id}
               visibility={collection.visibility}

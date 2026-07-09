@@ -11,13 +11,17 @@ import {
   removeRecipeFromCollection,
   renameCollection,
   setCollectionVisibility,
+  shareCollectionWithGroup,
   toggleFavorite,
+  unshareCollectionWithGroup,
 } from "./mutations";
 import {
+  collectionGroupShareInput,
   collectionInput,
   collectionRecipeInput,
   setCollectionVisibilityInput,
   toggleFavoriteInput,
+  type CollectionGroupShareInput,
   type CollectionInput,
   type CollectionRecipeInput,
   type CollectionVisibilityValue,
@@ -213,6 +217,56 @@ export async function removeRecipeFromCollectionAction(
     await removeRecipeFromCollection(
       parsed.data.collectionId,
       parsed.data.recipeId,
+      user,
+    );
+    revalidatePath("/collections");
+    revalidatePath(`/collections/${parsed.data.collectionId}`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function shareCollectionWithGroupAction(
+  input: CollectionGroupShareInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = collectionGroupShareInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't share that collection." };
+  }
+
+  try {
+    const user = await requireUser();
+    await shareCollectionWithGroup(
+      parsed.data.collectionId,
+      parsed.data.groupId,
+      user,
+    );
+    revalidatePath("/collections");
+    revalidatePath(`/collections/${parsed.data.collectionId}`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function unshareCollectionWithGroupAction(
+  input: CollectionGroupShareInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = collectionGroupShareInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't update that collection." };
+  }
+
+  try {
+    const user = await requireUser();
+    await unshareCollectionWithGroup(
+      parsed.data.collectionId,
+      parsed.data.groupId,
       user,
     );
     revalidatePath("/collections");

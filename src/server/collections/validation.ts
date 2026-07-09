@@ -51,8 +51,16 @@ export const setCollectionVisibilityInput = z.object({
   visibility: z.enum(collectionVisibilityValues),
 });
 
+export const collectionGroupShareInput = z.object({
+  collectionId: idInput,
+  groupId: idInput,
+});
+
 export type CollectionInput = z.infer<typeof collectionInput>;
 export type ToggleFavoriteInput = z.infer<typeof toggleFavoriteInput>;
 export type CollectionRecipeInput = z.infer<typeof collectionRecipeInput>;
+export type CollectionGroupShareInput = z.infer<
+  typeof collectionGroupShareInput
+>;
 export type CollectionVisibilityValue =
   (typeof collectionVisibilityValues)[number];

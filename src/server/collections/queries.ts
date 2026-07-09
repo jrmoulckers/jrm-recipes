@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, asc, desc, eq, max, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, max, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
+  collectionGroups,
   collectionRecipes,
   collections,
   cookLogEntries,
@@ -55,6 +56,9 @@ export async function listMyCollections(userId: string) {
     where: eq(collections.userId, userId),
     orderBy: [desc(collections.updatedAt)],
     with: {
+      sharedWithGroups: {
+        with: { group: { columns: { id: true, name: true, slug: true } } },
+      },
       recipes: {
         columns: { recipeId: true },
         orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
@@ -76,6 +80,10 @@ export async function listMyCollections(userId: string) {
       coverImageUrl: cover,
       recipeCount: collection.recipes.length,
       updatedAt: collection.updatedAt,
+      sharedGroups: (collection.sharedWithGroups ?? [])
+        .map((link) => link.group)
+        .filter((group): group is NonNullable<typeof group> => group != null)
+        .map((group) => ({ id: group.id, name: group.name, slug: group.slug })),
     };
   });
 }
@@ -134,6 +142,11 @@ export async function getSharedCollection(
     ),
     with: {
       owner: { columns: { id: true, name: true } },
+      sharedWithGroups: {
+        with: {
+          group: { columns: { id: true, name: true, slug: true } },
+        },
+      },
       recipes: {
         orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
         with: { recipe: { with: recipeCardWith } },
@@ -142,16 +155,24 @@ export async function getSharedCollection(
   });
   if (!collection) return null;
 
+  const groupIds = await viewerGroupIds(viewer);
+  // Groups this collection is shared with that the viewer also belongs to —
+  // read access is granted through any one of them (issue #365).
+  const sharedToViewerGroups = (collection.sharedWithGroups ?? [])
+    .map((link) => link.group)
+    .filter((group): group is NonNullable<typeof group> => group != null)
+    .filter((group) => groupIds.includes(group.id));
+
   const isOwner = viewer?.id === collection.userId;
   const matchedByToken =
     collection.shareToken != null && collection.shareToken === idOrToken;
   const permitted =
     isOwner ||
     collection.visibility === "public" ||
-    (collection.visibility === "unlisted" && matchedByToken);
+    (collection.visibility === "unlisted" && matchedByToken) ||
+    sharedToViewerGroups.length > 0;
   if (!permitted) return null;
 
-  const groupIds = await viewerGroupIds(viewer);
   const recipes = collection.recipes
     .map((entry) => entry.recipe)
     .filter((recipe): recipe is NonNullable<typeof recipe> => recipe != null)
@@ -166,6 +187,7 @@ export async function getSharedCollection(
     shareToken: collection.shareToken,
     isOwner,
     ownerName: collection.owner?.name ?? null,
+    sharedWithGroups: sharedToViewerGroups,
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
     recipes,
@@ -277,3 +299,186 @@ export async function getCollectionsForRecipe(userId: string, recipeId: string) 
     contains: collection.recipes.length > 0,
   }));
 }
+
+function collectionCover(collection: {
+  coverImageUrl: string | null;
+  recipes: { recipe: { coverImageUrl: string | null } | null }[];
+}): string | null {
+  return (
+    collection.coverImageUrl ??
+    collection.recipes.find((r) => r.recipe?.coverImageUrl)?.recipe
+      ?.coverImageUrl ??
+    null
+  );
+}
+
+/**
+ * The groups the owner can share a collection with — every group they belong to,
+ * flagged with whether the collection is already shared there (issue #365).
+ * Returns [] unless the caller owns the collection.
+ */
+export async function listShareTargetsForCollection(
+  collectionId: string,
+  user: User,
+) {
+  if (!isDbConfigured()) return [];
+
+  const owned = await db.query.collections.findFirst({
+    where: and(
+      eq(collections.id, collectionId),
+      eq(collections.userId, user.id),
+    ),
+    columns: { id: true },
+  });
+  if (!owned) return [];
+
+  const [memberships, shared] = await Promise.all([
+    db.query.groupMembers.findMany({
+      where: eq(groupMembers.userId, user.id),
+      orderBy: [desc(groupMembers.updatedAt)],
+      with: {
+        group: {
+          columns: { id: true, name: true, slug: true, avatarUrl: true },
+        },
+      },
+    }),
+    db.query.collectionGroups.findMany({
+      where: eq(collectionGroups.collectionId, collectionId),
+      columns: { groupId: true },
+    }),
+  ]);
+
+  const sharedIds = new Set(shared.map((row) => row.groupId));
+  return memberships
+    .map((m) => m.group)
+    .filter((group): group is NonNullable<typeof group> => group != null)
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      slug: group.slug,
+      avatarUrl: group.avatarUrl,
+      shared: sharedIds.has(group.id),
+    }));
+}
+
+export type CollectionShareTarget = Awaited<
+  ReturnType<typeof listShareTargetsForCollection>
+>[number];
+
+/**
+ * Collections shared with a group, for the group page's "Shared collections"
+ * shelf (issue #365). Returns [] unless the viewer is a member of the group.
+ */
+export async function listCollectionsSharedWithGroup(
+  groupId: string,
+  viewer: User | null,
+) {
+  if (!isDbConfigured() || !viewer) return [];
+
+  const membership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, viewer.id),
+    ),
+    columns: { id: true },
+  });
+  if (!membership) return [];
+
+  const links = await db.query.collectionGroups.findMany({
+    where: eq(collectionGroups.groupId, groupId),
+    orderBy: [desc(collectionGroups.createdAt)],
+    with: {
+      collection: {
+        with: {
+          owner: { columns: { id: true, name: true } },
+          recipes: {
+            columns: { recipeId: true },
+            with: { recipe: { columns: { coverImageUrl: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  return links
+    .map((link) => link.collection)
+    .filter((c): c is NonNullable<typeof c> => c != null)
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      coverImageUrl: collectionCover(c),
+      recipeCount: c.recipes.length,
+      ownerName: c.owner?.name ?? null,
+    }));
+}
+
+export type SharedGroupCollection = Awaited<
+  ReturnType<typeof listCollectionsSharedWithGroup>
+>[number];
+
+/**
+ * Collections other people have shared with any group the viewer belongs to —
+ * powers the "Shared with you" shelf in the Saved view (issue #365). Excludes
+ * the viewer's own collections and dedupes a collection shared with several of
+ * the viewer's groups.
+ */
+export async function listCollectionsSharedWithViewer(userId: string) {
+  if (!isDbConfigured()) return [];
+
+  const memberships = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+    columns: { groupId: true },
+  });
+  const groupIds = memberships.map((m) => m.groupId);
+  if (groupIds.length === 0) return [];
+
+  const links = await db.query.collectionGroups.findMany({
+    where: inArray(collectionGroups.groupId, groupIds),
+    orderBy: [desc(collectionGroups.createdAt)],
+    with: {
+      group: { columns: { id: true, name: true, slug: true } },
+      collection: {
+        with: {
+          owner: { columns: { id: true, name: true } },
+          recipes: {
+            columns: { recipeId: true },
+            with: { recipe: { columns: { coverImageUrl: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  const seen = new Set<string>();
+  const out: {
+    id: string;
+    name: string;
+    description: string | null;
+    coverImageUrl: string | null;
+    recipeCount: number;
+    ownerName: string | null;
+    groupName: string | null;
+    groupSlug: string | null;
+  }[] = [];
+  for (const link of links) {
+    const c = link.collection;
+    if (!c || c.userId === userId || seen.has(c.id)) continue;
+    seen.add(c.id);
+    out.push({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      coverImageUrl: collectionCover(c),
+      recipeCount: c.recipes.length,
+      ownerName: c.owner?.name ?? null,
+      groupName: link.group?.name ?? null,
+      groupSlug: link.group?.slug ?? null,
+    });
+  }
+  return out;
+}
+
+export type ViewerSharedCollection = Awaited<
+  ReturnType<typeof listCollectionsSharedWithViewer>
+>[number];

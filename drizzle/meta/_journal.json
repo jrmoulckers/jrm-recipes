@@ -141,6 +141,13 @@
       "when": 1783558912885,
       "tag": "0019_legacy_heirloom_wave5",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1783559012885,
+      "tag": "0020_collection_group_share",
+      "breakpoints": true
     }
   ]
 }
