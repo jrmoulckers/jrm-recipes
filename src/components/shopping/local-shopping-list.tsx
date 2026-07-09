@@ -45,6 +45,7 @@ export function LocalShoppingList() {
     unit: i.unit,
     note: i.note,
     category: i.category,
+    optional: i.optional,
     checked: i.checked,
   }));
 

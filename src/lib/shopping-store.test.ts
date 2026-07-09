@@ -62,6 +62,33 @@ describe("addRecipe consolidation", () => {
     expect(noted).toBeDefined();
     expect(noted?.quantity).toBe(1);
   });
+
+  it("carries the optional flag through consolidation (#56)", () => {
+    store().addRecipe(
+      recipe([{ item: "Cilantro", quantity: 1, unit: "bunch", optional: true }]),
+    );
+
+    const cilantro = store().items.find(
+      (i) => i.item.toLowerCase() === "cilantro",
+    );
+    expect(cilantro?.optional).toBe(true);
+
+    // Re-consolidating (adding another required item) must not drop the flag on
+    // the existing optional line.
+    store().addRecipe(recipe([{ item: "Rice", quantity: 2, unit: "cup" }]));
+    const stillOptional = store().items.find(
+      (i) => i.item.toLowerCase() === "cilantro",
+    );
+    expect(stillOptional?.optional).toBe(true);
+
+    // A line is optional only when every contribution is optional: merging a
+    // required contribution of the same item clears it.
+    store().addRecipe(recipe([{ item: "Cilantro", quantity: 1, unit: "bunch" }]));
+    const merged = store().items.find(
+      (i) => i.item.toLowerCase() === "cilantro",
+    );
+    expect(merged?.optional).toBe(false);
+  });
 });
 
 describe("addManual", () => {

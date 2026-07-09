@@ -30,6 +30,7 @@ export default async function ShoppingPage() {
     unit: row.unit,
     note: row.note,
     category: (row.category as ShoppingCategory | null) ?? "Other",
+    optional: row.optional,
     checked: row.checked,
     allergens: detectAllergensForSafety(row.item),
   }));
