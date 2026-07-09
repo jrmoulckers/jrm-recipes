@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db } from "~/server/db";
+import { type db } from "~/server/db";
 import { notifications, type NotificationType } from "~/server/db/schema";
 
 /**

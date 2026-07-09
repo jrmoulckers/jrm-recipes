@@ -147,9 +147,13 @@ describe("createCookAlong (#353)", () => {
     );
     expect(rsvpInsert).toBeTruthy();
     expect(notifyManyMock).toHaveBeenCalledOnce();
-    const [, recipients, params] = notifyManyMock.mock.calls[0]!;
-    expect(recipients).toEqual(["user_host", "user_2"]);
-    expect(params.type).toBe("cook_along_invite");
+    const call = notifyManyMock.mock.calls[0] as [
+      unknown,
+      string[],
+      { type: string },
+    ];
+    expect(call[1]).toEqual(["user_host", "user_2"]);
+    expect(call[2].type).toBe("cook_along_invite");
   });
 });
 

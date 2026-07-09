@@ -97,10 +97,10 @@ export async function listBlockedPeople(
   return rows
     .filter((row) => row.blocked)
     .map((row) => ({
-      id: row.blocked!.id,
-      name: row.blocked!.name,
-      handle: row.blocked!.handle,
-      avatarUrl: row.blocked!.avatarUrl,
+      id: row.blocked.id,
+      name: row.blocked.name,
+      handle: row.blocked.handle,
+      avatarUrl: row.blocked.avatarUrl,
       blockedAt: row.createdAt,
     }))
     .sort((a, b) => b.blockedAt.getTime() - a.blockedAt.getTime());

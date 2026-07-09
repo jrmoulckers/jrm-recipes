@@ -2,7 +2,7 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { db } from "~/server/db";
+import { type db } from "~/server/db";
 import { groupMembers, recipes } from "~/server/db/schema";
 import type { MentionCandidate } from "~/lib/mentions";
 

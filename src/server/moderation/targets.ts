@@ -3,7 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
-import { db } from "~/server/db";
+import { type db } from "~/server/db";
 import {
   comments,
   reviews,

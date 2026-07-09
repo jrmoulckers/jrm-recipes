@@ -173,7 +173,8 @@ describe("CommentsSection", () => {
     );
   });
 
-  it("shows a delete affordance to the comment author", () => {
+  it("shows a delete affordance to the comment author", async () => {
+    const user = userEvent.setup();
     render(
       <CommentsSection
         {...baseProps}
@@ -184,12 +185,14 @@ describe("CommentsSection", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "More actions" }));
     expect(
-      screen.getByRole("button", { name: "Comment actions" }),
+      screen.getByRole("menuitem", { name: /delete/i }),
     ).toBeInTheDocument();
   });
 
-  it("shows a delete affordance to the recipe owner", () => {
+  it("shows a delete affordance to the recipe owner", async () => {
+    const user = userEvent.setup();
     render(
       <CommentsSection
         {...baseProps}
@@ -200,12 +203,14 @@ describe("CommentsSection", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "More actions" }));
     expect(
-      screen.getByRole("button", { name: "Comment actions" }),
+      screen.getByRole("menuitem", { name: /delete/i }),
     ).toBeInTheDocument();
   });
 
-  it("hides the delete affordance from other members", () => {
+  it("hides the delete affordance from other members", async () => {
+    const user = userEvent.setup();
     render(
       <CommentsSection
         {...baseProps}
@@ -216,8 +221,13 @@ describe("CommentsSection", () => {
       />,
     );
 
+    // Other members still get the overflow menu (Report/Block), but no Delete.
+    await user.click(screen.getByRole("button", { name: "More actions" }));
     expect(
-      screen.queryByRole("button", { name: "Comment actions" }),
+      screen.getByRole("menuitem", { name: /report/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: /delete/i }),
     ).not.toBeInTheDocument();
   });
 

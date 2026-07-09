@@ -24,6 +24,10 @@ const {
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
   revalidateTag: revalidateTagMock,
+  unstable_cache:
+    (fn: (...args: unknown[]) => unknown) =>
+    (...args: unknown[]) =>
+      fn(...args),
 }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
 vi.mock("~/server/db", () => ({ isDbConfigured: () => true }));

@@ -9,7 +9,6 @@ import {
   comments,
   cookLogEntries,
   reactions,
-  recipes,
   reviews,
   type User,
 } from "~/server/db/schema";
@@ -152,7 +151,7 @@ export async function getReactionsForTargets(
   >();
 
   for (const row of rows) {
-    const emoji = row.emoji as ReactionEmojiKey;
+    const emoji = row.emoji;
     let byEmoji = acc.get(row.targetId);
     if (!byEmoji) {
       byEmoji = new Map();

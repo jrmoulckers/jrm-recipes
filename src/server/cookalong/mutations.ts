@@ -55,7 +55,8 @@ export async function createCookAlong(
       where: eq(recipes.id, input.recipeId),
       columns: { id: true, groupId: true, title: true },
     });
-    if (!recipe || recipe.groupId !== input.groupId) {
+    if (!recipe) throw new DomainError("NOT_FOUND");
+    if (recipe.groupId !== input.groupId) {
       throw new DomainError("NOT_FOUND");
     }
 

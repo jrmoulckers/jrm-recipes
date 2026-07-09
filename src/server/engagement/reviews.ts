@@ -42,7 +42,7 @@ function emptyToNull(value: string | undefined): string | null {
 export async function listReviews(
   recipeId: string,
   sort: ReviewSort = "recent",
-  hiddenAuthorIds: Set<string> = new Set(),
+  hiddenAuthorIds = new Set<string>(),
 ): Promise<ReviewListItem[]> {
   if (!isDbConfigured()) return [];
 

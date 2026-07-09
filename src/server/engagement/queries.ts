@@ -259,10 +259,10 @@ export async function getRatingBreakdown(
         .filter((row) => row.user)
         .slice(0, avatarLimit)
         .map((row) => ({
-          id: row.user!.id,
-          name: row.user!.name,
-          handle: row.user!.handle,
-          avatarUrl: row.user!.avatarUrl,
+          id: row.user.id,
+          name: row.user.name,
+          handle: row.user.handle,
+          avatarUrl: row.user.avatarUrl,
         }))
     : [];
 
