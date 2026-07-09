@@ -125,12 +125,14 @@ function ItemRow({
   avoidAllergens,
   onToggle,
   onRemove,
+  onSetCategory,
 }: {
   item: ShoppingViewItem;
   disabled: boolean;
   avoidAllergens: Allergen[];
   onToggle: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
+  onSetCategory: (id: string, category: ShoppingCategory) => void;
 }) {
   const amount = describeQuantity(item);
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
@@ -192,6 +194,24 @@ function ItemRow({
           )}
         </span>
       </button>
+      <label className="sr-only" htmlFor={`aisle-${item.id}`}>
+        Aisle for {item.item}
+      </label>
+      <select
+        id={`aisle-${item.id}`}
+        value={item.category}
+        disabled={disabled}
+        onChange={(e) => onSetCategory(item.id, e.target.value as ShoppingCategory)}
+        aria-label={`Aisle for ${item.item}`}
+        title="Change aisle"
+        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+      >
+        {SHOPPING_CATEGORIES.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
       <button
         type="button"
         disabled={disabled}
@@ -213,6 +233,7 @@ export function ShoppingListView({
   onAddManual,
   onToggle,
   onRemove,
+  onSetCategory,
   onClearChecked,
   onClearAll,
 }: {
@@ -228,6 +249,7 @@ export function ShoppingListView({
   onAddManual: (entry: ManualEntryDraft) => void;
   onToggle: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
+  onSetCategory: (id: string, category: ShoppingCategory) => void;
   onClearChecked: () => void;
   onClearAll: () => void;
 }) {
@@ -358,6 +380,7 @@ export function ShoppingListView({
                       avoidAllergens={avoidAllergens}
                       onToggle={onToggle}
                       onRemove={onRemove}
+                      onSetCategory={onSetCategory}
                     />
                   ))}
                 </ul>
@@ -379,6 +402,7 @@ export function ShoppingListView({
                     avoidAllergens={avoidAllergens}
                     onToggle={onToggle}
                     onRemove={onRemove}
+                    onSetCategory={onSetCategory}
                   />
                 ))}
               </ul>

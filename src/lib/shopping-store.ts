@@ -43,6 +43,7 @@ type ShoppingStore = {
   addRecipe: (recipe: ShoppingRecipeInput) => void;
   addManual: (entry: ManualEntry) => void;
   setChecked: (id: string, checked: boolean) => void;
+  setCategory: (id: string, category: ShoppingCategory) => void;
   remove: (id: string) => void;
   clearChecked: () => void;
   clearAll: () => void;
@@ -119,6 +120,12 @@ export const useShoppingStore = create<ShoppingStore>()(
         set((state) => ({
           items: state.items.map((i) =>
             i.id === id ? { ...i, checked } : i,
+          ),
+        })),
+      setCategory: (id, category) =>
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.id === id ? { ...i, category } : i,
           ),
         })),
       remove: (id) =>

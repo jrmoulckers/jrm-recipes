@@ -10,11 +10,13 @@ import {
   clearCheckedItemsAction,
   clearShoppingListAction,
   removeShoppingItemAction,
+  setItemCategoryAction,
   setItemCheckedAction,
   type ActionResult,
 } from "~/server/shopping/actions";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
+import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
   ShoppingListView,
   type ManualEntryDraft,
@@ -60,6 +62,13 @@ export function DbShoppingList({
     run(() => removeShoppingItemAction(id));
   }
 
+  function onSetCategory(id: string, category: ShoppingCategory) {
+    setOptimistic((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, category } : i)),
+    );
+    run(() => setItemCategoryAction(id, category));
+  }
+
   function onAddManual(entry: ManualEntryDraft) {
     run(() =>
       addManualItemAction({
@@ -90,6 +99,7 @@ export function DbShoppingList({
       onAddManual={onAddManual}
       onToggle={onToggle}
       onRemove={onRemove}
+      onSetCategory={onSetCategory}
       onClearChecked={onClearChecked}
       onClearAll={onClearAll}
     />

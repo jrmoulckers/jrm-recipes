@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { getLocale } from "next-intl/server";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -9,17 +10,26 @@ import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
 import {
   addManualItem,
   addRecipeToList,
+  buildListFromPlan,
   clearChecked,
   clearList,
   removeItem,
+  setItemCategory,
   setItemChecked,
 } from "./mutations";
 import {
   addRecipeToListInput,
   manualItemInput,
+  setItemCategoryInput,
   type AddRecipeToListInput,
   type ManualItemInput,
 } from "./validation";
+import { type ShoppingCategory } from "~/lib/shopping-list";
+import {
+  getPlannerWeek,
+  parseDateParam,
+  toDateParam,
+} from "~/server/planner/week";
 
 export type ActionResult =
   | { ok: true }
@@ -75,6 +85,35 @@ export async function addRecipeToShoppingListAction(
   }
 }
 
+export type BuildFromPlanActionResult =
+  | { ok: true; recipesUsed: number; added: number; merged: number; empty: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Build the shopping list from the meal plan for the week containing `week`
+ * (#361). Mirrors the planner page's week calculation so the list reflects
+ * exactly the visible week.
+ */
+export async function buildListFromPlanAction(
+  week: string,
+): Promise<BuildFromPlanActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const user = await requireUser();
+  try {
+    const locale = await getLocale();
+    const { start, end } = getPlannerWeek(parseDateParam(week), locale);
+    const result = await buildListFromPlan(
+      user,
+      toDateParam(start),
+      toDateParam(end),
+    );
+    revalidatePath("/shopping");
+    return { ok: true, ...result };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
 export async function addManualItemAction(
   input: ManualItemInput,
 ): Promise<ActionResult> {
@@ -105,6 +144,29 @@ export async function setItemCheckedAction(
   const user = await requireUser();
   try {
     await setItemChecked(user, itemId, checked);
+    revalidatePath("/shopping");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function setItemCategoryAction(
+  itemId: string,
+  category: ShoppingCategory,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = setItemCategoryInput.safeParse({ itemId, category });
+  if (!parsed.success) {
+    return { ok: false, error: "That aisle isn't valid." };
+  }
+  const user = await requireUser();
+  try {
+    await setItemCategory(
+      user,
+      parsed.data.itemId,
+      parsed.data.category as ShoppingCategory,
+    );
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {

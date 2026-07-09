@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SHOPPING_CATEGORIES } from "~/lib/shopping-list";
+
 /**
  * Validation contract for shopping-list input, shared by the client UI and the
  * server actions so the shape is guaranteed end to end. Mirrors the recipe
@@ -43,5 +45,14 @@ export const addRecipeToListInput = z.object({
   includeStaples: z.boolean().optional(),
 });
 
+/** Override the aisle (category) an item is filed under (#360). */
+export const setItemCategoryInput = z.object({
+  itemId: z.string().trim().min(1).max(24),
+  category: z.enum(
+    SHOPPING_CATEGORIES as unknown as [string, ...string[]],
+  ),
+});
+
 export type ManualItemInput = z.infer<typeof manualItemInput>;
 export type AddRecipeToListInput = z.infer<typeof addRecipeToListInput>;
+export type SetItemCategoryInput = z.infer<typeof setItemCategoryInput>;
