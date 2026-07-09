@@ -54,7 +54,11 @@ export type RecipeDiff = {
 
 function str(value: unknown): string {
   if (value == null) return "";
-  return String(value).trim();
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  return "";
 }
 
 function num(value: number | null | undefined): string {
@@ -129,66 +133,60 @@ function diffLines<T>(
   after: T[],
   key: (item: T) => string,
   display: (item: T) => string,
+  pairGaps = false,
 ): SectionDiff {
   const beforeKeys = before.map(key);
   const afterKeys = after.map(key);
   const pairs = lcsPairs(beforeKeys, afterKeys);
-  const matchedBefore = new Set(pairs.map(([i]) => i));
-  const matchedAfter = new Set(pairs.map(([, j]) => j));
 
   const lines: LineDiff[] = [];
   let added = 0;
   let removed = 0;
   let changed = 0;
 
-  let bi = 0;
-  let ai = 0;
-  let p = 0;
-  while (bi < before.length || ai < after.length) {
-    const pair = pairs[p];
-    // Emit any leading removed rows (in before, before the next matched pair).
-    if (bi < before.length && (!pair || bi < pair[0]) && !matchedBefore.has(bi)) {
-      lines.push({ kind: "removed", before: display(before[bi]!), after: null });
-      removed++;
-      bi++;
-      continue;
-    }
-    // Emit any leading added rows (in after, before the next matched pair).
-    if (ai < after.length && (!pair || ai < pair[1]) && !matchedAfter.has(ai)) {
-      lines.push({ kind: "added", before: null, after: display(after[ai]!) });
-      added++;
-      ai++;
-      continue;
-    }
-    if (pair && bi === pair[0] && ai === pair[1]) {
-      const beforeText = display(before[bi]!);
-      const afterText = display(after[ai]!);
+  const pushRow = (bItem: T | null, aItem: T | null) => {
+    if (bItem != null && aItem != null) {
+      const beforeText = display(bItem);
+      const afterText = display(aItem);
       if (beforeText === afterText) {
         lines.push({ kind: "unchanged", before: beforeText, after: afterText });
       } else {
         lines.push({ kind: "changed", before: beforeText, after: afterText });
         changed++;
       }
-      bi++;
-      ai++;
-      p++;
-      continue;
-    }
-    // Fallback (matched row not at cursor): drain remaining unmatched rows.
-    if (bi < before.length && !matchedBefore.has(bi)) {
-      lines.push({ kind: "removed", before: display(before[bi]!), after: null });
+    } else if (bItem != null) {
+      lines.push({ kind: "removed", before: display(bItem), after: null });
       removed++;
-      bi++;
-    } else if (ai < after.length && !matchedAfter.has(ai)) {
-      lines.push({ kind: "added", before: null, after: display(after[ai]!) });
+    } else if (aItem != null) {
+      lines.push({ kind: "added", before: null, after: display(aItem) });
       added++;
-      ai++;
-    } else {
-      // Both cursors sit on matched rows out of pair order; advance safely.
-      if (bi < before.length) bi++;
-      if (ai < after.length) ai++;
     }
+  };
+
+  // Emit the unmatched rows sitting between two anchors. When `pairGaps` is set
+  // (steps, which are positional), leftover before/after rows are paired into
+  // `changed` edits; otherwise they stay as discrete removed/added rows.
+  const flushGap = (bItems: T[], aItems: T[]) => {
+    if (pairGaps) {
+      const shared = Math.min(bItems.length, aItems.length);
+      for (let k = 0; k < shared; k++) pushRow(bItems[k]!, aItems[k]!);
+      for (let k = shared; k < bItems.length; k++) pushRow(bItems[k]!, null);
+      for (let k = shared; k < aItems.length; k++) pushRow(null, aItems[k]!);
+    } else {
+      for (const item of bItems) pushRow(item, null);
+      for (const item of aItems) pushRow(null, item);
+    }
+  };
+
+  let bi = 0;
+  let ai = 0;
+  for (const [pb, pa] of pairs) {
+    flushGap(before.slice(bi, pb), after.slice(ai, pa));
+    pushRow(before[pb]!, after[pa]!);
+    bi = pb + 1;
+    ai = pa + 1;
   }
+  flushGap(before.slice(bi), after.slice(ai));
 
   return { lines, added, removed, changed };
 }
@@ -219,7 +217,11 @@ const EMPTY_RECIPE: Partial<RecipeInput> = {
 function fieldValue(recipe: Partial<RecipeInput>, key: keyof RecipeInput): string {
   const value = recipe[key];
   if (value == null) return "";
-  return String(value).trim();
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  return "";
 }
 
 /**
@@ -259,6 +261,7 @@ export function diffRecipeSnapshots(
     b.steps ?? [],
     (step) => str(step.instruction).toLowerCase().slice(0, 80),
     formatStepLine,
+    true,
   );
 
   const added = ingredients.added + steps.added;

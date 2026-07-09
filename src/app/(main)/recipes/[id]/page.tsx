@@ -63,6 +63,7 @@ import { TechniqueChips } from "~/components/cook/technique-chips";
 import { CookBundleWarmer } from "~/components/cook/cook-bundle-warmer";
 import { FavoriteButton } from "~/components/collections/favorite-button";
 import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
+import { QuickPlanButton } from "~/components/recipe/quick-plan-button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { RecipeTimelineSection } from "~/components/recipe/sections/recipe-timeline-section";
 import { RecipeCookedSection } from "~/components/recipe/sections/recipe-cooked-section";
@@ -70,6 +71,7 @@ import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-dis
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { buildTwoWeekPlanContext } from "~/server/planner/quick-plan";
 import { getAnchoredSuggestions } from "~/server/engagement/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
@@ -159,6 +161,10 @@ export default async function RecipePage({
 
   const isOwner = Boolean(user?.id === recipe.authorId);
   const dbEnabled = isDbConfigured();
+  // Two-week add-to-plan picker for signed-in viewers (#362); reuses the quick
+  // planner action so a cook can plan a recipe the moment they decide to make it.
+  const addToPlanContext =
+    user && dbEnabled ? buildTwoWeekPlanContext() : null;
   // Exclude any owner self-rating so the shown average matches the JSON-LD
   // aggregateRating (authors can't rate their own recipe).
   const { average, count } = ratingSummary(
@@ -412,6 +418,16 @@ export default async function RecipePage({
                 })),
               }}
             />
+            {addToPlanContext && (
+              <QuickPlanButton
+                recipeId={recipe.id}
+                recipeTitle={recipe.title}
+                days={addToPlanContext.days}
+                defaultDate={addToPlanContext.defaultDate}
+                variant="button"
+                heading="Add to a meal plan"
+              />
+            )}
             <GrownUpControls>
               <AdaptButton
                 sourceId={recipe.id}

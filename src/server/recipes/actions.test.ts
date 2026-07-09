@@ -59,6 +59,11 @@ vi.mock("./mutations", () => ({
   revertRecipe: revertRecipeMock,
   deleteRecipe: vi.fn(),
 }));
+vi.mock("./queries", () => ({
+  getRecipeVersion: vi.fn(),
+  parseSnapshot: vi.fn(),
+}));
+vi.mock("./loaders", () => ({ getRecipeForViewer: vi.fn() }));
 
 import {
   createRecipeAction,
