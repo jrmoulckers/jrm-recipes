@@ -20,7 +20,7 @@ vi.mock("~/server/db", () => ({
 }));
 
 import type { User } from "~/server/db/schema";
-import { getRecipeLineage, getRecipeTimeline } from "./queries";
+import { getRecipeLineage, getRecipeFamilyTree, getRecipeTimeline } from "./queries";
 import { FORK_LIST_CAP } from "./pagination";
 
 const owner = { id: "owner_1" } as User;
@@ -237,5 +237,115 @@ describe("getRecipeTimeline pagination (#159)", () => {
     expect(entries.every((e) => !e.id.startsWith("synth-origin-"))).toBe(true);
     expect(entries.some((e) => e.kind === "created")).toBe(false);
     expect(dbMock.query.recipes.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("getRecipeFamilyTree (#359)", () => {
+  function recipeRow(
+    id: string,
+    forkedFromId: string | null,
+    overrides: Partial<{
+      visibility: string;
+      authorId: string;
+      groupId: string | null;
+    }> = {},
+  ) {
+    return {
+      id,
+      slug: id,
+      title: id.toUpperCase(),
+      visibility: "public",
+      authorId: "chef",
+      groupId: null,
+      forkedFromId,
+      author: { name: "Chef" },
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    // Down-walk fetches default to "no adaptations" unless a test says otherwise.
+    dbMock.query.recipes.findMany.mockResolvedValue([]);
+  });
+
+  it("builds an ancestor spine down to the highlighted current recipe", async () => {
+    dbMock.query.recipes.findFirst
+      .mockResolvedValueOnce(recipeRow("c", "p"))
+      .mockResolvedValueOnce(recipeRow("p", "g"))
+      .mockResolvedValueOnce(recipeRow("g", null));
+
+    const tree = await getRecipeFamilyTree("c", owner);
+
+    expect(tree).not.toBeNull();
+    expect(tree!.multiGeneration).toBe(true);
+    expect(tree!.ancestorDepth).toBe(2);
+    expect(tree!.root.id).toBe("g");
+    expect(tree!.root.children[0]!.id).toBe("p");
+    const currentNode = tree!.root.children[0]!.children[0]!;
+    expect(currentNode.id).toBe("c");
+    expect(currentNode.isCurrent).toBe(true);
+  });
+
+  it("stays single-generation for just an immediate parent and child", async () => {
+    dbMock.query.recipes.findFirst
+      .mockResolvedValueOnce(recipeRow("c", "p"))
+      .mockResolvedValueOnce(recipeRow("p", null));
+    dbMock.query.recipes.findMany
+      .mockResolvedValueOnce([recipeRow("d1", "c")])
+      .mockResolvedValueOnce([]);
+
+    const tree = await getRecipeFamilyTree("c", owner);
+
+    expect(tree!.ancestorDepth).toBe(1);
+    expect(tree!.descendantDepth).toBe(1);
+    expect(tree!.multiGeneration).toBe(false);
+  });
+
+  it("becomes multi-generation once a grandchild fork exists", async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValueOnce(recipeRow("c", null));
+    dbMock.query.recipes.findMany
+      .mockResolvedValueOnce([recipeRow("d1", "c")])
+      .mockResolvedValueOnce([recipeRow("d2", "d1")])
+      .mockResolvedValueOnce([]);
+
+    const tree = await getRecipeFamilyTree("c", owner);
+
+    expect(tree!.descendantDepth).toBe(2);
+    expect(tree!.multiGeneration).toBe(true);
+    expect(tree!.root.id).toBe("c");
+    expect(tree!.root.children[0]!.id).toBe("d1");
+    expect(tree!.root.children[0]!.children[0]!.id).toBe("d2");
+  });
+
+  it("does not loop on cyclic or self-referential fork links", async () => {
+    // Current recipe's parent link points back at itself; a descendant links
+    // back up to the current recipe. Neither should re-enter the tree.
+    dbMock.query.recipes.findFirst.mockResolvedValueOnce(recipeRow("c", "c"));
+    dbMock.query.recipes.findMany
+      .mockResolvedValueOnce([recipeRow("c", "c"), recipeRow("d1", "c")])
+      .mockResolvedValueOnce([recipeRow("c", "d1")])
+      .mockResolvedValue([]);
+
+    const tree = await getRecipeFamilyTree("c", owner);
+
+    expect(tree!.ancestorDepth).toBe(0);
+    expect(tree!.root.id).toBe("c");
+    expect(tree!.root.children.map((n) => n.id)).toEqual(["d1"]);
+    expect(tree!.root.children[0]!.children).toEqual([]);
+  });
+
+  it("stops the ancestor walk at a fork the viewer may not see", async () => {
+    dbMock.query.recipes.findFirst
+      .mockResolvedValueOnce(recipeRow("c", "p"))
+      .mockResolvedValueOnce(
+        recipeRow("p", "g", { visibility: "private", authorId: "stranger" }),
+      );
+
+    const tree = await getRecipeFamilyTree("c", owner);
+
+    expect(tree!.ancestorDepth).toBe(0);
+    expect(tree!.root.id).toBe("c");
+    // The grandparent is never fetched: the walk stops at the hidden parent.
+    expect(dbMock.query.recipes.findFirst).toHaveBeenCalledTimes(2);
   });
 });
