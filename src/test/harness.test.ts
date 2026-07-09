@@ -56,7 +56,7 @@ describe("createDbMock (#225)", () => {
 
   it("accepts extra tables", () => {
     const extended = createDbMock(["reviews"]);
-    expect(extended.query.reviews.findFirst).toBeTypeOf("function");
+    expect(extended.query.reviews?.findFirst).toBeTypeOf("function");
   });
 });
 

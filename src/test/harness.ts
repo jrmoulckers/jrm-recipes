@@ -84,6 +84,14 @@ export type QueryTableMock = {
   findMany: Mock<(...args: unknown[]) => Promise<unknown[]>>;
 };
 
+/**
+ * The `query` surface: the default tables are known-present (so
+ * `db.query.recipes` needs no undefined check), while extra tables added via
+ * {@link createDbMock} resolve through the string index signature.
+ */
+export type QueryMock = Record<(typeof DEFAULT_TABLES)[number], QueryTableMock> &
+  Record<string, QueryTableMock>;
+
 type InsertBuilder = { values: (vals?: unknown) => Chainable };
 type UpdateBuilder = {
   set: (vals?: unknown) => { where: (where?: unknown) => Promise<undefined> };
@@ -103,7 +111,7 @@ export interface StatementMocks {
 
 /** The transaction/statement surface shared by `db` and its `tx` callback arg. */
 export interface TxMock extends StatementMocks {
-  query: Record<string, QueryTableMock>;
+  query: QueryMock;
   /** Nested SAVEPOINT (`tx.transaction`) that runs its callback against `tx`. */
   transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
 }
@@ -122,14 +130,14 @@ const DEFAULT_TABLES = [
   "users",
 ] as const;
 
-function makeQuery(tables: readonly string[]): Record<string, QueryTableMock> {
+function makeQuery(tables: readonly string[]): QueryMock {
   const query: Record<string, QueryTableMock> = {};
   for (const t of tables)
     query[t] = {
       findFirst: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
       findMany: vi.fn<(...args: unknown[]) => Promise<unknown[]>>(),
     };
-  return query;
+  return query as QueryMock;
 }
 
 /** The full fake db plus handles for configuring/asserting on it. */
@@ -139,7 +147,7 @@ export interface DbMock extends StatementMocks {
   /** The tx object every `transaction(cb)` / SAVEPOINT callback receives. */
   tx: TxMock;
   /** Shorthand for `db.query`. */
-  query: Record<string, QueryTableMock>;
+  query: QueryMock;
   transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
   $count: Mock;
 }
