@@ -20,23 +20,29 @@ import { PasteImportPanel } from "~/components/recipe/paste-import-panel";
 export function ImportRecipePanel({
   onImported,
   urlLabel,
+  initialUrl,
 }: {
   onImported: (recipe: ImportedRecipe) => void;
   urlLabel: string;
+  /** A URL shared into the PWA to pre-fill and auto-import on mount (#50/#55). */
+  initialUrl?: string;
 }) {
-  const [importUrl, setImportUrl] = React.useState("");
+  const [importUrl, setImportUrl] = React.useState(initialUrl ?? "");
   const [importing, setImporting] = React.useState(false);
   // "Import from a link" vs. "Paste text" (#370).
   const [importMode, setImportMode] = React.useState<"url" | "text">("url");
 
-  async function handleImport() {
-    const url = importUrl.trim();
+  const onImportedRef = React.useRef(onImported);
+  onImportedRef.current = onImported;
+
+  const runImport = React.useCallback(async (rawUrl: string) => {
+    const url = rawUrl.trim();
     if (!url) return;
     setImporting(true);
     try {
       const res = await importRecipeFromUrlAction(url);
       if (res.ok) {
-        onImported(res.recipe);
+        onImportedRef.current(res.recipe);
         toast.success(
           res.recipe.title
             ? `Imported “${res.recipe.title}”. Review the details, then save.`
@@ -51,7 +57,21 @@ export function ImportRecipePanel({
     } finally {
       setImporting(false);
     }
+  }, []);
+
+  async function handleImport() {
+    await runImport(importUrl);
   }
+
+  // A recipe URL shared into the PWA (Web Share Target, #55) arrives pre-filled;
+  // kick off the import automatically so the share flow lands on filled fields.
+  const autoImportedRef = React.useRef(false);
+  React.useEffect(() => {
+    const url = initialUrl?.trim();
+    if (!url || autoImportedRef.current) return;
+    autoImportedRef.current = true;
+    void runImport(url);
+  }, [initialUrl, runImport]);
 
   return (
     <section className="rounded-xl border border-border bg-muted/40 p-4">

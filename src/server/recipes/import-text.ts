@@ -86,7 +86,14 @@ function wordCount(line: string): number {
 }
 
 function toStep(instruction: string): ImportedStep {
-  return { instruction, imageUrl: "", timerMinutes: "", techniques: "" };
+  return {
+    section: "",
+    instruction,
+    imageUrl: "",
+    videoUrl: "",
+    timerMinutes: "",
+    techniques: "",
+  };
 }
 
 function buildSteps(lines: string[]): ImportedStep[] {
