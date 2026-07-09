@@ -58,6 +58,7 @@ import { HandDownButton } from "~/components/recipe/hand-down-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
+import { RecipeActionsMenu } from "~/components/recipe/recipe-actions-menu";
 import { ReadAloudButton } from "~/components/recipe/read-aloud-button-lazy";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
@@ -392,7 +393,9 @@ export default async function RecipePage({
             )}
           </div>
 
-          {/* Action bar */}
+          {/* Action bar (#81): Cook is the single primary CTA; every secondary
+              action is tucked into the overflow "…" menu so the hierarchy stays
+              unambiguous without dropping any action. */}
           <div className="flex flex-wrap gap-2 pt-1">
             {/* Best-effort: warm the offline Cook Mode bundle for this recipe. */}
             <CookBundleWarmer
@@ -407,6 +410,7 @@ export default async function RecipePage({
                 <Play /> {t("actions.cook")}
               </Link>
             </Button>
+            <RecipeActionsMenu>
             <Button asChild size="lg" variant="outline">
               <Link href={`/recipes/${recipe.slug}/print`}>
                 <Printer /> {t("actions.print")}
@@ -487,6 +491,7 @@ export default async function RecipePage({
                 />
               </GrownUpControls>
             )}
+            </RecipeActionsMenu>
           </div>
         </header>
 
