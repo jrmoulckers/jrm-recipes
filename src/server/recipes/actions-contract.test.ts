@@ -74,6 +74,11 @@ vi.mock("./mutations", () => ({
   restoreRecipe: vi.fn(),
   setShareLinkState: vi.fn(),
 }));
+vi.mock("./queries", () => ({
+  getRecipeVersion: vi.fn(),
+  parseSnapshot: vi.fn(),
+}));
+vi.mock("./loaders", () => ({ getRecipeForViewer: vi.fn() }));
 
 import {
   createAdaptationAction,

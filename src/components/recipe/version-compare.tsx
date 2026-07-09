@@ -22,6 +22,12 @@ import {
 
 type VersionOption = { versionNumber: number; label: string };
 
+export type VersionCompareProps = {
+  recipeId: string;
+  // Newest-first, matching the version history list.
+  versions: VersionOption[];
+};
+
 const CURRENT = "current" as const;
 
 function toSelection(value: string): CompareSelection {
@@ -33,14 +39,7 @@ function toSelection(value: string): CompareSelection {
  * (a saved version or the live recipe) and see an inline diff of scalar fields,
  * ingredient lines, and steps. Read-only — Restore lives in the version list.
  */
-export function VersionCompare({
-  recipeId,
-  versions,
-}: {
-  recipeId: string;
-  // Newest-first, matching the version history list.
-  versions: VersionOption[];
-}) {
+export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
   // Need at least one saved version to have anything to compare against.
   const options = React.useMemo(
     () => [

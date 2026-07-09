@@ -4,7 +4,7 @@ import { getRecipeTimeline, getRecipeVersions } from "~/server/recipes/queries";
 import { type RecipeForViewer } from "~/server/recipes/loaders";
 import { RecipeStory } from "~/components/recipe/story";
 import { RecipeTimeline } from "~/components/recipe/timeline";
-import { VersionCompare } from "~/components/recipe/version-compare";
+import { VersionCompareLazy } from "~/components/recipe/version-compare-lazy";
 
 /**
  * Timeline tab content (#176). Fetches the story timeline and saved versions in
@@ -43,7 +43,7 @@ export async function RecipeTimelineSection({
           recipeId={recipeId}
           canRevert={canRevert}
         />
-        <VersionCompare
+        <VersionCompareLazy
           recipeId={recipeId}
           versions={versions.items.map((version) => ({
             versionNumber: version.versionNumber,
