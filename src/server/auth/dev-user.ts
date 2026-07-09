@@ -13,6 +13,7 @@ export const DEV_USER: User = {
   handle: "home-cook",
   avatarUrl: null,
   weeklyDigestOptIn: false,
+  deletedAt: null,
   createdAt: new Date(0),
   updatedAt: new Date(0),
 };

@@ -14,10 +14,12 @@ import {
 } from "~/server/action-result";
 import { authedAction, NEEDS_DATABASE } from "~/server/action";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { absoluteUrl } from "~/lib/utils";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { captureServer } from "~/lib/analytics/server";
 import { getLimitStatus } from "~/server/billing/entitlements";
+import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { recipeInput, type RecipeInput } from "./validation";
 import { recipeMutationTags, recipeTag } from "./cache-tags";
@@ -27,6 +29,7 @@ import {
   forkRecipe,
   restoreRecipe,
   revertRecipe,
+  setShareLinkState,
   updateRecipe,
 } from "./mutations";
 
@@ -62,6 +65,8 @@ function revalidateRecipeTags(id: string) {
 const runCreateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user): Promise<ActionResult> => {
+    // Throttle write spam / storage exhaustion (issue #199).
+    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     // Soft-limit (issue #318): free tiers cap the number of saved recipes. Refuse
     // only *new* creates once at/over the cap and hand the UI an upgrade-flagged
     // result — existing recipes stay fully editable/viewable, and an unlimited plan
@@ -116,6 +121,7 @@ export async function createRecipeAction(
 const runUpdateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user, id: string): Promise<ActionResult> => {
+    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       const recipe = await updateRecipe(id, data, user);
       void captureServer(user.id, "recipe_updated", {
@@ -150,6 +156,7 @@ export async function forkRecipeAction(
   if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   try {
     const user = await requireUser();
+    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     const recipe = await forkRecipe(sourceId, user, forkNote);
     void captureServer(user.id, "recipe_forked", {
       recipeId: recipe.id,
@@ -208,6 +215,11 @@ export async function importRecipeFromUrlAction(
 ): Promise<ImportResult> {
   // Tie the fetch to an authenticated session so it isn't an open proxy.
   const user = await requireUser();
+  // Bound outbound fetches per user so import can't be used for SSRF
+  // amplification / high-volume third-party fetches (issue #199).
+  if (!checkRateLimit("import", user.id).ok) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
   const result = await importRecipeFromUrl(url);
   void captureServer(user.id, "recipe_imported", { ok: result.ok });
   return result;
@@ -216,6 +228,7 @@ export async function importRecipeFromUrlAction(
 export async function deleteRecipeAction(id: string): Promise<void> {
   if (!isDbConfigured()) return;
   const user = await requireUser();
+  if (!checkRateLimit("recipeWrite", user.id).ok) return;
   try {
     await deleteRecipe(id, user);
     void captureServer(user.id, "recipe_deleted", { recipeId: id });
@@ -246,4 +259,36 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
   revalidatePath(recipeDetailPath(restored));
   revalidateRecipeTags(restored.id);
   return true;
+}
+
+/** Result of a share-link change: the new URL (null when revoked) + its state. */
+export type ShareLinkActionResult = BaseActionResult<{
+  url: string | null;
+  enabled: boolean;
+}>;
+
+/**
+ * Owner-only: disable/enable or rotate an unlisted recipe's share link (#207).
+ * Authorization is enforced in {@link setShareLinkState} (row scoped to the
+ * author); a non-owner resolves to a generic failure. On success we bust the
+ * recipe's cache tags and hand back the fresh token URL (or null when revoked).
+ */
+export async function setShareLinkStateAction(
+  recipeId: string,
+  change: { enabled?: boolean; rotate?: boolean },
+): Promise<ShareLinkActionResult> {
+  if (!isDbConfigured()) return fail(NEEDS_DATABASE);
+  const user = await requireUser();
+  if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+  try {
+    const state = await setShareLinkState(recipeId, user, change);
+    revalidateRecipeTags(recipeId);
+    const url =
+      state.shareToken && state.shareLinkEnabled
+        ? absoluteUrl(`/r/${state.shareToken}`)
+        : null;
+    return ok({ url, enabled: state.shareLinkEnabled });
+  } catch {
+    return fail("We couldn't update that share link.");
+  }
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { slugify } from "~/lib/utils";
 import { DIETARY_TAGS } from "~/lib/substitutions";
+import { ALLOWED_MEDIA_HOSTS } from "~/config/media-hosts";
 
 /**
  * Validation contract for recipe input. The editor (client) and the server
@@ -32,6 +33,43 @@ const optionalUrl = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+/**
+ * Stored recipe media (cover/step image + step video) is rendered on every
+ * recipe view, so a URL on an arbitrary host would leak viewers' IPs to
+ * attacker-controlled servers (tracking/CSRF beacon, issue #216). Restrict such
+ * URLs to the media-host allowlist that also backs `next/image`
+ * `remotePatterns`, so what we store and what we render agree.
+ *
+ * Escape hatch: when Cloudinary isn't configured (the local "paste an image
+ * URL" dev flow, where there's no uploader) any valid host is allowed, so the
+ * app still runs with zero config. In a Cloudinary-configured deploy the
+ * allowlist is enforced.
+ */
+const cloudinaryConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+);
+
+const MEDIA_HOST_MESSAGE =
+  "Upload photos and videos to Heirloom — links to other sites aren't allowed.";
+
+function mediaHostAllowed(url: string): boolean {
+  if (!cloudinaryConfigured) return true;
+  try {
+    return ALLOWED_MEDIA_HOSTS.includes(new URL(url).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+const mediaUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
+  .refine(mediaHostAllowed, { message: MEDIA_HOST_MESSAGE })
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 /** A nullable, coercible non-negative number from a possibly-empty form field. */
 const optionalNumber = z
   .union([z.string(), z.number()])
@@ -59,8 +97,8 @@ export const ingredientInput = z.object({
 export const stepInput = z.object({
   section: optionalString(120),
   instruction: z.string().trim().min(1, "Add step text").max(5000),
-  imageUrl: optionalUrl,
-  videoUrl: optionalUrl,
+  imageUrl: mediaUrl,
+  videoUrl: mediaUrl,
   timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
   // Target internal/doneness temperature in °C + a short doneness cue (#417).
   // Bounds cover freezer (-50) through a very hot oven (400 °C); NULL passes.
@@ -87,7 +125,7 @@ export const recipeInput = z
   .object({
     title: z.string().trim().min(1, "Give your recipe a title").max(200),
     description: optionalString(2000),
-    coverImageUrl: optionalUrl,
+    coverImageUrl: mediaUrl,
     servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
     servingsNoun: optionalString(40),
     prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),

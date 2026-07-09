@@ -19,6 +19,7 @@ import {
   type User,
 } from "~/server/db/schema";
 import { getGroupSeatLimit } from "~/server/billing/entitlements";
+import { AuditAction, recordAudit } from "~/server/audit";
 import {
   type CreateInviteLinkInput,
   createInviteLinkInput,
@@ -247,6 +248,14 @@ export async function addMember(
     const member = await memberWithUser(tx, inserted.id);
     if (!member) throw new DomainError("CONFLICT");
 
+    await recordAudit(tx, {
+      actorId: actor.id,
+      action: AuditAction.GroupMemberAdded,
+      targetType: "group",
+      targetId: group.id,
+      metadata: { memberUserId: target.id, role },
+    });
+
     // Count after the insert so the caller can bucket the group's size for
     // analytics without ever seeing individual members.
     const members = await tx.query.groupMembers.findMany({
@@ -282,6 +291,14 @@ export async function updateMemberRole(
 
     if (!updated) throw new DomainError("NOT_FOUND");
 
+    await recordAudit(tx, {
+      actorId: actor.id,
+      action: AuditAction.GroupMemberRoleUpdated,
+      targetType: "group",
+      targetId: group.id,
+      metadata: { memberUserId, from: target.role, to: role },
+    });
+
     const member = await memberWithUser(tx, updated.id);
     if (!member) throw new DomainError("NOT_FOUND");
     return member;
@@ -310,6 +327,15 @@ export async function removeMember(
     }
 
     await tx.delete(groupMembers).where(eq(groupMembers.id, target.id));
+
+    await recordAudit(tx, {
+      actorId: actor.id,
+      action: AuditAction.GroupMemberRemoved,
+      targetType: "group",
+      targetId: group.id,
+      metadata: { memberUserId, role: target.role },
+    });
+
     return { slug: group.slug };
   });
 }
@@ -359,6 +385,15 @@ export async function deleteGroup(groupSlugOrId: string, user: User) {
       .returning({ slug: groups.slug });
 
     if (!deleted) throw new DomainError("NOT_FOUND");
+
+    await recordAudit(tx, {
+      actorId: user.id,
+      action: AuditAction.GroupDeleted,
+      targetType: "group",
+      targetId: group.id,
+      metadata: { slug: deleted.slug },
+    });
+
     return { slug: deleted.slug, groupId: group.id };
   });
 }
@@ -390,6 +425,14 @@ export async function transferOwnership(
       .update(groupMembers)
       .set({ role: "admin" })
       .where(eq(groupMembers.id, currentOwner.id));
+
+    await recordAudit(tx, {
+      actorId: owner.id,
+      action: AuditAction.GroupOwnershipTransferred,
+      targetType: "group",
+      targetId: group.id,
+      metadata: { newOwnerUserId, previousOwnerUserId: owner.id },
+    });
 
     return { slug: group.slug };
   });

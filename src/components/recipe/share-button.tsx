@@ -1,12 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { Download, Link2, Share, Share2 } from "lucide-react";
+import {
+  Download,
+  Link2,
+  Link2Off,
+  RefreshCw,
+  Share,
+  Share2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { track } from "~/lib/analytics";
 import { shareText, shareMessageWithUrl } from "~/lib/share-text";
+import { setShareLinkStateAction } from "~/server/recipes/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,19 +48,73 @@ function cardImageUrl(): string {
 export function ShareButton({
   title,
   author,
+  shareUrl,
+  recipeId,
+  manageable = false,
+  shareEnabled = true,
 }: {
   title: string;
   author?: string | null;
+  // Absolute URL to hand out when sharing. For unlisted recipes this is the
+  // unguessable `/r/<token>` link (issue #204); when omitted we fall back to the
+  // current page URL (public/group recipes, where the address is shareable).
+  shareUrl?: string;
+  // Owner-only revoke/rotate controls (issue #207) are shown when this recipe is
+  // the viewer's own unlisted recipe. `recipeId` targets the server action and
+  // `shareEnabled` seeds the current link state.
+  recipeId?: string;
+  manageable?: boolean;
+  shareEnabled?: boolean;
 }) {
   // Pre-fetched card image, kept ready so the native share call fires inside
   // the click gesture (Safari drops file sharing if you await first).
   const fileRef = React.useRef<File | null>(null);
   const [canShareFiles, setCanShareFiles] = React.useState(false);
+  // Live share-link state so revoke/rotate updates the copied URL in place.
+  const [enabled, setEnabled] = React.useState(shareEnabled);
+  const [currentUrl, setCurrentUrl] = React.useState(shareUrl);
+  const [pending, setPending] = React.useState(false);
 
   const nativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   const text = shareText({ title, author });
+
+  /** The link to share/copy: the live share URL, else this page's URL. */
+  function linkToShare(): string {
+    return currentUrl ?? window.location.href;
+  }
+
+  async function changeShareLink(change: {
+    enabled?: boolean;
+    rotate?: boolean;
+  }) {
+    if (!recipeId || pending) return;
+    setPending(true);
+    try {
+      const result = await setShareLinkStateAction(recipeId, change);
+      if (!result.ok) {
+        toast.error(result.error ?? "Couldn't update the share link");
+        return;
+      }
+      setEnabled(result.enabled);
+      setCurrentUrl(result.url ?? undefined);
+      if (change.rotate) {
+        track("share_link_rotated", {});
+        toast.success("Share link reset — the old link no longer works");
+      } else if (change.enabled === false) {
+        track("share_link_disabled", {});
+        toast.success("Share link disabled");
+      } else {
+        toast.success("Share link enabled");
+      }
+    } catch {
+      toast.error("Couldn't update the share link");
+    } finally {
+      setPending(false);
+    }
+  }
+
 
   async function loadCardFile(): Promise<File | null> {
     if (fileRef.current) return fileRef.current;
@@ -83,7 +145,7 @@ export function ShareButton({
   }
 
   async function shareCard() {
-    const url = window.location.href;
+    const url = linkToShare();
     const file = fileRef.current;
     try {
       if (
@@ -128,7 +190,7 @@ export function ShareButton({
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(
-        shareMessageWithUrl({ title, author }, window.location.href),
+        shareMessageWithUrl({ title, author }, linkToShare()),
       );
       track("recipe_shared", { method: "copy_link" });
       track("share_link_copied", {});
@@ -161,6 +223,31 @@ export function ShareButton({
           <Link2 />
           Copy link
         </DropdownMenuItem>
+        {manageable ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={pending}
+              onSelect={(event) => {
+                event.preventDefault();
+                void changeShareLink({ enabled: !enabled });
+              }}
+            >
+              <Link2Off />
+              {enabled ? "Disable link" : "Enable link"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={pending}
+              onSelect={(event) => {
+                event.preventDefault();
+                void changeShareLink({ rotate: true });
+              }}
+            >
+              <RefreshCw />
+              Reset link
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

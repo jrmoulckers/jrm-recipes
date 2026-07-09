@@ -17,7 +17,9 @@ import {
   type User,
 } from "~/server/db/schema";
 import { canonicalizeTag } from "~/lib/tag-taxonomy";
+import { AuditAction, recordAudit } from "~/server/audit";
 import { recipeSlug, type RecipeInput } from "./validation";
+import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
 import { buildAdaptationInput } from "./timeline";
 
@@ -383,6 +385,15 @@ async function applyRecipeInput(
   await insertChildren(tx, id, input);
   await syncTags(tx, id, input.tags);
   await journal(tx, id, author.id, input, label);
+  // Mint a share token the first time a recipe becomes unlisted (issue #204).
+  // Guarded by `share_token IS NULL` so an existing token (and its enabled /
+  // rotated state, #207) is preserved across edits and never regenerated here.
+  if (input.visibility === "unlisted") {
+    await tx
+      .update(recipes)
+      .set({ shareToken: generateShareToken() })
+      .where(and(eq(recipes.id, id), isNull(recipes.shareToken)));
+  }
   return { id, slug: current.slug };
 }
 
@@ -397,6 +408,10 @@ export async function createRecipe(input: RecipeInput, author: User) {
           ...scalarFields(input, groupId),
           slug,
           authorId: author.id,
+          // A recipe created directly as unlisted needs its share token up front
+          // so `/r/<token>` works immediately (issue #204).
+          shareToken:
+            input.visibility === "unlisted" ? generateShareToken() : null,
           publishedAt: input.status === "published" ? new Date() : null,
         })
         .returning({ id: recipes.id, slug: recipes.slug });
@@ -429,7 +444,13 @@ export async function updateRecipe(
   return db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
-      columns: { id: true, slug: true, publishedAt: true, status: true },
+      columns: {
+        id: true,
+        slug: true,
+        publishedAt: true,
+        status: true,
+        visibility: true,
+      },
     });
     if (!current) throw new DomainError("NOT_FOUND");
 
@@ -448,6 +469,15 @@ export async function updateRecipe(
       actorId: author.id,
       type: newlyPublished ? "published" : "updated",
     });
+    if (input.visibility !== current.visibility) {
+      await recordAudit(tx, {
+        actorId: author.id,
+        action: AuditAction.RecipeVisibilityChanged,
+        targetType: "recipe",
+        targetId: id,
+        metadata: { from: current.visibility, to: input.visibility },
+      });
+    }
     return result;
   });
 }
@@ -599,6 +629,12 @@ export async function deleteRecipe(id: string, author: User) {
     )
     .returning({ id: recipes.id });
   if (!row) throw new DomainError("NOT_FOUND");
+  await recordAudit(db, {
+    actorId: author.id,
+    action: AuditAction.RecipeDeleted,
+    targetType: "recipe",
+    targetId: id,
+  });
   return row;
 }
 
@@ -621,4 +657,83 @@ export async function restoreRecipe(id: string, author: User) {
     .returning({ id: recipes.id, slug: recipes.slug });
   if (!row) throw new DomainError("NOT_FOUND");
   return row;
+}
+
+/** The share-link state returned after an owner changes it (issue #207). */
+export type ShareLinkState = {
+  shareToken: string | null;
+  shareLinkEnabled: boolean;
+  shareTokenRotatedAt: Date | null;
+};
+
+/**
+ * Owner-only share-link controls for an unlisted recipe (issue #207).
+ *
+ * - `enabled: false` **revokes** the link: every URL that was ever handed out
+ *   immediately 404s (see {@link getRecipeByShareToken}), while the recipe stays
+ *   editable and owner-visible.
+ * - `rotate: true` **rotates** the token: the old token dies and a fresh one is
+ *   minted, so a leaked/compromised link can be replaced without unsharing.
+ * - Enabling a never-shared recipe mints its first token so there's a URL to
+ *   hand out.
+ *
+ * Authorization is enforced by scoping the row to `authorId`, so a non-owner
+ * (or a stranger guessing an id) gets NOT_FOUND and can never change link state.
+ * Returns the resulting state so the caller can surface the new URL.
+ */
+export async function setShareLinkState(
+  id: string,
+  author: User,
+  change: { enabled?: boolean; rotate?: boolean },
+): Promise<ShareLinkState> {
+  return db.transaction(async (tx) => {
+    const current = await tx.query.recipes.findFirst({
+      where: and(
+        eq(recipes.id, id),
+        eq(recipes.authorId, author.id),
+        isNull(recipes.deletedAt),
+      ),
+      columns: {
+        shareToken: true,
+        shareLinkEnabled: true,
+        shareTokenRotatedAt: true,
+      },
+    });
+    if (!current) throw new DomainError("NOT_FOUND");
+
+    const next: Partial<ShareLinkState> = {};
+    if (change.rotate) {
+      next.shareToken = generateShareToken();
+      next.shareTokenRotatedAt = new Date();
+    } else if (!current.shareToken && change.enabled !== false) {
+      // First enable of a recipe that never had a token — mint one to share.
+      next.shareToken = generateShareToken();
+    }
+    if (change.enabled !== undefined) next.shareLinkEnabled = change.enabled;
+
+    if (Object.keys(next).length === 0) return current;
+
+    const [updated] = await tx
+      .update(recipes)
+      .set(next)
+      .where(eq(recipes.id, id))
+      .returning({
+        shareToken: recipes.shareToken,
+        shareLinkEnabled: recipes.shareLinkEnabled,
+        shareTokenRotatedAt: recipes.shareTokenRotatedAt,
+      });
+    if (!updated) throw new DomainError("NOT_FOUND");
+
+    await recordAudit(tx, {
+      actorId: author.id,
+      action: AuditAction.RecipeShareLinkChanged,
+      targetType: "recipe",
+      targetId: id,
+      metadata: {
+        rotated: Boolean(change.rotate),
+        enabled: updated.shareLinkEnabled,
+      },
+    });
+    return updated;
+  });
 }

@@ -1,7 +1,7 @@
 import "~/styles/globals.css";
 
 import { type Metadata, type Viewport } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ClerkProvider } from "@clerk/nextjs";
 import {
   Fraunces,
@@ -148,6 +148,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
+  // Per-request CSP nonce minted by the middleware (issue #212) so the inline
+  // no-flash theme/a11y scripts below execute under a strict script-src.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const themeCookie = cookieStore.get(THEME_COOKIE)?.value;
   const schemeCookie = cookieStore.get(SCHEME_COOKIE)?.value;
   const theme = isUITheme(themeCookie) ? themeCookie : DEFAULT_UI_THEME;
@@ -192,8 +195,8 @@ export default async function RootLayout({
             href={origin}
           />,
         ])}
-        <ThemeScript />
-        <A11yScript />
+        <ThemeScript nonce={nonce} />
+        <A11yScript nonce={nonce} />
       </head>
       <body className="min-h-dvh bg-background">
         <NextIntlClientProvider locale={locale} messages={messages}>

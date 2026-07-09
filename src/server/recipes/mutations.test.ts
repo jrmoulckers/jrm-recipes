@@ -19,10 +19,12 @@ import { recipes, recipeVersions, type User } from "~/server/db/schema";
 import { recipeInput } from "./validation";
 import {
   createRecipe,
+  deleteRecipe,
   forkRecipe,
   isSlugConflict,
   isVersionConflict,
   resolveGroupId,
+  revertRecipe,
   updateRecipe,
   uniqueSlug,
 } from "./mutations";
@@ -489,5 +491,62 @@ describe("journal version-number allocation (issue #151)", () => {
 
     // First attempt took v2 and lost the race; the retry recomputed max+1 → v3.
     expect(versionRows.map((r) => r.versionNumber)).toEqual([2, 3]);
+  });
+});
+
+// --- Cross-tenant ownership regression guards (issue #220) --------------------
+
+/**
+ * Negative-authorization guards: `updateRecipe`/`revertRecipe`/`deleteRecipe`
+ * scope every write by `authorId`, so another user's recipe is invisible to the
+ * mutation and resolves to `NOT_FOUND` rather than being edited. These fail if
+ * the `eq(recipes.authorId, author.id)` predicate is dropped.
+ */
+const stranger = { id: "stranger_9" } as User;
+
+/** Tx whose author-scoped recipe lookup finds nothing (a non-owner caller). */
+function notOwnedTx() {
+  const update = vi.fn(() => ({
+    set: () => ({ where: vi.fn(() => Promise.resolve(undefined)) }),
+  }));
+  const tx: Record<string, unknown> = {
+    query: {
+      recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeVersions: { findFirst: vi.fn().mockResolvedValue(undefined) },
+    },
+    update,
+    insert: vi.fn(() => ({ values: () => chainable(undefined) })),
+  };
+  tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
+  return { tx, update };
+}
+
+describe("recipe ownership authz guards (i220)", () => {
+  it("updateRecipe on another user's recipe throws NOT_FOUND and writes nothing", async () => {
+    const { tx, update } = notOwnedTx();
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await expect(
+      updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), stranger),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("revertRecipe on another user's recipe throws NOT_FOUND and writes nothing", async () => {
+    const { tx, update } = notOwnedTx();
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+
+    await expect(revertRecipe("r1", 1, stranger)).rejects.toThrow("NOT_FOUND");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("deleteRecipe on another user's recipe throws NOT_FOUND (no row matched)", async () => {
+    // deleteRecipe uses db.update(...).where(id AND authorId AND deleted IS NULL);
+    // a non-owner matches no row, so `.returning()` is empty → NOT_FOUND.
+    const where = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([]) }));
+    const set = vi.fn(() => ({ where }));
+    (dbMock as Record<string, unknown>).update = vi.fn(() => ({ set }));
+
+    await expect(deleteRecipe("r1", stranger)).rejects.toThrow("NOT_FOUND");
   });
 });

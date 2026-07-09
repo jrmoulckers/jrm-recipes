@@ -16,3 +16,4 @@ export * from "./searches";
 export * from "./dietary";
 export * from "./waitlist";
 export * from "./billing";
+export * from "./audit";

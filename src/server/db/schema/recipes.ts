@@ -98,6 +98,16 @@ export const recipes = pgTable(
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),
 
+    // Unguessable share-link controls for `unlisted` recipes (issues #204/#207).
+    // Anonymous viewers can reach an unlisted recipe ONLY via this high-entropy
+    // token (served at /r/<shareToken>), never the guessable title-slug.
+    // `shareLinkEnabled` lets an owner revoke a leaked link without unsharing the
+    // recipe entirely; `shareTokenRotatedAt` records the last rotation. A NULL
+    // token means no share link has been minted yet.
+    shareToken: varchar({ length: 32 }),
+    shareLinkEnabled: boolean().notNull().default(true),
+    shareTokenRotatedAt: timestamp({ withTimezone: true }),
+
     // Optional per-serving nutrition (issue #414). All nullable — a recipe may
     // carry none, some, or all of these. Energy in kcal and sodium in mg are
     // whole numbers (integer); macronutrients are grams and may be fractional
@@ -151,6 +161,11 @@ export const recipes = pgTable(
     // also provides the btree index that backs slug lookups, so no separate
     // non-unique index is needed.
     unique("recipes_slug_uq").on(t.slug),
+    // Share tokens are the confidentiality secret for unlisted recipes
+    // (issues #204/#207), so they must be globally unique; the constraint's
+    // btree also backs the /r/<token> lookup. Multiple NULLs are allowed
+    // (Postgres), so recipes without a minted link don't collide.
+    unique("recipes_share_token_uq").on(t.shareToken),
     index("recipes_forked_from_idx").on(t.forkedFromId),
     // Non-negative time/serving invariants mirroring Zod (`recipeInput` in
     // src/server/recipes/validation.ts: servings min 1, minutes min 0). These

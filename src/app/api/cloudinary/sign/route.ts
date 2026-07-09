@@ -4,6 +4,7 @@ import { z } from "zod";
 import { env } from "~/env";
 import { requireUser } from "~/server/auth";
 import { getLimitStatus } from "~/server/billing/entitlements";
+import { checkRateLimit } from "~/server/rate-limit";
 import { type User } from "~/server/db/schema";
 
 // The Cloudinary SDK relies on Node crypto for signing, so keep this off the
@@ -16,6 +17,13 @@ export const runtime = "nodejs";
  * can't drop assets into (or overwrite assets in) arbitrary folders.
  */
 const ROOT_FOLDER = "heirloom";
+
+/**
+ * Upper bound on the signing request body (issue #222). The allowlisted params
+ * are a few short strings and a timestamp, so a few KB is generous; anything
+ * larger is refused before it is buffered into memory.
+ */
+const MAX_SIGN_BODY_BYTES = 4_096;
 
 /**
  * Matches `heirloom`, `heirloom/cooks`, `heirloom/a/b`, … but never a foreign
@@ -129,6 +137,16 @@ export async function POST(request: Request) {
     return Response.json({ error: "Sign in to upload." }, { status: 401 });
   }
 
+  // 2a. Throttle signature issuance per user to blunt Cloudinary quota/cost
+  //     abuse (issue #199). Friendly 429 with Retry-After, no internals leaked.
+  const limit = checkRateLimit("sign", user.id);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Too many upload requests. Please slow down." },
+      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const cloudName = env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const apiKey = env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
   const apiSecret = env.CLOUDINARY_API_SECRET;
@@ -155,9 +173,27 @@ export async function POST(request: Request) {
     );
   }
 
+  // 2c. Bound the request body (issue #222). The signed payload is a handful of
+  //     short fields; anything large is abuse, so refuse to buffer it. Guard on
+  //     the declared length up front and hard-cap the bytes we actually read.
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_SIGN_BODY_BYTES) {
+    return Response.json({ error: "Request body too large." }, { status: 413 });
+  }
+
+  let raw: string;
+  try {
+    raw = await request.text();
+  } catch {
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
+  }
+  if (raw.length > MAX_SIGN_BODY_BYTES) {
+    return Response.json({ error: "Request body too large." }, { status: 413 });
+  }
+
   let json: unknown;
   try {
-    json = await request.json();
+    json = JSON.parse(raw);
   } catch {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }

@@ -9,6 +9,8 @@
  * `parseRecipeFromHtml` and its helpers.
  */
 
+import { promises as dns } from "node:dns";
+
 import { normalizeUnit, roundNice, unitDimension } from "~/lib/units";
 
 export type ImportedIngredient = {
@@ -626,8 +628,62 @@ const IMPORT_FETCH_HEADERS = {
 
 const MAX_IMPORT_REDIRECTS = 5;
 
+/**
+ * Hard cap on bytes read from an imported page (issue #222). A malicious or
+ * misbehaving server could stream an unbounded response; buffering it whole
+ * before slicing would exhaust memory. We reject on an over-large
+ * `Content-Length` up front and otherwise stop reading once the cap is hit.
+ */
+const MAX_IMPORT_BYTES = 3_000_000;
+
 /** Raised when a redirect points at a non-public or invalid host (SSRF guard). */
 class BlockedRedirectError extends Error {}
+
+/**
+ * Resolves a hostname to its IP addresses. Injectable so the SSRF resolution
+ * guard can be unit-tested without real DNS. `verbatim` keeps the resolver from
+ * reordering/filtering families, so we validate exactly what would be dialed.
+ */
+export type HostLookup = (
+  host: string,
+) => Promise<{ address: string; family: number }[]>;
+
+const defaultHostLookup: HostLookup = (host) =>
+  dns.lookup(host, { all: true, verbatim: true });
+
+/**
+ * Harden the SSRF guard against DNS-rebinding (issue #194).
+ *
+ * {@link isPublicHost} only inspects the hostname *string*, so a public name
+ * whose `A`/`AAAA` record points at loopback, an RFC-1918 address, or the cloud
+ * metadata IP (`169.254.169.254`) sails through and `fetch` dials the internal
+ * target. Here we resolve the name ourselves and reject if *any* returned
+ * address is non-public — using the same {@link isPublicHost} predicate, which
+ * already understands IPv4, IPv6, and IPv4-mapped-IPv6 literals — before a
+ * single byte is fetched. Applied on the initial URL and every redirect hop so
+ * the address family can't change between check and connect.
+ *
+ * A resolution *failure* is not itself a forgery risk (there is no IP to reach,
+ * so the subsequent fetch simply fails), so we let it fall through rather than
+ * masking a genuine "site not found"; only a *successful* resolution to an
+ * internal address is blocked here.
+ */
+async function assertResolvedHostIsPublic(
+  host: string,
+  lookup: HostLookup,
+): Promise<void> {
+  let addresses: { address: string; family: number }[];
+  try {
+    addresses = await lookup(host);
+  } catch {
+    return;
+  }
+  for (const { address } of addresses) {
+    if (!isPublicHost(address)) {
+      throw new BlockedRedirectError("host resolves to a non-public address");
+    }
+  }
+}
 
 function isHttpRedirect(status: number): boolean {
   return (
@@ -641,16 +697,20 @@ function isHttpRedirect(status: number): boolean {
 
 /**
  * Fetch `startUrl`, following redirects manually so every hop's host is
- * re-validated with {@link isPublicHost}. A public URL that 3xx-redirects to an
- * internal address (loopback, link-local, cloud metadata) is rejected instead
- * of being silently followed. Bounded to {@link MAX_IMPORT_REDIRECTS} hops.
+ * re-validated with {@link isPublicHost} *and* re-resolved with
+ * {@link assertResolvedHostIsPublic}. A public URL that 3xx-redirects to an
+ * internal address (loopback, link-local, cloud metadata) — literally or via a
+ * crafted DNS record — is rejected instead of being silently followed. Bounded
+ * to {@link MAX_IMPORT_REDIRECTS} hops.
  */
 async function fetchGuardingRedirects(
   startUrl: URL,
   signal: AbortSignal,
+  lookup: HostLookup,
 ): Promise<Response> {
   let current = startUrl;
   for (let hop = 0; hop <= MAX_IMPORT_REDIRECTS; hop++) {
+    await assertResolvedHostIsPublic(current.hostname, lookup);
     const res = await fetch(current.toString(), {
       redirect: "manual",
       signal,
@@ -677,8 +737,48 @@ async function fetchGuardingRedirects(
   throw new BlockedRedirectError("too many redirects");
 }
 
+/**
+ * Read a response body as text, stopping once `maxBytes` have been consumed so
+ * an unbounded stream cannot exhaust memory (issue #222). The excess is dropped
+ * and the underlying stream cancelled rather than buffered.
+ */
+async function readCappedText(res: Response, maxBytes: number): Promise<string> {
+  const body = res.body;
+  if (!body) return (await res.text()).slice(0, maxBytes);
+
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let out = "";
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        const remaining = value.byteLength - (total - maxBytes);
+        out += decoder.decode(value.subarray(0, Math.max(0, remaining)), {
+          stream: true,
+        });
+        await reader.cancel();
+        break;
+      }
+      out += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  out += decoder.decode();
+  return out;
+}
+
 /** Fetch a URL and extract a recipe. Returns friendly errors, never throws. */
-export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult> {
+export async function importRecipeFromUrl(
+  rawUrl: string,
+  options: { lookup?: HostLookup } = {},
+): Promise<ImportResult> {
+  const lookup = options.lookup ?? defaultHostLookup;
   const url = normalizeInputUrl(rawUrl);
   if (!url) return { ok: false, error: "That doesn't look like a valid web address." };
   if (!isPublicHost(url.hostname))
@@ -686,7 +786,7 @@ export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult>
 
   let res: Response;
   try {
-    res = await fetchGuardingRedirects(url, AbortSignal.timeout(12000));
+    res = await fetchGuardingRedirects(url, AbortSignal.timeout(12000), lookup);
   } catch (e) {
     if (e instanceof BlockedRedirectError)
       return { ok: false, error: "That address can't be imported." };
@@ -710,7 +810,16 @@ export async function importRecipeFromUrl(rawUrl: string): Promise<ImportResult>
     };
   }
 
-  const html = (await res.text()).slice(0, 3_000_000);
+  const declaredLength = Number(res.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_IMPORT_BYTES) {
+    await res.body?.cancel();
+    return {
+      ok: false,
+      error: "That page is too large to import. Try adding it by hand.",
+    };
+  }
+
+  const html = await readCappedText(res, MAX_IMPORT_BYTES);
   const recipe = parseRecipeFromHtml(html, url.toString());
   if (!recipe)
     return {

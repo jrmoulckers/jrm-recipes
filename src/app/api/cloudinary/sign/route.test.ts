@@ -35,6 +35,11 @@ vi.mock("~/env", () => ({
 }));
 
 import { POST } from "./route";
+import {
+  MemoryRateLimitStore,
+  RATE_LIMITS,
+  setRateLimitStore,
+} from "~/server/rate-limit";
 
 const APP_HOST = "recipes.example.com";
 const APP_ORIGIN = `https://${APP_HOST}`;
@@ -65,6 +70,8 @@ beforeEach(() => {
   apiSignRequestMock.mockReturnValue("test-signature");
   // Default to a signed-in user; individual tests override as needed.
   requireUserMock.mockResolvedValue({ id: "user_1" });
+  // Fresh rate-limit store per test so budgets don't bleed across cases (#199).
+  setRateLimitStore(new MemoryRateLimitStore());
   // Default: under the storage cap, so signing proceeds. The cap test overrides.
   getLimitStatusMock.mockReset();
   getLimitStatusMock.mockResolvedValue({
@@ -239,5 +246,53 @@ describe("POST /api/cloudinary/sign", () => {
       { timestamp, folder: "heirloom/cooks", source: "uw" },
       "top-secret",
     );
+  });
+
+  it("rejects an oversized declared body with 413 and signs nothing (i222)", async () => {
+    const res = await POST(
+      makeRequest(
+        { paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" } },
+        { "content-length": String(1_000_000) },
+      ),
+    );
+
+    expect(res.status).toBe(413);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an oversized actual body with 413 (i222)", async () => {
+    const res = await POST(
+      makeRequest({
+        paramsToSign: {
+          timestamp: freshTimestamp(),
+          folder: "heirloom",
+          source: "x".repeat(8_000),
+        },
+      }),
+    );
+
+    expect(res.status).toBe(413);
+    expect(apiSignRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("throttles excessive signing requests with 429 (i199)", async () => {
+    const { limit } = RATE_LIMITS.sign;
+    // Exhaust the per-user budget.
+    for (let i = 0; i < limit; i++) {
+      const res = await POST(
+        makeRequest({
+          paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+        }),
+      );
+      expect(res.status).toBe(200);
+    }
+
+    const throttled = await POST(
+      makeRequest({
+        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom" },
+      }),
+    );
+    expect(throttled.status).toBe(429);
+    expect(throttled.headers.get("retry-after")).toBeTruthy();
   });
 });

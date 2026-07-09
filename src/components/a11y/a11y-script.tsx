@@ -10,7 +10,7 @@ import { A11Y_COOKIE } from "~/config/a11y";
  * wins), and an absent/legacy value writes nothing so `prefers-contrast` /
  * `prefers-reduced-motion` govern automatically — no flash, no matchMedia needed.
  */
-export function A11yScript() {
+export function A11yScript({ nonce }: { nonce?: string }) {
   const script = `
 (function () {
   try {
@@ -33,6 +33,7 @@ export function A11yScript() {
 `;
   return (
     <script
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: script }}
       suppressHydrationWarning
     />

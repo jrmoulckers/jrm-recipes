@@ -316,3 +316,123 @@ describe("importRecipeFromUrl redirect SSRF guard", () => {
     expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(6);
   });
 });
+
+describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects a public hostname that resolves to a loopback IP before fetching", async () => {
+    const fetchMock = vi.fn(async () => new Response("INTERNAL", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [{ address: "127.0.0.1", family: 4 }]);
+    await expect(
+      importRecipeFromUrl("https://rebind.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    // No bytes fetched from the internal target.
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a hostname that resolves to the cloud metadata IP", async () => {
+    const fetchMock = vi.fn(async () => new Response("SECRETS", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [
+      { address: "169.254.169.254", family: 4 },
+    ]);
+    await expect(
+      importRecipeFromUrl("https://metadata.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects when ANY resolved address is private (mixed A records)", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [
+      { address: "93.184.216.34", family: 4 },
+      { address: "10.0.0.5", family: 4 },
+    ]);
+    await expect(
+      importRecipeFromUrl("https://mixed.example/recipe", { lookup }),
+    ).resolves.toEqual({ ok: false, error: "That address can't be imported." });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("allows a hostname that resolves only to public addresses", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]);
+    const result = await importRecipeFromUrl(
+      "https://recipes.example/marinara",
+      { lookup },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.recipe.title).toBe("Grandma's Marinara");
+    expect(lookup).toHaveBeenCalled();
+  });
+
+  it("does not block when the name fails to resolve (no internal target)", async () => {
+    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const lookup = vi.fn(async () => {
+      throw new Error("ENOTFOUND");
+    });
+    const result = await importRecipeFromUrl("https://recipes.example/x", {
+      lookup,
+    });
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("importRecipeFromUrl response size limits (i222)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects a response whose Content-Length exceeds the cap", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response("x", {
+          status: 200,
+          headers: { "content-length": String(10_000_000) },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await importRecipeFromUrl("https://example.com/huge");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/too large/i);
+  });
+
+  it("stops reading a streamed body once the byte cap is hit", async () => {
+    // A body that would stream far more than the 3 MB cap if fully consumed.
+    let pulls = 0;
+    const chunk = new TextEncoder().encode("a".repeat(1_000_000));
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        if (pulls > 100) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(chunk);
+      },
+    });
+    const fetchMock = vi.fn(
+      async () => new Response(stream, { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    // No structured recipe in the garbage body, so it reports "not found" —
+    // the point is that it returns promptly without buffering the whole stream.
+    const result = await importRecipeFromUrl("https://example.com/stream");
+    expect(result.ok).toBe(false);
+    // We never pulled anywhere near the full (100 MB) body.
+    expect(pulls).toBeLessThanOrEqual(5);
+  });
+});

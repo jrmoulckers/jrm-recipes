@@ -8,21 +8,30 @@ const stranger = { id: "stranger_1" } as User;
 const member = { id: "member_1" } as User;
 
 describe("canView", () => {
-  it("allows anyone to view public and unlisted recipes", () => {
+  it("allows anyone to view public recipes", () => {
     const publicRecipe = {
       authorId: author.id,
       visibility: "public",
       groupId: null,
     };
+
+    expect(canView(publicRecipe, null, [])).toBe(true);
+    expect(canView(publicRecipe, stranger, [])).toBe(true);
+  });
+
+  it("does NOT grant slug/id access to an unlisted recipe (issue #204)", () => {
+    // Unlisted is the share-link visibility: reachable only via the unguessable
+    // share token, never by the guessable slug/id this predicate is scoped to.
     const unlisted = {
       authorId: author.id,
       visibility: "unlisted",
       groupId: null,
     };
 
-    expect(canView(publicRecipe, null, [])).toBe(true);
-    expect(canView(publicRecipe, stranger, [])).toBe(true);
-    expect(canView(unlisted, null, [])).toBe(true);
+    expect(canView(unlisted, null, [])).toBe(false);
+    expect(canView(unlisted, stranger, [])).toBe(false);
+    // The owner still reaches their own unlisted recipe.
+    expect(canView(unlisted, author, [])).toBe(true);
   });
 
   it("only lets the author view a private recipe", () => {

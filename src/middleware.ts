@@ -6,9 +6,40 @@ import {
 } from "next/server";
 
 import { LOCALE_COOKIE, negotiateAcceptLanguage } from "~/config/i18n";
+import {
+  applySecurityHeaders,
+  buildContentSecurityPolicy,
+  generateNonce,
+} from "~/lib/security/headers";
 
 /** One year, in seconds — mirrors the locale/theme cookies' persistence. */
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+/**
+ * Produce a `NextResponse.next()` carrying our security posture (issue #212).
+ *
+ * A fresh CSP nonce is minted per request and forwarded to the app on the
+ * *request* headers (`x-nonce` for Server Components, plus the CSP itself so
+ * Next.js nonces its own bootstrap scripts). The same CSP and the static
+ * security headers (HSTS, nosniff, framing, Referrer-Policy, Permissions-Policy)
+ * are set on the *response* the browser actually enforces. Shared by both the
+ * Clerk-wrapped and dev-bypass code paths so headers are identical either way.
+ */
+function securedNext(request: NextRequest): NextResponse {
+  const nonce = generateNonce();
+  const csp = buildContentSecurityPolicy(
+    nonce,
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  );
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("content-security-policy", csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  applySecurityHeaders(response.headers, csp);
+  return response;
+}
 
 /**
  * Seed a first-time visitor's locale from their `Accept-Language` header.
@@ -71,8 +102,8 @@ if (
 }
 
 const authMiddleware: NextMiddleware = clerkConfigured
-  ? clerkMiddleware()
-  : (_request: NextRequest) => NextResponse.next();
+  ? clerkMiddleware((_auth, request) => securedNext(request))
+  : (request: NextRequest) => securedNext(request);
 
 export default withNegotiatedLocale(authMiddleware);
 

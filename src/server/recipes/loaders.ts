@@ -18,11 +18,13 @@ import { getRecipe } from "~/server/recipes/queries";
  * dedupes by argument within a render. New domains should follow the same thin
  * `loaders.ts` pattern.
  */
-export const getRecipeForViewer = cache(async (idOrSlug: string) => {
-  const user = await getCurrentUser();
-  const recipe = await getRecipe(idOrSlug, user);
-  return { user, recipe };
-});
+export const getRecipeForViewer = cache(
+  async (idOrSlug: string, shareToken?: string | null) => {
+    const user = await getCurrentUser();
+    const recipe = await getRecipe(idOrSlug, user, shareToken ?? null);
+    return { user, recipe };
+  },
+);
 
 /** The `{ user, recipe }` shape resolved by {@link getRecipeForViewer}. */
 export type RecipeForViewer = Awaited<ReturnType<typeof getRecipeForViewer>>;
