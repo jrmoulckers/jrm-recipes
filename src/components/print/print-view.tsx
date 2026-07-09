@@ -12,6 +12,7 @@ import {
   Link2,
   Printer,
   Share2,
+  Type,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,7 +92,31 @@ const FORMAT_DETAILS: Record<PrintFormat, FormatDetails> = {
   },
 };
 
-function printStyles(format: FormatDetails): string {
+function printStyles(format: FormatDetails, largePrint: boolean): string {
+  // Large-print mode (issue #406): bump body copy to a comfortable size for
+  // long-time cooks with low vision, overriding even the compact card sizes.
+  const largePrintPrint = largePrint
+    ? `
+  .print-large .heirloom-print-document,
+  .print-large .heirloom-print-document p,
+  .print-large .heirloom-print-ingredient,
+  .print-large .heirloom-print-step {
+    font-size: 14pt !important;
+    line-height: 1.6 !important;
+  }
+`
+    : "";
+  const largePrintScreen = largePrint
+    ? `
+.print-large .heirloom-print-document,
+.print-large .heirloom-print-document p,
+.print-large .heirloom-print-ingredient,
+.print-large .heirloom-print-step {
+  font-size: 1.2rem;
+  line-height: 1.65;
+}
+`
+    : "";
   return `
 @media print {
   @page {
@@ -163,7 +188,9 @@ function printStyles(format: FormatDetails): string {
   .print-format-card-3x5 .print-card-method {
     margin-top: 0.1in;
   }
+${largePrintPrint}
 }
+${largePrintScreen}
 `;
 }
 
@@ -650,6 +677,7 @@ function IndexCard({
 
 export function PrintView({ recipe }: { recipe: PrintRecipe }) {
   const [format, setFormat] = React.useState<PrintFormat>("full");
+  const [largePrint, setLargePrint] = React.useState(false);
   const [canNativeShare, setCanNativeShare] = React.useState(false);
   const activeFormat = FORMAT_DETAILS[format];
   const url = recipeUrl(recipe);
@@ -709,9 +737,10 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
       className={cn(
         "heirloom-print-root min-h-dvh bg-muted/30 text-foreground print:bg-white print:text-black",
         activeFormat.className,
+        largePrint && "print-large",
       )}
     >
-      <style>{printStyles(activeFormat)}</style>
+      <style>{printStyles(activeFormat, largePrint)}</style>
 
       <div className="border-b border-border bg-background print:hidden">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -828,31 +857,50 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
           </div>
 
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div
-              role="group"
-              aria-label="Print format"
-              className="flex h-auto flex-wrap justify-start gap-1 rounded-xl bg-muted p-1 text-muted-foreground"
-            >
-              {FORMAT_ORDER.map((formatId) => (
-                <button
-                  key={formatId}
-                  type="button"
-                  aria-pressed={format === formatId}
-                  onClick={() => {
-                    setFormat(formatId);
-                  }}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    format === formatId
-                      ? "bg-card text-foreground shadow-token"
-                      : "hover:text-foreground",
-                  )}
-                >
-                  {FORMAT_DETAILS[formatId].label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                role="group"
+                aria-label="Print format"
+                className="flex h-auto flex-wrap justify-start gap-1 rounded-xl bg-muted p-1 text-muted-foreground"
+              >
+                {FORMAT_ORDER.map((formatId) => (
+                  <button
+                    key={formatId}
+                    type="button"
+                    aria-pressed={format === formatId}
+                    onClick={() => {
+                      setFormat(formatId);
+                    }}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      format === formatId
+                        ? "bg-card text-foreground shadow-token"
+                        : "hover:text-foreground",
+                    )}
+                  >
+                    {FORMAT_DETAILS[formatId].label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-pressed={largePrint}
+                onClick={() => setLargePrint((on) => !on)}
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  largePrint
+                    ? "border-transparent bg-card text-foreground shadow-token"
+                    : "border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Type aria-hidden="true" className="size-4" /> Large print
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground">{activeFormat.hint}</p>
+            <p className="text-sm text-muted-foreground">
+              {largePrint
+                ? "Bigger, easy-to-read type for the printed sheet."
+                : activeFormat.hint}
+            </p>
           </div>
         </div>
       </div>
