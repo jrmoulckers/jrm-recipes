@@ -86,5 +86,9 @@
     "moveDownNamed": "{object} nach unten verschieben",
     "remove": "Entfernen",
     "removeNamed": "{object} entfernen"
+  },
+  "characterCounter": {
+    "remaining": "Noch {count}",
+    "over": "{count} zu viel — {message}"
   }
 }

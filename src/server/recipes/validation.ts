@@ -17,11 +17,11 @@ import { ALLOWED_MEDIA_HOSTS } from "~/config/media-hosts";
  * bound lives in src/server/engagement/validation.ts (`ratingInput`).
  */
 
-const optionalString = (max: number) =>
+const optionalString = (max: number, message?: string) =>
   z
     .string()
     .trim()
-    .max(max)
+    .max(max, message)
     .optional()
     .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
@@ -85,7 +85,11 @@ export const ingredientInput = z.object({
   quantity: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   quantityMax: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   unit: optionalString(40),
-  item: z.string().trim().min(1, "Add an ingredient").max(300),
+  item: z
+    .string()
+    .trim()
+    .min(1, "Add an ingredient")
+    .max(300, "Keep each ingredient under 300 characters"),
   note: optionalString(300),
   // Structured prep state, separate from free-text note (#401).
   prep: optionalString(200),
@@ -96,7 +100,11 @@ export const ingredientInput = z.object({
 
 export const stepInput = z.object({
   section: optionalString(120),
-  instruction: z.string().trim().min(1, "Add step text").max(5000),
+  instruction: z
+    .string()
+    .trim()
+    .min(1, "Add step text")
+    .max(5000, "Keep each step under 5,000 characters"),
   imageUrl: mediaUrl,
   videoUrl: mediaUrl,
   timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
@@ -123,8 +131,15 @@ export const dietaryTag = z.enum(DIETARY_TAGS);
 
 export const recipeInput = z
   .object({
-    title: z.string().trim().min(1, "Give your recipe a title").max(200),
-    description: optionalString(2000),
+    title: z
+      .string()
+      .trim()
+      .min(1, "Give your recipe a title")
+      .max(200, "Keep the title under 200 characters"),
+    description: optionalString(
+      2000,
+      "Keep the description under 2,000 characters",
+    ),
     coverImageUrl: mediaUrl,
     servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
     servingsNoun: optionalString(40),
@@ -138,7 +153,7 @@ export const recipeInput = z
     cuisine: optionalString(80),
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
-    notes: optionalString(4000),
+    notes: optionalString(4000, "Keep notes under 4,000 characters"),
     // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
     // and sodium (mg) are whole numbers, macronutrients are grams and may be
     // fractional. These bounds are mirrored by CHECK constraints on `recipes`.

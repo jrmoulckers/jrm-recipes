@@ -107,6 +107,27 @@ describe("recipeInput", () => {
     ).toThrow();
   });
 
+  it("surfaces human max-length messages for long text fields", () => {
+    const overTitle = recipeInput.safeParse({ title: "x".repeat(201) });
+    expect(overTitle.success).toBe(false);
+    if (!overTitle.success) {
+      expect(overTitle.error.flatten().fieldErrors.title?.[0]).toBe(
+        "Keep the title under 200 characters",
+      );
+    }
+
+    const overDescription = recipeInput.safeParse({
+      title: "Fine",
+      description: "x".repeat(2001),
+    });
+    expect(overDescription.success).toBe(false);
+    if (!overDescription.success) {
+      expect(overDescription.error.flatten().fieldErrors.description?.[0]).toBe(
+        "Keep the description under 2,000 characters",
+      );
+    }
+  });
+
   describe("group visibility requires a group (rc09)", () => {
     it("rejects visibility=group with no groupId and flags the field", () => {
       const res = recipeInput.safeParse({

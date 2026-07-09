@@ -19,8 +19,8 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { FormField } from "~/components/ui/form-field";
 
 export function CreateGroupDialog({
   children,
@@ -84,45 +84,32 @@ export function CreateGroupDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-2">
-            <Label htmlFor={nameId}>Group name</Label>
+          <FormField
+            label="Group name"
+            htmlFor={nameId}
+            error={fieldErrors.name}
+          >
             <Input
               id={nameId}
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Sunday Supper Club"
-              aria-invalid={Boolean(fieldErrors.name)}
-              aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
               autoFocus
             />
-            {fieldErrors.name?.[0] ? (
-              <p id={`${nameId}-error`} className="text-sm text-destructive">
-                {fieldErrors.name[0]}
-              </p>
-            ) : null}
-          </div>
+          </FormField>
 
-          <div className="grid gap-2">
-            <Label htmlFor={descriptionId}>Description</Label>
+          <FormField
+            label="Description"
+            htmlFor={descriptionId}
+            error={fieldErrors.description}
+          >
             <Textarea
               id={descriptionId}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="For the recipes, notes, and weeknight saves we all share."
-              aria-invalid={Boolean(fieldErrors.description)}
-              aria-describedby={
-                fieldErrors.description ? `${descriptionId}-error` : undefined
-              }
             />
-            {fieldErrors.description?.[0] ? (
-              <p
-                id={`${descriptionId}-error`}
-                className="text-sm text-destructive"
-              >
-                {fieldErrors.description[0]}
-              </p>
-            ) : null}
-          </div>
+          </FormField>
 
           <DialogFooter>
             <Button

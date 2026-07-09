@@ -12,6 +12,12 @@ export function Toaster(props: ToasterProps) {
     <Sonner
       theme={resolvedScheme}
       className="toaster group"
+      // A keyboard-reachable dismiss affordance on every toast so error messages
+      // (which should linger) can be closed on demand instead of only timing out.
+      closeButton
+      // Give feedback long enough to read; errors typically linger longer than
+      // this default and callers can still override per-toast.
+      duration={5000}
       toastOptions={{
         classNames: {
           toast:
@@ -21,6 +27,8 @@ export function Toaster(props: ToasterProps) {
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          closeButton:
+            "group-[.toast]:bg-popover group-[.toast]:text-muted-foreground group-[.toast]:border-border group-[.toast]:hover:text-foreground",
         },
       }}
       {...props}
