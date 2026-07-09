@@ -269,7 +269,9 @@ flow, so a broken migration surfaces on staging before it can reach production.
   update PRs, each gated by CI.
 - **Schema changes:** edit the Drizzle schema in `src/server/db/schema/`, run
   `pnpm db:generate` locally to create a migration, and commit it. It applies on
-  the next deploy.
+  the next deploy. For breaking changes, follow the **expand/contract**
+  convention and the **rollback/repair runbook** in
+  [`docs/migrations.md`](docs/migrations.md).
 
 > **Gate the site on green CI (optional but recommended).** Vercel deploys `main`
 > independently of GitHub Actions, so a build that passes Vercel but fails CI can
