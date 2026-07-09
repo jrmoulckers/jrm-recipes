@@ -275,6 +275,33 @@ human-readable version instead of a raw commit SHA:
 The deployed version and commit SHA are exposed at **`GET /api/health`**
 (`version` + `sha`) for support and debugging.
 
+### Monitoring & uptime
+
+Heirloom exposes a lightweight, unauthenticated health probe at **`GET
+/api/health`** so an outage is caught by tooling, not by family members. It
+returns JSON and an HTTP status:
+
+- **200** — `{"status":"ok","version":…,"sha":…,"db":"ok"|"not_configured", …}`.
+  `db: "not_configured"` is still healthy (zero-config mode: the app is up, it
+  just has no database).
+- **503** — a database _is_ configured but unreachable (`db: "degraded"`), so a
+  monitor can alert.
+
+The probe runs a cheap `SELECT 1` with a short timeout, is never cached
+(`no-store` + dynamic), and leaks nothing sensitive (the DB result is a coarse
+`ok`/`degraded`/`not_configured` enum, never a driver error or connection
+string).
+
+Wire an external uptime monitor against `https://<your-domain>/api/health`:
+
+1. In [Better Stack](https://betterstack.com/uptime),
+   [UptimeRobot](https://uptimerobot.com/), or Vercel's built-in monitoring,
+   create an HTTP monitor for that URL on a 1–5 minute interval.
+2. Treat any non-200 (including 503) as **down** and add an email/Slack/SMS
+   alert contact.
+3. Optionally assert the body contains `"status":"ok"` to catch degraded-DB
+   states that some monitors would otherwise see as reachable.
+
 ---
 
 ## Ongoing: how deploys work
