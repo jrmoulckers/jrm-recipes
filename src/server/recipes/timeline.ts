@@ -121,6 +121,16 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
   };
 }
 
+/**
+ * Map a viewable recipe into the `RecipeInput` snapshot shape for diffing
+ * against a saved version (#358). Same field-for-field clone as
+ * {@link buildAdaptationInput} but keeps the recipe's real title (no
+ * "(Adaptation)" marker) so a "current vs. version" diff reads truthfully.
+ */
+export function recipeToInput(source: AdaptationSource): RecipeInput {
+  return { ...buildAdaptationInput(source), title: source.title.trim() };
+}
+
 /** One rendered milestone in a recipe's timeline. */
 export type TimelineEntry = {
   id: string;
