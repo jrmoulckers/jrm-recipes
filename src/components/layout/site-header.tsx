@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { getAuthState } from "~/server/auth";
 import { Button } from "~/components/ui/button";
@@ -16,11 +17,12 @@ import { NotificationBellServer } from "~/components/notifications/notification-
 /** Sticky top header with brand, primary nav, theme switcher, and auth. */
 export async function SiteHeader() {
   const { isConfigured, user } = await getAuthState();
+  const t = await getTranslations("nav");
 
   return (
     <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur [@media(display-mode:standalone)]:pt-safe-t supports-[backdrop-filter]:bg-card/70">
       <div className="container flex min-h-16 items-center gap-4">
-        <Link href="/" className="shrink-0" aria-label="Heirloom home">
+        <Link href="/" className="shrink-0" aria-label={t("homeLink")}>
           <Logo />
         </Link>
 
@@ -30,7 +32,7 @@ export async function SiteHeader() {
 
         <div className="ms-auto flex items-center gap-2">
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/recipes/new">New recipe</Link>
+            <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
           <ThemeSwitcher />
           <KidsModeToggle />

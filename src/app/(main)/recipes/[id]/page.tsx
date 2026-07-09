@@ -2,12 +2,14 @@ import { Suspense } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import {
   ArrowLeft,
   BookOpen,
   ChefHat,
   Clock3,
   CookingPot,
+  ExternalLink,
   Flame,
   History,
   Hourglass,
@@ -34,7 +36,7 @@ import {
   getFavoriteRecipeIds,
   isFavorited,
 } from "~/server/collections/queries";
-import { absoluteUrl, formatMinutes } from "~/lib/utils";
+import { absoluteUrl, cn, formatMinutes } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
@@ -42,7 +44,7 @@ import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Badge, badgeVariants } from "~/components/ui/badge";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -142,6 +144,8 @@ export default async function RecipePage({
   const { user, recipe } = await getRecipeForViewer(id, shareToken);
   if (!recipe) notFound();
 
+  const t = await getTranslations("recipeDetail");
+
   // Unlisted recipes are shared by token, never by their guessable slug, so the
   // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
   // public/group recipes, where the address itself is the shareable link.
@@ -223,17 +227,20 @@ export default async function RecipePage({
     },
     recipe.prepMinutes != null && {
       icon: Timer,
-      label: `${formatMinutes(recipe.prepMinutes)} prep`,
+      label: t("meta.prep", { time: formatMinutes(recipe.prepMinutes) }),
     },
     recipe.restMinutes != null && {
       icon: Hourglass,
-      label: `${formatMinutes(recipe.restMinutes)} resting`,
+      label: t("meta.resting", { time: formatMinutes(recipe.restMinutes) }),
     },
     recipe.servings != null && {
       icon: Users,
-      label: `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`,
+      label: `${recipe.servings} ${recipe.servingsNoun ?? t("servingsNoun")}`,
     },
-    recipe.difficulty && { icon: Flame, label: recipe.difficulty },
+    recipe.difficulty && {
+      icon: Flame,
+      label: t(`difficulty.${recipe.difficulty}`),
+    },
   ].filter(Boolean) as { icon: typeof Clock3; label: string }[];
 
   return (
@@ -276,16 +283,24 @@ export default async function RecipePage({
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild size="sm" variant="ghost" className="-ms-2">
               <Link href="/recipes">
-                <ArrowLeft /> Recipes
+                <ArrowLeft /> {t("backToRecipes")}
               </Link>
             </Button>
             {recipe.visibility !== "public" && (
-              <Badge variant="muted" className="capitalize">
-                {recipe.visibility}
+              <Badge variant="muted">
+                {t(`visibility.${recipe.visibility}`)}
               </Badge>
             )}
             {recipe.cuisine && (
-              <Badge variant="outline">{recipe.cuisine}</Badge>
+              <Link
+                href={`/recipes?cuisine=${encodeURIComponent(recipe.cuisine)}`}
+                className={cn(
+                  badgeVariants({ variant: "outline" }),
+                  "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                )}
+              >
+                {recipe.cuisine}
+              </Link>
             )}
             {recipe.group && (
               <Link
@@ -309,7 +324,7 @@ export default async function RecipePage({
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {recipe.author?.name && (
               <span>
-                By{" "}
+                {t("by")}{" "}
                 {recipe.author.handle ? (
                   <Link
                     href={`/cooks/${recipe.author.handle}`}
@@ -333,8 +348,16 @@ export default async function RecipePage({
               </span>
             ))}
             {count > 0 && (
-              <span className="inline-flex items-center gap-1.5">
-                ⭐ {average.toFixed(1)} ({count})
+              <span
+                className="inline-flex items-center gap-1.5"
+                aria-label={t("ratingLabel", {
+                  average: average.toFixed(1),
+                  count,
+                })}
+              >
+                <span aria-hidden="true">
+                  ⭐ {average.toFixed(1)} ({count})
+                </span>
               </span>
             )}
           </div>
@@ -351,12 +374,12 @@ export default async function RecipePage({
             />
             <Button asChild size="lg">
               <Link href={`/recipes/${recipe.slug}/cook`}>
-                <Play /> Cook
+                <Play /> {t("actions.cook")}
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href={`/recipes/${recipe.slug}/print`}>
-                <Printer /> Print
+                <Printer /> {t("actions.print")}
               </Link>
             </Button>
             <GrownUpControls>
@@ -409,7 +432,7 @@ export default async function RecipePage({
               <GrownUpControls>
                 <Button asChild size="lg" variant="outline">
                   <Link href={`/recipes/${recipe.slug}/edit`}>
-                    <Pencil /> Edit
+                    <Pencil /> {t("actions.edit")}
                   </Link>
                 </Button>
                 <DeleteRecipeButton id={recipe.id} />
@@ -428,16 +451,16 @@ export default async function RecipePage({
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
           <TabsList className="self-start">
             <TabsTrigger value="recipe">
-              <BookOpen className="size-4" /> Recipe
+              <BookOpen className="size-4" /> {t("tabs.recipe")}
             </TabsTrigger>
             <TabsTrigger value="timeline">
-              <History className="size-4" /> Timeline
+              <History className="size-4" /> {t("tabs.timeline")}
             </TabsTrigger>
             <TabsTrigger value="cooked">
-              <CookingPot className="size-4" /> Cooked it
+              <CookingPot className="size-4" /> {t("tabs.cooked")}
             </TabsTrigger>
             <TabsTrigger value="discussion">
-              <MessageCircle className="size-4" /> Discussion
+              <MessageCircle className="size-4" /> {t("tabs.discussion")}
             </TabsTrigger>
           </TabsList>
 
@@ -446,7 +469,7 @@ export default async function RecipePage({
               {/* Ingredients */}
               <div className="lg:sticky lg:top-20 lg:self-start">
                 <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
-                  Ingredients
+                  {t("ingredients.heading")}
                 </h2>
                 {recipe.ingredients.length > 0 && (
                   <AllergenSummary
@@ -479,7 +502,7 @@ export default async function RecipePage({
                   />
                 ) : (
                   <p className="text-muted-foreground">
-                    No ingredients listed.
+                    {t("ingredients.empty")}
                   </p>
                 )}
 
@@ -487,7 +510,7 @@ export default async function RecipePage({
                   <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4">
                     <h3 className="flex items-center gap-2 text-sm font-semibold">
                       <Hourglass className="size-4 text-primary" />
-                      Make ahead
+                      {t("ingredients.makeAhead")}
                     </h3>
                     <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                       {recipe.makeAheadNote}
@@ -499,7 +522,7 @@ export default async function RecipePage({
                   <div className="mt-6">
                     <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
                       <Wrench className="size-4 text-primary" />
-                      Equipment
+                      {t("ingredients.equipment")}
                     </h3>
                     <ul className="flex flex-col gap-1.5 text-sm">
                       {recipe.equipment.map((tool) => (
@@ -520,11 +543,11 @@ export default async function RecipePage({
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h2 className="font-display text-2xl font-bold tracking-tight">
-                    Method
+                    {t("method.heading")}
                   </h2>
                   <Button asChild variant="ghost" size="sm">
                     <Link href={`/recipes/${recipe.slug}/cook`}>
-                      <ChefHat /> Cook mode
+                      <ChefHat /> {t("actions.cookMode")}
                     </Link>
                   </Button>
                 </div>
@@ -549,7 +572,10 @@ export default async function RecipePage({
                             <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
                               <CloudinaryImage
                                 src={step.imageUrl}
-                                alt={`Step ${i + 1}`}
+                                alt={t("method.stepImageAlt", {
+                                  title: recipe.title,
+                                  position: i + 1,
+                                })}
                                 fill
                                 sizes="(max-width: 768px) 100vw, 28rem"
                                 className="object-cover"
@@ -581,7 +607,9 @@ export default async function RecipePage({
                             recipeSlug={recipe.slug}
                             anchorType="step"
                             anchorId={step.id}
-                            anchorLabel={`Step ${i + 1}`}
+                            anchorLabel={t("method.stepLabel", {
+                              position: i + 1,
+                            })}
                             canInteract={canSuggest}
                             suggestions={
                               suggestionsByAnchor.get(`step:${step.id}`) ?? []
@@ -593,11 +621,11 @@ export default async function RecipePage({
                   </ol>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
-                    <p className="font-medium">No steps yet</p>
+                    <p className="font-medium">{t("method.emptyTitle")}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {isOwner
-                        ? "Add the steps and this recipe is ready to cook."
-                        : "The steps haven’t been added to this recipe yet."}
+                        ? t("method.emptyOwner")
+                        : t("method.emptyViewer")}
                     </p>
                     {isOwner && (
                       <Button
@@ -607,7 +635,7 @@ export default async function RecipePage({
                         className="mt-3"
                       >
                         <Link href={`/recipes/${recipe.slug}/edit`}>
-                          <Pencil /> Edit recipe
+                          <Pencil /> {t("method.editRecipe")}
                         </Link>
                       </Button>
                     )}
@@ -621,7 +649,7 @@ export default async function RecipePage({
                       {recipe.notes && (
                         <div>
                           <h3 className="font-display text-lg font-semibold">
-                            Notes
+                            {t("notes")}
                           </h3>
                           <p className="mt-1 whitespace-pre-line text-muted-foreground">
                             {recipe.notes}
@@ -630,15 +658,19 @@ export default async function RecipePage({
                       )}
                       {(recipe.sourceName ?? recipe.sourceUrl) && (
                         <p className="text-sm text-muted-foreground">
-                          Source:{" "}
+                          {t("source")}{" "}
                           {recipe.sourceUrl ? (
                             <a
                               href={recipe.sourceUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-primary underline-offset-4 hover:underline"
+                              className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
                             >
                               {recipe.sourceName ?? recipe.sourceUrl}
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
+                              <span className="sr-only">
+                                ({t("opensInNewTab")})
+                              </span>
                             </a>
                           ) : (
                             recipe.sourceName
@@ -652,9 +684,16 @@ export default async function RecipePage({
                 {recipe.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-2">
                     {recipe.tags.map(({ tag }) => (
-                      <Badge key={tag.id} variant="muted">
+                      <Link
+                        key={tag.id}
+                        href={`/recipes?tag=${encodeURIComponent(tag.name)}`}
+                        className={cn(
+                          badgeVariants({ variant: "muted" }),
+                          "hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        )}
+                      >
                         #{tag.name}
-                      </Badge>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -717,7 +756,7 @@ export default async function RecipePage({
             <div className="flex items-center gap-2">
               <CookingPot className="size-5 text-primary" />
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                You might also like
+                {t("similar")}
               </h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -7,6 +7,26 @@
     "pricing": "Pricing",
     "billing": "Billing"
   },
+  "nav": {
+    "home": "Home",
+    "recipes": "Recipes",
+    "discover": "Discover",
+    "saved": "Saved",
+    "plan": "Plan",
+    "journal": "Journal",
+    "shopping": "Shopping",
+    "family": "Family",
+    "create": "Create",
+    "more": "More",
+    "skipToContent": "Skip to content",
+    "newRecipe": "New recipe",
+    "homeLink": "Heirloom home",
+    "landmarks": {
+      "primary": "Primary",
+      "primaryMobile": "Primary mobile",
+      "breadcrumb": "Breadcrumb"
+    }
+  },
   "cook": {
     "timer": {
       "complete": "Time's up!",
@@ -61,6 +81,10 @@
       "reset": "Use each recipe's servings"
     }
   },
+  "localeSwitcher": {
+    "trigger": "Change language",
+    "label": "Language"
+  },
   "saveToCollection": {
     "list": "Your collections",
     "add": "Add to collection {name}",
@@ -90,5 +114,56 @@
   "characterCounter": {
     "remaining": "{count} left",
     "over": "Over by {count} — {message}"
+  },
+  "recipeDetail": {
+    "backToRecipes": "Recipes",
+    "by": "By",
+    "servingsNoun": "servings",
+    "opensInNewTab": "opens in new tab",
+    "notes": "Notes",
+    "source": "Source:",
+    "similar": "You might also like",
+    "visibility": {
+      "private": "Private",
+      "unlisted": "Unlisted",
+      "group": "Group"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "meta": {
+      "prep": "{time} prep",
+      "resting": "{time} resting"
+    },
+    "ratingLabel": "Rated {average} out of 5 — {count, plural, one {# review} other {# reviews}}",
+    "actions": {
+      "cook": "Cook",
+      "print": "Print",
+      "edit": "Edit",
+      "cookMode": "Cook mode"
+    },
+    "ingredients": {
+      "heading": "Ingredients",
+      "empty": "No ingredients listed.",
+      "makeAhead": "Make ahead",
+      "equipment": "Equipment"
+    },
+    "method": {
+      "heading": "Method",
+      "emptyTitle": "No steps yet",
+      "emptyOwner": "Add the steps and this recipe is ready to cook.",
+      "emptyViewer": "The steps haven't been added to this recipe yet.",
+      "editRecipe": "Edit recipe",
+      "stepLabel": "Step {position}",
+      "stepImageAlt": "{title} — step {position}"
+    },
+    "tabs": {
+      "recipe": "Recipe",
+      "timeline": "Timeline",
+      "cooked": "Cooked it",
+      "discussion": "Discussion"
+    }
   }
 }

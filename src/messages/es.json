@@ -7,6 +7,26 @@
     "pricing": "Precios",
     "billing": "Facturación"
   },
+  "nav": {
+    "home": "Inicio",
+    "recipes": "Recetas",
+    "discover": "Descubrir",
+    "saved": "Guardados",
+    "plan": "Planificar",
+    "journal": "Diario",
+    "shopping": "Compra",
+    "family": "Familia",
+    "create": "Crear",
+    "more": "Más",
+    "skipToContent": "Saltar al contenido",
+    "newRecipe": "Nueva receta",
+    "homeLink": "Inicio de Heirloom",
+    "landmarks": {
+      "primary": "Principal",
+      "primaryMobile": "Principal móvil",
+      "breadcrumb": "Ruta de navegación"
+    }
+  },
   "cook": {
     "timer": {
       "complete": "¡Se acabó el tiempo!",
@@ -61,6 +81,10 @@
       "reset": "Usar las porciones de cada receta"
     }
   },
+  "localeSwitcher": {
+    "trigger": "Cambiar idioma",
+    "label": "Idioma"
+  },
   "saveToCollection": {
     "list": "Tus colecciones",
     "add": "Añadir a la colección {name}",
@@ -90,5 +114,56 @@
   "characterCounter": {
     "remaining": "Quedan {count}",
     "over": "Te pasaste por {count} — {message}"
+  },
+  "recipeDetail": {
+    "backToRecipes": "Recetas",
+    "by": "Por",
+    "servingsNoun": "raciones",
+    "opensInNewTab": "se abre en una pestaña nueva",
+    "notes": "Notas",
+    "source": "Fuente:",
+    "similar": "También te puede gustar",
+    "visibility": {
+      "private": "Privada",
+      "unlisted": "No listada",
+      "group": "Grupo"
+    },
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    },
+    "meta": {
+      "prep": "{time} de preparación",
+      "resting": "{time} de reposo"
+    },
+    "ratingLabel": "Valorada con {average} sobre 5 — {count, plural, one {# reseña} other {# reseñas}}",
+    "actions": {
+      "cook": "Cocinar",
+      "print": "Imprimir",
+      "edit": "Editar",
+      "cookMode": "Modo cocina"
+    },
+    "ingredients": {
+      "heading": "Ingredientes",
+      "empty": "No hay ingredientes.",
+      "makeAhead": "Preparar con antelación",
+      "equipment": "Equipamiento"
+    },
+    "method": {
+      "heading": "Preparación",
+      "emptyTitle": "Aún no hay pasos",
+      "emptyOwner": "Añade los pasos y esta receta estará lista para cocinar.",
+      "emptyViewer": "Todavía no se han añadido los pasos a esta receta.",
+      "editRecipe": "Editar receta",
+      "stepLabel": "Paso {position}",
+      "stepImageAlt": "{title} — paso {position}"
+    },
+    "tabs": {
+      "recipe": "Receta",
+      "timeline": "Historial",
+      "cooked": "Cocinada",
+      "discussion": "Comentarios"
+    }
   }
 }

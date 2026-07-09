@@ -67,7 +67,7 @@ export default async function CookProfilePage({
 
   return (
     <div className="container flex flex-col gap-8 py-10">
-      <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left">
+      <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-start">
         <Avatar className="size-20 text-xl">
           {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
           <AvatarFallback>
