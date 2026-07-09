@@ -84,16 +84,7 @@ function StarRow({
   );
 }
 
-export function ReviewsSection({
-  recipeId,
-  recipeSlug,
-  initialReviews,
-  reactionsByReview = {},
-  viewerReview,
-  currentUserId,
-  canReview,
-  isRecipeOwner,
-}: {
+export type ReviewsSectionProps = {
   recipeId: string;
   recipeSlug: string;
   initialReviews: ReviewListItem[];
@@ -105,7 +96,18 @@ export function ReviewsSection({
   currentUserId: string | null;
   canReview: boolean;
   isRecipeOwner: boolean;
-}) {
+};
+
+export function ReviewsSection({
+  recipeId,
+  recipeSlug,
+  initialReviews,
+  reactionsByReview = {},
+  viewerReview,
+  currentUserId,
+  canReview,
+  isRecipeOwner,
+}: ReviewsSectionProps) {
   const locale = useLocale();
   const [sort, setSort] = React.useState<ReviewSort>("recent");
   const [rating, setRating] = React.useState(viewerReview?.rating ?? 0);

@@ -4,7 +4,7 @@ import {
 } from "~/server/engagement/reviews";
 import { getReactionsForTargets } from "~/server/engagement/reactions";
 import { getHiddenAuthorIds } from "~/server/moderation/blocks";
-import { ReviewsSection } from "~/components/engagement/reviews-section";
+import { ReviewsSection } from "~/components/engagement/reviews-section-lazy";
 
 /**
  * Reviews tab content (#341): the recipe's written reviews + the viewer's own
