@@ -12,7 +12,39 @@ import {
 import { GroupSettingsForm } from "~/components/groups/group-settings-form";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
+
+/**
+ * Plain-language capability hints for each group role, surfaced right where a
+ * manager assigns them (issue #344). Copy only — the roles and rules themselves
+ * live in the server (`src/server/groups/mutations.ts`) and are documented in
+ * `docs/group-roles.md`.
+ */
+const ROLE_HINTS = [
+  {
+    role: "Owner",
+    hint: "Full control — manage settings and members, assign admins, transfer ownership, or delete the group.",
+  },
+  {
+    role: "Admin",
+    hint: "Helps you run the group — edit settings, invite people, and manage members and kids (but can't add other admins).",
+  },
+  {
+    role: "Member",
+    hint: "A family member — reads the shared cookbook and adds recipes.",
+  },
+  {
+    role: "Kid",
+    hint: "A child account with the kid-safe experience. Always free — never uses a paid seat.",
+  },
+] as const;
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -73,6 +105,26 @@ export default async function GroupSettingsPage({
           avatarUrl: group.avatarUrl,
         }}
       />
+
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Roles &amp; permissions</CardTitle>
+          <CardDescription>
+            Who can do what in this group. You can set a member&apos;s role from
+            the group page.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-3 sm:grid-cols-2">
+            {ROLE_HINTS.map(({ role, hint }) => (
+              <div key={role}>
+                <dt className="text-sm font-medium">{role}</dt>
+                <dd className="mt-0.5 text-sm text-muted-foreground">{hint}</dd>
+              </div>
+            ))}
+          </dl>
+        </CardContent>
+      </Card>
     </div>
   );
 }
