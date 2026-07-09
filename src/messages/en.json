@@ -59,7 +59,37 @@
       "hintUnset": "Recipes use their own servings. Set this to auto-scale Cook Mode and shopping lists.",
       "hintSet": "Cook Mode and shopping lists start scaled to your family.",
       "reset": "Use each recipe's servings"
-    }
+    },
+    "triggerActive": "Accessibility & comfort settings (active)",
+    "title": "Accessibility & comfort",
+    "description": "Tune how Heirloom looks and reads. These settings work with any theme and are saved on this device.",
+    "textSize": {
+      "label": "Text size",
+      "option": "{label} text size",
+      "default": "Default",
+      "large": "Large",
+      "xl": "Larger"
+    },
+    "contrast": {
+      "title": "High contrast",
+      "description": "Stronger text and borders for easier reading.",
+      "descriptionSystem": "Following your system setting. Stronger text and borders."
+    },
+    "motion": {
+      "title": "Reduce motion",
+      "description": "Turn off animations and transitions.",
+      "descriptionSystem": "Following your system setting. Animations are turned off."
+    },
+    "reading": {
+      "title": "Easy-reading text",
+      "description": "Roomier spacing and a highly legible typeface."
+    },
+    "kids": {
+      "title": "Kids mode",
+      "description": "Big buttons, bright colors, and simpler screens."
+    },
+    "privacy": "Privacy",
+    "reset": "Reset to defaults"
   },
   "saveToCollection": {
     "list": "Your collections",
@@ -86,5 +116,8 @@
     "moveDownNamed": "Move {object} down",
     "remove": "Remove",
     "removeNamed": "Remove {object}"
+  },
+  "layout": {
+    "skipToContent": "Skip to content"
   }
 }

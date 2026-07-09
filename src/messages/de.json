@@ -59,7 +59,37 @@
       "hintUnset": "Rezepte verwenden ihre eigenen Portionen. Lege dies fest, um den Kochmodus und Einkaufslisten automatisch zu skalieren.",
       "hintSet": "Kochmodus und Einkaufslisten starten auf deine Familie skaliert.",
       "reset": "Portionen jedes Rezepts verwenden"
-    }
+    },
+    "triggerActive": "Einstellungen für Barrierefreiheit und Komfort (aktiv)",
+    "title": "Barrierefreiheit & Komfort",
+    "description": "Passe an, wie Heirloom aussieht und sich liest. Diese Einstellungen funktionieren mit jedem Design und werden auf diesem Gerät gespeichert.",
+    "textSize": {
+      "label": "Textgröße",
+      "option": "Textgröße: {label}",
+      "default": "Standard",
+      "large": "Groß",
+      "xl": "Größer"
+    },
+    "contrast": {
+      "title": "Hoher Kontrast",
+      "description": "Kräftigerer Text und Ränder für leichteres Lesen.",
+      "descriptionSystem": "Folgt deiner Systemeinstellung. Kräftigerer Text und Ränder."
+    },
+    "motion": {
+      "title": "Bewegung reduzieren",
+      "description": "Animationen und Übergänge ausschalten.",
+      "descriptionSystem": "Folgt deiner Systemeinstellung. Animationen sind ausgeschaltet."
+    },
+    "reading": {
+      "title": "Gut lesbarer Text",
+      "description": "Großzügigere Abstände und eine besonders gut lesbare Schrift."
+    },
+    "kids": {
+      "title": "Kindermodus",
+      "description": "Große Schaltflächen, kräftige Farben und einfachere Bildschirme."
+    },
+    "privacy": "Datenschutz",
+    "reset": "Auf Standard zurücksetzen"
   },
   "saveToCollection": {
     "list": "Deine Sammlungen",
@@ -86,5 +116,8 @@
     "moveDownNamed": "{object} nach unten verschieben",
     "remove": "Entfernen",
     "removeNamed": "{object} entfernen"
+  },
+  "layout": {
+    "skipToContent": "Zum Inhalt springen"
   }
 }

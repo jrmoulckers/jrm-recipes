@@ -39,10 +39,11 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 
-const TEXT_SIZE_META: Record<TextSize, { label: string; sample: string }> = {
-  default: { label: "Default", sample: "text-sm" },
-  large: { label: "Large", sample: "text-base" },
-  xl: { label: "Larger", sample: "text-xl" },
+/** Font-size preview class per option; the visible label + names are localized. */
+const TEXT_SIZE_SAMPLE: Record<TextSize, string> = {
+  default: "text-sm",
+  large: "text-base",
+  xl: "text-xl",
 };
 
 function ToggleRow({
@@ -60,18 +61,31 @@ function ToggleRow({
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {
+  // Name the switch with the title only; the longer description is linked via
+  // aria-describedby so it's read as supplementary detail, not part of the name.
+  const descriptionId = `${id}-description`;
   return (
     <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted/60">
       <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
         <Icon className="size-5" />
       </span>
-      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer select-none">
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-muted-foreground">
+      <div className="min-w-0 flex-1">
+        <label
+          htmlFor={id}
+          className="block cursor-pointer select-none text-sm font-medium"
+        >
+          {title}
+        </label>
+        <span id={descriptionId} className="block text-xs text-muted-foreground">
           {description}
         </span>
-      </label>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      </div>
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onChange}
+        aria-describedby={descriptionId}
+      />
     </div>
   );
 }
@@ -95,7 +109,7 @@ export function AccessibilityMenu() {
         <Button
           variant="outline"
           size="icon"
-          aria-label={t("trigger")}
+          aria-label={active ? t("triggerActive") : t("trigger")}
           className="relative"
         >
           <Accessibility className="size-5" />
@@ -109,12 +123,9 @@ export function AccessibilityMenu() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Accessibility className="size-5 text-primary" />
-            Accessibility &amp; comfort
+            {t("title")}
           </DialogTitle>
-          <DialogDescription>
-            Tune how {`Heirloom`} looks and reads. These settings work with any
-            theme and are saved on this device.
-          </DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -122,7 +133,7 @@ export function AccessibilityMenu() {
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Type className="size-4 text-muted-foreground" />
-              Text size
+              {t("textSize.label")}
             </div>
             <div
               role="group"
@@ -131,12 +142,14 @@ export function AccessibilityMenu() {
             >
               {TEXT_SIZES.map((size) => {
                 const selected = prefs.textSize === size;
+                const label = t(`textSize.${size}`);
                 return (
                   <button
                     key={size}
                     type="button"
                     onClick={() => update({ textSize: size })}
                     aria-pressed={selected}
+                    aria-label={t("textSize.option", { label })}
                     className={cn(
                       "flex flex-col items-center gap-0.5 rounded-lg py-2 transition-colors",
                       selected
@@ -145,16 +158,15 @@ export function AccessibilityMenu() {
                     )}
                   >
                     <span
+                      aria-hidden="true"
                       className={cn(
                         "font-display font-semibold leading-none",
-                        TEXT_SIZE_META[size].sample,
+                        TEXT_SIZE_SAMPLE[size],
                       )}
                     >
                       A
                     </span>
-                    <span className="text-[0.7rem]">
-                      {TEXT_SIZE_META[size].label}
-                    </span>
+                    <span className="text-[0.7rem]">{label}</span>
                   </button>
                 );
               })}
@@ -166,11 +178,11 @@ export function AccessibilityMenu() {
             <ToggleRow
               id="a11y-contrast"
               icon={Contrast}
-              title="High contrast"
+              title={t("contrast.title")}
               description={
                 prefs.contrast === undefined && effective.contrast
-                  ? "Following your system setting. Stronger text and borders."
-                  : "Stronger text and borders for easier reading."
+                  ? t("contrast.descriptionSystem")
+                  : t("contrast.description")
               }
               checked={effective.contrast}
               onChange={(v) => update({ contrast: v ? "on" : "off" })}
@@ -178,11 +190,11 @@ export function AccessibilityMenu() {
             <ToggleRow
               id="a11y-motion"
               icon={Zap}
-              title="Reduce motion"
+              title={t("motion.title")}
               description={
                 prefs.motion === undefined && effective.motion
-                  ? "Following your system setting. Animations are turned off."
-                  : "Turn off animations and transitions."
+                  ? t("motion.descriptionSystem")
+                  : t("motion.description")
               }
               checked={effective.motion}
               onChange={(v) => update({ motion: v ? "on" : "off" })}
@@ -190,8 +202,8 @@ export function AccessibilityMenu() {
             <ToggleRow
               id="a11y-reading"
               icon={BookOpenText}
-              title="Easy-reading text"
-              description="Roomier spacing and a highly legible typeface."
+              title={t("reading.title")}
+              description={t("reading.description")}
               checked={prefs.reading}
               onChange={(v) => update({ reading: v })}
             />
@@ -271,9 +283,11 @@ export function AccessibilityMenu() {
               htmlFor="a11y-kids"
               className="min-w-0 flex-1 cursor-pointer select-none"
             >
-              <span className="block text-sm font-semibold">Kids mode</span>
+              <span className="block text-sm font-semibold">
+                {t("kids.title")}
+              </span>
               <span className="block text-xs text-muted-foreground">
-                Big buttons, bright colors, and simpler screens.
+                {t("kids.description")}
               </span>
             </label>
             <Switch
@@ -289,7 +303,7 @@ export function AccessibilityMenu() {
           <section className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldCheck className="size-4 text-muted-foreground" />
-              Privacy
+              {t("privacy")}
             </div>
             <PrivacyToggle />
           </section>
@@ -302,7 +316,7 @@ export function AccessibilityMenu() {
               className="self-start text-muted-foreground"
             >
               <RotateCcw className="size-4" />
-              Reset to defaults
+              {t("reset")}
             </Button>
           )}
         </div>

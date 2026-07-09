@@ -59,7 +59,37 @@
       "hintUnset": "Las recetas usan sus propias porciones. Ajústalo para escalar automáticamente el modo cocina y las listas de la compra.",
       "hintSet": "El modo cocina y las listas de la compra empiezan ajustados a tu familia.",
       "reset": "Usar las porciones de cada receta"
-    }
+    },
+    "triggerActive": "Ajustes de accesibilidad y comodidad (activos)",
+    "title": "Accesibilidad y comodidad",
+    "description": "Ajusta cómo se ve y se lee Heirloom. Estos ajustes funcionan con cualquier tema y se guardan en este dispositivo.",
+    "textSize": {
+      "label": "Tamaño del texto",
+      "option": "Tamaño del texto: {label}",
+      "default": "Predeterminado",
+      "large": "Grande",
+      "xl": "Más grande"
+    },
+    "contrast": {
+      "title": "Alto contraste",
+      "description": "Texto y bordes más marcados para leer con más facilidad.",
+      "descriptionSystem": "Siguiendo la configuración de tu sistema. Texto y bordes más marcados."
+    },
+    "motion": {
+      "title": "Reducir movimiento",
+      "description": "Desactiva animaciones y transiciones.",
+      "descriptionSystem": "Siguiendo la configuración de tu sistema. Las animaciones están desactivadas."
+    },
+    "reading": {
+      "title": "Texto de lectura fácil",
+      "description": "Espaciado más amplio y una tipografía muy legible."
+    },
+    "kids": {
+      "title": "Modo infantil",
+      "description": "Botones grandes, colores vivos y pantallas más simples."
+    },
+    "privacy": "Privacidad",
+    "reset": "Restablecer valores predeterminados"
   },
   "saveToCollection": {
     "list": "Tus colecciones",
@@ -86,5 +116,8 @@
     "moveDownNamed": "Bajar {object}",
     "remove": "Eliminar",
     "removeNamed": "Eliminar {object}"
+  },
+  "layout": {
+    "skipToContent": "Saltar al contenido"
   }
 }
