@@ -195,6 +195,28 @@ pnpm db:seed
 It creates a demo cook, a "family" group, and three sample recipes (all
 idempotent — safe to run twice; delete them from the UI any time).
 
+### Run a staging environment (optional)
+
+Want a stable, always-on pre-production URL (separate from per-PR previews) to
+smoke-test before promoting to production? Heirloom supports a **staging**
+environment:
+
+1. In Vercel → **Settings → Git**, keep Production tracking `main` and add a
+   long-lived **`staging`** branch as a deployment branch (or use a dedicated
+   Vercel "Preview" branch). Pushes to `staging` build a stable staging URL.
+2. Give staging its **own** `DATABASE_URL` — a Neon branch of production is
+   ideal — and its own Clerk keys, exactly like production (never point staging
+   at the production database).
+3. `staging` runs the **same CI gate** as `main` (the CI workflow triggers on
+   pushes to both), so nothing lands on staging without passing lint, tests, and
+   the build.
+4. Promote by fast-forwarding `main` to the reviewed `staging` commit (or open a
+   `staging → main` PR). Vercel then deploys production from `main` as usual.
+
+Because migrations only auto-run in production and are skipped on preview
+(#258), staging uses its own branch database and the standard `vercel-build`
+flow, so a broken migration surfaces on staging before it can reach production.
+
 ---
 
 ## Ongoing: how deploys work

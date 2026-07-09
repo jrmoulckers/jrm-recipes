@@ -6,8 +6,10 @@
 name: CI
 
 on:
+  # Run the full gate on pushes to main and to the long-lived staging branch
+  # (#266), and on every PR targeting main.
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
     branches: [main]
 
