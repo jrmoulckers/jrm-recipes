@@ -178,6 +178,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Cache Next.js's compiler cache so builds reuse work across runs (#243).
+      # Keyed on the lockfile + source so it invalidates when deps or code
+      # change; restore-keys allow a partial (still-useful) hit.
+      - name: Cache Next.js build
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+
       - name: Build
         run: pnpm build | tee bundle-build.log
 
@@ -267,6 +279,16 @@ jobs:
 
       - name: Seed demo data
         run: pnpm db:seed
+
+      # Cache the downloaded Playwright browser binaries (#243). Keyed on the
+      # lockfile so a Playwright version bump re-downloads them.
+      - name: Cache Playwright browsers
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
