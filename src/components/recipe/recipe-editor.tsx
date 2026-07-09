@@ -35,6 +35,7 @@ import { type ImportedRecipe } from "~/server/recipes/import";
 import {
   createRecipeAction,
   importRecipeFromUrlAction,
+  importRecipeTextAction,
   updateRecipeAction,
 } from "~/server/recipes/actions";
 import { Button } from "~/components/ui/button";
@@ -199,6 +200,9 @@ export function RecipeEditor({
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
   const [importUrl, setImportUrl] = React.useState("");
   const [importing, setImporting] = React.useState(false);
+  // "Import from a link" vs. "Paste text" (#370).
+  const [importMode, setImportMode] = React.useState<"url" | "text">("url");
+  const [pasteText, setPasteText] = React.useState("");
 
   // Editor-open is the top of the creation/edit funnel (#310).
   React.useEffect(() => {
@@ -318,6 +322,30 @@ export function RecipeEditor({
       }
     } catch {
       toast.error("Something went wrong importing that link.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handlePasteImport() {
+    const text = pasteText.trim();
+    if (!text) return;
+    setImporting(true);
+    try {
+      const res = await importRecipeTextAction(text);
+      if (res.ok) {
+        applyImported(res.recipe);
+        toast.success(
+          res.recipe.title
+            ? `Imported “${res.recipe.title}”. Review the details, then save.`
+            : "Imported the recipe. Review the details, then save.",
+        );
+        setPasteText("");
+      } else {
+        toast.error(friendlyError(res.error));
+      }
+    } catch {
+      toast.error("Something went wrong reading that text.");
     } finally {
       setImporting(false);
     }
@@ -553,43 +581,102 @@ export function RecipeEditor({
               <div className="flex items-center gap-2">
                 <Link2 className="size-4 text-primary" />
                 <h2 className="font-display text-base font-semibold">
-                  Import from a link
+                  Start from an existing recipe
                 </h2>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Paste a recipe URL and we&apos;ll fill in the details for you to
-                review.
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <Input
-                  type="url"
-                  inputMode="url"
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void handleImport();
-                    }
-                  }}
-                  placeholder="https://example.com/best-marinara"
-                  disabled={importing}
-                  aria-label={t("importUrl")}
-                />
+              <div className="mt-3 flex gap-2" role="tablist" aria-label="Import method">
                 <Button
                   type="button"
-                  onClick={() => void handleImport()}
-                  disabled={importing || !importUrl.trim()}
-                  className="shrink-0"
+                  size="sm"
+                  variant={importMode === "url" ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={importMode === "url"}
+                  onClick={() => setImportMode("url")}
                 >
-                  {importing ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <Download />
-                  )}
-                  {importing ? "Importing…" : "Import"}
+                  Import from a link
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={importMode === "text" ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={importMode === "text"}
+                  onClick={() => setImportMode("text")}
+                >
+                  Paste text
                 </Button>
               </div>
+
+              {importMode === "url" ? (
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Paste a recipe URL and we&apos;ll fill in the details for you
+                    to review.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      value={importUrl}
+                      onChange={(e) => setImportUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleImport();
+                        }
+                      }}
+                      placeholder="https://example.com/best-marinara"
+                      disabled={importing}
+                      aria-label={t("importUrl")}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void handleImport()}
+                      disabled={importing || !importUrl.trim()}
+                      className="shrink-0"
+                    >
+                      {importing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Download />
+                      )}
+                      {importing ? "Importing…" : "Import"}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Paste a recipe as plain text — a message from a relative, a
+                    typed note — and we&apos;ll structure it for you to review.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2">
+                    <Textarea
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      placeholder={
+                        "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer."
+                      }
+                      rows={6}
+                      disabled={importing}
+                      aria-label="Recipe text to import"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void handlePasteImport()}
+                      disabled={importing || !pasteText.trim()}
+                      className="shrink-0 self-start"
+                    >
+                      {importing ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Download />
+                      )}
+                      {importing ? "Reading…" : "Use this text"}
+                    </Button>
+                  </div>
+                </>
+              )}
             </section>
           ) : null}
 

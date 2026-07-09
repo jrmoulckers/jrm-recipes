@@ -21,8 +21,13 @@ import { captureServer } from "~/lib/analytics/server";
 import { getLimitStatus } from "~/server/billing/entitlements";
 import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import { importRecipeFromUrl, type ImportResult } from "./import";
+import { parseRecipeText } from "./import-text";
 import { recipeInput, type RecipeInput } from "./validation";
 import { recipeMutationTags, recipeTag } from "./cache-tags";
+import { diffRecipeSnapshots, type RecipeDiff } from "~/lib/recipe-diff";
+import { recipeToInput } from "./timeline";
+import { getRecipeForViewer } from "./loaders";
+import { getRecipeVersion, parseSnapshot } from "./queries";
 import {
   createRecipe,
   deleteRecipe,
@@ -210,6 +215,41 @@ export async function revertRecipeAction(
   }
 }
 
+/** One end of a version comparison: a saved version number, or the live recipe. */
+export type CompareSelection = number | "current";
+
+export type CompareVersionsResult =
+  | { ok: true; diff: RecipeDiff }
+  | { ok: false; error: string };
+
+/**
+ * Diff two points in a recipe's history for the Timeline "Compare" view (#358).
+ * Each side is either a saved `versionNumber` or `"current"` (the live recipe).
+ * Access is gated by {@link getRecipeForViewer} so only viewers who can see the
+ * recipe can read its snapshots; a missing/legacy snapshot diffs as an empty
+ * recipe rather than failing.
+ */
+export async function compareRecipeVersionsAction(
+  recipeId: string,
+  from: CompareSelection,
+  to: CompareSelection,
+): Promise<CompareVersionsResult> {
+  if (!isDbConfigured()) return { ok: false, error: NEEDS_DATABASE };
+  const { recipe } = await getRecipeForViewer(recipeId);
+  if (!recipe) return { ok: false, error: "We couldn't find that recipe." };
+
+  const resolve = async (
+    selection: CompareSelection,
+  ): Promise<RecipeInput | null> => {
+    if (selection === "current") return recipeToInput(recipe);
+    const version = await getRecipeVersion(recipe.id, selection);
+    return version ? parseSnapshot(version.snapshot) : null;
+  };
+
+  const [before, after] = await Promise.all([resolve(from), resolve(to)]);
+  return { ok: true, diff: diffRecipeSnapshots(before, after) };
+}
+
 export async function importRecipeFromUrlAction(
   url: string,
 ): Promise<ImportResult> {
@@ -223,6 +263,34 @@ export async function importRecipeFromUrlAction(
   const result = await importRecipeFromUrl(url);
   void captureServer(user.id, "recipe_imported", { ok: result.ok });
   return result;
+}
+
+/**
+ * Parse pasted plain-text into a structured recipe draft (#370). Deterministic
+ * and offline - no fetch, no AI - so it only needs an authenticated session to
+ * curb abuse. The editor applies the result for the user to review before save.
+ */
+export async function importRecipeTextAction(
+  text: string,
+): Promise<ImportResult> {
+  const user = await requireUser();
+  if (!checkRateLimit("import", user.id).ok) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+  const recipe = parseRecipeText(text ?? "");
+  if (
+    !recipe.title &&
+    recipe.ingredients.length === 0 &&
+    recipe.steps.length === 0
+  ) {
+    return {
+      ok: false,
+      error:
+        "We couldn't find a recipe in that text. Try including the title, ingredients, and steps.",
+    };
+  }
+  void captureServer(user.id, "recipe_imported", { ok: true });
+  return { ok: true, recipe };
 }
 
 export async function deleteRecipeAction(id: string): Promise<void> {
