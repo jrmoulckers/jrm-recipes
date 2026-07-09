@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   AlertCircle,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Circle,
   GripVertical,
   History,
   Loader2,
@@ -193,6 +195,105 @@ function numOrUndef(s: string): number | undefined {
 
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm";
+
+/** One entry in the in-editor section navigator (#112). */
+type EditorSection = {
+  /** DOM id of the section this anchor jumps to. */
+  id: string;
+  /** Short human label shown in the navigator. */
+  label: string;
+  /** Whether the section has any user content yet (drives the progress cue). */
+  complete: boolean;
+  /** Optional sections don't count against the "core" completion nudge. */
+  optional?: boolean;
+};
+
+/**
+ * In-editor section navigator + progress cue for the long recipe form (#112).
+ * Purely presentational and additive: it reads live completion booleans derived
+ * from the existing form state (no new sources of truth) and renders anchor
+ * links plus a progress bar so writers can see how far along they are and jump
+ * between Basics / Ingredients / Steps / Details without endless scrolling.
+ *
+ * Anchors use `scrollIntoView` (respecting each section's `scroll-mt`) rather
+ * than hash navigation so the sticky app header + this bar never hide the
+ * target heading, and so the URL isn't polluted mid-edit. It sits above the
+ * autosave/dictation machinery and touches none of it.
+ */
+function EditorSectionNav({ sections }: { sections: EditorSection[] }) {
+  const done = sections.filter((s) => s.complete).length;
+  const total = sections.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  return (
+    <nav
+      aria-label="Recipe sections"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-surface/60 p-3 shadow-token-sm lg:sticky lg:top-16 lg:z-20 lg:backdrop-blur lg:supports-[backdrop-filter]:bg-surface/75"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-medium text-foreground">
+          {done === total ? "All sections started 🎉" : "Recipe progress"}
+        </span>
+        <span
+          className="text-xs font-medium tabular-nums text-muted-foreground"
+          aria-hidden="true"
+        >
+          {done}/{total}
+        </span>
+      </div>
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuenow={done}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={`${done} of ${total} sections started`}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {sections.map((section) => (
+          <li key={section.id}>
+            <a
+              href={`#${section.id}`}
+              onClick={(event) => {
+                const el = document.getElementById(section.id);
+                if (el) {
+                  event.preventDefault();
+                  el.scrollIntoView({ block: "start", behavior: "smooth" });
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              {section.complete ? (
+                <CheckCircle2
+                  className="size-4 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Circle
+                  className="size-4 shrink-0 text-muted-foreground/50"
+                  aria-hidden="true"
+                />
+              )}
+              {section.label}
+              <span className="sr-only">
+                {section.complete
+                  ? " (started)"
+                  : section.optional
+                    ? " (optional, not started)"
+                    : " (not started)"}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
 
 export function RecipeEditor({
   mode,
@@ -521,6 +622,41 @@ export function RecipeEditor({
   );
   const errorKeys = Object.keys(errors);
 
+  // Live section-completion cues for the in-editor navigator (#112). Derived
+  // straight from the working form state so they stay in sync as the user types
+  // — no extra state, no interaction with autosave/dictation/paste-import.
+  const editorSections: EditorSection[] = [
+    {
+      id: "editor-basics",
+      label: "Basics",
+      complete: form.title.trim() !== "",
+    },
+    {
+      id: "editor-ingredients",
+      label: "Ingredients",
+      complete: ingredients.some((row) => row.item.trim() !== ""),
+    },
+    {
+      id: "editor-steps",
+      label: "Steps",
+      complete: steps.some((row) => row.instruction.trim() !== ""),
+    },
+    {
+      id: "editor-details",
+      label: "Details & photo",
+      complete:
+        form.coverImageUrl.trim() !== "" ||
+        form.difficulty !== "" ||
+        form.cuisine.trim() !== "",
+    },
+    {
+      id: "editor-story",
+      label: "Notes & story",
+      complete: form.notes.trim() !== "" || form.story.trim() !== "",
+      optional: true,
+    },
+  ];
+
   // Move focus to the summary whenever a submit attempt produces errors so
   // screen-reader and keyboard users land on the list of what needs fixing.
   React.useEffect(() => {
@@ -653,6 +789,8 @@ export function RecipeEditor({
         </div>
       )}
 
+      <EditorSectionNav sections={editorSections} />
+
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         {/* Main column */}
         <div className="flex flex-col gap-8">
@@ -663,7 +801,7 @@ export function RecipeEditor({
             />
           ) : null}
 
-          <section className="flex flex-col gap-4">
+          <section id="editor-basics" className="flex scroll-mt-28 flex-col gap-4">
             <Field label="Title" name="title" error={errors.title} required>
               <Input
                 value={form.title}
@@ -694,7 +832,7 @@ export function RecipeEditor({
           </section>
 
           {/* Ingredients */}
-          <section className="flex flex-col gap-3">
+          <section id="editor-ingredients" className="flex scroll-mt-28 flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold">Ingredients</h2>
               <Button
@@ -824,7 +962,7 @@ export function RecipeEditor({
           </section>
 
           {/* Steps */}
-          <section className="flex flex-col gap-3">
+          <section id="editor-steps" className="flex scroll-mt-28 flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold">Steps</h2>
               <Button
@@ -961,6 +1099,7 @@ export function RecipeEditor({
             </div>
           </section>
 
+          <section id="editor-story" className="flex scroll-mt-28 flex-col gap-8">
           <Field
             label="Notes"
             name="notes"
@@ -999,6 +1138,7 @@ export function RecipeEditor({
               onAppend={(text) => appendToField("story", text)}
             />
           </div>
+          </section>
 
           <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
             <legend className="px-1 text-sm font-medium text-foreground">
@@ -1035,7 +1175,10 @@ export function RecipeEditor({
         </div>
 
         {/* Sidebar */}
-        <aside className="flex h-fit flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky lg:top-20">
+        <aside
+          id="editor-details"
+          className="flex h-fit scroll-mt-28 flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky lg:top-20"
+        >
           <div className="grid grid-cols-2 gap-3">
             <Field label="Servings" name="servings" error={errors.servings}>
               <Input

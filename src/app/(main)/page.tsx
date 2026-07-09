@@ -24,6 +24,10 @@ import {
   ROTATION_MIN,
 } from "~/server/collections/queries";
 import { listDinnerCandidates, listLibrary } from "~/server/recipes/queries";
+import {
+  getOnboardingProgress,
+  isOnboardingComplete,
+} from "~/server/onboarding/progress";
 import { buildQuickPlanContext } from "~/server/planner/quick-plan";
 import { todayParam } from "~/server/planner/week";
 import { Button } from "~/components/ui/button";
@@ -33,6 +37,7 @@ import { ModePicker } from "~/components/theme/mode-picker";
 import { DinnerSuggestion } from "~/components/recipe/dinner-suggestion";
 import { RotationRail } from "~/components/recipe/rotation-rail";
 import { RecipeCard } from "~/components/recipe/recipe-card";
+import { OnboardingChecklist } from "~/components/onboarding/onboarding-checklist";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import {
@@ -95,8 +100,15 @@ async function loadPersonalizedHome(user: User) {
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  const personalized =
-    user && isDbConfigured() ? await loadPersonalizedHome(user) : null;
+  const [personalized, onboarding] =
+    user && isDbConfigured()
+      ? await Promise.all([
+          loadPersonalizedHome(user),
+          getOnboardingProgress(user),
+        ])
+      : [null, null];
+  const showOnboarding =
+    onboarding != null && !isOnboardingComplete(onboarding);
   const showDinner = personalized != null && personalized.dinner.length > 0;
   const showRotation =
     personalized != null && personalized.rotation.length >= ROTATION_MIN;
@@ -121,6 +133,11 @@ export default async function HomePage() {
         }}
       />
       <LandingViewedTracker />
+      {showOnboarding && onboarding && (
+        <section className="container pt-8">
+          <OnboardingChecklist progress={onboarding} />
+        </section>
+      )}
       {personalizedHome && (
         <section className="border-b border-border bg-surface">
           <div className="container flex flex-col gap-5 py-10">

@@ -152,7 +152,7 @@ export function NutritionPanel({
               aria-label="Family member for calorie goal"
               value={activeMember.id}
               onChange={(e) => setActiveMemberId(e.target.value)}
-              className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground"
+              className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {calorieCandidates.map((m) => (
                 <option key={m.id} value={m.id}>
