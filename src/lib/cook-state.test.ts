@@ -2,24 +2,41 @@ import { describe, expect, it } from "vitest";
 
 import {
   clampStepIndex,
+  countRunningCustomTimers,
   countRunningTimers,
   cookStorageKey,
   formatCountdown,
   hasRunningCookTimers,
   isInteractiveShortcutTarget,
+  makeCustomTimer,
   makeTimer,
   parseCookState,
+  reconcileCustomTimers,
   reconcileTimer,
   reconcileTimers,
   serializeCookState,
   stepShortcutForKey,
   timerStatusText,
+  type CustomTimer,
   type StoredCookState,
   type TimerRecord,
 } from "./cook-state";
 
 function timer(overrides: Partial<TimerRecord> = {}): TimerRecord {
   return { duration: 300, remaining: 300, status: "idle", endsAt: null, ...overrides };
+}
+
+function customTimer(overrides: Partial<CustomTimer> = {}): CustomTimer {
+  return {
+    id: "ct-1",
+    label: "Pasta",
+    stepPosition: null,
+    duration: 300,
+    remaining: 300,
+    status: "idle",
+    endsAt: null,
+    ...overrides,
+  };
 }
 
 /** In-memory Storage stand-in exposing the `length`/`key`/`getItem` slice we scan. */
@@ -41,6 +58,7 @@ function cookState(timers: Record<string, TimerRecord>): string {
     system: "original",
     checked: [],
     timers,
+    customTimers: [],
   });
 }
 
@@ -286,6 +304,16 @@ describe("cook state serialization (ck05)", () => {
       "step-1": timer({ status: "running", remaining: 120, endsAt: 999_000 }),
       "step-2": timer({ status: "paused", remaining: 45, endsAt: null }),
     },
+    customTimers: [
+      customTimer({
+        id: "ct-a",
+        label: "Rice",
+        stepPosition: 2,
+        status: "running",
+        remaining: 200,
+        endsAt: 888_000,
+      }),
+    ],
   };
 
   it("round-trips through serialize/parse", () => {
@@ -310,6 +338,7 @@ describe("cook state serialization (ck05)", () => {
       system: "original",
       checked: [],
       timers: {},
+      customTimers: [],
     });
   });
 
@@ -329,4 +358,111 @@ describe("cook state serialization (ck05)", () => {
     expect(parsed?.checked).toEqual(["ok", "also-ok"]);
     expect(Object.keys(parsed?.timers ?? {})).toEqual(["good"]);
   });
+
+  it("drops malformed custom timers and defaults a missing list", () => {
+    expect(parseCookState(JSON.stringify({ stepIndex: 0 }))?.customTimers).toEqual(
+      [],
+    );
+
+    const parsed = parseCookState(
+      JSON.stringify({
+        customTimers: [
+          customTimer({ id: "keep", label: "Eggs", status: "running", endsAt: 5 }),
+          { id: "", label: "no id" },
+          { id: "x", label: 5 },
+          "nope",
+        ],
+      }),
+    );
+    expect(parsed?.customTimers.map((t) => t.id)).toEqual(["keep"]);
+  });
 });
+
+describe("custom timers (#392)", () => {
+  it("makeCustomTimer starts running by default with an absolute end time", () => {
+    const t = makeCustomTimer({
+      id: "a",
+      label: "Sauce",
+      durationSeconds: 90,
+      stepPosition: 1,
+      now: 1_000,
+    });
+    expect(t).toEqual({
+      id: "a",
+      label: "Sauce",
+      stepPosition: 1,
+      duration: 90,
+      remaining: 90,
+      status: "running",
+      endsAt: 1_000 + 90 * 1000,
+    });
+  });
+
+  it("makeCustomTimer can start idle and floors the duration", () => {
+    const t = makeCustomTimer({
+      id: "b",
+      label: "Rest",
+      durationSeconds: 45.9,
+      start: false,
+    });
+    expect(t.status).toBe("idle");
+    expect(t.endsAt).toBeNull();
+    expect(t.duration).toBe(45);
+    expect(t.stepPosition).toBeNull();
+  });
+
+  it("reconcileCustomTimers depletes running timers and flips expired to complete", () => {
+    const running = customTimer({
+      id: "r",
+      status: "running",
+      remaining: 120,
+      endsAt: 10_000,
+    });
+    const expired = customTimer({
+      id: "e",
+      status: "running",
+      remaining: 5,
+      endsAt: 9_000,
+    });
+
+    const next = reconcileCustomTimers([running, expired], 10_000);
+    expect(next[0]?.remaining).toBe(0); // 10_000 end at 10_000 → 0 left
+    const reAt = reconcileCustomTimers([running], 4_000);
+    expect(reAt[0]?.remaining).toBe(6);
+    expect(next[1]?.status).toBe("complete");
+    expect(next[1]?.endsAt).toBeNull();
+  });
+
+  it("reconcileCustomTimers preserves identity when nothing changes", () => {
+    const idle = [customTimer({ id: "i", status: "paused", remaining: 30 })];
+    expect(reconcileCustomTimers(idle, 50_000)).toBe(idle);
+  });
+
+  it("countRunningCustomTimers counts only running timers", () => {
+    expect(
+      countRunningCustomTimers([
+        customTimer({ id: "1", status: "running" }),
+        customTimer({ id: "2", status: "paused" }),
+        customTimer({ id: "3", status: "running" }),
+        customTimer({ id: "4", status: "complete" }),
+      ]),
+    ).toBe(2);
+  });
+
+  it("hasRunningCookTimers counts a running custom timer", () => {
+    const now = 10_000;
+    const raw = serializeCookState({
+      stepIndex: 0,
+      servings: null,
+      system: "original",
+      checked: [],
+      timers: {},
+      customTimers: [
+        customTimer({ id: "c", status: "running", remaining: 60, endsAt: now + 60_000 }),
+      ],
+    });
+    const storage = memoryStorage({ [cookStorageKey("r1")]: raw });
+    expect(hasRunningCookTimers(storage, now)).toBe(true);
+  });
+});
+

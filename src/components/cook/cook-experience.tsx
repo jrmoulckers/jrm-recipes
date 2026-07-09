@@ -20,11 +20,13 @@ import {
   ListOrdered,
   Pause,
   Play,
+  Plus,
   Repeat,
   RotateCcw,
   Square,
   Thermometer,
   Timer,
+  Trash2,
   Utensils,
   Volume2,
   VolumeX,
@@ -35,6 +37,7 @@ import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { Input } from "~/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +52,7 @@ import {
   makeTimer,
   stepShortcutForKey,
   timerStatusText,
+  type CustomTimer,
   type TimerRecord,
   type TimerStatus,
 } from "~/lib/cook-state";
@@ -68,6 +72,7 @@ import { CookAllergenBanner } from "./cook-allergen-banner";
 import { TechniqueChips } from "./technique-chips";
 import { KidSafetyCallout } from "./kid-safety-callout";
 import { PreCookChecklist } from "./pre-cook-checklist";
+import { MiseEnPlaceScreen } from "./mise-en-place-screen";
 import { CookCompletion } from "./cook-completion";
 import { CookCompletionFeedback } from "./cook-completion-feedback";
 import { KidsBadgeReward } from "./kids-badge-reward";
@@ -109,6 +114,7 @@ export function CookExperience({
     stepIndex,
     timers,
     activeTimers,
+    customTimers,
     runningTimerCount,
     servings,
     system,
@@ -119,6 +125,11 @@ export function CookExperience({
     startTimer,
     pauseTimer,
     resetTimer,
+    addCustomTimer,
+    startCustomTimer,
+    pauseCustomTimer,
+    resetCustomTimer,
+    removeCustomTimer,
     setServings,
     setSystem,
     toggleChecked,
@@ -212,6 +223,28 @@ export function CookExperience({
       /* storage unavailable — proceeding still works for this session */
     }
   }, [readyStorageKey]);
+
+  // Mise en place pre-cook screen (#402): "gather & prep everything before step
+  // one". Shown once per cook session before step 1 when the recipe actually
+  // lists ingredients, and remembered per session so it never nags on reload or
+  // step navigation. Purely additive and read-only.
+  const miseStorageKey = `heirloom-mise-ready:${recipe.id}`;
+  const [miseReady, setMiseReady] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      if (sessionStorage.getItem(miseStorageKey) === "1") setMiseReady(true);
+    } catch {
+      /* storage unavailable — the screen simply shows once this session */
+    }
+  }, [miseStorageKey]);
+  const confirmMiseReady = React.useCallback(() => {
+    setMiseReady(true);
+    try {
+      sessionStorage.setItem(miseStorageKey, "1");
+    } catch {
+      /* storage unavailable — proceeding still works for this session */
+    }
+  }, [miseStorageKey]);
 
   // "You did it!" completion moment (#437): finishing opens a celebratory screen
   // (photo capture + badges) instead of navigating away instantly. `finishAndLeave`
@@ -329,6 +362,19 @@ export function CookExperience({
         hasHazards={recipeHasHazards}
         largeTargets={largeTargets}
         onReady={confirmPrecookReady}
+      />
+    );
+  }
+
+  // Mise en place gate (#402): once the cook is "ready", show a pre-cook
+  // gather-and-prep screen before step 1 whenever the recipe lists ingredients.
+  if (recipe.ingredients.length > 0 && !miseReady) {
+    return (
+      <MiseEnPlaceScreen
+        recipe={recipe}
+        controls={ingredientControls}
+        largeTargets={largeTargets}
+        onStart={confirmMiseReady}
       />
     );
   }
@@ -556,6 +602,18 @@ export function CookExperience({
               onStart={startTimer}
             />
           )}
+
+          <CookTimersPanel
+            customTimers={customTimers}
+            currentStep={currentStep}
+            currentStepNumber={stepIndex + 1}
+            largeTargets={largeTargets}
+            onAdd={addCustomTimer}
+            onStart={startCustomTimer}
+            onPause={pauseCustomTimer}
+            onReset={resetCustomTimer}
+            onRemove={removeCustomTimer}
+          />
 
           {recipe.notes && <CookNotes notes={recipe.notes} />}
 
@@ -1442,6 +1500,239 @@ function ActiveTimersPanel({
           );
         })}
       </div>
+    </section>
+  );
+}
+
+/**
+ * Multiple labeled + ad-hoc timers (#392). Cooks can run several countdowns at
+ * once — an extra timer for the current step, or a free-standing one they name
+ * themselves — each pausable, resettable, and dismissable. Timer state lives in
+ * the cook session (localStorage), so timers keep running across step
+ * navigation and a reload. Controls upsize with the large-target flag.
+ */
+function CookTimersPanel({
+  customTimers,
+  currentStep,
+  currentStepNumber,
+  largeTargets,
+  onAdd,
+  onStart,
+  onPause,
+  onReset,
+  onRemove,
+}: {
+  customTimers: CustomTimer[];
+  currentStep: CookStep;
+  currentStepNumber: number;
+  largeTargets: boolean;
+  onAdd: (input: {
+    label: string;
+    durationSeconds: number;
+    stepPosition?: number | null;
+  }) => string | null;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+  onReset: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [label, setLabel] = React.useState("");
+  const [minutes, setMinutes] = React.useState("");
+  const [seconds, setSeconds] = React.useState("");
+
+  const parsedMinutes = Number.parseInt(minutes, 10);
+  const parsedSeconds = Number.parseInt(seconds, 10);
+  const totalSeconds =
+    (Number.isFinite(parsedMinutes) ? Math.max(0, parsedMinutes) : 0) * 60 +
+    (Number.isFinite(parsedSeconds) ? Math.max(0, parsedSeconds) : 0);
+  const canAdd = totalSeconds > 0;
+
+  const stepDefaultLabel = `Step ${currentStepNumber} timer`;
+
+  function reset() {
+    setLabel("");
+    setMinutes("");
+    setSeconds("");
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canAdd) return;
+    onAdd({
+      label: label.trim() || stepDefaultLabel,
+      durationSeconds: totalSeconds,
+      stepPosition: currentStep.position,
+    });
+    reset();
+  }
+
+  function addStepTimer() {
+    const duration =
+      currentStep.timerSeconds != null && currentStep.timerSeconds > 0
+        ? currentStep.timerSeconds
+        : 5 * 60;
+    onAdd({
+      label: stepDefaultLabel,
+      durationSeconds: duration,
+      stepPosition: currentStep.position,
+    });
+  }
+
+  return (
+    <section
+      className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token"
+      aria-labelledby="cook-timers-title"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h2
+          id="cook-timers-title"
+          className="flex items-center gap-2 font-display text-xl font-semibold"
+        >
+          <Timer className="size-5 text-primary" />
+          Timers
+        </h2>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={addStepTimer}
+        >
+          <Plus />
+          For this step
+        </Button>
+      </div>
+
+      {customTimers.length > 0 && (
+        <ul className="mt-4 flex flex-col gap-2">
+          {customTimers.map((timer) => {
+            const isRunning = timer.status === "running";
+            const isComplete = timer.status === "complete";
+            return (
+              <li
+                key={timer.id}
+                className={cn(
+                  "relative rounded-xl border border-border bg-background p-3",
+                  isComplete && "border-success/40 bg-success/10",
+                )}
+              >
+                {isComplete && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-xl opacity-0 ring-2 ring-success motion-safe:animate-timer-done-pulse"
+                  />
+                )}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{timer.label}</p>
+                    <p
+                      className={cn(
+                        "font-mono text-lg font-semibold tabular-nums",
+                        isComplete && "text-success",
+                      )}
+                    >
+                      {formatCountdown(timer.remaining)}
+                      {isComplete && (
+                        <span className="ms-2 text-sm font-sans font-normal text-success">
+                          Done
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Dismiss ${timer.label}`}
+                    onClick={() => onRemove(timer.id)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className={cn(largeTargets && "h-11 text-base")}
+                    onClick={() =>
+                      isRunning ? onPause(timer.id) : onStart(timer.id)
+                    }
+                  >
+                    {isRunning ? <Pause /> : <Play />}
+                    {isRunning ? "Pause" : isComplete ? "Restart" : "Start"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className={cn(largeTargets && "h-11 text-base")}
+                    onClick={() => onReset(timer.id)}
+                  >
+                    <RotateCcw />
+                    Reset
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2">
+        <label htmlFor="cook-timer-label" className="sr-only">
+          Timer label
+        </label>
+        <Input
+          id="cook-timer-label"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder={`Label (e.g. ${stepDefaultLabel})`}
+          className={cn(largeTargets && "h-12 text-base")}
+        />
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center gap-1">
+            <label htmlFor="cook-timer-min" className="sr-only">
+              Minutes
+            </label>
+            <Input
+              id="cook-timer-min"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={minutes}
+              onChange={(event) => setMinutes(event.target.value)}
+              placeholder="min"
+              className={cn("w-full", largeTargets && "h-12 text-base")}
+            />
+            <span aria-hidden="true" className="text-muted-foreground">
+              :
+            </span>
+            <label htmlFor="cook-timer-sec" className="sr-only">
+              Seconds
+            </label>
+            <Input
+              id="cook-timer-sec"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={59}
+              value={seconds}
+              onChange={(event) => setSeconds(event.target.value)}
+              placeholder="sec"
+              className={cn("w-full", largeTargets && "h-12 text-base")}
+            />
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={!canAdd}
+            className={cn("shrink-0", largeTargets && "h-12 text-base")}
+          >
+            <Plus />
+            Add
+          </Button>
+        </div>
+      </form>
     </section>
   );
 }

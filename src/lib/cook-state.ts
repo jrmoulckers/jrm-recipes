@@ -15,6 +15,26 @@ export type TimerRecord = {
   endsAt: number | null;
 };
 
+/**
+ * A cook-labeled countdown that is NOT bound to a single step's built-in timer
+ * (#392): either an extra timer started from a step (a second thing on the
+ * stove) or a fully ad-hoc timer the cook names themselves. Several run at once
+ * and persist with the rest of the cook session, so they survive step
+ * navigation and a reload. `stepPosition` is the 0-based step the timer was
+ * created from (handy for a "Step N" label), or null for a free-standing timer.
+ */
+export type CustomTimer = {
+  id: string;
+  label: string;
+  stepPosition: number | null;
+  duration: number;
+  /** Best-known seconds left; recomputed from `endsAt` for running timers. */
+  remaining: number;
+  status: TimerStatus;
+  /** Absolute epoch-ms the timer finishes; only set while running. */
+  endsAt: number | null;
+};
+
 export type UnitSystem = "original" | "us" | "metric" | "grams";
 
 /** The persisted shape of a single recipe's cook session. */
@@ -24,6 +44,8 @@ export type StoredCookState = {
   system: UnitSystem;
   checked: string[];
   timers: Record<string, TimerRecord>;
+  /** Extra labeled + ad-hoc timers (#392), independent of the per-step timers. */
+  customTimers: CustomTimer[];
 };
 
 const STORAGE_VERSION = 1;
@@ -44,6 +66,68 @@ export function clampStepIndex(index: number, totalSteps: number): number {
 export function makeTimer(durationSeconds: number | null | undefined): TimerRecord {
   const duration = Math.max(0, durationSeconds ?? 0);
   return { duration, remaining: duration, status: "idle", endsAt: null };
+}
+
+/**
+ * Build a custom timer (#392). Starts running immediately by default (the cook
+ * just entered a duration and expects it to count down); pass `start: false`
+ * for an idle timer. `now` is injectable so callers stay testable.
+ */
+export function makeCustomTimer(input: {
+  id: string;
+  label: string;
+  durationSeconds: number;
+  stepPosition?: number | null;
+  start?: boolean;
+  now?: number;
+}): CustomTimer {
+  const duration = Math.max(0, Math.floor(input.durationSeconds));
+  const now = input.now ?? Date.now();
+  const running = input.start !== false && duration > 0;
+  return {
+    id: input.id,
+    label: input.label,
+    stepPosition: input.stepPosition ?? null,
+    duration,
+    remaining: duration,
+    status: running ? "running" : "idle",
+    endsAt: running ? now + duration * 1000 : null,
+  };
+}
+
+/**
+ * Reconcile every custom timer against `now`, recomputing running countdowns
+ * from their absolute end time (so they survive a reload) and flipping expired
+ * ones to complete. Referential identity is preserved when nothing changed.
+ */
+export function reconcileCustomTimers(
+  timers: readonly CustomTimer[],
+  now: number,
+): CustomTimer[] {
+  let changed = false;
+  const next = timers.map((timer): CustomTimer => {
+    if (timer.status !== "running" || timer.endsAt == null) return timer;
+    const remaining = Math.max(0, Math.ceil((timer.endsAt - now) / 1000));
+    if (remaining <= 0) {
+      changed = true;
+      return { ...timer, remaining: 0, status: "complete", endsAt: null };
+    }
+    if (remaining === timer.remaining) return timer;
+    changed = true;
+    return { ...timer, remaining };
+  });
+  return changed ? next : (timers as CustomTimer[]);
+}
+
+/** Count only custom timers that are actively counting down. */
+export function countRunningCustomTimers(
+  timers: readonly CustomTimer[],
+): number {
+  let count = 0;
+  for (const timer of timers) {
+    if (timer.status === "running") count += 1;
+  }
+  return count;
 }
 
 /**
@@ -109,6 +193,9 @@ export function hasRunningCookTimers(
     const state = parseCookState(storage.getItem(key));
     if (!state) continue;
     if (countRunningTimers(reconcileTimers(state.timers, now)) > 0) return true;
+    if (countRunningCustomTimers(reconcileCustomTimers(state.customTimers, now)) > 0) {
+      return true;
+    }
   }
   return false;
 }
@@ -251,6 +338,46 @@ function parseChecked(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string");
 }
 
+function parseCustomTimer(value: unknown): CustomTimer | null {
+  if (!isRecord(value)) return null;
+
+  const { id, label, stepPosition, duration, remaining, status, endsAt } = value;
+  if (typeof id !== "string" || id.length === 0) return null;
+  if (typeof label !== "string") return null;
+  if (typeof duration !== "number" || !Number.isFinite(duration)) return null;
+  if (typeof remaining !== "number" || !Number.isFinite(remaining)) return null;
+  if (!isTimerStatus(status)) return null;
+  if (endsAt !== null && (typeof endsAt !== "number" || !Number.isFinite(endsAt))) {
+    return null;
+  }
+
+  const pos =
+    typeof stepPosition === "number" && Number.isFinite(stepPosition)
+      ? Math.max(0, Math.floor(stepPosition))
+      : null;
+
+  return {
+    id,
+    label,
+    stepPosition: pos,
+    duration: Math.max(0, duration),
+    remaining: Math.max(0, remaining),
+    status,
+    endsAt,
+  };
+}
+
+function parseCustomTimers(value: unknown): CustomTimer[] {
+  if (!Array.isArray(value)) return [];
+
+  const timers: CustomTimer[] = [];
+  for (const raw of value) {
+    const timer = parseCustomTimer(raw);
+    if (timer) timers.push(timer);
+  }
+  return timers;
+}
+
 /**
  * Parse a persisted cook session, discarding anything malformed. Returns null
  * when there is nothing usable so callers can fall back to defaults.
@@ -279,6 +406,7 @@ export function parseCookState(
   const system = isUnitSystem(data.system) ? data.system : "original";
   const checked = parseChecked(data.checked);
   const timers = parseTimers(data.timers);
+  const customTimers = parseCustomTimers(data.customTimers);
 
-  return { stepIndex, servings, system, checked, timers };
+  return { stepIndex, servings, system, checked, timers, customTimers };
 }

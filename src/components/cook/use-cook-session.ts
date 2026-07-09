@@ -7,9 +7,12 @@ import { toast } from "sonner";
 import {
   clampStepIndex,
   cookStorageKey,
+  countRunningCustomTimers,
   countRunningTimers,
+  makeCustomTimer,
   makeTimer,
   parseCookState,
+  reconcileCustomTimers,
   reconcileTimers,
   serializeCookState,
   type StoredCookState,
@@ -18,6 +21,9 @@ import {
 } from "~/lib/cook-state";
 import {
   buildCookTimerNotification,
+  COOK_NOTIFICATION_TAG_PREFIX,
+  COOK_NOTIFICATION_TYPE,
+  cookTimerNotificationUrl,
   requestTimerNotificationPermission,
   shouldSendTimerNotification,
 } from "~/lib/cook-notify";
@@ -136,7 +142,55 @@ function defaultState(
     system,
     checked: [],
     timers: {},
+    customTimers: [],
   };
+}
+
+/**
+ * Background system notification for a completed custom timer (#392). Mirrors
+ * `notifyTimerComplete` but titles the alert with the timer's own label instead
+ * of a step number. Best-effort and silent where the SW/notifications aren't
+ * available; foreground completion still gets its tone + toast.
+ */
+function notifyCustomTimerComplete(input: {
+  label: string;
+  recipeTitle: string;
+  recipeSlug: string;
+  timerId: string;
+}): void {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return;
+  const supported =
+    typeof Notification !== "undefined" && "serviceWorker" in navigator;
+  const permission =
+    typeof Notification !== "undefined" ? Notification.permission : "denied";
+  const documentHidden =
+    typeof document !== "undefined" && document.visibilityState === "hidden";
+  if (!shouldSendTimerNotification({ supported, permission, documentHidden })) {
+    return;
+  }
+
+  const url = cookTimerNotificationUrl(input.recipeSlug);
+  void navigator.serviceWorker.ready
+    .then((registration) =>
+      registration.showNotification(`${input.label} is done`, {
+        body: input.recipeTitle,
+        tag: `${COOK_NOTIFICATION_TAG_PREFIX}:${input.recipeSlug}:${input.timerId}`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        data: { url, type: COOK_NOTIFICATION_TYPE },
+      }),
+    )
+    .catch(() => {
+      // SW not ready or notifications unavailable — tone + toast already fired.
+    });
+}
+
+/** Generate a collision-resistant id for a custom timer. */
+function newCustomTimerId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `ct_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /** localStorage, or null when unavailable (SSR / private mode). */
@@ -185,9 +239,13 @@ export function useCookSession(
     const stored = parseCookState(window.localStorage.getItem(storageKey));
     if (stored) {
       const timers = reconcileTimers(stored.timers, Date.now());
+      const customTimers = reconcileCustomTimers(stored.customTimers, Date.now());
       // Don't replay tones/toasts for timers that finished while we were away.
       for (const [id, timer] of Object.entries(timers)) {
         if (timer.status === "complete") announcedTimersRef.current.add(id);
+      }
+      for (const timer of customTimers) {
+        if (timer.status === "complete") announcedTimersRef.current.add(timer.id);
       }
       setState({
         stepIndex: clampStepIndex(stored.stepIndex, totalSteps),
@@ -195,6 +253,7 @@ export function useCookSession(
         system: stored.system,
         checked: stored.checked,
         timers,
+        customTimers,
       });
     }
     setLoaded(true);
@@ -272,8 +331,11 @@ export function useCookSession(
   }, [loaded, state.stepIndex, totalSteps, recipe.id, recipe.householdId]);
 
   const hasRunningTimers = React.useMemo(
-    () => countRunningTimers(state.timers) > 0,
-    [state.timers],
+    () =>
+      countRunningTimers(state.timers) +
+        countRunningCustomTimers(state.customTimers) >
+      0,
+    [state.timers, state.customTimers],
   );
 
   // Tick running timers off their absolute end time.
@@ -282,8 +344,13 @@ export function useCookSession(
 
     const intervalId = window.setInterval(() => {
       setState((prev) => {
-        const timers = reconcileTimers(prev.timers, Date.now());
-        return timers === prev.timers ? prev : { ...prev, timers };
+        const now = Date.now();
+        const timers = reconcileTimers(prev.timers, now);
+        const customTimers = reconcileCustomTimers(prev.customTimers, now);
+        if (timers === prev.timers && customTimers === prev.customTimers) {
+          return prev;
+        }
+        return { ...prev, timers, customTimers };
       });
     }, 250);
 
@@ -313,6 +380,30 @@ export function useCookSession(
       });
     });
   }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers]);
+
+  // Announce completion once per custom timer (#392), keyed by the timer's own
+  // id and titled with its label so several finishing at once each speak for
+  // themselves.
+  React.useEffect(() => {
+    state.customTimers.forEach((timer) => {
+      if (timer.status !== "complete") return;
+      if (announcedTimersRef.current.has(timer.id)) return;
+
+      announcedTimersRef.current.add(timer.id);
+      playTimerTone();
+      vibrate(HAPTICS.timerComplete);
+      track("cook_timer_completed", { recipeId: recipe.id });
+      toast.success(`${timer.label || "Timer"} is done`, {
+        description: recipe.title,
+      });
+      notifyCustomTimerComplete({
+        label: timer.label || "Timer",
+        recipeTitle: recipe.title,
+        recipeSlug: recipe.slug,
+        timerId: timer.id,
+      });
+    });
+  }, [recipe.id, recipe.slug, recipe.title, state.customTimers]);
 
   const goToStep = React.useCallback(
     (index: number) => {
@@ -409,6 +500,104 @@ export function useCookSession(
     }));
   }, []);
 
+  const addCustomTimer = React.useCallback(
+    (input: {
+      label: string;
+      durationSeconds: number;
+      stepPosition?: number | null;
+    }): string | null => {
+      if (!Number.isFinite(input.durationSeconds) || input.durationSeconds <= 0) {
+        return null;
+      }
+
+      track("cook_timer_started", { recipeId: recipe.id });
+      // Contextual permission ask (#186): the cook just started a timer.
+      void requestTimerNotificationPermission(
+        typeof Notification !== "undefined" ? Notification : undefined,
+      );
+
+      const id = newCustomTimerId();
+      announcedTimersRef.current.delete(id);
+      const timer = makeCustomTimer({
+        id,
+        label: input.label.trim() || "Timer",
+        durationSeconds: input.durationSeconds,
+        stepPosition: input.stepPosition ?? null,
+        start: true,
+      });
+      setState((prev) => ({
+        ...prev,
+        customTimers: [...prev.customTimers, timer],
+      }));
+      return id;
+    },
+    [recipe.id],
+  );
+
+  const startCustomTimer = React.useCallback((id: string) => {
+    announcedTimersRef.current.delete(id);
+    setState((prev) => ({
+      ...prev,
+      customTimers: prev.customTimers.map((timer) => {
+        if (timer.id !== id) return timer;
+        const remaining =
+          timer.status === "complete" || timer.remaining <= 0
+            ? timer.duration
+            : timer.remaining;
+        return {
+          ...timer,
+          remaining,
+          status: "running",
+          endsAt: Date.now() + remaining * 1000,
+        };
+      }),
+    }));
+  }, []);
+
+  const pauseCustomTimer = React.useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      customTimers: prev.customTimers.map((timer) => {
+        if (timer.id !== id || timer.status !== "running") return timer;
+        const remaining = Math.max(
+          0,
+          Math.ceil(((timer.endsAt ?? Date.now()) - Date.now()) / 1000),
+        );
+        return {
+          ...timer,
+          remaining,
+          status: remaining === 0 ? "complete" : "paused",
+          endsAt: null,
+        };
+      }),
+    }));
+  }, []);
+
+  const resetCustomTimer = React.useCallback((id: string) => {
+    announcedTimersRef.current.delete(id);
+    setState((prev) => ({
+      ...prev,
+      customTimers: prev.customTimers.map((timer) =>
+        timer.id === id
+          ? {
+              ...timer,
+              remaining: timer.duration,
+              status: "idle",
+              endsAt: null,
+            }
+          : timer,
+      ),
+    }));
+  }, []);
+
+  const removeCustomTimer = React.useCallback((id: string) => {
+    announcedTimersRef.current.delete(id);
+    setState((prev) => ({
+      ...prev,
+      customTimers: prev.customTimers.filter((timer) => timer.id !== id),
+    }));
+  }, []);
+
   const setServings = React.useCallback(
     (next: number) => {
       track("cook_servings_scaled", { recipeId: recipe.id, servings: next });
@@ -459,8 +648,10 @@ export function useCookSession(
   }, [recipe.steps, state.timers]);
 
   const runningTimerCount = React.useMemo(
-    () => countRunningTimers(state.timers),
-    [state.timers],
+    () =>
+      countRunningTimers(state.timers) +
+      countRunningCustomTimers(state.customTimers),
+    [state.timers, state.customTimers],
   );
 
   const checkedSet = React.useMemo<ReadonlySet<string>>(
@@ -472,6 +663,7 @@ export function useCookSession(
     stepIndex: state.stepIndex,
     timers: state.timers,
     activeTimers,
+    customTimers: state.customTimers,
     runningTimerCount,
     servings: state.servings ?? baseServings ?? 1,
     system: state.system,
@@ -482,6 +674,11 @@ export function useCookSession(
     startTimer,
     pauseTimer,
     resetTimer,
+    addCustomTimer,
+    startCustomTimer,
+    pauseCustomTimer,
+    resetCustomTimer,
+    removeCustomTimer,
     setServings,
     setSystem,
     toggleChecked,
