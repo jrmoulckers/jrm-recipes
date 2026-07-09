@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BookHeart, ChefHat, CloudOff, Timer } from "lucide-react";
 
 import { brand } from "~/config/brand";
@@ -8,25 +9,33 @@ import { Button } from "~/components/ui/button";
 import { LogoMark } from "~/components/layout/logo";
 import { OfflineReconnect } from "~/components/pwa/offline-reconnect";
 
-export const metadata: Metadata = {
-  title: "You're offline",
-  description: `${brand.name} works offline — reconnect to sync the latest.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("pwa.offline");
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription", { brand: brand.name }),
+    // The offline fallback is a utility shell with no standalone search value —
+    // keep crawlers from indexing it (it's precached and served only offline).
+    robots: { index: false, follow: false },
+  };
+}
 
-const stillWorks = [
-  {
-    icon: Timer,
-    title: "Cook mode",
-    body: "Any recipe you've opened stays hands-free with timers and scaling.",
-  },
-  {
-    icon: BookHeart,
-    title: "Recipes you've viewed",
-    body: "Recently opened recipes are cached and ready to read.",
-  },
-];
+export default async function OfflinePage() {
+  const t = await getTranslations("pwa.offline");
 
-export default function OfflinePage() {
+  const stillWorks = [
+    {
+      icon: Timer,
+      title: t("cookModeTitle"),
+      body: t("cookModeBody"),
+    },
+    {
+      icon: BookHeart,
+      title: t("viewedTitle"),
+      body: t("viewedBody"),
+    },
+  ];
+
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
       <div
@@ -44,19 +53,16 @@ export default function OfflinePage() {
 
         <div className="flex flex-col gap-2">
           <h1 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            You&rsquo;re offline
+            {t("heading")}
           </h1>
-          <p className="text-pretty text-muted-foreground">
-            No internet right now — but the kitchen never closes. Reconnect to
-            browse, save and sync your family&rsquo;s recipes again.
-          </p>
+          <p className="text-pretty text-muted-foreground">{t("body")}</p>
         </div>
 
         <OfflineReconnect />
 
         <div className="mt-4 w-full rounded-2xl border border-border bg-surface/60 p-4 text-start">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Still works without a connection
+            {t("stillWorksTitle")}
           </p>
           <ul className="flex flex-col gap-3">
             {stillWorks.map((item) => (
@@ -78,7 +84,7 @@ export default function OfflinePage() {
         <Button asChild variant="ghost" size="sm">
           <Link href="/">
             <ChefHat className="size-4" />
-            Go to {brand.name} home
+            {t("home", { brand: brand.name })}
           </Link>
         </Button>
       </div>

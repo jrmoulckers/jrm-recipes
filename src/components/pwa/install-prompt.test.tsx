@@ -2,13 +2,22 @@ import {
   act,
   cleanup,
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { IntlWrapper } from "~/test/intl";
 import { InstallPrompt, shouldShowIosInstallTip } from "./install-prompt";
+
+/**
+ * Render inside the i18n provider so the component's `useTranslations` resolves
+ * against the real English catalog — the copy is unchanged, so every assertion
+ * below still matches.
+ */
+const render = (ui: Parameters<typeof rtlRender>[0]) =>
+  rtlRender(ui, { wrapper: IntlWrapper });
 
 const IPHONE_SAFARI =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";

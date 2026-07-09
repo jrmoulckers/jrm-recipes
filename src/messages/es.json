@@ -68,6 +68,66 @@
       }
     }
   },
+  "pwa": {
+    "offline": {
+      "metaTitle": "Estás sin conexión",
+      "metaDescription": "{brand} funciona sin conexión: vuelve a conectarte para sincronizar lo último.",
+      "heading": "Estás sin conexión",
+      "body": "Ahora no hay internet, pero la cocina nunca cierra. Vuelve a conectarte para explorar, guardar y sincronizar las recetas de tu familia.",
+      "stillWorksTitle": "Sigue funcionando sin conexión",
+      "cookModeTitle": "Modo cocina",
+      "cookModeBody": "Cualquier receta que hayas abierto sigue disponible sin manos, con temporizadores y ajuste de raciones.",
+      "viewedTitle": "Recetas que has visto",
+      "viewedBody": "Las recetas abiertas recientemente están en caché y listas para leer.",
+      "home": "Ir al inicio de {brand}"
+    },
+    "reconnect": {
+      "online": "De nuevo en línea: recargando…",
+      "offline": "Sin conexión",
+      "retry": "Reintentar",
+      "retrying": "Reconectando…"
+    },
+    "install": {
+      "title": "Instalar {brand}",
+      "body": "Añádela a tu pantalla de inicio para el modo cocina con un toque.",
+      "iosTip": "Toca <share></share> y luego «Añadir a pantalla de inicio».",
+      "iosShareLabel": "Compartir",
+      "action": "Instalar",
+      "dismiss": "Descartar el aviso de instalación"
+    },
+    "installButton": {
+      "label": "Instalar app",
+      "dialogTitle": "Instalar {brand}",
+      "dialogDescription": "Añade {brand} a tu pantalla de inicio para el modo cocina con un toque.",
+      "iosSteps": "Toca <share></share> en la barra de Safari y luego elige <b>Añadir a pantalla de inicio</b>.",
+      "iosShareLabel": "el botón Compartir"
+    },
+    "update": {
+      "title": "Actualización disponible",
+      "body": "Hay una nueva versión de {brand} lista.",
+      "action": "Recargar",
+      "dismiss": "Descartar el aviso de actualización"
+    },
+    "connectivity": {
+      "offline": "Estás sin conexión: las recetas que has abierto siguen funcionando. Sincronizaremos los cambios cuando vuelvas.",
+      "online": "De nuevo en línea: sincronizando lo último."
+    },
+    "storage": {
+      "trigger": "Almacenamiento sin conexión",
+      "title": "Almacenamiento sin conexión",
+      "description": "{brand} guarda recetas y fotos en este dispositivo para que funcionen sin conexión. Bórralas cuando quieras para liberar espacio.",
+      "used": "Usado en este dispositivo",
+      "usedLabel": "Almacenamiento sin conexión usado",
+      "unavailable": "El uso de almacenamiento no está disponible en este dispositivo, pero aún puedes borrar las recetas y fotos en caché abajo.",
+      "clear": "Borrar recetas e imágenes en caché",
+      "clearing": "Borrando…",
+      "cleared": "Caché sin conexión borrada. Las recetas se reconstruyen a medida que navegas."
+    },
+    "manifest": {
+      "screenshotWide": "Explora el recetario de tu familia",
+      "screenshotNarrow": "Modo cocina sin manos con temporizadores"
+    }
+  },
   "accessibilityMenu": {
     "trigger": "Ajustes de accesibilidad y comodidad",
     "textSizeGroup": "Tamaño del texto",

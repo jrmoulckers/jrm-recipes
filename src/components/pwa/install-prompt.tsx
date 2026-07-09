@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Download, Share, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -89,6 +90,7 @@ export function shouldShowIosInstallTip(
  * (WCAG 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 4.1.2).
  */
 export function InstallPrompt() {
+  const t = useTranslations("pwa.install");
   const promptRef = React.useRef<BeforeInstallPromptEvent | null>(null);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [variant, setVariant] = React.useState<"prompt" | "ios" | null>(null);
@@ -233,41 +235,45 @@ export function InstallPrompt() {
         </span>
         <div className="min-w-0 flex-1">
           <p id={labelId} className="text-sm font-semibold leading-tight">
-            Install {brand.name}
+            {t("title", { brand: brand.name })}
           </p>
           {isIos ? (
             <p
               id={descriptionId}
               className="text-xs leading-snug text-muted-foreground"
             >
-              Tap{" "}
-              <Share
-                className="inline-block size-3.5 -translate-y-px"
-                aria-hidden
-              />
-              <span className="sr-only">Share</span> then &ldquo;Add to Home
-              Screen&rdquo;.
+              {t.rich("iosTip", {
+                share: () => (
+                  <>
+                    <Share
+                      className="inline-block size-3.5 -translate-y-px"
+                      aria-hidden
+                    />
+                    <span className="sr-only">{t("iosShareLabel")}</span>
+                  </>
+                ),
+              })}
             </p>
           ) : (
             <p
               id={descriptionId}
               className="truncate text-xs text-muted-foreground"
             >
-              Add to your home screen for one-tap cook mode.
+              {t("body")}
             </p>
           )}
         </div>
         {!isIos && (
           <Button size="sm" onClick={install} className="shrink-0">
             <Download className="size-4" />
-            Install
+            {t("action")}
           </Button>
         )}
         <Button
           size="icon"
           variant="ghost"
           onClick={dismiss}
-          aria-label="Dismiss install prompt"
+          aria-label={t("dismiss")}
           className="size-9 shrink-0"
         >
           <X className="size-4" />

@@ -68,6 +68,66 @@
       }
     }
   },
+  "pwa": {
+    "offline": {
+      "metaTitle": "You're offline",
+      "metaDescription": "{brand} works offline — reconnect to sync the latest.",
+      "heading": "You're offline",
+      "body": "No internet right now — but the kitchen never closes. Reconnect to browse, save and sync your family's recipes again.",
+      "stillWorksTitle": "Still works without a connection",
+      "cookModeTitle": "Cook mode",
+      "cookModeBody": "Any recipe you've opened stays hands-free with timers and scaling.",
+      "viewedTitle": "Recipes you've viewed",
+      "viewedBody": "Recently opened recipes are cached and ready to read.",
+      "home": "Go to {brand} home"
+    },
+    "reconnect": {
+      "online": "Back online — reloading…",
+      "offline": "No connection",
+      "retry": "Try again",
+      "retrying": "Reconnecting…"
+    },
+    "install": {
+      "title": "Install {brand}",
+      "body": "Add to your home screen for one-tap cook mode.",
+      "iosTip": "Tap <share></share> then “Add to Home Screen”.",
+      "iosShareLabel": "Share",
+      "action": "Install",
+      "dismiss": "Dismiss install prompt"
+    },
+    "installButton": {
+      "label": "Install app",
+      "dialogTitle": "Install {brand}",
+      "dialogDescription": "Add {brand} to your home screen for one-tap cook mode.",
+      "iosSteps": "Tap <share></share> in Safari's toolbar, then choose <b>Add to Home Screen</b>.",
+      "iosShareLabel": "the Share button"
+    },
+    "update": {
+      "title": "Update available",
+      "body": "A new version of {brand} is ready.",
+      "action": "Reload",
+      "dismiss": "Dismiss update notification"
+    },
+    "connectivity": {
+      "offline": "You're offline — recipes you've opened still work. We'll sync changes when you're back.",
+      "online": "Back online — syncing your latest."
+    },
+    "storage": {
+      "trigger": "Offline storage",
+      "title": "Offline storage",
+      "description": "{brand} keeps recipes and photos on this device so they work without a connection. Clear them anytime to free up space.",
+      "used": "Used on this device",
+      "usedLabel": "Offline storage used",
+      "unavailable": "Storage usage isn't available on this device, but you can still clear cached recipes and photos below.",
+      "clear": "Clear cached recipes & images",
+      "clearing": "Clearing…",
+      "cleared": "Offline cache cleared. Recipes rebuild as you browse."
+    },
+    "manifest": {
+      "screenshotWide": "Browse your family cookbook",
+      "screenshotNarrow": "Hands-free Cook Mode with step timers"
+    }
+  },
   "accessibilityMenu": {
     "trigger": "Accessibility & comfort settings",
     "textSizeGroup": "Text size",

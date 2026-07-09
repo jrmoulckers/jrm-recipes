@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Check, Database, HardDrive, Trash2 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -45,6 +46,7 @@ function cacheStorage(): CacheStorage | undefined {
  * browses again.
  */
 export function OfflineStorageMenu() {
+  const t = useTranslations("pwa.storage");
   const [open, setOpen] = React.useState(false);
   const [estimate, setEstimate] = React.useState<StorageEstimateResult | null>(
     null,
@@ -81,7 +83,7 @@ export function OfflineStorageMenu() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Offline storage">
+        <Button variant="outline" size="icon" aria-label={t("trigger")}>
           <HardDrive className="size-5" />
         </Button>
       </DialogTrigger>
@@ -90,11 +92,10 @@ export function OfflineStorageMenu() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="size-5 text-primary" />
-            Offline storage
+            {t("title")}
           </DialogTitle>
           <DialogDescription>
-            {brand.name} keeps recipes and photos on this device so they work
-            without a connection. Clear them anytime to free up space.
+            {t("description", { brand: brand.name })}
           </DialogDescription>
         </DialogHeader>
 
@@ -103,7 +104,7 @@ export function OfflineStorageMenu() {
             {supported && estimate ? (
               <>
                 <div className="flex items-baseline justify-between text-sm">
-                  <span className="font-medium">Used on this device</span>
+                  <span className="font-medium">{t("used")}</span>
                   <span className="tabular-nums text-muted-foreground">
                     {formatBytes(estimate.usage)}
                     {estimate.quota > 0 && (
@@ -119,7 +120,7 @@ export function OfflineStorageMenu() {
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={percent}
-                  aria-label="Offline storage used"
+                  aria-label={t("usedLabel")}
                   className="h-2 overflow-hidden rounded-full bg-muted"
                 >
                   <div
@@ -130,8 +131,7 @@ export function OfflineStorageMenu() {
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Storage usage isn&rsquo;t available on this device, but you can
-                still clear cached recipes and photos below.
+                {t("unavailable")}
               </p>
             )}
           </section>
@@ -144,7 +144,7 @@ export function OfflineStorageMenu() {
               className="justify-center"
             >
               <Trash2 className={cn("size-4", clearing && "animate-pulse")} />
-              {clearing ? "Clearing…" : "Clear cached recipes & images"}
+              {clearing ? t("clearing") : t("clear")}
             </Button>
             {cleared && (
               <p
@@ -153,7 +153,7 @@ export function OfflineStorageMenu() {
                 className="inline-flex items-center gap-1.5 text-sm text-success"
               >
                 <Check className="size-4" />
-                Offline cache cleared. Recipes rebuild as you browse.
+                {t("cleared")}
               </p>
             )}
           </div>

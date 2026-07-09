@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { RefreshCw, X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -28,6 +29,7 @@ const COOK_RECHECK_INTERVAL_MS = 10_000;
  * app chrome only — never in immersive cook/print views.
  */
 export function UpdatePrompt() {
+  const t = useTranslations("pwa.update");
   const [waitingWorker, setWaitingWorker] =
     React.useState<ServiceWorker | null>(null);
   const [blockedByCook, setBlockedByCook] = React.useState(false);
@@ -182,22 +184,20 @@ export function UpdatePrompt() {
           <RefreshCw className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight">
-            Update available
-          </p>
+          <p className="text-sm font-semibold leading-tight">{t("title")}</p>
           <p className="truncate text-xs text-muted-foreground">
-            A new version of {brand.name} is ready.
+            {t("body", { brand: brand.name })}
           </p>
         </div>
         <Button size="sm" onClick={reload} className="shrink-0">
           <RefreshCw className="size-4" />
-          Reload
+          {t("action")}
         </Button>
         <Button
           size="icon"
           variant="ghost"
           onClick={dismiss}
-          aria-label="Dismiss update notification"
+          aria-label={t("dismiss")}
           className="size-9 shrink-0"
         >
           <X className="size-4" />

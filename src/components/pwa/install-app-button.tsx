@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Download, Share } from "lucide-react";
 
 import { brand } from "~/config/brand";
@@ -45,6 +46,7 @@ function computeStandalone(): boolean {
  * installed / running standalone.
  */
 export function InstallAppButton() {
+  const t = useTranslations("pwa.installButton");
   const [deferredPrompt, setDeferredPrompt] =
     React.useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = React.useState(false);
@@ -106,30 +108,33 @@ export function InstallAppButton() {
       <Dialog>
         <DialogTrigger className={TRIGGER_CLASS}>
           <Download className="size-4" aria-hidden />
-          Install app
+          {t("label")}
         </DialogTrigger>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="size-5 text-primary" />
-              Install {brand.name}
+              {t("dialogTitle", { brand: brand.name })}
             </DialogTitle>
             <DialogDescription>
-              Add {brand.name} to your home screen for one-tap cook mode.
+              {t("dialogDescription", { brand: brand.name })}
             </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Tap{" "}
-            <Share
-              className="inline-block size-4 -translate-y-px"
-              aria-hidden
-            />
-            <span className="sr-only">the Share button</span> in Safari&rsquo;s
-            toolbar, then choose{" "}
-            <span className="font-medium text-foreground">
-              Add to Home Screen
-            </span>
-            .
+            {t.rich("iosSteps", {
+              share: () => (
+                <>
+                  <Share
+                    className="inline-block size-4 -translate-y-px"
+                    aria-hidden
+                  />
+                  <span className="sr-only">{t("iosShareLabel")}</span>
+                </>
+              ),
+              b: (chunks) => (
+                <span className="font-medium text-foreground">{chunks}</span>
+              ),
+            })}
           </p>
         </DialogContent>
       </Dialog>
@@ -139,7 +144,7 @@ export function InstallAppButton() {
   return (
     <button type="button" onClick={install} className={TRIGGER_CLASS}>
       <Download className="size-4" aria-hidden />
-      Install app
+      {t("label")}
     </button>
   );
 }

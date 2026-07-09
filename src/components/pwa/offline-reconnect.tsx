@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -41,6 +42,7 @@ export function scheduleReconnect(
  * worker serves when a navigation fails with no cached copy.
  */
 export function OfflineReconnect() {
+  const t = useTranslations("pwa.reconnect");
   const [online, setOnline] = React.useState(true);
   const [retrying, setRetrying] = React.useState(false);
 
@@ -105,19 +107,19 @@ export function OfflineReconnect() {
         {online ? (
           <>
             <Wifi className="size-4" />
-            Back online — reloading…
+            {t("online")}
           </>
         ) : (
           <>
             <WifiOff className="size-4" />
-            No connection
+            {t("offline")}
           </>
         )}
       </span>
 
       <Button size="lg" onClick={retry} disabled={retrying}>
         <RefreshCw className={cn("size-4", retrying && "animate-spin")} />
-        {retrying ? "Reconnecting…" : "Try again"}
+        {retrying ? t("retrying") : t("retry")}
       </Button>
     </div>
   );
