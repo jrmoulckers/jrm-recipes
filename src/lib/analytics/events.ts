@@ -111,6 +111,9 @@ export interface EventProperties {
   // Shareable invite links (#343): a manager minted a link; joins reuse
   // `invite_accepted`. Role is the (non-privileged) role the link grants.
   invite_link_created: { groupId: string; role: InviteRole };
+  // Invite-link revocation (#366): a manager killed a shareable link so it can
+  // no longer be redeemed. Keyed by group slug (the action's revoke handle).
+  invite_link_revoked: { slug: string };
   member_role_changed: { groupId: string; role: InviteRole };
   group_left: { groupId: string };
   group_deleted: { groupId: string };

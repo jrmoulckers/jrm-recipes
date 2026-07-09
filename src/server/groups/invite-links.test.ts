@@ -19,7 +19,7 @@ import {
   type MemberRole,
   type User,
 } from "~/server/db/schema";
-import { acceptInviteLink, createInviteLink } from "./mutations";
+import { acceptInviteLink, createInviteLink, revokeInviteLink } from "./mutations";
 
 type Membership = {
   id: string;
@@ -325,6 +325,58 @@ describe("acceptInviteLink (issue #343)", () => {
     const tx = fakeTx({ link: null });
     runWith(tx);
     await expect(acceptInviteLink("nope", joiner)).rejects.toThrow("NOT_FOUND");
+  });
+});
+
+describe("revokeInviteLink (issue #366)", () => {
+  const activeLink = {
+    id: "link_1",
+    groupId: "group_1",
+    token: "tok_link",
+    revokedAt: null,
+  };
+
+  it("a manager revokes an active link by setting revokedAt", async () => {
+    const tx = fakeTx({ memberships: [ownerMember()], link: activeLink });
+    runWith(tx);
+
+    const result = await revokeInviteLink("family", owner, "tok_link");
+
+    expect(result).toEqual({ id: "link_1", slug: "family" });
+    expect(tx.update).toHaveBeenCalledWith(groupInviteLinks);
+    const patch = tx.chain.set.mock.calls[0]![0] as { revokedAt: Date };
+    expect(patch.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it("is idempotent for an already-revoked link (no second write)", async () => {
+    const tx = fakeTx({
+      memberships: [ownerMember()],
+      link: { ...activeLink, revokedAt: past() },
+    });
+    runWith(tx);
+
+    const result = await revokeInviteLink("family", owner, "tok_link");
+
+    expect(result).toEqual({ id: "link_1", slug: "family" });
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-manager with FORBIDDEN", async () => {
+    const tx = fakeTx({ memberships: [], link: activeLink });
+    runWith(tx);
+    await expect(
+      revokeInviteLink("family", stranger, "tok_link"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown token with NOT_FOUND", async () => {
+    const tx = fakeTx({ memberships: [ownerMember()], link: null });
+    runWith(tx);
+    await expect(revokeInviteLink("family", owner, "nope")).rejects.toThrow(
+      "NOT_FOUND",
+    );
+    expect(tx.update).not.toHaveBeenCalled();
   });
 });
 

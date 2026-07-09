@@ -23,6 +23,7 @@ import {
   deleteGroup,
   leaveGroup,
   removeMember,
+  revokeInviteLink,
   transferOwnership,
   updateGroup,
   updateMemberRole,
@@ -292,6 +293,31 @@ export async function acceptInviteLinkAction(
       });
     }
     return { ok: true, slug: result.slug, alreadyMember: result.alreadyMember };
+  } catch (error) {
+    return groupError(error);
+  }
+}
+
+/**
+ * Revoke a shareable invite link by token (issue #366). Manager-only (enforced
+ * in the mutation). Revalidates the group so any settings view reflects the
+ * killed link immediately. Emits a non-PII `invite_link_revoked` event.
+ */
+export async function revokeInviteLinkAction(
+  slug: string,
+  token: string,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = z.string().trim().min(1).safeParse(token);
+  if (!parsed.success) return { ok: false, error: "That invite link is invalid." };
+
+  const user = await requireUser();
+  try {
+    const result = await revokeInviteLink(slug, user, parsed.data);
+    revalidateGroup(result.slug);
+    void captureServer(user.id, "invite_link_revoked", { slug: result.slug });
+    return { ok: true, slug: result.slug };
   } catch (error) {
     return groupError(error);
   }

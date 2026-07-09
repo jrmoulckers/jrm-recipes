@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Check, Copy, Link2, RefreshCw } from "lucide-react";
+import { Check, Copy, Link2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 
-import { createInviteLinkAction } from "~/server/groups/actions";
+import { createInviteLinkAction, revokeInviteLinkAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -42,8 +42,10 @@ export function InviteLinkManager({ slug }: { slug: string }) {
   const [role, setRole] = React.useState<LinkRole>("member");
   const [expiry, setExpiry] = React.useState<string>("never");
   const [url, setUrl] = React.useState<string | null>(null);
+  const [token, setToken] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
+  const [isRevoking, startRevoke] = React.useTransition();
 
   function generate() {
     startTransition(() => {
@@ -55,10 +57,27 @@ export function InviteLinkManager({ slug }: { slug: string }) {
             return;
           }
           setUrl(result.url);
+          setToken(result.token);
           setCopied(false);
           toast.success("Invite link ready to share");
         },
       );
+    });
+  }
+
+  function revoke() {
+    if (!token) return;
+    startRevoke(() => {
+      void revokeInviteLinkAction(slug, token).then((result) => {
+        if (!result.ok) {
+          toast.error(friendlyError(result.error));
+          return;
+        }
+        setUrl(null);
+        setToken(null);
+        setCopied(false);
+        toast.success("Invite link revoked");
+      });
     });
   }
 
@@ -149,6 +168,17 @@ export function InviteLinkManager({ slug }: { slug: string }) {
                 {copied ? <Check /> : <Copy />}
               </Button>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={revoke}
+              disabled={isRevoking}
+            >
+              <Trash2 />
+              {isRevoking ? "Revoking…" : "Revoke this link"}
+            </Button>
           </div>
         ) : null}
 

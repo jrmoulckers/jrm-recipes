@@ -101,6 +101,7 @@ Current call sites are in the paths named in the "When it fires" column.
 | `invite_sent` | `groupId: string`; `role: InviteRole`; `sizeBucket: GroupSizeBucket` | When `addMemberAction` adds an existing user to a group in `src/server/groups/actions.ts`. |
 | `invite_accepted` | `groupId: string`; `role: string` | When a directly added member is activated, or when a new member accepts an invite link, in `src/server/groups/actions.ts`. |
 | `invite_link_created` | `groupId: string`; `role: InviteRole` | When a manager creates a shareable invite link in `src/server/groups/actions.ts`. |
+| `invite_link_revoked` | `slug: string` | When a manager revokes a shareable invite link in `src/server/groups/actions.ts`. |
 | `member_role_changed` | `groupId: string`; `role: InviteRole` | After `updateMemberRoleAction` changes a member role in `src/server/groups/actions.ts`. |
 | `group_left` | `groupId: string` | After `leaveGroupAction` removes the current user from a group in `src/server/groups/actions.ts`. |
 | `group_deleted` | `groupId: string` | After `deleteGroupAction` deletes a group in `src/server/groups/actions.ts`. |
