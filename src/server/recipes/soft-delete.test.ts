@@ -16,7 +16,7 @@ const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     query: {
       recipes: { findMany: vi.fn(), findFirst: vi.fn() },
-      groupMembers: { findMany: vi.fn() },
+      groupMembers: { findMany: vi.fn(), findFirst: vi.fn() },
     },
     update: vi.fn(),
   },
@@ -59,6 +59,7 @@ beforeEach(() => {
   dbMock.query.recipes.findMany.mockResolvedValue([]);
   dbMock.query.recipes.findFirst.mockResolvedValue(undefined);
   dbMock.query.groupMembers.findMany.mockResolvedValue([]);
+  dbMock.query.groupMembers.findFirst.mockResolvedValue(undefined);
 });
 
 // Issue #165 — every recipe read path must exclude soft-deleted (tombstoned)
@@ -137,5 +138,34 @@ describe("deleteRecipe / restoreRecipe (issue #165)", () => {
   it("restoreRecipe throws NOT_FOUND when nothing was restored", async () => {
     stubUpdate([]);
     await expect(restoreRecipe("missing", author)).rejects.toThrow("NOT_FOUND");
+  });
+});
+
+// Issue #367 — a kid-role member of the recipe's group can never delete a
+// recipe, even one they authored. Enforced server-side before the tombstone.
+describe("deleteRecipe kid-safe guard (issue #367)", () => {
+  function stubUpdate(rows: unknown[]) {
+    const set = vi.fn((_values: unknown) => ({
+      where: vi.fn(() => ({ returning: vi.fn(() => Promise.resolve(rows)) })),
+    }));
+    dbMock.update.mockReturnValue({ set });
+    return set;
+  }
+
+  it("rejects a kid deleting a group recipe with FORBIDDEN (no tombstone)", async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValue({ groupId: "group_1" });
+    dbMock.query.groupMembers.findFirst.mockResolvedValue({ role: "kid" });
+    const set = stubUpdate([{ id: "r1" }]);
+
+    await expect(deleteRecipe("r1", author)).rejects.toThrow("FORBIDDEN");
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it("lets a non-kid member delete a group recipe", async () => {
+    dbMock.query.recipes.findFirst.mockResolvedValue({ groupId: "group_1" });
+    dbMock.query.groupMembers.findFirst.mockResolvedValue({ role: "member" });
+    stubUpdate([{ id: "r1" }]);
+
+    await expect(deleteRecipe("r1", author)).resolves.toEqual({ id: "r1" });
   });
 });

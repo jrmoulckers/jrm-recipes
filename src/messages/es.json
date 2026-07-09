@@ -123,6 +123,9 @@
     "notes": "Notas",
     "source": "Fuente:",
     "similar": "También te puede gustar",
+    "kidSafe": {
+      "deleteHidden": "Pídele a un adulto que elimine esta receta."
+    },
     "visibility": {
       "private": "Privada",
       "unlisted": "No listada",

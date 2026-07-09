@@ -123,6 +123,9 @@
     "notes": "ملاحظات",
     "source": "المصدر:",
     "similar": "قد يعجبك أيضًا",
+    "kidSafe": {
+      "deleteHidden": "اطلب من شخص بالغ حذف هذه الوصفة."
+    },
     "visibility": {
       "private": "خاصة",
       "unlisted": "غير مُدرَجة",

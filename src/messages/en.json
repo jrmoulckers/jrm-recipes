@@ -123,6 +123,9 @@
     "notes": "Notes",
     "source": "Source:",
     "similar": "You might also like",
+    "kidSafe": {
+      "deleteHidden": "Ask a grown-up to delete this recipe."
+    },
     "visibility": {
       "private": "Private",
       "unlisted": "Unlisted",
