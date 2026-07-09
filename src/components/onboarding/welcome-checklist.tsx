@@ -58,7 +58,7 @@ export function WelcomeChecklist() {
         variant="ghost"
         onClick={dismiss}
         aria-label="Dismiss welcome"
-        className="absolute right-3 top-3 size-9 text-muted-foreground"
+        className="absolute end-3 top-3 size-9 text-muted-foreground"
       >
         <X className="size-4" />
       </Button>

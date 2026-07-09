@@ -184,7 +184,7 @@ export default async function PlanPage({
               aria-label="Previous week"
             >
               <Link href={`/plan?week=${previousWeekParam(focusDate, locale)}`}>
-                <ChevronLeft />
+                <ChevronLeft className="rtl:-scale-x-100" />
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -192,7 +192,7 @@ export default async function PlanPage({
             </Button>
             <Button asChild variant="outline" size="icon" aria-label="Next week">
               <Link href={`/plan?week=${nextWeekParam(focusDate, locale)}`}>
-                <ChevronRight />
+                <ChevronRight className="rtl:-scale-x-100" />
               </Link>
             </Button>
           </nav>

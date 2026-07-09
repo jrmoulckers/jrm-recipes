@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Check, Languages } from "lucide-react";
 
@@ -35,6 +35,7 @@ import {
  * checked on first paint.
  */
 export function LocaleSwitcher() {
+  const t = useTranslations("localeSwitcher");
   const activeLocale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
@@ -53,18 +54,18 @@ export function LocaleSwitcher() {
         <Button
           variant="outline"
           size="icon"
-          aria-label="Change language"
+          aria-label={t("trigger")}
           disabled={isPending}
         >
           <Languages className="size-5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Language</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("label")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={activeLocale}
           onValueChange={(value) => selectLocale(value as Locale)}
-          aria-label="Language"
+          aria-label={t("label")}
           className="grid gap-1 p-1"
         >
           {SUPPORTED_LOCALES.map((locale) => {

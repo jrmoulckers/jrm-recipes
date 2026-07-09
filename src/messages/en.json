@@ -81,6 +81,10 @@
       "reset": "Use each recipe's servings"
     }
   },
+  "localeSwitcher": {
+    "trigger": "Change language",
+    "label": "Language"
+  },
   "saveToCollection": {
     "list": "Your collections",
     "add": "Add to collection {name}",

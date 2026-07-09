@@ -81,6 +81,10 @@
       "reset": "Usar las porciones de cada receta"
     }
   },
+  "localeSwitcher": {
+    "trigger": "Cambiar idioma",
+    "label": "Idioma"
+  },
   "saveToCollection": {
     "list": "Tus colecciones",
     "add": "Añadir a la colección {name}",
