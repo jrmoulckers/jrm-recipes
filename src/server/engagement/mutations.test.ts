@@ -36,6 +36,8 @@ const recipeRow = {
 /** Build a fake transaction whose recipe/comment lookups return canned rows. */
 function fakeTx(overrides: {
   recipe?: unknown;
+  /** Full recipe (with ingredients/steps/tags) returned to the #63 snapshot. */
+  fullRecipe?: unknown;
   comment?: unknown;
   /** The caller's existing rating row, if any (drives aggregate deltas). */
   existingRating?: { value: number } | null;
@@ -49,12 +51,16 @@ function fakeTx(overrides: {
     where: vi.fn(() => chain),
     returning: vi.fn(async () => [{ id: "row_1" }]),
   };
-  return {
+  const tx: Record<string, unknown> = {
     chain,
     query: {
       recipes: {
         findFirst: vi.fn(async () =>
-          "recipe" in overrides ? overrides.recipe : recipeRow,
+          "fullRecipe" in overrides
+            ? overrides.fullRecipe
+            : "recipe" in overrides
+              ? overrides.recipe
+              : recipeRow,
         ),
       },
       ratings: {
@@ -71,7 +77,15 @@ function fakeTx(overrides: {
     insert: vi.fn(() => chain),
     update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
+    // journal() (recipes/mutations) allocates the version number in a SAVEPOINT
+    // (tx.transaction) after reading max+1 via select(); model both here so the
+    // #63 snapshot path can run against the fake tx.
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({ where: vi.fn(async () => [{ next: 1 }]) })),
+    })),
   };
+  tx.transaction = vi.fn((cb: (t: unknown) => unknown) => cb(tx));
+  return tx;
 }
 
 /** Render a Drizzle SQL fragment's bound params (no DB needed). */
@@ -386,6 +400,58 @@ const suggestionRow = {
 
 const applyArgs = { recipeId: "recipe_1", suggestionId: "sugg_1" };
 
+/**
+ * The recipe's full current state (ingredients/steps/tags + meta) as the #63
+ * snapshot query loads it — structurally an AdaptationSource, so `recipeToInput`
+ * can clone it into the version snapshot.
+ */
+const fullRecipeRow = {
+  id: "recipe_1",
+  title: "Sunday Sauce",
+  description: null,
+  coverImageUrl: null,
+  servings: 6,
+  servingsNoun: null,
+  prepMinutes: null,
+  cookMinutes: null,
+  totalMinutes: null,
+  restMinutes: null,
+  makeAheadNote: null,
+  equipment: null,
+  difficulty: null,
+  cuisine: null,
+  sourceName: null,
+  sourceUrl: null,
+  notes: "Simmer low.",
+  dietaryFlags: null,
+  ingredients: [
+    {
+      section: null,
+      quantity: 2,
+      quantityMax: null,
+      unit: "clove",
+      item: "garlic",
+      note: null,
+      prep: null,
+      stepPosition: null,
+      optional: false,
+    },
+  ],
+  steps: [
+    {
+      section: null,
+      instruction: "Simmer low and slow.",
+      imageUrl: null,
+      videoUrl: null,
+      timerSeconds: null,
+      targetTempC: null,
+      doneness: null,
+      techniques: null,
+    },
+  ],
+  tags: [{ tag: { name: "Italian" } }],
+};
+
 /** Read the argument object of the first chain call whose payload has `key`. */
 function payloadWith(
   calls: unknown[][],
@@ -402,7 +468,7 @@ function payloadWith(
 
 describe("applySuggestion folds a suggestion into the recipe (owner-only)", () => {
   it("merges the suggestion into notes, marks it applied, and records the milestone", async () => {
-    const tx = fakeTx({ comment: suggestionRow });
+    const tx = fakeTx({ comment: suggestionRow, fullRecipe: fullRecipeRow });
     runWith(tx);
     mockCanView.mockResolvedValue(true);
 
@@ -430,6 +496,31 @@ describe("applySuggestion folds a suggestion into the recipe (owner-only)", () =
       type: "suggestion_applied",
       note: "Add a bay leaf",
     });
+  });
+
+  it("snapshots the recipe into version history so the applied note is revertible (#63)", async () => {
+    const tx = fakeTx({ comment: suggestionRow, fullRecipe: fullRecipeRow });
+    runWith(tx);
+    mockCanView.mockResolvedValue(true);
+
+    await applySuggestion(applyArgs, ownerUser);
+
+    const chain = (tx as { chain: { values: ReturnType<typeof vi.fn> } }).chain;
+
+    // A recipe_versions row is written, labeled and authored by the applying
+    // owner, so the merged note becomes the latest saved version.
+    const version = payloadWith(chain.values.mock.calls, "snapshot");
+    expect(version).toMatchObject({
+      recipeId: "recipe_1",
+      authorId: "owner_9",
+      label: "Suggestion applied",
+    });
+
+    // The snapshot carries the merged note — the whole point: reverting to the
+    // latest version now restores (not drops) the applied suggestion.
+    expect((version!.snapshot as { notes?: string }).notes).toBe(
+      "Simmer low.\n\nAdd a bay leaf — suggested by Cousin Rae",
+    );
   });
 
   it("rejects a non-owner even when they can view the recipe (FORBIDDEN)", async () => {

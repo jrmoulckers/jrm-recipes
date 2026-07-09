@@ -320,7 +320,7 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
  * the now-committed sibling — yielding sequential, gap-tolerant version numbers
  * without locking the whole table.
  */
-async function journal(
+export async function journal(
   tx: Tx,
   recipeId: string,
   authorId: string,

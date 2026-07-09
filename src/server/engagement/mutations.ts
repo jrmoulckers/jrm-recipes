@@ -11,6 +11,8 @@ import {
   groupMembers,
   ratings,
   recipeEvents,
+  recipeIngredients,
+  recipeSteps,
   recipes,
   type Comment,
   type Rating,
@@ -21,6 +23,8 @@ import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
 import { loadMentionCandidates } from "./mention-targets";
 import { notify } from "~/server/notifications/notify";
 import { resolveMentions } from "~/lib/mentions";
+import { journal } from "~/server/recipes/mutations";
+import { recipeToInput } from "~/server/recipes/timeline";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -229,7 +233,9 @@ export async function resolveComment(
  * credited to the contributor — rather than forking a new recipe. A
  * `suggestion_applied` timeline event attributes the contributor so the applied
  * tweak shows in the family history, and the suggestion is marked applied (and
- * resolved) so it isn't offered again.
+ * resolved) so it isn't offered again. Because the merge mutates the recipe, we
+ * also snapshot the recipe's new state into version history (#63) so the change
+ * is revertible and can't be silently lost by a later revert.
  */
 export async function applySuggestion(
   input: { recipeId: string; suggestionId: string },
@@ -291,6 +297,28 @@ export async function applySuggestion(
       .update(comments)
       .set({ appliedAt: now, resolvedAt: now, updatedAt: now })
       .where(eq(comments.id, suggestion.id));
+
+    // Snapshot the recipe's now-current full state into version history (#63),
+    // reusing the same journal() pattern as a normal edit. Applying a suggestion
+    // mutates the recipe (the merged note) but previously wrote no version, so
+    // the latest saved version predated the change and a later revert would
+    // silently drop the applied note. Snapshotting here keeps the note revertible.
+    const full = await tx.query.recipes.findFirst({
+      where: eq(recipes.id, suggestion.recipe.id),
+      with: {
+        ingredients: { orderBy: [recipeIngredients.position] },
+        steps: { orderBy: [recipeSteps.position] },
+        tags: { with: { tag: true } },
+      },
+    });
+    if (!full) throw new DomainError("NOT_FOUND");
+    await journal(
+      tx,
+      suggestion.recipe.id,
+      user.id,
+      { ...recipeToInput(full), notes: mergedNotes },
+      "Suggestion applied",
+    );
 
     // Attribute the contributor (not the applying owner) so the timeline credits
     // whose idea it was; the suggestion text rides along as the event note.
