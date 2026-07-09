@@ -453,7 +453,11 @@ export default async function RecipePage({
                     <Pencil /> {t("actions.edit")}
                   </Link>
                 </Button>
-                <DeleteRecipeButton id={recipe.id} />
+                <DeleteRecipeButton
+                  id={recipe.id}
+                  slug={recipe.slug}
+                  title={recipe.title}
+                />
               </GrownUpControls>
             )}
           </div>
