@@ -2,6 +2,7 @@ import { cache } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -9,6 +10,7 @@ import {
   getGroupBySlug,
 } from "~/server/groups/queries";
 import { GroupSettingsForm } from "~/components/groups/group-settings-form";
+import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { Button } from "~/components/ui/button";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
@@ -38,8 +40,18 @@ export default async function GroupSettingsPage({
   const { group } = await load(slug);
   if (!group || !canManageGroup(group.viewerRole)) notFound();
 
+  const tNav = await getTranslations("nav");
+
   return (
     <div className="container max-w-3xl py-10">
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: tNav("family"), href: "/groups" },
+          { label: group.name },
+          { label: "Settings" },
+        ]}
+      />
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">

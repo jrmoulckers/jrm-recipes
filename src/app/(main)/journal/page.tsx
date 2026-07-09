@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, CookingPot, UtensilsCrossed } from "lucide-react";
+import { BookOpen, CookingPot, Database, UtensilsCrossed } from "lucide-react";
 import { getLocale } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
@@ -10,6 +10,7 @@ import { cookedTimesLabel, formatServingsMade } from "~/server/cooklog/summary";
 import { formatDate, formatRelativeTime } from "~/lib/dates";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 
 export const metadata: Metadata = {
   title: "Cook journal",
@@ -128,43 +129,39 @@ function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
 
 function EmptyJournal() {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-        <CookingPot className="size-7" />
-      </span>
-      <div>
-        <h2 className="font-display text-xl font-semibold">
-          No cooks logged yet
-        </h2>
-        <p className="mt-1 max-w-sm text-muted-foreground">
-          Open a recipe and tap &ldquo;I cooked this&rdquo; to start your
-          journal. Notes and photos build a history you&apos;ll love looking
-          back on.
-        </p>
-      </div>
-      <Button asChild size="lg">
-        <Link href="/recipes">
-          <BookOpen /> Browse recipes
-        </Link>
-      </Button>
-    </div>
+    <EmptyState
+      icon={<CookingPot />}
+      title="No cooks logged yet"
+      description="Open a recipe and tap “I cooked this” to start your journal. Notes and photos build a history you’ll love looking back on."
+      action={
+        <Button asChild size="lg">
+          <Link href="/recipes">
+            <BookOpen /> Browse recipes
+          </Link>
+        </Button>
+      }
+    />
   );
 }
 
 function ConnectDbNotice() {
   return (
-    <div className="rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
-      <p className="mx-auto max-w-md">
-        Connect a database to start keeping a cooking journal. Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          docker compose up -d
-        </code>
-        .
-      </p>
-    </div>
+    <EmptyState
+      icon={<Database />}
+      title="Connect a database to start"
+      description={
+        <>
+          Keep a cooking journal by setting{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            DATABASE_URL
+          </code>{" "}
+          (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            docker compose up -d
+          </code>
+          .
+        </>
+      }
+    />
   );
 }
