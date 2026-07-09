@@ -26,6 +26,7 @@ export type LocalShoppingItem = {
   unit: string | null;
   note: string | null;
   category: ShoppingCategory;
+  optional: boolean;
   checked: boolean;
   recipeId: string | null;
 };
@@ -71,6 +72,7 @@ function consolidate(
     quantity: i.quantity,
     quantityMax: i.quantityMax,
     unit: i.unit,
+    optional: i.optional,
     recipeId: i.recipeId,
   }));
 
@@ -83,6 +85,7 @@ function consolidate(
       unit: m.unit,
       note: null,
       category: m.category,
+      optional: m.optional,
       checked: false,
       recipeId: m.recipeIds[0] ?? null,
     }),
@@ -111,6 +114,7 @@ export const useShoppingStore = create<ShoppingStore>()(
               unit: entry.unit?.trim() ?? null,
               note: entry.note?.trim() ?? null,
               category: categorize(entry.item),
+              optional: false,
               checked: false,
               recipeId: null,
             },

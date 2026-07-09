@@ -45,6 +45,7 @@ export const shoppingListItems = pgTable(
     unit: varchar({ length: 40 }),
     category: varchar({ length: 40 }),
     note: varchar({ length: 300 }),
+    optional: boolean().notNull().default(false),
     checked: boolean().notNull().default(false),
     recipeId: fk().references(() => recipes.id, { onDelete: "set null" }),
     position: integer().notNull().default(0),

@@ -98,6 +98,7 @@ export async function addRecipeToList(
       quantity: i.quantity,
       quantityMax: i.quantityMax,
       unit: i.unit,
+      optional: i.optional,
       recipeId: i.recipeId,
     }));
 
@@ -121,6 +122,7 @@ export async function addRecipeToList(
           quantityMax: m.quantityMax,
           unit: m.unit,
           category: m.category,
+          optional: m.optional,
           recipeId: m.recipeIds[0] ?? null,
           position: idx,
         })),
@@ -230,6 +232,7 @@ export async function buildListFromPlan(
       quantity: i.quantity,
       quantityMax: i.quantityMax,
       unit: i.unit,
+      optional: i.optional,
       recipeId: i.recipeId,
     }));
 
@@ -263,6 +266,7 @@ export async function buildListFromPlan(
           quantityMax: m.quantityMax,
           unit: m.unit,
           category: m.category,
+          optional: m.optional,
           recipeId: m.recipeIds[0] ?? null,
           position: idx,
         })),

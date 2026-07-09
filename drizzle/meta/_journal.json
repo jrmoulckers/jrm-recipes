@@ -148,6 +148,13 @@
       "when": 1783559012885,
       "tag": "0020_collection_group_share",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1783559112885,
+      "tag": "0021_shopping_optional",
+      "breakpoints": true
     }
   ]
 }
