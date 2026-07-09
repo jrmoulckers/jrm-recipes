@@ -3,7 +3,7 @@ import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus, ShieldAlert, Settings, Users } from "lucide-react";
+import { BookOpen, Plus, ShieldAlert, Settings, Users } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -151,6 +151,11 @@ export default async function GroupPage({
                   {group.members.length}{" "}
                   {group.members.length === 1 ? "member" : "members"}
                 </span>
+                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <BookOpen className="size-4" aria-hidden="true" />
+                  {group.recipes.length}{" "}
+                  {group.recipes.length === 1 ? "recipe" : "recipes"}
+                </span>
               </div>
               <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight">
                 {group.name}
@@ -242,11 +247,21 @@ export default async function GroupPage({
               {canManage ? <InviteLinkManager slug={group.slug} /> : null}
             </div>
             {canManage ? <AddMemberForm slug={group.slug} /> : null}
-            <MemberList
-              slug={group.slug}
-              viewerRole={group.viewerRole}
-              members={members}
-            />
+            {isMember ? (
+              <MemberList
+                slug={group.slug}
+                viewerRole={group.viewerRole}
+                members={members}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-6 text-center text-muted-foreground">
+                <p className="mx-auto max-w-md">
+                  {group.members.length}{" "}
+                  {group.members.length === 1 ? "cook keeps" : "cooks keep"} this
+                  table. Only members can see who&apos;s gathered here.
+                </p>
+              </div>
+            )}
           </section>
 
           <Separator />
