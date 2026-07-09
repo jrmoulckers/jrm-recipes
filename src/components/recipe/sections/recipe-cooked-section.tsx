@@ -6,6 +6,7 @@ import {
   getShareableGroupForRecipe,
 } from "~/server/cooklog/queries";
 import { getReactionsForTargets } from "~/server/engagement/reactions";
+import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 import { CookLogSection } from "~/components/cooklog/cook-log-section";
 import { FamilyCooksStrip } from "~/components/cooklog/family-cooks-strip";
 
@@ -26,18 +27,22 @@ export async function RecipeCookedSection({
   userId: string | null;
   canLog: boolean;
 }) {
-  const [entries, cookCount, shareGroup, familyCooks] = await Promise.all([
-    getRecipeCookLog(recipeId, userId),
-    getCookCount(recipeId, userId),
-    getShareableGroupForRecipe(recipeId, userId),
-    getFamilyCooks(recipeId, userId),
-  ]);
+  const [entries, cookCount, shareGroup, familyCooks, hiddenAuthorIds] =
+    await Promise.all([
+      getRecipeCookLog(recipeId, userId),
+      getCookCount(recipeId, userId),
+      getShareableGroupForRecipe(recipeId, userId),
+      getFamilyCooks(recipeId, userId),
+      getHiddenAuthorIds(userId),
+    ]);
 
-  // Reaction tallies for every cook-log entry in one query (#342).
+  // Reaction tallies for every cook-log entry in one query (#342), with a
+  // blocked member's reactions filtered out (#355).
   const reactionMap = await getReactionsForTargets(
     "cook_log",
     entries.map((entry) => entry.id),
     userId,
+    hiddenAuthorIds,
   );
   const reactionsByEntry = Object.fromEntries(reactionMap);
 

@@ -50,7 +50,7 @@ export async function RecipeDiscussionSection({
       getViewerRating(recipeId, currentUserId),
       getRatingBreakdown(recipeId, viewer),
       getRecipeComments(recipeId, { hiddenAuthorIds }),
-      getMentionCandidates(recipeId),
+      getMentionCandidates(recipeId, currentUserId),
     ]);
 
   // Reaction tallies for every comment (all thread depths) in one query (#342).
@@ -58,6 +58,7 @@ export async function RecipeDiscussionSection({
     "comment",
     collectCommentIds(comments),
     currentUserId,
+    hiddenAuthorIds,
   );
   const reactionsByComment = Object.fromEntries(reactionMap);
 

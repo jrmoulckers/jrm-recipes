@@ -34,6 +34,7 @@ export async function RecipeReviewsSection({
     "review",
     reviews.map((review) => review.id),
     currentUserId,
+    hiddenAuthorIds,
   );
   const reactionsByReview = Object.fromEntries(reactionMap);
 

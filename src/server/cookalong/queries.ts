@@ -5,6 +5,7 @@ import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import { db, isDbConfigured } from "~/server/db";
 import { cookAlongs, groupMembers } from "~/server/db/schema";
 import type { RsvpStatus } from "~/server/db/schema";
+import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 
 export type CookAlongAttendee = {
   userId: string;
@@ -86,12 +87,20 @@ export async function getUpcomingCookAlongs(
     },
   });
 
+  // Block filtering (#355): keep the roster and "going" count consistent with
+  // the viewer's blocks — a blocked member's RSVP is hidden from both. The
+  // viewer is never in their own hidden set (self-block is rejected), so their
+  // own RSVP always survives.
+  const hiddenAuthorIds = await getHiddenAuthorIds(viewerId);
+
   return rows.map((row) => {
-    const attendees: CookAlongAttendee[] = row.rsvps.map((rsvp) => ({
-      userId: rsvp.userId,
-      status: rsvp.status,
-      user: rsvp.user ?? null,
-    }));
+    const attendees: CookAlongAttendee[] = row.rsvps
+      .filter((rsvp) => !hiddenAuthorIds.has(rsvp.userId))
+      .map((rsvp) => ({
+        userId: rsvp.userId,
+        status: rsvp.status,
+        user: rsvp.user ?? null,
+      }));
     return {
       id: row.id,
       title: row.title,

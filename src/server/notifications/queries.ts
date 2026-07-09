@@ -5,6 +5,7 @@ import { and, desc, eq, isNull, lt } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { notifications, type NotificationType } from "~/server/db/schema";
+import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
 
 /** One notification shaped for the bell dropdown / inbox. */
 export type NotificationItem = {
@@ -29,11 +30,17 @@ export type NotificationPage = {
   nextCursor: string | null;
 };
 
-/** The number of unread notifications, for the header bell badge. */
+/**
+ * The number of unread notifications, for the header bell badge. Notifications
+ * from a blocked actor (or someone who blocked the viewer) are excluded so the
+ * badge count matches the filtered list (#355). System notifications (null
+ * actor) always count.
+ */
 export async function getUnreadCount(userId: string | null): Promise<number> {
   if (!isDbConfigured() || !userId) return 0;
+  const hiddenAuthorIds = await getHiddenAuthorIds(userId);
   const rows = await db
-    .select({ id: notifications.id })
+    .select({ id: notifications.id, actorId: notifications.actorId })
     .from(notifications)
     .where(
       and(
@@ -41,7 +48,7 @@ export async function getUnreadCount(userId: string | null): Promise<number> {
         isNull(notifications.readAt),
       ),
     );
-  return rows.length;
+  return filterBlocked(rows, (row) => row.actorId, hiddenAuthorIds).length;
 }
 
 /**
@@ -62,6 +69,11 @@ function hrefFor(row: {
  * Recent notifications for a user, newest first, with cursor pagination keyed on
  * `createdAt` (encoded as an ISO string). Joins the actor + recipe/group targets
  * so the row can render an avatar and deep-link without extra round-trips.
+ * Notifications whose actor the viewer has blocked (or who has blocked them) are
+ * dropped from the page — the single read-side chokepoint (#355), so every
+ * notification type (mentions, replies, reviews, cook-along invites, reports)
+ * respects blocks regardless of which write path created it, and retroactively.
+ * Pagination keys off the raw fetched rows so filtering never skips a page.
  */
 export async function listNotifications(
   userId: string | null,
@@ -69,6 +81,7 @@ export async function listNotifications(
 ): Promise<NotificationPage> {
   if (!isDbConfigured() || !userId) return { items: [], nextCursor: null };
 
+  const hiddenAuthorIds = await getHiddenAuthorIds(userId);
   const cursorDate = cursor ? new Date(cursor) : null;
   const rows = await db.query.notifications.findMany({
     where: and(
@@ -92,8 +105,10 @@ export async function listNotifications(
   const nextCursor =
     rows.length > limit ? page[page.length - 1]!.createdAt.toISOString() : null;
 
+  const visible = filterBlocked(page, (row) => row.actorId, hiddenAuthorIds);
+
   return {
-    items: page.map((row) => ({
+    items: visible.map((row) => ({
       id: row.id,
       type: row.type,
       context: row.context,

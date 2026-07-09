@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isCloudinaryUrl } from "~/lib/cloudinary-loader";
+
 const idInput = z.string().trim().min(1);
 
 /** Max length for a comment/suggestion body. Imported by the UI counter (#144). */
@@ -61,7 +63,17 @@ export const reviewInput = z.object({
     .trim()
     .max(4000, "Keep reviews under 4,000 characters.")
     .optional(),
-  photoUrl: z.string().trim().max(2048).optional(),
+  // A review photo must be an uploaded Cloudinary delivery URL (#341/#355):
+  // require a real https URL on our image host so an arbitrary/off-host URL
+  // can't be stored and rendered as a tracking beacon against viewers.
+  photoUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2048)
+    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 export const deleteReviewInput = z.object({

@@ -4,6 +4,7 @@ import { and, count, desc, eq, isNull } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { cookLogEntries, groupMembers, recipes } from "~/server/db/schema";
+import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
 
 /** A single cook-log entry, shaped for rendering a timeline row. */
 export type CookLogItem = {
@@ -179,11 +180,16 @@ export async function getFamilyCooks(
       },
     },
   });
-  return rows.map((row) => ({
-    id: row.id,
-    cookedAt: row.cookedAt,
-    note: row.note,
-    photoUrl: row.photoUrl,
-    cook: row.user ?? null,
-  }));
+  // Block filtering (#355): drop cooks shared by a member the viewer has
+  // blocked (or who blocked them), mirroring getGroupActivity.
+  const hiddenAuthorIds = await getHiddenAuthorIds(userId);
+  return filterBlocked(rows, (row) => row.user?.id, hiddenAuthorIds).map(
+    (row) => ({
+      id: row.id,
+      cookedAt: row.cookedAt,
+      note: row.note,
+      photoUrl: row.photoUrl,
+      cook: row.user ?? null,
+    }),
+  );
 }

@@ -130,6 +130,7 @@ export async function getReactionsForTargets(
   targetType: ReactionTargetType,
   targetIds: string[],
   viewerId: string | null,
+  hiddenAuthorIds = new Set<string>(),
 ): Promise<Map<string, TargetReactions>> {
   const result = new Map<string, TargetReactions>();
   if (!isDbConfigured() || targetIds.length === 0) return result;
@@ -151,6 +152,9 @@ export async function getReactionsForTargets(
   >();
 
   for (const row of rows) {
+    // Block filtering (#355): a blocked member's reaction must not inflate the
+    // count or surface their name in the reactors reveal.
+    if (hiddenAuthorIds.has(row.userId)) continue;
     const emoji = row.emoji;
     let byEmoji = acc.get(row.targetId);
     if (!byEmoji) {

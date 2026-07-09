@@ -9,6 +9,7 @@ import { excludeOwnerRatings, ratingBreakdown } from "~/lib/ratings";
 import type { RatingBreakdown } from "~/lib/ratings";
 import type { User } from "~/server/db/schema";
 import type { MentionCandidate } from "~/lib/mentions";
+import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
 import { loadMentionCandidates } from "./mention-targets";
 
 export type ThreadedComment = {
@@ -175,13 +176,18 @@ export async function getAnchoredSuggestions(
 /**
  * The members who can be @mentioned on this recipe (issue #340): the recipe
  * author plus its group. Given to the composer for autocomplete and reused by
- * the renderer to resolve which `@handles` become links.
+ * the renderer to resolve which `@handles` become links. Members the viewer has
+ * blocked (or who have blocked them) are excluded so you can't mention — and
+ * won't be offered — someone you've blocked (#355).
  */
 export async function getMentionCandidates(
   recipeId: string,
+  viewerId?: string | null,
 ): Promise<MentionCandidate[]> {
   if (!isDbConfigured()) return [];
-  return loadMentionCandidates(db, recipeId);
+  const candidates = await loadMentionCandidates(db, recipeId);
+  const hiddenAuthorIds = await getHiddenAuthorIds(viewerId);
+  return filterBlocked(candidates, (c) => c.id, hiddenAuthorIds);
 }
 
 export async function getViewerRating(
