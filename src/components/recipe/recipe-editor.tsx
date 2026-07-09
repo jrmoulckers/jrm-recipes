@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Download,
   GripVertical,
+  History,
   Link2,
   Loader2,
   Plus,
@@ -23,6 +24,7 @@ import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { useAutosaveDraft } from "~/lib/use-autosave-draft";
 import { track } from "~/lib/analytics";
 import { SUGGESTED_TAGS } from "~/lib/tag-taxonomy";
 import { type RecipeInput } from "~/server/recipes/validation";
@@ -43,6 +45,7 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
+import { appendDictation } from "~/lib/append-dictation";
 
 /**
  * The upgrade prompt is only needed when a create hits the plan's recipe cap
@@ -51,6 +54,16 @@ import { ImageUploadField } from "~/components/ui/image-upload";
  */
 const UpgradeDialog = dynamic(() =>
   import("~/components/billing/upgrade-dialog").then((m) => m.UpgradeDialog),
+);
+
+// Voice dictation (issue #373) is a progressive enhancement, so it is
+// code-split out of the editor's first-load JS and loaded on the client only.
+const DictationButton = dynamic(
+  () =>
+    import("~/components/recipe/dictation-button").then(
+      (m) => m.DictationButton,
+    ),
+  { ssr: false },
 );
 
 type IngRow = {
@@ -261,6 +274,73 @@ export function RecipeEditor({
     })),
   );
 
+  // Auto-save & draft recovery (#421): mirror the in-progress editor value to
+  // localStorage (debounced) so a locked phone or a stray "back" tap never
+  // loses a half-typed recipe. Drafts are namespaced so new vs. edit can't mix.
+  const draftKey = mode === "edit" && recipeId ? recipeId : "new";
+  const draftSnapshot: RecipeEditorValue = React.useMemo(
+    () => ({
+      ...form,
+      ingredients: ingredients.map(({ key: _key, ...rest }) => rest),
+      steps: steps.map(({ key: _key, ...rest }) => rest),
+    }),
+    [form, ingredients, steps],
+  );
+  const draftJson = React.useMemo(
+    () => JSON.stringify(draftSnapshot),
+    [draftSnapshot],
+  );
+  const [initialDraftJson] = React.useState(() => draftJson);
+  const draftDirty = draftJson !== initialDraftJson;
+  const draft = useAutosaveDraft<RecipeEditorValue>({
+    key: draftKey,
+    snapshot: draftSnapshot,
+    dirty: draftDirty,
+  });
+
+  function restoreDraft(value: RecipeEditorValue) {
+    const {
+      ingredients: draftIngredients,
+      steps: draftSteps,
+      ...scalars
+    } = value;
+    setForm((f) => ({ ...f, ...scalars }));
+    setIngredients(
+      (draftIngredients ?? []).map((r) => ({
+        ...EMPTY_ING,
+        ...r,
+        key: nextKey(),
+      })),
+    );
+    setSteps(
+      (draftSteps ?? []).map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })),
+    );
+    draft.acceptDraft();
+    toast.success("Restored your unfinished recipe.");
+  }
+
+  // Voice dictation append helpers (#373): always append, never overwrite, and
+  // update functionally so rapid transcript chunks can't clobber each other.
+  function appendToField(key: "description" | "notes" | "story", text: string) {
+    setForm((f) => ({ ...f, [key]: appendDictation(f[key], text) }));
+  }
+  function appendIngredientItem(rowKey: string, text: string) {
+    setIngredients((l) =>
+      l.map((r) =>
+        r.key === rowKey ? { ...r, item: appendDictation(r.item, text) } : r,
+      ),
+    );
+  }
+  function appendStepInstruction(rowKey: string, text: string) {
+    setSteps((l) =>
+      l.map((r) =>
+        r.key === rowKey
+          ? { ...r, instruction: appendDictation(r.instruction, text) }
+          : r,
+      ),
+    );
+  }
+
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -470,6 +550,7 @@ export function RecipeEditor({
           ? await updateRecipeAction(recipeId, payload)
           : await createRecipeAction(payload);
       if (res.ok) {
+        draft.clear();
         toast.success(mode === "edit" ? "Recipe updated" : "Recipe created");
         router.push(recipeDetailPath(res));
         router.refresh();
@@ -527,6 +608,45 @@ export function RecipeEditor({
           </Button>
         </div>
       </div>
+
+      {draft.availableDraft ? (
+        <div
+          role="region"
+          aria-label="Unfinished recipe"
+          className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <History
+              className="mt-0.5 size-5 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="font-medium">You have an unfinished recipe</p>
+              <p className="text-sm text-muted-foreground">
+                Pick up where you left off, or start fresh.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => draft.discardDraft()}
+            >
+              Discard
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const pending = draft.availableDraft;
+                if (pending) restoreDraft(pending);
+              }}
+            >
+              Restore
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {errorKeys.length > 0 && (
         <div
@@ -714,6 +834,12 @@ export function RecipeEditor({
                 rows={2}
               />
             </Field>
+            <div className="-mt-1 flex justify-end">
+              <DictationButton
+                fieldLabel="description"
+                onAppend={(text) => appendToField("description", text)}
+              />
+            </div>
           </section>
 
           {/* Ingredients */}
@@ -768,20 +894,30 @@ export function RecipeEditor({
                       }
                       placeholder="cup"
                     />
-                    <Input
-                      aria-label={t("ingredient")}
-                      value={row.item}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, item: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="all-purpose flour"
-                    />
+                    <div className="flex items-start gap-1.5">
+                      <Input
+                        aria-label={t("ingredient")}
+                        value={row.item}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, item: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="all-purpose flour"
+                        className="flex-1"
+                      />
+                      <DictationButton
+                        fieldLabel="ingredient"
+                        onAppend={(text) =>
+                          appendIngredientItem(row.key, text)
+                        }
+                        className="mt-1"
+                      />
+                    </div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-[1fr_9rem]">
                       <Input
@@ -876,6 +1012,14 @@ export function RecipeEditor({
                       placeholder="Whisk the dry ingredients together…"
                       rows={2}
                     />
+                    <div className="flex justify-end">
+                      <DictationButton
+                        fieldLabel={`step ${i + 1}`}
+                        onAppend={(text) =>
+                          appendStepInstruction(row.key, text)
+                        }
+                      />
+                    </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Input
                         aria-label={t("timerMinutes")}
@@ -978,6 +1122,12 @@ export function RecipeEditor({
               rows={3}
             />
           </Field>
+          <div className="-mt-1 flex justify-end">
+            <DictationButton
+              fieldLabel="notes"
+              onAppend={(text) => appendToField("notes", text)}
+            />
+          </div>
 
           <Field
             label="Story & memories"
@@ -992,6 +1142,12 @@ export function RecipeEditor({
               rows={4}
             />
           </Field>
+          <div className="-mt-1 flex justify-end">
+            <DictationButton
+              fieldLabel="story"
+              onAppend={(text) => appendToField("story", text)}
+            />
+          </div>
 
           <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
             <legend className="px-1 text-sm font-medium text-foreground">

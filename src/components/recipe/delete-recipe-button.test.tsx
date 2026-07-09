@@ -27,9 +27,15 @@ vi.mock("sonner", () => ({
   toast: Object.assign(
     (message?: unknown, options?: unknown) => toastFn(message, options),
     {
-      success: (m: string) => toastSuccess(m),
-      error: (m: string) => toastError(m),
-      dismiss: (id: unknown) => toastDismiss(id),
+      success: (m: string) => {
+        toastSuccess(m);
+      },
+      error: (m: string) => {
+        toastError(m);
+      },
+      dismiss: (id: unknown) => {
+        toastDismiss(id);
+      },
     },
   ),
 }));
