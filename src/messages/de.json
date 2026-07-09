@@ -123,6 +123,9 @@
     "notes": "Notizen",
     "source": "Quelle:",
     "similar": "Das könnte dir auch gefallen",
+    "kidSafe": {
+      "deleteHidden": "Bitte einen Erwachsenen, dieses Rezept zu löschen."
+    },
     "visibility": {
       "private": "Privat",
       "unlisted": "Nicht gelistet",

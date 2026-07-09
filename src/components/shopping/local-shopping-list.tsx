@@ -16,6 +16,7 @@ export function LocalShoppingList() {
   const items = useShoppingStore((s) => s.items);
   const addManual = useShoppingStore((s) => s.addManual);
   const setChecked = useShoppingStore((s) => s.setChecked);
+  const setCategory = useShoppingStore((s) => s.setCategory);
   const remove = useShoppingStore((s) => s.remove);
   const clearChecked = useShoppingStore((s) => s.clearChecked);
   const clearAll = useShoppingStore((s) => s.clearAll);
@@ -66,6 +67,7 @@ export function LocalShoppingList() {
       onAddManual={onAddManual}
       onToggle={setChecked}
       onRemove={remove}
+      onSetCategory={setCategory}
       onClearChecked={clearChecked}
       onClearAll={onClearAll}
     />

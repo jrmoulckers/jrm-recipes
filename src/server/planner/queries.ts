@@ -1,10 +1,11 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
   groupMembers,
+  groups,
   mealPlanEntries,
   recipes,
   type User,
@@ -14,6 +15,11 @@ import {
  * Meal-plan entries for a user between two calendar dates (inclusive). Dates are
  * `yyyy-MM-dd` strings, matching the `date` column, so lexical comparison is also
  * chronological. Guarded so the page renders with no database configured.
+ *
+ * Scoped to the viewer's *personal* plane (`groupId IS NULL`) so a member's
+ * group-shared entries (issue #363) live only on the group board and never
+ * double-show here. Historic entries all have a null group, so this is a no-op
+ * for existing plans.
  */
 export async function listEntriesInRange(
   userId: string,
@@ -24,6 +30,7 @@ export async function listEntriesInRange(
   return db.query.mealPlanEntries.findMany({
     where: and(
       eq(mealPlanEntries.userId, userId),
+      isNull(mealPlanEntries.groupId),
       gte(mealPlanEntries.date, startDate),
       lte(mealPlanEntries.date, endDate),
     ),
@@ -132,4 +139,74 @@ export async function listPlannableRecipes(viewer: User | null) {
 
 export type PlannableRecipe = Awaited<
   ReturnType<typeof listPlannableRecipes>
+>[number];
+
+/**
+ * The groups a viewer belongs to, lightweight enough to populate the planner's
+ * scope selector (issue #363). Ordered by name for a stable menu.
+ */
+export async function listViewerGroups(userId: string) {
+  if (!isDbConfigured()) return [];
+  const rows = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+    columns: {},
+    with: {
+      group: { columns: { id: true, slug: true, name: true } },
+    },
+  });
+  return rows
+    .map((row) => row.group)
+    .filter((group): group is NonNullable<typeof group> => group != null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type ViewerGroup = Awaited<
+  ReturnType<typeof listViewerGroups>
+>[number];
+
+/**
+ * Every member's entries for a group's week (issue #363). Membership is enforced
+ * server-side: a non-member gets `null`, which the page turns into a
+ * not-found/redirect — the board is never rendered for someone outside the
+ * group. Each entry carries its author so cards can show who planned it.
+ */
+export async function listGroupEntriesInRange(
+  viewer: User,
+  groupId: string,
+  startDate: string,
+  endDate: string,
+) {
+  if (!isDbConfigured()) return null;
+
+  const membership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, viewer.id),
+    ),
+    columns: { id: true },
+  });
+  if (!membership) return null;
+
+  return db.query.mealPlanEntries.findMany({
+    where: and(
+      eq(mealPlanEntries.groupId, groupId),
+      gte(mealPlanEntries.date, startDate),
+      lte(mealPlanEntries.date, endDate),
+    ),
+    orderBy: [
+      asc(mealPlanEntries.date),
+      asc(mealPlanEntries.position),
+      asc(mealPlanEntries.createdAt),
+    ],
+    with: {
+      recipe: {
+        columns: { id: true, slug: true, title: true, coverImageUrl: true },
+      },
+      user: { columns: { id: true, name: true } },
+    },
+  });
+}
+
+export type GroupPlannerEntry = NonNullable<
+  Awaited<ReturnType<typeof listGroupEntriesInRange>>
 >[number];

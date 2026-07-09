@@ -630,6 +630,25 @@ export async function revertRecipe(
  * deferred — when added it should be the only path that issues a real DELETE.
  */
 export async function deleteRecipe(id: string, author: User) {
+  // Kid-safe (issue #367): a kid-role member of the recipe's group can browse,
+  // cook, and favorite, but must never delete a recipe — enforced here on the
+  // server, not just hidden in the UI. Resolved before the tombstone write so a
+  // kid's delete is rejected with FORBIDDEN rather than silently allowed.
+  const target = await db.query.recipes.findFirst({
+    where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
+    columns: { groupId: true },
+  });
+  if (target?.groupId) {
+    const membership = await db.query.groupMembers.findFirst({
+      where: and(
+        eq(groupMembers.groupId, target.groupId),
+        eq(groupMembers.userId, author.id),
+      ),
+      columns: { role: true },
+    });
+    if (membership) assertKidAllowed(membership.role, "delete_recipe");
+  }
+
   const [row] = await db
     .update(recipes)
     .set({ deletedAt: new Date(), deletedBy: author.id })

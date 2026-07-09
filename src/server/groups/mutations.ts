@@ -741,3 +741,40 @@ export async function acceptInviteLink(token: string, user: User) {
     };
   });
 }
+
+/**
+ * Revoke an invite link by its token (issue #366). Owner/admin only. Sets
+ * `revokedAt` so {@link acceptInviteLink} rejects it and
+ * {@link getInviteLinkPreview} reports a `revoked` status. Idempotent: revoking
+ * an already-revoked link keeps its original timestamp and succeeds, so a
+ * double-tap never errors.
+ */
+export async function revokeInviteLink(
+  groupSlugOrId: string,
+  actor: User,
+  token: string,
+) {
+  return db.transaction(async (tx) => {
+    const group = await findGroup(tx, groupSlugOrId);
+    if (!group) throw new DomainError("NOT_FOUND");
+    await requireManager(tx, group.id, actor);
+
+    const link = await tx.query.groupInviteLinks.findFirst({
+      where: and(
+        eq(groupInviteLinks.token, token),
+        eq(groupInviteLinks.groupId, group.id),
+      ),
+      columns: { id: true, revokedAt: true },
+    });
+    if (!link) throw new DomainError("NOT_FOUND");
+    if (link.revokedAt != null) {
+      return { id: link.id, slug: group.slug };
+    }
+
+    await tx
+      .update(groupInviteLinks)
+      .set({ revokedAt: new Date() })
+      .where(eq(groupInviteLinks.id, link.id));
+    return { id: link.id, slug: group.slug };
+  });
+}

@@ -63,6 +63,8 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
+  /** Who planned this entry — shown on the shared group board (#363). */
+  author?: { id: string; name: string } | null;
   recipe: {
     id: string;
     slug: string;
@@ -95,12 +97,16 @@ export function PlannerBoard({
   entries,
   recipes,
   members = [],
+  groupId = null,
 }: {
   days: BoardDay[];
   entries: BoardEntry[];
   recipes: BoardRecipe[];
   /** Family profiles, to flag entries unsafe for the active member (#432). */
   members?: ActiveMemberOption[];
+  /** When set, the board is a shared group plan: new entries are tagged with
+   * this group and cards show their author (#363). */
+  groupId?: string | null;
 }) {
   const [activeCell, setActiveCell] = React.useState<Cell | null>(null);
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
@@ -229,6 +235,7 @@ export function PlannerBoard({
         cell={activeCell}
         recipes={recipes}
         days={days}
+        groupId={groupId}
         onClose={() => setActiveCell(null)}
       />
     </>
@@ -339,6 +346,11 @@ function EntryChip({
             {entry.recipe && entry.note && !leftovers ? (
               <span className="block text-muted-foreground">{entry.note}</span>
             ) : null}
+            {entry.author ? (
+              <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                {entry.author.name}
+              </span>
+            ) : null}
             {alertText && (
               <span
                 className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
@@ -439,11 +451,13 @@ function AddEntryDialog({
   cell,
   recipes,
   days,
+  groupId = null,
   onClose,
 }: {
   cell: Cell | null;
   recipes: BoardRecipe[];
   days: BoardDay[];
+  groupId?: string | null;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -520,6 +534,7 @@ function AddEntryDialog({
               date: cell.dateParam,
               slot: cell.slot,
               recipeId: selectedId,
+              groupId: groupId ?? undefined,
               note: trimmedNote.length > 0 ? trimmedNote : undefined,
               leftoversDate,
               multiple,
@@ -528,6 +543,7 @@ function AddEntryDialog({
               date: cell.dateParam,
               slot: cell.slot,
               recipeId: selectedId ?? undefined,
+              groupId: groupId ?? undefined,
               note: trimmedNote.length > 0 ? trimmedNote : undefined,
             });
 
@@ -714,16 +730,32 @@ function AddEntryDialog({
   );
 }
 
-export function PlannerEmptyState() {
+export function PlannerEmptyState({
+  groupName = null,
+}: {
+  groupName?: string | null;
+}) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 py-14 text-center">
       <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         <UtensilsCrossed className="size-6" aria-hidden="true" />
       </span>
       <p className="max-w-sm text-sm text-muted-foreground">
-        Nothing planned this week yet. Tap{" "}
-        <span className="font-medium text-foreground">Add</span> on any day to
-        drop in a recipe or a quick note.
+        {groupName ? (
+          <>
+            Nothing planned for{" "}
+            <span className="font-medium text-foreground">{groupName}</span> this
+            week yet. Tap{" "}
+            <span className="font-medium text-foreground">Add</span> on any day —
+            everyone in the group can see and edit this plan.
+          </>
+        ) : (
+          <>
+            Nothing planned this week yet. Tap{" "}
+            <span className="font-medium text-foreground">Add</span> on any day to
+            drop in a recipe or a quick note.
+          </>
+        )}
       </p>
     </div>
   );

@@ -77,6 +77,8 @@ import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-dis
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { getMembership } from "~/server/groups/queries";
+import { isKid } from "~/server/groups/kid-safe";
 import { buildTwoWeekPlanContext } from "~/server/planner/quick-plan";
 import { getAnchoredSuggestions } from "~/server/engagement/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
@@ -166,6 +168,15 @@ export default async function RecipePage({
       : undefined;
 
   const isOwner = Boolean(user?.id === recipe.authorId);
+  // Kid-safe UI (issue #367): a kid-role member of the recipe's group must never
+  // see the Delete control. The server rejects the delete regardless (see
+  // `deleteRecipe`), but hiding it here keeps a child from hitting a dead button.
+  // Only owners ever see Delete, so this matters when a kid authored the recipe.
+  const viewerRole =
+    isOwner && recipe.groupId && user
+      ? (await getMembership(recipe.groupId, user.id))?.role ?? null
+      : null;
+  const viewerIsKid = isKid(viewerRole);
   const dbEnabled = isDbConfigured();
   // Two-week add-to-plan picker for signed-in viewers (#362); reuses the quick
   // planner action so a cook can plan a recipe the moment they decide to make it.
@@ -484,11 +495,17 @@ export default async function RecipePage({
                     <Pencil /> {t("actions.edit")}
                   </Link>
                 </Button>
-                <DeleteRecipeButton
-                  id={recipe.id}
-                  slug={recipe.slug}
-                  title={recipe.title}
-                />
+                {viewerIsKid ? (
+                  <p className="px-3 py-2 text-sm text-muted-foreground">
+                    {t("kidSafe.deleteHidden")}
+                  </p>
+                ) : (
+                  <DeleteRecipeButton
+                    id={recipe.id}
+                    slug={recipe.slug}
+                    title={recipe.title}
+                  />
+                )}
               </GrownUpControls>
             )}
             </RecipeActionsMenu>
