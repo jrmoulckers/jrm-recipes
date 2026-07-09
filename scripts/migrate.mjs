@@ -29,6 +29,24 @@ if (!url) {
   process.exit(0);
 }
 
+// Preview-deploy safety net (#258): a preview build shares Vercel's project
+// env, so a `DATABASE_URL` added to the Preview environment would otherwise
+// point these DDL migrations at the *production* database. Never migrate from a
+// preview deploy unless an isolated per-branch database (e.g. a Neon branch) is
+// explicitly wired in and opted into via ALLOW_PREVIEW_MIGRATIONS=1. Production
+// (`VERCEL_ENV=production`) and local/CI (no `VERCEL_ENV`) are unaffected.
+if (
+  process.env.VERCEL_ENV === "preview" &&
+  process.env.ALLOW_PREVIEW_MIGRATIONS !== "1"
+) {
+  console.log(
+    "[migrate] Preview deploy detected — skipping migrations to protect the " +
+      "production database. Provision a per-branch database and set " +
+      "ALLOW_PREVIEW_MIGRATIONS=1 to run them against the isolated branch.",
+  );
+  process.exit(0);
+}
+
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 try {

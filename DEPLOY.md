@@ -105,8 +105,9 @@ sell the Family/Premium plan.
      script that runs database migrations and then `next build` — Vercel uses it
      automatically.
 3. Under **Environment Variables**, add the values you collected (see the table
-   below). Add them to **Production** (and Preview if you want preview deploys to
-   use real services).
+   below). Add them to **Production**. For **Preview**, do **not** reuse the
+   production `DATABASE_URL` — see [Isolating preview
+   databases](#isolating-preview-databases) below.
 4. Click **Deploy**.
 
 That's it. On this and every future deploy, Vercel will run the migrations
@@ -146,6 +147,30 @@ against Neon and build the app.
 >
 > Local, CI, and preview builds skip the check entirely, so zero-config runs are
 > unaffected.
+
+### Isolating preview databases
+
+Vercel runs `vercel-build` for **preview** deployments too, and a preview shares
+the project's environment variables. If you add the production `DATABASE_URL` to
+the Preview environment, a PR's build would run schema **migrations against the
+production database** — at best noisy, at worst destructive. Never do this.
+
+Instead, give previews their own throwaway database:
+
+- **Recommended — Neon branching.** Install the [Neon–Vercel
+  integration](https://neon.tech/docs/guides/vercel) and enable "Create a
+  database branch for each preview". Neon injects a per-PR branch `DATABASE_URL`
+  into the Preview environment automatically and deletes the branch when the PR
+  closes, so previews get an isolated copy of the schema/data.
+- **Or leave Preview with no `DATABASE_URL`.** The app boots read-degraded and
+  `scripts/migrate.mjs` skips (it exits 0 when no URL is set), which is safe if
+  you don't need a working database in previews.
+
+As a defense-in-depth guardrail, `scripts/migrate.mjs` **refuses to migrate from
+a preview deploy** (`VERCEL_ENV=preview`) unless you explicitly opt in with
+`ALLOW_PREVIEW_MIGRATIONS=1` — so even a misconfigured Preview `DATABASE_URL`
+cannot mutate production schema by accident. Set that flag only once you've
+confirmed the Preview `DATABASE_URL` points at an isolated per-branch database.
 
 ---
 
