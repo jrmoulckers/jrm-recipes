@@ -86,5 +86,56 @@
     "moveDownNamed": "{object} nach unten verschieben",
     "remove": "Entfernen",
     "removeNamed": "{object} entfernen"
+  },
+  "recipeDetail": {
+    "backToRecipes": "Rezepte",
+    "by": "Von",
+    "servingsNoun": "Portionen",
+    "opensInNewTab": "wird in einem neuen Tab geöffnet",
+    "notes": "Notizen",
+    "source": "Quelle:",
+    "similar": "Das könnte dir auch gefallen",
+    "visibility": {
+      "private": "Privat",
+      "unlisted": "Nicht gelistet",
+      "group": "Gruppe"
+    },
+    "difficulty": {
+      "easy": "Einfach",
+      "medium": "Mittel",
+      "hard": "Schwer"
+    },
+    "meta": {
+      "prep": "{time} Vorbereitung",
+      "resting": "{time} Ruhezeit"
+    },
+    "ratingLabel": "Bewertet mit {average} von 5 — {count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "actions": {
+      "cook": "Kochen",
+      "print": "Drucken",
+      "edit": "Bearbeiten",
+      "cookMode": "Kochmodus"
+    },
+    "ingredients": {
+      "heading": "Zutaten",
+      "empty": "Keine Zutaten angegeben.",
+      "makeAhead": "Vorbereitung",
+      "equipment": "Ausstattung"
+    },
+    "method": {
+      "heading": "Zubereitung",
+      "emptyTitle": "Noch keine Schritte",
+      "emptyOwner": "Füge die Schritte hinzu, dann ist dieses Rezept bereit zum Kochen.",
+      "emptyViewer": "Die Schritte wurden diesem Rezept noch nicht hinzugefügt.",
+      "editRecipe": "Rezept bearbeiten",
+      "stepLabel": "Schritt {position}",
+      "stepImageAlt": "{title} — Schritt {position}"
+    },
+    "tabs": {
+      "recipe": "Rezept",
+      "timeline": "Verlauf",
+      "cooked": "Gekocht",
+      "discussion": "Diskussion"
+    }
   }
 }
