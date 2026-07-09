@@ -63,3 +63,6 @@ yarn-error.log*
 /bundle-build.log
 # @next/bundle-analyzer output (part of /.next, but be explicit)
 /.next/analyze/
+
+# i18n pseudolocale (QA-only, regenerated on demand via `pnpm i18n:pseudo`)
+/src/messages/en-XA.json
