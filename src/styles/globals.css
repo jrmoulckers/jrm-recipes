@@ -134,3 +134,15 @@
     display: none !important;
   }
 }
+
+/*
+ * "Read this to me" (issue #387): outline the recipe step currently being read
+ * aloud so a listener can follow along. Driven by a `data-reading-step`
+ * attribute the ReadAloudButton toggles on the active step; uses the theme ring
+ * token so it tracks light/dark and high-contrast modes.
+ */
+[data-reading-step] {
+  border-radius: 0.75rem;
+  outline: var(--ring-width, 2px) solid hsl(var(--ring));
+  outline-offset: 6px;
+}

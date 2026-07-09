@@ -56,6 +56,7 @@ import { ShareButton } from "~/components/recipe/share-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
+import { ReadAloudButton } from "~/components/recipe/read-aloud-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
@@ -575,9 +576,23 @@ export default async function RecipePage({
                 </div>
 
                 {recipe.steps.length > 0 ? (
-                  <ol className="flex flex-col gap-5">
-                    {recipe.steps.map((step, i) => (
-                      <li key={step.id} className="flex gap-4">
+                  <>
+                    <ReadAloudButton
+                      anchorPrefix="recipe-step-"
+                      steps={recipe.steps.map(
+                        (step, i) =>
+                          `Step ${i + 1}. ${
+                            step.section ? `${step.section}. ` : ""
+                          }${step.instruction}`,
+                      )}
+                    />
+                    <ol className="flex flex-col gap-5">
+                      {recipe.steps.map((step, i) => (
+                        <li
+                          key={step.id}
+                          id={`recipe-step-${i}`}
+                          className="flex gap-4"
+                        >
                         <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
                           {i + 1}
                         </span>
@@ -640,7 +655,8 @@ export default async function RecipePage({
                         </div>
                       </li>
                     ))}
-                  </ol>
+                    </ol>
+                  </>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
                     <p className="font-medium">{t("method.emptyTitle")}</p>
