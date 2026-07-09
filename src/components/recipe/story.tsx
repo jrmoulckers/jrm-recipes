@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
 import {
   GitFork,
   Globe,
@@ -13,6 +12,7 @@ import {
 import { cn } from "~/lib/utils";
 import type { TimelineEntry } from "~/server/recipes/timeline";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { RelativeTime } from "./relative-time";
 
 type EntryStyle = {
   icon: typeof Sprout;
@@ -167,11 +167,7 @@ export function RecipeStory({
                       </span>
                     </span>
                   )}
-                  {validWhen && (
-                    <time dateTime={when.toISOString()}>
-                      {formatDistanceToNow(when, { addSuffix: true })}
-                    </time>
-                  )}
+                  {validWhen && <RelativeTime value={when} />}
                 </p>
 
                 {entry.note && (
