@@ -67,7 +67,10 @@ const config = {
         ? "https://eu-assets.i.posthog.com"
         : host;
     return [
-      { source: "/ingest/static/:path*", destination: `${assetHost}/static/:path*` },
+      {
+        source: "/ingest/static/:path*",
+        destination: `${assetHost}/static/:path*`,
+      },
       { source: "/ingest/:path*", destination: `${host}/:path*` },
     ];
   },
@@ -76,6 +79,29 @@ const config = {
     serverActions: {
       bodySizeLimit: "4mb",
     },
+    // Tree-shake large barrel packages so importing a handful of icons/utilities
+    // doesn't pull the whole module graph into a route's bundle. Next rewrites
+    // `import { X } from "pkg"` to the underlying deep import per used symbol.
+    // Only the barrels actually imported in the app are listed (verified against
+    // package.json + real import sites): the lucide icon set, the date-fns
+    // utility barrel, and the individual Radix primitive packages in use.
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-label",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-select",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-slider",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+    ],
   },
 };
 

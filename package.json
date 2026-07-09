@@ -21,6 +21,8 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "check": "pnpm run lint && pnpm run typecheck",
+    "i18n:validate": "node scripts/i18n-validate.mjs",
+    "i18n:pseudo": "node scripts/i18n-pseudo.mjs",
     "audit:ci": "pnpm audit --audit-level=high",
     "test": "vitest run",
     "test:watch": "vitest",
