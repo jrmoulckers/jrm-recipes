@@ -388,7 +388,7 @@ export function DietaryProfilesManager({
                 <Label htmlFor={groupSelectId}>Family group (optional)</Label>
                 <select
                   id={groupSelectId}
-                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={draft.groupId}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, groupId: e.target.value }))

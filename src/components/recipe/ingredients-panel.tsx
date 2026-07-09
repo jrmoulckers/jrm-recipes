@@ -512,7 +512,7 @@ export function IngredientsPanel({
                 setPinId(e.target.value);
                 setPinUnit(next?.unit ?? "");
               }}
-              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
+              className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {pinnable.map((i) => (
                 <option key={i.id} value={i.id}>
@@ -645,7 +645,7 @@ export function IngredientsPanel({
             id={cookingForId}
             value={activeMember?.id ?? ""}
             onChange={(e) => setActiveMemberId(e.target.value || null)}
-            className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium"
+            className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <option value="">Everyone</option>
             {memberList.map((m) => (
