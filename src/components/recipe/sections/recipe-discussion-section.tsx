@@ -10,7 +10,7 @@ import type { ThreadedComment } from "~/server/engagement/queries";
 import type { User } from "~/server/db/schema";
 import { RatingControl } from "~/components/engagement/rating-control";
 import { RatingSummary } from "~/components/engagement/rating-summary";
-import { CommentsSection } from "~/components/engagement/comments-section";
+import { CommentsSection } from "~/components/engagement/comments-section-lazy";
 
 /** Flatten a threaded comment tree into a flat list of ids (all depths). */
 function collectCommentIds(nodes: ThreadedComment[], into: string[] = []): string[] {

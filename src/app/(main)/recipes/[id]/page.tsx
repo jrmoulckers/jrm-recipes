@@ -47,7 +47,7 @@ import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
-import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions";
+import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
 import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";

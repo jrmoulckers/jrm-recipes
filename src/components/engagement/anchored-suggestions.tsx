@@ -22,6 +22,16 @@ function authorName(author: AnchoredSuggestion["author"]) {
  * suggestion refers to. Existing anchored suggestions render inline at the
  * target; the owner resolves/applies them from the discussion suggestions list.
  */
+export type AnchoredSuggestionsProps = {
+  recipeId: string;
+  recipeSlug: string;
+  anchorType: "ingredient" | "step";
+  anchorId: string;
+  anchorLabel: string;
+  canInteract: boolean;
+  suggestions: AnchoredSuggestion[];
+};
+
 export function AnchoredSuggestions({
   recipeId,
   recipeSlug,
@@ -30,15 +40,7 @@ export function AnchoredSuggestions({
   anchorLabel,
   canInteract,
   suggestions,
-}: {
-  recipeId: string;
-  recipeSlug: string;
-  anchorType: "ingredient" | "step";
-  anchorId: string;
-  anchorLabel: string;
-  canInteract: boolean;
-  suggestions: AnchoredSuggestion[];
-}) {
+}: AnchoredSuggestionsProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [body, setBody] = React.useState("");

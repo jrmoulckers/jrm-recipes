@@ -74,7 +74,7 @@ type CommentReactions = {
   reactors: Partial<Record<ReactionEmojiKey, string[]>>;
 };
 
-export function CommentsSection(props: {
+export type CommentsSectionProps = {
   recipeId: string;
   recipeSlug: string;
   initialComments: ThreadedComment[];
@@ -83,7 +83,9 @@ export function CommentsSection(props: {
   canPost: boolean;
   mentionCandidates?: MentionCandidate[];
   reactionsByComment?: Record<string, CommentReactions>;
-}) {
+};
+
+export function CommentsSection(props: CommentsSectionProps) {
   const {
     recipeId,
     recipeSlug,
