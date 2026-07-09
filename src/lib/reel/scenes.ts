@@ -113,8 +113,13 @@ export type ReelScene =
       siteUrl: string;
     };
 
-/** Site wordmark shown on the outro. */
-export const REEL_SITE_URL = "heirloom.jrmoulckers.com";
+/**
+ * Site wordmark shown on the outro. Derived from `NEXT_PUBLIC_SITE_URL` so a
+ * reel shared from any environment (preview, self-host) stamps the right host,
+ * falling back to the production domain when the var is unset.
+ */
+export const REEL_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "heirloom.jrmoulckers.com";
 
 /**
  * Browser capabilities relevant to exporting a reel. Kept as plain booleans so

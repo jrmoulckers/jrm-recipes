@@ -230,6 +230,11 @@ describe("buildReelScenes", () => {
     const scenes = buildReelScenes(makeRecipe());
     const outro = scenes.at(-1) as Extract<ReelScene, { kind: "outro" }>;
     expect(outro.siteUrl).toBe(REEL_SITE_URL);
+    // Env-derived with a fallback: unset NEXT_PUBLIC_SITE_URL (as in tests)
+    // yields the production domain, so reels always carry a real host.
+    expect(REEL_SITE_URL).toBe(
+      process.env.NEXT_PUBLIC_SITE_URL ?? "heirloom.jrmoulckers.com",
+    );
   });
 });
 
