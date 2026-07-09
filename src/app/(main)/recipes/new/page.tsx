@@ -12,12 +12,18 @@ export const metadata: Metadata = { title: "New recipe" };
 export default async function NewRecipePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cover?: string }>;
+  searchParams: Promise<{ cover?: string; title?: string }>;
 }) {
-  const { cover } = await searchParams;
+  const { cover, title } = await searchParams;
   // Only a Cloudinary https URL we just uploaded (via the photo share target)
   // is trusted as a pre-filled cover; anything else is ignored.
   const initialCoverImageUrl = safeSharedImageUrl(cover);
+  // A searched-but-missing recipe can seed the title (#103). Trim/cap to keep it
+  // sane; the editor still requires the user to confirm and save.
+  const initialTitle =
+    typeof title === "string" && title.trim().length > 0
+      ? title.trim().slice(0, 120)
+      : undefined;
 
   const user = await getCurrentUser();
   const groups = user ? await listUserGroups(user.id) : [];
@@ -45,6 +51,7 @@ export default async function NewRecipePage({
         mode="create"
         groups={groups}
         initialCoverImageUrl={initialCoverImageUrl}
+        initialTitle={initialTitle}
       />
     </>
   );

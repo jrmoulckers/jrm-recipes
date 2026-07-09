@@ -17,7 +17,8 @@ import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { AlertTriangle, Check, Plus, Share2, Trash2, X } from "lucide-react";
+import { EmptyState } from "~/components/ui/empty-state";
+import { AlertTriangle, Check, Plus, Share2, ShoppingCart, Trash2, X } from "lucide-react";
 
 export type ShoppingViewItem = {
   id: string;
@@ -304,10 +305,12 @@ export function ShoppingListView({
       </form>
 
       {items.length === 0 ? (
-        <p className="text-muted-foreground">
-          Your list is empty. Add items above, or open a recipe and choose
-          &ldquo;Add to shopping list&rdquo;.
-        </p>
+        <EmptyState
+          variant="compact"
+          icon={<ShoppingCart />}
+          title="Your list is empty"
+          description="Add items above, or open a recipe and choose “Add to shopping list”."
+        />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">

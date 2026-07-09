@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { Clock3, Star, UtensilsCrossed, Users } from "lucide-react";
+import { Clock3, Play, Star, UtensilsCrossed, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
 import {
@@ -123,7 +123,7 @@ export function RecipeCard({
     : null;
 
   return (
-    <div className="relative">
+    <div className="group/card relative">
       {canFavorite && (
         <FavoriteButton
           recipeId={recipe.id}
@@ -144,6 +144,20 @@ export function RecipeCard({
           )}
         />
       )}
+      {/* One-tap Cook (#118): a real, focusable link that jumps straight to the
+          immersive cook route. Kept a sibling of the card link (never nested) to
+          avoid anchor-in-anchor. Overlays the image region via a pointer-events
+          gate; always visible on touch, hover/focus-revealed on desktop. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
+        <Link
+          href={`/recipes/${recipe.slug}/cook`}
+          aria-label={`Cook ${recipe.title}`}
+          className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:opacity-0 sm:group-hover/card:opacity-100 sm:group-focus-within/card:opacity-100 motion-reduce:transition-none"
+        >
+          <Play className="size-3.5" aria-hidden />
+          Cook
+        </Link>
+      </div>
       <Link
         href={`/recipes/${recipe.slug}`}
         className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg active:bg-muted/40 active:shadow-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

@@ -3,7 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronDown, Search, ShieldCheck, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -75,7 +82,11 @@ export function RecipeSearchControls({
   const pathname = usePathname();
   const currentParams = useSearchParams();
   const searchId = React.useId();
+  const filtersId = React.useId();
   const [query, setQuery] = React.useState(search.q ?? "");
+  // On phones the filter row collapses behind a "Filters" disclosure so the
+  // recipes stay near the top; desktop keeps the inline row (#90).
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [, startTransition] = React.useTransition();
 
   // Reflect URL changes driven elsewhere (back/forward, Clear) into the input.
@@ -163,6 +174,81 @@ export function RecipeSearchControls({
 
   const filtersActive = hasActiveRecipeFilters(search);
 
+  // Human-readable, individually removable chips for every active filter (#87).
+  // Each knows how to clear only its own param while preserving the rest.
+  const tagNameBySlug = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of facets.tags) map.set(t.slug.toLowerCase(), t.name);
+    return map;
+  }, [facets.tags]);
+  const memberNameById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of members) map.set(m.id, m.name);
+    return map;
+  }, [members]);
+
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
+  if (search.q) {
+    activeChips.push({
+      key: "q",
+      label: `“${search.q}”`,
+      onRemove: () => {
+        setQuery("");
+        pushParams({ q: undefined });
+      },
+    });
+  }
+  for (const cuisine of search.cuisines) {
+    activeChips.push({
+      key: `cuisine:${cuisine}`,
+      label: `Cuisine: ${cuisine}`,
+      onRemove: () =>
+        pushListParam(
+          "cuisine",
+          search.cuisines.filter(
+            (c) => c.toLowerCase() !== cuisine.toLowerCase(),
+          ),
+        ),
+    });
+  }
+  if (search.difficulty) {
+    activeChips.push({
+      key: "difficulty",
+      label: `Difficulty: ${search.difficulty}`,
+      onRemove: () => pushParams({ difficulty: undefined }),
+    });
+  }
+  if (search.maxTime != null) {
+    activeChips.push({
+      key: "maxTime",
+      label: `≤ ${search.maxTime} min`,
+      onRemove: () => pushParams({ maxTime: undefined }),
+    });
+  }
+  for (const tag of search.tags) {
+    const name = tagNameBySlug.get(tag.toLowerCase()) ?? tag;
+    activeChips.push({
+      key: `tag:${tag}`,
+      label: `Tag: ${name}`,
+      onRemove: () =>
+        pushListParam(
+          "tag",
+          search.tags.filter((t) => t.toLowerCase() !== tag.toLowerCase()),
+        ),
+    });
+  }
+  if (search.safeFor) {
+    const name = memberNameById.get(search.safeFor);
+    activeChips.push({
+      key: "safeFor",
+      label: name ? `Safe for: ${name}` : "Safe for",
+      onRemove: () => pushParams({ safeFor: undefined }),
+    });
+  }
+
+  // Active filters excluding the free-text query, for the mobile trigger badge.
+  const filterCount = activeChips.length - (search.q ? 1 : 0);
+
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4">
       <div className="flex flex-wrap items-center gap-2" aria-label="Quick filters">
@@ -207,7 +293,41 @@ export function RecipeSearchControls({
         />
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-3">
+        <div className="md:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
+            aria-controls={filtersId}
+            className="w-full justify-between font-normal"
+          >
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="size-4" />
+              Filters
+              {filterCount > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
+                  {filterCount}
+                </span>
+              )}
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 opacity-60 transition-transform",
+                filtersOpen && "rotate-180",
+              )}
+            />
+          </Button>
+        </div>
+
+        <div
+          id={filtersId}
+          className={cn(
+            "flex-wrap items-end gap-3 md:flex",
+            filtersOpen ? "flex" : "hidden",
+          )}
+        >
         {facets.cuisines.length > 0 && (
           <FacetMultiSelect
             label="Cuisine"
@@ -357,6 +477,33 @@ export function RecipeSearchControls({
           />
         </div>
       </div>
+      </div>
+
+      {activeChips.length > 0 && (
+        <ul
+          aria-label="Active filters"
+          className="flex flex-wrap items-center gap-2"
+        >
+          {activeChips.map((chip) => (
+            <li key={chip.key}>
+              <button
+                type="button"
+                onClick={chip.onRemove}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 pe-1.5 ps-3 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="max-w-[14rem] truncate">{chip.label}</span>
+                <span
+                  aria-hidden
+                  className="inline-flex size-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                >
+                  <X className="size-3" />
+                </span>
+                <span className="sr-only">— remove filter</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {search.safeFor != null && (
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">

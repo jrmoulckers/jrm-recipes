@@ -180,6 +180,7 @@ export function RecipeEditor({
   recipeId,
   initial,
   initialCoverImageUrl,
+  initialTitle,
   groups = [],
 }: {
   mode: "create" | "edit";
@@ -187,6 +188,8 @@ export function RecipeEditor({
   initial?: RecipeEditorValue;
   /** Pre-filled cover (e.g. a photo shared into the PWA share target). */
   initialCoverImageUrl?: string;
+  /** Pre-filled title (e.g. seeded from a searched-but-missing recipe, #103). */
+  initialTitle?: string;
   groups?: { id: string; name: string }[];
 }) {
   const router = useRouter();
@@ -203,7 +206,7 @@ export function RecipeEditor({
   }, [mode]);
 
   const [form, setForm] = React.useState(() => ({
-    title: initial?.title ?? "",
+    title: initial?.title ?? initialTitle ?? "",
     description: initial?.description ?? "",
     coverImageUrl: initial?.coverImageUrl ?? initialCoverImageUrl ?? "",
     servings: initial?.servings ?? "4",

@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ChefHat, Clock3, Compass, SearchX, Tags as TagIcon, UtensilsCrossed } from "lucide-react";
+import { ChefHat, Clock3, Compass, Database, SearchX, Tags as TagIcon, UtensilsCrossed } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -27,6 +27,7 @@ import { getFavoriteRecipeIds } from "~/server/collections/queries";
 import { buildQuickPlanContext } from "~/server/planner/quick-plan";
 import { listMySavedSearches } from "~/server/searches/queries";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   RecipeCard,
   type QuickPlanContext,
@@ -294,7 +295,7 @@ async function SearchResults({
         );
       }
     }
-    return <NoResults />;
+    return <NoResults search={search} />;
   }
 
   return (
@@ -370,37 +371,57 @@ async function ResultsGrid({
   );
 }
 
-function NoResults() {
+function NoResults({ search }: { search: RecipeSearch }) {
+  const query = search.q?.trim();
   return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-        <SearchX className="size-7" />
-      </span>
-      <div>
-        <h2 className="font-display text-xl font-semibold">No matches</h2>
-        <p className="mt-1 max-w-sm text-muted-foreground">
-          Try fewer filters or a different search — your next favorite might be
-          hiding under another name.
-        </p>
-      </div>
-    </div>
+    <EmptyState
+      icon={<SearchX />}
+      title={query ? `No matches for “${query}”` : "No matches"}
+      description="Try fewer filters or a different search — your next favorite might be hiding under another name."
+      action={
+        <>
+          <Button asChild>
+            <Link href="/recipes">
+              <Compass /> Clear all filters
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            {/* Deep-link "create this recipe" with the searched term as a
+                starting title, so a missing recipe becomes an invitation to add
+                it (#103). Object href stays type-safe under typedRoutes. */}
+            <Link
+              href={{
+                pathname: "/recipes/new",
+                query: query ? { title: query } : undefined,
+              }}
+            >
+              <ChefHat /> {query ? `Create “${query}”` : "Create a recipe"}
+            </Link>
+          </Button>
+        </>
+      }
+    />
   );
 }
 
 function ConnectDbNotice() {
   return (
-    <div className="rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
-      <p className="mx-auto max-w-md">
-        Connect a database to start saving recipes. Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          docker compose up -d
-        </code>
-        .
-      </p>
-    </div>
+    <EmptyState
+      icon={<Database />}
+      title="Connect a database to start"
+      description={
+        <>
+          Set{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            DATABASE_URL
+          </code>{" "}
+          (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            docker compose up -d
+          </code>
+          .
+        </>
+      }
+    />
   );
 }

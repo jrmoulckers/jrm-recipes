@@ -1,11 +1,12 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { UserX, UtensilsCrossed, Users } from "lucide-react";
+import { Database, UserX, UtensilsCrossed, Users } from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { listMyGroups } from "~/server/groups/queries";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { CreateGroupDialog } from "~/components/groups/create-group-dialog";
 import { GroupCard } from "~/components/groups/group-card";
 
@@ -72,21 +73,12 @@ export default async function GroupsPage() {
 
 function EmptyGroups() {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-        <Users className="size-7" aria-hidden="true" />
-      </span>
-      <div>
-        <h2 className="font-display text-xl font-semibold">
-          Start a family table
-        </h2>
-        <p className="mt-1 max-w-md text-muted-foreground">
-          Create a space for the people who share weeknight wins, holiday
-          classics, and the little notes that make a dish yours.
-        </p>
-      </div>
-      <CreateGroupDialog />
-    </div>
+    <EmptyState
+      icon={<Users />}
+      title="Start a family table"
+      description="Create a space for the people who share weeknight wins, holiday classics, and the little notes that make a dish yours."
+      action={<CreateGroupDialog />}
+    />
   );
 }
 
@@ -112,14 +104,18 @@ function SignInNudge() {
 
 function ConnectDbNotice() {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
-      <p className="mx-auto max-w-md">
-        Connect a database to start saving family groups. Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        or start the local Postgres container.
-      </p>
-    </div>
+    <EmptyState
+      icon={<Database />}
+      title="Connect a database to start"
+      description={
+        <>
+          Set{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+            DATABASE_URL
+          </code>{" "}
+          or start the local Postgres container.
+        </>
+      }
+    />
   );
 }

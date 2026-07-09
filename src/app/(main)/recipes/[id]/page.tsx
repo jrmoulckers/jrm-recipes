@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
-  ArrowLeft,
   BookOpen,
   ChefHat,
   Clock3,
@@ -45,6 +44,7 @@ import { listMemberProfiles } from "~/server/dietary/queries";
 import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -145,6 +145,7 @@ export default async function RecipePage({
   if (!recipe) notFound();
 
   const t = await getTranslations("recipeDetail");
+  const tNav = await getTranslations("nav");
 
   // Unlisted recipes are shared by token, never by their guessable slug, so the
   // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
@@ -281,11 +282,13 @@ export default async function RecipePage({
       <div className="container -mt-16 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild size="sm" variant="ghost" className="-ms-2">
-              <Link href="/recipes">
-                <ArrowLeft /> {t("backToRecipes")}
-              </Link>
-            </Button>
+            <Breadcrumbs
+              className="-ms-0.5"
+              items={[
+                { label: tNav("recipes"), href: "/recipes" },
+                { label: recipe.title },
+              ]}
+            />
             {recipe.visibility !== "public" && (
               <Badge variant="muted">
                 {t(`visibility.${recipe.visibility}`)}

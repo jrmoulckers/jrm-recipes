@@ -3,6 +3,7 @@ import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { BookOpen, Plus, ShieldAlert, Settings, Users } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
@@ -29,6 +30,7 @@ import {
 import { RoleBadge } from "~/components/groups/role-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { Separator } from "~/components/ui/separator";
 import { brand } from "~/config/brand";
 import { absoluteUrl } from "~/lib/utils";
@@ -120,9 +122,16 @@ export default async function GroupPage({
     joinedAt: member.createdAt.toISOString(),
     user: member.user,
   }));
+  const tNav = await getTranslations("nav");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
+      <Breadcrumbs
+        items={[
+          { label: tNav("family"), href: "/groups" },
+          { label: group.name },
+        ]}
+      />
       <header className="rounded-2xl border border-border bg-card p-5 shadow-token sm:p-7">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">

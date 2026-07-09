@@ -23,7 +23,7 @@ import {
   listBackInRotation,
   ROTATION_MIN,
 } from "~/server/collections/queries";
-import { listDinnerCandidates } from "~/server/recipes/queries";
+import { listDinnerCandidates, listLibrary } from "~/server/recipes/queries";
 import { buildQuickPlanContext } from "~/server/planner/quick-plan";
 import { todayParam } from "~/server/planner/week";
 import { Button } from "~/components/ui/button";
@@ -32,6 +32,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ModePicker } from "~/components/theme/mode-picker";
 import { DinnerSuggestion } from "~/components/recipe/dinner-suggestion";
 import { RotationRail } from "~/components/recipe/rotation-rail";
+import { RecipeCard } from "~/components/recipe/recipe-card";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import {
@@ -83,12 +84,13 @@ const features = [
  */
 async function loadPersonalizedHome(user: User) {
   const today = todayParam();
-  const [dinner, rotation, quickPlan] = await Promise.all([
+  const [dinner, rotation, quickPlan, library] = await Promise.all([
     listDinnerCandidates(user, { today }),
     listBackInRotation(user.id),
     buildQuickPlanContext(user.id),
+    listLibrary(user),
   ]);
-  return { today, dinner, rotation, quickPlan };
+  return { today, dinner, rotation, quickPlan, library };
 }
 
 export default async function HomePage() {
@@ -98,6 +100,11 @@ export default async function HomePage() {
   const showDinner = personalized != null && personalized.dinner.length > 0;
   const showRotation =
     personalized != null && personalized.rotation.length >= ROTATION_MIN;
+  // Signed-in users who already have recipes get a personalized home instead of
+  // the marketing landing (#77): a greeting, quick actions, and their library.
+  const personalizedHome = personalized != null && personalized.library.length > 0;
+  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
 
   return (
     <div className="flex flex-col">
@@ -114,6 +121,39 @@ export default async function HomePage() {
         }}
       />
       <LandingViewedTracker />
+      {personalizedHome && (
+        <section className="border-b border-border bg-surface">
+          <div className="container flex flex-col gap-5 py-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  {greeting}
+                </h1>
+                <p className="mt-1 text-muted-foreground">
+                  Pick up where you left off, or start something new.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link href="/recipes/new">
+                    <ChefHat /> New recipe
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/recipes">
+                    <BookHeart /> Browse
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/groups">
+                    <Users /> Family
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       {personalized && (showDinner || showRotation) && (
         <section className="border-b border-border bg-surface">
           <div className="container flex flex-col gap-10 py-10">
@@ -132,7 +172,26 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-      {/* Hero */}
+      {personalizedHome && personalized && (
+        <section className="container py-12">
+          <div className="mb-5 flex items-end justify-between gap-3">
+            <h2 className="font-display text-2xl font-bold tracking-tight">
+              Your recipes
+            </h2>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/recipes">View all</Link>
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {personalized.library.slice(0, 8).map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+        </section>
+      )}
+      {!personalizedHome && (
+        <>
+          {/* Hero */}
       <section className="relative overflow-hidden">
         <div
           aria-hidden
@@ -249,6 +308,8 @@ export default async function HomePage() {
           </CardContent>
         </Card>
       </section>
+        </>
+      )}
     </div>
   );
 }
