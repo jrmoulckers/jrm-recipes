@@ -57,7 +57,7 @@ import { HandDownButton } from "~/components/recipe/hand-down-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
-import { ReadAloudButton } from "~/components/recipe/read-aloud-button";
+import { ReadAloudButton } from "~/components/recipe/read-aloud-button-lazy";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";

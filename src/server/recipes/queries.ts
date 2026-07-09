@@ -294,7 +294,7 @@ export async function listOwnedRecipesForBackup(
       tags: { with: { tag: true } },
       ratings: true,
     },
-  }) as Promise<FullRecipe[]>;
+  });
 }
 
 /**

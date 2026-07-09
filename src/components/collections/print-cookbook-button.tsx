@@ -34,10 +34,12 @@ export function PrintCookbookButton({
 
   function openPrint() {
     const trimmed = dedication.trim();
-    router.push({
-      pathname: `/collections/${collectionId}/print`,
-      query: trimmed ? { dedication: trimmed } : undefined,
-    });
+    if (trimmed) {
+      const qs = new URLSearchParams({ dedication: trimmed }).toString();
+      router.push(`/collections/${collectionId}/print?${qs}`);
+    } else {
+      router.push(`/collections/${collectionId}/print`);
+    }
   }
 
   return (
