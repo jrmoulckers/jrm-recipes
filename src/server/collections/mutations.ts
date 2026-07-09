@@ -5,6 +5,7 @@ import { createId } from "@paralleldrive/cuid2";
 
 import { db } from "~/server/db";
 import {
+  collectionGroups,
   collectionRecipes,
   collections,
   favorites,
@@ -236,5 +237,68 @@ export async function removeRecipeFromCollection(
       .where(eq(collections.id, collectionId));
 
     return { collectionId, recipeId };
+  });
+}
+
+/** Assert the caller is a member of the group, or throw NOT_FOUND. */
+async function requireGroupMembership(tx: Tx, groupId: string, user: User) {
+  const membership = await tx.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, user.id),
+    ),
+    columns: { id: true },
+  });
+  if (!membership) throw new Error("NOT_FOUND");
+  return membership;
+}
+
+/**
+ * Share a collection with a family group (issue #365). Only the collection
+ * *owner* may share it, and only with a group they belong to. Idempotent — a
+ * repeat share of the same pair is a no-op.
+ */
+export async function shareCollectionWithGroup(
+  collectionId: string,
+  groupId: string,
+  user: User,
+) {
+  return db.transaction(async (tx) => {
+    await requireOwnedCollection(tx, collectionId, user);
+    await requireGroupMembership(tx, groupId, user);
+
+    await tx
+      .insert(collectionGroups)
+      .values({ collectionId, groupId, sharedById: user.id })
+      .onConflictDoNothing({
+        target: [collectionGroups.collectionId, collectionGroups.groupId],
+      });
+
+    return { collectionId, groupId };
+  });
+}
+
+/**
+ * Stop sharing a collection with a group. Only the owner may unshare; deleting
+ * the link immediately revokes group members' access.
+ */
+export async function unshareCollectionWithGroup(
+  collectionId: string,
+  groupId: string,
+  user: User,
+) {
+  return db.transaction(async (tx) => {
+    await requireOwnedCollection(tx, collectionId, user);
+
+    await tx
+      .delete(collectionGroups)
+      .where(
+        and(
+          eq(collectionGroups.collectionId, collectionId),
+          eq(collectionGroups.groupId, groupId),
+        ),
+      );
+
+    return { collectionId, groupId };
   });
 }

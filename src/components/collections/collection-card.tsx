@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookMarked } from "lucide-react";
+import { BookMarked, Users } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
@@ -60,9 +60,20 @@ export function CollectionCard({
             {collection.description}
           </p>
         )}
-        <div className="mt-auto pt-1 text-xs text-muted-foreground">
-          {collection.recipeCount}{" "}
-          {collection.recipeCount === 1 ? "recipe" : "recipes"}
+        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
+          <span>
+            {collection.recipeCount}{" "}
+            {collection.recipeCount === 1 ? "recipe" : "recipes"}
+          </span>
+          {collection.sharedGroups.length > 0 ? (
+            <span className="inline-flex items-center gap-1 text-primary">
+              <Users className="size-3" aria-hidden="true" />
+              Shared with {collection.sharedGroups[0]!.name}
+              {collection.sharedGroups.length > 1
+                ? ` +${collection.sharedGroups.length - 1}`
+                : ""}
+            </span>
+          ) : null}
         </div>
       </div>
     </Link>

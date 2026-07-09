@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { BookOpen, Plus, ShieldAlert, Settings, Users } from "lucide-react";
+import { BookMarked, BookOpen, Plus, ShieldAlert, Settings, Users } from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -12,8 +12,10 @@ import {
   getGroupBySlug,
   type GroupRecipe,
 } from "~/server/groups/queries";
+import { type SharedGroupCollection } from "~/server/collections/queries";
 import { getOpenReportCount } from "~/server/moderation/queries";
 import { getGroupActivity } from "~/server/activity/queries";
+import { listCollectionsSharedWithGroup } from "~/server/collections/queries";
 import {
   getRecentCookAlongsToLog,
   getUpcomingCookAlongs,
@@ -111,6 +113,10 @@ export default async function GroupPage({
           getRecentCookAlongsToLog(group.id, viewer.id),
         ])
       : [[], []];
+  const sharedCollections =
+    isMember && viewer
+      ? await listCollectionsSharedWithGroup(group.id, viewer)
+      : [];
   const cookAlongRecipes = group.recipes.map((recipe) => ({
     id: recipe.id,
     title: recipe.title,
@@ -305,6 +311,31 @@ export default async function GroupPage({
               <EmptyCookbook isMember={Boolean(group.viewerRole)} />
             )}
           </section>
+
+          {isMember && sharedCollections.length > 0 ? (
+            <>
+              <Separator />
+              <section className="flex flex-col gap-4">
+                <div>
+                  <h2 className="font-display text-2xl font-bold tracking-tight">
+                    Shared collections
+                  </h2>
+                  <p className="mt-1 text-muted-foreground">
+                    Cookbooks family members have shared with this group.
+                  </p>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  {sharedCollections.map((collection) => (
+                    <SharedCollectionCard
+                      key={collection.id}
+                      collection={collection}
+                      groupName={group.name}
+                    />
+                  ))}
+                </div>
+              </section>
+            </>
+          ) : null}
         </main>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:self-start">
@@ -381,6 +412,58 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
             <span className="font-medium text-foreground">{recipe.author.name}</span>
           </p>
         ) : null}
+      </div>
+    </Link>
+  );
+}
+
+function SharedCollectionCard({
+  collection,
+  groupName,
+}: {
+  collection: SharedGroupCollection;
+  groupName: string;
+}) {
+  return (
+    <Link
+      href={`/collections/${collection.id}`}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <div className="relative aspect-[16/9] overflow-hidden bg-primary/12">
+        {collection.coverImageUrl ? (
+          <Image
+            src={collection.coverImageUrl}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 50vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center text-primary/25">
+            <BookMarked className="size-10" />
+          </div>
+        )}
+        <div className="absolute start-3 top-3">
+          <Badge variant="muted" className="gap-1 backdrop-blur">
+            <Users className="size-3" aria-hidden="true" />
+            Shared with {groupName}
+          </Badge>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-4">
+        <h3 className="line-clamp-1 font-display text-lg font-semibold leading-tight">
+          {collection.name}
+        </h3>
+        {collection.description ? (
+          <p className="line-clamp-2 text-sm text-muted-foreground">
+            {collection.description}
+          </p>
+        ) : null}
+        <p className="mt-auto pt-2 text-xs text-muted-foreground">
+          {collection.recipeCount}{" "}
+          {collection.recipeCount === 1 ? "recipe" : "recipes"}
+          {collection.ownerName ? <> · by {collection.ownerName}</> : null}
+        </p>
       </div>
     </Link>
   );

@@ -12,6 +12,7 @@ import {
 import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
 import { recipes } from "./recipes";
+import { groups } from "./groups";
 
 /**
  * One-tap favorites: a bookmark of any recipe a user can view. Distinct from
@@ -107,7 +108,57 @@ export const collectionsRelations = relations(collections, ({ one, many }) => ({
     references: [users.id],
   }),
   recipes: many(collectionRecipes),
+  sharedWithGroups: many(collectionGroups),
 }));
+
+/**
+ * View-sharing link between a collection and a family group (issue #365).
+ * A collection *owner* can share their cookbook with a group they belong to;
+ * every member of that group can then view it (read-only in this slice — only
+ * the owner adds/removes recipes). Unsharing deletes the row and immediately
+ * revokes access. One row per collection+group pair.
+ */
+export const collectionGroups = pgTable(
+  "collection_groups",
+  {
+    id: pk(),
+    collectionId: fk()
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    groupId: fk()
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    // Who shared it (for provenance); nulls out if that user is removed.
+    sharedById: fk().references(() => users.id, { onDelete: "set null" }),
+    ...timestamps(),
+  },
+  (t) => [
+    unique("collection_groups_collection_group_uq").on(
+      t.collectionId,
+      t.groupId,
+    ),
+    index("collection_groups_collection_idx").on(t.collectionId),
+    index("collection_groups_group_idx").on(t.groupId),
+  ],
+);
+
+export const collectionGroupsRelations = relations(
+  collectionGroups,
+  ({ one }) => ({
+    collection: one(collections, {
+      fields: [collectionGroups.collectionId],
+      references: [collections.id],
+    }),
+    group: one(groups, {
+      fields: [collectionGroups.groupId],
+      references: [groups.id],
+    }),
+    sharedBy: one(users, {
+      fields: [collectionGroups.sharedById],
+      references: [users.id],
+    }),
+  }),
+);
 
 export const collectionRecipesRelations = relations(
   collectionRecipes,
@@ -131,3 +182,5 @@ export type CollectionVisibility =
   (typeof collectionVisibility.enumValues)[number];
 export type CollectionRecipe = typeof collectionRecipes.$inferSelect;
 export type NewCollectionRecipe = typeof collectionRecipes.$inferInsert;
+export type CollectionGroup = typeof collectionGroups.$inferSelect;
+export type NewCollectionGroup = typeof collectionGroups.$inferInsert;
