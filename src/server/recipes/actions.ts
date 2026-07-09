@@ -21,6 +21,7 @@ import { captureServer } from "~/lib/analytics/server";
 import { getLimitStatus } from "~/server/billing/entitlements";
 import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import { importRecipeFromUrl, type ImportResult } from "./import";
+import { parseRecipeText } from "./import-text";
 import { recipeInput, type RecipeInput } from "./validation";
 import { recipeMutationTags, recipeTag } from "./cache-tags";
 import { diffRecipeSnapshots, type RecipeDiff } from "~/lib/recipe-diff";
@@ -262,6 +263,34 @@ export async function importRecipeFromUrlAction(
   const result = await importRecipeFromUrl(url);
   void captureServer(user.id, "recipe_imported", { ok: result.ok });
   return result;
+}
+
+/**
+ * Parse pasted plain-text into a structured recipe draft (#370). Deterministic
+ * and offline - no fetch, no AI - so it only needs an authenticated session to
+ * curb abuse. The editor applies the result for the user to review before save.
+ */
+export async function importRecipeTextAction(
+  text: string,
+): Promise<ImportResult> {
+  const user = await requireUser();
+  if (!checkRateLimit("import", user.id).ok) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+  const recipe = parseRecipeText(text ?? "");
+  if (
+    !recipe.title &&
+    recipe.ingredients.length === 0 &&
+    recipe.steps.length === 0
+  ) {
+    return {
+      ok: false,
+      error:
+        "We couldn't find a recipe in that text. Try including the title, ingredients, and steps.",
+    };
+  }
+  void captureServer(user.id, "recipe_imported", { ok: true });
+  return { ok: true, recipe };
 }
 
 export async function deleteRecipeAction(id: string): Promise<void> {
