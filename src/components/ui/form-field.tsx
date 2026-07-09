@@ -30,8 +30,8 @@ import { Label } from "./label";
 function firstMessage(
   error?: string | readonly string[] | null,
 ): string | undefined {
-  if (!error) return undefined;
-  const message = Array.isArray(error) ? error[0] : (error as string);
+  if (error == null) return undefined;
+  const message = typeof error === "string" ? error : error[0];
   return message && message.length > 0 ? message : undefined;
 }
 
@@ -122,7 +122,7 @@ export function FormField({
 
   const existingDescribedBy =
     child && typeof child.props["aria-describedby"] === "string"
-      ? (child.props["aria-describedby"] as string)
+      ? child.props["aria-describedby"]
       : undefined;
 
   const control = child
