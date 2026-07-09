@@ -47,35 +47,65 @@ import { vi, type Mock } from "vitest";
 
 import type { User } from "~/server/db/schema";
 
+/** The fluent builder surface an insert/statement resolves through. */
+export interface Chainable {
+  returning: Mock<(...cols: unknown[]) => Promise<unknown[]>>;
+  onConflictDoNothing: Mock<(...args: unknown[]) => Promise<undefined>>;
+  then: (
+    onFulfilled: (value: unknown) => unknown,
+    onRejected?: (reason: unknown) => unknown,
+  ) => Promise<unknown>;
+}
+
 /**
  * A resolved-then-chainable drizzle builder stand-in. `await db.insert(t)
- * .values(v)` resolves to `result`, while `.returning(...)` and
+ * .values(v)` resolves to `rows`, while `.returning(...)` and
  * `.onConflictDoNothing(...)` are also awaitable — matching the fluent surface
  * the mutation code walks.
  */
-export function chainable(result: unknown = undefined) {
+export function chainable(rows: unknown[] = []): Chainable {
   return {
-    returning: vi.fn(() => Promise.resolve(result)),
-    onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
+    returning: vi.fn(
+      (..._cols: unknown[]): Promise<unknown[]> => Promise.resolve(rows),
+    ),
+    onConflictDoNothing: vi.fn(
+      (..._args: unknown[]): Promise<undefined> => Promise.resolve(undefined),
+    ),
     then: (
       onFulfilled: (value: unknown) => unknown,
       onRejected?: (reason: unknown) => unknown,
-    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+    ) => Promise.resolve(rows).then(onFulfilled, onRejected),
   };
 }
 
 /** A vitest fake `query.<table>` surface. */
-export type QueryTableMock = { findFirst: Mock; findMany: Mock };
+export type QueryTableMock = {
+  findFirst: Mock<(...args: unknown[]) => Promise<unknown>>;
+  findMany: Mock<(...args: unknown[]) => Promise<unknown[]>>;
+};
+
+type InsertBuilder = { values: (vals?: unknown) => Chainable };
+type UpdateBuilder = {
+  set: (vals?: unknown) => { where: (where?: unknown) => Promise<undefined> };
+};
+type DeleteBuilder = { where: (where?: unknown) => Promise<undefined> };
+type SelectBuilder = {
+  from: (table?: unknown) => { where: (where?: unknown) => Promise<unknown[]> };
+};
+
+/** The drizzle statement builders shared by `db` and each `tx`. */
+export interface StatementMocks {
+  insert: Mock<(table?: unknown) => InsertBuilder>;
+  update: Mock<(table?: unknown) => UpdateBuilder>;
+  delete: Mock<(table?: unknown) => DeleteBuilder>;
+  select: Mock<(...columns: unknown[]) => SelectBuilder>;
+}
 
 /** The transaction/statement surface shared by `db` and its `tx` callback arg. */
-export interface TxMock {
+export interface TxMock extends StatementMocks {
   query: Record<string, QueryTableMock>;
-  insert: Mock;
-  update: Mock;
-  delete: Mock;
-  select: Mock;
   /** Nested SAVEPOINT (`tx.transaction`) that runs its callback against `tx`. */
-  transaction: Mock;
+  transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
 }
 
 /** Default tables exposed on `query`; extend per-test via {@link createDbMock}. */
@@ -94,24 +124,23 @@ const DEFAULT_TABLES = [
 
 function makeQuery(tables: readonly string[]): Record<string, QueryTableMock> {
   const query: Record<string, QueryTableMock> = {};
-  for (const t of tables) query[t] = { findFirst: vi.fn(), findMany: vi.fn() };
+  for (const t of tables)
+    query[t] = {
+      findFirst: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+      findMany: vi.fn<(...args: unknown[]) => Promise<unknown[]>>(),
+    };
   return query;
 }
 
 /** The full fake db plus handles for configuring/asserting on it. */
-export interface DbMock {
+export interface DbMock extends StatementMocks {
   /** Object to hand to `vi.mock("~/server/db", () => ({ db }))`. */
   db: TxMock & { $count: Mock };
   /** The tx object every `transaction(cb)` / SAVEPOINT callback receives. */
   tx: TxMock;
   /** Shorthand for `db.query`. */
   query: Record<string, QueryTableMock>;
-  /** Shorthand for the shared `insert`/`update`/`delete`/`select`/`$count` fns. */
-  insert: Mock;
-  update: Mock;
-  delete: Mock;
-  select: Mock;
-  transaction: Mock;
+  transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
   $count: Mock;
 }
 
@@ -128,14 +157,30 @@ export function createDbMock(
   const tables = [...new Set([...DEFAULT_TABLES, ...extraTables])];
   const query = makeQuery(tables);
 
-  const insert = vi.fn(() => ({ values: vi.fn(() => chainable()) }));
-  const update = vi.fn(() => ({
-    set: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
-  }));
-  const del = vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) }));
-  const select = vi.fn(() => ({
-    from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([])) })),
-  }));
+  const insert = vi.fn(
+    (_table?: unknown): InsertBuilder => ({
+      values: (_vals?: unknown) => chainable(),
+    }),
+  );
+  const update = vi.fn(
+    (_table?: unknown): UpdateBuilder => ({
+      set: (_vals?: unknown) => ({
+        where: (_where?: unknown) => Promise.resolve(undefined),
+      }),
+    }),
+  );
+  const del = vi.fn(
+    (_table?: unknown): DeleteBuilder => ({
+      where: (_where?: unknown) => Promise.resolve(undefined),
+    }),
+  );
+  const select = vi.fn(
+    (..._columns: unknown[]): SelectBuilder => ({
+      from: (_table?: unknown) => ({
+        where: (_where?: unknown) => Promise.resolve([]),
+      }),
+    }),
+  );
   const $count = vi.fn();
 
   const tx: TxMock = {
@@ -173,7 +218,7 @@ export function useDbMock(mock: DbMock = createDbMock()): DbMock {
   return mock;
 }
 
-const dbProxy: unknown = new Proxy(
+const dbProxy = new Proxy(
   {},
   {
     get(_t, prop) {
@@ -182,7 +227,7 @@ const dbProxy: unknown = new Proxy(
       return activeDb.db[prop as keyof DbMock["db"]];
     },
   },
-);
+) as unknown as TxMock & { $count: Mock };
 
 /**
  * Module shim for `vi.mock("~/server/db", …)`. Returns a stable `db` proxy that

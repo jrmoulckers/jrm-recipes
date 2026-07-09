@@ -82,7 +82,6 @@ import {
   forkRecipeAction,
   importRecipeFromUrlAction,
   revertRecipeAction,
-  updateRecipeAction,
 } from "./actions";
 import { NEEDS_DATABASE } from "~/server/action";
 import { DomainError } from "~/server/errors";
