@@ -19,13 +19,17 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
+import { createLogger } from "../src/lib/log.js";
+
+const log = createLogger({ scope: "migrate" });
+
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
   process.env.POSTGRES_URL_NON_POOLING ??
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[migrate] No database URL set — skipping migrations.");
+  log.info("No database URL set — skipping migrations.");
   process.exit(0);
 }
 
@@ -39,8 +43,8 @@ if (
   process.env.VERCEL_ENV === "preview" &&
   process.env.ALLOW_PREVIEW_MIGRATIONS !== "1"
 ) {
-  console.log(
-    "[migrate] Preview deploy detected — skipping migrations to protect the " +
+  log.warn(
+    "Preview deploy detected — skipping migrations to protect the " +
       "production database. Provision a per-branch database and set " +
       "ALLOW_PREVIEW_MIGRATIONS=1 to run them against the isolated branch.",
   );
@@ -50,13 +54,13 @@ if (
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 
 try {
-  console.log("[migrate] Applying migrations from ./drizzle …");
+  log.info("Applying migrations from ./drizzle …");
   await migrate(drizzle(sql), { migrationsFolder: "./drizzle" });
-  console.log("[migrate] Database is up to date.");
+  log.info("Database is up to date.");
   await sql.end();
   process.exit(0);
 } catch (error) {
-  console.error("[migrate] Migration failed:", error);
+  log.error("Migration failed.", { error });
   await sql.end({ timeout: 5 }).catch(() => {});
   process.exit(1);
 }

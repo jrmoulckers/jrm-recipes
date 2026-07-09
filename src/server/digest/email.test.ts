@@ -104,17 +104,23 @@ describe("renderDigestEmail", () => {
 
 describe("logEmailProvider", () => {
   it("redacts the recipient address and never throws", async () => {
-    const spy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const chunks: string[] = [];
+    const spy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation((chunk: unknown) => {
+        chunks.push(String(chunk));
+        return true;
+      });
     await logEmailProvider.send({
       to: "grandma@example.com",
       subject: "Hi",
       html: "<p>Hi</p>",
       text: "Hi",
     });
-    expect(spy).toHaveBeenCalledOnce();
-    const logged = spy.mock.calls[0]?.join(" ") ?? "";
+    spy.mockRestore();
+    const logged = chunks.join(" ");
+    expect(chunks.length).toBeGreaterThanOrEqual(1);
     expect(logged).toContain("g***@example.com");
     expect(logged).not.toContain("grandma@example.com");
-    spy.mockRestore();
   });
 });
