@@ -40,6 +40,13 @@ export type PrintRecipe = {
   sourceName: string | null;
   sourceUrl: string | null;
   notes: string | null;
+  // Heritage fields (issues #377/#381) — optional so existing PrintRecipe
+  // producers/fixtures stay valid; the backup export (#420) reads them so a
+  // family's story and provenance are never lost when they take their data home.
+  story?: string | null;
+  handedDownFrom?: string | null;
+  originYear?: string | null;
+  originPlace?: string | null;
   author: {
     name: string | null;
   } | null;
