@@ -139,7 +139,7 @@ export function RecipeCard({
           days={quickPlan.days}
           defaultDate={quickPlan.defaultDate}
           className={cn(
-            "absolute left-2 top-2 z-10",
+            "absolute start-2 top-2 z-10",
             recipe.visibility !== "public" && "top-11",
           )}
         />

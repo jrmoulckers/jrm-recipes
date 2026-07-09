@@ -498,7 +498,7 @@ export function CookExperience({
               <p className="text-sm font-semibold text-muted-foreground">
                 Step {stepIndex + 1} of {totalSteps}
                 {!canGoNext && totalSteps > 1 && (
-                  <span className="ml-2 font-medium text-primary">· Last step</span>
+                  <span className="ms-2 font-medium text-primary">· Last step</span>
                 )}
               </p>
               <h1
@@ -818,7 +818,7 @@ function ReadAloudControls({
 }) {
   const t = useTranslations("cook.readAloud");
   return (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="ms-auto flex items-center gap-2">
       <Button
         type="button"
         size="sm"

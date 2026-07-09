@@ -61,6 +61,10 @@
       "reset": "استخدام حصص كل وصفة"
     }
   },
+  "localeSwitcher": {
+    "trigger": "تغيير اللغة",
+    "label": "اللغة"
+  },
   "saveToCollection": {
     "list": "مجموعاتك",
     "add": "الإضافة إلى المجموعة {name}",

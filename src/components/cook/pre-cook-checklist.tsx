@@ -28,7 +28,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
         aria-pressed={done}
         onClick={() => setDone((value) => !value)}
         className={cn(
-          "flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5",
+          "flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5",
           highlight
             ? "border-warning/55 bg-warning/15 text-warning-foreground"
             : "border-border bg-card text-card-foreground",
@@ -45,7 +45,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
         <span
           aria-hidden="true"
           className={cn(
-            "ml-auto flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold",
+            "ms-auto flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold",
             done
               ? "border-success bg-success text-success-foreground"
               : "border-muted-foreground/40 text-transparent",

@@ -502,7 +502,7 @@ export function RecipeEditor({
               ? "Please fix this field before saving:"
               : `Please fix these ${errorKeys.length} fields before saving:`}
           </h2>
-          <ul className="mt-2 flex list-disc flex-col gap-1 pl-8">
+          <ul className="mt-2 flex list-disc flex-col gap-1 ps-8">
             {errorKeys.map((key) => {
               const label = FIELD_LABELS[key] ?? prettifyFieldKey(key);
               const message = errors[key]?.[0];

@@ -48,7 +48,7 @@ export function RatingSummary({
       className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <div className="flex shrink-0 flex-col items-center gap-1 sm:pr-5">
+        <div className="flex shrink-0 flex-col items-center gap-1 sm:pe-5">
           <span className="font-display text-4xl font-semibold text-foreground">
             {average.toFixed(1)}
           </span>
@@ -96,7 +96,7 @@ export function RatingSummary({
                     style={{ width: `${width}%` }}
                   />
                 </span>
-                <span className="w-8 shrink-0 text-right tabular-nums text-muted-foreground">
+                <span className="w-8 shrink-0 text-end tabular-nums text-muted-foreground">
                   {row.count}
                 </span>
               </li>
