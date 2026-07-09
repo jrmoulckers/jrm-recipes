@@ -133,6 +133,20 @@ against Neon and build the app.
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.
 
+> **Production deploy preflight (`scripts/preflight-env.mjs`).** Because every
+> variable above is technically optional (so local/CI/preview can boot with zero
+> config), production deploys run a preflight check _before_ migrations and the
+> build. When `VERCEL_ENV=production`, it fails the deploy fast with an
+> actionable message unless all of these are present and well-formed:
+>
+> - `DATABASE_URL` — a `postgres://` / `postgresql://` URL
+> - `NEXT_PUBLIC_APP_URL` — an absolute `http(s)` URL
+> - `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+> - `NEXT_PUBLIC_DEV_AUTH_BYPASS` **must not** be `1`
+>
+> Local, CI, and preview builds skip the check entirely, so zero-config runs are
+> unaffected.
+
 ---
 
 ## 5. Verify

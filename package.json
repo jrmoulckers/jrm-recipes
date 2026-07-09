@@ -12,7 +12,7 @@
     "analyze": "node scripts/analyze.mjs",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "lhci": "lhci autorun --config=./lighthouserc.cjs",
-    "vercel-build": "node scripts/migrate.mjs && next build",
+    "vercel-build": "node scripts/preflight-env.mjs && node scripts/migrate.mjs && next build",
     "start": "next start",
     "preview": "next build && next start",
     "lint": "next lint",
