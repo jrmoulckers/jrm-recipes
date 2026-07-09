@@ -40,6 +40,8 @@ type QuickPlanButtonProps = {
    * `button` is a labelled action for the "Back in the rotation" rail.
    */
   variant?: "overlay" | "button";
+  /** Popover heading; defaults to the this-week copy used by browse cards. */
+  heading?: string;
   className?: string;
 };
 
@@ -59,6 +61,7 @@ export function QuickPlanButton({
   days,
   defaultDate,
   variant = "overlay",
+  heading = "Add to this week's plan",
   className,
 }: QuickPlanButtonProps) {
   const router = useRouter();
@@ -121,7 +124,7 @@ export function QuickPlanButton({
         onClick={(event) => event.stopPropagation()}
       >
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <p className="text-sm font-medium">Add to this week&apos;s plan</p>
+          <p className="text-sm font-medium">{heading}</p>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             Day
             <select

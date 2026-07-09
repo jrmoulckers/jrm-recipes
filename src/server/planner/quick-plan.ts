@@ -5,6 +5,8 @@ import {
   formatDayName,
   formatMonthDay,
   getPlannerWeek,
+  nextWeekParam,
+  parseDateParam,
   toDateParam,
   todayParam,
 } from "./week";
@@ -42,4 +44,22 @@ export async function buildQuickPlanContext(
     pool[0]?.value ??
     today;
   return { days, defaultDate };
+}
+
+/**
+ * Build the add-to-plan context for the recipe detail page (#362): the current
+ * planner week plus the following week (14 days, labelled "Mon, Jul 6"), with
+ * today pre-selected. Signed-in detail-page viewers can drop a recipe onto any
+ * night across two weeks without leaving the page, reusing `addEntryAction`.
+ * Unlike {@link buildQuickPlanContext} this needs no occupancy read, so it is
+ * synchronous.
+ */
+export function buildTwoWeekPlanContext(): QuickPlanData {
+  const thisWeek = getPlannerWeek(new Date());
+  const nextWeek = getPlannerWeek(parseDateParam(nextWeekParam(new Date())));
+  const days = [...thisWeek.days, ...nextWeek.days].map((day) => ({
+    value: toDateParam(day),
+    label: `${formatDayName(day)}, ${formatMonthDay(day)}`,
+  }));
+  return { days, defaultDate: todayParam() };
 }
