@@ -105,8 +105,9 @@ sell the Family/Premium plan.
      script that runs database migrations and then `next build` — Vercel uses it
      automatically.
 3. Under **Environment Variables**, add the values you collected (see the table
-   below). Add them to **Production** (and Preview if you want preview deploys to
-   use real services).
+   below). Add them to **Production**. For **Preview**, do **not** reuse the
+   production `DATABASE_URL` — see [Isolating preview
+   databases](#isolating-preview-databases) below.
 4. Click **Deploy**.
 
 That's it. On this and every future deploy, Vercel will run the migrations
@@ -132,6 +133,44 @@ against Neon and build the app.
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.
+
+> **Production deploy preflight (`scripts/preflight-env.mjs`).** Because every
+> variable above is technically optional (so local/CI/preview can boot with zero
+> config), production deploys run a preflight check _before_ migrations and the
+> build. When `VERCEL_ENV=production`, it fails the deploy fast with an
+> actionable message unless all of these are present and well-formed:
+>
+> - `DATABASE_URL` — a `postgres://` / `postgresql://` URL
+> - `NEXT_PUBLIC_APP_URL` — an absolute `http(s)` URL
+> - `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+> - `NEXT_PUBLIC_DEV_AUTH_BYPASS` **must not** be `1`
+>
+> Local, CI, and preview builds skip the check entirely, so zero-config runs are
+> unaffected.
+
+### Isolating preview databases
+
+Vercel runs `vercel-build` for **preview** deployments too, and a preview shares
+the project's environment variables. If you add the production `DATABASE_URL` to
+the Preview environment, a PR's build would run schema **migrations against the
+production database** — at best noisy, at worst destructive. Never do this.
+
+Instead, give previews their own throwaway database:
+
+- **Recommended — Neon branching.** Install the [Neon–Vercel
+  integration](https://neon.tech/docs/guides/vercel) and enable "Create a
+  database branch for each preview". Neon injects a per-PR branch `DATABASE_URL`
+  into the Preview environment automatically and deletes the branch when the PR
+  closes, so previews get an isolated copy of the schema/data.
+- **Or leave Preview with no `DATABASE_URL`.** The app boots read-degraded and
+  `scripts/migrate.mjs` skips (it exits 0 when no URL is set), which is safe if
+  you don't need a working database in previews.
+
+As a defense-in-depth guardrail, `scripts/migrate.mjs` **refuses to migrate from
+a preview deploy** (`VERCEL_ENV=preview`) unless you explicitly opt in with
+`ALLOW_PREVIEW_MIGRATIONS=1` — so even a misconfigured Preview `DATABASE_URL`
+cannot mutate production schema by accident. Set that flag only once you've
+confirmed the Preview `DATABASE_URL` points at an isolated per-branch database.
 
 ---
 
@@ -195,6 +234,74 @@ pnpm db:seed
 It creates a demo cook, a "family" group, and three sample recipes (all
 idempotent — safe to run twice; delete them from the UI any time).
 
+### Run a staging environment (optional)
+
+Want a stable, always-on pre-production URL (separate from per-PR previews) to
+smoke-test before promoting to production? Heirloom supports a **staging**
+environment:
+
+1. In Vercel → **Settings → Git**, keep Production tracking `main` and add a
+   long-lived **`staging`** branch as a deployment branch (or use a dedicated
+   Vercel "Preview" branch). Pushes to `staging` build a stable staging URL.
+2. Give staging its **own** `DATABASE_URL` — a Neon branch of production is
+   ideal — and its own Clerk keys, exactly like production (never point staging
+   at the production database).
+3. `staging` runs the **same CI gate** as `main` (the CI workflow triggers on
+   pushes to both), so nothing lands on staging without passing lint, tests, and
+   the build.
+4. Promote by fast-forwarding `main` to the reviewed `staging` commit (or open a
+   `staging → main` PR). Vercel then deploys production from `main` as usual.
+
+Because migrations only auto-run in production and are skipped on preview
+(#258), staging uses its own branch database and the standard `vercel-build`
+flow, so a broken migration surfaces on staging before it can reach production.
+
+### Automated releases (versioning & changelog)
+
+Versioning, the changelog, and release tags are automated with
+[release-please](https://github.com/googleapis/release-please)
+(`.github/workflows/release.yml`), so every production deploy maps to a
+human-readable version instead of a raw commit SHA:
+
+1. Write commits using [Conventional
+   Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
+   `chore:`, …). The prefix determines the semver bump.
+2. As those commits land on `main`, release-please maintains a standing **release
+   PR** that bumps `version` in `package.json` + `.release-please-manifest.json`
+   and updates `CHANGELOG.md`.
+3. That release PR runs the **same CI gate** as any other PR, so a release can
+   only land on green CI. Merging it tags `vX.Y.Z` and cuts a GitHub Release.
+
+The deployed version and commit SHA are exposed at **`GET /api/health`**
+(`version` + `sha`) for support and debugging.
+
+### Monitoring & uptime
+
+Heirloom exposes a lightweight, unauthenticated health probe at **`GET
+/api/health`** so an outage is caught by tooling, not by family members. It
+returns JSON and an HTTP status:
+
+- **200** — `{"status":"ok","version":…,"sha":…,"db":"ok"|"not_configured", …}`.
+  `db: "not_configured"` is still healthy (zero-config mode: the app is up, it
+  just has no database).
+- **503** — a database _is_ configured but unreachable (`db: "degraded"`), so a
+  monitor can alert.
+
+The probe runs a cheap `SELECT 1` with a short timeout, is never cached
+(`no-store` + dynamic), and leaks nothing sensitive (the DB result is a coarse
+`ok`/`degraded`/`not_configured` enum, never a driver error or connection
+string).
+
+Wire an external uptime monitor against `https://<your-domain>/api/health`:
+
+1. In [Better Stack](https://betterstack.com/uptime),
+   [UptimeRobot](https://uptimerobot.com/), or Vercel's built-in monitoring,
+   create an HTTP monitor for that URL on a 1–5 minute interval.
+2. Treat any non-200 (including 503) as **down** and add an email/Slack/SMS
+   alert contact.
+3. Optionally assert the body contains `"status":"ok"` to catch degraded-DB
+   states that some monitors would otherwise see as reachable.
+
 ---
 
 ## Ongoing: how deploys work
@@ -208,7 +315,9 @@ idempotent — safe to run twice; delete them from the UI any time).
   update PRs, each gated by CI.
 - **Schema changes:** edit the Drizzle schema in `src/server/db/schema/`, run
   `pnpm db:generate` locally to create a migration, and commit it. It applies on
-  the next deploy.
+  the next deploy. For breaking changes, follow the **expand/contract**
+  convention and the **rollback/repair runbook** in
+  [`docs/migrations.md`](docs/migrations.md).
 
 > **Gate the site on green CI (optional but recommended).** Vercel deploys `main`
 > independently of GitHub Actions, so a build that passes Vercel but fails CI can

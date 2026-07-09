@@ -110,6 +110,14 @@ export const env = createEnv({
     // app still builds and runs. Redeeming an already-issued code needs only the
     // database, never this key.
     STRIPE_PRICE_GIFT_FAMILY: z.string().optional(),
+    // Structured-logger verbosity (#268): one of debug|info|warn|error|silent.
+    // Read directly by ~/lib/log (never imported here) so a deploy-time script
+    // can log without triggering env validation; declared here only so it's a
+    // documented, validated part of the schema. Unset ⇒ `info` in production,
+    // `debug` elsewhere.
+    LOG_LEVEL: z
+      .enum(["debug", "info", "warn", "error", "silent"])
+      .optional(),
   },
 
   client: {
@@ -156,6 +164,7 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_PRICE_FAMILY: process.env.STRIPE_PRICE_FAMILY,
     STRIPE_PRICE_GIFT_FAMILY: process.env.STRIPE_PRICE_GIFT_FAMILY,
+    LOG_LEVEL: process.env.LOG_LEVEL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },

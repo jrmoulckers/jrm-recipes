@@ -1,4 +1,5 @@
 import { brand } from "~/config/brand";
+import { log } from "~/lib/log";
 import { absoluteUrl } from "~/lib/utils";
 import { type WeeklyDigest } from "./builder";
 
@@ -120,9 +121,10 @@ function redactEmail(email: string): string {
 export const logEmailProvider: EmailProvider = {
   name: "log",
   async send(message) {
-    console.info(
-      `[digest] no email provider configured — would send "${message.subject}" to ${redactEmail(message.to)}`,
-    );
+    log.info("digest: no email provider configured — would send", {
+      subject: message.subject,
+      to: redactEmail(message.to),
+    });
   },
 };
 
