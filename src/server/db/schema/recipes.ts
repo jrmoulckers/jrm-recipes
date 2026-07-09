@@ -98,6 +98,20 @@ export const recipes = pgTable(
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),
 
+    // "Story & memories" (issue #377): free-text heritage — who a recipe came
+    // from, when it's made, what it means — kept distinct from the practical
+    // `notes` (cooking tips) so the *why* is preserved next to the *how* and can
+    // be given its own warm section on the recipe page. NULL/empty means untold.
+    story: text(),
+
+    // Heirloom provenance (issue #381): short, structured family attribution,
+    // distinct from the web `sourceName`/`sourceUrl`. "Handed down from
+    // Great-Grandma Rosa · since the 1930s · Calabria" — displayed as a small
+    // badge/line. All optional; era is free-text ("1935" or "1930s").
+    handedDownFrom: varchar({ length: 200 }),
+    originYear: varchar({ length: 40 }),
+    originPlace: varchar({ length: 200 }),
+
     // Unguessable share-link controls for `unlisted` recipes (issues #204/#207).
     // Anonymous viewers can reach an unlisted recipe ONLY via this high-entropy
     // token (served at /r/<shareToken>), never the guessable title-slug.

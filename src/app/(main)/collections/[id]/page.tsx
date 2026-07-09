@@ -11,6 +11,7 @@ import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CollectionActions } from "~/components/collections/collection-actions";
 import { RemoveFromCollectionButton } from "~/components/collections/remove-from-collection-button";
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
+import { PrintCookbookButton } from "~/components/collections/print-cookbook-button";
 import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
 import { brand } from "~/config/brand";
 
@@ -105,6 +106,9 @@ export default async function CollectionPage({
         </div>
         {collection.isOwner && (
           <div className="flex items-center gap-2">
+            {collection.recipes.length > 0 && (
+              <PrintCookbookButton collectionId={collection.id} />
+            )}
             <ShareCollectionControl
               collectionId={collection.id}
               visibility={collection.visibility}

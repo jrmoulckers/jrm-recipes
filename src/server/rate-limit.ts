@@ -127,6 +127,9 @@ export const RATE_LIMITS = {
   sign: { limit: 30, windowMs: 60_000 },
   recipeWrite: { limit: 40, windowMs: 60_000 },
   engagementWrite: { limit: 60, windowMs: 60_000 },
+  // Full-cookbook backup export (issue #420): builds the whole archive in
+  // memory, so keep it modest — a handful of downloads a minute is plenty.
+  backup: { limit: 5, windowMs: 60_000 },
 } as const;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;

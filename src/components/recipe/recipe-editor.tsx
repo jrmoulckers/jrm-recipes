@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronUp,
   GripVertical,
+  History,
   Loader2,
   Plus,
   Save,
@@ -21,6 +22,7 @@ import { useThemeBehavior } from "~/components/theme/theme-provider";
 
 import { cn } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { useAutosaveDraft } from "~/lib/use-autosave-draft";
 import { track } from "~/lib/analytics";
 import { SUGGESTED_TAGS } from "~/lib/tag-taxonomy";
 import { type RecipeInput } from "~/server/recipes/validation";
@@ -39,6 +41,7 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
+import { appendDictation } from "~/lib/append-dictation";
 
 /**
  * The upgrade prompt is only needed when a create hits the plan's recipe cap
@@ -51,6 +54,16 @@ const UpgradeDialog = dynamic(() =>
 
 const ImportRecipePanel = dynamic(
   () => import("~/components/recipe/import-recipe-panel").then((m) => m.ImportRecipePanel),
+  { ssr: false },
+);
+
+// Voice dictation (issue #373) is a progressive enhancement, so it is
+// code-split out of the editor's first-load JS and loaded on the client only.
+const DictationButton = dynamic(
+  () =>
+    import("~/components/recipe/dictation-button").then(
+      (m) => m.DictationButton,
+    ),
   { ssr: false },
 );
 
@@ -99,6 +112,10 @@ export type RecipeEditorValue = {
   sourceName: string;
   sourceUrl: string;
   notes: string;
+  story?: string;
+  handedDownFrom?: string;
+  originYear?: string;
+  originPlace?: string;
   visibility: "private" | "group" | "unlisted" | "public";
   status: "draft" | "published";
   groupId: string;
@@ -229,6 +246,10 @@ export function RecipeEditor({
     sourceName: initial?.sourceName ?? "",
     sourceUrl: initial?.sourceUrl ?? "",
     notes: initial?.notes ?? "",
+    story: initial?.story ?? "",
+    handedDownFrom: initial?.handedDownFrom ?? "",
+    originYear: initial?.originYear ?? "",
+    originPlace: initial?.originPlace ?? "",
     visibility: initial?.visibility ?? "private",
     status: initial?.status ?? "published",
     groupId: initial?.groupId ?? "",
@@ -248,6 +269,73 @@ export function RecipeEditor({
       key: nextKey(),
     })),
   );
+
+  // Auto-save & draft recovery (#421): mirror the in-progress editor value to
+  // localStorage (debounced) so a locked phone or a stray "back" tap never
+  // loses a half-typed recipe. Drafts are namespaced so new vs. edit can't mix.
+  const draftKey = mode === "edit" && recipeId ? recipeId : "new";
+  const draftSnapshot: RecipeEditorValue = React.useMemo(
+    () => ({
+      ...form,
+      ingredients: ingredients.map(({ key: _key, ...rest }) => rest),
+      steps: steps.map(({ key: _key, ...rest }) => rest),
+    }),
+    [form, ingredients, steps],
+  );
+  const draftJson = React.useMemo(
+    () => JSON.stringify(draftSnapshot),
+    [draftSnapshot],
+  );
+  const [initialDraftJson] = React.useState(() => draftJson);
+  const draftDirty = draftJson !== initialDraftJson;
+  const draft = useAutosaveDraft<RecipeEditorValue>({
+    key: draftKey,
+    snapshot: draftSnapshot,
+    dirty: draftDirty,
+  });
+
+  function restoreDraft(value: RecipeEditorValue) {
+    const {
+      ingredients: draftIngredients,
+      steps: draftSteps,
+      ...scalars
+    } = value;
+    setForm((f) => ({ ...f, ...scalars }));
+    setIngredients(
+      (draftIngredients ?? []).map((r) => ({
+        ...EMPTY_ING,
+        ...r,
+        key: nextKey(),
+      })),
+    );
+    setSteps(
+      (draftSteps ?? []).map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })),
+    );
+    draft.acceptDraft();
+    toast.success("Restored your unfinished recipe.");
+  }
+
+  // Voice dictation append helpers (#373): always append, never overwrite, and
+  // update functionally so rapid transcript chunks can't clobber each other.
+  function appendToField(key: "description" | "notes" | "story", text: string) {
+    setForm((f) => ({ ...f, [key]: appendDictation(f[key], text) }));
+  }
+  function appendIngredientItem(rowKey: string, text: string) {
+    setIngredients((l) =>
+      l.map((r) =>
+        r.key === rowKey ? { ...r, item: appendDictation(r.item, text) } : r,
+      ),
+    );
+  }
+  function appendStepInstruction(rowKey: string, text: string) {
+    setSteps((l) =>
+      l.map((r) =>
+        r.key === rowKey
+          ? { ...r, instruction: appendDictation(r.instruction, text) }
+          : r,
+      ),
+    );
+  }
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -336,6 +424,10 @@ export function RecipeEditor({
       sourceName: form.sourceName.trim() || undefined,
       sourceUrl: form.sourceUrl.trim() || undefined,
       notes: form.notes.trim() || undefined,
+      story: form.story.trim() || undefined,
+      handedDownFrom: form.handedDownFrom.trim() || undefined,
+      originYear: form.originYear.trim() || undefined,
+      originPlace: form.originPlace.trim() || undefined,
       visibility: form.visibility,
       status: form.status,
       groupId:
@@ -406,6 +498,7 @@ export function RecipeEditor({
           ? await updateRecipeAction(recipeId, payload)
           : await createRecipeAction(payload);
       if (res.ok) {
+        draft.clear();
         toast.success(mode === "edit" ? "Recipe updated" : "Recipe created");
         router.push(recipeDetailPath(res));
         router.refresh();
@@ -463,6 +556,45 @@ export function RecipeEditor({
           </Button>
         </div>
       </div>
+
+      {draft.availableDraft ? (
+        <div
+          role="region"
+          aria-label="Unfinished recipe"
+          className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <History
+              className="mt-0.5 size-5 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="font-medium">You have an unfinished recipe</p>
+              <p className="text-sm text-muted-foreground">
+                Pick up where you left off, or start fresh.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => draft.discardDraft()}
+            >
+              Discard
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const pending = draft.availableDraft;
+                if (pending) restoreDraft(pending);
+              }}
+            >
+              Restore
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {errorKeys.length > 0 && (
         <div
@@ -553,6 +685,12 @@ export function RecipeEditor({
                 rows={2}
               />
             </Field>
+            <div className="-mt-1 flex justify-end">
+              <DictationButton
+                fieldLabel="description"
+                onAppend={(text) => appendToField("description", text)}
+              />
+            </div>
           </section>
 
           {/* Ingredients */}
@@ -607,20 +745,30 @@ export function RecipeEditor({
                       }
                       placeholder="cup"
                     />
-                    <Input
-                      aria-label={t("ingredient")}
-                      value={row.item}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, item: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="all-purpose flour"
-                    />
+                    <div className="flex items-start gap-1.5">
+                      <Input
+                        aria-label={t("ingredient")}
+                        value={row.item}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, item: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="all-purpose flour"
+                        className="flex-1"
+                      />
+                      <DictationButton
+                        fieldLabel="ingredient"
+                        onAppend={(text) =>
+                          appendIngredientItem(row.key, text)
+                        }
+                        className="mt-1"
+                      />
+                    </div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-[1fr_9rem]">
                       <Input
@@ -715,6 +863,14 @@ export function RecipeEditor({
                       placeholder="Whisk the dry ingredients together…"
                       rows={2}
                     />
+                    <div className="flex justify-end">
+                      <DictationButton
+                        fieldLabel={`step ${i + 1}`}
+                        onAppend={(text) =>
+                          appendStepInstruction(row.key, text)
+                        }
+                      />
+                    </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Input
                         aria-label={t("timerMinutes")}
@@ -817,6 +973,65 @@ export function RecipeEditor({
               rows={3}
             />
           </Field>
+          <div className="-mt-1 flex justify-end">
+            <DictationButton
+              fieldLabel="notes"
+              onAppend={(text) => appendToField("notes", text)}
+            />
+          </div>
+
+          <Field
+            label="Story & memories"
+            name="story"
+            hint="Who it came from, when you make it, what it means — in your own words."
+            error={errors.story}
+          >
+            <Textarea
+              value={form.story}
+              onChange={(e) => set("story", e.target.value)}
+              placeholder="Nonna learned this from her mother in Calabria. We make it every Christmas Eve…"
+              rows={4}
+            />
+          </Field>
+          <div className="-mt-1 flex justify-end">
+            <DictationButton
+              fieldLabel="story"
+              onAppend={(text) => appendToField("story", text)}
+            />
+          </div>
+
+          <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
+            <legend className="px-1 text-sm font-medium text-foreground">
+              Handed down from
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Who this recipe came from and roughly when — shown as a small
+              heirloom label. All optional.
+            </p>
+            <Field label="Name" name="handedDownFrom" error={errors.handedDownFrom}>
+              <Input
+                value={form.handedDownFrom}
+                onChange={(e) => set("handedDownFrom", e.target.value)}
+                placeholder="Great-Grandma Rosa Bianchi"
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="When" name="originYear" error={errors.originYear}>
+                <Input
+                  value={form.originYear}
+                  onChange={(e) => set("originYear", e.target.value)}
+                  placeholder="1935 or 1930s"
+                />
+              </Field>
+              <Field label="Place" name="originPlace" error={errors.originPlace}>
+                <Input
+                  value={form.originPlace}
+                  onChange={(e) => set("originPlace", e.target.value)}
+                  placeholder="Calabria, Italy"
+                />
+              </Field>
+            </div>
+          </fieldset>
         </div>
 
         {/* Sidebar */}
@@ -1166,6 +1381,10 @@ const FIELD_LABELS: Record<string, string> = {
   difficulty: "Difficulty",
   cuisine: "Cuisine",
   notes: "Notes",
+  story: "Story & memories",
+  handedDownFrom: "Handed down from",
+  originYear: "When",
+  originPlace: "Place",
   calories: "Calories",
   proteinGrams: "Protein",
   carbsGrams: "Carbs",
@@ -1196,6 +1415,10 @@ const ANCHORABLE_FIELDS = new Set([
   "difficulty",
   "cuisine",
   "notes",
+  "story",
+  "handedDownFrom",
+  "originYear",
+  "originPlace",
   "calories",
   "proteinGrams",
   "carbsGrams",

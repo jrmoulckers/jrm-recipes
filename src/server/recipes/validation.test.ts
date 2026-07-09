@@ -128,6 +128,29 @@ describe("recipeInput", () => {
     }
   });
 
+  it("keeps heritage story + heirloom provenance, trimming and dropping blanks (#377/#381)", () => {
+    expect(
+      recipeInput.parse({
+        title: "Sunday Gravy",
+        story: "  From Nonna, learned in Calabria.  ",
+        handedDownFrom: "  Rosa Bianchi  ",
+        originYear: " 1930s ",
+        originPlace: "",
+      }),
+    ).toMatchObject({
+      story: "From Nonna, learned in Calabria.",
+      handedDownFrom: "Rosa Bianchi",
+      originYear: "1930s",
+      originPlace: undefined,
+    });
+  });
+
+  it("rejects an over-long heritage story (#377)", () => {
+    expect(() =>
+      recipeInput.parse({ title: "Long tale", story: "x".repeat(4001) }),
+    ).toThrow();
+  });
+
   describe("group visibility requires a group (rc09)", () => {
     it("rejects visibility=group with no groupId and flags the field", () => {
       const res = recipeInput.safeParse({

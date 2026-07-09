@@ -150,6 +150,24 @@ function sourceLine(recipe: PrintRecipe): string | null {
   return null;
 }
 
+/**
+ * Human-readable provenance lines (issue #381): who a recipe was handed down
+ * from and where/when it originated. Returns `[]` when a recipe carries no
+ * heritage, so exports of ordinary recipes are byte-for-byte unchanged.
+ */
+export function provenanceLines(recipe: PrintRecipe): string[] {
+  const lines: string[] = [];
+  if (recipe.handedDownFrom) {
+    lines.push(`Handed down from ${cleanLine(recipe.handedDownFrom)}`);
+  }
+  const origin = [recipe.originPlace, recipe.originYear]
+    .filter((part): part is string => !!part && part.trim().length > 0)
+    .map((part) => cleanLine(part))
+    .join(", ");
+  if (origin) lines.push(`Origin: ${origin}`);
+  return lines;
+}
+
 export function serializeRecipePlainText(recipe: PrintRecipe): string {
   const lines: string[] = [recipe.title, "=".repeat(recipe.title.length), ""];
   const meta = formatRecipeMeta(recipe);
@@ -190,6 +208,15 @@ export function serializeRecipePlainText(recipe: PrintRecipe): string {
   }
 
   if (recipe.notes) lines.push("", "Notes", recipe.notes.trim());
+  const provenance = provenanceLines(recipe);
+  if (recipe.story || provenance.length > 0) {
+    lines.push("", "Story");
+    for (const line of provenance) lines.push(line);
+    if (recipe.story) {
+      if (provenance.length > 0) lines.push("");
+      lines.push(recipe.story.trim());
+    }
+  }
   if (source) lines.push("", source);
   lines.push("", recipeUrl(recipe));
 
@@ -238,6 +265,15 @@ export function serializeRecipeMarkdown(recipe: PrintRecipe): string {
   }
 
   if (recipe.notes) lines.push("", "## Notes", recipe.notes.trim());
+  const provenanceMd = provenanceLines(recipe);
+  if (recipe.story || provenanceMd.length > 0) {
+    lines.push("", "## Story");
+    for (const line of provenanceMd) lines.push(`_${line}_`);
+    if (recipe.story) {
+      if (provenanceMd.length > 0) lines.push("");
+      lines.push(recipe.story.trim());
+    }
+  }
   if (source) lines.push("", source);
   lines.push("", `[Open recipe](${recipeUrl(recipe)})`);
 

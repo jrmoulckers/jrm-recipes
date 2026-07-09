@@ -16,6 +16,7 @@ import {
   Pencil,
   Play,
   Printer,
+  Sparkles,
   Thermometer,
   Timer,
   Users,
@@ -52,9 +53,11 @@ import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
 import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
 import { AllergenSummary } from "~/components/recipe/allergen-summary";
 import { ShareButton } from "~/components/recipe/share-button";
+import { HandDownButton } from "~/components/recipe/hand-down-button";
 import { CreateReelButton } from "~/components/recipe/reel-button";
 import { mapRecipeToReel } from "~/lib/reel/scenes";
 import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
+import { ReadAloudButton } from "~/components/recipe/read-aloud-button";
 import { AdaptButton } from "~/components/recipe/adapt-button";
 import { GrownUpControls } from "~/components/recipe/grown-up-controls";
 import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
@@ -329,6 +332,20 @@ export default async function RecipePage({
               {recipe.description}
             </p>
           )}
+          {(recipe.handedDownFrom ?? recipe.originYear ?? recipe.originPlace) && (
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-secondary-foreground">
+              <Sparkles className="size-4 text-secondary" aria-hidden="true" />
+              {[
+                recipe.handedDownFrom
+                  ? `Handed down from ${recipe.handedDownFrom}`
+                  : null,
+                recipe.originYear ? `since ${recipe.originYear}` : null,
+                recipe.originPlace,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {recipe.author?.name && (
@@ -400,6 +417,11 @@ export default async function RecipePage({
                 manageable={isOwner && recipe.visibility === "unlisted"}
                 shareEnabled={recipe.shareLinkEnabled}
               />
+              <HandDownButton
+                slug={recipe.slug}
+                defaultFrom={user?.name ?? recipe.author?.name}
+                token={shareUrl ? recipe.shareToken : undefined}
+              />
               <CreateReelButton reel={mapRecipeToReel(recipe)} />
             </GrownUpControls>
             <AddToShoppingList
@@ -454,7 +476,11 @@ export default async function RecipePage({
                     <Pencil /> {t("actions.edit")}
                   </Link>
                 </Button>
-                <DeleteRecipeButton id={recipe.id} />
+                <DeleteRecipeButton
+                  id={recipe.id}
+                  slug={recipe.slug}
+                  title={recipe.title}
+                />
               </GrownUpControls>
             )}
           </div>
@@ -572,9 +598,23 @@ export default async function RecipePage({
                 </div>
 
                 {recipe.steps.length > 0 ? (
-                  <ol className="flex flex-col gap-5">
-                    {recipe.steps.map((step, i) => (
-                      <li key={step.id} className="flex gap-4">
+                  <>
+                    <ReadAloudButton
+                      anchorPrefix="recipe-step-"
+                      steps={recipe.steps.map(
+                        (step, i) =>
+                          `Step ${i + 1}. ${
+                            step.section ? `${step.section}. ` : ""
+                          }${step.instruction}`,
+                      )}
+                    />
+                    <ol className="flex flex-col gap-5">
+                      {recipe.steps.map((step, i) => (
+                        <li
+                          key={step.id}
+                          id={`recipe-step-${i}`}
+                          className="flex gap-4"
+                        >
                         <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
                           {i + 1}
                         </span>
@@ -637,7 +677,8 @@ export default async function RecipePage({
                         </div>
                       </li>
                     ))}
-                  </ol>
+                    </ol>
+                  </>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
                     <p className="font-medium">{t("method.emptyTitle")}</p>
@@ -659,6 +700,24 @@ export default async function RecipePage({
                       </Button>
                     )}
                   </div>
+                )}
+
+                {recipe.story && (
+                  <>
+                    <Separator />
+                    <div className="flex flex-col gap-2">
+                      <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
+                        <Sparkles
+                          className="size-4 text-secondary"
+                          aria-hidden="true"
+                        />
+                        Story &amp; memories
+                      </h3>
+                      <p className="whitespace-pre-line leading-relaxed text-foreground/90">
+                        {recipe.story}
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (

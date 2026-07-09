@@ -272,6 +272,32 @@ export async function listMyRecipes(userId: string) {
 }
 
 /**
+ * Every one of a user's own (non-deleted) recipes in full detail, for the
+ * "download my whole cookbook" backup (issue #420). Mirrors {@link getRecipe}'s
+ * `with` shape so each row maps straight through `toPrintRecipe`. Ordered by
+ * title so the exported archive and its manifest read like a table of contents.
+ * On-demand only (never a hot path), so loading full relations in one findMany
+ * is acceptable.
+ */
+export async function listOwnedRecipesForBackup(
+  userId: string,
+): Promise<FullRecipe[]> {
+  if (!isDbConfigured()) return [];
+  return db.query.recipes.findMany({
+    where: and(notDeleted, eq(recipes.authorId, userId)),
+    orderBy: [asc(recipes.title)],
+    with: {
+      author: true,
+      group: true,
+      ingredients: { orderBy: [recipeIngredients.position] },
+      steps: { orderBy: [recipeSteps.position] },
+      tags: { with: { tag: true } },
+      ratings: true,
+    },
+  }) as Promise<FullRecipe[]>;
+}
+
+/**
  * Publicly published recipes for the discover feed.
  *
  * `"recent"` keeps the base ordering `publishedAt desc, updatedAt desc`.

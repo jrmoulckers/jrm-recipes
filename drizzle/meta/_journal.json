@@ -134,6 +134,13 @@
       "when": 1783558812885,
       "tag": "0018_marvelous_bill_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1783558912885,
+      "tag": "0019_legacy_heirloom_wave5",
+      "breakpoints": true
     }
   ]
 }

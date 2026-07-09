@@ -83,6 +83,10 @@ export function toPrintRecipe(recipe: FullRecipe): PrintRecipe {
     sourceName: recipe.sourceName,
     sourceUrl: recipe.sourceUrl,
     notes: recipe.notes,
+    story: recipe.story,
+    handedDownFrom: recipe.handedDownFrom,
+    originYear: recipe.originYear,
+    originPlace: recipe.originPlace,
     author: recipe.author ? { name: recipe.author.name } : null,
     ingredients: recipe.ingredients.map((ingredient) => ({
       id: ingredient.id,
