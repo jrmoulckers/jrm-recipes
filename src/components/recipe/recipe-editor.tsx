@@ -98,6 +98,10 @@ export type RecipeEditorValue = {
   sourceName: string;
   sourceUrl: string;
   notes: string;
+  story?: string;
+  handedDownFrom?: string;
+  originYear?: string;
+  originPlace?: string;
   visibility: "private" | "group" | "unlisted" | "public";
   status: "draft" | "published";
   groupId: string;
@@ -233,6 +237,10 @@ export function RecipeEditor({
     sourceName: initial?.sourceName ?? "",
     sourceUrl: initial?.sourceUrl ?? "",
     notes: initial?.notes ?? "",
+    story: initial?.story ?? "",
+    handedDownFrom: initial?.handedDownFrom ?? "",
+    originYear: initial?.originYear ?? "",
+    originPlace: initial?.originPlace ?? "",
     visibility: initial?.visibility ?? "private",
     status: initial?.status ?? "published",
     groupId: initial?.groupId ?? "",
@@ -388,6 +396,10 @@ export function RecipeEditor({
       sourceName: form.sourceName.trim() || undefined,
       sourceUrl: form.sourceUrl.trim() || undefined,
       notes: form.notes.trim() || undefined,
+      story: form.story.trim() || undefined,
+      handedDownFrom: form.handedDownFrom.trim() || undefined,
+      originYear: form.originYear.trim() || undefined,
+      originPlace: form.originPlace.trim() || undefined,
       visibility: form.visibility,
       status: form.status,
       groupId:
@@ -966,6 +978,53 @@ export function RecipeEditor({
               rows={3}
             />
           </Field>
+
+          <Field
+            label="Story & memories"
+            name="story"
+            hint="Who it came from, when you make it, what it means — in your own words."
+            error={errors.story}
+          >
+            <Textarea
+              value={form.story}
+              onChange={(e) => set("story", e.target.value)}
+              placeholder="Nonna learned this from her mother in Calabria. We make it every Christmas Eve…"
+              rows={4}
+            />
+          </Field>
+
+          <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
+            <legend className="px-1 text-sm font-medium text-foreground">
+              Handed down from
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Who this recipe came from and roughly when — shown as a small
+              heirloom label. All optional.
+            </p>
+            <Field label="Name" name="handedDownFrom" error={errors.handedDownFrom}>
+              <Input
+                value={form.handedDownFrom}
+                onChange={(e) => set("handedDownFrom", e.target.value)}
+                placeholder="Great-Grandma Rosa Bianchi"
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="When" name="originYear" error={errors.originYear}>
+                <Input
+                  value={form.originYear}
+                  onChange={(e) => set("originYear", e.target.value)}
+                  placeholder="1935 or 1930s"
+                />
+              </Field>
+              <Field label="Place" name="originPlace" error={errors.originPlace}>
+                <Input
+                  value={form.originPlace}
+                  onChange={(e) => set("originPlace", e.target.value)}
+                  placeholder="Calabria, Italy"
+                />
+              </Field>
+            </div>
+          </fieldset>
         </div>
 
         {/* Sidebar */}
@@ -1315,6 +1374,10 @@ const FIELD_LABELS: Record<string, string> = {
   difficulty: "Difficulty",
   cuisine: "Cuisine",
   notes: "Notes",
+  story: "Story & memories",
+  handedDownFrom: "Handed down from",
+  originYear: "When",
+  originPlace: "Place",
   calories: "Calories",
   proteinGrams: "Protein",
   carbsGrams: "Carbs",
@@ -1345,6 +1408,10 @@ const ANCHORABLE_FIELDS = new Set([
   "difficulty",
   "cuisine",
   "notes",
+  "story",
+  "handedDownFrom",
+  "originYear",
+  "originPlace",
   "calories",
   "proteinGrams",
   "carbsGrams",

@@ -220,6 +220,11 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     sourceName: input.sourceName ?? null,
     sourceUrl: input.sourceUrl ?? null,
     notes: input.notes ?? null,
+    // Heritage story (#377) + structured provenance (#381).
+    story: input.story ?? null,
+    handedDownFrom: input.handedDownFrom ?? null,
+    originYear: input.originYear ?? null,
+    originPlace: input.originPlace ?? null,
     calories: input.calories ?? null,
     proteinGrams: input.proteinGrams ?? null,
     carbsGrams: input.carbsGrams ?? null,

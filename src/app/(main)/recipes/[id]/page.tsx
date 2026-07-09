@@ -16,6 +16,7 @@ import {
   Pencil,
   Play,
   Printer,
+  Sparkles,
   Thermometer,
   Timer,
   Users,
@@ -321,6 +322,20 @@ export default async function RecipePage({
           {recipe.description && (
             <p className="max-w-2xl text-lg text-muted-foreground">
               {recipe.description}
+            </p>
+          )}
+          {(recipe.handedDownFrom ?? recipe.originYear ?? recipe.originPlace) && (
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-secondary-foreground">
+              <Sparkles className="size-4 text-secondary" aria-hidden="true" />
+              {[
+                recipe.handedDownFrom
+                  ? `Handed down from ${recipe.handedDownFrom}`
+                  : null,
+                recipe.originYear ? `since ${recipe.originYear}` : null,
+                recipe.originPlace,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           )}
 
@@ -643,6 +658,24 @@ export default async function RecipePage({
                       </Button>
                     )}
                   </div>
+                )}
+
+                {recipe.story && (
+                  <>
+                    <Separator />
+                    <div className="flex flex-col gap-2">
+                      <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
+                        <Sparkles
+                          className="size-4 text-secondary"
+                          aria-hidden="true"
+                        />
+                        Story &amp; memories
+                      </h3>
+                      <p className="whitespace-pre-line leading-relaxed text-foreground/90">
+                        {recipe.story}
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {(recipe.notes ?? recipe.sourceName ?? recipe.sourceUrl) && (

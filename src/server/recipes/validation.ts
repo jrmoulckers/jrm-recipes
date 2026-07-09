@@ -154,6 +154,13 @@ export const recipeInput = z
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
     notes: optionalString(4000, "Keep notes under 4,000 characters"),
+    // "Story & memories" heritage text (issue #377), distinct from `notes`.
+    story: optionalString(4000),
+    // Heirloom provenance (issue #381): short structured family attribution,
+    // separate from the web source. Era is free-text ("1935" or "1930s").
+    handedDownFrom: optionalString(200),
+    originYear: optionalString(40),
+    originPlace: optionalString(200),
     // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
     // and sodium (mg) are whole numbers, macronutrients are grams and may be
     // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
