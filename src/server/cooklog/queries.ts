@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import { cookLogEntries, groupMembers, recipes } from "~/server/db/schema";
@@ -93,6 +93,136 @@ export async function getMyRecentCooks(
       },
     },
   });
+  return rows;
+}
+
+/** Filters a viewer can narrow their cooking journal by (#364). */
+export type JournalFilter = {
+  /** Only cooks of this recipe. */
+  recipeId?: string | null;
+  /** Only cooks at or after this instant (time-range lower bound). */
+  since?: Date | null;
+};
+
+/** Shared WHERE for the viewer's own journal, applying the optional filters. */
+function journalWhere(userId: string, filter: JournalFilter) {
+  const clauses = [eq(cookLogEntries.userId, userId)];
+  if (filter.recipeId) {
+    clauses.push(eq(cookLogEntries.recipeId, filter.recipeId));
+  }
+  if (filter.since) {
+    clauses.push(gte(cookLogEntries.cookedAt, filter.since));
+  }
+  return and(...clauses);
+}
+
+/**
+ * The viewer's cooks matching the journal filters, newest first (#364). A
+ * generalization of {@link getMyRecentCooks} that also accepts a recipe and a
+ * time-range bound so the journal can be sliced without new tables.
+ */
+export async function getFilteredCooks(
+  userId: string,
+  filter: JournalFilter = {},
+  limit = 60,
+): Promise<RecentCookItem[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await db.query.cookLogEntries.findMany({
+    where: journalWhere(userId, filter),
+    orderBy: [desc(cookLogEntries.cookedAt)],
+    limit,
+    columns: {
+      id: true,
+      cookedAt: true,
+      note: true,
+      photoUrl: true,
+      servingsMade: true,
+    },
+    with: {
+      recipe: {
+        columns: { id: true, slug: true, title: true, coverImageUrl: true },
+      },
+    },
+  });
+  return rows;
+}
+
+/** A most-cooked recipe with its cook count, for the journal insights strip. */
+export type TopCookedRecipe = {
+  id: string;
+  slug: string;
+  title: string;
+  count: number;
+};
+
+/** Insight tiles for the cooking journal, computed over the filtered set (#364). */
+export type JournalInsights = {
+  totalCooks: number;
+  mostRecent: Date | null;
+  topRecipes: TopCookedRecipe[];
+};
+
+/**
+ * Aggregate insights for the journal — total cooks, the most-recent cook, and
+ * the top-3 most-cooked recipes — computed with the same filters as the list so
+ * the numbers always reconcile with what's shown (#364). No new tables.
+ */
+export async function getJournalInsights(
+  userId: string,
+  filter: JournalFilter = {},
+): Promise<JournalInsights> {
+  if (!isDbConfigured()) {
+    return { totalCooks: 0, mostRecent: null, topRecipes: [] };
+  }
+  const where = journalWhere(userId, filter);
+
+  const [[totals], latest, topRecipes] = await Promise.all([
+    db.select({ total: count() }).from(cookLogEntries).where(where),
+    db.query.cookLogEntries.findFirst({
+      where,
+      orderBy: [desc(cookLogEntries.cookedAt)],
+      columns: { cookedAt: true },
+    }),
+    db
+      .select({
+        id: recipes.id,
+        slug: recipes.slug,
+        title: recipes.title,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(cookLogEntries)
+      .innerJoin(recipes, eq(cookLogEntries.recipeId, recipes.id))
+      .where(where)
+      .groupBy(recipes.id, recipes.slug, recipes.title)
+      .orderBy(sql`count(*) desc`)
+      .limit(3),
+  ]);
+
+  return {
+    totalCooks: totals?.total ?? 0,
+    mostRecent: latest?.cookedAt ?? null,
+    topRecipes,
+  };
+}
+
+/** A recipe the viewer has cooked, for the journal's recipe filter dropdown. */
+export type CookedRecipeOption = { id: string; title: string };
+
+/**
+ * The distinct recipes the viewer has ever cooked, alphabetical, to populate
+ * the journal recipe filter (#364).
+ */
+export async function getCookedRecipeOptions(
+  userId: string,
+): Promise<CookedRecipeOption[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await db
+    .select({ id: recipes.id, title: recipes.title })
+    .from(cookLogEntries)
+    .innerJoin(recipes, eq(cookLogEntries.recipeId, recipes.id))
+    .where(eq(cookLogEntries.userId, userId))
+    .groupBy(recipes.id, recipes.title)
+    .orderBy(asc(recipes.title));
   return rows;
 }
 

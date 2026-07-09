@@ -18,7 +18,7 @@ function recipe(overrides: Partial<RecipeInput> = {}): RecipeInput {
     visibility: "private",
     status: "draft",
     ...overrides,
-  } as RecipeInput;
+  } satisfies RecipeInput;
 }
 
 function ing(item: string, extra: Record<string, unknown> = {}) {

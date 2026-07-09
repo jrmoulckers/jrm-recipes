@@ -89,6 +89,12 @@ export function CookLogSection({
     );
   }
 
+  // Recency nudge (#368): with prior cooks, surface "last made … · N times" and a
+  // one-tap re-log. Entries arrive newest-first, so entries[0] is the last cook.
+  const lastEntry = entries[0] ?? null;
+  const lastCookedAt = lastEntry ? new Date(lastEntry.cookedAt) : null;
+  const lastServings = lastEntry?.servingsMade ?? null;
+
   return (
     <section
       className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 shadow-token sm:p-6"
@@ -126,6 +132,16 @@ export function CookLogSection({
         </div>
       </div>
 
+      {canLog && cookCount > 0 && lastCookedAt && (
+        <LogAgainNudge
+          recipeId={recipeId}
+          recipeSlug={recipeSlug}
+          lastCookedAt={lastCookedAt}
+          cookCount={cookCount}
+          lastServings={lastServings}
+        />
+      )}
+
       {entries.length > 0 ? (
         <CookLogTimeline
           entries={entries}
@@ -151,6 +167,79 @@ function EmptyCookLog() {
         The first time you make this, log it — notes, tweaks, and a photo become
         part of the recipe&apos;s story.
       </p>
+    </div>
+  );
+}
+
+/**
+ * "Made it again?" recency nudge (#368). Shown when the viewer has cooked this
+ * recipe before: surfaces how long ago and how many times, plus a one-tap
+ * "Log again" that records a fresh cook (dated now, servings prefilled from the
+ * last entry) via the existing {@link logCookAction}. Reuses the cook-log data
+ * already on the page, so no extra queries. Notes/photos remain available
+ * through the full "I cooked this" dialog.
+ */
+function LogAgainNudge({
+  recipeId,
+  recipeSlug,
+  lastCookedAt,
+  cookCount,
+  lastServings,
+}: {
+  recipeId: string;
+  recipeSlug: string;
+  lastCookedAt: Date;
+  cookCount: number;
+  lastServings: number | null;
+}) {
+  const locale = useLocale();
+  const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
+  const valid = !Number.isNaN(lastCookedAt.getTime());
+
+  function onLogAgain() {
+    if (pending) return;
+    startTransition(async () => {
+      const result = await logCookAction({
+        recipeId,
+        recipeSlug,
+        servingsMade: lastServings ?? undefined,
+      });
+      if (result.ok) {
+        toast.success(
+          `Logged again — ${cookedTimesLabel(cookCount + 1).toLowerCase()}`,
+        );
+        router.refresh();
+        return;
+      }
+      toast.error(friendlyError(result.error));
+    });
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background/60 p-3">
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">Made it again?</span>{" "}
+        {valid
+          ? `Last made ${formatRelativeTime(lastCookedAt, locale)}`
+          : "You've made this before"}
+        {" · "}
+        {cookedTimesLabel(cookCount).toLowerCase()}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onLogAgain}
+        disabled={pending}
+      >
+        {pending ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <CookingPot className="size-4" />
+        )}
+        {pending ? "Logging…" : "Log again"}
+      </Button>
     </div>
   );
 }
