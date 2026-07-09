@@ -10,7 +10,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "pnpm build && pnpm start",
+    // In CI the production build is produced once by the `build` job and
+    // downloaded as an artifact (#244), so just start it — no second compile.
+    // Locally there's no artifact, so build first, then start.
+    command: process.env.CI ? "pnpm start" : "pnpm build && pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

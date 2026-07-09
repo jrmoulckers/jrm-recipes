@@ -1,4 +1,8 @@
-# Vercel deploys from main; this workflow is the lightweight quality gate before code lands.
+# Vercel deploys from main; this workflow is the lightweight quality gate before
+# code lands. The single sequential `quality` job was split into independent,
+# parallel jobs (#244) so a lint failure no longer blocks typecheck/unit/build
+# feedback, and the production build is produced ONCE (the `build` job) and
+# reused by E2E instead of being compiled a second time.
 name: CI
 
 on:
@@ -22,6 +26,7 @@ jobs:
   # dependency advisory and on any committed secret, keeping these cheap checks
   # separate from the heavier quality/e2e jobs.
   security:
+    name: Security
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -60,59 +65,152 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  quality:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
       - name: Setup pnpm
         uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
         with:
           version: 10.6.1
-
       - name: Setup Node
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 20
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Lint
         run: pnpm lint
 
+  # Prettier formatting gate — previously not run in CI (#244).
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 10.6.1
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format check
+        run: pnpm format:check
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 10.6.1
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Typecheck
         run: pnpm typecheck
 
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 10.6.1
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Unit tests
         run: pnpm test
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SKIP_ENV_VALIDATION: "1"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 10.6.1
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Build
         run: pnpm build | tee bundle-build.log
-        env:
-          SKIP_ENV_VALIDATION: "1"
-          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-          NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
 
       # Fail the build if a tracked route's first-load JS exceeds its budget
       # (bundle-budgets.json). Reuses the log captured above so we build once.
       - name: Bundle size budget
         run: node scripts/check-bundle-budget.mjs bundle-build.log
 
+      # Publish the production build so E2E can start it directly instead of
+      # rebuilding (#244). Exclude the local build cache — E2E only needs the
+      # compiled output to `next start`.
+      - name: Upload build output
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: next-build
+          path: |
+            .next
+            !.next/cache
+          retention-days: 1
+          if-no-files-found: error
+
   # End-to-end tests, including offline PWA coverage (issue #171). Playwright
-  # builds + starts the app in production mode (see playwright.config.ts), so the
-  # Serwist service worker is ACTIVE during the run � `next dev` disables it, so
-  # offline behavior can only be verified against a production build. A throwaway
-  # Postgres (a local service container with hard-coded credentials � NOT a repo
-  # secret, mirroring the lighthouse job) is migrated + seeded so the offline
-  # spec can open a real recipe and enter Cook Mode; the smoke spec is
+  # starts the app in production mode (see playwright.config.ts) so the Serwist
+  # service worker is ACTIVE during the run — `next dev` disables it, so offline
+  # behavior can only be verified against a production build. It reuses the
+  # `build` job's artifact and runs `pnpm start` (no second compile, #244). A
+  # throwaway Postgres (a local service container with hard-coded credentials —
+  # NOT a repo secret, mirroring the lighthouse job) is migrated + seeded so the
+  # offline spec can open a real recipe and enter Cook Mode; the smoke spec is
   # database-agnostic.
   e2e:
+    name: E2E
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -156,6 +254,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Reuse the production build from the `build` job instead of compiling
+      # again — playwright.config.ts runs `pnpm start` (not build) under CI.
+      - name: Download build output
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: next-build
+          path: .next
+
       - name: Run migrations
         run: node scripts/migrate.mjs
 
@@ -170,13 +276,14 @@ jobs:
 
   # Runtime performance gate (issue #205). Unlike the other jobs, this one needs
   # real content on the recipe detail route, so it seeds an ephemeral, throwaway
-  # Postgres whose credentials are hard-coded here (a local service container �
+  # Postgres whose credentials are hard-coded here (a local service container —
   # NOT a repo secret), keeping the "no secrets" property of the rest of CI. It
   # builds, migrates + seeds, starts the app in dev-bypass mode, and runs
   # Lighthouse against the key routes with the Core Web Vitals budgets in
   # lighthouserc.cjs. Assertions fail the job on regression; reports upload as
   # artifacts for inspection.
   lighthouse:
+    name: Lighthouse
     runs-on: ubuntu-latest
     permissions:
       contents: read
