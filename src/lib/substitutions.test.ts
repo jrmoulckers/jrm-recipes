@@ -105,6 +105,37 @@ describe("matchIngredient", () => {
     expect(matchIngredient("")).toBeNull();
     expect(matchIngredient(null)).toBeNull();
   });
+
+  it("routes plant milks away from cow-milk swaps (#59)", () => {
+    expect(matchIngredient("almond milk")?.name).not.toBe("Milk");
+    expect(matchIngredient("oat milk")?.name).not.toBe("Milk");
+    expect(matchIngredient("coconut milk")?.name).not.toBe("Milk");
+    expect(matchIngredient("soy milk")?.name).not.toBe("Milk");
+    // and lands on the dedicated plant-milk guidance
+    expect(matchIngredient("almond milk")?.name).toBe("Plant milk");
+    expect(matchIngredient("oat milk")?.name).toBe("Plant milk");
+    expect(matchIngredient("coconut milk")?.name).toBe("Plant milk");
+  });
+
+  it("routes coconut cream away from heavy-cream swaps (#59)", () => {
+    expect(matchIngredient("coconut cream")?.name).not.toBe("Heavy cream");
+    expect(matchIngredient("coconut cream")?.name).toBe("Coconut cream");
+  });
+
+  it("does not match a compound dish to the egg staple (#59)", () => {
+    expect(matchIngredient("egg noodles")?.name).not.toBe("Egg");
+    expect(matchIngredient("egg noodles")).toBeNull();
+  });
+
+  it("still matches plain dairy and eggs after the #59 guards (regression)", () => {
+    expect(matchIngredient("milk")?.name).toBe("Milk");
+    expect(matchIngredient("whole milk")?.name).toBe("Milk");
+    expect(matchIngredient("skim milk")?.name).toBe("Milk");
+    expect(matchIngredient("buttermilk")?.name).toBe("Buttermilk");
+    expect(matchIngredient("egg")?.name).toBe("Egg");
+    expect(matchIngredient("large eggs")?.name).toBe("Egg");
+    expect(matchIngredient("heavy cream")?.name).toBe("Heavy cream");
+  });
 });
 
 describe("matchIngredientDetailed", () => {

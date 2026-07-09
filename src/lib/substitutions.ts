@@ -232,6 +232,70 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     ],
   },
   {
+    // Plant milks are already vegan and dairy-free, so they must not inherit the
+    // cow-milk swaps from the "Milk" entry (#59). Guidance here helps cooks swap
+    // between plant milks — e.g. away from a nut milk for an allergy.
+    name: "Plant milk",
+    aliases: [
+      "plant milk",
+      "plant based milk",
+      "non dairy milk",
+      "nondairy milk",
+      "almond milk",
+      "oat milk",
+      "soy milk",
+      "soya milk",
+      "rice milk",
+      "cashew milk",
+      "coconut milk",
+      "hemp milk",
+      "pea milk",
+      "hazelnut milk",
+    ],
+    substitutions: [
+      {
+        substitute: "Any other unsweetened plant milk",
+        ratioOrNotes:
+          "1:1 oat, soy, almond, or rice — choose one that suits the eater's allergies.",
+        dietaryTags: ["vegan", "dairy-free"],
+      },
+      {
+        substitute: "Oat or soy milk (nut-free)",
+        ratioOrNotes: "1:1; closest body to dairy milk and safe for nut allergies.",
+        dietaryTags: ["vegan", "dairy-free"],
+      },
+      {
+        substitute: "Dairy milk",
+        ratioOrNotes: "1:1 if dairy is fine; richer, but not vegan.",
+        dietaryTags: ["vegetarian"],
+      },
+    ],
+  },
+  {
+    // Coconut cream is dairy-free, so it must not fall through to the "Heavy
+    // cream" cow-dairy swaps (#59).
+    name: "Coconut cream",
+    aliases: ["coconut cream"],
+    substitutions: [
+      {
+        substitute: "Chilled full-fat coconut milk",
+        ratioOrNotes:
+          "Refrigerate a can overnight and scoop the thick top; whips when cold.",
+        dietaryTags: ["vegan", "dairy-free"],
+      },
+      {
+        substitute: "Cashew cream",
+        ratioOrNotes: "Blend soaked cashews with a little water until thick; 1:1.",
+        dietaryTags: ["vegan", "dairy-free"],
+      },
+      {
+        substitute: "Heavy cream",
+        ratioOrNotes: "1:1 if dairy is fine; not vegan and without coconut flavor.",
+        dietaryTags: ["vegetarian"],
+      },
+    ],
+  },
+  {
     name: "Crème fraîche",
     aliases: ["creme fraiche"],
     substitutions: [
@@ -896,9 +960,10 @@ function tokenize(value: string): string[] {
   return value.split(" ").filter(Boolean);
 }
 
-/** True when `phrase` appears as a contiguous run of whole words in `haystack`. */
-function containsPhrase(haystack: string[], phrase: string[]): boolean {
-  if (phrase.length === 0 || phrase.length > haystack.length) return false;
+/** Index where `phrase` first appears as a contiguous run of whole words in
+ * `haystack`, or -1 when it doesn't. */
+function phraseIndex(haystack: string[], phrase: string[]): number {
+  if (phrase.length === 0 || phrase.length > haystack.length) return -1;
   for (let i = 0; i + phrase.length <= haystack.length; i++) {
     let matched = true;
     for (let j = 0; j < phrase.length; j++) {
@@ -907,7 +972,60 @@ function containsPhrase(haystack: string[], phrase: string[]): boolean {
         break;
       }
     }
-    if (matched) return true;
+    if (matched) return i;
+  }
+  return -1;
+}
+
+/**
+ * Tokens that, sitting immediately before a bare "milk" or "cream", name a
+ * distinct plant-based ingredient rather than the dairy staple. "almond milk"
+ * and "coconut cream" are already vegan, so offering cow-milk / heavy-cream
+ * swaps is wrong (#59); guarding these lets the dedicated plant entries win.
+ */
+const PLANT_DAIRY_QUALIFIERS = new Set([
+  "almond",
+  "oat",
+  "soy",
+  "soya",
+  "rice",
+  "cashew",
+  "cashews",
+  "coconut",
+  "hemp",
+  "pea",
+  "hazelnut",
+  "macadamia",
+  "flax",
+  "walnut",
+]);
+
+/**
+ * Head nouns that turn a leading "egg"/"eggs" into a modifier for a different
+ * dish rather than the whole-egg staple, e.g. "egg noodles" (#59).
+ */
+const EGG_COMPOUND_HEADS = new Set(["noodle", "noodles"]);
+
+/**
+ * Reject an otherwise-valid alias hit when a generic dairy/egg head noun is used
+ * inside a compound that names a different ingredient (#59): "almond milk",
+ * "coconut cream", "egg noodles". Only bare single-token aliases are guarded, so
+ * full phrases (their own entries, or "whole milk") are unaffected.
+ */
+function isCompoundMismatch(
+  haystack: string[],
+  phrase: string[],
+  at: number,
+): boolean {
+  if (phrase.length !== 1) return false;
+  const word = phrase[0];
+  if (word === "milk" || word === "cream") {
+    const prev = at > 0 ? haystack[at - 1] : undefined;
+    return prev != null && PLANT_DAIRY_QUALIFIERS.has(prev);
+  }
+  if (word === "egg" || word === "eggs") {
+    const next = haystack[at + 1];
+    return next != null && EGG_COMPOUND_HEADS.has(next);
   }
   return false;
 }
@@ -977,7 +1095,9 @@ export function matchIngredientDetailed(
   let best: DetailedIngredientMatch | null = null;
   for (const { entry, aliasTokens } of INDEX) {
     for (const phrase of aliasTokens) {
-      if (!containsPhrase(tokens, phrase)) continue;
+      const at = phraseIndex(tokens, phrase);
+      if (at < 0) continue;
+      if (isCompoundMismatch(tokens, phrase, at)) continue;
       const score = phrase.length * 100 + phrase.join(" ").length;
       if (!best || score > best.score) {
         best = { entry, score, confidence: confidenceForAlias(phrase) };

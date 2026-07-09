@@ -775,8 +775,8 @@ export function describeQuantity(
   if (item.quantity == null) return "";
   const number =
     item.quantityMax != null
-      ? `${formatQuantity(item.quantity)}–${formatQuantity(item.quantityMax)}`
-      : formatQuantity(item.quantity);
+      ? `${formatQuantity(item.quantity, item.unit)}–${formatQuantity(item.quantityMax, item.unit)}`
+      : formatQuantity(item.quantity, item.unit);
   const unit = displayUnit(item.unit, item.quantityMax ?? item.quantity);
   return unit ? `${number} ${unit}` : number;
 }
