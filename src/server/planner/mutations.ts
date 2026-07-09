@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
@@ -29,6 +29,22 @@ async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {
   return rows.map((row) => row.groupId);
 }
 
+/** True when `userId` is a member of `groupId` (issue #363 access control). */
+async function isGroupMember(
+  tx: Tx,
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
+  const membership = await tx.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, userId),
+    ),
+    columns: { id: true },
+  });
+  return membership != null;
+}
+
 function canView(
   recipe: { authorId: string; visibility: string; groupId: string | null },
   viewer: User,
@@ -44,25 +60,29 @@ function canView(
   );
 }
 
-/** The next free position within a user's day + slot column. */
+/** The next free position within a day + slot column. Scoped to the group's
+ * shared column when `groupId` is set (issue #363), otherwise to the user's
+ * personal column (`group_id IS NULL`) so the two planes number independently. */
 async function nextPosition(
   tx: Tx,
   userId: string,
   date: string,
   slot: MealSlot,
+  groupId: string | null = null,
 ): Promise<number> {
+  const scope =
+    groupId != null
+      ? eq(mealPlanEntries.groupId, groupId)
+      : and(
+          eq(mealPlanEntries.userId, userId),
+          isNull(mealPlanEntries.groupId),
+        );
   const rows = await tx
     .select({
       next: sql<number>`coalesce(max(${mealPlanEntries.position}), -1) + 1`,
     })
     .from(mealPlanEntries)
-    .where(
-      and(
-        eq(mealPlanEntries.userId, userId),
-        eq(mealPlanEntries.date, date),
-        eq(mealPlanEntries.slot, slot),
-      ),
-    );
+    .where(and(scope, eq(mealPlanEntries.date, date), eq(mealPlanEntries.slot, slot)));
   return Number(rows[0]?.next ?? 0);
 }
 
@@ -83,20 +103,14 @@ export async function addEntry(input: AddEntryInput, user: User) {
 
     let groupId: string | null = null;
     if (input.groupId) {
-      const membership = await tx.query.groupMembers.findFirst({
-        where: and(
-          eq(groupMembers.groupId, input.groupId),
-          eq(groupMembers.userId, user.id),
-        ),
-        columns: { id: true },
-      });
-      if (!membership) throw new Error("FORBIDDEN");
+      if (!(await isGroupMember(tx, input.groupId, user.id)))
+        throw new Error("FORBIDDEN");
       groupId = input.groupId;
     }
 
     const position =
       input.position ??
-      (await nextPosition(tx, user.id, input.date, input.slot));
+      (await nextPosition(tx, user.id, input.date, input.slot, groupId));
 
     const [created] = await tx
       .insert(mealPlanEntries)
@@ -146,17 +160,27 @@ export async function addBatchCook(
       recipe.visibility === "group" ? await viewerGroupIds(tx, user.id) : [];
     if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
 
+    // Group-scoped batch cook (issue #363): both nights land on the shared group
+    // board when a group is in scope; membership is enforced first.
+    let entryGroupId: string | null = null;
+    if (input.groupId) {
+      if (!(await isGroupMember(tx, input.groupId, user.id)))
+        throw new Error("FORBIDDEN");
+      entryGroupId = input.groupId;
+    }
+
     const primaryPosition = await nextPosition(
       tx,
       user.id,
       input.date,
       input.slot,
+      entryGroupId,
     );
     const [primary] = await tx
       .insert(mealPlanEntries)
       .values({
         userId: user.id,
-        groupId: null,
+        groupId: entryGroupId,
         date: input.date,
         slot: input.slot,
         recipeId: recipe.id,
@@ -170,12 +194,13 @@ export async function addBatchCook(
       user.id,
       input.leftoversDate,
       input.slot,
+      entryGroupId,
     );
     const [leftovers] = await tx
       .insert(mealPlanEntries)
       .values({
         userId: user.id,
-        groupId: null,
+        groupId: entryGroupId,
         date: input.leftoversDate,
         slot: input.slot,
         recipeId: recipe.id,
@@ -190,18 +215,23 @@ export async function addBatchCook(
 
 export async function moveEntry(input: MoveEntryInput, user: User) {
   return db.transaction(async (tx) => {
+    // A personal entry moves only for its owner; a group entry moves for any
+    // member of that group (issue #363).
     const entry = await tx.query.mealPlanEntries.findFirst({
-      where: and(
-        eq(mealPlanEntries.id, input.entryId),
-        eq(mealPlanEntries.userId, user.id),
-      ),
-      columns: { id: true },
+      where: eq(mealPlanEntries.id, input.entryId),
+      columns: { id: true, userId: true, groupId: true },
     });
     if (!entry) throw new Error("NOT_FOUND");
+    if (entry.groupId) {
+      if (!(await isGroupMember(tx, entry.groupId, user.id)))
+        throw new Error("FORBIDDEN");
+    } else if (entry.userId !== user.id) {
+      throw new Error("NOT_FOUND");
+    }
 
     const position =
       input.position ??
-      (await nextPosition(tx, user.id, input.date, input.slot));
+      (await nextPosition(tx, user.id, input.date, input.slot, entry.groupId));
 
     const [updated] = await tx
       .update(mealPlanEntries)
@@ -214,17 +244,28 @@ export async function moveEntry(input: MoveEntryInput, user: User) {
 }
 
 export async function removeEntry(entryId: string, user: User) {
-  const [row] = await db
-    .delete(mealPlanEntries)
-    .where(
-      and(
-        eq(mealPlanEntries.id, entryId),
-        eq(mealPlanEntries.userId, user.id),
-      ),
-    )
-    .returning({ id: mealPlanEntries.id });
-  if (!row) throw new Error("NOT_FOUND");
-  return row;
+  return db.transaction(async (tx) => {
+    // Owner removes their personal entries; any member removes a group entry
+    // (issue #363).
+    const entry = await tx.query.mealPlanEntries.findFirst({
+      where: eq(mealPlanEntries.id, entryId),
+      columns: { id: true, userId: true, groupId: true },
+    });
+    if (!entry) throw new Error("NOT_FOUND");
+    if (entry.groupId) {
+      if (!(await isGroupMember(tx, entry.groupId, user.id)))
+        throw new Error("FORBIDDEN");
+    } else if (entry.userId !== user.id) {
+      throw new Error("NOT_FOUND");
+    }
+
+    const [row] = await tx
+      .delete(mealPlanEntries)
+      .where(eq(mealPlanEntries.id, entryId))
+      .returning({ id: mealPlanEntries.id });
+    if (!row) throw new Error("NOT_FOUND");
+    return row;
+  });
 }
 
 export type CopyWeekResult = { copied: number; previousEmpty: boolean };
