@@ -93,7 +93,7 @@ async function loadPersonalizedHome(user: User) {
     listDinnerCandidates(user, { today }),
     listBackInRotation(user.id),
     buildQuickPlanContext(user.id),
-    listLibrary(user),
+    listLibrary(user).then((page) => page.items),
   ]);
   return { today, dinner, rotation, quickPlan, library };
 }

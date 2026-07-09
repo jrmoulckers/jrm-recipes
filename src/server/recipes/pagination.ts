@@ -1,6 +1,13 @@
 /** Default number of discover-feed recipes fetched per page. */
 export const DISCOVER_PAGE_SIZE = 24;
 
+/**
+ * Default number of personal-library recipes fetched per page (#57). The
+ * `/recipes` cookbook and the home "Your recipes" strip both page through the
+ * viewer's library instead of loading (and rendering) every card at once.
+ */
+export const LIBRARY_PAGE_SIZE = 24;
+
 /** Default number of saved versions returned per version-history page (#159). */
 export const VERSION_HISTORY_PAGE_SIZE = 20;
 

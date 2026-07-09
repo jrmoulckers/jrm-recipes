@@ -8,6 +8,7 @@ import { type User } from "~/server/db/schema";
 import {
   attachCardAllergens,
   listLibrary,
+  listLibraryRecipeIds,
   listPublicRecipes,
   listRecentlyViewed,
   listRecipeFacets,
@@ -21,6 +22,7 @@ import { isAllergen } from "~/lib/allergens";
 import {
   isDefaultRecipeView,
   parseRecipeSearch,
+  recipeSearchToQueryString,
   type RecipeSearch,
 } from "~/server/recipes/search";
 import { getFavoriteRecipeIds } from "~/server/collections/queries";
@@ -34,6 +36,8 @@ import {
 } from "~/components/recipe/recipe-card";
 import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
+import { LibraryFeed } from "~/components/recipe/library-feed";
+import { SearchResultsFeed } from "~/components/recipe/search-results-feed";
 import { EmptyLibraryCta } from "~/components/recipe/empty-library-cta";
 import { WelcomeChecklist } from "~/components/onboarding/welcome-checklist";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
@@ -143,22 +147,29 @@ async function BrowseSections({
   members: CardDietaryMember[];
   quickPlan: QuickPlanContext | null;
 }) {
-  const [mine, discover, favoriteIds, tags, recentlyViewed] = await Promise.all([
-    listLibrary(user),
-    listPublicRecipes(),
-    getFavoriteRecipeIds(user?.id),
-    listTagsWithCounts(user),
-    listRecentlyViewed(user),
-  ]);
-  const mineIds = new Set(mine.map((r) => r.id));
+  const [library, discover, favoriteIds, tags, recentlyViewed, libraryIds] =
+    await Promise.all([
+      listLibrary(user),
+      listPublicRecipes(),
+      getFavoriteRecipeIds(user?.id),
+      listTagsWithCounts(user),
+      listRecentlyViewed(user),
+      listLibraryRecipeIds(user),
+    ]);
+  // Exclude the viewer's whole library from Discover (not just the first page),
+  // so paging the cookbook can't leak their own recipes into the feed (#57).
+  const mineIds = new Set(libraryIds);
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
+  const hasLibrary = library.items.length > 0;
   const canFavorite = Boolean(user);
   const popularTags = [...tags]
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, POPULAR_BROWSE_TAG_COUNT);
   // Only pay for allergen roll-up when a family member with allergies is active.
   const showBadges = members.some((m) => m.allergens.length > 0);
-  const mineCards = showBadges ? await attachCardAllergens(mine) : mine;
+  const libraryCards = showBadges
+    ? await attachCardAllergens(library.items)
+    : library.items;
 
   return (
     <>
@@ -216,19 +227,17 @@ async function BrowseSections({
         </section>
       )}
 
-      {mine.length > 0 ? (
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {mineCards.map((recipe, i) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              canFavorite={canFavorite}
-              favorited={favoriteIds.has(recipe.id)}
-              quickPlan={quickPlan ?? undefined}
-              priority={i < LCP_PRIORITY_COUNT}
-              members={members}
-            />
-          ))}
+      {hasLibrary ? (
+        <section className="flex flex-col gap-5">
+          <LibraryFeed
+            initialItems={libraryCards}
+            initialNextOffset={library.nextOffset}
+            canFavorite={canFavorite}
+            favoritedIds={[...favoriteIds]}
+            priorityCount={LCP_PRIORITY_COUNT}
+            members={members}
+            quickPlan={quickPlan ?? undefined}
+          />
         </section>
       ) : (
         <>
@@ -250,7 +259,7 @@ async function BrowseSections({
             initialNextOffset={discover.nextOffset}
             canFavorite={canFavorite}
             favoritedIds={[...favoriteIds]}
-            priorityCount={mine.length === 0 ? LCP_PRIORITY_COUNT : 0}
+            priorityCount={hasLibrary ? 0 : LCP_PRIORITY_COUNT}
           />
         </section>
       )}
@@ -258,7 +267,7 @@ async function BrowseSections({
   );
 }
 
-/** Flat, filtered + sorted results grid shown once a search or filter is set. */
+/** Flat, filtered + sorted results shown once a search or filter is set. */
 async function SearchResults({
   user,
   search,
@@ -270,22 +279,24 @@ async function SearchResults({
   members: CardDietaryMember[];
   quickPlan: QuickPlanContext | null;
 }) {
-  const [results, favoriteIds] = await Promise.all([
+  const [page, favoriteIds] = await Promise.all([
     searchRecipes(user, search),
     getFavoriteRecipeIds(user?.id),
   ]);
   const canFavorite = Boolean(user);
 
-  if (results.length === 0) {
+  if (page.items.length === 0) {
     // Typo-tolerant fallback: only for text queries, and only when a close
     // trigram match exists *and* actually yields results.
     const suggestion = search.q ? await suggestSearchTerm(user, search.q) : null;
     if (suggestion) {
-      const corrected = await searchRecipes(user, { ...search, q: suggestion });
-      if (corrected.length > 0) {
+      const correctedSearch = { ...search, q: suggestion };
+      const corrected = await searchRecipes(user, correctedSearch);
+      if (corrected.items.length > 0) {
         return (
-          <ResultsGrid
-            results={corrected}
+          <ResultsView
+            page={corrected}
+            search={correctedSearch}
             favoriteIds={favoriteIds}
             canFavorite={canFavorite}
             members={members}
@@ -299,8 +310,9 @@ async function SearchResults({
   }
 
   return (
-    <ResultsGrid
-      results={results}
+    <ResultsView
+      page={page}
+      search={search}
       favoriteIds={favoriteIds}
       canFavorite={canFavorite}
       members={members}
@@ -309,16 +321,23 @@ async function SearchResults({
   );
 }
 
-/** Results header + card grid, with an optional "did you mean" correction note. */
-async function ResultsGrid({
-  results,
+/**
+ * Attaches allergen badges to the first page and hands paging off to the client
+ * {@link SearchResultsFeed}, which owns the "Load more" button and the count
+ * hint. The active search is serialized to its canonical query string so the
+ * load-more action re-parses (and re-validates) it server-side (#58).
+ */
+async function ResultsView({
+  page,
+  search,
   favoriteIds,
   canFavorite,
   members,
   quickPlan,
   correction,
 }: {
-  results: RecipeSearchResult[];
+  page: { items: RecipeSearchResult[]; nextOffset: number | null };
+  search: RecipeSearch;
   favoriteIds: Set<string>;
   canFavorite: boolean;
   members: CardDietaryMember[];
@@ -327,47 +346,19 @@ async function ResultsGrid({
 }) {
   // Only pay for allergen roll-up when a family member with allergies is active.
   const showBadges = members.some((m) => m.allergens.length > 0);
-  const cards = showBadges ? await attachCardAllergens(results) : results;
+  const cards = showBadges ? await attachCardAllergens(page.items) : page.items;
   return (
-    <section className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-2xl font-bold tracking-tight">
-            Results
-          </h2>
-          {correction && (
-            <p className="text-sm text-muted-foreground">
-              No exact matches for{" "}
-              <span className="font-medium text-foreground">
-                &ldquo;{correction.from}&rdquo;
-              </span>
-              . Showing results for{" "}
-              <span className="font-medium text-foreground">
-                &ldquo;{correction.to}&rdquo;
-              </span>
-              .
-            </p>
-          )}
-        </div>
-        <span className="text-sm text-muted-foreground">
-          {results.length} recipe{results.length === 1 ? "" : "s"}
-        </span>
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((recipe, i) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            canFavorite={canFavorite}
-            favorited={favoriteIds.has(recipe.id)}
-            quickPlan={quickPlan ?? undefined}
-            priority={i < LCP_PRIORITY_COUNT}
-            matchReason={recipe.matchReason}
-            members={members}
-          />
-        ))}
-      </div>
-    </section>
+    <SearchResultsFeed
+      initialItems={cards}
+      initialNextOffset={page.nextOffset}
+      queryString={recipeSearchToQueryString(search)}
+      canFavorite={canFavorite}
+      favoritedIds={[...favoriteIds]}
+      priorityCount={LCP_PRIORITY_COUNT}
+      members={members}
+      quickPlan={quickPlan ?? undefined}
+      correction={correction}
+    />
   );
 }
 
