@@ -1,0 +1,42 @@
+# Automated release management (#265).
+#
+# release-please watches Conventional Commits landing on `main` and maintains a
+# standing "release PR" that bumps the version in package.json + the manifest
+# and updates CHANGELOG.md. Merging that PR creates the git tag and GitHub
+# Release. This gives every production deploy a human-readable version to point
+# at instead of a raw commit SHA.
+#
+# CI gating: the version bump and the tag both flow through a pull request (the
+# release PR), which runs the full CI workflow like any other PR — so a release
+# can only land on green CI. See DEPLOY.md → "Automated releases".
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Serialize releases; never cancel an in-flight one mid-tag.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Read-only by default; the single job below opts into exactly what
+# release-please needs to open its PR and cut the release.
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    permissions:
+      # Create the release commit/tag/GitHub Release and open/maintain the
+      # release PR. Scoped to this job only (least privilege).
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Run release-please
+        uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

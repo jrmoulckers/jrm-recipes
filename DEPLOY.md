@@ -256,6 +256,25 @@ Because migrations only auto-run in production and are skipped on preview
 (#258), staging uses its own branch database and the standard `vercel-build`
 flow, so a broken migration surfaces on staging before it can reach production.
 
+### Automated releases (versioning & changelog)
+
+Versioning, the changelog, and release tags are automated with
+[release-please](https://github.com/googleapis/release-please)
+(`.github/workflows/release.yml`), so every production deploy maps to a
+human-readable version instead of a raw commit SHA:
+
+1. Write commits using [Conventional
+   Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
+   `chore:`, …). The prefix determines the semver bump.
+2. As those commits land on `main`, release-please maintains a standing **release
+   PR** that bumps `version` in `package.json` + `.release-please-manifest.json`
+   and updates `CHANGELOG.md`.
+3. That release PR runs the **same CI gate** as any other PR, so a release can
+   only land on green CI. Merging it tags `vX.Y.Z` and cuts a GitHub Release.
+
+The deployed version and commit SHA are exposed at **`GET /api/health`**
+(`version` + `sha`) for support and debugging.
+
 ---
 
 ## Ongoing: how deploys work
