@@ -65,6 +65,43 @@ describe("logCookInput", () => {
     ).toBeUndefined();
   });
 
+  it("accepts today and a past cook date", () => {
+    const today = logCookInput.parse({
+      recipeId: "recipe_1",
+      recipeSlug: "sunday-sauce",
+      cookedAt: new Date(),
+    });
+    expect(today.cookedAt).toBeInstanceOf(Date);
+
+    const past = logCookInput.parse({
+      recipeId: "recipe_1",
+      recipeSlug: "sunday-sauce",
+      cookedAt: "2020-06-15T12:00:00.000Z",
+    });
+    expect(past.cookedAt?.toISOString()).toBe("2020-06-15T12:00:00.000Z");
+  });
+
+  it("rejects a cook date in the future", () => {
+    const future = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    expect(() =>
+      logCookInput.parse({
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        cookedAt: future.toISOString(),
+      }),
+    ).toThrow();
+  });
+
+  it("rejects a cook date before the year 2000", () => {
+    expect(() =>
+      logCookInput.parse({
+        recipeId: "recipe_1",
+        recipeSlug: "sunday-sauce",
+        cookedAt: "1999-12-31T00:00:00.000Z",
+      }),
+    ).toThrow();
+  });
+
   it("rejects missing ids, bad photo URLs, and non-positive servings", () => {
     expect(() =>
       logCookInput.parse({ recipeId: " ", recipeSlug: "sunday-sauce" }),

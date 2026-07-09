@@ -40,7 +40,21 @@ const optionalServings = z
   })
   .pipe(z.number().int().min(1).max(100000).optional());
 
-/** Optional cook date — accepts a Date or parseable string, else `undefined`. */
+/**
+ * Earliest cook date we accept — guards against epoch/typo dates (e.g. a
+ * mis-keyed year) that would otherwise sort a cook to the very bottom.
+ */
+const COOK_DATE_MIN_MS = Date.UTC(2000, 0, 1);
+/** Out-of-range message — kept friendly for the log dialog. */
+export const COOK_DATE_OUT_OF_RANGE_MESSAGE =
+  "Enter a cook date between 2000 and today";
+
+/**
+ * Optional cook date — accepts a Date or parseable string, else `undefined`.
+ * Clamped to `[2000-01-01, now]` so a client can't store a cook dated in the
+ * future (which would jump to the top of the journal) or absurdly far in the
+ * past. `now` is read per-parse via `Date.now()`, not frozen at module load.
+ */
 const optionalCookedAt = z
   .union([z.string(), z.date()])
   .optional()
@@ -48,7 +62,13 @@ const optionalCookedAt = z
     if (v == null || v === "") return undefined;
     const d = v instanceof Date ? v : new Date(v);
     return Number.isNaN(d.getTime()) ? undefined : d;
-  });
+  })
+  .refine(
+    (d) =>
+      d === undefined ||
+      (d.getTime() >= COOK_DATE_MIN_MS && d.getTime() <= Date.now()),
+    { message: COOK_DATE_OUT_OF_RANGE_MESSAGE },
+  );
 
 export const logCookInput = z.object({
   recipeId: idInput,
