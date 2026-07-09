@@ -362,6 +362,18 @@ describe("toSystemRange", () => {
     });
     expect(toSystemRange(1, 2, null, "metric")).toBeNull();
   });
+
+  it("renders a metric-converted range coherently via formatQuantity (#51)", () => {
+    // Mirrors the ingredients panel: convert the range as a whole, then format
+    // each end on the shared unit so metric rounding applies to both.
+    const range = toSystemRange(2, 3, "cup", "metric");
+    expect(range).not.toBeNull();
+    if (range) {
+      const lo = formatQuantity(range.quantity, range.unit);
+      const hi = formatQuantity(range.quantityMax, range.unit);
+      expect(`${lo}–${hi} ${range.unit}`).toBe("473–710 ml");
+    }
+  });
 });
 
 describe("temperature (#249)", () => {

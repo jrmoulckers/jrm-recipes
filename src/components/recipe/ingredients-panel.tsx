@@ -15,6 +15,7 @@ import {
   formatQuantity,
   scaleQuantity,
   toSystem,
+  toSystemRange,
   toWeight,
 } from "~/lib/units";
 import {
@@ -107,6 +108,35 @@ function measure(
   return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
 }
 
+/**
+ * Convert a *ranged* amount (min…max) as a coherent whole so both ends land on
+ * one shared unit and round together (#51). Converting the max independently via
+ * {@link measure} could pick a different friendly unit or rounding for the high
+ * end (e.g. "1 cup–1 quart"); routing us/metric through {@link toSystemRange}
+ * keeps the range on the low end's unit. Original/grams pass-throughs stay
+ * coherent because both ends share one unit already.
+ */
+function measureRange(
+  q: number | null,
+  qMax: number | null,
+  unit: string | null,
+  system: System,
+  item: string,
+): { q: number | null; qMax: number | null; unit: string } {
+  if (q == null) return { q: null, qMax: null, unit: unit ?? "" };
+  if (system === "original" || !unit) return { q, qMax, unit: unit ?? "" };
+  if (system === "grams") {
+    const grams = toWeight(q, unit, item);
+    if (grams == null) return { q, qMax, unit };
+    const gramsMax = qMax != null ? toWeight(qMax, unit, item) : null;
+    return { q: grams, qMax: gramsMax, unit: "g" };
+  }
+  const range = toSystemRange(q, qMax, unit, system);
+  return range
+    ? { q: range.quantity, qMax: range.quantityMax, unit: range.unit }
+    : { q, qMax, unit };
+}
+
 function amountLabel(
   ing: PanelIngredient,
   factor: number,
@@ -116,8 +146,8 @@ function amountLabel(
 ) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
-  const m = measure(q, ing.unit, system, ing.item);
-  const mMax = qMax != null ? measure(qMax, ing.unit, system, ing.item) : null;
+  const m = measureRange(q, qMax, ing.unit, system, ing.item);
+  const mMax = m.qMax != null ? { q: m.qMax, unit: m.unit } : null;
   if (m.q == null) {
     return {
       number: "",

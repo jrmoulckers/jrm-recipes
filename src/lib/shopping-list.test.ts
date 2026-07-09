@@ -395,6 +395,17 @@ describe("describeQuantity", () => {
       describeQuantity({ quantity: null, quantityMax: null, unit: null }),
     ).toBe("");
   });
+
+  it("applies metric rounding/formatting by passing the unit through (#51)", () => {
+    // Small metric dose keeps one decimal instead of a vulgar fraction (½).
+    expect(
+      describeQuantity({ quantity: 12.5, quantityMax: null, unit: "g" }),
+    ).toBe("12.5 g");
+    // A converted metric range renders coherently as whole millilitres.
+    expect(
+      describeQuantity({ quantity: 237, quantityMax: 710, unit: "ml" }),
+    ).toBe("237–710 ml");
+  });
 });
 
 // Type export smoke test — keeps the public input type wired up.
