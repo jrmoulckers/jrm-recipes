@@ -111,6 +111,10 @@
     "remove": "Eliminar",
     "removeNamed": "Eliminar {object}"
   },
+  "characterCounter": {
+    "remaining": "Quedan {count}",
+    "over": "Te pasaste por {count} — {message}"
+  },
   "recipeDetail": {
     "backToRecipes": "Recetas",
     "by": "Por",

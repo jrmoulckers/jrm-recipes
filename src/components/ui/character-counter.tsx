@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 
@@ -13,7 +14,9 @@ import { cn } from "~/lib/utils";
  * readers hear the warning as the user types, without interrupting.
  *
  * `max` and `overMessage` are passed straight from the Zod schema so the wording
- * and limit never drift from what the server enforces.
+ * and limit never drift from what the server enforces. All visible/announced copy
+ * is resolved through next-intl (`characterCounter` namespace) so it localizes and
+ * reads correctly under RTL — the counter no longer hardcodes English.
  */
 export function CharacterCounter({
   value,
@@ -31,6 +34,7 @@ export function CharacterCounter({
   threshold?: number;
   className?: string;
 }) {
+  const t = useTranslations("characterCounter");
   const remaining = max - value;
   const visible = value >= max * threshold;
   const over = remaining < 0;
@@ -48,8 +52,8 @@ export function CharacterCounter({
       {/* Empty (but present) while hidden so the region can announce on change. */}
       {visible
         ? over
-          ? `Over by ${-remaining} — ${overMessage}`
-          : `${remaining} left`
+          ? t("over", { count: -remaining, message: overMessage })
+          : t("remaining", { count: remaining })
         : ""}
     </p>
   );

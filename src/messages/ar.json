@@ -111,6 +111,10 @@
     "remove": "إزالة",
     "removeNamed": "إزالة {object}"
   },
+  "characterCounter": {
+    "remaining": "متبقٍ {count}",
+    "over": "تجاوزت بمقدار {count} — {message}"
+  },
   "recipeDetail": {
     "backToRecipes": "الوصفات",
     "by": "بواسطة",
