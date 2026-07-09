@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
@@ -29,6 +29,38 @@ export function isOwner(role: MemberRole | null | undefined): boolean {
   return role === "owner";
 }
 
+/**
+ * Whether a recipe belongs in a group's rendered cookbook for `viewer`. This is
+ * the listing counterpart to {@link canView} (issues #204/#165): it decides what
+ * a group page *shows*, not just what an individual recipe grants on direct
+ * access, and it must never be looser than `canView`.
+ *
+ * - Tombstoned (soft-deleted) recipes are never listed.
+ * - The author always sees their own recipe in their group's cookbook.
+ * - Non-members (the public cookbook view) only ever see recipes that are both
+ *   `public` and `published` — never drafts, `group`, `unlisted`, or `private`.
+ * - Members see recipes explicitly shared to the group (`group`) plus `public`
+ *   ones, but NOT a fellow member's `private` (author-only) or `unlisted`
+ *   (share-token-only) recipes.
+ */
+export function canListInGroupCookbook(
+  recipe: {
+    authorId: string;
+    visibility: string;
+    status: string;
+    deletedAt: Date | null;
+  },
+  viewer: User | null,
+  isMember: boolean,
+): boolean {
+  if (recipe.deletedAt != null) return false;
+  if (recipe.authorId === viewer?.id) return true;
+  if (!isMember) {
+    return recipe.visibility === "public" && recipe.status === "published";
+  }
+  return recipe.visibility === "group" || recipe.visibility === "public";
+}
+
 export async function listMyGroups(userId: string) {
   if (!isDbConfigured()) return [];
 
@@ -47,7 +79,10 @@ export async function listMyGroups(userId: string) {
       columns: { groupId: true },
     }),
     db.query.recipes.findMany({
-      where: inArray(recipes.groupId, groupIds),
+      where: and(
+        inArray(recipes.groupId, groupIds),
+        isNull(recipes.deletedAt),
+      ),
       columns: { groupId: true },
     }),
   ]);
@@ -108,11 +143,15 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
     viewer == null
       ? null
       : (members.find((member) => member.userId === viewer.id)?.role ?? null);
+  const isMember = viewerRole != null;
 
-  const visibleRecipes = await db.query.recipes.findMany({
-    where: viewerRole
-      ? eq(recipes.groupId, group.id)
-      : and(eq(recipes.groupId, group.id), eq(recipes.visibility, "public")),
+  // Fetch the group's live (non-tombstoned) recipes, then apply the same
+  // listing rule as `canView` (issues #204/#165) so the cookbook never leaks a
+  // member's private/unlisted recipe to others, nor a public draft to
+  // non-members. Family cookbooks are small, so filtering in memory keeps the
+  // predicate a single source of truth (mirroring getRecipe -> canView).
+  const groupRecipes = await db.query.recipes.findMany({
+    where: and(eq(recipes.groupId, group.id), isNull(recipes.deletedAt)),
     orderBy: [desc(recipes.updatedAt)],
     columns: {
       id: true,
@@ -122,6 +161,8 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
       coverImageUrl: true,
       visibility: true,
       status: true,
+      authorId: true,
+      deletedAt: true,
       updatedAt: true,
     },
     with: {
@@ -135,6 +176,10 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
       },
     },
   });
+
+  const visibleRecipes = groupRecipes.filter((recipe) =>
+    canListInGroupCookbook(recipe, viewer, isMember),
+  );
 
   return {
     ...group,
