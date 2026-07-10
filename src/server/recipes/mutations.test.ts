@@ -284,20 +284,26 @@ function createTx(opts: { member: boolean }) {
   const insert = vi.fn((table: unknown) => ({
     values: (vals: unknown) => {
       if (table === recipes) recipeValues(vals);
-      return chainable(table === recipes ? [{ id: "r1", slug: "apple-pie" }] : undefined);
+      return chainable(
+        table === recipes ? [{ id: "r1", slug: "apple-pie" }] : undefined,
+      );
     },
   }));
   const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
-        findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
       },
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     insert,
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({
-      from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
+      from: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve([{ next: 1 }])),
+      })),
     })),
   };
   // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
@@ -309,7 +315,9 @@ function createTx(opts: { member: boolean }) {
 describe("createRecipe group-membership enforcement", () => {
   it("persists a groupId the author belongs to", async () => {
     const { tx, recipeValues } = createTx({ member: true });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
     const parsed = recipeInput.parse({
       title: "Apple Pie",
       visibility: "group",
@@ -326,7 +334,9 @@ describe("createRecipe group-membership enforcement", () => {
 
   it("rejects (FORBIDDEN) and persists nothing when the author isn't a member", async () => {
     const { tx, insert } = createTx({ member: false });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
     const parsed = recipeInput.parse({
       title: "Apple Pie",
       visibility: "group",
@@ -339,7 +349,9 @@ describe("createRecipe group-membership enforcement", () => {
 
   it("nulls a stray groupId on a private recipe from a non-member", async () => {
     const { tx, recipeValues } = createTx({ member: false });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
     const parsed = recipeInput.parse({
       title: "Apple Pie",
       visibility: "private",
@@ -366,7 +378,9 @@ function updateTx(opts: { member: boolean }) {
   const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
-        findFirst: vi.fn().mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
       },
       recipes: {
         findFirst: vi.fn().mockResolvedValue({
@@ -381,7 +395,9 @@ function updateTx(opts: { member: boolean }) {
     insert: vi.fn(() => ({ values: () => chainable(undefined) })),
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({
-      from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
+      from: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve([{ next: 1 }])),
+      })),
     })),
   };
   // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
@@ -393,7 +409,9 @@ function updateTx(opts: { member: boolean }) {
 describe("updateRecipe group-membership enforcement", () => {
   it("allows an update assigning a group the author belongs to", async () => {
     const { tx, setValues } = updateTx({ member: true });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
     const parsed = recipeInput.parse({
       title: "Apple Pie",
       visibility: "group",
@@ -410,7 +428,9 @@ describe("updateRecipe group-membership enforcement", () => {
 
   it("rejects (FORBIDDEN) an update assigning a group the author isn't in", async () => {
     const { tx, update } = updateTx({ member: false });
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
     const parsed = recipeInput.parse({
       title: "Apple Pie",
       visibility: "group",
@@ -485,7 +505,9 @@ describe("journal version-number allocation (issue #151)", () => {
 
   it("retries on a version-number collision so concurrent edits get distinct numbers", async () => {
     const { tx, versionRows } = versionRaceTx();
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
 
     await updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), author);
 
@@ -524,7 +546,9 @@ function notOwnedTx() {
 describe("recipe ownership authz guards (i220)", () => {
   it("updateRecipe on another user's recipe throws NOT_FOUND and writes nothing", async () => {
     const { tx, update } = notOwnedTx();
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
 
     await expect(
       updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), stranger),
@@ -534,15 +558,22 @@ describe("recipe ownership authz guards (i220)", () => {
 
   it("revertRecipe on another user's recipe throws NOT_FOUND and writes nothing", async () => {
     const { tx, update } = notOwnedTx();
-    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
 
     await expect(revertRecipe("r1", 1, stranger)).rejects.toThrow("NOT_FOUND");
     expect(update).not.toHaveBeenCalled();
   });
 
   it("deleteRecipe on another user's recipe throws NOT_FOUND (no row matched)", async () => {
-    // deleteRecipe uses db.update(...).where(id AND authorId AND deleted IS NULL);
-    // a non-owner matches no row, so `.returning()` is empty → NOT_FOUND.
+    // deleteRecipe first runs an owner-scoped lookup for the kid-safe guard
+    // (issue #367): a non-owner sees no row, so the guard is skipped. It then
+    // issues db.update(...).where(id AND authorId AND deleted IS NULL); a
+    // non-owner matches no row, so `.returning()` is empty → NOT_FOUND.
+    (dbMock as Record<string, unknown>).query = {
+      recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+    };
     const where = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([]) }));
     const set = vi.fn(() => ({ where }));
     (dbMock as Record<string, unknown>).update = vi.fn(() => ({ set }));

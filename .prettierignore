@@ -1,0 +1,13 @@
+# Generated / tool-owned output — not formatted by prettier.
+
+# drizzle-kit owns these migration snapshots and SQL. Prettier and drizzle-kit
+# disagree on JSON array wrapping, so checking them here would make the CI
+# "Format" gate fight `pnpm db:generate` (the "Migration drift" gate) forever.
+drizzle/
+
+# Build, test, and tooling artifacts (gitignored, but keep local `format:*`
+# fast and prevent it from rewriting generated output).
+.next/
+coverage/
+playwright-report/
+test-results/
