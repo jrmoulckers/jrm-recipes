@@ -12,12 +12,18 @@ export const metadata: Metadata = { title: "New recipe" };
 export default async function NewRecipePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cover?: string; title?: string }>;
+  searchParams: Promise<{ cover?: string; title?: string; import?: string }>;
 }) {
-  const { cover, title } = await searchParams;
+  const { cover, title, import: importUrl } = await searchParams;
   // Only a Cloudinary https URL we just uploaded (via the photo share target)
   // is trusted as a pre-filled cover; anything else is ignored.
   const initialCoverImageUrl = safeSharedImageUrl(cover);
+  // A recipe URL shared into the PWA (Web Share Target, #50) arrives as
+  // ?import=<url>; pre-fill the importer so the share flow doesn't dead-end.
+  const initialImportUrl =
+    typeof importUrl === "string" && importUrl.trim().length > 0
+      ? importUrl.trim().slice(0, 2048)
+      : undefined;
   // A searched-but-missing recipe can seed the title (#103). Trim/cap to keep it
   // sane; the editor still requires the user to confirm and save.
   const initialTitle =
@@ -52,6 +58,7 @@ export default async function NewRecipePage({
         groups={groups}
         initialCoverImageUrl={initialCoverImageUrl}
         initialTitle={initialTitle}
+        initialImportUrl={initialImportUrl}
       />
     </>
   );

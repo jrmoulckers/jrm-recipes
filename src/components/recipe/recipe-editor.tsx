@@ -73,6 +73,7 @@ type IngRow = {
   key: string;
   section: string;
   quantity: string;
+  quantityMax: string;
   unit: string;
   item: string;
   note: string;
@@ -82,8 +83,10 @@ type IngRow = {
 };
 type StepRow = {
   key: string;
+  section: string;
   instruction: string;
   imageUrl: string;
+  videoUrl: string;
   timerMinutes: string;
   targetTempC: string;
   doneness: string;
@@ -133,6 +136,7 @@ const nextKey = () => `row-${idCounter++}`;
 const EMPTY_ING: Omit<IngRow, "key"> = {
   section: "",
   quantity: "",
+  quantityMax: "",
   unit: "",
   item: "",
   note: "",
@@ -141,8 +145,10 @@ const EMPTY_ING: Omit<IngRow, "key"> = {
   optional: false,
 };
 const EMPTY_STEP: Omit<StepRow, "key"> = {
+  section: "",
   instruction: "",
   imageUrl: "",
+  videoUrl: "",
   timerMinutes: "",
   targetTempC: "",
   doneness: "",
@@ -301,6 +307,7 @@ export function RecipeEditor({
   initial,
   initialCoverImageUrl,
   initialTitle,
+  initialImportUrl,
   groups = [],
 }: {
   mode: "create" | "edit";
@@ -310,6 +317,8 @@ export function RecipeEditor({
   initialCoverImageUrl?: string;
   /** Pre-filled title (e.g. seeded from a searched-but-missing recipe, #103). */
   initialTitle?: string;
+  /** Recipe URL shared into the PWA to import from on mount (#50/#55). */
+  initialImportUrl?: string;
   groups?: { id: string; name: string }[];
 }) {
   const router = useRouter();
@@ -543,7 +552,7 @@ export function RecipeEditor({
         .map((r) => ({
           section: r.section.trim() || undefined,
           quantity: numOrUndef(r.quantity),
-          quantityMax: undefined,
+          quantityMax: numOrUndef(r.quantityMax),
           unit: r.unit.trim() || undefined,
           item: r.item.trim(),
           note: r.note.trim() || undefined,
@@ -554,10 +563,10 @@ export function RecipeEditor({
       steps: steps
         .filter((r) => r.instruction.trim() !== "")
         .map((r) => ({
-          section: undefined,
+          section: r.section.trim() || undefined,
           instruction: r.instruction.trim(),
           imageUrl: r.imageUrl.trim() || undefined,
-          videoUrl: undefined,
+          videoUrl: r.videoUrl.trim() || undefined,
           timerSeconds: r.timerMinutes.trim()
             ? Math.round(Number(r.timerMinutes) * 60)
             : undefined,
@@ -798,6 +807,7 @@ export function RecipeEditor({
             <ImportRecipePanel
               onImported={applyImported}
               urlLabel={t("importUrl")}
+              initialUrl={initialImportUrl}
             />
           ) : null}
 
@@ -853,7 +863,21 @@ export function RecipeEditor({
                   className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
                 >
                   <div className="flex flex-1 flex-col gap-2">
-                    <div className="grid gap-2 sm:grid-cols-[4rem_5rem_1fr]">
+                    <Input
+                      aria-label="Ingredient section"
+                      value={row.section}
+                      onChange={(e) =>
+                        setIngredients((l) =>
+                          l.map((r) =>
+                            r.key === row.key
+                              ? { ...r, section: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                      placeholder="Section — For the sauce…"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-[4rem_4rem_5rem_1fr]">
                     <Input
                       aria-label={t("quantity")}
                       value={row.quantity}
@@ -867,6 +891,21 @@ export function RecipeEditor({
                         )
                       }
                       placeholder="2"
+                      inputMode="decimal"
+                    />
+                    <Input
+                      aria-label="Maximum quantity"
+                      value={row.quantityMax}
+                      onChange={(e) =>
+                        setIngredients((l) =>
+                          l.map((r) =>
+                            r.key === row.key
+                              ? { ...r, quantityMax: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                      placeholder="to 3"
                       inputMode="decimal"
                     />
                     <Input
@@ -945,6 +984,39 @@ export function RecipeEditor({
                         ))}
                       </select>
                     </div>
+                    <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto]">
+                      <Input
+                        aria-label="Ingredient note"
+                        value={row.note}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, note: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="Note — room temperature, divided…"
+                      />
+                      <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="size-4 accent-primary"
+                          checked={row.optional}
+                          onChange={(e) =>
+                            setIngredients((l) =>
+                              l.map((r) =>
+                                r.key === row.key
+                                  ? { ...r, optional: e.target.checked }
+                                  : r,
+                              ),
+                            )
+                          }
+                        />
+                        Optional
+                      </label>
+                    </div>
                   </div>
                   <RowControls
                     objectLabel={t("ingredientObject")}
@@ -986,6 +1058,20 @@ export function RecipeEditor({
                     {i + 1}
                   </span>
                   <div className="flex flex-1 flex-col gap-2">
+                    <Input
+                      aria-label="Step section"
+                      value={row.section}
+                      onChange={(e) =>
+                        setSteps((l) =>
+                          l.map((r) =>
+                            r.key === row.key
+                              ? { ...r, section: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                      placeholder="Section — Make the dough…"
+                    />
                     <Textarea
                       aria-label={t("step", { position: i + 1 })}
                       value={row.instruction}
@@ -1071,6 +1157,22 @@ export function RecipeEditor({
                         placeholder="Doneness — golden brown, springs back…"
                       />
                     </div>
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      aria-label="Step video URL"
+                      value={row.videoUrl}
+                      onChange={(e) =>
+                        setSteps((l) =>
+                          l.map((r) =>
+                            r.key === row.key
+                              ? { ...r, videoUrl: e.target.value }
+                              : r,
+                          ),
+                        )
+                      }
+                      placeholder="Video URL — https://…"
+                    />
                     <ImageUploadField
                       size="compact"
                       label={`Step ${i + 1} photo`}

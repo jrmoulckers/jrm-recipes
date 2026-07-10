@@ -87,6 +87,29 @@ describe("parseIngredientLine", () => {
       item: "Salt and pepper to taste",
     });
   });
+  it("captures quantity ranges as min/max", () => {
+    expect(parseIngredientLine("2 to 3 cups flour")).toMatchObject({
+      quantity: "2",
+      quantityMax: "3",
+      unit: "cup",
+      item: "flour",
+    });
+    expect(parseIngredientLine("1-2 tsp salt")).toMatchObject({
+      quantity: "1",
+      quantityMax: "2",
+      unit: "tsp",
+      item: "salt",
+    });
+    expect(parseIngredientLine("1/2 to 3/4 cup sugar")).toMatchObject({
+      quantity: "0.5",
+      quantityMax: "0.75",
+      unit: "cup",
+      item: "sugar",
+    });
+  });
+  it("leaves quantityMax empty for single quantities", () => {
+    expect(parseIngredientLine("2 cups flour").quantityMax).toBe("");
+  });
 });
 
 const SAMPLE_HTML = `
@@ -113,7 +136,7 @@ const SAMPLE_HTML = `
         "3 cloves garlic (minced)"
       ],
       "recipeInstructions": [
-        { "@type": "HowToStep", "text": "Warm the oil.", "image": "https://cdn.example.com/s1.jpg" },
+        { "@type": "HowToStep", "text": "Warm the oil.", "image": "https://cdn.example.com/s1.jpg", "video": { "@type": "VideoObject", "contentUrl": "https://cdn.example.com/v1.mp4" } },
         { "@type": "HowToSection", "name": "Simmer", "itemListElement": [
           { "@type": "HowToStep", "text": "Add tomatoes." },
           { "@type": "HowToStep", "text": "Simmer 90 minutes." }
@@ -164,6 +187,12 @@ describe("parseRecipeFromHtml", () => {
       imageUrl: "https://cdn.example.com/s1.jpg",
     });
     expect(recipe?.steps[2]?.instruction).toBe("Simmer 90 minutes.");
+  });
+  it("preserves HowToSection names and per-step video URLs", () => {
+    expect(recipe?.steps[0]?.section).toBe("");
+    expect(recipe?.steps[0]?.videoUrl).toBe("https://cdn.example.com/v1.mp4");
+    expect(recipe?.steps[1]?.section).toBe("Simmer");
+    expect(recipe?.steps[2]?.section).toBe("Simmer");
   });
   it("returns null when there is no recipe", () => {
     expect(parseRecipeFromHtml("<html></html>", "https://x.com")).toBeNull();

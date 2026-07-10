@@ -67,6 +67,7 @@ export default async function EditRecipePage({
     ingredients: recipe.ingredients.map((ing) => ({
       section: ing.section ?? "",
       quantity: ing.quantity != null ? String(ing.quantity) : "",
+      quantityMax: ing.quantityMax != null ? String(ing.quantityMax) : "",
       unit: ing.unit ?? "",
       item: ing.item,
       note: ing.note ?? "",
@@ -75,8 +76,10 @@ export default async function EditRecipePage({
       optional: ing.optional,
     })),
     steps: recipe.steps.map((step) => ({
+      section: step.section ?? "",
       instruction: step.instruction,
       imageUrl: step.imageUrl ?? "",
+      videoUrl: step.videoUrl ?? "",
       timerMinutes:
         step.timerSeconds != null
           ? String(Math.round((step.timerSeconds / 60) * 100) / 100)

@@ -16,6 +16,7 @@ import { normalizeUnit, roundNice, unitDimension } from "~/lib/units";
 export type ImportedIngredient = {
   section: string;
   quantity: string;
+  quantityMax: string;
   unit: string;
   item: string;
   note: string;
@@ -23,8 +24,10 @@ export type ImportedIngredient = {
 };
 
 export type ImportedStep = {
+  section: string;
   instruction: string;
   imageUrl: string;
+  videoUrl: string;
   timerMinutes: string;
   techniques: string;
 };
@@ -283,17 +286,27 @@ function parseQuantityToken(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function splitLeadingQuantity(line: string): { quantity?: number; rest: string } {
+function splitLeadingQuantity(line: string): {
+  quantity?: number;
+  quantityMax?: number;
+  rest: string;
+} {
   const t = line.trim();
   const token = `\\d+\\s+\\d+/\\d+|\\d+/\\d+|\\d+(?:\\.\\d+)?\\s*[${GLYPHS}]|\\d+(?:\\.\\d+)?|[${GLYPHS}]`;
   const re = new RegExp(
-    `^(${token})(?:\\s*(?:-|–|—|to)\\s*(?:${token}))?\\s+(.*)$`,
+    `^(${token})(?:\\s*(?:-|–|—|to)\\s*(${token}))?\\s+(.*)$`,
   );
   const m = re.exec(t);
   if (!m) return { rest: t };
   const q = parseQuantityToken(m[1] ?? "");
   if (q == null) return { rest: t };
-  return { quantity: q, rest: (m[2] ?? "").trim() };
+  const max = m[2] ? parseQuantityToken(m[2]) : undefined;
+  return {
+    quantity: q,
+    // Only treat the second value as a max when it's a sane upper bound.
+    quantityMax: max != null && max >= q ? max : undefined,
+    rest: (m[3] ?? "").trim(),
+  };
 }
 
 function knownUnit(word: string): string | null {
@@ -334,11 +347,12 @@ export function parseIngredientLine(raw: string): ImportedIngredient {
       .replace(/\s+/g, " ")
       .trim();
   }
-  const { quantity, rest } = splitLeadingQuantity(line);
+  const { quantity, quantityMax, rest } = splitLeadingQuantity(line);
   const { unit, item } = splitUnit(rest);
   return {
     section: "",
     quantity: quantity != null ? String(roundNice(quantity)) : "",
+    quantityMax: quantityMax != null ? String(roundNice(quantityMax)) : "",
     unit,
     item: (item || rest || line).trim(),
     note,
@@ -382,32 +396,40 @@ function cleanStep(text: string): string {
 
 function mapInstructions(value: unknown): ImportedStep[] {
   const steps: ImportedStep[] = [];
-  const push = (text: string, image = ""): void => {
+  const push = (
+    text: string,
+    image = "",
+    section = "",
+    video = "",
+  ): void => {
     const instruction = cleanStep(text);
     if (instruction)
       steps.push({
+        section,
         instruction,
         imageUrl: /^https?:\/\//i.test(image) ? image : "",
+        videoUrl: /^https?:\/\//i.test(video) ? video : "",
         timerMinutes: "",
         techniques: "",
       });
   };
-  const walk = (node: unknown): void => {
+  const walk = (node: unknown, section = ""): void => {
     if (typeof node === "string") {
       const parts = node.split(/\r?\n+/).map((s) => s.trim()).filter(Boolean);
-      if (parts.length > 1) parts.forEach((p) => push(p));
-      else push(node);
+      if (parts.length > 1) parts.forEach((p) => push(p, "", section));
+      else push(node, "", section);
       return;
     }
     const arr = asArray(node);
     if (arr.length) {
-      arr.forEach(walk);
+      arr.forEach((n) => walk(n, section));
       return;
     }
     if (node && typeof node === "object") {
       const o = node as Record<string, unknown>;
       if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "howtosection")) {
-        walk(o.itemListElement);
+        const name = typeof o.name === "string" ? cleanStep(o.name) : "";
+        walk(o.itemListElement, name || section);
         return;
       }
       const text =
@@ -415,10 +437,10 @@ function mapInstructions(value: unknown): ImportedStep[] {
         (typeof o.name === "string" && o.name) ||
         "";
       if (text) {
-        push(text, firstImageUrl(o.image));
+        push(text, firstImageUrl(o.image), section, firstImageUrl(o.video));
         return;
       }
-      if (o.itemListElement) walk(o.itemListElement);
+      if (o.itemListElement) walk(o.itemListElement, section);
     }
   };
   walk(value);
