@@ -23,10 +23,8 @@ import {
 
 import { db, isDbConfigured } from "~/server/db";
 import {
-  compareByTopRated,
   excludeOwnerRatings,
   ratingSummary,
-  summaryFromAggregates,
   TOP_RATED_PRIOR_COUNT,
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
@@ -59,10 +57,12 @@ import {
   clampPageSize,
   DISCOVER_PAGE_SIZE,
   FORK_LIST_CAP,
+  LIBRARY_PAGE_SIZE,
   nextPageOffset,
   toCursorPage,
   TIMELINE_EVENT_PAGE_SIZE,
   VERSION_HISTORY_PAGE_SIZE,
+  type Paginated,
 } from "./pagination";
 import { expandQueryTerms } from "~/lib/search-synonyms";
 import { deriveMatchReason } from "~/lib/search-match";
@@ -96,7 +96,10 @@ export type PublicRecipeListItem = Awaited<
 >["items"][number];
 export type RecipeSearchResult = Awaited<
   ReturnType<typeof searchRecipes>
->[number];
+>["items"][number];
+export type LibraryListItem = Awaited<
+  ReturnType<typeof listLibrary>
+>["items"][number];
 export type CookWithResult = Awaited<
   ReturnType<typeof searchByIngredients>
 >[number];
@@ -107,25 +110,6 @@ export type VersionListItem = VersionHistoryPage["items"][number];
 
 /** Re-exported for recipe detail pages that import it from the query module. */
 export { excludeOwnerRatings, ratingSummary };
-
-/**
- * Re-order a fetched list so the highest-rated recipes come first, using each
- * recipe's denormalized, owner-excluded aggregates (issue #154). Used for lists
- * that are already fully loaded (e.g. a viewer's library); paged/searched feeds
- * order in SQL via {@link topRatedOrderBy} instead so the ranking is global
- * rather than per-window. `"recent"` keeps the DB order untouched.
- */
-function applyRatingSort<
-  T extends { ratingCount: number; ratingSum: number },
->(rows: T[], sort: RatingSort): T[] {
-  if (sort !== "top-rated") return rows;
-  return [...rows].sort((a, b) =>
-    compareByTopRated(
-      summaryFromAggregates(a.ratingCount, a.ratingSum),
-      summaryFromAggregates(b.ratingCount, b.ratingSum),
-    ),
-  );
-}
 
 /**
  * Per-recipe weighted "top rated" score, read straight from the denormalized
@@ -643,11 +627,48 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
   return recipe ?? null;
 }
 
-/** Recipes visible on a viewer's home/library: their own + their groups'. */
+/**
+ * One page of the recipes visible on a viewer's home/library: their own + their
+ * groups' (issue #57). Paginated in SQL with `limit`/`offset` so the cookbook no
+ * longer loads (and eager-hydrates tags/ratings for) every recipe at once. For
+ * `"top-rated"` the ranking is applied in SQL via {@link topRatedOrderBy} so the
+ * offset walks the true global order rather than re-sorting a single window;
+ * `"recent"` keeps the base `updatedAt desc` ordering.
+ */
 export async function listLibrary(
   viewer: User | null,
-  sort: RatingSort = "recent",
-) {
+  {
+    sort = "recent",
+    limit = LIBRARY_PAGE_SIZE,
+    offset = 0,
+  }: { sort?: RatingSort; limit?: number; offset?: number } = {},
+): Promise<Paginated<RecipeListItem>> {
+  if (!isDbConfigured() || !viewer) return { items: [], nextOffset: null };
+  const groupIds = await viewerGroupIds(viewer);
+  const scope =
+    groupIds.length > 0
+      ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
+      : eq(recipes.authorId, viewer.id);
+  const rows = await db.query.recipes.findMany({
+    where: and(notDeleted, scope),
+    orderBy: sort === "top-rated" ? topRatedOrderBy() : [desc(recipes.updatedAt)],
+    limit,
+    offset,
+    with: { author: true, tags: { with: { tag: true } } },
+  });
+  return { items: rows, nextOffset: nextPageOffset(offset, rows.length, limit) };
+}
+
+/**
+ * Just the ids of the recipes in a viewer's library (their own + their groups'),
+ * with no eager relations (#57). The discover feed subtracts this set so a
+ * viewer never sees their own recipes under "Discover"; keeping it id-only means
+ * each "Load more" no longer re-hydrates every library recipe's tags and ratings
+ * just to build an exclusion set. Empty without a database or user.
+ */
+export async function listLibraryRecipeIds(
+  viewer: User | null,
+): Promise<string[]> {
   if (!isDbConfigured() || !viewer) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope =
@@ -656,10 +677,9 @@ export async function listLibrary(
       : eq(recipes.authorId, viewer.id);
   const rows = await db.query.recipes.findMany({
     where: and(notDeleted, scope),
-    orderBy: [desc(recipes.updatedAt)],
-    with: { author: true, tags: { with: { tag: true } } },
+    columns: { id: true },
   });
-  return applyRatingSort(rows, sort);
+  return rows.map((r) => r.id);
 }
 
 /** A dinner-appropriate recipe for the one-tap "what's for dinner" picker (#375). */
@@ -806,6 +826,11 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
   }
 }
 
+/**
+ * Recipes returned per search page (issue #58). Search now pages with
+ * `limit`/`offset` and a "Load more" instead of silently capping at this many;
+ * this is the window fetched per request, not a hard ceiling on total results.
+ */
 const RECIPE_SEARCH_LIMIT = 60;
 
 /**
@@ -913,8 +938,16 @@ export function searchFilterConditions(
  * Viewer-scoped, so left dynamic (uncached); the cached public surface is
  * {@link listPublicRecipes} (#160).
  */
-export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
-  if (!isDbConfigured()) return [];
+export async function searchRecipes(
+  viewer: User | null,
+  search: RecipeSearch,
+  {
+    limit = RECIPE_SEARCH_LIMIT,
+    offset = 0,
+  }: { limit?: number; offset?: number } = {},
+) {
+  if (!isDbConfigured())
+    return { items: [], nextOffset: null } as Paginated<never>;
   const groupIds = await viewerGroupIds(viewer);
 
   const conditions: (SQL | undefined)[] = [
@@ -960,7 +993,8 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
   const rows = await db.query.recipes.findMany({
     where: and(...conditions),
     orderBy,
-    limit: RECIPE_SEARCH_LIMIT,
+    limit,
+    offset,
     with: {
       author: true,
       tags: { with: { tag: true } },
@@ -970,6 +1004,12 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
       ...(search.q ? { ingredients: { columns: { item: true } } } : {}),
     },
   });
+
+  // Whether another page exists is decided by the *raw* SQL page length — a full
+  // page implies more rows to fetch. The allergen pass below only drops rows
+  // within a page (like the discover feed's library filter), so it must not
+  // shorten a full page into a false "end of results".
+  const nextOffset = nextPageOffset(offset, rows.length, limit);
 
   // Allergen safety is best-effort text detection, so it runs in JS: pull the
   // candidate rows' ingredients in one query and drop any recipe that carries
@@ -994,7 +1034,7 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
   // candidate set above, so the returned rows are already globally ranked. Attach
   // a lightweight match reason per row (and drop the ingredient text from the
   // payload — it was only needed to derive that reason).
-  return safeRows.map((row) => {
+  const items = safeRows.map((row) => {
     const { ingredients, ...rest } = row as typeof row & {
       ingredients?: { item: string }[];
     };
@@ -1012,6 +1052,7 @@ export async function searchRecipes(viewer: User | null, search: RecipeSearch) {
       : null;
     return { ...rest, matchReason };
   });
+  return { items, nextOffset };
 }
 
 /** Candidate ceiling scored by "cook with what you have" before ranking. */

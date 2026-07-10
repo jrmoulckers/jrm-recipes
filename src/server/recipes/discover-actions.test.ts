@@ -3,24 +3,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RatingSort } from "~/lib/ratings";
 
 /**
- * Unit tests for `loadMorePublicRecipesAction` (issue #228): the "Load more"
- * pagination on `/recipes`. It clamps a possibly-malformed offset, sanitizes the
- * sort, re-derives the viewer server-side, and hides recipes already in the
- * viewer's library. Auth + queries are mocked; the real `parseRatingSort` runs.
+ * Unit tests for `loadMorePublicRecipesAction` (issues #228, #67): the "Load
+ * more" pagination on `/recipes`. It clamps a possibly-malformed offset,
+ * sanitizes the sort, re-derives the viewer server-side, and hides recipes
+ * already in the viewer's library. When a page is *entirely* the viewer's own
+ * recipes it keeps paging so the button never adds zero cards yet persists
+ * (#67). Auth + queries are mocked; the real `parseRatingSort` runs.
  */
 
 vi.mock("~/server/auth", async () =>
   (await import("~/test/harness")).authModuleMock(),
 );
 
-const { listPublicRecipesMock, listLibraryMock } = vi.hoisted(() => ({
+const { listPublicRecipesMock, listLibraryRecipeIdsMock } = vi.hoisted(() => ({
   listPublicRecipesMock: vi.fn(),
-  listLibraryMock: vi.fn(),
+  listLibraryRecipeIdsMock: vi.fn(),
 }));
 
 vi.mock("./queries", () => ({
   listPublicRecipes: listPublicRecipesMock,
-  listLibrary: listLibraryMock,
+  listLibraryRecipeIds: listLibraryRecipeIdsMock,
 }));
 
 import { loadMorePublicRecipesAction } from "./discover-actions";
@@ -35,7 +37,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   useAuthMock(makeUser({ id: "viewer_1" }));
   listPublicRecipesMock.mockResolvedValue(page(["r1"]));
-  listLibraryMock.mockResolvedValue([]);
+  listLibraryRecipeIdsMock.mockResolvedValue([]);
 });
 
 describe("offset clamping", () => {
@@ -77,7 +79,7 @@ describe("sort sanitization", () => {
 describe("library filtering + pagination", () => {
   it("removes recipes already in the viewer's library", async () => {
     listPublicRecipesMock.mockResolvedValue(page(["r1", "r2", "r3"]));
-    listLibraryMock.mockResolvedValue([{ id: "r2" }]);
+    listLibraryRecipeIdsMock.mockResolvedValue(["r2"]);
 
     const result = await loadMorePublicRecipesAction(0);
 
@@ -91,15 +93,51 @@ describe("library filtering + pagination", () => {
   });
 });
 
+describe("empty post-filter page (#67)", () => {
+  it("keeps paging past a page the viewer owns entirely, then returns the next page's offset", async () => {
+    // The viewer authored every recipe on the first raw page.
+    listLibraryRecipeIdsMock.mockResolvedValue(["r1", "r2"]);
+    listPublicRecipesMock
+      .mockResolvedValueOnce(page(["r1", "r2"], 24))
+      .mockResolvedValueOnce(page(["r5"], 48));
+
+    const result = await loadMorePublicRecipesAction(0);
+
+    // Skips the all-owned first page instead of returning zero cards, and
+    // advances the offset past the page it actually consumed.
+    expect(result.items.map((r) => r.id)).toEqual(["r5"]);
+    expect(result.nextOffset).toBe(48);
+    expect(listPublicRecipesMock).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ offset: 0 }),
+    );
+    expect(listPublicRecipesMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ offset: 24 }),
+    );
+  });
+
+  it("hides the button when the remaining feed is entirely the viewer's own recipes", async () => {
+    listLibraryRecipeIdsMock.mockResolvedValue(["r1"]);
+    // A short final page (nextOffset null) that filters to nothing.
+    listPublicRecipesMock.mockResolvedValue(page(["r1"], null));
+
+    const result = await loadMorePublicRecipesAction(0);
+
+    expect(result.items).toEqual([]);
+    expect(result.nextOffset).toBeNull();
+  });
+});
+
 describe("signed-out viewer", () => {
   it("works when getCurrentUser returns null (no throw, library derived from null)", async () => {
     useAuthMock(null);
     listPublicRecipesMock.mockResolvedValue(page(["r1", "r2"]));
-    listLibraryMock.mockResolvedValue([]);
+    listLibraryRecipeIdsMock.mockResolvedValue([]);
 
     const result = await loadMorePublicRecipesAction(0);
 
-    expect(listLibraryMock).toHaveBeenCalledWith(null);
+    expect(listLibraryRecipeIdsMock).toHaveBeenCalledWith(null);
     expect(result.items.map((r) => r.id)).toEqual(["r1", "r2"]);
   });
 });
