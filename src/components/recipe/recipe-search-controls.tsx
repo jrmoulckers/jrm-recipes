@@ -59,13 +59,7 @@ type Facets = {
 type SafeForMember = { id: string; name: string };
 
 type ParamKey =
-  | "q"
-  | "cuisine"
-  | "difficulty"
-  | "maxTime"
-  | "tag"
-  | "safeFor"
-  | "sort";
+  "q" | "cuisine" | "difficulty" | "maxTime" | "tag" | "safeFor" | "sort";
 
 export function RecipeSearchControls({
   search,
@@ -168,7 +162,10 @@ export function RecipeSearchControls({
   React.useEffect(() => {
     const next = query.trim();
     if (next === (search.q ?? "")) return;
-    const id = window.setTimeout(() => pushParams({ q: next || undefined }), 300);
+    const id = window.setTimeout(
+      () => pushParams({ q: next || undefined }),
+      300,
+    );
     return () => window.clearTimeout(id);
   }, [query, search.q, pushParams]);
 
@@ -187,7 +184,8 @@ export function RecipeSearchControls({
     return map;
   }, [members]);
 
-  const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
+  const activeChips: { key: string; label: string; onRemove: () => void }[] =
+    [];
   if (search.q) {
     activeChips.push({
       key: "q",
@@ -251,7 +249,10 @@ export function RecipeSearchControls({
 
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4">
-      <div className="flex flex-wrap items-center gap-2" aria-label="Quick filters">
+      <div
+        className="flex flex-wrap items-center gap-2"
+        aria-label="Quick filters"
+      >
         <span className="text-xs font-medium text-muted-foreground">
           Quick picks
         </span>
@@ -328,155 +329,162 @@ export function RecipeSearchControls({
             filtersOpen ? "flex" : "hidden",
           )}
         >
-        {facets.cuisines.length > 0 && (
-          <FacetMultiSelect
-            label="Cuisine"
-            placeholder="Any cuisine"
-            selected={search.cuisines}
-            options={facets.cuisines
-              .filter(
-                (c) =>
-                  c.count > 0 ||
-                  search.cuisines.some(
-                    (s) => s.toLowerCase() === c.value.toLowerCase(),
-                  ),
-              )
-              .map((c) => ({
-                value: c.value,
-                label: `${c.value} (${c.count})`,
-              }))}
-            onToggle={(value, on) =>
-              toggleListValue("cuisine", search.cuisines, value, on)
-            }
-          />
-        )}
+          {facets.cuisines.length > 0 && (
+            <FacetMultiSelect
+              label="Cuisine"
+              placeholder="Any cuisine"
+              selected={search.cuisines}
+              options={facets.cuisines
+                .filter(
+                  (c) =>
+                    c.count > 0 ||
+                    search.cuisines.some(
+                      (s) => s.toLowerCase() === c.value.toLowerCase(),
+                    ),
+                )
+                .map((c) => ({
+                  value: c.value,
+                  label: `${c.value} (${c.count})`,
+                }))}
+              onToggle={(value, on) =>
+                toggleListValue("cuisine", search.cuisines, value, on)
+              }
+            />
+          )}
 
-        <FilterField label="Difficulty">
-          <Select
-            value={search.difficulty ?? ANY}
-            onValueChange={(value) => pushParams({ difficulty: value })}
-          >
-            <SelectTrigger className="min-w-[8rem]">
-              <SelectValue placeholder="Any level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ANY}>Any level</SelectItem>
-              {recipeDifficultyValues.map((level) => (
-                <SelectItem key={level} value={level} className="capitalize">
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        <FilterField label="Max time">
-          <Select
-            value={search.maxTime != null ? String(search.maxTime) : ANY}
-            onValueChange={(value) => pushParams({ maxTime: value })}
-          >
-            <SelectTrigger className="min-w-[8rem]">
-              <SelectValue placeholder="Any time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ANY}>Any time</SelectItem>
-              {TIME_OPTIONS.map((minutes) => (
-                <SelectItem key={minutes} value={String(minutes)}>
-                  {minutes} min or less
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        {facets.tags.length > 0 && (
-          <FacetMultiSelect
-            label="Tag"
-            placeholder="Any tag"
-            selected={search.tags}
-            options={facets.tags
-              .filter(
-                (t) =>
-                  t.count > 0 ||
-                  search.tags.some((s) => s.toLowerCase() === t.slug),
-              )
-              .map((t) => ({
-                value: t.slug,
-                label: `${t.name} (${t.count})`,
-              }))}
-            onToggle={(value, on) =>
-              toggleListValue("tag", search.tags, value, on)
-            }
-          />
-        )}
-
-        <FilterField label="Safe for">
-          {members.length > 0 ? (
+          <FilterField label="Difficulty">
             <Select
-              value={search.safeFor ?? ANY}
-              onValueChange={(value) => pushParams({ safeFor: value })}
+              value={search.difficulty ?? ANY}
+              onValueChange={(value) => pushParams({ difficulty: value })}
             >
-              <SelectTrigger className="min-w-[9rem]">
-                <SelectValue placeholder="Anyone" />
+              <SelectTrigger className="min-w-[8rem]">
+                <SelectValue placeholder="Any level" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Anyone</SelectItem>
-                {members.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
+                <SelectItem value={ANY}>Any level</SelectItem>
+                {recipeDifficultyValues.map((level) => (
+                  <SelectItem key={level} value={level} className="capitalize">
+                    {level}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          ) : (
-            <Button asChild variant="outline" className="min-w-[9rem] justify-start font-normal">
-              <Link href="/settings/dietary">
-                <ShieldCheck className="text-muted-foreground" /> Add a profile
-              </Link>
+          </FilterField>
+
+          <FilterField label="Max time">
+            <Select
+              value={search.maxTime != null ? String(search.maxTime) : ANY}
+              onValueChange={(value) => pushParams({ maxTime: value })}
+            >
+              <SelectTrigger className="min-w-[8rem]">
+                <SelectValue placeholder="Any time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ANY}>Any time</SelectItem>
+                {TIME_OPTIONS.map((minutes) => (
+                  <SelectItem key={minutes} value={String(minutes)}>
+                    {minutes} min or less
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+
+          {facets.tags.length > 0 && (
+            <FacetMultiSelect
+              label="Tag"
+              placeholder="Any tag"
+              selected={search.tags}
+              options={facets.tags
+                .filter(
+                  (t) =>
+                    t.count > 0 ||
+                    search.tags.some((s) => s.toLowerCase() === t.slug),
+                )
+                .map((t) => ({
+                  value: t.slug,
+                  label: `${t.name} (${t.count})`,
+                }))}
+              onToggle={(value, on) =>
+                toggleListValue("tag", search.tags, value, on)
+              }
+            />
+          )}
+
+          <FilterField label="Safe for">
+            {members.length > 0 ? (
+              <Select
+                value={search.safeFor ?? ANY}
+                onValueChange={(value) => pushParams({ safeFor: value })}
+              >
+                <SelectTrigger className="min-w-[9rem]">
+                  <SelectValue placeholder="Anyone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Anyone</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Button
+                asChild
+                variant="outline"
+                className="min-w-[9rem] justify-start font-normal"
+              >
+                <Link href="/settings/dietary">
+                  <ShieldCheck className="text-muted-foreground" /> Add a
+                  profile
+                </Link>
+              </Button>
+            )}
+          </FilterField>
+
+          <FilterField label="Sort">
+            <Select
+              value={search.sort}
+              onValueChange={(value) => pushParams({ sort: value })}
+            >
+              <SelectTrigger className="min-w-[8rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {recipeSortValues.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {recipeSortLabels[option]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
+
+          {filtersActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setQuery("");
+                startTransition(() =>
+                  router.push(pathnameWithQuery(pathname), { scroll: false }),
+                );
+              }}
+              className={cn("text-muted-foreground")}
+            >
+              <X /> Clear
             </Button>
           )}
-        </FilterField>
 
-        <FilterField label="Sort">
-          <Select
-            value={search.sort}
-            onValueChange={(value) => pushParams({ sort: value })}
-          >
-            <SelectTrigger className="min-w-[8rem]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {recipeSortValues.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {recipeSortLabels[option]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        {filtersActive && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setQuery("");
-              startTransition(() => router.push(pathnameWithQuery(pathname), { scroll: false }));
-            }}
-            className={cn("text-muted-foreground")}
-          >
-            <X /> Clear
-          </Button>
-        )}
-
-        <div className="ms-auto">
-          <SavedSearches
-            savedSearches={savedSearches}
-            currentQuery={currentParams.toString()}
-            filtersActive={filtersActive}
-          />
+          <div className="ms-auto">
+            <SavedSearches
+              savedSearches={savedSearches}
+              currentQuery={currentParams.toString()}
+              filtersActive={filtersActive}
+            />
+          </div>
         </div>
-      </div>
       </div>
 
       {activeChips.length > 0 && (

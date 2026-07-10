@@ -25,7 +25,9 @@ describe("route-params contract (#208)", () => {
 
   describe("param parsers", () => {
     it("awaits and returns the validated recipe id/slug segment", async () => {
-      await expect(parseRecipeParams(Promise.resolve({ id: "rec_1" }))).resolves.toEqual({
+      await expect(
+        parseRecipeParams(Promise.resolve({ id: "rec_1" })),
+      ).resolves.toEqual({
         id: "rec_1",
       });
     });
@@ -44,7 +46,9 @@ describe("route-params contract (#208)", () => {
       ).resolves.toEqual({ token: "tok_abc" });
     });
     it("rejects an empty dynamic segment at the boundary", async () => {
-      await expect(parseRecipeParams(Promise.resolve({ id: "" }))).rejects.toThrow();
+      await expect(
+        parseRecipeParams(Promise.resolve({ id: "" })),
+      ).rejects.toThrow();
     });
   });
 });

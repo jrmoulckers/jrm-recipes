@@ -33,7 +33,11 @@
     overflow-x: clip;
   }
 
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     @apply font-display;
     text-wrap: balance;
   }
@@ -59,7 +63,10 @@
    * compact controls stay easy to hit. Scoped to real controls — inline text
    * links (`a` without `.btn`) are intentionally excluded so prose isn't
    * stretched; only link-styled buttons (`a.btn`, `label.btn`) opt in. */
-  button, [role="button"], a.btn, label.btn {
+  button,
+  [role="button"],
+  a.btn,
+  label.btn {
     min-height: var(--tap-min, 2.75rem);
     min-width: var(--tap-min, 2.75rem);
   }
@@ -69,7 +76,11 @@
    * hands — register instantly. `manipulation` still allows panning/scrolling
    * from these elements; pinch-to-zoom on page content and images is untouched,
    * preserving accessibility (issue #288). */
-  button, a, [role="button"], [role="tab"], summary {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  summary {
     touch-action: manipulation;
   }
 

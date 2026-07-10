@@ -1,6 +1,14 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ChefHat, Clock3, Compass, Database, SearchX, Tags as TagIcon, UtensilsCrossed } from "lucide-react";
+import {
+  ChefHat,
+  Clock3,
+  Compass,
+  Database,
+  SearchX,
+  Tags as TagIcon,
+  UtensilsCrossed,
+} from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -46,7 +54,8 @@ import { type SearchParams } from "~/lib/route-params";
 
 export const metadata: Metadata = {
   title: "Your recipes",
-  description: "Every recipe you've saved and created, together in one library.",
+  description:
+    "Every recipe you've saved and created, together in one library.",
 };
 
 /**
@@ -122,7 +131,11 @@ export default async function RecipesPage({
             members={members}
           />
           {browsing ? (
-            <BrowseSections user={user} members={members} quickPlan={quickPlan} />
+            <BrowseSections
+              user={user}
+              members={members}
+              quickPlan={quickPlan}
+            />
           ) : (
             <SearchResults
               user={user}
@@ -288,7 +301,9 @@ async function SearchResults({
   if (page.items.length === 0) {
     // Typo-tolerant fallback: only for text queries, and only when a close
     // trigram match exists *and* actually yields results.
-    const suggestion = search.q ? await suggestSearchTerm(user, search.q) : null;
+    const suggestion = search.q
+      ? await suggestSearchTerm(user, search.q)
+      : null;
     if (suggestion) {
       const correctedSearch = { ...search, q: suggestion };
       const corrected = await searchRecipes(user, correctedSearch);

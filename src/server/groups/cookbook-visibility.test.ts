@@ -48,10 +48,18 @@ describe("canListInGroupCookbook", () => {
 
   it("shows group and public recipes to members", () => {
     expect(
-      canListInGroupCookbook(recipe({ visibility: "group" }), otherMember, true),
+      canListInGroupCookbook(
+        recipe({ visibility: "group" }),
+        otherMember,
+        true,
+      ),
     ).toBe(true);
     expect(
-      canListInGroupCookbook(recipe({ visibility: "public" }), otherMember, true),
+      canListInGroupCookbook(
+        recipe({ visibility: "public" }),
+        otherMember,
+        true,
+      ),
     ).toBe(true);
   });
 

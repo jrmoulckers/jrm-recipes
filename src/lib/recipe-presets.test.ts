@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  RECIPE_PRESETS,
-  isPresetActive,
-  togglePreset,
-} from "./recipe-presets";
+import { RECIPE_PRESETS, isPresetActive, togglePreset } from "./recipe-presets";
 
 function preset(id: string) {
   const found = RECIPE_PRESETS.find((p) => p.id === id);

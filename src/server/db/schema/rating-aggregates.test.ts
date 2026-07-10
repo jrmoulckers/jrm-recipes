@@ -29,10 +29,10 @@ describe("recipes rating aggregate columns (issue #154)", () => {
     },
   );
 
-  it.each([
-    "recipes_rating_count_check",
-    "recipes_rating_sum_check",
-  ])("guards %s against going negative", (name) => {
-    expect(checks.map((c) => c.name)).toContain(name);
-  });
+  it.each(["recipes_rating_count_check", "recipes_rating_sum_check"])(
+    "guards %s against going negative",
+    (name) => {
+      expect(checks.map((c) => c.name)).toContain(name);
+    },
+  );
 });

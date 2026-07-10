@@ -156,9 +156,7 @@ describe("InstallPrompt modal dialog semantics", () => {
     act(() => (document.activeElement as HTMLElement | null)?.blur());
     fireEvent.keyDown(document, { key: "Escape" });
 
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog")).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // Escape is a real dismissal — remembered like clicking the X.
     expect(window.localStorage.getItem(DISMISS_KEY)).not.toBeNull();
   });

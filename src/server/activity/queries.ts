@@ -138,7 +138,9 @@ export async function getGroupActivity(
       createdAt: true,
     },
     with: {
-      user: { columns: { id: true, name: true, handle: true, avatarUrl: true } },
+      user: {
+        columns: { id: true, name: true, handle: true, avatarUrl: true },
+      },
     },
   });
   for (const cook of cooks) {
@@ -265,7 +267,9 @@ export async function getGroupActivity(
     limit,
     columns: { id: true, userId: true, createdAt: true },
     with: {
-      user: { columns: { id: true, name: true, handle: true, avatarUrl: true } },
+      user: {
+        columns: { id: true, name: true, handle: true, avatarUrl: true },
+      },
     },
   });
   for (const join of joins) {

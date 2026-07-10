@@ -90,7 +90,11 @@ export function WeekMenuPrintView({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" onClick={() => window.print()} className="shrink-0">
+            <Button
+              type="button"
+              onClick={() => window.print()}
+              className="shrink-0"
+            >
               <Printer /> Print / Save PDF
             </Button>
             <Button type="button" variant="outline" onClick={copyLink}>
@@ -150,7 +154,10 @@ export function WeekMenuPrintView({
                             )}
                           >
                             {dinner.leftovers && (
-                              <Repeat className="size-3.5 shrink-0" aria-hidden />
+                              <Repeat
+                                className="size-3.5 shrink-0"
+                                aria-hidden
+                              />
                             )}
                             {dinner.title}
                           </span>

@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, GitCompare, Loader2, Minus, Plus, Pencil } from "lucide-react";
+import {
+  ArrowRight,
+  GitCompare,
+  Loader2,
+  Minus,
+  Plus,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
@@ -86,7 +93,9 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
           <GitCompare className="size-4" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-semibold">Compare versions</h3>
+          <h3 className="font-display text-lg font-semibold">
+            Compare versions
+          </h3>
           <p className="text-sm text-muted-foreground">
             See exactly what changed between two points in this recipe&apos;s
             history.
@@ -182,7 +191,9 @@ function DiffResult({ diff }: { diff: RecipeDiff }) {
                         {field.before ?? "—"}
                       </span>
                       <ArrowRight className="size-3.5" aria-hidden="true" />
-                      <span className="text-foreground">{field.after ?? "—"}</span>
+                      <span className="text-foreground">
+                        {field.after ?? "—"}
+                      </span>
                     </div>
                   </li>
                 ))}

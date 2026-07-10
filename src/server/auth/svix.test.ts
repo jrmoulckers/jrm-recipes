@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { verifySvixSignature } from "~/server/auth/svix";
 
-const SECRET = "whsec_" + Buffer.from("super-secret-signing-key").toString("base64");
+const SECRET =
+  "whsec_" + Buffer.from("super-secret-signing-key").toString("base64");
 
 /** Sign a payload exactly the way Svix (and Clerk) would, for test fixtures. */
 function sign(payload: string, id: string, timestamp: string, secret = SECRET) {
@@ -57,13 +58,28 @@ describe("verifySvixSignature", () => {
   it("rejects missing headers", () => {
     const signature = sign(payload, id, timestamp);
     expect(
-      verifySvixSignature(SECRET, { id: null, timestamp, signature }, payload, now),
+      verifySvixSignature(
+        SECRET,
+        { id: null, timestamp, signature },
+        payload,
+        now,
+      ),
     ).toBe(false);
     expect(
-      verifySvixSignature(SECRET, { id, timestamp: null, signature }, payload, now),
+      verifySvixSignature(
+        SECRET,
+        { id, timestamp: null, signature },
+        payload,
+        now,
+      ),
     ).toBe(false);
     expect(
-      verifySvixSignature(SECRET, { id, timestamp, signature: null }, payload, now),
+      verifySvixSignature(
+        SECRET,
+        { id, timestamp, signature: null },
+        payload,
+        now,
+      ),
     ).toBe(false);
   });
 

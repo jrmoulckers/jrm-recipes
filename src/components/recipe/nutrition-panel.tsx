@@ -203,7 +203,9 @@ export function NutritionPanel({
             <dt
               className={cn(
                 "text-sm",
-                row.key === "calories" ? "text-foreground" : "text-muted-foreground",
+                row.key === "calories"
+                  ? "text-foreground"
+                  : "text-muted-foreground",
               )}
             >
               {row.label}

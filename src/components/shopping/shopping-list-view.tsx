@@ -18,7 +18,15 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
-import { AlertTriangle, Check, Plus, Share2, ShoppingCart, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Plus,
+  Share2,
+  ShoppingCart,
+  Trash2,
+  X,
+} from "lucide-react";
 
 export type ShoppingViewItem = {
   id: string;
@@ -201,10 +209,12 @@ function ItemRow({
         id={`aisle-${item.id}`}
         value={item.category}
         disabled={disabled}
-        onChange={(e) => onSetCategory(item.id, e.target.value as ShoppingCategory)}
+        onChange={(e) =>
+          onSetCategory(item.id, e.target.value as ShoppingCategory)
+        }
         aria-label={`Aisle for ${item.item}`}
         title="Change aisle"
-        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
@@ -217,7 +227,7 @@ function ItemRow({
         disabled={disabled}
         onClick={() => onRemove(item.id)}
         aria-label={`Remove ${item.item}`}
-        className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+        className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
       >
         <X className="size-4" />
       </button>
@@ -268,7 +278,8 @@ export function ShoppingListView({
     const parsedQty = qty.trim() === "" ? null : Number(qty);
     onAddManual({
       item: trimmed,
-      quantity: parsedQty != null && Number.isFinite(parsedQty) ? parsedQty : null,
+      quantity:
+        parsedQty != null && Number.isFinite(parsedQty) ? parsedQty : null,
       unit: unit.trim() || null,
     });
     setName("");

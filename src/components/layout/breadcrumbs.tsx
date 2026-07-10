@@ -35,12 +35,18 @@ export function Breadcrumbs({
   if (items.length === 0) return null;
 
   return (
-    <nav aria-label={t("landmarks.breadcrumb")} className={cn("min-w-0", className)}>
+    <nav
+      aria-label={t("landmarks.breadcrumb")}
+      className={cn("min-w-0", className)}
+    >
       <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
+            <li
+              key={`${item.label}-${index}`}
+              className="flex items-center gap-1.5"
+            >
               {item.href && !isLast ? (
                 <Link
                   href={item.href}

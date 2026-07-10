@@ -87,15 +87,18 @@ export function JoinGroupPanel({
   return (
     <div className="flex flex-col gap-2">
       <SignUpButton mode="modal" forceRedirectUrl={returnTo}>
-        <Button size="lg" className="w-full" onClick={() => track("signup_started", {})}>
+        <Button
+          size="lg"
+          className="w-full"
+          onClick={() => track("signup_started", {})}
+        >
           <UserPlus />
           Sign up &amp; join
         </Button>
       </SignUpButton>
       <SignInButton mode="modal" forceRedirectUrl={returnTo}>
         <Button size="lg" variant="outline" className="w-full">
-          <LogIn />
-          I already have an account
+          <LogIn />I already have an account
         </Button>
       </SignInButton>
     </div>

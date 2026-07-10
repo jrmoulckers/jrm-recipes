@@ -28,15 +28,15 @@ export default async function DataSettingsPage() {
           Your data
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Your recipes are yours. Download your whole cookbook whenever you
-          like — no account, app, or internet needed to read it later.
+          Your recipes are yours. Download your whole cookbook whenever you like
+          — no account, app, or internet needed to read it later.
         </p>
       </header>
 
       <section className="max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-token">
         <div className="flex flex-col gap-4">
           <div className="flex items-start gap-4">
-            <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+            <span className="bg-primary/12 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl text-primary">
               <Download className="size-6" aria-hidden="true" />
             </span>
             <div>
@@ -76,7 +76,7 @@ function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <Download className="size-7" aria-hidden="true" />
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight">

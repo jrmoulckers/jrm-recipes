@@ -59,7 +59,11 @@ function parseRules(source: string): Rule[] {
 const RULES = parseRules(CSS);
 
 /** Would this single selector apply to <html data-theme=theme class=scheme>? */
-function selectorApplies(selector: string, theme: string, scheme: Scheme): boolean {
+function selectorApplies(
+  selector: string,
+  theme: string,
+  scheme: Scheme,
+): boolean {
   const wantsDark = selector.includes(".dark");
   if (scheme === "light" && wantsDark) return false;
   const themeMatch = /\[data-theme="([^"]+)"\]/.exec(selector);
@@ -72,7 +76,11 @@ function selectorApplies(selector: string, theme: string, scheme: Scheme): boole
 function tokensFor(theme: string, scheme: Scheme): Record<string, string> {
   const resolved: Record<string, string> = {};
   for (const rule of RULES) {
-    if (rule.selectors.some((selector) => selectorApplies(selector, theme, scheme))) {
+    if (
+      rule.selectors.some((selector) =>
+        selectorApplies(selector, theme, scheme),
+      )
+    ) {
       Object.assign(resolved, rule.vars);
     }
   }
@@ -113,7 +121,11 @@ function contrastRatio(a: string, b: string): number {
 }
 
 /** Look up a token or fail loudly (parsing/renaming regressions surface here). */
-function token(tokens: Record<string, string>, name: string, where: string): string {
+function token(
+  tokens: Record<string, string>,
+  name: string,
+  where: string,
+): string {
   const value = tokens[name];
   if (value === undefined) {
     throw new Error(`Missing --${name} for ${where}`);
@@ -127,11 +139,19 @@ const SCHEMES: readonly Scheme[] = ["light", "dark"];
 const TEXT_PAIRS: ReadonlyArray<{ fg: string; bg: string; label: string }> = [
   { fg: "primary-foreground", bg: "primary", label: "primary button" },
   { fg: "secondary-foreground", bg: "secondary", label: "secondary button" },
-  { fg: "destructive-foreground", bg: "destructive", label: "destructive button" },
+  {
+    fg: "destructive-foreground",
+    bg: "destructive",
+    label: "destructive button",
+  },
   { fg: "accent-foreground", bg: "accent", label: "accent button" },
   { fg: "info-foreground", bg: "info", label: "info fill" },
   { fg: "background", bg: "foreground", label: "tooltip (default) chip" },
-  { fg: "popover-foreground", bg: "popover", label: "tooltip (soft) / popover" },
+  {
+    fg: "popover-foreground",
+    bg: "popover",
+    label: "tooltip (soft) / popover",
+  },
   { fg: "primary", bg: "background", label: "active nav label" },
 ];
 

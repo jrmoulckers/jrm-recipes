@@ -11,11 +11,7 @@ import {
   transferOwnershipAction,
   updateMemberRoleAction,
 } from "~/server/groups/actions";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -81,7 +77,9 @@ export function MemberList({
 
   function runAction(
     key: string,
-    action: () => Promise<{ ok: true; slug?: string } | { ok: false; error: string }>,
+    action: () => Promise<
+      { ok: true; slug?: string } | { ok: false; error: string }
+    >,
     successMessage: string,
   ) {
     setPendingKey(key);
@@ -125,7 +123,9 @@ export function MemberList({
               <div className="min-w-0">
                 <p className="truncate font-medium">{name}</p>
                 <p className="truncate text-sm text-muted-foreground">
-                  {member.user.handle ? `@${member.user.handle}` : "No handle yet"}
+                  {member.user.handle
+                    ? `@${member.user.handle}`
+                    : "No handle yet"}
                 </p>
               </div>
             </div>
@@ -140,7 +140,9 @@ export function MemberList({
                       variant="ghost"
                       size="icon"
                       aria-label={`Manage ${name}`}
-                      disabled={isPending && pendingKey?.startsWith(member.userId)}
+                      disabled={
+                        isPending && pendingKey?.startsWith(member.userId)
+                      }
                     >
                       <Settings />
                     </Button>

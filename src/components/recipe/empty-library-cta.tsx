@@ -61,7 +61,7 @@ export function EmptyLibraryCta() {
 
   return (
     <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-surface/50 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+      <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
         <UtensilsCrossed className="size-7" />
       </span>
       <div>

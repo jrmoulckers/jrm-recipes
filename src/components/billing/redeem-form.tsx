@@ -53,8 +53,8 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
             Your gift is unwrapped!
           </p>
           <p className="text-sm text-muted-foreground">
-            You now have {success.months} months of Heirloom Family. Every recipe,
-            every relative — it&apos;s all unlocked.
+            You now have {success.months} months of Heirloom Family. Every
+            recipe, every relative — it&apos;s all unlocked.
           </p>
         </div>
         <Button asChild>
@@ -82,7 +82,11 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
           className="font-mono tracking-wide"
         />
         {error ? (
-          <p id="gift-code-error" role="alert" className="text-sm text-destructive">
+          <p
+            id="gift-code-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {error}
           </p>
         ) : null}

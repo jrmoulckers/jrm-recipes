@@ -18,9 +18,9 @@ describe("pickSharedUrl", () => {
   });
 
   it("checks candidates in order and skips empty ones", () => {
-    expect(
-      pickSharedUrl(null, "   ", undefined, "https://example.com/a"),
-    ).toBe("https://example.com/a");
+    expect(pickSharedUrl(null, "   ", undefined, "https://example.com/a")).toBe(
+      "https://example.com/a",
+    );
   });
 
   it("digs a bare url out of shared free text", () => {
@@ -49,12 +49,16 @@ describe("pickSharedUrl", () => {
 
 describe("isShareableImage", () => {
   it("accepts a reasonably sized image file", () => {
-    expect(isShareableImage({ type: "image/jpeg", size: 2_000_000 })).toBe(true);
+    expect(isShareableImage({ type: "image/jpeg", size: 2_000_000 })).toBe(
+      true,
+    );
     expect(isShareableImage({ type: "image/HEIC", size: 1 })).toBe(true);
   });
 
   it("rejects non-image, empty, and oversize files", () => {
-    expect(isShareableImage({ type: "application/pdf", size: 100 })).toBe(false);
+    expect(isShareableImage({ type: "application/pdf", size: 100 })).toBe(
+      false,
+    );
     expect(isShareableImage({ type: "image/png", size: 0 })).toBe(false);
     expect(
       isShareableImage({ type: "image/png", size: SHARED_IMAGE_MAX_BYTES + 1 }),
@@ -72,7 +76,9 @@ describe("safeSharedImageUrl", () => {
   });
 
   it("rejects other hosts, schemes, and junk", () => {
-    expect(safeSharedImageUrl("https://evil.example.com/x.jpg")).toBeUndefined();
+    expect(
+      safeSharedImageUrl("https://evil.example.com/x.jpg"),
+    ).toBeUndefined();
     expect(
       safeSharedImageUrl("http://res.cloudinary.com/demo/x.jpg"),
     ).toBeUndefined();

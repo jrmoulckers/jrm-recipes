@@ -3,7 +3,12 @@ import "server-only";
 import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
-import { comments, ratings, recipes, type CommentKind } from "~/server/db/schema";
+import {
+  comments,
+  ratings,
+  recipes,
+  type CommentKind,
+} from "~/server/db/schema";
 import { canViewRecipe } from "~/server/recipes/queries";
 import { excludeOwnerRatings, ratingBreakdown } from "~/lib/ratings";
 import type { RatingBreakdown } from "~/lib/ratings";
@@ -278,4 +283,3 @@ export async function getRatingBreakdown(
     totalRaters: canSeeRaters ? scored.length : 0,
   };
 }
-

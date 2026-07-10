@@ -62,22 +62,22 @@ export async function listReviews(
   return rows
     .filter((row) => !row.userId || !hiddenAuthorIds.has(row.userId))
     .map((row) => ({
-    id: row.id,
-    rating: row.rating,
-    title: row.title,
-    body: row.body,
-    photoUrl: row.photoUrl,
-    createdAt: row.createdAt,
-    editedAt: row.editedAt,
-    author: row.user
-      ? {
-          id: row.user.id,
-          name: row.user.name,
-          handle: row.user.handle,
-          avatarUrl: row.user.avatarUrl,
-        }
-      : null,
-  }));
+      id: row.id,
+      rating: row.rating,
+      title: row.title,
+      body: row.body,
+      photoUrl: row.photoUrl,
+      createdAt: row.createdAt,
+      editedAt: row.editedAt,
+      author: row.user
+        ? {
+            id: row.user.id,
+            name: row.user.name,
+            handle: row.user.handle,
+            avatarUrl: row.user.avatarUrl,
+          }
+        : null,
+    }));
 }
 
 /** The viewer's own review for a recipe, if any (prefills the composer). */
@@ -114,7 +114,8 @@ export async function upsertReview(
       },
     });
     if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
+    if (!(await canViewRecipe(recipe, user)))
+      throw new DomainError("FORBIDDEN");
 
     const existing = await tx.query.reviews.findFirst({
       where: and(
@@ -141,7 +142,14 @@ export async function upsertReview(
       })
       .onConflictDoUpdate({
         target: [reviews.recipeId, reviews.userId],
-        set: { rating: input.rating, title, body, photoUrl, editedAt: now, updatedAt: now },
+        set: {
+          rating: input.rating,
+          title,
+          body,
+          photoUrl,
+          editedAt: now,
+          updatedAt: now,
+        },
       })
       .returning();
 

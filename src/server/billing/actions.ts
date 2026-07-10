@@ -26,8 +26,7 @@ import {
  */
 
 export type BillingActionResult =
-  | { ok: true; url: string }
-  | { ok: false; error: string };
+  { ok: true; url: string } | { ok: false; error: string };
 
 const BILLING_OFF =
   "Billing isn't set up yet. Add your Stripe keys (see .env.example) to enable upgrades.";
@@ -137,9 +136,7 @@ export async function createCheckoutSessionAction(
         // Start a Stripe-managed free trial when the plan offers one (#326). The
         // resolver already treats `trialing` as fully entitled, and the webhook
         // persists the trial end so the UI can show an honest end date.
-        ...(plan.trialDays > 0
-          ? { trial_period_days: plan.trialDays }
-          : {}),
+        ...(plan.trialDays > 0 ? { trial_period_days: plan.trialDays } : {}),
       },
       metadata: { userId: user.id, planId },
       success_url: `${appUrl()}/settings/billing?checkout=success`,
@@ -230,7 +227,9 @@ export type RedeemGiftResult =
  * here we translate its typed errors into friendly, actionable copy. The grant
  * then flows through the normal entitlements resolver.
  */
-export async function redeemGiftAction(rawCode: string): Promise<RedeemGiftResult> {
+export async function redeemGiftAction(
+  rawCode: string,
+): Promise<RedeemGiftResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const code = rawCode.trim();

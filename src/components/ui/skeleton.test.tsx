@@ -1,11 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  ListRowSkeleton,
-  RecipeCardSkeleton,
-  Skeleton,
-} from "./skeleton";
+import { ListRowSkeleton, RecipeCardSkeleton, Skeleton } from "./skeleton";
 
 afterEach(cleanup);
 
@@ -72,7 +68,9 @@ describe("composed skeletons", () => {
     expect(card.className).toContain("bg-card");
     expect(card.className).toContain("border-border");
     // image + 3 text lines + 3 meta chips = 7 skeleton blocks.
-    expect(container.querySelectorAll("[data-skeleton-shimmer]")).toHaveLength(7);
+    expect(container.querySelectorAll("[data-skeleton-shimmer]")).toHaveLength(
+      7,
+    );
   });
 
   it("exposes exactly one loading status per composed skeleton", () => {
@@ -90,6 +88,8 @@ describe("composed skeletons", () => {
     const row = container.firstElementChild as HTMLElement;
     expect(row.className).toContain("bg-card");
     // avatar + 3 text lines = 4 skeleton blocks.
-    expect(container.querySelectorAll("[data-skeleton-shimmer]")).toHaveLength(4);
+    expect(container.querySelectorAll("[data-skeleton-shimmer]")).toHaveLength(
+      4,
+    );
   });
 });

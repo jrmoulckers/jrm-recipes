@@ -37,7 +37,10 @@ export type Coverage = { matched: number; total: number; missing: number };
  * "chicken" covers "boneless chicken breast", and "olive oil" covers "extra
  * virgin olive oil", but "salt" never covers "salted butter".
  */
-function itemCovered(ingredientTokenSet: Set<string>, pantry: string[][]): boolean {
+function itemCovered(
+  ingredientTokenSet: Set<string>,
+  pantry: string[][],
+): boolean {
   return pantry.some(
     (tokens) =>
       tokens.length > 0 && tokens.every((t) => ingredientTokenSet.has(t)),

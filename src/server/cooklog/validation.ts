@@ -10,7 +10,8 @@ const idInput = z.string().trim().min(1);
 /** Max length for a cook-journal note. Imported by the UI counter (#144). */
 export const COOK_NOTE_MAX_LENGTH = 2000;
 /** Over-limit message — kept in sync with the field counter. */
-export const COOK_NOTE_TOO_LONG_MESSAGE = "Keep your note under 2,000 characters";
+export const COOK_NOTE_TOO_LONG_MESSAGE =
+  "Keep your note under 2,000 characters";
 
 /** A trimmed, optional string that collapses empty input to `undefined`. */
 const optionalNote = z

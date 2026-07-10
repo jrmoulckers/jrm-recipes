@@ -103,11 +103,13 @@ describe("QuickPlanButton (#379)", () => {
     await user.selectOptions(screen.getByLabelText("Meal"), "lunch");
     await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
 
-    await waitFor(() => expect(mockedAddEntry).toHaveBeenCalledWith({
-      date: "2026-07-06",
-      slot: "lunch",
-      recipeId: "r1",
-    }));
+    await waitFor(() =>
+      expect(mockedAddEntry).toHaveBeenCalledWith({
+        date: "2026-07-06",
+        slot: "lunch",
+        recipeId: "r1",
+      }),
+    );
   });
 
   it("surfaces the action error without closing on failure", async () => {

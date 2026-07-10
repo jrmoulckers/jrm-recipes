@@ -52,11 +52,7 @@ export function UsageMeter({
         <div
           className={cn(
             "h-full rounded-full transition-[width]",
-            unlimited
-              ? "bg-primary/40"
-              : alert
-                ? "bg-warning"
-                : "bg-primary",
+            unlimited ? "bg-primary/40" : alert ? "bg-warning" : "bg-primary",
           )}
           style={{ width: `${pct}%` }}
         />

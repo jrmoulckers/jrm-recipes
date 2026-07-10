@@ -15,11 +15,7 @@ import type { ActivityEvent, ActivityKind } from "~/server/activity/queries";
 import { loadGroupActivityAction } from "~/server/activity/actions";
 import { formatRelativeTime } from "~/lib/dates";
 import { useServerAction } from "~/lib/use-server-action";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 
 const KIND_ICON: Record<
@@ -40,7 +36,9 @@ function actorName(event: ActivityEvent) {
 
 /** The lead sentence for an event, e.g. "Grandma cooked Sunday Ragù". */
 function headline(event: ActivityEvent): React.ReactNode {
-  const who = <span className="font-medium text-foreground">{actorName(event)}</span>;
+  const who = (
+    <span className="font-medium text-foreground">{actorName(event)}</span>
+  );
   const recipe = event.recipe ? (
     <Link
       href={`/recipes/${event.recipe.slug}`}
@@ -52,15 +50,35 @@ function headline(event: ActivityEvent): React.ReactNode {
 
   switch (event.kind) {
     case "recipe_added":
-      return <>{who} added {recipe}</>;
+      return (
+        <>
+          {who} added {recipe}
+        </>
+      );
     case "cook_shared":
-      return <>{who} cooked {recipe}</>;
+      return (
+        <>
+          {who} cooked {recipe}
+        </>
+      );
     case "review":
-      return <>{who} reviewed {recipe}</>;
+      return (
+        <>
+          {who} reviewed {recipe}
+        </>
+      );
     case "comment":
-      return <>{who} commented on {recipe}</>;
+      return (
+        <>
+          {who} commented on {recipe}
+        </>
+      );
     case "suggestion":
-      return <>{who} suggested an edit to {recipe}</>;
+      return (
+        <>
+          {who} suggested an edit to {recipe}
+        </>
+      );
     case "member_joined":
       return <>{who} joined the family</>;
   }

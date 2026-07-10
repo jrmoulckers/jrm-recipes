@@ -115,7 +115,8 @@ export async function deleteCookAlongAction(input: {
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the host or a group admin can cancel this cook-along.",
+          FORBIDDEN:
+            "Only the host or a group admin can cancel this cook-along.",
           NOT_FOUND: "That cook-along is already gone.",
         },
         "We couldn't cancel that cook-along.",

@@ -35,7 +35,9 @@ describe("sitemap", () => {
     expect(urls.some((u) => u.endsWith("/"))).toBe(true);
     expect(urls.some((u) => u.endsWith("/recipes"))).toBe(true);
 
-    const cobbler = entries.find((e) => e.url.endsWith("/recipes/peach-cobbler"));
+    const cobbler = entries.find((e) =>
+      e.url.endsWith("/recipes/peach-cobbler"),
+    );
     expect(cobbler).toBeDefined();
     expect(cobbler!.lastModified).toEqual(updatedAt);
     expect(entries).toHaveLength(5);

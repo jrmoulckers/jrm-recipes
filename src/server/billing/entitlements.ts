@@ -324,7 +324,12 @@ export async function getGroupSeatLimit(
       subscriptions.customerId,
       customers.map((c) => c.id),
     ),
-    columns: { planId: true, status: true, currentPeriodEnd: true, seats: true },
+    columns: {
+      planId: true,
+      status: true,
+      currentPeriodEnd: true,
+      seats: true,
+    },
   });
   const active = subs.filter(
     (s) =>

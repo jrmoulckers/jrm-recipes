@@ -168,7 +168,10 @@ describe("POST /api/cloudinary/sign", () => {
   it("rejects a folder attempting path traversal with 400", async () => {
     const res = await POST(
       makeRequest({
-        paramsToSign: { timestamp: freshTimestamp(), folder: "heirloom/../evil" },
+        paramsToSign: {
+          timestamp: freshTimestamp(),
+          folder: "heirloom/../evil",
+        },
       }),
     );
 

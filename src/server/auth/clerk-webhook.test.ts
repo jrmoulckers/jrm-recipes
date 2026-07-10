@@ -10,10 +10,7 @@ vi.mock("~/server/auth", () => ({
   applyClerkUserDeletion,
 }));
 
-import {
-  extractProfile,
-  handleClerkEvent,
-} from "~/server/auth/clerk-webhook";
+import { extractProfile, handleClerkEvent } from "~/server/auth/clerk-webhook";
 
 beforeEach(() => {
   applyClerkUserUpdate.mockReset();

@@ -28,7 +28,10 @@ function fontOptions(constructor: string): string {
   const match = new RegExp(`${constructor}\\(\\{([\\s\\S]*?)\\}\\)`).exec(
     layoutSrc,
   );
-  expect(match, `expected a ${constructor}({...}) call in layout.tsx`).not.toBeNull();
+  expect(
+    match,
+    `expected a ${constructor}({...}) call in layout.tsx`,
+  ).not.toBeNull();
   return match![1]!;
 }
 
@@ -61,7 +64,9 @@ describe("theme font loading (#182)", () => {
       "JetBrains_Mono",
     ]) {
       const opts = fontOptions(constructor);
-      expect(opts, `${constructor} needs a fallback stack`).toContain("fallback:");
+      expect(opts, `${constructor} needs a fallback stack`).toContain(
+        "fallback:",
+      );
       expect(opts, `${constructor} needs adjustFontFallback`).toContain(
         "adjustFontFallback",
       );

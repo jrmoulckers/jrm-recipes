@@ -29,7 +29,10 @@ import { analyticsRequiresConsent } from "./config";
  */
 export async function serverCaptureAllowed(): Promise<boolean> {
   try {
-    const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+    const [cookieStore, headerStore] = await Promise.all([
+      cookies(),
+      headers(),
+    ]);
 
     // 1. Browser privacy signals always win.
     if (headerStore.get("sec-gpc") === "1" || headerStore.get("dnt") === "1") {

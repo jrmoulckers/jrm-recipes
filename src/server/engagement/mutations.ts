@@ -64,7 +64,8 @@ export async function createComment(
       },
     });
     if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
+    if (!(await canViewRecipe(recipe, user)))
+      throw new DomainError("FORBIDDEN");
 
     let parentAuthorId: string | null = null;
     if (input.parentId) {
@@ -216,7 +217,8 @@ export async function resolveComment(
 
     // A suggestion that's already been folded into the recipe can't be reopened
     // (resolved=false); doing so would leave an applied-but-unresolved entry.
-    if (!resolved && comment.appliedAt) throw new DomainError("ALREADY_APPLIED");
+    if (!resolved && comment.appliedAt)
+      throw new DomainError("ALREADY_APPLIED");
 
     await tx
       .update(comments)
@@ -346,7 +348,8 @@ export async function setRating(
       },
     });
     if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
+    if (!(await canViewRecipe(recipe, user)))
+      throw new DomainError("FORBIDDEN");
     // Integrity: authors can't rate their own recipe — a self-rating would
     // inflate both the average and the JSON-LD aggregateRating.
     if (recipe.authorId === user.id) throw new DomainError("SELF_RATING");
@@ -391,7 +394,10 @@ export async function setRating(
   });
 }
 
-export async function removeRating(recipeId: string, user: User): Promise<void> {
+export async function removeRating(
+  recipeId: string,
+  user: User,
+): Promise<void> {
   await db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, recipeId),

@@ -119,7 +119,11 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon.ico",
       // 180×180 opaque home-screen glyph iOS uses instead of the manifest icon.
       apple: [
-        { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        {
+          url: "/icons/apple-touch-icon.png",
+          sizes: "180x180",
+          type: "image/png",
+        },
       ],
     },
     openGraph: {
@@ -159,7 +163,9 @@ export default async function RootLayout({
     : DEFAULT_COLOR_SCHEME;
   const a11y = parseA11y(cookieStore.get(A11Y_COOKIE)?.value);
   const household = parseHousehold(cookieStore.get(HOUSEHOLD_COOKIE)?.value);
-  const consent = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
+  const consent = parseConsent(
+    cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
+  );
   const locale = await getLocale();
   const messages = await getMessages();
   const currentUser = await getCurrentUser();

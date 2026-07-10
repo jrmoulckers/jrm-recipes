@@ -47,7 +47,9 @@ describe("createDbMock (#225)", () => {
   });
 
   it("lets a test configure a .returning() result via chainable", async () => {
-    db.insert.mockReturnValue({ values: vi.fn(() => chainable([{ id: "r9" }])) });
+    db.insert.mockReturnValue({
+      values: vi.fn(() => chainable([{ id: "r9" }])),
+    });
 
     const [row] = await db.insert("recipes").values({}).returning();
 

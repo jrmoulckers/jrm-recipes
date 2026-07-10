@@ -60,7 +60,10 @@ describe("selectBackInRotation (#426)", () => {
 
   it("caps the result at the limit", () => {
     const recipes = ["a", "b", "c", "d", "e"].map(recipe);
-    const result = selectBackInRotation(recipes, new Map(), { now: NOW, limit: 2 });
+    const result = selectBackInRotation(recipes, new Map(), {
+      now: NOW,
+      limit: 2,
+    });
     expect(result.map((r) => r.id)).toEqual(["a", "b"]);
   });
 

@@ -18,7 +18,9 @@ describe("media host allowlist", () => {
 
   it("rejects off-allowlist hosts (tracking/beacon vector)", () => {
     expect(isAllowedMediaUrl("https://evil.example/pixel.gif")).toBe(false);
-    expect(isAllowedMediaUrl("https://169.254.169.254/latest/meta")).toBe(false);
+    expect(isAllowedMediaUrl("https://169.254.169.254/latest/meta")).toBe(
+      false,
+    );
     // A look-alike subdomain must not slip through a naive endsWith check.
     expect(
       isAllowedMediaUrl("https://res.cloudinary.com.evil.example/x.jpg"),

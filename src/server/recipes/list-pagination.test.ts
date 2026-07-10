@@ -23,11 +23,7 @@ vi.mock("~/server/db", () => ({
 }));
 
 import type { User } from "~/server/db/schema";
-import {
-  listLibrary,
-  listLibraryRecipeIds,
-  searchRecipes,
-} from "./queries";
+import { listLibrary, listLibraryRecipeIds, searchRecipes } from "./queries";
 import type { RecipeSearch } from "./search";
 import { LIBRARY_PAGE_SIZE } from "./pagination";
 
@@ -58,10 +54,7 @@ describe("listLibrary pagination (#57)", () => {
   });
 
   it("advances nextOffset by the page size when a full page comes back", async () => {
-    dbMock.query.recipes.findMany.mockResolvedValue([
-      { id: "a" },
-      { id: "b" },
-    ]);
+    dbMock.query.recipes.findMany.mockResolvedValue([{ id: "a" }, { id: "b" }]);
     const page = await listLibrary(viewer, { limit: 2, offset: 4 });
     expect(page.items.map((r) => r.id)).toEqual(["a", "b"]);
     expect(page.nextOffset).toBe(6);
@@ -93,10 +86,7 @@ describe("listLibrary pagination (#57)", () => {
 
 describe("listLibraryRecipeIds (#57)", () => {
   it("selects only ids with no eager relations", async () => {
-    dbMock.query.recipes.findMany.mockResolvedValue([
-      { id: "a" },
-      { id: "b" },
-    ]);
+    dbMock.query.recipes.findMany.mockResolvedValue([{ id: "a" }, { id: "b" }]);
     const ids = await listLibraryRecipeIds(viewer);
     expect(ids).toEqual(["a", "b"]);
     const arg = lastFindManyArg();

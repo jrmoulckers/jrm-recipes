@@ -30,7 +30,9 @@ export type IdentityTraits = {
 };
 
 /** Coerce a date-ish value to a `YYYY-MM-DD` string, or undefined if invalid. */
-function toDateOnly(value: Date | string | null | undefined): string | undefined {
+function toDateOnly(
+  value: Date | string | null | undefined,
+): string | undefined {
   if (value == null) return undefined;
   const date = value instanceof Date ? value : new Date(value);
   const time = date.getTime();
@@ -43,7 +45,9 @@ function toDateOnly(value: Date | string | null | undefined): string | undefined
  * to a non-negative integer so a bad input can never emit a fractional/negative
  * count, and `created_at` is omitted entirely when unknown.
  */
-export function buildIdentityTraits(input: IdentityTraitsInput): IdentityTraits {
+export function buildIdentityTraits(
+  input: IdentityTraitsInput,
+): IdentityTraits {
   const groupCount = Math.max(0, Math.trunc(input.groupCount) || 0);
   const traits: IdentityTraits = {
     group_count: groupCount,

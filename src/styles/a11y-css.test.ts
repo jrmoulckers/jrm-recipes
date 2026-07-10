@@ -6,7 +6,10 @@ import { describe, expect, it } from "vitest";
 // These assert the CSS *contract* for OS-driven accessibility. Forced-colors and
 // prefers-* cannot be simulated in jsdom, so we verify the source rules exist and
 // stay wired the way the components + provider depend on.
-const a11yCss = readFileSync(join(process.cwd(), "src/styles/a11y.css"), "utf8");
+const a11yCss = readFileSync(
+  join(process.cwd(), "src/styles/a11y.css"),
+  "utf8",
+);
 const globalsCss = readFileSync(
   join(process.cwd(), "src/styles/globals.css"),
   "utf8",
@@ -33,7 +36,9 @@ describe("forced-colors support (issue #131)", () => {
   });
 
   it("keeps a visible focus outline using system colors", () => {
-    expect(a11yCss).toMatch(/:focus-visible[\s\S]*outline: 2px solid Highlight/);
+    expect(a11yCss).toMatch(
+      /:focus-visible[\s\S]*outline: 2px solid Highlight/,
+    );
   });
 
   it("emphasizes primary/destructive/accent buttons by variant", () => {

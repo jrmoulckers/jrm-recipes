@@ -11,12 +11,12 @@ describe("installEntryMode", () => {
   };
 
   it("hides when already installed or standalone", () => {
-    expect(installEntryMode({ ...base, standalone: true, hasDeferredPrompt: true })).toBe(
-      "hidden",
-    );
-    expect(installEntryMode({ ...base, installed: true, iosEligible: true })).toBe(
-      "hidden",
-    );
+    expect(
+      installEntryMode({ ...base, standalone: true, hasDeferredPrompt: true }),
+    ).toBe("hidden");
+    expect(
+      installEntryMode({ ...base, installed: true, iosEligible: true }),
+    ).toBe("hidden");
   });
 
   it("prefers the native prompt when one is captured", () => {

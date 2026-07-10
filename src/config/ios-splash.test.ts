@@ -16,7 +16,9 @@ describe("ios splash config", () => {
     const urls = images.map((i) => i.url);
     expect(new Set(urls).size).toBe(urls.length);
     for (const { url } of images) {
-      expect(url).toMatch(/^\/icons\/apple-splash-[\d-]+x-(portrait|landscape)\.png$/);
+      expect(url).toMatch(
+        /^\/icons\/apple-splash-[\d-]+x-(portrait|landscape)\.png$/,
+      );
     }
   });
 

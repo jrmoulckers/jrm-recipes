@@ -53,7 +53,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
     }
     setDraft("");
     if (next.length !== items.length) commit(next);
-  }
+  };
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter" || event.key === ",") {
@@ -109,8 +109,8 @@ export function CookWithInput({ initial }: { initial: string[] }) {
         )}
       </div>
       <p className="text-sm text-muted-foreground">
-        Enter what&apos;s in your pantry — we&apos;ll rank recipes by how much you
-        already have.
+        Enter what&apos;s in your pantry — we&apos;ll rank recipes by how much
+        you already have.
       </p>
     </div>
   );

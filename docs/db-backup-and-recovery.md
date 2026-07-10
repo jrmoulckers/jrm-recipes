@@ -35,23 +35,23 @@ Local Docker Postgres from `docker-compose.yml` is for development only and is n
 
 Fill in the final retention policy for the chosen managed Postgres host.
 
-| Backup type | Recommended retention | Notes |
-| --- | --- | --- |
-| Automated daily snapshots | 14-30 days | Enough to catch most accidental deletion/corruption reports. |
-| PITR/WAL window | 7-14 days minimum | Larger windows improve recovery from slow-discovered corruption. |
-| Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes. |
-| Restore-drill artifacts | Keep latest drill notes and verification evidence | Do not keep exported production data outside approved secure storage. |
+| Backup type                        | Recommended retention                                                       | Notes                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Automated daily snapshots          | 14-30 days                                                                  | Enough to catch most accidental deletion/corruption reports.          |
+| PITR/WAL window                    | 7-14 days minimum                                                           | Larger windows improve recovery from slow-discovered corruption.      |
+| Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                            |
+| Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage. |
 
 ## RPO/RTO targets
 
 These are recommended targets to confirm with product and operations owners.
 
-| Scenario | Recommended RPO | Recommended RTO | Owner to confirm |
-| --- | --- | --- | --- |
-| Single recipe accidentally deleted | Near-zero if soft-delete restore applies | Same business day | Product / Eng lead |
-| Application bug corrupts recent rows | 15 minutes or provider PITR granularity | 2-4 hours | Eng lead |
-| Bad migration affects schema/data | Last clean pre-migration snapshot or PITR point | 2-6 hours | Eng lead / repo admins |
-| Regional database outage | Deployment-dependent | 4-24 hours unless cross-region failover is configured | Operations owner |
+| Scenario                             | Recommended RPO                                 | Recommended RTO                                       | Owner to confirm       |
+| ------------------------------------ | ----------------------------------------------- | ----------------------------------------------------- | ---------------------- |
+| Single recipe accidentally deleted   | Near-zero if soft-delete restore applies        | Same business day                                     | Product / Eng lead     |
+| Application bug corrupts recent rows | 15 minutes or provider PITR granularity         | 2-4 hours                                             | Eng lead               |
+| Bad migration affects schema/data    | Last clean pre-migration snapshot or PITR point | 2-6 hours                                             | Eng lead / repo admins |
+| Regional database outage             | Deployment-dependent                            | 4-24 hours unless cross-region failover is configured | Operations owner       |
 
 ## What PITR means
 

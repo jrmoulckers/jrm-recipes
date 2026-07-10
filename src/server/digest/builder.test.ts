@@ -11,7 +11,9 @@ const groups = [
   { id: "g_book", name: "Book Club" },
 ];
 
-function recipe(overrides: Partial<DigestRecipe> & { id: string }): DigestRecipe {
+function recipe(
+  overrides: Partial<DigestRecipe> & { id: string },
+): DigestRecipe {
   return {
     slug: overrides.id,
     title: `Recipe ${overrides.id}`,
@@ -117,7 +119,9 @@ describe("buildWeeklyDigest", () => {
     const recipes = [
       recipe({ id: "d3", createdAt: daysAgo(3), updatedAt: daysAgo(3) }),
     ];
-    expect(buildWeeklyDigest({ groups, recipes, now: NOW, windowDays: 2 })).toBeNull();
+    expect(
+      buildWeeklyDigest({ groups, recipes, now: NOW, windowDays: 2 }),
+    ).toBeNull();
     expect(
       buildWeeklyDigest({ groups, recipes, now: NOW, windowDays: 7 })?.totalNew,
     ).toBe(1);

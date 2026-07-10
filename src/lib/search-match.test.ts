@@ -81,7 +81,9 @@ describe("splitHighlight", () => {
     expect(splitHighlight("Tacos", "pizza")).toEqual([
       { text: "Tacos", hit: false },
     ]);
-    expect(splitHighlight("Tacos", "a")).toEqual([{ text: "Tacos", hit: false }]);
+    expect(splitHighlight("Tacos", "a")).toEqual([
+      { text: "Tacos", hit: false },
+    ]);
   });
 
   it("does not treat the term as HTML (XSS safe)", () => {

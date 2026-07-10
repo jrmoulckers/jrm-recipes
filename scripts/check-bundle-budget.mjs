@@ -90,7 +90,8 @@ function getBuildOutput() {
       SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION ?? "1",
       NEXT_PUBLIC_APP_URL:
         process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-      NEXT_PUBLIC_DEV_AUTH_BYPASS: process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS ?? "1",
+      NEXT_PUBLIC_DEV_AUTH_BYPASS:
+        process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS ?? "1",
     },
   });
   const output = `${res.stdout ?? ""}\n${res.stderr ?? ""}`;

@@ -20,11 +20,11 @@ Never make a breaking schema change in a single migration. Split it across
 **separate deploys** so that at every moment the running code and the live
 schema are compatible.
 
-| Phase        | What ships                                                                 | Safe because                                       |
-| ------------ | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| **Expand**   | Additive DDL only: new nullable column / new table / new index.            | Old code ignores it; new code can start writing.   |
-| **Backfill** | Data migration + code that dual-writes (writes both old and new shape).    | Both shapes stay valid; no reader sees a gap.      |
-| **Contract** | Remove the old column/table/constraint _after_ no deployed code reads it.  | Nothing references the old shape anymore.          |
+| Phase        | What ships                                                                | Safe because                                     |
+| ------------ | ------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Expand**   | Additive DDL only: new nullable column / new table / new index.           | Old code ignores it; new code can start writing. |
+| **Backfill** | Data migration + code that dual-writes (writes both old and new shape).   | Both shapes stay valid; no reader sees a gap.    |
+| **Contract** | Remove the old column/table/constraint _after_ no deployed code reads it. | Nothing references the old shape anymore.        |
 
 Ship each phase in its **own PR/deploy** and wait for the previous one to be
 fully rolled out before the next.
@@ -32,7 +32,7 @@ fully rolled out before the next.
 ### Worked example: rename `recipes.notes` → `recipes.cook_notes`
 
 1. **Expand** — add `cook_notes` as a nullable column (`ADD COLUMN IF NOT
-   EXISTS`). Deploy. Old code still reads/writes `notes`.
+EXISTS`). Deploy. Old code still reads/writes `notes`.
 2. **Backfill + dual-write** — copy `notes` → `cook_notes`
    (`UPDATE … WHERE cook_notes IS NULL`) and change the app to write **both**
    columns and read `cook_notes` (falling back to `notes`). Deploy.
@@ -51,7 +51,7 @@ statement must be safe to apply twice:
 - `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`.
 - `ALTER TABLE IF EXISTS … ADD COLUMN IF NOT EXISTS`.
 - Wrap enum/constraint/FK creation in a `DO $$ … EXCEPTION WHEN
-  duplicate_object THEN null; WHEN duplicate_table THEN null; END $$` block so a
+duplicate_object THEN null; WHEN duplicate_table THEN null; END $$` block so a
   re-apply doesn't error on `42710`/`42P07`.
 
 ## Destructive-change checklist (for any PR touching `drizzle/`)

@@ -36,7 +36,9 @@ const noteInput = z
   .trim()
   .max(300)
   .optional()
-  .transform((value) => (value == null || value.length === 0 ? undefined : value));
+  .transform((value) =>
+    value == null || value.length === 0 ? undefined : value,
+  );
 
 const positionInput = z.number().int().min(0).max(1000).optional();
 

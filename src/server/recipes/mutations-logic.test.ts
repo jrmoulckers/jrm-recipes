@@ -87,7 +87,9 @@ function recordingTx() {
       const key = keyOf(table);
       push(key, vals);
       if (key === "tags") lastTagCount = (vals as unknown[]).length;
-      return chainable(key === "recipes" ? [{ id: "r1", slug: "apple-pie" }] : undefined);
+      return chainable(
+        key === "recipes" ? [{ id: "r1", slug: "apple-pie" }] : undefined,
+      );
     },
   }));
 
@@ -98,7 +100,9 @@ function recordingTx() {
       tags: {
         findMany: vi.fn(() =>
           Promise.resolve(
-            Array.from({ length: lastTagCount }, (_, i) => ({ id: `tag_${i + 1}` })),
+            Array.from({ length: lastTagCount }, (_, i) => ({
+              id: `tag_${i + 1}`,
+            })),
           ),
         ),
       },
@@ -106,7 +110,9 @@ function recordingTx() {
     insert,
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({
-      from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve([{ next: 1 }])) })),
+      from: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve([{ next: 1 }])),
+      })),
     })),
   };
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
@@ -115,7 +121,9 @@ function recordingTx() {
 
 function runCreate(overrides: Record<string, unknown>) {
   const { tx, inserts } = recordingTx();
-  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+    cb(tx),
+  );
   const parsed = recipeInput.parse({ title: "Apple Pie", ...overrides });
   return { promise: createRecipe(parsed, author), inserts };
 }
@@ -126,7 +134,10 @@ beforeEach(() => {
 
 describe("scalarFields (derived columns persisted on create)", () => {
   it("derives totalMinutes from prep + cook when it isn't supplied", async () => {
-    const { promise, inserts } = runCreate({ prepMinutes: 10, cookMinutes: 20 });
+    const { promise, inserts } = runCreate({
+      prepMinutes: 10,
+      cookMinutes: 20,
+    });
     await promise;
 
     expect(inserts.recipes?.[0]).toMatchObject({ totalMinutes: 30 });
@@ -147,7 +158,9 @@ describe("scalarFields (derived columns persisted on create)", () => {
     const { promise, inserts } = runCreate({ prepMinutes: 10 });
     await promise;
 
-    expect((inserts.recipes?.[0] as { totalMinutes: unknown }).totalMinutes).toBeNull();
+    expect(
+      (inserts.recipes?.[0] as { totalMinutes: unknown }).totalMinutes,
+    ).toBeNull();
   });
 
   it("defaults servingsNoun to 'servings' and null-coerces empty collections", async () => {
@@ -172,7 +185,9 @@ describe("scalarFields (derived columns persisted on create)", () => {
 
 describe("syncTags (canonical de-duplication)", () => {
   it("collapses case/whitespace variants into a single tag + join row", async () => {
-    const { promise, inserts } = runCreate({ tags: ["Vegan", "vegan", " Vegan "] });
+    const { promise, inserts } = runCreate({
+      tags: ["Vegan", "vegan", " Vegan "],
+    });
     await promise;
 
     expect(inserts.tags?.[0]).toHaveLength(1);
@@ -193,7 +208,9 @@ describe("recipe-event journal", () => {
     const { promise, inserts } = runCreate({});
     await promise;
 
-    const types = (inserts.recipeEvents ?? []).map((e) => (e as { type: string }).type);
+    const types = (inserts.recipeEvents ?? []).map(
+      (e) => (e as { type: string }).type,
+    );
     expect(types).toEqual(["created"]);
   });
 
@@ -201,7 +218,9 @@ describe("recipe-event journal", () => {
     const { promise, inserts } = runCreate({ status: "published" });
     await promise;
 
-    const types = (inserts.recipeEvents ?? []).map((e) => (e as { type: string }).type);
+    const types = (inserts.recipeEvents ?? []).map(
+      (e) => (e as { type: string }).type,
+    );
     expect(types).toEqual(["created", "published"]);
   });
 });

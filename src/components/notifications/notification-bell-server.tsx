@@ -1,7 +1,10 @@
 import * as React from "react";
 
 import { getAuthState } from "~/server/auth";
-import { getUnreadCount, listNotifications } from "~/server/notifications/queries";
+import {
+  getUnreadCount,
+  listNotifications,
+} from "~/server/notifications/queries";
 import { NotificationBell } from "./notification-bell";
 
 /**

@@ -51,8 +51,7 @@ async function main() {
 
   for (const [canonicalSlug, { canonical, members }] of groups) {
     // Keeper: a member already at the canonical slug, else the first one.
-    const keeper =
-      members.find((m) => m.slug === canonicalSlug) ?? members[0]!;
+    const keeper = members.find((m) => m.slug === canonicalSlug) ?? members[0]!;
 
     // Ensure the keeper carries the canonical slug + display name.
     if (keeper.slug !== canonical.slug || keeper.name !== canonical.name) {

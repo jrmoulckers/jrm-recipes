@@ -45,9 +45,7 @@ export async function loadMoreSearchAction(
   const page = await searchRecipes(user, search, { offset: start });
 
   const members = user ? await listMemberProfiles(user.id) : [];
-  const showBadges = members.some((m) =>
-    (m.allergens ?? []).some(isAllergen),
-  );
+  const showBadges = members.some((m) => (m.allergens ?? []).some(isAllergen));
   const items: RecipeSearchResult[] = showBadges
     ? await attachCardAllergens(page.items)
     : page.items;

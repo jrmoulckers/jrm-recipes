@@ -25,7 +25,7 @@ const emptyStateVariants = cva(
 );
 
 const emptyStateIconVariants = cva(
-  "inline-flex items-center justify-center rounded-2xl bg-primary/12 text-primary",
+  "bg-primary/12 inline-flex items-center justify-center rounded-2xl text-primary",
   {
     variants: {
       variant: {
@@ -38,7 +38,8 @@ const emptyStateIconVariants = cva(
 );
 
 export interface EmptyStateProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
     VariantProps<typeof emptyStateVariants> {
   icon?: React.ReactNode;
   title: React.ReactNode;
@@ -47,17 +48,17 @@ export interface EmptyStateProps
 }
 
 const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  (
-    { className, icon, title, description, action, variant, ...props },
-    ref,
-  ) => (
+  ({ className, icon, title, description, action, variant, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(emptyStateVariants({ variant }), className)}
       {...props}
     >
       {icon ? (
-        <span className={emptyStateIconVariants({ variant })} aria-hidden="true">
+        <span
+          className={emptyStateIconVariants({ variant })}
+          aria-hidden="true"
+        >
           {icon}
         </span>
       ) : null}

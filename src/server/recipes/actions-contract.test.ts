@@ -203,7 +203,11 @@ describe("createAdaptationAction delegation", () => {
       { id: "user_1" },
       "riffed on Nana's",
     );
-    expect(res).toEqual({ ok: true, id: "fork_1", slug: "apple-pie-adaptation" });
+    expect(res).toEqual({
+      ok: true,
+      id: "fork_1",
+      slug: "apple-pie-adaptation",
+    });
   });
 });
 
@@ -234,7 +238,9 @@ describe("importRecipeFromUrlAction", () => {
     const res = await importRecipeFromUrlAction("https://example.com/r");
 
     expect(requireUserMock).toHaveBeenCalled();
-    expect(importRecipeFromUrlMock).toHaveBeenCalledWith("https://example.com/r");
+    expect(importRecipeFromUrlMock).toHaveBeenCalledWith(
+      "https://example.com/r",
+    );
     expect(res).toEqual({ ok: true, data: {} });
   });
 

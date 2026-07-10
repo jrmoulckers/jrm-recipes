@@ -67,32 +67,62 @@ beforeEach(() => {
 describe("recipe read paths exclude soft-deleted rows (issue #165)", () => {
   it("listMyRecipes filters on deleted_at", async () => {
     await listMyRecipes("user_1");
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findMany),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 
   it("listPublicRecipes filters on deleted_at", async () => {
     await listPublicRecipes();
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findMany),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 
   it("getRecipe filters on deleted_at", async () => {
     await getRecipe("apple-pie", null);
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findFirst), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findFirst),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 
   it("getOwnedRecipe filters on deleted_at", async () => {
     await getOwnedRecipe("apple-pie", "user_1");
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findFirst), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findFirst),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 
   it("listLibrary filters on deleted_at", async () => {
     await listLibrary(author);
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findMany),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 
   it("searchRecipes filters on deleted_at", async () => {
     await searchRecipes(author, { cuisines: [], tags: [], sort: "newest" });
-    expect(filtersOnColumn(lastWhere(dbMock.query.recipes.findMany), recipes.deletedAt)).toBe(true);
+    expect(
+      filtersOnColumn(
+        lastWhere(dbMock.query.recipes.findMany),
+        recipes.deletedAt,
+      ),
+    ).toBe(true);
   });
 });
 

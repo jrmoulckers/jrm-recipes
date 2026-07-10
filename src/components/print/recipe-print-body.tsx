@@ -45,7 +45,9 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
               ) : null}
               <ul className="mt-1 list-disc space-y-1 pl-5">
                 {group.items.map((ingredient) => (
-                  <li key={ingredient.id}>{formatIngredientLine(ingredient)}</li>
+                  <li key={ingredient.id}>
+                    {formatIngredientLine(ingredient)}
+                  </li>
                 ))}
               </ul>
             </div>

@@ -2,10 +2,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { HOUSEHOLD_COOKIE } from "~/config/household";
-import {
-  HouseholdProvider,
-  useHousehold,
-} from "./household-provider";
+import { HouseholdProvider, useHousehold } from "./household-provider";
 
 afterEach(() => {
   cleanup();

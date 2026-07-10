@@ -65,11 +65,11 @@ export interface Chainable {
  */
 export function chainable(rows: unknown[] = []): Chainable {
   return {
-    returning: vi.fn(
-      (..._cols: unknown[]): Promise<unknown[]> => Promise.resolve(rows),
+    returning: vi.fn((..._cols: unknown[]): Promise<unknown[]> =>
+      Promise.resolve(rows),
     ),
-    onConflictDoNothing: vi.fn(
-      (..._args: unknown[]): Promise<undefined> => Promise.resolve(undefined),
+    onConflictDoNothing: vi.fn((..._args: unknown[]): Promise<undefined> =>
+      Promise.resolve(undefined),
     ),
     then: (
       onFulfilled: (value: unknown) => unknown,
@@ -89,7 +89,10 @@ export type QueryTableMock = {
  * `db.query.recipes` needs no undefined check), while extra tables added via
  * {@link createDbMock} resolve through the string index signature.
  */
-export type QueryMock = Record<(typeof DEFAULT_TABLES)[number], QueryTableMock> &
+export type QueryMock = Record<
+  (typeof DEFAULT_TABLES)[number],
+  QueryTableMock
+> &
   Record<string, QueryTableMock>;
 
 type InsertBuilder = { values: (vals?: unknown) => Chainable };
@@ -159,36 +162,26 @@ export interface DbMock extends StatementMocks {
  * fn returns a {@link chainable} by default; override per-test for `.returning()`
  * results (e.g. `db.insert.mockReturnValue(chainable([{ id: "r1" }]))`).
  */
-export function createDbMock(
-  extraTables: readonly string[] = [],
-): DbMock {
+export function createDbMock(extraTables: readonly string[] = []): DbMock {
   const tables = [...new Set([...DEFAULT_TABLES, ...extraTables])];
   const query = makeQuery(tables);
 
-  const insert = vi.fn(
-    (_table?: unknown): InsertBuilder => ({
-      values: (_vals?: unknown) => chainable(),
-    }),
-  );
-  const update = vi.fn(
-    (_table?: unknown): UpdateBuilder => ({
-      set: (_vals?: unknown) => ({
-        where: (_where?: unknown) => Promise.resolve(undefined),
-      }),
-    }),
-  );
-  const del = vi.fn(
-    (_table?: unknown): DeleteBuilder => ({
+  const insert = vi.fn((_table?: unknown): InsertBuilder => ({
+    values: (_vals?: unknown) => chainable(),
+  }));
+  const update = vi.fn((_table?: unknown): UpdateBuilder => ({
+    set: (_vals?: unknown) => ({
       where: (_where?: unknown) => Promise.resolve(undefined),
     }),
-  );
-  const select = vi.fn(
-    (..._columns: unknown[]): SelectBuilder => ({
-      from: (_table?: unknown) => ({
-        where: (_where?: unknown) => Promise.resolve([]),
-      }),
+  }));
+  const del = vi.fn((_table?: unknown): DeleteBuilder => ({
+    where: (_where?: unknown) => Promise.resolve(undefined),
+  }));
+  const select = vi.fn((..._columns: unknown[]): SelectBuilder => ({
+    from: (_table?: unknown) => ({
+      where: (_where?: unknown) => Promise.resolve([]),
     }),
-  );
+  }));
   const $count = vi.fn();
 
   const tx: TxMock = {

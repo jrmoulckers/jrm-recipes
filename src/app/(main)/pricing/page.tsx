@@ -48,15 +48,15 @@ export default async function PricingPage() {
         </h1>
         <p className="mt-3 text-muted-foreground">
           Start free and keep everything you cook. Upgrade to Family when
-          you&apos;re ready for unlimited recipes and AI help — no fine print, no
-          countdowns, cancel anytime.
+          you&apos;re ready for unlimited recipes and AI help — no fine print,
+          no countdowns, cancel anytime.
         </p>
       </header>
 
       {!billingReady ? (
         <p className="mx-auto max-w-xl rounded-xl border border-dashed border-border bg-surface/50 px-4 py-3 text-center text-sm text-muted-foreground">
-          Checkout isn&apos;t enabled in this environment yet, so you can compare
-          the plans here but can&apos;t subscribe right now.
+          Checkout isn&apos;t enabled in this environment yet, so you can
+          compare the plans here but can&apos;t subscribe right now.
         </p>
       ) : null}
 
@@ -111,7 +111,10 @@ function GiftSection({ billingReady }: { billingReady: boolean }) {
         </div>
         <p className="text-sm text-muted-foreground">
           Have a code?{" "}
-          <Link href="/redeem" className="font-medium text-primary underline-offset-4 hover:underline">
+          <Link
+            href="/redeem"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             Redeem your gift
           </Link>
           .

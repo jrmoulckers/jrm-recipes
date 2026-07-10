@@ -115,21 +115,21 @@ against Neon and build the app.
 
 ### Environment variables
 
-| Variable                            | Required?   | Value                                                                                        |
-| ----------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                      | **Yes**     | Neon **pooled** connection string (step 1)                                                   |
-| `NEXT_PUBLIC_APP_URL`               | **Yes**     | Your public site URL, e.g. `https://heirloom.yourdomain.com`                                 |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | For auth    | Clerk publishable key                                                                        |
-| `CLERK_SECRET_KEY`                  | For auth    | Clerk secret key                                                                             |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | For uploads | Cloudinary cloud name                                                                        |
-| `NEXT_PUBLIC_CLOUDINARY_API_KEY`    | For uploads | Cloudinary API key (public)                                                                  |
-| `CLOUDINARY_API_SECRET`             | For uploads | Cloudinary API secret (server-only)                                                          |
-| `STRIPE_SECRET_KEY`                 | For billing | Stripe secret key (server-only)                                                              |
-| `STRIPE_WEBHOOK_SECRET`             | For billing | Stripe webhook signing secret for `/api/stripe/webhook`                                       |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`| For billing | Stripe publishable key (public, client-safe)                                                 |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`     | Optional    | Defaults to `/sign-in`                                                                       |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`     | Optional    | Defaults to `/sign-up`                                                                       |
-| `NEXT_PUBLIC_DEV_AUTH_BYPASS`       | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy — preview or production — with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request) — leave it unset. |
+| Variable                             | Required?       | Value                                                                                                                                                                                                              |
+| ------------------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                       | **Yes**         | Neon **pooled** connection string (step 1)                                                                                                                                                                         |
+| `NEXT_PUBLIC_APP_URL`                | **Yes**         | Your public site URL, e.g. `https://heirloom.yourdomain.com`                                                                                                                                                       |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`  | For auth        | Clerk publishable key                                                                                                                                                                                              |
+| `CLERK_SECRET_KEY`                   | For auth        | Clerk secret key                                                                                                                                                                                                   |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`  | For uploads     | Cloudinary cloud name                                                                                                                                                                                              |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY`     | For uploads     | Cloudinary API key (public)                                                                                                                                                                                        |
+| `CLOUDINARY_API_SECRET`              | For uploads     | Cloudinary API secret (server-only)                                                                                                                                                                                |
+| `STRIPE_SECRET_KEY`                  | For billing     | Stripe secret key (server-only)                                                                                                                                                                                    |
+| `STRIPE_WEBHOOK_SECRET`              | For billing     | Stripe webhook signing secret for `/api/stripe/webhook`                                                                                                                                                            |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | For billing     | Stripe publishable key (public, client-safe)                                                                                                                                                                       |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`      | Optional        | Defaults to `/sign-in`                                                                                                                                                                                             |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`      | Optional        | Defaults to `/sign-up`                                                                                                                                                                                             |
+| `NEXT_PUBLIC_DEV_AUTH_BYPASS`        | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy — preview or production — with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request) — leave it unset. |
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.

@@ -23,9 +23,7 @@ describe("toggleReactionState (issue #342)", () => {
   });
 
   it("removes the viewer's reaction and drops the emoji when it hits zero", () => {
-    const counts: ReactionCount[] = [
-      { emoji: "yum", count: 1, reacted: true },
-    ];
+    const counts: ReactionCount[] = [{ emoji: "yum", count: 1, reacted: true }];
     expect(toggleReactionState(counts, "yum")).toEqual([]);
   });
 

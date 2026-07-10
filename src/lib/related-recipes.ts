@@ -17,7 +17,11 @@ export type RecipeSignals = {
  * shared tag (5) always outranks the capped ingredient-overlap contribution (3),
  * so common pantry words like "salt" can never dominate topical relatedness.
  */
-export const SIMILARITY_WEIGHTS = { tag: 5, cuisine: 2, ingredient: 1 } as const;
+export const SIMILARITY_WEIGHTS = {
+  tag: 5,
+  cuisine: 2,
+  ingredient: 1,
+} as const;
 
 /** Ingredient overlap is capped so a long shared pantry list can't dominate. */
 export const MAX_INGREDIENT_OVERLAP = 3;

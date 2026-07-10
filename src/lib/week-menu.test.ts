@@ -10,7 +10,12 @@ import {
 
 const days: WeekMenuDayInput[] = [
   { dateParam: "2026-07-06", weekday: "Monday", date: "Jul 6", isToday: true },
-  { dateParam: "2026-07-07", weekday: "Tuesday", date: "Jul 7", isToday: false },
+  {
+    dateParam: "2026-07-07",
+    weekday: "Tuesday",
+    date: "Jul 7",
+    isToday: false,
+  },
   {
     dateParam: "2026-07-08",
     weekday: "Wednesday",

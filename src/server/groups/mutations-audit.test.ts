@@ -88,7 +88,12 @@ describe("group mutation audit logging (#219)", () => {
     const tx = fakeTx({
       memberships: [
         { id: "gm_owner", role: "owner", userId: owner.id, groupId: group.id },
-        { id: "gm_target", role: "member", userId: "target_1", groupId: group.id },
+        {
+          id: "gm_target",
+          role: "member",
+          userId: "target_1",
+          groupId: group.id,
+        },
       ],
     });
     runWith(tx);

@@ -83,12 +83,12 @@ _Per-mode tone added for #133._
 The most important action in Heirloom — starting a cookbook and adding recipes —
 should read the same way everywhere so it's learnable. Use exactly these labels:
 
-| Intent | Label | Where |
-| --- | --- | --- |
-| Sign up (aspirational, signed-out) | **Start your cookbook** | Landing hero, header sign-up, `StartCookingButton` |
-| Create — first run / empty library | **Create your first recipe** | `EmptyLibrary`, home closing CTA, onboarding |
-| Create — recipes already exist | **Create a recipe** | Per-page create buttons |
-| Browse (secondary) | **Browse recipes** | Anywhere we point at the library |
+| Intent                             | Label                        | Where                                              |
+| ---------------------------------- | ---------------------------- | -------------------------------------------------- |
+| Sign up (aspirational, signed-out) | **Start your cookbook**      | Landing hero, header sign-up, `StartCookingButton` |
+| Create — first run / empty library | **Create your first recipe** | `EmptyLibrary`, home closing CTA, onboarding       |
+| Create — recipes already exist     | **Create a recipe**          | Per-page create buttons                            |
+| Browse (secondary)                 | **Browse recipes**           | Anywhere we point at the library                   |
 
 Rules:
 
@@ -107,7 +107,7 @@ Every confirm dialog for a delete / remove / leave follows one pattern:
 
 - Lead with the plain verb and the specific thing:
   "Delete this recipe?", "Remove {name} from this group?", "Leave {group}?"
-- State the real consequence, and reassure about what is *not* lost when true:
+- State the real consequence, and reassure about what is _not_ lost when true:
   "Everyone's recipes stay saved — only the shared group space is removed."
 - End with reversibility. If it can't be undone, say
   "This can't be undone." If it can, say how: "You can re-invite them anytime."
@@ -117,7 +117,7 @@ Every confirm dialog for a delete / remove / leave follows one pattern:
 ## Kids mode
 
 Kids mode (`THEME_BEHAVIOR.kids.kidSafe`) is a first-class experience: bigger
-targets, simpler chrome — and simpler *words*. Adult microcopy stays put unless a
+targets, simpler chrome — and simpler _words_. Adult microcopy stays put unless a
 surface opts in through `src/config/kid-copy.ts`.
 
 Guidelines for Kids variants:
@@ -136,7 +136,7 @@ must be byte-for-byte unchanged.
 ## Share text
 
 The words that ride along with a shared recipe link are content, not throwaway.
-When a link lands in a family chat it should say *what* it is and *whose* it is —
+When a link lands in a family chat it should say _what_ it is and _whose_ it is —
 never arrive as a naked URL.
 
 - Name the recipe first, then a warm one-liner. With a known cook, attribute it:
@@ -181,7 +181,3 @@ instructions. Orient people to the core loop, then get out of the way.
   return visits, and never show once the user has content.
 - Centralize the strings (`src/config/onboarding-copy.ts`) so the moment can be
   localized or mode-adapted later.
-
-
-
-

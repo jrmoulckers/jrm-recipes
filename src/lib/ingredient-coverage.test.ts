@@ -58,8 +58,8 @@ describe("rankByCoverage (#277)", () => {
   });
 
   it("returns [] when the pantry is empty", () => {
-    expect(
-      rankByCoverage([{ id: "a", ingredients: ["chicken"] }], []),
-    ).toEqual([]);
+    expect(rankByCoverage([{ id: "a", ingredients: ["chicken"] }], [])).toEqual(
+      [],
+    );
   });
 });

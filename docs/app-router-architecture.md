@@ -8,14 +8,14 @@ Routes live under [`src/app`](../src/app):
 
 - [`src/app/layout.tsx`](../src/app/layout.tsx) is the root Server Component layout. It imports global CSS, loads fonts, reads cookies and the CSP nonce header, resolves locale/messages, calls `getCurrentUser()`, evaluates feature flags, wraps the tree in `NextIntlClientProvider`, and conditionally wraps with `ClerkProvider` when Clerk is configured.
 - [`src/app/providers.tsx`](../src/app/providers.tsx) is the root client boundary for app-wide providers: theme, accessibility, household size, consent, analytics, flags, tooltips, pageview tracking, connectivity status, and toast UI.
-- [`src/app/(main)`](../src/app/(main)) is the normal app shell. Its layout adds skip link, header, footer, bottom nav, install prompt, and update prompt.
-- [`src/app/(immersive)`](../src/app/(immersive)) is the full-bleed shell for focused routes such as Cook Mode and print/keepsake views. Its layout intentionally drops header/footer/nav while inheriting root providers and theming.
+- [`src/app/(main)`](<../src/app/(main)>) is the normal app shell. Its layout adds skip link, header, footer, bottom nav, install prompt, and update prompt.
+- [`src/app/(immersive)`](<../src/app/(immersive)>) is the full-bleed shell for focused routes such as Cook Mode and print/keepsake views. Its layout intentionally drops header/footer/nav while inheriting root providers and theming.
 - [`src/app/api`](../src/app/api) contains route handlers for operational endpoints and webhooks, including health, Cloudinary signing, digest, Stripe webhook, Clerk webhook, backup, and oEmbed.
 - [`src/app/embed`](../src/app/embed) contains embeddable recipe routes.
 - [`src/app/import/route.ts`](../src/app/import/route.ts) is the PWA share-target handler.
 - [`src/app/~offline/page.tsx`](../src/app/~offline/page.tsx) is the service-worker offline fallback page.
 - [`src/app/manifest.ts`](../src/app/manifest.ts), [`src/app/robots.ts`](../src/app/robots.ts), and [`src/app/sitemap.ts`](../src/app/sitemap.ts) provide the PWA manifest, robots policy, and dynamic sitemap.
-- [`src/app/error.tsx`](../src/app/error.tsx), [`src/app/global-error.tsx`](../src/app/global-error.tsx), [`src/app/(main)/error.tsx`](../src/app/(main)/error.tsx), and [`src/app/not-found.tsx`](../src/app/not-found.tsx) provide route/global error and 404 surfaces.
+- [`src/app/error.tsx`](../src/app/error.tsx), [`src/app/global-error.tsx`](../src/app/global-error.tsx), [`src/app/(main)/error.tsx`](<../src/app/(main)/error.tsx>), and [`src/app/not-found.tsx`](../src/app/not-found.tsx) provide route/global error and 404 surfaces.
 
 ## Server and client boundaries
 

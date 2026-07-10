@@ -20,25 +20,73 @@ type IconEntry = { emoji: string; patterns: string[] };
 /** Ordered most-specific → most-general; the first match wins. */
 const ICON_ENTRIES: IconEntry[] = [
   // Specific compounds first so they aren't shadowed by a broader keyword.
-  { emoji: "🥜", patterns: ["peanut butter", "peanut", "peanuts", "almond", "walnut", "cashew", "pecan", "hazelnut", "nut", "nuts"] },
+  {
+    emoji: "🥜",
+    patterns: [
+      "peanut butter",
+      "peanut",
+      "peanuts",
+      "almond",
+      "walnut",
+      "cashew",
+      "pecan",
+      "hazelnut",
+      "nut",
+      "nuts",
+    ],
+  },
   { emoji: "🥛", patterns: ["buttermilk"] },
   { emoji: "🍠", patterns: ["sweet potato", "sweet potatoes", "yam"] },
   { emoji: "🫑", patterns: ["bell pepper", "bell peppers"] },
-  { emoji: "🌶️", patterns: ["chili", "chilli", "chile", "jalapeno", "jalapenos", "cayenne", "chipotle", "chilies"] },
+  {
+    emoji: "🌶️",
+    patterns: [
+      "chili",
+      "chilli",
+      "chile",
+      "jalapeno",
+      "jalapenos",
+      "cayenne",
+      "chipotle",
+      "chilies",
+    ],
+  },
   { emoji: "🫒", patterns: ["olive oil", "olive", "olives", "oil"] },
   { emoji: "🍫", patterns: ["chocolate", "cocoa", "cacao"] },
 
   // Dairy & eggs.
   { emoji: "🥚", patterns: ["egg", "eggs"] },
   { emoji: "🧈", patterns: ["butter", "margarine"] },
-  { emoji: "🧀", patterns: ["cheese", "cheddar", "parmesan", "mozzarella", "feta"] },
+  {
+    emoji: "🧀",
+    patterns: ["cheese", "cheddar", "parmesan", "mozzarella", "feta"],
+  },
   { emoji: "🥛", patterns: ["milk", "cream", "yogurt", "yoghurt"] },
 
   // Bakery & grains.
-  { emoji: "🌾", patterns: ["flour", "oat", "oats", "wheat", "cornmeal", "bran"] },
-  { emoji: "🍞", patterns: ["bread", "breadcrumb", "breadcrumbs", "baguette", "toast", "bun", "buns", "roll", "rolls"] },
+  {
+    emoji: "🌾",
+    patterns: ["flour", "oat", "oats", "wheat", "cornmeal", "bran"],
+  },
+  {
+    emoji: "🍞",
+    patterns: [
+      "bread",
+      "breadcrumb",
+      "breadcrumbs",
+      "baguette",
+      "toast",
+      "bun",
+      "buns",
+      "roll",
+      "rolls",
+    ],
+  },
   { emoji: "🍚", patterns: ["rice"] },
-  { emoji: "🍝", patterns: ["pasta", "spaghetti", "noodle", "noodles", "macaroni", "penne"] },
+  {
+    emoji: "🍝",
+    patterns: ["pasta", "spaghetti", "noodle", "noodles", "macaroni", "penne"],
+  },
 
   // Sweeteners & baking.
   { emoji: "🍬", patterns: ["sugar"] },
@@ -47,24 +95,55 @@ const ICON_ENTRIES: IconEntry[] = [
 
   // Produce — vegetables.
   { emoji: "🥕", patterns: ["carrot", "carrots"] },
-  { emoji: "🧅", patterns: ["onion", "onions", "scallion", "scallions", "shallot", "shallots", "leek", "leeks"] },
+  {
+    emoji: "🧅",
+    patterns: [
+      "onion",
+      "onions",
+      "scallion",
+      "scallions",
+      "shallot",
+      "shallots",
+      "leek",
+      "leeks",
+    ],
+  },
   { emoji: "🧄", patterns: ["garlic"] },
   { emoji: "🍅", patterns: ["tomato", "tomatoes"] },
   { emoji: "🥔", patterns: ["potato", "potatoes"] },
   { emoji: "🌽", patterns: ["corn", "sweetcorn"] },
   { emoji: "🍄", patterns: ["mushroom", "mushrooms"] },
   { emoji: "🥦", patterns: ["broccoli"] },
-  { emoji: "🥬", patterns: ["spinach", "lettuce", "kale", "cabbage", "greens", "chard"] },
-  { emoji: "🥒", patterns: ["cucumber", "cucumbers", "zucchini", "pickle", "pickles"] },
+  {
+    emoji: "🥬",
+    patterns: ["spinach", "lettuce", "kale", "cabbage", "greens", "chard"],
+  },
+  {
+    emoji: "🥒",
+    patterns: ["cucumber", "cucumbers", "zucchini", "pickle", "pickles"],
+  },
   { emoji: "🍆", patterns: ["eggplant", "aubergine"] },
   { emoji: "🥑", patterns: ["avocado", "avocados"] },
-  { emoji: "🫘", patterns: ["bean", "beans", "lentil", "lentils", "chickpea", "chickpeas"] },
+  {
+    emoji: "🫘",
+    patterns: ["bean", "beans", "lentil", "lentils", "chickpea", "chickpeas"],
+  },
 
   // Produce — fruit.
   { emoji: "🍋", patterns: ["lemon", "lemons", "lime", "limes"] },
   { emoji: "🍎", patterns: ["apple", "apples"] },
   { emoji: "🍌", patterns: ["banana", "bananas"] },
-  { emoji: "🍓", patterns: ["strawberry", "strawberries", "berry", "berries", "raspberry", "raspberries"] },
+  {
+    emoji: "🍓",
+    patterns: [
+      "strawberry",
+      "strawberries",
+      "berry",
+      "berries",
+      "raspberry",
+      "raspberries",
+    ],
+  },
   { emoji: "🫐", patterns: ["blueberry", "blueberries"] },
   { emoji: "🍊", patterns: ["orange", "oranges", "tangerine", "mandarin"] },
   { emoji: "🍑", patterns: ["peach", "peaches", "apricot"] },
@@ -84,7 +163,23 @@ const ICON_ENTRIES: IconEntry[] = [
   { emoji: "🍷", patterns: ["wine"] },
   { emoji: "☕", patterns: ["coffee", "espresso"] },
   { emoji: "🍵", patterns: ["tea", "matcha"] },
-  { emoji: "🌿", patterns: ["basil", "parsley", "cilantro", "coriander", "mint", "thyme", "rosemary", "oregano", "herb", "herbs", "sage", "dill"] },
+  {
+    emoji: "🌿",
+    patterns: [
+      "basil",
+      "parsley",
+      "cilantro",
+      "coriander",
+      "mint",
+      "thyme",
+      "rosemary",
+      "oregano",
+      "herb",
+      "herbs",
+      "sage",
+      "dill",
+    ],
+  },
 ];
 
 /** Lowercase + strip diacritics so "Purée" and "Jalapeño" match ASCII keywords. */

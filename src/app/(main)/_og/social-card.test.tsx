@@ -1,11 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  GroupCard,
-  ProfileCard,
-  ogInitials,
-} from "./social-card";
+import { GroupCard, ProfileCard, ogInitials } from "./social-card";
 
 afterEach(cleanup);
 
@@ -39,9 +35,7 @@ describe("ProfileCard", () => {
 
   it("singularizes a single recipe", () => {
     const { getByText } = render(
-      <ProfileCard
-        data={{ name: "Ada", handle: "ada", recipeCount: 1 }}
-      />,
+      <ProfileCard data={{ name: "Ada", handle: "ada", recipeCount: 1 }} />,
     );
     expect(getByText("1 public recipe")).toBeTruthy();
   });

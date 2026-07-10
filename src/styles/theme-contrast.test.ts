@@ -18,10 +18,7 @@ import { UI_THEME_IDS } from "~/config/themes";
  * ≥ 3:1 (1.4.11). See the pair lists for exactly what is guarded.
  */
 
-const css = readFileSync(
-  join(process.cwd(), "src/styles/themes.css"),
-  "utf8",
-);
+const css = readFileSync(join(process.cwd(), "src/styles/themes.css"), "utf8");
 
 const HSL_RE = /^([\d.]+)\s+([\d.]+)%\s+([\d.]+)%$/;
 
@@ -128,39 +125,49 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
 ];
 
 const COMBOS = UI_THEME_IDS.flatMap((theme) =>
-  [false, true].map((dark) => ({ theme, dark, label: `${theme}/${dark ? "dark" : "light"}` })),
+  [false, true].map((dark) => ({
+    theme,
+    dark,
+    label: `${theme}/${dark ? "dark" : "light"}`,
+  })),
 );
 
 describe("theme token contrast (issue #132)", () => {
-  it.each(COMBOS)("$label — body text pairs meet AA 4.5:1", ({ theme, dark }) => {
-    const tok = resolveTokens(theme, dark);
-    for (const [fg, bg] of TEXT_PAIRS) {
-      const fgVal = tok[fg];
-      const bgVal = tok[bg];
-      expect(fgVal, `missing --${fg}`).toBeDefined();
-      expect(bgVal, `missing --${bg}`).toBeDefined();
-      if (fgVal === undefined || bgVal === undefined) continue;
-      const ratio = contrast(fgVal, bgVal);
-      expect(
-        ratio,
-        `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 4.5)`,
-      ).toBeGreaterThanOrEqual(4.5);
-    }
-  });
+  it.each(COMBOS)(
+    "$label — body text pairs meet AA 4.5:1",
+    ({ theme, dark }) => {
+      const tok = resolveTokens(theme, dark);
+      for (const [fg, bg] of TEXT_PAIRS) {
+        const fgVal = tok[fg];
+        const bgVal = tok[bg];
+        expect(fgVal, `missing --${fg}`).toBeDefined();
+        expect(bgVal, `missing --${bg}`).toBeDefined();
+        if (fgVal === undefined || bgVal === undefined) continue;
+        const ratio = contrast(fgVal, bgVal);
+        expect(
+          ratio,
+          `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 4.5)`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
 
-  it.each(COMBOS)("$label — control/focus pairs meet AA 3:1", ({ theme, dark }) => {
-    const tok = resolveTokens(theme, dark);
-    for (const [fg, bg] of NON_TEXT_PAIRS) {
-      const fgVal = tok[fg];
-      const bgVal = tok[bg];
-      expect(fgVal, `missing --${fg}`).toBeDefined();
-      expect(bgVal, `missing --${bg}`).toBeDefined();
-      if (fgVal === undefined || bgVal === undefined) continue;
-      const ratio = contrast(fgVal, bgVal);
-      expect(
-        ratio,
-        `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 3.0)`,
-      ).toBeGreaterThanOrEqual(3.0);
-    }
-  });
+  it.each(COMBOS)(
+    "$label — control/focus pairs meet AA 3:1",
+    ({ theme, dark }) => {
+      const tok = resolveTokens(theme, dark);
+      for (const [fg, bg] of NON_TEXT_PAIRS) {
+        const fgVal = tok[fg];
+        const bgVal = tok[bg];
+        expect(fgVal, `missing --${fg}`).toBeDefined();
+        expect(bgVal, `missing --${bg}`).toBeDefined();
+        if (fgVal === undefined || bgVal === undefined) continue;
+        const ratio = contrast(fgVal, bgVal);
+        expect(
+          ratio,
+          `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 3.0)`,
+        ).toBeGreaterThanOrEqual(3.0);
+      }
+    },
+  );
 });

@@ -79,23 +79,26 @@ export async function listMyGroups(userId: string) {
       columns: { groupId: true },
     }),
     db.query.recipes.findMany({
-      where: and(
-        inArray(recipes.groupId, groupIds),
-        isNull(recipes.deletedAt),
-      ),
+      where: and(inArray(recipes.groupId, groupIds), isNull(recipes.deletedAt)),
       columns: { groupId: true },
     }),
   ]);
 
   const memberCounts = new Map<string, number>();
   for (const member of allMembers) {
-    memberCounts.set(member.groupId, (memberCounts.get(member.groupId) ?? 0) + 1);
+    memberCounts.set(
+      member.groupId,
+      (memberCounts.get(member.groupId) ?? 0) + 1,
+    );
   }
 
   const recipeCounts = new Map<string, number>();
   for (const recipe of groupRecipes) {
     if (!recipe.groupId) continue;
-    recipeCounts.set(recipe.groupId, (recipeCounts.get(recipe.groupId) ?? 0) + 1);
+    recipeCounts.set(
+      recipe.groupId,
+      (recipeCounts.get(recipe.groupId) ?? 0) + 1,
+    );
   }
 
   return memberships.map((membership) => ({
@@ -194,7 +197,10 @@ export async function getMembership(groupId: string, userId: string) {
 
   return (
     (await db.query.groupMembers.findFirst({
-      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
+      where: and(
+        eq(groupMembers.groupId, groupId),
+        eq(groupMembers.userId, userId),
+      ),
     })) ?? null
   );
 }

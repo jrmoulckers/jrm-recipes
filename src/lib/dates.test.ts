@@ -45,8 +45,12 @@ describe("formatDayName", () => {
 
 describe("formatWeekRange", () => {
   it("localizes month names in a same-month range", () => {
-    expect(formatWeekRange(WEEK_START, WEEK_END, "en")).toBe("Jul 5 – 11, 2026");
-    expect(formatWeekRange(WEEK_START, WEEK_END, "es")).toBe("jul 5 – 11, 2026");
+    expect(formatWeekRange(WEEK_START, WEEK_END, "en")).toBe(
+      "Jul 5 – 11, 2026",
+    );
+    expect(formatWeekRange(WEEK_START, WEEK_END, "es")).toBe(
+      "jul 5 – 11, 2026",
+    );
     expect(formatWeekRange(WEEK_START, WEEK_END, "de")).toBe(
       "Juli 5 – 11, 2026",
     );

@@ -51,7 +51,10 @@ describe("extractMentionHandles", () => {
 
 describe("resolveMentions", () => {
   it("resolves only real members, once each", () => {
-    const resolved = resolveMentions("@dad @GRANDMAROSE @dad @ghost", candidates);
+    const resolved = resolveMentions(
+      "@dad @GRANDMAROSE @dad @ghost",
+      candidates,
+    );
     expect(resolved.map((c) => c.id)).toEqual(["u_dad", "u_gran"]);
   });
 

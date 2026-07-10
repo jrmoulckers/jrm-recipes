@@ -31,7 +31,9 @@ describe("Switch large-target sizing", () => {
     render(<Switch aria-label="notify" />);
     const thumb = thumbOf(screen.getByRole("switch"));
 
-    expect(thumb.className).toContain("size-[calc(1.25rem*var(--control-scale))]");
+    expect(thumb.className).toContain(
+      "size-[calc(1.25rem*var(--control-scale))]",
+    );
     // Travel = inner width - thumb = (2.75 - 0.25)s - 1.25s = 1.5s - 0.25rem, where
     // the fixed 0.25rem is the preserved 2px border on each edge.
     expect(thumb.className).toContain(

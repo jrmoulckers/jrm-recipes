@@ -8,8 +8,7 @@ import type { AnchoredSuggestionsProps } from "./anchored-suggestions";
 // recipe page's first-load budget (#206). It renders once per ingredient row
 // and method step, so deferring it to an on-demand chunk is a meaningful trim.
 const AnchoredSuggestionsImpl = dynamic(
-  () =>
-    import("./anchored-suggestions").then((mod) => mod.AnchoredSuggestions),
+  () => import("./anchored-suggestions").then((mod) => mod.AnchoredSuggestions),
   { ssr: false },
 );
 

@@ -49,8 +49,7 @@ function periodEndSeconds(sub: Stripe.Subscription): number | undefined {
     .current_period_end;
   if (typeof top === "number") return top;
   const item = sub.items?.data?.[0] as unknown as
-    | { current_period_end?: number }
-    | undefined;
+    { current_period_end?: number } | undefined;
   return item?.current_period_end;
 }
 
@@ -99,7 +98,9 @@ async function ensureCustomerLink(
  * through here — a deleted subscription simply carries a `canceled` status).
  * No-op when the DB is unconfigured or we can't attribute an owner.
  */
-export async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
+export async function syncSubscription(
+  sub: Stripe.Subscription,
+): Promise<void> {
   if (!isDbConfigured()) return;
 
   const stripeCustomerId = customerIdOf(sub.customer);
@@ -160,8 +161,10 @@ async function handleCheckoutCompleted(
   // no-op rather than a second code.
   if (session.mode === "payment" && session.metadata?.kind === "gift") {
     const meta = session.metadata;
-    const planId: PlanId = meta.giftPlanId === "family" ? "family" : GIFT_CONFIG.planId;
-    const durationMonths = Number(meta.durationMonths) || GIFT_CONFIG.durationMonths;
+    const planId: PlanId =
+      meta.giftPlanId === "family" ? "family" : GIFT_CONFIG.planId;
+    const durationMonths =
+      Number(meta.durationMonths) || GIFT_CONFIG.durationMonths;
     await mintGiftCode({
       stripeSessionId: session.id,
       purchaserUserId: meta.purchaserUserId ?? null,
@@ -173,7 +176,10 @@ async function handleCheckoutCompleted(
 
   const stripeCustomerId = customerIdOf(session.customer);
   if (!stripeCustomerId) return;
-  await ensureCustomerLink(stripeCustomerId, session.metadata?.userId ?? undefined);
+  await ensureCustomerLink(
+    stripeCustomerId,
+    session.metadata?.userId ?? undefined,
+  );
 }
 
 /** Flag the subscription past-due when an invoice payment fails. */

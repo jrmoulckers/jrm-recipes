@@ -78,7 +78,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "dice",
     name: "Dice",
-    shortTip: "Cut into even, square-ish cubes so everything cooks at the same rate.",
+    shortTip:
+      "Cut into even, square-ish cubes so everything cooks at the same rate.",
     description:
       "Trim the ingredient flat so it doesn't roll, slice into planks, cut the planks into sticks, then cut across to make cubes. Small dice is roughly 6 mm; large dice about 2 cm. Even sizing is what keeps cooking uniform.",
     aliases: ["diced", "dicing"],
@@ -102,7 +103,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "julienne",
     name: "Julienne",
-    shortTip: "Cut into thin matchsticks for quick cooking and elegant texture.",
+    shortTip:
+      "Cut into thin matchsticks for quick cooking and elegant texture.",
     description:
       "Square off the sides, slice into thin planks, stack the planks and cut into fine strips about 3 mm thick. Great for stir-fries and slaws where you want delicate, fast-cooking ribbons.",
     aliases: ["julienned", "matchstick", "matchsticks"],
@@ -113,7 +115,15 @@ const SEED: TechniqueSeed[] = [
     shortTip: "Cook fast in a little hot fat, keeping the food moving.",
     description:
       "From the French for 'jump'. Use a wide pan over medium-high heat with a thin film of oil, and stir or toss so pieces brown lightly without steaming. Don't crowd the pan or the food will stew instead of sizzle.",
-    aliases: ["sautee", "sauteed", "sauteing", "saute", "pan fry", "pan-fry", "sweat"],
+    aliases: [
+      "sautee",
+      "sauteed",
+      "sauteing",
+      "saute",
+      "pan fry",
+      "pan-fry",
+      "sweat",
+    ],
   },
   {
     slug: "sear",
@@ -129,12 +139,19 @@ const SEED: TechniqueSeed[] = [
     shortTip: "Cook sugars low and slow until deeply browned and sweet-nutty.",
     description:
       "Whether it's onions or sugar, gentle sustained heat turns natural sugars golden to brown, unlocking rich, complex flavor. It takes patience — rushing over high heat scorches instead of caramelizes.",
-    aliases: ["caramelise", "caramelized", "caramelised", "caramelizing", "caramelising"],
+    aliases: [
+      "caramelise",
+      "caramelized",
+      "caramelised",
+      "caramelizing",
+      "caramelising",
+    ],
   },
   {
     slug: "deglaze",
     name: "Deglaze",
-    shortTip: "Add liquid to a hot pan and scrape up the browned bits for a sauce.",
+    shortTip:
+      "Add liquid to a hot pan and scrape up the browned bits for a sauce.",
     description:
       "After searing, pour in wine, stock or water and scrape the fond (the sticky browned residue) off the pan bottom. Those bits are concentrated flavor and become the backbone of a quick pan sauce.",
     aliases: ["deglazed", "deglazing"],
@@ -142,7 +159,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "braise",
     name: "Braise",
-    shortTip: "Brown, then simmer gently in a little liquid, covered, until tender.",
+    shortTip:
+      "Brown, then simmer gently in a little liquid, covered, until tender.",
     description:
       "A combination method: sear for flavor, then cook low and slow partly submerged in liquid. Ideal for tough cuts — collagen melts into gelatin, leaving meat meltingly tender and the liquid rich.",
     aliases: ["braised", "braising"],
@@ -150,7 +168,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "blanch",
     name: "Blanch",
-    shortTip: "Boil briefly, then plunge into ice water to lock color and crunch.",
+    shortTip:
+      "Boil briefly, then plunge into ice water to lock color and crunch.",
     description:
       "A quick dip in rapidly boiling water sets bright color and par-cooks vegetables; the ice-water 'shock' stops cooking instantly. Also loosens skins on tomatoes and peaches for easy peeling.",
     aliases: ["blanched", "blanching", "shock", "parboil"],
@@ -158,7 +177,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "simmer",
     name: "Simmer",
-    shortTip: "Keep the liquid just below a boil — small bubbles, gentle motion.",
+    shortTip:
+      "Keep the liquid just below a boil — small bubbles, gentle motion.",
     description:
       "Look for lazy bubbles breaking the surface rather than a rolling boil. Simmering cooks food gently and evenly, keeps proteins tender and lets flavors meld without the violent agitation of a hard boil.",
     aliases: ["simmered", "simmering"],
@@ -249,12 +269,20 @@ const SEED: TechniqueSeed[] = [
     shortTip: "Let yeasted dough rest and rise until puffy before baking.",
     description:
       "Resting time lets yeast produce gas that inflates the dough. Proof somewhere warm and draft-free until roughly doubled; a gentle poke should spring back slowly. Also called proving.",
-    aliases: ["proofed", "proofing", "prove", "proved", "proving", "prove the dough"],
+    aliases: [
+      "proofed",
+      "proofing",
+      "prove",
+      "proved",
+      "proving",
+      "prove the dough",
+    ],
   },
   {
     slug: "sift",
     name: "Sift",
-    shortTip: "Pass dry ingredients through a sieve to aerate and remove lumps.",
+    shortTip:
+      "Pass dry ingredients through a sieve to aerate and remove lumps.",
     description:
       "Shaking flour, cocoa or powdered sugar through a fine mesh breaks up clumps and lightens it, so it folds in smoothly and measures evenly. Especially worthwhile for delicate cakes.",
     aliases: ["sifted", "sifting", "sieve", "sieved"],
@@ -262,7 +290,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "emulsify",
     name: "Emulsify",
-    shortTip: "Whisk fat into liquid in a slow stream to make a stable, creamy blend.",
+    shortTip:
+      "Whisk fat into liquid in a slow stream to make a stable, creamy blend.",
     description:
       "Emulsifying suspends tiny droplets of oil in water (or vice versa) so they don't separate — think vinaigrette, mayo or hollandaise. Add the oil gradually while whisking hard, often with an emulsifier like egg yolk or mustard.",
     aliases: ["emulsified", "emulsifying", "emulsion"],
@@ -270,7 +299,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "temper",
     name: "Temper",
-    shortTip: "Warm eggs (or chocolate) gradually so they don't seize or scramble.",
+    shortTip:
+      "Warm eggs (or chocolate) gradually so they don't seize or scramble.",
     description:
       "For custards, whisk a little hot liquid into the eggs to raise their temperature slowly before combining fully — this prevents curdling. For chocolate, controlled heating and cooling sets it glossy and snappy.",
     aliases: ["tempered", "tempering"],
@@ -278,7 +308,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "zest",
     name: "Zest",
-    shortTip: "Grate only the colored citrus peel — avoid the bitter white pith.",
+    shortTip:
+      "Grate only the colored citrus peel — avoid the bitter white pith.",
     description:
       "The outer rind holds aromatic oils that add bright citrus flavor. Use a microplane or zester and turn the fruit as you go, stopping at the white pith beneath, which tastes bitter.",
     aliases: ["zested", "zesting"],
@@ -286,7 +317,8 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "marinate",
     name: "Marinate",
-    shortTip: "Soak in a seasoned liquid to add flavor and, with acid, tenderize.",
+    shortTip:
+      "Soak in a seasoned liquid to add flavor and, with acid, tenderize.",
     description:
       "A marinade of acid, fat and aromatics seasons the surface and can slightly tenderize proteins. Marinate in the fridge; acidic mixes work in as little as 30 minutes, while tougher cuts benefit from hours.",
     aliases: ["marinated", "marinating", "marinade"],

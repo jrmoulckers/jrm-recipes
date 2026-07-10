@@ -1,6 +1,10 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
+import type {
+  PrecacheEntry,
+  RuntimeCaching,
+  SerwistGlobalConfig,
+} from "serwist";
 import {
   CacheableResponsePlugin,
   CacheFirst,
@@ -10,10 +14,7 @@ import {
 } from "serwist";
 
 import { isOfflineFallbackRequest } from "../lib/offline-fallback";
-import {
-  COOK_NOTIFICATION_TYPE,
-  matchesCookClient,
-} from "../lib/cook-notify";
+import { COOK_NOTIFICATION_TYPE, matchesCookClient } from "../lib/cook-notify";
 import {
   isWarmCookBundleMessage,
   type WarmCookBundleMessage,
@@ -233,8 +234,7 @@ async function focusOrOpenCook(targetUrl: string): Promise<void> {
 
 self.addEventListener("notificationclick", (event) => {
   const data = event.notification.data as
-    | { url?: string; type?: string }
-    | undefined;
+    { url?: string; type?: string } | undefined;
   // Only handle our cook-timer notifications; leave any others to default.
   if (data?.type !== COOK_NOTIFICATION_TYPE) return;
   event.notification.close();

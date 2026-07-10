@@ -72,5 +72,8 @@ export function buildWeekMenu(
     if (list) list.push(dinner);
     else byDate.set(entry.dateParam, [dinner]);
   }
-  return days.map((day) => ({ ...day, dinners: byDate.get(day.dateParam) ?? [] }));
+  return days.map((day) => ({
+    ...day,
+    dinners: byDate.get(day.dateParam) ?? [],
+  }));
 }

@@ -5,10 +5,7 @@ import { z } from "zod";
 
 import { authedAction } from "~/server/action";
 import { ok, type ActionResult } from "~/server/action-result";
-import {
-  listNotifications,
-  type NotificationPage,
-} from "./queries";
+import { listNotifications, type NotificationPage } from "./queries";
 import { markAllNotificationsRead, markNotificationRead } from "./mutations";
 
 const markReadInput = z.object({ notificationId: z.string().trim().min(1) });
@@ -33,7 +30,9 @@ export const markAllNotificationsReadAction = authedAction({
   },
 });
 
-const loadInput = z.object({ cursor: z.string().min(1).nullable().default(null) });
+const loadInput = z.object({
+  cursor: z.string().min(1).nullable().default(null),
+});
 
 /** Fetch an older page of notifications for the inbox "Load older" button. */
 export const loadNotificationsAction = authedAction({

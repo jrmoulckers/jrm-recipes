@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { transactionMock, resolveTargetMock, canViewRecipeMock, notifyManyMock } =
-  vi.hoisted(() => ({
-    transactionMock: vi.fn(),
-    resolveTargetMock: vi.fn(),
-    canViewRecipeMock: vi.fn(),
-    notifyManyMock: vi.fn(),
-  }));
+const {
+  transactionMock,
+  resolveTargetMock,
+  canViewRecipeMock,
+  notifyManyMock,
+} = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  resolveTargetMock: vi.fn(),
+  canViewRecipeMock: vi.fn(),
+  notifyManyMock: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: { transaction: transactionMock },

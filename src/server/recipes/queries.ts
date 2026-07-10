@@ -68,16 +68,9 @@ import { expandQueryTerms } from "~/lib/search-synonyms";
 import { deriveMatchReason } from "~/lib/search-match";
 import { rankBySimilarity, tokenizeIngredients } from "~/lib/related-recipes";
 import { rankByCoverage } from "~/lib/ingredient-coverage";
-import {
-  tagFilterSlug,
-  type RecipeSearch,
-  type RecipeSort,
-} from "./search";
+import { tagFilterSlug, type RecipeSearch, type RecipeSort } from "./search";
 import { assembleTimeline, type TimelineEntry } from "./timeline";
-import {
-  PUBLIC_RECIPES_REVALIDATE_SECONDS,
-  PUBLIC_RECIPES_TAG,
-} from "./cache";
+import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from "./cache";
 import { todayParam } from "~/server/planner/week";
 
 /**
@@ -537,7 +530,10 @@ export async function getRecipe(
 ) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
-    where: and(notDeleted, or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug))),
+    where: and(
+      notDeleted,
+      or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
+    ),
     with: {
       author: true,
       group: true,
@@ -651,12 +647,16 @@ export async function listLibrary(
       : eq(recipes.authorId, viewer.id);
   const rows = await db.query.recipes.findMany({
     where: and(notDeleted, scope),
-    orderBy: sort === "top-rated" ? topRatedOrderBy() : [desc(recipes.updatedAt)],
+    orderBy:
+      sort === "top-rated" ? topRatedOrderBy() : [desc(recipes.updatedAt)],
     limit,
     offset,
     with: { author: true, tags: { with: { tag: true } } },
   });
-  return { items: rows, nextOffset: nextPageOffset(offset, rows.length, limit) };
+  return {
+    items: rows,
+    nextOffset: nextPageOffset(offset, rows.length, limit),
+  };
 }
 
 /**
@@ -742,7 +742,8 @@ export async function listDinnerCandidates(
   // a cook whose recipes are all long/hard still gets a suggestion.
   const preferred = available.filter(
     (recipe) =>
-      (recipe.totalMinutes == null || recipe.totalMinutes <= QUICK_DINNER_MINUTES) &&
+      (recipe.totalMinutes == null ||
+        recipe.totalMinutes <= QUICK_DINNER_MINUTES) &&
       recipe.difficulty !== "hard",
   );
   const pool = preferred.length > 0 ? preferred : available;
@@ -761,7 +762,10 @@ function visibleRecipesScope(viewer: User | null, groupIds: string[]): SQL {
       and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
       viewer ? eq(recipes.authorId, viewer.id) : undefined,
       groupIds.length > 0
-        ? and(eq(recipes.visibility, "group"), inArray(recipes.groupId, groupIds))
+        ? and(
+            eq(recipes.visibility, "group"),
+            inArray(recipes.groupId, groupIds),
+          )
         : undefined,
     ),
   )!;
@@ -895,7 +899,9 @@ export function searchFilterConditions(
   }
 
   if (opts.skip !== "cuisine" && search.cuisines.length > 0)
-    conditions.push(or(...search.cuisines.map((c) => ilike(recipes.cuisine, c))));
+    conditions.push(
+      or(...search.cuisines.map((c) => ilike(recipes.cuisine, c))),
+    );
   if (search.difficulty)
     conditions.push(eq(recipes.difficulty, search.difficulty));
   if (search.maxTime != null)
@@ -1252,7 +1258,12 @@ export async function listRecipeFacets(
   }
   for (const selected of search?.tags ?? []) {
     const slug = tagFilterSlug(selected);
-    if (!tags_.some((t) => t.slug === slug || t.name.toLowerCase() === selected.toLowerCase()))
+    if (
+      !tags_.some(
+        (t) =>
+          t.slug === slug || t.name.toLowerCase() === selected.toLowerCase(),
+      )
+    )
       tags_.push({ slug, name: selected, count: 0 });
   }
   cuisines.sort((a, b) => a.value.localeCompare(b.value));
@@ -1320,7 +1331,9 @@ export async function listSimilarRecipes(
   const sourceSignals = {
     tagSlugs: source.tags.map((t) => t.tag.slug),
     cuisine: source.cuisine,
-    ingredientTokens: tokenizeIngredients(source.ingredients.map((i) => i.item)),
+    ingredientTokens: tokenizeIngredients(
+      source.ingredients.map((i) => i.item),
+    ),
   };
 
   const sharesTag = sourceSignals.tagSlugs.length
@@ -1714,7 +1727,10 @@ export async function getRecipeFamilyTree(
     );
 
     for (const fork of visibleForks) {
-      if (node.children.length >= TREE_CHILD_CAP || nodeCount >= TREE_MAX_NODES) {
+      if (
+        node.children.length >= TREE_CHILD_CAP ||
+        nodeCount >= TREE_MAX_NODES
+      ) {
         node.hiddenChildren += 1;
         truncated = true;
         continue;
@@ -1769,11 +1785,14 @@ export async function getRecipeTimeline(
   options: { afterEvent?: TimelineCursor | null; limit?: number } = {},
 ): Promise<{
   entries: TimelineEntry[];
-  parent: { slug: string; title: string; author?: { name: string | null } | null } | null;
+  parent: {
+    slug: string;
+    title: string;
+    author?: { name: string | null } | null;
+  } | null;
   nextCursor: TimelineCursor | null;
 }> {
-  if (!isDbConfigured())
-    return { entries: [], parent: null, nextCursor: null };
+  if (!isDbConfigured()) return { entries: [], parent: null, nextCursor: null };
 
   const recipe = await db.query.recipes.findFirst({
     where: and(notDeleted, eq(recipes.id, recipeId)),

@@ -1,7 +1,15 @@
 import { cache } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, BookMarked, Globe, Link2, Lock, Users, UtensilsCrossed } from "lucide-react";
+import {
+  ArrowLeft,
+  BookMarked,
+  Globe,
+  Link2,
+  Lock,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getCurrentUser } from "~/server/auth";
@@ -16,7 +24,10 @@ import { RemoveFromCollectionButton } from "~/components/collections/remove-from
 import { ShareCollectionControl } from "~/components/collections/share-collection-control";
 import { ShareWithGroupControl } from "~/components/collections/share-with-group-control";
 import { PrintCookbookButton } from "~/components/collections/print-cookbook-button";
-import { parseCollectionParams, type CollectionRouteParams } from "~/lib/route-params";
+import {
+  parseCollectionParams,
+  type CollectionRouteParams,
+} from "~/lib/route-params";
 import { brand } from "~/config/brand";
 
 const load = cache(async (id: string) => {
@@ -96,13 +107,12 @@ export default async function CollectionPage({
                 {visibilityBadge.label}
               </span>
             )}
-            {!collection.isOwner &&
-              collection.sharedWithGroups.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">
-                  <Users className="size-3" />
-                  Shared with {collection.sharedWithGroups[0]!.name}
-                </span>
-              )}
+            {!collection.isOwner && collection.sharedWithGroups.length > 0 && (
+              <span className="bg-primary/12 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-primary">
+                <Users className="size-3" />
+                Shared with {collection.sharedWithGroups[0]!.name}
+              </span>
+            )}
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
             {collection.name}
@@ -163,7 +173,7 @@ export default async function CollectionPage({
         </section>
       ) : (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-          <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+          <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
             <UtensilsCrossed className="size-7" />
           </span>
           <div>

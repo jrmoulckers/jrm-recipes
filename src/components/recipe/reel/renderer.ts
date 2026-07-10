@@ -185,7 +185,10 @@ function easeOut(t: number): number {
 }
 
 /** Progress-driven entrance: alpha + translateY, or static when reduced. */
-function entrance(progress: number, reducedMotion: boolean): {
+function entrance(
+  progress: number,
+  reducedMotion: boolean,
+): {
   alpha: number;
   dy: number;
 } {
@@ -306,7 +309,14 @@ function drawProgressBar(
   roundRect(ctx, x, y, w, h, h / 2);
   ctx.fill();
   ctx.fillStyle = onDark ? REEL_COLORS.cream : REEL_COLORS.terracotta;
-  roundRect(ctx, x, y, Math.max(h, w * Math.min(1, Math.max(0, fraction))), h, h / 2);
+  roundRect(
+    ctx,
+    x,
+    y,
+    Math.max(h, w * Math.min(1, Math.max(0, fraction))),
+    h,
+    h / 2,
+  );
   ctx.fill();
 }
 
@@ -481,7 +491,15 @@ function drawStepScene(
 
   ctx.fillStyle = REEL_COLORS.ink;
   ctx.font = `600 60px ${displayFont()}`;
-  drawParagraph(ctx, scene.step.instruction, MARGIN, top + 190, CONTENT_W, 76, 8);
+  drawParagraph(
+    ctx,
+    scene.step.instruction,
+    MARGIN,
+    top + 190,
+    CONTENT_W,
+    76,
+    8,
+  );
 
   ctx.restore();
 
@@ -650,8 +668,7 @@ function pickMimeType(): string | null {
 /** Probe the current browser for the capabilities the export decision needs. */
 export function detectExportCapabilities(): ReelExportCapabilities {
   const hasWindow = typeof window !== "undefined";
-  const hasCanvas =
-    hasWindow && typeof HTMLCanvasElement !== "undefined";
+  const hasCanvas = hasWindow && typeof HTMLCanvasElement !== "undefined";
   return {
     canvasCapture:
       hasCanvas &&

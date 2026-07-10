@@ -292,6 +292,11 @@ jobs:
           path: |
             .next
             !.next/cache
+          # `.next` is a dotfile directory, so upload-artifact v4 (which excludes
+          # hidden files by default) would skip its entire contents and fail with
+          # "No files were found". Opt in so the production build is actually
+          # published for the E2E job to consume.
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
 

@@ -92,7 +92,9 @@ export function CreateCollectionDialog({
               onChange={(event) => setName(event.target.value)}
               placeholder="Weeknight Winners"
               aria-invalid={Boolean(fieldErrors.name)}
-              aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
+              aria-describedby={
+                fieldErrors.name ? `${nameId}-error` : undefined
+              }
               autoFocus
             />
             {fieldErrors.name?.[0] ? (

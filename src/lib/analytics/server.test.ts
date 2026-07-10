@@ -22,10 +22,11 @@ import {
   getFlag,
 } from "./server";
 
-function mockFetch(response: Partial<Response> & { json?: () => Promise<unknown> }) {
-  const fn = vi.fn(
-    (_url: string, _init?: RequestInit): Promise<Response> =>
-      Promise.resolve(response as Response),
+function mockFetch(
+  response: Partial<Response> & { json?: () => Promise<unknown> },
+) {
+  const fn = vi.fn((_url: string, _init?: RequestInit): Promise<Response> =>
+    Promise.resolve(response as Response),
   );
   vi.stubGlobal("fetch", fn);
   return fn;
@@ -246,7 +247,9 @@ describe("feature flags", () => {
   it("getFlag returns the flag value or the provided fallback", async () => {
     mockFetch({
       ok: true,
-      json: async () => ({ featureFlags: { empty_state_cta: "sample_shortcut" } }),
+      json: async () => ({
+        featureFlags: { empty_state_cta: "sample_shortcut" },
+      }),
     });
 
     await expect(getFlag("user_1", "empty_state_cta", "control")).resolves.toBe(

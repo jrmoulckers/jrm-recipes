@@ -26,11 +26,7 @@ import { MentionText } from "~/components/engagement/mention-text";
 import { ReactionBar } from "~/components/engagement/reaction-bar";
 import { ContentActionsMenu } from "~/components/moderation/content-actions-menu";
 import type { ReactionCount, ReactionEmojiKey } from "~/lib/reactions";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -106,7 +102,12 @@ export function CommentsSection(props: CommentsSectionProps) {
     setComments(initialComments);
   }, [initialComments]);
 
-  const postComment: PostComment = (nextBody, nextKind, parentId, onSuccess) => {
+  const postComment: PostComment = (
+    nextBody,
+    nextKind,
+    parentId,
+    onSuccess,
+  ) => {
     const trimmed = nextBody.trim();
     if (!trimmed) {
       toast.error("Write something before posting.");
@@ -190,7 +191,7 @@ export function CommentsSection(props: CommentsSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="rounded-full bg-primary/12 p-2 text-primary">
+        <span className="bg-primary/12 rounded-full p-2 text-primary">
           <MessageCircle className="size-5" />
         </span>
         <div>
@@ -205,7 +206,10 @@ export function CommentsSection(props: CommentsSectionProps) {
 
       <div className="mt-5">
         {canPost ? (
-          <form onSubmit={submitTopLevel} className="rounded-xl bg-muted/45 p-3">
+          <form
+            onSubmit={submitTopLevel}
+            className="rounded-xl bg-muted/45 p-3"
+          >
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Button
                 type="button"
@@ -259,7 +263,11 @@ export function CommentsSection(props: CommentsSectionProps) {
                   max={COMMENT_MAX_LENGTH}
                   overMessage={COMMENT_TOO_LONG_MESSAGE}
                 />
-                <Button type="submit" size="sm" disabled={pending || !body.trim()}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={pending || !body.trim()}
+                >
                   {pending ? "Posting…" : "Post"}
                 </Button>
               </div>
@@ -281,8 +289,8 @@ export function CommentsSection(props: CommentsSectionProps) {
             Start the conversation
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Be the first to ask a question, celebrate a successful bake, or leave
-            a helpful suggestion for the recipe owner.
+            Be the first to ask a question, celebrate a successful bake, or
+            leave a helpful suggestion for the recipe owner.
           </p>
         </div>
       ) : (
@@ -403,7 +411,10 @@ function CommentItem({
               </Badge>
             ) : null}
             {isSuggestion && comment.anchorLabel ? (
-              <Badge variant="muted" title={`Anchored to ${comment.anchorLabel}`}>
+              <Badge
+                variant="muted"
+                title={`Anchored to ${comment.anchorLabel}`}
+              >
                 {comment.anchorType === "ingredient" ? "Ingredient" : "Step"}:{" "}
                 {comment.anchorLabel}
               </Badge>

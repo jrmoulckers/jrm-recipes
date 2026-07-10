@@ -109,7 +109,8 @@ describe("joinWaitlistAction", () => {
   it("rejects an invalid email with field errors", async () => {
     const result = await joinWaitlistAction({ email: "nope" });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.fieldErrors?.email?.length).toBeGreaterThan(0);
+    if (!result.ok)
+      expect(result.fieldErrors?.email?.length).toBeGreaterThan(0);
   });
 
   it("persists a normalized email and reports non-duplicate success", async () => {

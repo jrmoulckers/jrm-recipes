@@ -39,7 +39,10 @@ import {
 } from "./mutations";
 
 /** Recipe mutations resolve to the new/affected recipe's id + slug. */
-export type ActionResult = BaseActionResult<{ id: string; slug: string | null }>;
+export type ActionResult = BaseActionResult<{
+  id: string;
+  slug: string | null;
+}>;
 
 /**
  * Message shown when a recipe is assigned to a group its author doesn't belong
@@ -71,7 +74,8 @@ const runCreateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user): Promise<ActionResult> => {
     // Throttle write spam / storage exhaustion (issue #199).
-    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit("recipeWrite", user.id).ok)
+      return fail(RATE_LIMITED_MESSAGE);
     // Soft-limit (issue #318): free tiers cap the number of saved recipes. Refuse
     // only *new* creates once at/over the cap and hand the UI an upgrade-flagged
     // result — existing recipes stay fully editable/viewable, and an unlimited plan
@@ -98,7 +102,10 @@ const runCreateRecipe = authedAction({
       // the author's recipe count first reaches 1. Gated on analytics being
       // configured so the default path skips the extra count query.
       if (isAnalyticsConfigured()) {
-        const authored = await db.$count(recipes, eq(recipes.authorId, user.id));
+        const authored = await db.$count(
+          recipes,
+          eq(recipes.authorId, user.id),
+        );
         if (authored === 1) {
           void captureServer(user.id, "first_recipe_created", {
             recipeId: recipe.id,
@@ -126,7 +133,8 @@ export async function createRecipeAction(
 const runUpdateRecipe = authedAction({
   input: recipeInput,
   handler: async (data, user, id: string): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit("recipeWrite", user.id).ok)
+      return fail(RATE_LIMITED_MESSAGE);
     try {
       const recipe = await updateRecipe(id, data, user);
       void captureServer(user.id, "recipe_updated", {
@@ -161,7 +169,8 @@ export async function forkRecipeAction(
   if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   try {
     const user = await requireUser();
-    if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit("recipeWrite", user.id).ok)
+      return fail(RATE_LIMITED_MESSAGE);
     const recipe = await forkRecipe(sourceId, user, forkNote);
     void captureServer(user.id, "recipe_forked", {
       recipeId: recipe.id,
@@ -219,8 +228,7 @@ export async function revertRecipeAction(
 export type CompareSelection = number | "current";
 
 export type CompareVersionsResult =
-  | { ok: true; diff: RecipeDiff }
-  | { ok: false; error: string };
+  { ok: true; diff: RecipeDiff } | { ok: false; error: string };
 
 /**
  * Diff two points in a recipe's history for the Timeline "Compare" view (#358).
@@ -347,7 +355,8 @@ export async function setShareLinkStateAction(
 ): Promise<ShareLinkActionResult> {
   if (!isDbConfigured()) return fail(NEEDS_DATABASE);
   const user = await requireUser();
-  if (!checkRateLimit("recipeWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit("recipeWrite", user.id).ok)
+    return fail(RATE_LIMITED_MESSAGE);
   try {
     const state = await setShareLinkState(recipeId, user, change);
     revalidateRecipeTags(recipeId);

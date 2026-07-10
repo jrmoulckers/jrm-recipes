@@ -86,7 +86,13 @@ export async function addRecipeToShoppingListAction(
 }
 
 export type BuildFromPlanActionResult =
-  | { ok: true; recipesUsed: number; added: number; merged: number; empty: boolean }
+  | {
+      ok: true;
+      recipesUsed: number;
+      added: number;
+      merged: number;
+      empty: boolean;
+    }
   | { ok: false; error: string };
 
 /**

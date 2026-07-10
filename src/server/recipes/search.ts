@@ -184,7 +184,8 @@ export function recipeSearchToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
   if (search.q) params.set("q", search.q);
-  for (const cuisine of search.cuisines ?? []) params.append("cuisine", cuisine);
+  for (const cuisine of search.cuisines ?? [])
+    params.append("cuisine", cuisine);
   if (search.difficulty) params.set("difficulty", search.difficulty);
   if (search.maxTime != null) params.set("maxTime", String(search.maxTime));
   for (const tag of search.tags ?? []) params.append("tag", tag);

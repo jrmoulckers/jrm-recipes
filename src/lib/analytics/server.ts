@@ -9,11 +9,7 @@ import "server-only";
  * errors, so instrumentation never blocks or breaks a server action. Callers
  * pass an explicit, non-PII distinct id (the internal user id — see #321).
  */
-import {
-  analyticsHost,
-  analyticsKey,
-  isAnalyticsConfigured,
-} from "./config";
+import { analyticsHost, analyticsKey, isAnalyticsConfigured } from "./config";
 import { type AnalyticsEventName, type EventProperties } from "./events";
 import { scrubProperties } from "./scrub";
 import { serverCaptureAllowed } from "./server-consent";
@@ -26,7 +22,10 @@ import { serverCaptureAllowed } from "./server-consent";
  */
 const REQUEST_TIMEOUT_MS = 1500;
 
-async function post(path: string, body: Record<string, unknown>): Promise<Response | null> {
+async function post(
+  path: string,
+  body: Record<string, unknown>,
+): Promise<Response | null> {
   const key = analyticsKey();
   if (!key) return null;
   try {
@@ -79,7 +78,10 @@ export async function identifyServer(
 }
 
 /** Stitch an anonymous device id to the identified user id (funnel stitching). */
-export async function aliasServer(distinctId: string, aliasId: string): Promise<void> {
+export async function aliasServer(
+  distinctId: string,
+  aliasId: string,
+): Promise<void> {
   if (!isAnalyticsConfigured()) return;
   if (!(await serverCaptureAllowed())) return;
   await post("/capture/", {

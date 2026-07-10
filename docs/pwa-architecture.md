@@ -40,12 +40,12 @@ The `/import` route handler in [`src/app/import/route.ts`](../src/app/import/rou
 
 [`src/app/sw.ts`](../src/app/sw.ts) prepends two custom runtime caches before `...defaultCache`, so these routes win before Serwist's defaults.
 
-| Cache name | Strategy | What it holds | Bound |
-| --- | --- | --- | --- |
-| Serwist precache | Precache | Generated revisioned app-shell/build assets plus `/~offline` and `/img/recipe-image-placeholder.svg` from `additionalPrecacheEntries`. | Revisioned by the Serwist manifest and `buildRevision`. |
-| `heirloom-recipe-images` | `CacheFirst` | Cloudinary-backed recipe and Cook Mode images, including direct `res.cloudinary.com` images and `/_next/image?url=<cloudinary>` optimizer requests. | `ExpirationPlugin`: 128 entries, 30 days, `purgeOnQuotaError`; `CacheableResponsePlugin` allows statuses `0` and `200`. |
-| `heirloom-recipes` | `NetworkFirst` | Same-origin recipe detail and Cook Mode documents plus their RSC payloads. | `networkTimeoutSeconds: 3`; `ExpirationPlugin`: 64 entries, 30 days, `purgeOnQuotaError`; only status `200` is cached. |
-| Serwist `defaultCache` | Serwist defaults | Remaining Next.js/runtime requests not matched by the custom recipe caches. | Defined by `@serwist/next/worker`. |
+| Cache name               | Strategy         | What it holds                                                                                                                                       | Bound                                                                                                                   |
+| ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Serwist precache         | Precache         | Generated revisioned app-shell/build assets plus `/~offline` and `/img/recipe-image-placeholder.svg` from `additionalPrecacheEntries`.              | Revisioned by the Serwist manifest and `buildRevision`.                                                                 |
+| `heirloom-recipe-images` | `CacheFirst`     | Cloudinary-backed recipe and Cook Mode images, including direct `res.cloudinary.com` images and `/_next/image?url=<cloudinary>` optimizer requests. | `ExpirationPlugin`: 128 entries, 30 days, `purgeOnQuotaError`; `CacheableResponsePlugin` allows statuses `0` and `200`. |
+| `heirloom-recipes`       | `NetworkFirst`   | Same-origin recipe detail and Cook Mode documents plus their RSC payloads.                                                                          | `networkTimeoutSeconds: 3`; `ExpirationPlugin`: 64 entries, 30 days, `purgeOnQuotaError`; only status `200` is cached.  |
+| Serwist `defaultCache`   | Serwist defaults | Remaining Next.js/runtime requests not matched by the custom recipe caches.                                                                         | Defined by `@serwist/next/worker`.                                                                                      |
 
 ### Recipe images
 
@@ -83,7 +83,7 @@ The service worker is created with:
 
 With `skipWaiting: false`, a newly installed worker enters `waiting` instead of immediately taking over. Serwist listens for `{ type: "SKIP_WAITING" }` and calls `self.skipWaiting()` when it receives that message.
 
-The client side is in [`src/components/pwa/update-prompt.tsx`](../src/components/pwa/update-prompt.tsx), with the message constant in [`src/lib/sw-update.ts`](../src/lib/sw-update.ts). The prompt appears only when there is both an existing controller and a waiting worker, which means it is a real update, not first install. Accepting the prompt posts `SKIP_WAITING`; when `controllerchange` fires, the page reloads once. The prompt is mounted in [`src/app/(main)/layout.tsx`](../src/app/(main)/layout.tsx), not in immersive routes, and it defers while Cook Mode has running timers.
+The client side is in [`src/components/pwa/update-prompt.tsx`](../src/components/pwa/update-prompt.tsx), with the message constant in [`src/lib/sw-update.ts`](../src/lib/sw-update.ts). The prompt appears only when there is both an existing controller and a waiting worker, which means it is a real update, not first install. Accepting the prompt posts `SKIP_WAITING`; when `controllerchange` fires, the page reloads once. The prompt is mounted in [`src/app/(main)/layout.tsx`](<../src/app/(main)/layout.tsx>), not in immersive routes, and it defers while Cook Mode has running timers.
 
 ## Cook Mode warming and notifications
 

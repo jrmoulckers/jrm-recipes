@@ -40,7 +40,10 @@ const { state, db, stripeMock } = vi.hoisted(() => {
 });
 
 vi.mock("~/env", () => ({
-  env: { STRIPE_WEBHOOK_SECRET: "whsec_test", STRIPE_PRICE_FAMILY: "price_family" },
+  env: {
+    STRIPE_WEBHOOK_SECRET: "whsec_test",
+    STRIPE_PRICE_FAMILY: "price_family",
+  },
 }));
 vi.mock("~/server/db", () => ({ db, isDbConfigured: () => state.db }));
 vi.mock("~/server/billing/stripe", () => ({

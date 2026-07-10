@@ -86,7 +86,7 @@ function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
 const clerkConfigured =
   Boolean(
     process.env.CLERK_SECRET_KEY &&
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   ) && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== "1";
 
 if (

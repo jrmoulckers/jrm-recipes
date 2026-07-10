@@ -34,7 +34,9 @@ describe("WelcomeChecklist (issue #147)", () => {
 
     expect(window.localStorage.getItem(WELCOME_DISMISS_KEY)).toBe("1");
     expect(welcomeDismissed()).toBe(true);
-    expect(screen.queryByRole("heading", { name: /welcome to heirloom/i })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: /welcome to heirloom/i }),
+    ).toBeNull();
   });
 
   it("stays hidden when already dismissed", () => {

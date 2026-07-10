@@ -23,7 +23,13 @@ import {
 } from "./cook-state";
 
 function timer(overrides: Partial<TimerRecord> = {}): TimerRecord {
-  return { duration: 300, remaining: 300, status: "idle", endsAt: null, ...overrides };
+  return {
+    duration: 300,
+    remaining: 300,
+    status: "idle",
+    endsAt: null,
+    ...overrides,
+  };
 }
 
 function customTimer(overrides: Partial<CustomTimer> = {}): CustomTimer {
@@ -237,9 +243,9 @@ describe("timerStatusText", () => {
 
   it("routes each timer status to its message key with a formatted countdown", () => {
     expect(timerStatusText(timer({ status: "complete" }), t)).toBe("complete");
-    expect(timerStatusText(timer({ status: "running", remaining: 65 }), t)).toBe(
-      "remaining:1:05",
-    );
+    expect(
+      timerStatusText(timer({ status: "running", remaining: 65 }), t),
+    ).toBe("remaining:1:05");
     expect(timerStatusText(timer({ status: "paused", remaining: 65 }), t)).toBe(
       "paused:1:05",
     );
@@ -360,14 +366,19 @@ describe("cook state serialization (ck05)", () => {
   });
 
   it("drops malformed custom timers and defaults a missing list", () => {
-    expect(parseCookState(JSON.stringify({ stepIndex: 0 }))?.customTimers).toEqual(
-      [],
-    );
+    expect(
+      parseCookState(JSON.stringify({ stepIndex: 0 }))?.customTimers,
+    ).toEqual([]);
 
     const parsed = parseCookState(
       JSON.stringify({
         customTimers: [
-          customTimer({ id: "keep", label: "Eggs", status: "running", endsAt: 5 }),
+          customTimer({
+            id: "keep",
+            label: "Eggs",
+            status: "running",
+            endsAt: 5,
+          }),
           { id: "", label: "no id" },
           { id: "x", label: 5 },
           "nope",
@@ -458,11 +469,15 @@ describe("custom timers (#392)", () => {
       checked: [],
       timers: {},
       customTimers: [
-        customTimer({ id: "c", status: "running", remaining: 60, endsAt: now + 60_000 }),
+        customTimer({
+          id: "c",
+          status: "running",
+          remaining: 60,
+          endsAt: now + 60_000,
+        }),
       ],
     });
     const storage = memoryStorage({ [cookStorageKey("r1")]: raw });
     expect(hasRunningCookTimers(storage, now)).toBe(true);
   });
 });
-

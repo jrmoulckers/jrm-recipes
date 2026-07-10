@@ -52,14 +52,10 @@ describe("Text", () => {
   });
 
   it("supports muted and small variants", () => {
-    const { getByText: getMuted } = render(
-      <Text variant="muted">Muted</Text>,
-    );
+    const { getByText: getMuted } = render(<Text variant="muted">Muted</Text>);
     expect(getMuted("Muted").className).toContain("text-muted-foreground");
 
-    const { getByText: getSmall } = render(
-      <Text variant="small">Small</Text>,
-    );
+    const { getByText: getSmall } = render(<Text variant="small">Small</Text>);
     const small = getSmall("Small");
     expect(small.className).toContain("text-body-sm");
     expect(small.className).toContain("text-muted-foreground");

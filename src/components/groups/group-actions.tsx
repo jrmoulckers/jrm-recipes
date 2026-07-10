@@ -6,10 +6,7 @@ import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 
-import {
-  deleteGroupAction,
-  leaveGroupAction,
-} from "~/server/groups/actions";
+import { deleteGroupAction, leaveGroupAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
 import { type DisplayRole } from "./role-badge";
 
@@ -35,7 +32,9 @@ export function GroupActions({
 
   function run(
     kind: "leave" | "delete",
-    action: () => Promise<{ ok: true; slug?: string } | { ok: false; error: string }>,
+    action: () => Promise<
+      { ok: true; slug?: string } | { ok: false; error: string }
+    >,
     success: string,
   ) {
     setPending(kind);
@@ -89,7 +88,11 @@ export function GroupActions({
               ) {
                 return;
               }
-              run("delete", () => deleteGroupAction(slug), "The group was deleted");
+              run(
+                "delete",
+                () => deleteGroupAction(slug),
+                "The group was deleted",
+              );
             }}
             disabled={isPending}
           >

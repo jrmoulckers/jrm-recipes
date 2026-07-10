@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { GitFork } from "lucide-react";
 
-import type { FamilyTreeNode, RecipeFamilyTree } from "~/server/recipes/queries";
+import type {
+  FamilyTreeNode,
+  RecipeFamilyTree,
+} from "~/server/recipes/queries";
 
 /**
  * Multi-generation adaptation tree for a recipe (#359): renders the ancestor
@@ -45,7 +48,9 @@ function TreeNode({ node, depth }: { node: FamilyTreeNode; depth: number }) {
   );
 
   return (
-    <li className={depth > 0 ? "mt-2 border-l border-border/70 pl-4" : undefined}>
+    <li
+      className={depth > 0 ? "mt-2 border-l border-border/70 pl-4" : undefined}
+    >
       <div className="flex items-center gap-2">
         <GitFork
           className="size-3.5 shrink-0 text-muted-foreground"

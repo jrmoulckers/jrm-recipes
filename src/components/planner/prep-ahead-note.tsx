@@ -38,9 +38,7 @@ export function PrepAheadNote({
             >
               {reminder.title}
             </Link>{" "}
-            <span className="text-muted-foreground">
-              ({reminder.dayLabel})
-            </span>
+            <span className="text-muted-foreground">({reminder.dayLabel})</span>
           </li>
         ))}
       </ul>

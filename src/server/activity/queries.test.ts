@@ -89,7 +89,10 @@ describe("getGroupActivity aggregation (#349)", () => {
       },
     ]);
 
-    const page = await getGroupActivity("group_1", { id: "u1", role: "member" });
+    const page = await getGroupActivity("group_1", {
+      id: "u1",
+      role: "member",
+    });
 
     expect(page.events.map((e) => e.kind)).toEqual([
       "cook_shared", // Jan 3
@@ -159,7 +162,10 @@ describe("getGroupActivity aggregation (#349)", () => {
       },
     ]);
 
-    const page = await getGroupActivity("group_1", { id: "u1", role: "member" });
+    const page = await getGroupActivity("group_1", {
+      id: "u1",
+      role: "member",
+    });
     expect(page.events).toHaveLength(0);
   });
 });

@@ -317,10 +317,14 @@ describe("recipe funnel analytics (#310)", () => {
 
     await revertRecipeAction("rec_1", 3);
 
-    expect(captureServerMock).toHaveBeenCalledWith("user_1", "recipe_reverted", {
-      recipeId: "rec_1",
-      versionNumber: 3,
-    });
+    expect(captureServerMock).toHaveBeenCalledWith(
+      "user_1",
+      "recipe_reverted",
+      {
+        recipeId: "rec_1",
+        versionNumber: 3,
+      },
+    );
   });
 });
 

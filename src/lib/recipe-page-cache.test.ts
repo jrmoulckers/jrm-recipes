@@ -58,7 +58,11 @@ describe("isRecipePageRequest", () => {
   });
 
   it("does not cache sibling non-detail routes", () => {
-    for (const path of ["/recipes/new", "/recipes/cook-with", "/recipes/tags"]) {
+    for (const path of [
+      "/recipes/new",
+      "/recipes/cook-with",
+      "/recipes/tags",
+    ]) {
       expect(isRecipePageRequest(makeRequest(`${ORIGIN}${path}`))).toBe(false);
     }
   });
@@ -71,7 +75,9 @@ describe("isRecipePageRequest", () => {
 
   it("does not match deeper paths under a recipe id", () => {
     expect(
-      isRecipePageRequest(makeRequest(`${ORIGIN}/recipes/apple-pie/cook/steps`)),
+      isRecipePageRequest(
+        makeRequest(`${ORIGIN}/recipes/apple-pie/cook/steps`),
+      ),
     ).toBe(false);
   });
 

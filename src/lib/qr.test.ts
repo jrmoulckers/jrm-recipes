@@ -24,9 +24,9 @@ describe("buildQrCode", () => {
     // margin of 4 the path must begin at grid coordinate (4,4).
     expect(buildQrCode(URL).path.startsWith("M4 4h1v1h-1z")).toBe(true);
     // A custom margin shifts that origin accordingly.
-    expect(buildQrCode(URL, { margin: 2 }).path.startsWith("M2 2h1v1h-1z")).toBe(
-      true,
-    );
+    expect(
+      buildQrCode(URL, { margin: 2 }).path.startsWith("M2 2h1v1h-1z"),
+    ).toBe(true);
   });
 
   it("honours a custom quiet-zone margin in the viewBox size", () => {

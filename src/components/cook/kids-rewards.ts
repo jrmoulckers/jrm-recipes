@@ -38,7 +38,11 @@ const STICKER_EMOJI = [
   "🥪",
 ];
 
-const MILESTONES: ReadonlyArray<{ count: number; name: string; emoji: string }> = [
+const MILESTONES: ReadonlyArray<{
+  count: number;
+  name: string;
+  emoji: string;
+}> = [
   { count: 3, name: "3 Recipes Cooked!", emoji: "🥉" },
   { count: 5, name: "5 Recipes Cooked!", emoji: "🥈" },
   { count: 10, name: "10 Recipes Cooked!", emoji: "🥇" },

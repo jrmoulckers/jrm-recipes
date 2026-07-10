@@ -61,7 +61,7 @@ export default function OfflinePage() {
           <ul className="flex flex-col gap-3">
             {stillWorks.map((item) => (
               <li key={item.title} className="flex items-start gap-3">
-                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                <span className="bg-primary/12 inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-primary">
                   <item.icon className="size-5" />
                 </span>
                 <span className="flex flex-col">

@@ -111,7 +111,8 @@ export function RecipeStory({
         {entries.map((entry) => {
           const style = entryStyle(entry);
           const Icon = style.icon;
-          const isFork = entry.kind === "adapted" || entry.kind === "adaptation";
+          const isFork =
+            entry.kind === "adapted" || entry.kind === "adaptation";
           const author = entry.actor?.name ?? entry.actor?.handle ?? null;
           const when = entry.createdAt;
           const validWhen = !Number.isNaN(when.getTime());
@@ -150,10 +151,7 @@ export function RecipeStory({
                     <span className="inline-flex items-center gap-1.5">
                       <Avatar className="size-5">
                         {entry.actor?.avatarUrl && (
-                          <AvatarImage
-                            src={entry.actor.avatarUrl}
-                            alt=""
-                          />
+                          <AvatarImage src={entry.actor.avatarUrl} alt="" />
                         )}
                         <AvatarFallback className="text-[0.6rem]">
                           {initials(

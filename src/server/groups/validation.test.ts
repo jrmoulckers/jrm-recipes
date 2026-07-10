@@ -42,10 +42,12 @@ describe("groupInput", () => {
 
 describe("addMemberInput", () => {
   it("trims identifiers and defaults to member role", () => {
-    expect(addMemberInput.parse({ identifier: "  aunt-mary  " })).toMatchObject({
-      identifier: "aunt-mary",
-      role: "member",
-    });
+    expect(addMemberInput.parse({ identifier: "  aunt-mary  " })).toMatchObject(
+      {
+        identifier: "aunt-mary",
+        role: "member",
+      },
+    );
   });
 
   it("rejects empty identifiers", () => {

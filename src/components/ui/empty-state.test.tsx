@@ -22,7 +22,9 @@ describe("EmptyState", () => {
     expect(
       screen.getByText("Add your first recipe to get started."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add recipe" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add recipe" }),
+    ).toBeInTheDocument();
     // Decorative icon is hidden from assistive tech.
     const iconWrap = screen.getByTestId("icon").parentElement;
     expect(iconWrap?.getAttribute("aria-hidden")).toBe("true");

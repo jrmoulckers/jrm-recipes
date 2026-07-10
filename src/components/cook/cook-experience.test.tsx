@@ -1,5 +1,18 @@
-import { cleanup, fireEvent, render as rtlRender, screen } from "@testing-library/react";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render as rtlRender,
+  screen,
+} from "@testing-library/react";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import * as React from "react";
 
 import { IntlWrapper } from "~/test/intl";
@@ -289,7 +302,9 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     renderKids(makeRecipe());
     fireEvent.click(screen.getByRole("button", { name: /let's cook/i }));
 
-    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Finish cooking" }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
@@ -306,7 +321,9 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
-    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Finish cooking" }),
+    ).toBeInTheDocument();
   });
 
   it("remembers the choice for the session so it doesn't nag again", () => {
@@ -320,7 +337,9 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
     expect(
       screen.queryByRole("heading", { name: /let's get ready/i }),
     ).toBeNull();
-    expect(screen.getByRole("button", { name: "Finish cooking" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Finish cooking" }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -443,7 +462,9 @@ describe("Cook Mode Kids countdown ring (issue #442)", () => {
         </ThemeProvider>
       </IntlWrapper>,
     );
-    expect(container.querySelector('[data-testid="kids-timer-ring"]')).toBeNull();
+    expect(
+      container.querySelector('[data-testid="kids-timer-ring"]'),
+    ).toBeNull();
     expect(screen.getAllByText("5:00").length).toBeGreaterThan(0);
   });
 });
@@ -550,9 +571,8 @@ describe("Cook Mode completion moment (issue #437)", () => {
   it("previews a captured photo as a keepsake", () => {
     const { container } = renderKids();
     fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
-    const input = container.querySelector<HTMLInputElement>(
-      'input[type="file"]',
-    )!;
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const file = new File(["x"], "cupcake.png", { type: "image/png" });
     fireEvent.change(input, { target: { files: [file] } });
     const img = screen.getByRole("img", { name: /my finished/i });
@@ -565,9 +585,8 @@ describe("Cook Mode completion moment (issue #437)", () => {
     URL.createObjectURL = undefined;
     const { container } = renderKids();
     fireEvent.click(screen.getByRole("button", { name: "Finish cooking" }));
-    const input = container.querySelector<HTMLInputElement>(
-      'input[type="file"]',
-    )!;
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const file = new File(["x"], "cupcake.png", { type: "image/png" });
     expect(() =>
       fireEvent.change(input, { target: { files: [file] } }),

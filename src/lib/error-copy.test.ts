@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEFAULT_ERROR_COPY,
-  friendlyError,
-} from "./error-copy";
+import { DEFAULT_ERROR_COPY, friendlyError } from "./error-copy";
 
 describe("friendlyError", () => {
   it("maps known codes to warm, action-oriented copy", () => {
-    expect(friendlyError("NOT_AUTHENTICATED")).toBe("Please sign in to do that.");
+    expect(friendlyError("NOT_AUTHENTICATED")).toBe(
+      "Please sign in to do that.",
+    );
     expect(friendlyError("RATE_LIMITED")).toBe(
       "You're going a little fast — try again in a moment.",
     );

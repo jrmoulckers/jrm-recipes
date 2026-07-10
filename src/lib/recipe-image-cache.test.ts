@@ -33,7 +33,9 @@ describe("isRecipeImageRequest", () => {
     expect(
       isRecipeImageRequest(
         makeRequest(
-          optimizerUrl("https://res.cloudinary.com/demo/image/upload/v1/step-3.jpg"),
+          optimizerUrl(
+            "https://res.cloudinary.com/demo/image/upload/v1/step-3.jpg",
+          ),
         ),
       ),
     ).toBe(true);
@@ -53,7 +55,10 @@ describe("isRecipeImageRequest", () => {
   it("ignores a Cloudinary URL fetched with a non-image destination", () => {
     expect(
       isRecipeImageRequest(
-        makeRequest("https://res.cloudinary.com/demo/image/upload/v1/hero.jpg", ""),
+        makeRequest(
+          "https://res.cloudinary.com/demo/image/upload/v1/hero.jpg",
+          "",
+        ),
       ),
     ).toBe(false);
   });

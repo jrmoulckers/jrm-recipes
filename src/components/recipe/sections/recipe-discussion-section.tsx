@@ -13,7 +13,10 @@ import { RatingSummary } from "~/components/engagement/rating-summary";
 import { CommentsSection } from "~/components/engagement/comments-section-lazy";
 
 /** Flatten a threaded comment tree into a flat list of ids (all depths). */
-function collectCommentIds(nodes: ThreadedComment[], into: string[] = []): string[] {
+function collectCommentIds(
+  nodes: ThreadedComment[],
+  into: string[] = [],
+): string[] {
   for (const node of nodes) {
     into.push(node.id);
     if (node.replies.length > 0) collectCommentIds(node.replies, into);

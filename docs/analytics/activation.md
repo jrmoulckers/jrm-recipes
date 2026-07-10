@@ -7,7 +7,7 @@ funnel is reproducible from data.
 ## Definition of an "activated" family
 
 > A new user is **activated** when, **within 7 days of signing up**, they both
-> **create at least one recipe** *and* **start at least one cook** — _or_ they
+> **create at least one recipe** _and_ **start at least one cook** — _or_ they
 > join a group that already has recipes.
 
 ### Rationale
@@ -29,13 +29,13 @@ retention (see `retention.md`).
 
 ## The funnel
 
-| # | Step             | Event                 | Where it fires                                            |
-| - | ---------------- | --------------------- | --------------------------------------------------------- |
-| 1 | Land             | `landing_viewed`      | Marketing landing page (`src/app/(main)/page.tsx`).       |
-| 2 | Start sign-up    | `signup_started`      | Clerk `SignUpButton` CTAs (`src/components/auth/`).       |
-| 3 | Complete sign-up | `signup_completed`    | First app-side user sync (`src/server/auth`).             |
-| 4 | First recipe     | `first_recipe_created`| `createRecipeAction` when the author's count reaches 1.   |
-| 5 | First cook       | `first_cook_started`  | Cook Mode start (`use-cook-session` / `cook-tracking`).   |
+| #   | Step             | Event                  | Where it fires                                          |
+| --- | ---------------- | ---------------------- | ------------------------------------------------------- |
+| 1   | Land             | `landing_viewed`       | Marketing landing page (`src/app/(main)/page.tsx`).     |
+| 2   | Start sign-up    | `signup_started`       | Clerk `SignUpButton` CTAs (`src/components/auth/`).     |
+| 3   | Complete sign-up | `signup_completed`     | First app-side user sync (`src/server/auth`).           |
+| 4   | First recipe     | `first_recipe_created` | `createRecipeAction` when the author's count reaches 1. |
+| 5   | First cook       | `first_cook_started`   | Cook Mode start (`use-cook-session` / `cook-tracking`). |
 
 `landing → signup_started → signup_completed → first_recipe_created →
 first_cook_started` is the ordered funnel; the **activation rate** is the share
@@ -55,7 +55,7 @@ actions:
   (`markFirstCookStarted`, key `heirloom.cook.first`) set the first time any cook
   session begins. Subsequent cooks — of the same or a different recipe, or after
   a reload — report `isFirstEver: false` and emit nothing. Being device-local it
-  is a privacy-friendly *approximation* of a person-level first cook (no
+  is a privacy-friendly _approximation_ of a person-level first cook (no
   server round-trip, nothing stored per user); cross-device first cooks are
   reconciled analytically via the identified distinct id.
 

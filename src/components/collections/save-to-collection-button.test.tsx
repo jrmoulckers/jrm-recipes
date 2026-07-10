@@ -40,7 +40,9 @@ describe("SaveToCollectionButton toggle names (issue #122)", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /save to collection/i }));
+    await user.click(
+      screen.getByRole("button", { name: /save to collection/i }),
+    );
 
     // A non-member reads as "Add to …"; a member reads as "Remove from …".
     const add = screen.getByRole("button", {

@@ -48,9 +48,7 @@ export const addRecipeToListInput = z.object({
 /** Override the aisle (category) an item is filed under (#360). */
 export const setItemCategoryInput = z.object({
   itemId: z.string().trim().min(1).max(24),
-  category: z.enum(
-    SHOPPING_CATEGORIES as unknown as [string, ...string[]],
-  ),
+  category: z.enum(SHOPPING_CATEGORIES as unknown as [string, ...string[]]),
 });
 
 export type ManualItemInput = z.infer<typeof manualItemInput>;

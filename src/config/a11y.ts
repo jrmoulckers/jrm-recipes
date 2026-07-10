@@ -64,7 +64,10 @@ export const A11Y_MANAGED_ATTRS = [
 ] as const;
 
 export function isTextSize(value: unknown): value is TextSize {
-  return typeof value === "string" && (TEXT_SIZES as readonly string[]).includes(value);
+  return (
+    typeof value === "string" &&
+    (TEXT_SIZES as readonly string[]).includes(value)
+  );
 }
 
 /**
@@ -98,7 +101,9 @@ export function parseA11y(raw: string | null | undefined): A11yPrefs {
   try {
     const data = JSON.parse(raw) as Partial<Record<keyof A11yPrefs, unknown>>;
     return {
-      textSize: isTextSize(data.textSize) ? data.textSize : DEFAULT_A11Y.textSize,
+      textSize: isTextSize(data.textSize)
+        ? data.textSize
+        : DEFAULT_A11Y.textSize,
       contrast: parseTriState(data.contrast),
       motion: parseTriState(data.motion),
       reading: data.reading === true,

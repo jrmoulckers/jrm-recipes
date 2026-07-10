@@ -9,23 +9,25 @@ import {
 
 describe("detectPrepAheadCues", () => {
   it("detects each supported cue from step/ingredient text", () => {
-    expect(detectPrepAheadCues(["Defrost the chicken"]).map((c) => c.kind)).toEqual(
-      ["defrost"],
-    );
-    expect(detectPrepAheadCues(["Thaw the shrimp overnight"]).map((c) => c.kind)).toEqual(
-      ["defrost", "overnight"],
-    );
-    expect(detectPrepAheadCues(["Marinate the steak"]).map((c) => c.kind)).toEqual(
-      ["marinate"],
-    );
+    expect(
+      detectPrepAheadCues(["Defrost the chicken"]).map((c) => c.kind),
+    ).toEqual(["defrost"]);
+    expect(
+      detectPrepAheadCues(["Thaw the shrimp overnight"]).map((c) => c.kind),
+    ).toEqual(["defrost", "overnight"]);
+    expect(
+      detectPrepAheadCues(["Marinate the steak"]).map((c) => c.kind),
+    ).toEqual(["marinate"]);
     expect(detectPrepAheadCues(["Soak the beans"]).map((c) => c.kind)).toEqual([
       "soak",
     ]);
-    expect(detectPrepAheadCues(["Chill the dough"]).map((c) => c.kind)).toEqual([
-      "chill",
-    ]);
+    expect(detectPrepAheadCues(["Chill the dough"]).map((c) => c.kind)).toEqual(
+      ["chill"],
+    );
     expect(
-      detectPrepAheadCues(["Refrigerate for at least 4 hours"]).map((c) => c.kind),
+      detectPrepAheadCues(["Refrigerate for at least 4 hours"]).map(
+        (c) => c.kind,
+      ),
     ).toEqual(["chill"]);
     expect(
       detectPrepAheadCues(["Let the roast come to room temperature"]).map(
@@ -58,11 +60,13 @@ describe("detectPrepAheadCues", () => {
 
 describe("summarizePrepCues", () => {
   it("formats one, two, and three+ cues naturally", () => {
-    expect(summarizePrepCues(detectPrepAheadCues(["Defrost the chicken"]))).toBe(
-      "defrost",
-    );
     expect(
-      summarizePrepCues(detectPrepAheadCues(["Defrost then marinate the chicken"])),
+      summarizePrepCues(detectPrepAheadCues(["Defrost the chicken"])),
+    ).toBe("defrost");
+    expect(
+      summarizePrepCues(
+        detectPrepAheadCues(["Defrost then marinate the chicken"]),
+      ),
     ).toBe("defrost & marinate");
     expect(
       summarizePrepCues(

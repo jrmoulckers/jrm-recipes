@@ -18,7 +18,8 @@ afterEach(cleanup);
  * color swap.
  */
 
-const read = (...p: string[]) => readFileSync(join(process.cwd(), ...p), "utf8");
+const read = (...p: string[]) =>
+  readFileSync(join(process.cwd(), ...p), "utf8");
 
 const RING = [
   "focus-visible:outline-none",
@@ -42,7 +43,9 @@ describe("focus-visible standardization (issue #85)", () => {
 
   it("drives the ring width from --ring-width so it scales 2->3px", () => {
     // `ring-2` is remapped to the token in Tailwind rather than a literal 2px.
-    expect(read("tailwind.config.ts")).toMatch(/ringWidth:\s*\{\s*2:\s*"var\(--ring-width\)"/);
+    expect(read("tailwind.config.ts")).toMatch(
+      /ringWidth:\s*\{\s*2:\s*"var\(--ring-width\)"/,
+    );
   });
 
   it("unifies the Select trigger and Dialog close on the ring, dropping border-only focus", () => {

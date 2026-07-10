@@ -68,7 +68,9 @@ function num(value: number | null | undefined): string {
 /** Human-readable one-line rendering of an ingredient row. */
 export function formatIngredientLine(ing: IngredientInput): string {
   const qty =
-    ing.quantity != null && ing.quantityMax != null && ing.quantityMax !== ing.quantity
+    ing.quantity != null &&
+    ing.quantityMax != null &&
+    ing.quantityMax !== ing.quantity
       ? `${ing.quantity}–${ing.quantityMax}`
       : num(ing.quantity);
   const parts = [qty, str(ing.unit), str(ing.item)].filter(Boolean);
@@ -214,7 +216,10 @@ const EMPTY_RECIPE: Partial<RecipeInput> = {
   steps: [],
 };
 
-function fieldValue(recipe: Partial<RecipeInput>, key: keyof RecipeInput): string {
+function fieldValue(
+  recipe: Partial<RecipeInput>,
+  key: keyof RecipeInput,
+): string {
   const value = recipe[key];
   if (value == null) return "";
   if (typeof value === "string") return value.trim();

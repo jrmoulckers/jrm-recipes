@@ -18,7 +18,9 @@ export type WaitlistResult = "created" | "duplicate" | "unavailable";
  * repeat submission is a silent no-op rather than an error or a duplicate row.
  * Returns `unavailable` (never throws) when `DATABASE_URL` is unset.
  */
-export async function addToWaitlist(data: WaitlistData): Promise<WaitlistResult> {
+export async function addToWaitlist(
+  data: WaitlistData,
+): Promise<WaitlistResult> {
   if (!isDbConfigured()) return "unavailable";
 
   const [row] = await db

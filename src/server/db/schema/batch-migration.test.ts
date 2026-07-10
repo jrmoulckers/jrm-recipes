@@ -25,11 +25,16 @@ const body = migration?.body ?? "";
 
 describe("eng-data batch migration repairs legacy data before constraining it", () => {
   it("exists as a single generated migration", () => {
-    expect(migration, "no migration adds the version unique constraint").toBeDefined();
+    expect(
+      migration,
+      "no migration adds the version unique constraint",
+    ).toBeDefined();
   });
 
   it("#151 de-duplicates version numbers before adding the UNIQUE constraint", () => {
-    const dedupe = body.indexOf('UPDATE "recipe_versions" v SET "version_number"');
+    const dedupe = body.indexOf(
+      'UPDATE "recipe_versions" v SET "version_number"',
+    );
     const unique = body.indexOf(
       'ADD CONSTRAINT "recipe_versions_recipe_version_uq"',
     );
@@ -41,9 +46,7 @@ describe("eng-data batch migration repairs legacy data before constraining it", 
     const repair = body.indexOf(
       `UPDATE "recipe_versions" SET "snapshot" = '{}'`,
     );
-    const cast = body.indexOf(
-      'SET DATA TYPE jsonb USING "snapshot"::jsonb',
-    );
+    const cast = body.indexOf('SET DATA TYPE jsonb USING "snapshot"::jsonb');
     // A bare `SET DATA TYPE jsonb` would fail (no implicit text->jsonb cast).
     expect(cast).toBeGreaterThan(-1);
     expect(repair).toBeGreaterThanOrEqual(0);

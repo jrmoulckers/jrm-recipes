@@ -37,7 +37,9 @@ function fakeTx(opts: TxOpts) {
       }),
       onConflictDoNothing: vi.fn(() => chain),
       onConflictDoUpdate: vi.fn(() => chain),
-      returning: vi.fn(async () => [{ id: "cookalong_1", ...inserted.at(-1)?.values }]),
+      returning: vi.fn(async () => [
+        { id: "cookalong_1", ...inserted.at(-1)?.values },
+      ]),
     };
     return chain;
   };

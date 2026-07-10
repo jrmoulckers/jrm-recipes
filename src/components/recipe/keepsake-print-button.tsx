@@ -11,11 +11,7 @@ import { Button } from "~/components/ui/button";
  */
 export function KeepsakePrintButton() {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => window.print()}
-    >
+    <Button type="button" variant="outline" onClick={() => window.print()}>
       <Printer aria-hidden="true" /> Print this keepsake
     </Button>
   );

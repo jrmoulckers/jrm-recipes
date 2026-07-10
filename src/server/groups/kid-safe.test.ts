@@ -58,6 +58,8 @@ describe("kid-safe capabilities (issue #345)", () => {
       expect((error as DomainError).code).toBe("FORBIDDEN");
     }
     expect(() => assertKidAllowed("owner", "delete_recipe")).not.toThrow();
-    expect(() => assertKidAllowed("member", "make_recipe_public")).not.toThrow();
+    expect(() =>
+      assertKidAllowed("member", "make_recipe_public"),
+    ).not.toThrow();
   });
 });

@@ -1,5 +1,8 @@
 import { env } from "~/env";
-import { handleClerkEvent, type ClerkWebhookEvent } from "~/server/auth/clerk-webhook";
+import {
+  handleClerkEvent,
+  type ClerkWebhookEvent,
+} from "~/server/auth/clerk-webhook";
 import { verifySvixSignature } from "~/server/auth/svix";
 
 /**

@@ -58,7 +58,9 @@ export function SaveToCollectionButton({
     if (pendingId) return;
     setPendingId(collectionId);
     setItems((prev) =>
-      prev.map((c) => (c.id === collectionId ? { ...c, contains: !contains } : c)),
+      prev.map((c) =>
+        c.id === collectionId ? { ...c, contains: !contains } : c,
+      ),
     );
 
     void (async () => {
@@ -70,9 +72,7 @@ export function SaveToCollectionButton({
         router.refresh();
       } else {
         setItems((prev) =>
-          prev.map((c) =>
-            c.id === collectionId ? { ...c, contains } : c,
-          ),
+          prev.map((c) => (c.id === collectionId ? { ...c, contains } : c)),
         );
         toast.error(friendlyError(result.error));
       }

@@ -49,14 +49,21 @@ describe("Slider large-target sizing", () => {
     renderSlider();
     const thumb = screen.getByRole("slider");
 
-    expect(thumb.className).toContain("size-[calc(1.25rem*var(--control-scale))]");
+    expect(thumb.className).toContain(
+      "size-[calc(1.25rem*var(--control-scale))]",
+    );
     expect(thumb.className).toContain("focus-visible:ring-2");
     expect(thumb.className).toContain("disabled:opacity-50");
   });
 
   it("still merges a caller-provided className on the root", () => {
     const { container } = render(
-      <Slider defaultValue={[10]} max={100} aria-label="amount" className="mt-4" />,
+      <Slider
+        defaultValue={[10]}
+        max={100}
+        aria-label="amount"
+        className="mt-4"
+      />,
     );
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("mt-4");

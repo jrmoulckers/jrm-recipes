@@ -20,7 +20,9 @@ vi.mock("~/server/db", () => ({
 
 import { listRecentlyViewed, recordRecipeView } from "./queries";
 
-const viewer = { id: "u1" } as unknown as Parameters<typeof listRecentlyViewed>[0];
+const viewer = { id: "u1" } as unknown as Parameters<
+  typeof listRecentlyViewed
+>[0];
 
 describe("recordRecipeView (#280)", () => {
   beforeEach(() => {

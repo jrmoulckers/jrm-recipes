@@ -78,7 +78,8 @@ export async function toggleReaction(
   return db.transaction(async (tx) => {
     const recipe = await loadTargetRecipe(tx, input.targetType, input.targetId);
     if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user))) throw new DomainError("FORBIDDEN");
+    if (!(await canViewRecipe(recipe, user)))
+      throw new DomainError("FORBIDDEN");
 
     const existing = await tx.query.reactions.findFirst({
       where: and(

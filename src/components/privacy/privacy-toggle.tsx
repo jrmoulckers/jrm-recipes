@@ -29,8 +29,8 @@ export function PrivacyToggle() {
         </span>
         {privacySignal && (
           <span className="mt-1 block text-xs font-medium text-muted-foreground">
-            Your browser’s Do Not Track / Global Privacy Control signal is on, so
-            analytics stays off.
+            Your browser’s Do Not Track / Global Privacy Control signal is on,
+            so analytics stays off.
           </span>
         )}
       </label>

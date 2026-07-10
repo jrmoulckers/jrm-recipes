@@ -5,11 +5,7 @@ import type { TypeOf, ZodTypeAny } from "zod";
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import type { User } from "~/server/db/schema";
-import {
-  type ActionResult,
-  fail,
-  fromZodError,
-} from "~/server/action-result";
+import { type ActionResult, fail, fromZodError } from "~/server/action-result";
 
 /**
  * Composable server-action wrapper (#169).

@@ -77,10 +77,10 @@
  * installed. The system-sans fallbacks cover the brief swap window.
  * ------------------------------------------------------------------------- */
 [data-reading="readable"] {
-  --font-body: var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui,
-    sans-serif;
-  --font-display: var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui,
-    sans-serif;
+  --font-body:
+    var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-atkinson), "Segoe UI", ui-sans-serif, system-ui, sans-serif;
 }
 
 [data-reading="readable"] body {

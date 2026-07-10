@@ -21,10 +21,10 @@ current, task-led copy ("No recipes yet").
 
 ## Variants
 
-| Variant   | Flag value | Description                                                        |
-| --------- | ---------- | ----------------------------------------------------------------- |
-| Control   | `control`  | Current empty state ("No recipes yet"). Preserves the existing UI. |
-| Benefit   | `benefit`  | Benefit-led heading + body + CTA label.                            |
+| Variant | Flag value | Description                                                        |
+| ------- | ---------- | ------------------------------------------------------------------ |
+| Control | `control`  | Current empty state ("No recipes yet"). Preserves the existing UI. |
+| Benefit | `benefit`  | Benefit-led heading + body + CTA label.                            |
 
 The flag is multivariate (string) so additional treatments (e.g. a "start from a
 sample recipe" shortcut) can be added later without touching call sites — add a

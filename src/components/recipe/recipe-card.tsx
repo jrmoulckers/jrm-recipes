@@ -152,7 +152,7 @@ export function RecipeCard({
         <Link
           href={`/recipes/${recipe.slug}/cook`}
           aria-label={`Cook ${recipe.title}`}
-          className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:opacity-0 sm:group-hover/card:opacity-100 sm:group-focus-within/card:opacity-100 motion-reduce:transition-none"
+          className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
           <Play className="size-3.5" aria-hidden />
           Cook
@@ -160,104 +160,105 @@ export function RecipeCard({
       </div>
       <Link
         href={`/recipes/${recipe.slug}`}
-        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg active:bg-muted/40 active:shadow-token focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted/40 active:shadow-token"
       >
-      <div className="relative aspect-[16/10] overflow-hidden">
-        {recipe.coverImageUrl ? (
-          <CloudinaryImage
-            src={recipe.coverImageUrl}
-            alt=""
-            fill
-            priority={priority}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div
-            className={cn(
-              "flex size-full items-center justify-center bg-gradient-to-br",
-              gradient,
-            )}
-          >
-            <UtensilsCrossed className="size-10 text-foreground/25" />
-          </div>
-        )}
-        {recipe.visibility !== "public" && (
-          <span className="absolute start-2 top-2">
-            <Badge variant="muted" className="capitalize backdrop-blur">
-              {recipe.visibility}
-            </Badge>
-          </span>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight">
-          {titleSegments
-            ? titleSegments.map((seg, i) =>
-                seg.hit ? (
-                  <mark
-                    key={i}
-                    className="rounded bg-primary/15 px-0.5 text-foreground"
-                  >
-                    {seg.text}
-                  </mark>
-                ) : (
-                  <React.Fragment key={i}>{seg.text}</React.Fragment>
-                ),
-              )
-            : recipe.title}
-        </h3>
-        {matchReason && matchReason.field !== "title" && (
-          <p className="text-xs text-muted-foreground">
-            Matches {matchFieldLabel(matchReason.field)}:{" "}
-            <span className="font-medium text-foreground/80">
-              {matchReason.term}
-            </span>
-          </p>
-        )}
-        {recipe.description && (
-          <p className="line-clamp-2 break-words text-sm text-muted-foreground">
-            {recipe.description}
-          </p>
-        )}
-        {members && members.length > 0 && (
-          <CardDietaryBadge
-            members={members}
-            recipeAllergens={recipe.allergens ?? null}
-          />
-        )}
-        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
-          {recipe.totalMinutes != null && (
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="size-3.5" /> {formatMinutes(recipe.totalMinutes)}
-            </span>
-          )}
-          {recipe.servings != null && (
-            <span className="inline-flex items-center gap-1">
-              <Users className="size-3.5" /> {recipe.servings}
-            </span>
-          )}
-          {rating.unrated ? (
-            <span className="text-muted-foreground/70">Unrated</span>
+        <div className="relative aspect-[16/10] overflow-hidden">
+          {recipe.coverImageUrl ? (
+            <CloudinaryImage
+              src={recipe.coverImageUrl}
+              alt=""
+              fill
+              priority={priority}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            />
           ) : (
-            <span className="inline-flex items-center gap-1.5">
-              <StarRating filled={rating.filled} label={rating.label} />
-              <span className="tabular-nums">
-                {rating.average.toFixed(1)}
-                <span className="text-muted-foreground/70">
-                  {" "}
-                  ({rating.count})
-                </span>
-              </span>
-            </span>
+            <div
+              className={cn(
+                "flex size-full items-center justify-center bg-gradient-to-br",
+                gradient,
+              )}
+            >
+              <UtensilsCrossed className="size-10 text-foreground/25" />
+            </div>
           )}
-          {recipe.difficulty && (
-            <span className="capitalize">{recipe.difficulty}</span>
+          {recipe.visibility !== "public" && (
+            <span className="absolute start-2 top-2">
+              <Badge variant="muted" className="capitalize backdrop-blur">
+                {recipe.visibility}
+              </Badge>
+            </span>
           )}
         </div>
-      </div>
-    </Link>
+
+        <div className="flex flex-1 flex-col gap-2 p-4">
+          <h3 className="line-clamp-1 break-words font-display text-lg font-semibold leading-tight">
+            {titleSegments
+              ? titleSegments.map((seg, i) =>
+                  seg.hit ? (
+                    <mark
+                      key={i}
+                      className="rounded bg-primary/15 px-0.5 text-foreground"
+                    >
+                      {seg.text}
+                    </mark>
+                  ) : (
+                    <React.Fragment key={i}>{seg.text}</React.Fragment>
+                  ),
+                )
+              : recipe.title}
+          </h3>
+          {matchReason && matchReason.field !== "title" && (
+            <p className="text-xs text-muted-foreground">
+              Matches {matchFieldLabel(matchReason.field)}:{" "}
+              <span className="font-medium text-foreground/80">
+                {matchReason.term}
+              </span>
+            </p>
+          )}
+          {recipe.description && (
+            <p className="line-clamp-2 break-words text-sm text-muted-foreground">
+              {recipe.description}
+            </p>
+          )}
+          {members && members.length > 0 && (
+            <CardDietaryBadge
+              members={members}
+              recipeAllergens={recipe.allergens ?? null}
+            />
+          )}
+          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
+            {recipe.totalMinutes != null && (
+              <span className="inline-flex items-center gap-1">
+                <Clock3 className="size-3.5" />{" "}
+                {formatMinutes(recipe.totalMinutes)}
+              </span>
+            )}
+            {recipe.servings != null && (
+              <span className="inline-flex items-center gap-1">
+                <Users className="size-3.5" /> {recipe.servings}
+              </span>
+            )}
+            {rating.unrated ? (
+              <span className="text-muted-foreground/70">Unrated</span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <StarRating filled={rating.filled} label={rating.label} />
+                <span className="tabular-nums">
+                  {rating.average.toFixed(1)}
+                  <span className="text-muted-foreground/70">
+                    {" "}
+                    ({rating.count})
+                  </span>
+                </span>
+              </span>
+            )}
+            {recipe.difficulty && (
+              <span className="capitalize">{recipe.difficulty}</span>
+            )}
+          </div>
+        </div>
+      </Link>
     </div>
   );
 }

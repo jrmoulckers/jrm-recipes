@@ -56,5 +56,7 @@ export default async function KeepsakePage({
 
   const { from, note } = parseKeepsakeMessage({ from: sp.from, note: sp.note });
 
-  return <KeepsakeView recipe={toPrintRecipe(recipe)} from={from} note={note} />;
+  return (
+    <KeepsakeView recipe={toPrintRecipe(recipe)} from={from} note={note} />
+  );
 }

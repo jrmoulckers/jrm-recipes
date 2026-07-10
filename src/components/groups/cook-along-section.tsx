@@ -24,11 +24,7 @@ import type {
 } from "~/server/cookalong/queries";
 import type { RsvpStatus } from "~/server/db/schema";
 import { formatDate, formatRelativeTime } from "~/lib/dates";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -433,7 +429,11 @@ function ScheduleCookAlongButton({
               </Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
-              {pending ? <Loader2 className="animate-spin" /> : <CalendarPlus />}
+              {pending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <CalendarPlus />
+              )}
               {pending ? "Scheduling…" : "Schedule"}
             </Button>
           </DialogFooter>

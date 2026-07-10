@@ -3,7 +3,12 @@
 import * as React from "react";
 import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 
-import { COLOR_SCHEMES, UI_THEMES, type ColorScheme, type UITheme } from "~/config/themes";
+import {
+  COLOR_SCHEMES,
+  UI_THEMES,
+  type ColorScheme,
+  type UITheme,
+} from "~/config/themes";
 import { useTheme } from "~/components/theme/theme-provider";
 import { ThemeSwatch } from "~/components/theme/theme-swatch";
 import { cn } from "~/lib/utils";

@@ -38,10 +38,12 @@ describe("buildIdentityTraits", () => {
 
   it("marks household_active only when the user belongs to a group", () => {
     expect(
-      buildIdentityTraits({ groupCount: 0, hasRecipes: false }).household_active,
+      buildIdentityTraits({ groupCount: 0, hasRecipes: false })
+        .household_active,
     ).toBe(false);
     expect(
-      buildIdentityTraits({ groupCount: 2, hasRecipes: false }).household_active,
+      buildIdentityTraits({ groupCount: 2, hasRecipes: false })
+        .household_active,
     ).toBe(true);
   });
 

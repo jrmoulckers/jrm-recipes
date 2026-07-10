@@ -94,9 +94,7 @@ describe("upsertMyReview (issue #174)", () => {
 
   it("rejects an out-of-range rating before touching the DB", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    await expect(
-      upsertMyReview("r1", author, { rating: 6 }),
-    ).rejects.toThrow();
+    await expect(upsertMyReview("r1", author, { rating: 6 })).rejects.toThrow();
     expect(dbMock.insert).not.toHaveBeenCalled();
   });
 
@@ -110,9 +108,9 @@ describe("upsertMyReview (issue #174)", () => {
 
   it("throws FORBIDDEN when the reviewer can't view the recipe", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(privateRecipe);
-    await expect(
-      upsertMyReview("r2", author, { rating: 5 }),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(upsertMyReview("r2", author, { rating: 5 })).rejects.toThrow(
+      "FORBIDDEN",
+    );
     expect(dbMock.insert).not.toHaveBeenCalled();
   });
 });
@@ -134,10 +132,7 @@ describe("listRecipeReviews (issue #174)", () => {
 
   it("paginates a viewable recipe's reviews and reports the next offset", async () => {
     dbMock.query.recipes.findFirst.mockResolvedValue(publicRecipe);
-    dbMock.query.reviews.findMany.mockResolvedValue([
-      { id: "a" },
-      { id: "b" },
-    ]);
+    dbMock.query.reviews.findMany.mockResolvedValue([{ id: "a" }, { id: "b" }]);
 
     const page = await listRecipeReviews("r1", author, { limit: 2, offset: 0 });
 

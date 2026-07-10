@@ -20,10 +20,7 @@ import {
 } from "~/server/cooklog/queries";
 import { cookedTimesLabel, formatServingsMade } from "~/server/cooklog/summary";
 import { formatDate, formatRelativeTime } from "~/lib/dates";
-import {
-  journalRangeSince,
-  parseJournalRange,
-} from "~/lib/journal-range";
+import { journalRangeSince, parseJournalRange } from "~/lib/journal-range";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -65,7 +62,14 @@ export default async function JournalPage({
           getFilteredCooks(user.id, filter),
           getJournalInsights(user.id, filter),
         ])
-      : [[], { totalCooks: 0, mostRecent: null, topRecipes: [] } as JournalInsights];
+      : [
+          [],
+          {
+            totalCooks: 0,
+            mostRecent: null,
+            topRecipes: [],
+          } as JournalInsights,
+        ];
 
   const hasAnyCooks = recipeOptions.length > 0;
   const filtersActive = selectedRecipeId !== null || range !== "all";
@@ -154,9 +158,7 @@ function InsightsStrip({
         </span>
         <div className="min-w-0">
           <p className="truncate font-medium leading-tight">
-            {mostRecentValid
-              ? formatRelativeTime(mostRecent, locale)
-              : "—"}
+            {mostRecentValid ? formatRelativeTime(mostRecent, locale) : "—"}
           </p>
           <p className="text-sm text-muted-foreground">most recent cook</p>
         </div>
@@ -223,11 +225,7 @@ function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
       <div className="relative size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-gradient-to-br from-primary/20 to-accent/15">
         {cook.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- cook photos may be arbitrary user-pasted URLs (Cloudinary optional) that can't be pre-allowlisted for next/image
-          <img
-            src={cook.photoUrl}
-            alt=""
-            className="size-full object-cover"
-          />
+          <img src={cook.photoUrl} alt="" className="size-full object-cover" />
         ) : (
           <span className="flex size-full items-center justify-center text-primary/50">
             <CookingPot className="size-7" aria-hidden="true" />

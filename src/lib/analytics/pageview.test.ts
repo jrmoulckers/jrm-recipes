@@ -39,7 +39,9 @@ describe("normalizePathname", () => {
   });
 
   it("never leaves a real slug or id in the normalized path", () => {
-    const normalized = normalizePathname("/groups/private-family-name/settings");
+    const normalized = normalizePathname(
+      "/groups/private-family-name/settings",
+    );
     expect(normalized).not.toContain("private-family-name");
   });
 

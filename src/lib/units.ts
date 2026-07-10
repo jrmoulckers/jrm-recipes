@@ -136,25 +136,120 @@ type UnitDef = {
 
 // Base: volume in milliliters, mass in grams.
 const UNIT_DEFS: UnitDef[] = [
-  { canonical: "tsp", dimension: "volume", base: 4.92892, system: "us", aliases: ["teaspoon", "teaspoons", "t"] },
-  { canonical: "tbsp", dimension: "volume", base: 14.7868, system: "us", aliases: ["tablespoon", "tablespoons", "T", "tbs", "tbl"] },
-  { canonical: "fl oz", dimension: "volume", base: 29.5735, system: "us", aliases: ["fluid ounce", "fluid ounces", "floz"] },
-  { canonical: "cup", dimension: "volume", base: 236.588, system: "us", aliases: ["cups", "c"], plural: "cups" },
-  { canonical: "pint", dimension: "volume", base: 473.176, system: "us", aliases: ["pints", "pt"], plural: "pints" },
-  { canonical: "quart", dimension: "volume", base: 946.353, system: "us", aliases: ["quarts", "qt"], plural: "quarts" },
-  { canonical: "gallon", dimension: "volume", base: 3785.41, system: "us", aliases: ["gallons", "gal"], plural: "gallons" },
-  { canonical: "ml", dimension: "volume", base: 1, system: "metric", aliases: ["milliliter", "milliliters", "millilitre", "millilitres", "cc"] },
-  { canonical: "l", dimension: "volume", base: 1000, system: "metric", aliases: ["liter", "liters", "litre", "litres"] },
-  { canonical: "oz", dimension: "mass", base: 28.3495, system: "us", aliases: ["ounce", "ounces"] },
-  { canonical: "lb", dimension: "mass", base: 453.592, system: "us", aliases: ["pound", "pounds", "lbs"], plural: "lb" },
-  { canonical: "g", dimension: "mass", base: 1, system: "metric", aliases: ["gram", "grams", "gramme", "grammes"] },
-  { canonical: "kg", dimension: "mass", base: 1000, system: "metric", aliases: ["kilogram", "kilograms", "kilo", "kilos"] },
+  {
+    canonical: "tsp",
+    dimension: "volume",
+    base: 4.92892,
+    system: "us",
+    aliases: ["teaspoon", "teaspoons", "t"],
+  },
+  {
+    canonical: "tbsp",
+    dimension: "volume",
+    base: 14.7868,
+    system: "us",
+    aliases: ["tablespoon", "tablespoons", "T", "tbs", "tbl"],
+  },
+  {
+    canonical: "fl oz",
+    dimension: "volume",
+    base: 29.5735,
+    system: "us",
+    aliases: ["fluid ounce", "fluid ounces", "floz"],
+  },
+  {
+    canonical: "cup",
+    dimension: "volume",
+    base: 236.588,
+    system: "us",
+    aliases: ["cups", "c"],
+    plural: "cups",
+  },
+  {
+    canonical: "pint",
+    dimension: "volume",
+    base: 473.176,
+    system: "us",
+    aliases: ["pints", "pt"],
+    plural: "pints",
+  },
+  {
+    canonical: "quart",
+    dimension: "volume",
+    base: 946.353,
+    system: "us",
+    aliases: ["quarts", "qt"],
+    plural: "quarts",
+  },
+  {
+    canonical: "gallon",
+    dimension: "volume",
+    base: 3785.41,
+    system: "us",
+    aliases: ["gallons", "gal"],
+    plural: "gallons",
+  },
+  {
+    canonical: "ml",
+    dimension: "volume",
+    base: 1,
+    system: "metric",
+    aliases: ["milliliter", "milliliters", "millilitre", "millilitres", "cc"],
+  },
+  {
+    canonical: "l",
+    dimension: "volume",
+    base: 1000,
+    system: "metric",
+    aliases: ["liter", "liters", "litre", "litres"],
+  },
+  {
+    canonical: "oz",
+    dimension: "mass",
+    base: 28.3495,
+    system: "us",
+    aliases: ["ounce", "ounces"],
+  },
+  {
+    canonical: "lb",
+    dimension: "mass",
+    base: 453.592,
+    system: "us",
+    aliases: ["pound", "pounds", "lbs"],
+    plural: "lb",
+  },
+  {
+    canonical: "g",
+    dimension: "mass",
+    base: 1,
+    system: "metric",
+    aliases: ["gram", "grams", "gramme", "grammes"],
+  },
+  {
+    canonical: "kg",
+    dimension: "mass",
+    base: 1000,
+    system: "metric",
+    aliases: ["kilogram", "kilograms", "kilo", "kilos"],
+  },
   // Temperature is affine (offset + scale), so `base` is unused — conversion
   // goes through convertTemperature. The bare "c" alias is intentionally
   // omitted: it already means "cup", and a recipe's "2 c" is far more likely
   // cups than Celsius. Callers wanting Celsius should use "°C"/"celsius".
-  { canonical: "°F", dimension: "temperature", base: 1, system: "us", aliases: ["f", "fahrenheit"] },
-  { canonical: "°C", dimension: "temperature", base: 1, system: "metric", aliases: ["celsius", "centigrade"] },
+  {
+    canonical: "°F",
+    dimension: "temperature",
+    base: 1,
+    system: "us",
+    aliases: ["f", "fahrenheit"],
+  },
+  {
+    canonical: "°C",
+    dimension: "temperature",
+    base: 1,
+    system: "metric",
+    aliases: ["celsius", "centigrade"],
+  },
 ];
 
 const UNIT_INDEX = new Map<string, UnitDef>();
@@ -170,7 +265,9 @@ export function normalizeUnit(raw: string | null | undefined): string | null {
   return UNIT_INDEX.get(key)?.canonical ?? raw.trim();
 }
 
-export function unitDimension(raw: string | null | undefined): Dimension | null {
+export function unitDimension(
+  raw: string | null | undefined,
+): Dimension | null {
   if (!raw) return null;
   return UNIT_INDEX.get(raw.trim().toLowerCase())?.dimension ?? null;
 }
@@ -210,7 +307,8 @@ export function convertTemperature(
   const a = UNIT_INDEX.get(from.trim().toLowerCase());
   const b = UNIT_INDEX.get(to.trim().toLowerCase());
   if (!a || !b) return null;
-  if (a.dimension !== "temperature" || b.dimension !== "temperature") return null;
+  if (a.dimension !== "temperature" || b.dimension !== "temperature")
+    return null;
   if (a.canonical === b.canonical) return Math.round(value);
   const celsius = a.canonical === "°F" ? ((value - 32) * 5) / 9 : value;
   const result = b.canonical === "°F" ? (celsius * 9) / 5 + 32 : celsius;
@@ -254,7 +352,8 @@ export function toSystem(
       : { quantity: converted, unit: target };
   }
   const ladder = ladderFor(def.dimension, system);
-  if (ladder.length === 0) return { quantity: roundNice(quantity), unit: def.canonical };
+  if (ladder.length === 0)
+    return { quantity: roundNice(quantity), unit: def.canonical };
 
   const baseAmount = quantity * def.base;
   let chosen = ladder[0]!;
@@ -368,7 +467,10 @@ const INGREDIENT_DENSITIES: DensityEntry[] = [
     phrases: ["powdered sugar", "confectioners sugar", "icing sugar"],
   },
   { gPerMl: 0.96, phrases: ["butter"] },
-  { gPerMl: 0.92, phrases: ["oil", "olive oil", "vegetable oil", "canola oil"] },
+  {
+    gPerMl: 0.92,
+    phrases: ["oil", "olive oil", "vegetable oil", "canola oil"],
+  },
   { gPerMl: 1.42, phrases: ["honey"] },
   { gPerMl: 1.37, phrases: ["maple syrup"] },
   { gPerMl: 0.45, phrases: ["cocoa", "cocoa powder"] },
@@ -426,7 +528,8 @@ export function densityForItem(item: string | null | undefined): number | null {
   let best: { gPerMl: number; len: number } | null = null;
   for (const { gPerMl, tokens: phrase } of DENSITY_INDEX) {
     if (!containsWholePhrase(tokens, phrase)) continue;
-    if (!best || phrase.length > best.len) best = { gPerMl, len: phrase.length };
+    if (!best || phrase.length > best.len)
+      best = { gPerMl, len: phrase.length };
   }
   return best ? best.gPerMl : null;
 }
@@ -536,7 +639,9 @@ export function decomposeMeasure(
 
   const parts: string[] = [];
   if (cups >= 1) {
-    parts.push(`${formatDecimal(cups, locale)} ${displayUnit("cup", cups, locale)}`);
+    parts.push(
+      `${formatDecimal(cups, locale)} ${displayUnit("cup", cups, locale)}`,
+    );
   }
   if (tbsp >= 1) parts.push(`${formatDecimal(tbsp, locale)} tbsp`);
   if (tsp > 0) parts.push(`${formatQuantity(tsp, undefined, locale)} tsp`);
@@ -558,17 +663,61 @@ type KidFractionWords = {
 };
 
 const KID_FRACTIONS: Array<[number, KidFractionWords]> = [
-  [1 / 8, { combined: "an eighth", withUnit: "an eighth of a", bare: "an eighth" }],
+  [
+    1 / 8,
+    { combined: "an eighth", withUnit: "an eighth of a", bare: "an eighth" },
+  ],
   [1 / 6, { combined: "a sixth", withUnit: "a sixth of a", bare: "a sixth" }],
-  [1 / 4, { combined: "a quarter", withUnit: "a quarter of a", bare: "a quarter" }],
+  [
+    1 / 4,
+    { combined: "a quarter", withUnit: "a quarter of a", bare: "a quarter" },
+  ],
   [1 / 3, { combined: "a third", withUnit: "a third of a", bare: "a third" }],
-  [3 / 8, { combined: "three-eighths", withUnit: "three-eighths of a", bare: "three-eighths" }],
+  [
+    3 / 8,
+    {
+      combined: "three-eighths",
+      withUnit: "three-eighths of a",
+      bare: "three-eighths",
+    },
+  ],
   [1 / 2, { combined: "a half", withUnit: "half a", bare: "half" }],
-  [5 / 8, { combined: "five-eighths", withUnit: "five-eighths of a", bare: "five-eighths" }],
-  [2 / 3, { combined: "two-thirds", withUnit: "two-thirds of a", bare: "two-thirds" }],
-  [3 / 4, { combined: "three-quarters", withUnit: "three-quarters of a", bare: "three-quarters" }],
-  [5 / 6, { combined: "five-sixths", withUnit: "five-sixths of a", bare: "five-sixths" }],
-  [7 / 8, { combined: "seven-eighths", withUnit: "seven-eighths of a", bare: "seven-eighths" }],
+  [
+    5 / 8,
+    {
+      combined: "five-eighths",
+      withUnit: "five-eighths of a",
+      bare: "five-eighths",
+    },
+  ],
+  [
+    2 / 3,
+    { combined: "two-thirds", withUnit: "two-thirds of a", bare: "two-thirds" },
+  ],
+  [
+    3 / 4,
+    {
+      combined: "three-quarters",
+      withUnit: "three-quarters of a",
+      bare: "three-quarters",
+    },
+  ],
+  [
+    5 / 6,
+    {
+      combined: "five-sixths",
+      withUnit: "five-sixths of a",
+      bare: "five-sixths",
+    },
+  ],
+  [
+    7 / 8,
+    {
+      combined: "seven-eighths",
+      withUnit: "seven-eighths of a",
+      bare: "seven-eighths",
+    },
+  ],
 ];
 
 /** Canonical unit → [singular, plural] spoken word. */

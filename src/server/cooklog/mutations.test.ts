@@ -38,7 +38,9 @@ function fakeTx(opts: FakeTxOpts) {
         ),
       },
       groupMembers: {
-        findFirst: vi.fn(async () => (opts.isMember ? { id: "m_1" } : undefined)),
+        findFirst: vi.fn(async () =>
+          opts.isMember ? { id: "m_1" } : undefined,
+        ),
       },
     },
     insert: vi.fn(() => chain),
@@ -98,10 +100,7 @@ describe("createCookLog share-with-family (#352)", () => {
       isMember: true,
     });
     runWith(tx);
-    await createCookLog(
-      { recipeId: "recipe_1", recipeSlug: "s" },
-      cook,
-    );
+    await createCookLog({ recipeId: "recipe_1", recipeSlug: "s" }, cook);
     expect(tx.insertedValues[0]?.sharedToGroupId).toBeNull();
     expect(tx.query.groupMembers.findFirst).not.toHaveBeenCalled();
   });

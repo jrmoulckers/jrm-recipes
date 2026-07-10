@@ -37,8 +37,17 @@ export function ReadAloudButton({
   className?: string;
 }) {
   const reduced = useReducedMotion();
-  const { supported, status, index, play, pause, stop, replay, next, previous } =
-    useReadAloud(steps);
+  const {
+    supported,
+    status,
+    index,
+    play,
+    pause,
+    stop,
+    replay,
+    next,
+    previous,
+  } = useReadAloud(steps);
 
   // Outline the step currently being read and bring it into view.
   React.useEffect(() => {
@@ -142,10 +151,7 @@ export function ReadAloudButton({
           >
             <Square aria-hidden="true" />
           </Button>
-          <span
-            className="text-sm text-muted-foreground"
-            aria-live="polite"
-          >
+          <span className="text-sm text-muted-foreground" aria-live="polite">
             Step {index + 1} of {steps.length}
           </span>
         </>

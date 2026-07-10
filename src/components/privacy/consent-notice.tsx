@@ -27,9 +27,9 @@ export function ConsentNotice() {
           <ShieldCheck className="size-5" />
         </span>
         <p className="min-w-0 flex-1 text-sm text-muted-foreground">
-          Heirloom uses privacy-first, cookieless analytics to understand what to
-          improve. No recipes or personal details are ever shared, and you can
-          change this anytime in settings.
+          Heirloom uses privacy-first, cookieless analytics to understand what
+          to improve. No recipes or personal details are ever shared, and you
+          can change this anytime in settings.
         </p>
         <div className="flex shrink-0 gap-2">
           <Button variant="ghost" size="sm" onClick={deny}>

@@ -23,8 +23,7 @@ function PageviewTrackerInner() {
   React.useEffect(() => {
     if (!pathname) return;
     const normalized = normalizePathname(pathname);
-    const origin =
-      typeof window === "undefined" ? "" : window.location.origin;
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
     track("$pageview", {
       pathname: normalized,
       $current_url: `${origin}${normalized}`,

@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
 
@@ -131,7 +137,11 @@ describe("PlannerBoard — batch cook / leftovers (#380)", () => {
 
   it("marks the primary with a batch badge and the linked night as leftovers", () => {
     render(
-      <PlannerBoard days={weekDays} entries={[primary, leftovers]} recipes={[]} />,
+      <PlannerBoard
+        days={weekDays}
+        entries={[primary, leftovers]}
+        recipes={[]}
+      />,
     );
     expect(screen.getByText(/batch ×2/i)).toBeInTheDocument();
     // Wednesday's chip is styled as leftovers…
@@ -150,7 +160,11 @@ describe("PlannerBoard — batch cook / leftovers (#380)", () => {
   it("removing a batch primary offers to also remove the leftovers", async () => {
     removeEntryAction.mockResolvedValue({ ok: true });
     render(
-      <PlannerBoard days={weekDays} entries={[primary, leftovers]} recipes={[]} />,
+      <PlannerBoard
+        days={weekDays}
+        entries={[primary, leftovers]}
+        recipes={[]}
+      />,
     );
 
     fireEvent.click(
@@ -181,7 +195,9 @@ describe("PlannerBoard — batch cook / leftovers (#380)", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /add to dinner on monday, jul 6/i }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: /weeknight chili/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /weeknight chili/i }),
+    );
 
     const toggle = await screen.findByLabelText(/batch cook/i);
     fireEvent.click(toggle);

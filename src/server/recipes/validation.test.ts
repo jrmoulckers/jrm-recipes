@@ -285,7 +285,9 @@ describe("ingredientInput", () => {
     expect(() => ingredientInput.parse({ item: " " })).toThrow(
       /Add an ingredient/,
     );
-    expect(() => ingredientInput.parse({ item: "Salt", quantity: "100001" })).toThrow();
+    expect(() =>
+      ingredientInput.parse({ item: "Salt", quantity: "100001" }),
+    ).toThrow();
   });
 });
 

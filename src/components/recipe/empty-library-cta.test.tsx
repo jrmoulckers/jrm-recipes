@@ -21,7 +21,9 @@ afterEach(() => {
 });
 
 function renderWithFlag(value?: string) {
-  const initialFlags: FlagMap = value ? { [EMPTY_LIBRARY_CTA_FLAG]: value } : {};
+  const initialFlags: FlagMap = value
+    ? { [EMPTY_LIBRARY_CTA_FLAG]: value }
+    : {};
   return render(
     <FlagsProvider initialFlags={initialFlags}>
       <EmptyLibraryCta />

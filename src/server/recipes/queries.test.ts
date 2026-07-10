@@ -20,7 +20,11 @@ vi.mock("~/server/db", () => ({
 }));
 
 import type { User } from "~/server/db/schema";
-import { getRecipeLineage, getRecipeFamilyTree, getRecipeTimeline } from "./queries";
+import {
+  getRecipeLineage,
+  getRecipeFamilyTree,
+  getRecipeTimeline,
+} from "./queries";
 import { FORK_LIST_CAP } from "./pagination";
 
 const owner = { id: "owner_1" } as User;
@@ -145,7 +149,9 @@ describe("getRecipeTimeline visibility", () => {
     const { entries } = await getRecipeTimeline("src_1", null);
 
     expect(entries.some((e) => e.kind === "adaptation")).toBe(false);
-    expect(entries.some((e) => e.related?.title === "Private Fork")).toBe(false);
+    expect(entries.some((e) => e.related?.title === "Private Fork")).toBe(
+      false,
+    );
     expect(JSON.stringify(entries)).not.toContain("secret family tweak");
   });
 

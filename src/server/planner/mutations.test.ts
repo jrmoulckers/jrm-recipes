@@ -69,12 +69,19 @@ describe("addEntry group scope (issue #363)", () => {
     runWith(tx);
 
     await addEntry(
-      { date: "2024-01-01", slot: "dinner", note: "Taco night", groupId: "group_1" },
+      {
+        date: "2024-01-01",
+        slot: "dinner",
+        note: "Taco night",
+        groupId: "group_1",
+      },
       member,
     );
 
     expect(tx.insert).toHaveBeenCalledWith(mealPlanEntries);
-    const values = tx.chain.values.mock.calls[0]![0] as { groupId: string | null };
+    const values = tx.chain.values.mock.calls[0]![0] as {
+      groupId: string | null;
+    };
     expect(values.groupId).toBe("group_1");
   });
 
@@ -84,7 +91,12 @@ describe("addEntry group scope (issue #363)", () => {
 
     await expect(
       addEntry(
-        { date: "2024-01-01", slot: "dinner", note: "Nope", groupId: "group_1" },
+        {
+          date: "2024-01-01",
+          slot: "dinner",
+          note: "Nope",
+          groupId: "group_1",
+        },
         outsider,
       ),
     ).rejects.toThrow("FORBIDDEN");

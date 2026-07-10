@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NutritionPanel, type CalorieMember } from "./nutrition-panel";
@@ -16,10 +22,16 @@ const PER_SERVING: Nutrition = {
 describe("NutritionPanel", () => {
   it("renders per-serving values by default", () => {
     render(
-      <NutritionPanel nutrition={PER_SERVING} servings={4} servingsNoun="servings" />,
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        servingsNoun="servings"
+      />,
     );
     const region = screen.getByRole("region", { name: /nutrition facts/i });
-    expect(within(region).getByText(/amounts are per serving/i)).toBeInTheDocument();
+    expect(
+      within(region).getByText(/amounts are per serving/i),
+    ).toBeInTheDocument();
     expect(within(region).getByText("500")).toBeInTheDocument();
   });
 
@@ -74,11 +86,7 @@ describe("NutritionPanel calorie goal (issue #430)", () => {
 
   it("frames a serving against the first member's goal by default", () => {
     render(
-      <NutritionPanel
-        nutrition={PER_SERVING}
-        servings={4}
-        members={MEMBERS}
-      />,
+      <NutritionPanel nutrition={PER_SERVING} servings={4} members={MEMBERS} />,
     );
     // 500 / 2000 = 25% of Mom's daily calories.
     expect(screen.getByText("25%")).toBeInTheDocument();
@@ -87,11 +95,7 @@ describe("NutritionPanel calorie goal (issue #430)", () => {
 
   it("updates the percentage when a different member is selected", () => {
     render(
-      <NutritionPanel
-        nutrition={PER_SERVING}
-        servings={4}
-        members={MEMBERS}
-      />,
+      <NutritionPanel nutrition={PER_SERVING} servings={4} members={MEMBERS} />,
     );
     fireEvent.change(
       screen.getByRole("combobox", { name: /family member for calorie goal/i }),
@@ -103,11 +107,7 @@ describe("NutritionPanel calorie goal (issue #430)", () => {
 
   it("recomputes against whole-recipe calories when the basis is toggled", () => {
     render(
-      <NutritionPanel
-        nutrition={PER_SERVING}
-        servings={4}
-        members={MEMBERS}
-      />,
+      <NutritionPanel nutrition={PER_SERVING} servings={4} members={MEMBERS} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /whole recipe/i }));
     // 500 × 4 = 2000 calories = 100% of Mom's 2000 goal.

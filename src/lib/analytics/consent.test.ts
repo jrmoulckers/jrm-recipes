@@ -8,7 +8,11 @@ import {
   resetConsent,
 } from "./consent";
 import { track } from "./index";
-import { clearClientBackend, setClientBackend, type AnalyticsBackend } from "./backend";
+import {
+  clearClientBackend,
+  setClientBackend,
+  type AnalyticsBackend,
+} from "./backend";
 
 afterEach(() => {
   resetConsent();
@@ -29,12 +33,16 @@ describe("detectPrivacySignal", () => {
     expect(detectPrivacySignal({ doNotTrack: "1" })).toBe(true);
     expect(detectPrivacySignal({ doNotTrack: "yes" })).toBe(true);
     expect(detectPrivacySignal({ msDoNotTrack: "1" })).toBe(true);
-    expect(detectPrivacySignal({ doNotTrack: null }, { doNotTrack: "1" })).toBe(true);
+    expect(detectPrivacySignal({ doNotTrack: null }, { doNotTrack: "1" })).toBe(
+      true,
+    );
   });
 
   it("returns false when nothing is set", () => {
     expect(detectPrivacySignal({ doNotTrack: "0" })).toBe(false);
-    expect(detectPrivacySignal({ doNotTrack: null }, { doNotTrack: null })).toBe(false);
+    expect(
+      detectPrivacySignal({ doNotTrack: null }, { doNotTrack: null }),
+    ).toBe(false);
   });
 });
 

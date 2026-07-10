@@ -34,7 +34,10 @@ import {
   type BatchMultiple,
 } from "~/lib/planner-batch";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
-import { allergenConflicts, type ActiveMemberOption } from "~/lib/dietary-match";
+import {
+  allergenConflicts,
+  type ActiveMemberOption,
+} from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
@@ -128,7 +131,11 @@ export function PlannerBoard({
   const leftoversByRecipeId = React.useMemo(() => {
     const map = new Map<string, BoardEntry>();
     for (const entry of entries) {
-      if (entry.recipe && parseLeftoversNote(entry.note) && !map.has(entry.recipe.id)) {
+      if (
+        entry.recipe &&
+        parseLeftoversNote(entry.note) &&
+        !map.has(entry.recipe.id)
+      ) {
         map.set(entry.recipe.id, entry);
       }
     }
@@ -179,7 +186,7 @@ export function PlannerBoard({
                 </span>
               </div>
               {day.isToday && (
-                <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                <span className="bg-primary/12 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                   Today
                 </span>
               )}
@@ -263,7 +270,9 @@ function EntryChip({
   function removeEntries(alsoLeftovers: boolean) {
     startTransition(async () => {
       const ids =
-        alsoLeftovers && batch ? [entry.id, batch.leftoversEntryId] : [entry.id];
+        alsoLeftovers && batch
+          ? [entry.id, batch.leftoversEntryId]
+          : [entry.id];
       const results = await Promise.all(
         ids.map((id) => removeEntryAction({ entryId: id })),
       );
@@ -306,7 +315,10 @@ function EntryChip({
   }
 
   const title = entry.recipe?.title ?? entry.note ?? "Untitled";
-  const alerts = allergenConflicts(avoidAllergens, entry.recipe?.allergens ?? []);
+  const alerts = allergenConflicts(
+    avoidAllergens,
+    entry.recipe?.allergens ?? [],
+  );
   const alertText =
     alerts.length > 0
       ? `Contains ${formatList(
@@ -398,7 +410,7 @@ function EntryChip({
                 type="button"
                 onClick={cookedIt}
                 disabled={isCooking}
-                className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 disabled:cursor-wait disabled:opacity-70 motion-reduce:opacity-100"
+                className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-70 group-hover:opacity-100 motion-reduce:opacity-100"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden />
                 {isCooking ? "Logging…" : "Cooked it"}
@@ -418,8 +430,8 @@ function EntryChip({
               <DialogTitle>Remove this meal?</DialogTitle>
               <DialogDescription>
                 You batch-cooked this with a leftovers night
-                {batch.dayLabel ? ` on ${batch.dayLabel}` : ""}. Remove that too,
-                or just this meal?
+                {batch.dayLabel ? ` on ${batch.dayLabel}` : ""}. Remove that
+                too, or just this meal?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -549,7 +561,9 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          batching ? "Added — leftovers night booked too" : "Added to your plan",
+          batching
+            ? "Added — leftovers night booked too"
+            : "Added to your plan",
         );
         onClose();
         router.refresh();
@@ -693,7 +707,9 @@ function AddEntryDialog({
                       <select
                         id={leftoversId}
                         value={leftoversDate}
-                        onChange={(event) => setLeftoversDate(event.target.value)}
+                        onChange={(event) =>
+                          setLeftoversDate(event.target.value)
+                        }
                         className="h-9 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {leftoversOptions.map((day) => (
@@ -737,23 +753,23 @@ export function PlannerEmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 py-14 text-center">
-      <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+      <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
         <UtensilsCrossed className="size-6" aria-hidden="true" />
       </span>
       <p className="max-w-sm text-sm text-muted-foreground">
         {groupName ? (
           <>
             Nothing planned for{" "}
-            <span className="font-medium text-foreground">{groupName}</span> this
-            week yet. Tap{" "}
-            <span className="font-medium text-foreground">Add</span> on any day —
-            everyone in the group can see and edit this plan.
+            <span className="font-medium text-foreground">{groupName}</span>{" "}
+            this week yet. Tap{" "}
+            <span className="font-medium text-foreground">Add</span> on any day
+            — everyone in the group can see and edit this plan.
           </>
         ) : (
           <>
             Nothing planned this week yet. Tap{" "}
-            <span className="font-medium text-foreground">Add</span> on any day to
-            drop in a recipe or a quick note.
+            <span className="font-medium text-foreground">Add</span> on any day
+            to drop in a recipe or a quick note.
           </>
         )}
       </p>

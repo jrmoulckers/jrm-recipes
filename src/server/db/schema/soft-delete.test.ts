@@ -32,7 +32,10 @@ describe("recipes soft-delete schema (issue #165)", () => {
     ]) {
       const idx = indexes.find((i) => i.config.name === name);
       expect(idx, `expected index "${name}"`).toBeDefined();
-      expect(idx?.config.where, `"${name}" should be a partial index`).toBeDefined();
+      expect(
+        idx?.config.where,
+        `"${name}" should be a partial index`,
+      ).toBeDefined();
     }
   });
 });

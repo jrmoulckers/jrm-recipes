@@ -59,7 +59,11 @@ describe("messageForError", () => {
   });
 
   it("falls back to the provided fallback for a known code without an override", () => {
-    const msg = messageForError(new DomainError("CONFLICT"), {}, "fallback copy");
+    const msg = messageForError(
+      new DomainError("CONFLICT"),
+      {},
+      "fallback copy",
+    );
     expect(msg).toBe("fallback copy");
   });
 

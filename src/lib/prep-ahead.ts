@@ -11,12 +11,7 @@
  */
 
 export type PrepAheadCueKind =
-  | "defrost"
-  | "marinate"
-  | "soak"
-  | "overnight"
-  | "chill"
-  | "room-temp";
+  "defrost" | "marinate" | "soak" | "overnight" | "chill" | "room-temp";
 
 export type PrepAheadCue = {
   kind: PrepAheadCueKind;
@@ -70,9 +65,7 @@ const CUE_PATTERNS: CuePattern[] = [
 
 /** Detect the distinct prep-ahead cues present across a recipe's text blocks. */
 export function detectPrepAheadCues(texts: readonly string[]): PrepAheadCue[] {
-  const haystack = texts
-    .filter((t): t is string => Boolean(t))
-    .join("\n");
+  const haystack = texts.filter((t): t is string => Boolean(t)).join("\n");
   if (!haystack.trim()) return [];
   const cues: PrepAheadCue[] = [];
   for (const { kind, label, pattern } of CUE_PATTERNS) {

@@ -14,7 +14,8 @@ export const UI_THEMES = [
   {
     id: "kitchen",
     label: "Kitchen",
-    description: "Warm and cozy — creams, terracotta, and a little home-baked charm.",
+    description:
+      "Warm and cozy — creams, terracotta, and a little home-baked charm.",
   },
   {
     id: "whimsy",
@@ -73,11 +74,41 @@ export function isColorScheme(value: unknown): value is ColorScheme {
  */
 export const THEME_BEHAVIOR: Record<
   UITheme,
-  { largeTargets: boolean; reduceMotion: boolean; simplifiedChrome: boolean; kidSafe: boolean }
+  {
+    largeTargets: boolean;
+    reduceMotion: boolean;
+    simplifiedChrome: boolean;
+    kidSafe: boolean;
+  }
 > = {
-  kitchen: { largeTargets: false, reduceMotion: false, simplifiedChrome: false, kidSafe: false },
-  whimsy: { largeTargets: false, reduceMotion: false, simplifiedChrome: false, kidSafe: false },
-  professional: { largeTargets: false, reduceMotion: false, simplifiedChrome: false, kidSafe: false },
-  kids: { largeTargets: true, reduceMotion: false, simplifiedChrome: true, kidSafe: true },
-  barebones: { largeTargets: true, reduceMotion: true, simplifiedChrome: true, kidSafe: false },
+  kitchen: {
+    largeTargets: false,
+    reduceMotion: false,
+    simplifiedChrome: false,
+    kidSafe: false,
+  },
+  whimsy: {
+    largeTargets: false,
+    reduceMotion: false,
+    simplifiedChrome: false,
+    kidSafe: false,
+  },
+  professional: {
+    largeTargets: false,
+    reduceMotion: false,
+    simplifiedChrome: false,
+    kidSafe: false,
+  },
+  kids: {
+    largeTargets: true,
+    reduceMotion: false,
+    simplifiedChrome: true,
+    kidSafe: true,
+  },
+  barebones: {
+    largeTargets: true,
+    reduceMotion: true,
+    simplifiedChrome: true,
+    kidSafe: false,
+  },
 };

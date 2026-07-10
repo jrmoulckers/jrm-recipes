@@ -88,7 +88,14 @@ export function ImageUploadField({
               maxFiles: 1,
               resourceType: "image",
               sources: ["local", "url", "camera"],
-              clientAllowedFormats: ["png", "jpeg", "jpg", "webp", "gif", "avif"],
+              clientAllowedFormats: [
+                "png",
+                "jpeg",
+                "jpg",
+                "webp",
+                "gif",
+                "avif",
+              ],
               maxImageFileSize: 8_000_000,
             }}
             onSuccess={(result: CloudinaryUploadWidgetResults) => {

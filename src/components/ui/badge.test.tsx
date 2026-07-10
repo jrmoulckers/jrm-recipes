@@ -12,7 +12,9 @@ describe("Badge", () => {
   });
 
   it("renders status variants with semantic tokens", () => {
-    const cases: Array<[React.ComponentProps<typeof Badge>["variant"], string]> = [
+    const cases: Array<
+      [React.ComponentProps<typeof Badge>["variant"], string]
+    > = [
       ["success", "bg-success/15"],
       ["warning", "bg-warning/20"],
       ["info", "bg-info/15"],

@@ -53,8 +53,9 @@ describe("elevation tokens (issue #86)", () => {
       // Match class usage like `shadow-sm`/`shadow-lg` but not `shadow-token-*`.
       if (/\bshadow-(sm|md|lg)\b/.test(source)) offenders.push(file);
     }
-    expect(offenders, `raw shadow utilities in: ${offenders.join(", ")}`).toEqual(
-      [],
-    );
+    expect(
+      offenders,
+      `raw shadow utilities in: ${offenders.join(", ")}`,
+    ).toEqual([]);
   });
 });

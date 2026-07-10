@@ -9,8 +9,7 @@ import { db, isDbConfigured } from "~/server/db";
 import { users } from "~/server/db/schema";
 
 export type DigestPrefResult =
-  | { ok: true; optedIn: boolean }
-  | { ok: false; error: string };
+  { ok: true; optedIn: boolean } | { ok: false; error: string };
 
 /**
  * Toggle the signed-in user's weekly-digest opt-in (issue #354). Persisted per

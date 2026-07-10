@@ -45,7 +45,9 @@ describe("estimateOfflineStorage", () => {
 
 describe("clearAppCaches", () => {
   it("deletes each named runtime cache and counts removals", async () => {
-    const del = vi.fn(async (name: string) => name === APP_RUNTIME_CACHE_NAMES[0]);
+    const del = vi.fn(
+      async (name: string) => name === APP_RUNTIME_CACHE_NAMES[0],
+    );
     const removed = await clearAppCaches({ delete: del });
     expect(del).toHaveBeenCalledTimes(APP_RUNTIME_CACHE_NAMES.length);
     expect(removed).toBe(1);

@@ -10,17 +10,11 @@ import { groupInvitations } from "./groups";
  * email" index, FK cascade/set-null behaviour, and the contact CHECK.
  */
 describe("group_invitations table (issue #181)", () => {
-  const {
-    columns,
-    indexes,
-    checks,
-    foreignKeys,
-  } = getTableConfig(groupInvitations);
+  const { columns, indexes, checks, foreignKeys } =
+    getTableConfig(groupInvitations);
   const col = (name: string) => columns.find((c) => c.name === name);
   const fkOn = (name: string) =>
-    foreignKeys.find((f) =>
-      f.reference().columns.some((c) => c.name === name),
-    );
+    foreignKeys.find((f) => f.reference().columns.some((c) => c.name === name));
 
   it("has the expected columns", () => {
     for (const name of [
@@ -63,10 +57,9 @@ describe("group_invitations table (issue #181)", () => {
     expect(idx, "expected group_invitations_pending_email_uq").toBeDefined();
     expect(idx?.config.unique).toBe(true);
     expect(idx?.config.where, "expected a partial WHERE").toBeDefined();
-    expect(idx?.config.columns.map((c) => (c as { name: string }).name)).toEqual([
-      "groupId",
-      "email",
-    ]);
+    expect(
+      idx?.config.columns.map((c) => (c as { name: string }).name),
+    ).toEqual(["groupId", "email"]);
   });
 
   it("indexes the group foreign key", () => {

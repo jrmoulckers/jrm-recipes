@@ -85,7 +85,9 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
           const body = (
             <>
               <span className="flex-1">
-                <span className="block text-sm text-foreground">{sentence}</span>
+                <span className="block text-sm text-foreground">
+                  {sentence}
+                </span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
                   {formatRelativeTime(item.createdAt)}
                 </span>

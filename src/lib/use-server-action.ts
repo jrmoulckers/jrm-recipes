@@ -14,13 +14,10 @@ import { friendlyError } from "~/lib/error-copy";
 import { CONNECTIVITY_COPY, isOffline } from "~/lib/connectivity-copy";
 
 type SuccessToast<T, Args extends unknown[]> =
-  | string
-  | ((result: ActionSuccess<T>, ...args: Args) => string);
+  string | ((result: ActionSuccess<T>, ...args: Args) => string);
 
 type ErrorToast<Args extends unknown[]> =
-  | boolean
-  | string
-  | ((failure: ActionFailure, ...args: Args) => string);
+  boolean | string | ((failure: ActionFailure, ...args: Args) => string);
 
 export type UseServerActionOptions<T, Args extends unknown[]> = {
   /** Runs after a successful result, before the optional `router.refresh()`. */
@@ -74,7 +71,9 @@ export function useServerAction<T, Args extends unknown[]>(
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors | null>(null);
+  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors | null>(
+    null,
+  );
 
   // Keep the latest options without forcing `run` to change identity so callers
   // can safely pass inline option objects each render.

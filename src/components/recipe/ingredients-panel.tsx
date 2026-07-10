@@ -18,10 +18,7 @@ import {
   toSystemRange,
   toWeight,
 } from "~/lib/units";
-import {
-  computeBakersFormula,
-  computeBatchYield,
-} from "~/lib/bakers-math";
+import { computeBakersFormula, computeBatchYield } from "~/lib/bakers-math";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
 import {
@@ -45,7 +42,10 @@ import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
-import { NutritionPanel, type CalorieMember } from "~/components/recipe/nutrition-panel";
+import {
+  NutritionPanel,
+  type CalorieMember,
+} from "~/components/recipe/nutrition-panel";
 import { type Nutrition } from "~/lib/nutrition";
 
 type PanelIngredient = {
@@ -105,7 +105,9 @@ function measure(
     return grams != null ? { q: grams, unit: "g" } : { q, unit };
   }
   const converted = toSystem(q, unit, system);
-  return converted ? { q: converted.quantity, unit: converted.unit } : { q, unit };
+  return converted
+    ? { q: converted.quantity, unit: converted.unit }
+    : { q, unit };
 }
 
 /**
@@ -206,7 +208,8 @@ export function IngredientsPanel({
   const [servingsInternal, setServingsInternal] = React.useState(
     baseServings ?? 1,
   );
-  const [systemInternal, setSystemInternal] = React.useState<System>("original");
+  const [systemInternal, setSystemInternal] =
+    React.useState<System>("original");
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
     new Set(),
   );
@@ -236,8 +239,7 @@ export function IngredientsPanel({
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
   // chosen a member — so the list stays clean by default (issue #429).
-  const activeMember =
-    memberList.find((m) => m.id === activeMemberId) ?? null;
+  const activeMember = memberList.find((m) => m.id === activeMemberId) ?? null;
   const memberNeeds: MemberNeeds | null =
     activeMember &&
     (activeMember.allergens.length > 0 || activeMember.diets.length > 0)
@@ -302,8 +304,7 @@ export function IngredientsPanel({
     servingsNoun && Number.isFinite(servings) && servings > 0
       ? Math.round(servings)
       : null;
-  const pieces =
-    pieceCount.trim() === "" ? countableYield : Number(pieceCount);
+  const pieces = pieceCount.trim() === "" ? countableYield : Number(pieceCount);
   const batchYield = React.useMemo(
     () => computeBatchYield(weighed, factor, pieces),
     [weighed, factor, pieces],
@@ -324,7 +325,6 @@ export function IngredientsPanel({
     }
     return map;
   }, [ingredients, factor, bakersFormula]);
-
 
   const changedAmountIds = React.useMemo(() => {
     const changed = new Set<string>();
@@ -393,7 +393,10 @@ export function IngredientsPanel({
     : null;
   const pinServings =
     pinFactor != null && canScale && baseServings
-      ? Math.min(1000, Math.max(1, Math.round(baseServings * pinFactor * 100) / 100))
+      ? Math.min(
+          1000,
+          Math.max(1, Math.round(baseServings * pinFactor * 100) / 100),
+        )
       : null;
 
   function openScaleTo() {
@@ -582,15 +585,22 @@ export function IngredientsPanel({
           <Button type="submit" size="sm" disabled={pinServings == null}>
             Apply
           </Button>
-          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+          <p
+            className="w-full text-xs text-muted-foreground"
+            aria-live="polite"
+          >
             {pinAmount.trim() === "" ? (
-              <>Pin one ingredient to what you have and rescale the whole recipe.</>
+              <>
+                Pin one ingredient to what you have and rescale the whole
+                recipe.
+              </>
             ) : pinFactor != null && pinServings != null ? (
               <>
                 ≈ {formatQuantity(pinFactor, undefined, locale)}× the recipe
                 {servingsNoun ? (
                   <>
-                    {" "}— {formatQuantity(pinServings, undefined, locale)}{" "}
+                    {" "}
+                    — {formatQuantity(pinServings, undefined, locale)}{" "}
                     {servingsNoun}
                   </>
                 ) : null}
@@ -743,7 +753,8 @@ export function IngredientsPanel({
                       memberNeeds,
                     )
                   : null;
-                const flagged = conflict != null && isIngredientConflict(conflict);
+                const flagged =
+                  conflict != null && isIngredientConflict(conflict);
                 const reason = flagged
                   ? [
                       conflict.allergens.length > 0
@@ -783,7 +794,9 @@ export function IngredientsPanel({
                               : flagged
                                 ? "border-warning"
                                 : "border-border",
-                            justChecked && isChecked && "motion-safe:animate-check-box-pop",
+                            justChecked &&
+                              isChecked &&
+                              "motion-safe:animate-check-box-pop",
                           )}
                           aria-hidden
                         >
@@ -819,14 +832,19 @@ export function IngredientsPanel({
                               <span
                                 className={cn(
                                   "h-px w-full origin-left bg-current",
-                                  justChecked && "motion-safe:animate-strike-in",
+                                  justChecked &&
+                                    "motion-safe:animate-strike-in",
                                 )}
                               />
                             </span>
                           )}
                           {(number || unit) && (
                             <span
-                              key={amountChanged ? `amt-${servings}-${system}` : "amt"}
+                              key={
+                                amountChanged
+                                  ? `amt-${servings}-${system}`
+                                  : "amt"
+                              }
                               className={cn(
                                 "font-semibold tabular-nums",
                                 amountChanged &&
@@ -853,12 +871,18 @@ export function IngredientsPanel({
                             </span>
                           )}
                           {ing.stepPosition != null && (
-                            <Badge variant="muted" className="ms-2 align-middle">
+                            <Badge
+                              variant="muted"
+                              className="ms-2 align-middle"
+                            >
                               Step {ing.stepPosition}
                             </Badge>
                           )}
                           {ing.optional && (
-                            <Badge variant="muted" className="ms-2 align-middle">
+                            <Badge
+                              variant="muted"
+                              className="ms-2 align-middle"
+                            >
                               optional
                             </Badge>
                           )}
@@ -882,7 +906,7 @@ export function IngredientsPanel({
                       />
                     </div>
                     {flagged && (
-                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-warning">
+                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
                           <span className="sr-only">Dietary warning — </span>
@@ -891,13 +915,13 @@ export function IngredientsPanel({
                       </p>
                     )}
                     {nudge && (
-                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         {nudge}
                       </p>
                     )}
                     {breakdown && (
-                      <p className="ms-9 mb-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         <span>
                           <span className="sr-only">Measure as </span>≈{" "}

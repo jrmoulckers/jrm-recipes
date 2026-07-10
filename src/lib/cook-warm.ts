@@ -45,10 +45,14 @@ const LARGEST_DEVICE_SIZE = 1920;
  */
 export function cookImageWidths(viewportWidth: number, dpr: number): number[] {
   const safeDpr = Math.min(Math.max(Number.isFinite(dpr) ? dpr : 1, 1), 3);
-  const safeWidth = Math.max(Number.isFinite(viewportWidth) ? viewportWidth : 0, 1);
+  const safeWidth = Math.max(
+    Number.isFinite(viewportWidth) ? viewportWidth : 0,
+    1,
+  );
   const target = Math.ceil(safeWidth * safeDpr);
 
-  const chosen = DEVICE_SIZES.find((width) => width >= target) ?? LARGEST_DEVICE_SIZE;
+  const chosen =
+    DEVICE_SIZES.find((width) => width >= target) ?? LARGEST_DEVICE_SIZE;
   const nextUp = DEVICE_SIZES[DEVICE_SIZES.indexOf(chosen) + 1] ?? chosen;
 
   return [...new Set<number>([chosen, nextUp])];

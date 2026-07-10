@@ -117,7 +117,10 @@ export function A11yProvider({
   // OS signals. Seeded false for SSR/first paint (matchMedia is client-only),
   // then hydrated + kept live via listeners. Only read where no explicit pref
   // exists, so this never fights a user choice.
-  const [system, setSystem] = React.useState({ motion: false, contrast: false });
+  const [system, setSystem] = React.useState({
+    motion: false,
+    contrast: false,
+  });
 
   React.useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;

@@ -73,7 +73,7 @@ Build a standard triangular cohort table in the analytics tool:
 
 Produce two versions of the table — **per user** and **per household**
 (grouped by `householdId`) — so activation experiments and onboarding changes
-can be judged on whether they move *durable family* retention, not just
+can be judged on whether they move _durable family_ retention, not just
 first-week user activity.
 
 ## Reproducing it

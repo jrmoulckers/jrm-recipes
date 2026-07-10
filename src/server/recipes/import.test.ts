@@ -38,9 +38,15 @@ describe("parseDurationToMinutes", () => {
 
 describe("parseYield", () => {
   it("splits count and noun", () => {
-    expect(parseYield("4 servings")).toEqual({ servings: "4", noun: "servings" });
+    expect(parseYield("4 servings")).toEqual({
+      servings: "4",
+      noun: "servings",
+    });
     expect(parseYield("Serves 6")).toEqual({ servings: "6", noun: "" });
-    expect(parseYield(["8 cookies"])).toEqual({ servings: "8", noun: "cookies" });
+    expect(parseYield(["8 cookies"])).toEqual({
+      servings: "8",
+      noun: "cookies",
+    });
     expect(parseYield(12)).toEqual({ servings: "12", noun: "" });
   });
 });
@@ -149,7 +155,10 @@ const SAMPLE_HTML = `
 `;
 
 describe("parseRecipeFromHtml", () => {
-  const recipe = parseRecipeFromHtml(SAMPLE_HTML, "https://example.com/marinara");
+  const recipe = parseRecipeFromHtml(
+    SAMPLE_HTML,
+    "https://example.com/marinara",
+  );
 
   it("finds the Recipe node inside @graph", () => {
     expect(recipe).not.toBeNull();
@@ -260,23 +269,38 @@ describe("importRecipeFromUrl HTTP errors", () => {
   });
 
   it("suggests a different link for non-retryable 4xx responses", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 404 })),
+    );
 
-    await expect(importRecipeFromUrl("https://example.com/missing")).resolves.toEqual({
+    await expect(
+      importRecipeFromUrl("https://example.com/missing"),
+    ).resolves.toEqual({
       ok: false,
       error: "That site returned an error (404). Try a different link.",
     });
   });
 
   it("suggests trying again shortly for 429 and 5xx responses", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 429 })));
-    await expect(importRecipeFromUrl("https://example.com/rate-limited")).resolves.toEqual({
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 429 })),
+    );
+    await expect(
+      importRecipeFromUrl("https://example.com/rate-limited"),
+    ).resolves.toEqual({
       ok: false,
       error: "That site returned an error (429). Try again shortly.",
     });
 
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
-    await expect(importRecipeFromUrl("https://example.com/unavailable")).resolves.toEqual({
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 503 })),
+    );
+    await expect(
+      importRecipeFromUrl("https://example.com/unavailable"),
+    ).resolves.toEqual({
       ok: false,
       error: "That site returned an error (503). Try again shortly.",
     });
@@ -300,7 +324,9 @@ describe("importRecipeFromUrl redirect SSRF guard", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(importRecipeFromUrl("https://example.com/recipe")).resolves.toEqual({
+    await expect(
+      importRecipeFromUrl("https://example.com/recipe"),
+    ).resolves.toEqual({
       ok: false,
       error: "That address can't be imported.",
     });
@@ -338,7 +364,9 @@ describe("importRecipeFromUrl redirect SSRF guard", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(importRecipeFromUrl("https://example.com/loop")).resolves.toEqual({
+    await expect(
+      importRecipeFromUrl("https://example.com/loop"),
+    ).resolves.toEqual({
       ok: false,
       error: "That address can't be imported.",
     });
@@ -352,7 +380,9 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
   });
 
   it("rejects a public hostname that resolves to a loopback IP before fetching", async () => {
-    const fetchMock = vi.fn(async () => new Response("INTERNAL", { status: 200 }));
+    const fetchMock = vi.fn(
+      async () => new Response("INTERNAL", { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const lookup = vi.fn(async () => [{ address: "127.0.0.1", family: 4 }]);
@@ -364,7 +394,9 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
   });
 
   it("rejects a hostname that resolves to the cloud metadata IP", async () => {
-    const fetchMock = vi.fn(async () => new Response("SECRETS", { status: 200 }));
+    const fetchMock = vi.fn(
+      async () => new Response("SECRETS", { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const lookup = vi.fn(async () => [
@@ -377,7 +409,9 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
   });
 
   it("rejects when ANY resolved address is private (mixed A records)", async () => {
-    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    const fetchMock = vi.fn(
+      async () => new Response(SAMPLE_HTML, { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const lookup = vi.fn(async () => [
@@ -391,7 +425,9 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
   });
 
   it("allows a hostname that resolves only to public addresses", async () => {
-    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    const fetchMock = vi.fn(
+      async () => new Response(SAMPLE_HTML, { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const lookup = vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]);
@@ -405,7 +441,9 @@ describe("importRecipeFromUrl DNS-rebinding guard (i194)", () => {
   });
 
   it("does not block when the name fails to resolve (no internal target)", async () => {
-    const fetchMock = vi.fn(async () => new Response(SAMPLE_HTML, { status: 200 }));
+    const fetchMock = vi.fn(
+      async () => new Response(SAMPLE_HTML, { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const lookup = vi.fn(async () => {
@@ -452,9 +490,7 @@ describe("importRecipeFromUrl response size limits (i222)", () => {
         controller.enqueue(chunk);
       },
     });
-    const fetchMock = vi.fn(
-      async () => new Response(stream, { status: 200 }),
-    );
+    const fetchMock = vi.fn(async () => new Response(stream, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     // No structured recipe in the garbage body, so it reports "not found" —

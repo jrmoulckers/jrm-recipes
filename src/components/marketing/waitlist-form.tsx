@@ -88,12 +88,13 @@ export function WaitlistForm({
             disabled={isPending}
           />
         </div>
-        <Button type="submit" size="lg" disabled={isPending} className="shrink-0">
-          {isPending ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <Mail />
-          )}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={isPending}
+          className="shrink-0"
+        >
+          {isPending ? <Loader2 className="animate-spin" /> : <Mail />}
           {isPending ? "Joining…" : "Get early access"}
         </Button>
       </div>

@@ -13,7 +13,11 @@ class FakeUtterance {
   }
 }
 
-const STEPS = ["Step 1. Cream the butter.", "Step 2. Add eggs.", "Step 3. Bake."];
+const STEPS = [
+  "Step 1. Cream the butter.",
+  "Step 2. Add eggs.",
+  "Step 3. Bake.",
+];
 
 describe("useReadAloud (#387)", () => {
   let speakSpy: ReturnType<typeof vi.fn>;
@@ -22,7 +26,9 @@ describe("useReadAloud (#387)", () => {
   let resumeSpy: ReturnType<typeof vi.fn>;
 
   function lastUtterance(): FakeUtterance {
-    return speakSpy.mock.calls[speakSpy.mock.calls.length - 1]![0] as FakeUtterance;
+    return speakSpy.mock.calls[
+      speakSpy.mock.calls.length - 1
+    ]![0] as FakeUtterance;
   }
 
   beforeEach(() => {

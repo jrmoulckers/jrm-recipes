@@ -31,14 +31,19 @@ export function vibrate(
   pattern: HapticPattern,
   isReduced: () => boolean = prefersReducedMotion,
 ): boolean {
-  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
+  if (
+    typeof navigator === "undefined" ||
+    typeof navigator.vibrate !== "function"
+  ) {
     return false;
   }
   if (isReduced()) return false;
 
   try {
     // Copy readonly patterns to a mutable array for the DOM signature.
-    return navigator.vibrate(typeof pattern === "number" ? pattern : [...pattern]);
+    return navigator.vibrate(
+      typeof pattern === "number" ? pattern : [...pattern],
+    );
   } catch {
     return false;
   }

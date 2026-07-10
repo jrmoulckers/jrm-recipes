@@ -8,30 +8,30 @@ display prices in code are product-display values.
 
 ## Current tiers
 
-| Tier | Display price | Trial | Tagline | Highlights from code |
-| --- | ---: | ---: | --- | --- |
-| Free | $0/month | 0 days | "Everything a family needs to start cooking together." | Up to 50 saved recipes; one family group up to 5 members; 200 MB photo storage; Cook Mode, meal planning, and shopping lists. |
-| Family | $5/month | 14 days | "Unlimited recipes and AI help for the whole family." | Unlimited recipes; up to 20 family members across unlimited groups; 10 GB photo and video storage; AI recipe generation, cooking tutor, and substitutions; video and reel exports; 500 AI credits every month. |
+| Tier   | Display price |   Trial | Tagline                                                | Highlights from code                                                                                                                                                                                           |
+| ------ | ------------: | ------: | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Free   |      $0/month |  0 days | "Everything a family needs to start cooking together." | Up to 50 saved recipes; one family group up to 5 members; 200 MB photo storage; Cook Mode, meal planning, and shopping lists.                                                                                  |
+| Family |      $5/month | 14 days | "Unlimited recipes and AI help for the whole family."  | Unlimited recipes; up to 20 family members across unlimited groups; 10 GB photo and video storage; AI recipe generation, cooking tutor, and substitutions; video and reel exports; 500 AI credits every month. |
 
 ## Entitlement comparison
 
 In `src/config/plans.ts`, boolean entitlements are feature flags. Numeric limits
 use `null` for unlimited and `0` for off.
 
-| Entitlement | Free | Family |
-| --- | ---: | ---: |
-| `aiGeneration` | Off | On |
-| `aiTutor` | Off | On |
-| `aiSubstitutions` | Off | On |
-| `videoExport` | Off | On |
-| `advancedCollaboration` | Off | On |
-| `maxRecipes` | 50 | Unlimited (`null`) |
-| `maxStorageMb` | 200 MB | 10,240 MB (10 GB) |
-| `maxFamilyMembers` | 5 | 20 |
-| `maxGroups` | 1 | Unlimited (`null`) |
-| `aiCreditsPerMonth` | 0 | 500 |
-| `stripePriceEnvKey` | `null` | `STRIPE_PRICE_FAMILY` |
-| `trialDays` | 0 | 14 |
+| Entitlement             |   Free |                Family |
+| ----------------------- | -----: | --------------------: |
+| `aiGeneration`          |    Off |                    On |
+| `aiTutor`               |    Off |                    On |
+| `aiSubstitutions`       |    Off |                    On |
+| `videoExport`           |    Off |                    On |
+| `advancedCollaboration` |    Off |                    On |
+| `maxRecipes`            |     50 |    Unlimited (`null`) |
+| `maxStorageMb`          | 200 MB |     10,240 MB (10 GB) |
+| `maxFamilyMembers`      |      5 |                    20 |
+| `maxGroups`             |      1 |    Unlimited (`null`) |
+| `aiCreditsPerMonth`     |      0 |                   500 |
+| `stripePriceEnvKey`     | `null` | `STRIPE_PRICE_FAMILY` |
+| `trialDays`             |      0 |                    14 |
 
 ## Packaging strategy
 

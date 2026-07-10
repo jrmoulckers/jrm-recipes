@@ -67,9 +67,7 @@ describe("CookAllergenBanner", () => {
   });
 
   it("carries the best-effort double-check disclaimer", () => {
-    render(
-      <CookAllergenBanner recipe={makeRecipe(["1 cup whole milk"])} />,
-    );
+    render(<CookAllergenBanner recipe={makeRecipe(["1 cup whole milk"])} />);
     expect(
       screen.getByText(/double-check labels and brands/i),
     ).toBeInTheDocument();
@@ -91,9 +89,7 @@ describe("CookAllergenBanner", () => {
   });
 
   it("can be acknowledged and dismissed", () => {
-    render(
-      <CookAllergenBanner recipe={makeRecipe(["1 cup shrimp"])} />,
-    );
+    render(<CookAllergenBanner recipe={makeRecipe(["1 cup shrimp"])} />);
     expect(
       screen.getByRole("region", { name: /allergen safety check/i }),
     ).toBeInTheDocument();

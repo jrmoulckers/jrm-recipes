@@ -86,7 +86,7 @@ export function ReactionBar({
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
               entry.reacted
-                ? "border-primary/40 bg-primary/12 text-primary"
+                ? "bg-primary/12 border-primary/40 text-primary"
                 : "border-border bg-muted/40 text-foreground hover:bg-muted",
               (!canReact || action.pending) && "cursor-default opacity-70",
             )}

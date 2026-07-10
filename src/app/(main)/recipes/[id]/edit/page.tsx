@@ -42,9 +42,7 @@ export default async function EditRecipePage({
     carbsGrams: recipe.carbsGrams != null ? String(recipe.carbsGrams) : "",
     fatGrams: recipe.fatGrams != null ? String(recipe.fatGrams) : "",
     saturatedFatGrams:
-      recipe.saturatedFatGrams != null
-        ? String(recipe.saturatedFatGrams)
-        : "",
+      recipe.saturatedFatGrams != null ? String(recipe.saturatedFatGrams) : "",
     sodiumMg: recipe.sodiumMg != null ? String(recipe.sodiumMg) : "",
     sugarGrams: recipe.sugarGrams != null ? String(recipe.sugarGrams) : "",
     fiberGrams: recipe.fiberGrams != null ? String(recipe.fiberGrams) : "",
@@ -61,8 +59,8 @@ export default async function EditRecipePage({
     status: recipe.status,
     groupId: recipe.groupId ?? "",
     tags: recipe.tags.map(({ tag }) => tag.name).join(", "),
-    dietaryFlags: (recipe.dietaryFlags ?? []).filter(
-      (t): t is DietaryTag => (DIETARY_TAGS as readonly string[]).includes(t),
+    dietaryFlags: (recipe.dietaryFlags ?? []).filter((t): t is DietaryTag =>
+      (DIETARY_TAGS as readonly string[]).includes(t),
     ),
     ingredients: recipe.ingredients.map((ing) => ({
       section: ing.section ?? "",

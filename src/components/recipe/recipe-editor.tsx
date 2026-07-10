@@ -55,7 +55,10 @@ const UpgradeDialog = dynamic(() =>
 );
 
 const ImportRecipePanel = dynamic(
-  () => import("~/components/recipe/import-recipe-panel").then((m) => m.ImportRecipePanel),
+  () =>
+    import("~/components/recipe/import-recipe-panel").then(
+      (m) => m.ImportRecipePanel,
+    ),
   { ssr: false },
 );
 
@@ -596,7 +599,13 @@ export function RecipeEditor({
     ): Promise<Record<string, string[]>> => {
       const payload = buildPayloadRef.current();
       if (!payload.title) {
-        toast.error(pickKidCopy(kidSafe, "validation.title", "Your recipe needs a title."));
+        toast.error(
+          pickKidCopy(
+            kidSafe,
+            "validation.title",
+            "Your recipe needs a title.",
+          ),
+        );
         return { title: ["Give your recipe a title"] };
       }
       if (payload.visibility === "group" && !payload.groupId) {
@@ -811,7 +820,10 @@ export function RecipeEditor({
             />
           ) : null}
 
-          <section id="editor-basics" className="flex scroll-mt-28 flex-col gap-4">
+          <section
+            id="editor-basics"
+            className="flex scroll-mt-28 flex-col gap-4"
+          >
             <Field label="Title" name="title" error={errors.title} required>
               <Input
                 value={form.title}
@@ -842,15 +854,23 @@ export function RecipeEditor({
           </section>
 
           {/* Ingredients */}
-          <section id="editor-ingredients" className="flex scroll-mt-28 flex-col gap-3">
+          <section
+            id="editor-ingredients"
+            className="flex scroll-mt-28 flex-col gap-3"
+          >
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">Ingredients</h2>
+              <h2 className="font-display text-xl font-semibold">
+                Ingredients
+              </h2>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={() =>
-                  setIngredients((l) => [...l, { ...EMPTY_ING, key: nextKey() }])
+                  setIngredients((l) => [
+                    ...l,
+                    { ...EMPTY_ING, key: nextKey() },
+                  ])
                 }
               >
                 <Plus /> Add
@@ -878,74 +898,74 @@ export function RecipeEditor({
                       placeholder="Section — For the sauce…"
                     />
                     <div className="grid gap-2 sm:grid-cols-[4rem_4rem_5rem_1fr]">
-                    <Input
-                      aria-label={t("quantity")}
-                      value={row.quantity}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, quantity: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="2"
-                      inputMode="decimal"
-                    />
-                    <Input
-                      aria-label="Maximum quantity"
-                      value={row.quantityMax}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, quantityMax: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="to 3"
-                      inputMode="decimal"
-                    />
-                    <Input
-                      aria-label={t("unit")}
-                      value={row.unit}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, unit: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="cup"
-                    />
-                    <div className="flex items-start gap-1.5">
                       <Input
-                        aria-label={t("ingredient")}
-                        value={row.item}
+                        aria-label={t("quantity")}
+                        value={row.quantity}
                         onChange={(e) =>
                           setIngredients((l) =>
                             l.map((r) =>
                               r.key === row.key
-                                ? { ...r, item: e.target.value }
+                                ? { ...r, quantity: e.target.value }
                                 : r,
                             ),
                           )
                         }
-                        placeholder="all-purpose flour"
-                        className="flex-1"
+                        placeholder="2"
+                        inputMode="decimal"
                       />
-                      <DictationButton
-                        fieldLabel="ingredient"
-                        onAppend={(text) =>
-                          appendIngredientItem(row.key, text)
+                      <Input
+                        aria-label="Maximum quantity"
+                        value={row.quantityMax}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, quantityMax: e.target.value }
+                                : r,
+                            ),
+                          )
                         }
-                        className="mt-1"
+                        placeholder="to 3"
+                        inputMode="decimal"
                       />
-                    </div>
+                      <Input
+                        aria-label={t("unit")}
+                        value={row.unit}
+                        onChange={(e) =>
+                          setIngredients((l) =>
+                            l.map((r) =>
+                              r.key === row.key
+                                ? { ...r, unit: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                        placeholder="cup"
+                      />
+                      <div className="flex items-start gap-1.5">
+                        <Input
+                          aria-label={t("ingredient")}
+                          value={row.item}
+                          onChange={(e) =>
+                            setIngredients((l) =>
+                              l.map((r) =>
+                                r.key === row.key
+                                  ? { ...r, item: e.target.value }
+                                  : r,
+                              ),
+                            )
+                          }
+                          placeholder="all-purpose flour"
+                          className="flex-1"
+                        />
+                        <DictationButton
+                          fieldLabel="ingredient"
+                          onAppend={(text) =>
+                            appendIngredientItem(row.key, text)
+                          }
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-[1fr_9rem]">
                       <Input
@@ -1034,7 +1054,10 @@ export function RecipeEditor({
           </section>
 
           {/* Steps */}
-          <section id="editor-steps" className="flex scroll-mt-28 flex-col gap-3">
+          <section
+            id="editor-steps"
+            className="flex scroll-mt-28 flex-col gap-3"
+          >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold">Steps</h2>
               <Button
@@ -1054,7 +1077,7 @@ export function RecipeEditor({
                   key={row.key}
                   className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
                 >
-                  <span className="mt-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
+                  <span className="bg-primary/12 mt-2 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-primary">
                     {i + 1}
                   </span>
                   <div className="flex flex-1 flex-col gap-2">
@@ -1201,45 +1224,48 @@ export function RecipeEditor({
             </div>
           </section>
 
-          <section id="editor-story" className="flex scroll-mt-28 flex-col gap-8">
-          <Field
-            label="Notes"
-            name="notes"
-            hint="Tips, substitutions, the story behind it."
-            error={errors.notes}
+          <section
+            id="editor-story"
+            className="flex scroll-mt-28 flex-col gap-8"
           >
-            <Textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              rows={3}
-            />
-          </Field>
-          <div className="-mt-1 flex justify-end">
-            <DictationButton
-              fieldLabel="notes"
-              onAppend={(text) => appendToField("notes", text)}
-            />
-          </div>
+            <Field
+              label="Notes"
+              name="notes"
+              hint="Tips, substitutions, the story behind it."
+              error={errors.notes}
+            >
+              <Textarea
+                value={form.notes}
+                onChange={(e) => set("notes", e.target.value)}
+                rows={3}
+              />
+            </Field>
+            <div className="-mt-1 flex justify-end">
+              <DictationButton
+                fieldLabel="notes"
+                onAppend={(text) => appendToField("notes", text)}
+              />
+            </div>
 
-          <Field
-            label="Story & memories"
-            name="story"
-            hint="Who it came from, when you make it, what it means — in your own words."
-            error={errors.story}
-          >
-            <Textarea
-              value={form.story}
-              onChange={(e) => set("story", e.target.value)}
-              placeholder="Nonna learned this from her mother in Calabria. We make it every Christmas Eve…"
-              rows={4}
-            />
-          </Field>
-          <div className="-mt-1 flex justify-end">
-            <DictationButton
-              fieldLabel="story"
-              onAppend={(text) => appendToField("story", text)}
-            />
-          </div>
+            <Field
+              label="Story & memories"
+              name="story"
+              hint="Who it came from, when you make it, what it means — in your own words."
+              error={errors.story}
+            >
+              <Textarea
+                value={form.story}
+                onChange={(e) => set("story", e.target.value)}
+                placeholder="Nonna learned this from her mother in Calabria. We make it every Christmas Eve…"
+                rows={4}
+              />
+            </Field>
+            <div className="-mt-1 flex justify-end">
+              <DictationButton
+                fieldLabel="story"
+                onAppend={(text) => appendToField("story", text)}
+              />
+            </div>
           </section>
 
           <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
@@ -1250,7 +1276,11 @@ export function RecipeEditor({
               Who this recipe came from and roughly when — shown as a small
               heirloom label. All optional.
             </p>
-            <Field label="Name" name="handedDownFrom" error={errors.handedDownFrom}>
+            <Field
+              label="Name"
+              name="handedDownFrom"
+              error={errors.handedDownFrom}
+            >
               <Input
                 value={form.handedDownFrom}
                 onChange={(e) => set("handedDownFrom", e.target.value)}
@@ -1265,7 +1295,11 @@ export function RecipeEditor({
                   placeholder="1935 or 1930s"
                 />
               </Field>
-              <Field label="Place" name="originPlace" error={errors.originPlace}>
+              <Field
+                label="Place"
+                name="originPlace"
+                error={errors.originPlace}
+              >
                 <Input
                   value={form.originPlace}
                   onChange={(e) => set("originPlace", e.target.value)}
@@ -1450,7 +1484,12 @@ export function RecipeEditor({
 
           <div className="h-px bg-border" />
 
-          <Field label="Tags" name="tags" hint="Comma separated." error={errors.tags}>
+          <Field
+            label="Tags"
+            name="tags"
+            hint="Comma separated."
+            error={errors.tags}
+          >
             <Input
               id="recipe-field-tags"
               value={form.tags}

@@ -2,7 +2,8 @@
 
 import * as React from "react";
 
-type WakeLockStatus = "checking" | "active" | "released" | "unsupported" | "unavailable";
+type WakeLockStatus =
+  "checking" | "active" | "released" | "unsupported" | "unavailable";
 
 type ScreenWakeLockSentinel = {
   readonly released: boolean;

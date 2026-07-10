@@ -29,8 +29,8 @@ const user = { id: "u1" } as unknown as Parameters<typeof createSavedSearch>[1];
 
 /** Build a transaction stub whose callback receives the given `tx`. */
 function withTx(tx: unknown) {
-  dbMock.transaction.mockImplementation(
-    async (cb: (t: unknown) => unknown) => cb(tx),
+  dbMock.transaction.mockImplementation(async (cb: (t: unknown) => unknown) =>
+    cb(tx),
   );
 }
 
@@ -66,10 +66,14 @@ describe("createSavedSearch (#278)", () => {
 
   it("enforces the per-user cap for a new name", async () => {
     const select = vi.fn().mockReturnValue({
-      from: () => ({ where: () => Promise.resolve([{ count: MAX_SAVED_SEARCHES }]) }),
+      from: () => ({
+        where: () => Promise.resolve([{ count: MAX_SAVED_SEARCHES }]),
+      }),
     });
     const tx = {
-      query: { savedSearches: { findFirst: vi.fn().mockResolvedValue(undefined) } },
+      query: {
+        savedSearches: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      },
       select,
       insert: vi.fn(),
     };
@@ -90,7 +94,9 @@ describe("createSavedSearch (#278)", () => {
       from: () => ({ where: () => Promise.resolve([{ count: 0 }]) }),
     });
     const tx = {
-      query: { savedSearches: { findFirst: vi.fn().mockResolvedValue(undefined) } },
+      query: {
+        savedSearches: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      },
       select,
       insert,
     };
@@ -169,7 +175,12 @@ describe("listMySavedSearches (#278)", () => {
 
   it("returns the user's saved searches", async () => {
     const rows = [
-      { id: "s1", name: "Quick veg", query: "tag=quick", createdAt: new Date() },
+      {
+        id: "s1",
+        name: "Quick veg",
+        query: "tag=quick",
+        createdAt: new Date(),
+      },
     ];
     dbMock.query.savedSearches.findMany.mockResolvedValue(rows);
     await expect(listMySavedSearches("u1")).resolves.toEqual(rows);

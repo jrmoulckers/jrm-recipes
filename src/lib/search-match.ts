@@ -112,10 +112,12 @@ export function splitHighlight(text: string, term: string): HighlightSegment[] {
   for (;;) {
     const at = hay.indexOf(needle, cursor);
     if (at === -1) {
-      if (cursor < text.length) segments.push({ text: text.slice(cursor), hit: false });
+      if (cursor < text.length)
+        segments.push({ text: text.slice(cursor), hit: false });
       break;
     }
-    if (at > cursor) segments.push({ text: text.slice(cursor, at), hit: false });
+    if (at > cursor)
+      segments.push({ text: text.slice(cursor, at), hit: false });
     segments.push({ text: text.slice(at, at + term.length), hit: true });
     cursor = at + term.length;
   }

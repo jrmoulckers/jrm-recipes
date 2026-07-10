@@ -5,7 +5,10 @@ import { Check, Copy, Link2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 
-import { createInviteLinkAction, revokeInviteLinkAction } from "~/server/groups/actions";
+import {
+  createInviteLinkAction,
+  revokeInviteLinkAction,
+} from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -104,8 +107,8 @@ export function InviteLinkManager({ slug }: { slug: string }) {
         <div className="space-y-1">
           <p className="text-sm font-medium">Share a join link</p>
           <p className="text-xs text-muted-foreground">
-            Anyone with the link can join — perfect for relatives who aren&apos;t
-            on Heirloom yet.
+            Anyone with the link can join — perfect for relatives who
+            aren&apos;t on Heirloom yet.
           </p>
         </div>
 

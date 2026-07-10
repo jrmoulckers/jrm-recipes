@@ -56,7 +56,8 @@ export async function addCommentAction(
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
-  if (!checkRateLimit("engagementWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit("engagementWrite", user.id).ok)
+    return fail(RATE_LIMITED_MESSAGE);
   try {
     await createComment(parsed.data, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
@@ -114,11 +115,7 @@ export async function resolveCommentAction(
 
   const user = await requireUser();
   try {
-    await resolveComment(
-      parsed.data.commentId,
-      user,
-      parsed.data.resolved,
-    );
+    await resolveComment(parsed.data.commentId, user, parsed.data.resolved);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
     return { ok: true };
   } catch (error) {
@@ -149,7 +146,10 @@ export async function applySuggestionAction(
   const user = await requireUser();
   try {
     await applySuggestion(
-      { recipeId: parsed.data.recipeId, suggestionId: parsed.data.suggestionId },
+      {
+        recipeId: parsed.data.recipeId,
+        suggestionId: parsed.data.suggestionId,
+      },
       user,
     );
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
@@ -179,7 +179,8 @@ export async function setRatingAction(
   if (!parsed.success) return fromZodError(parsed.error);
 
   const user = await requireUser();
-  if (!checkRateLimit("engagementWrite", user.id).ok) return fail(RATE_LIMITED_MESSAGE);
+  if (!checkRateLimit("engagementWrite", user.id).ok)
+    return fail(RATE_LIMITED_MESSAGE);
   try {
     await setRating(parsed.data, user);
     revalidatePath(`/recipes/${parsed.data.recipeSlug}`);

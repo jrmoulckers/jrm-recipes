@@ -94,7 +94,9 @@ export const ingredientInput = z.object({
   // Structured prep state, separate from free-text note (#401).
   prep: optionalString(200),
   // Optional link to the step that uses this ingredient, by ordinal (#425).
-  stepPosition: optionalNumber.pipe(z.number().int().min(0).max(999).optional()),
+  stepPosition: optionalNumber.pipe(
+    z.number().int().min(0).max(999).optional(),
+  ),
   optional: z.boolean().optional().default(false),
 });
 
@@ -107,7 +109,9 @@ export const stepInput = z.object({
     .max(5000, "Keep each step under 5,000 characters"),
   imageUrl: mediaUrl,
   videoUrl: mediaUrl,
-  timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
+  timerSeconds: optionalNumber.pipe(
+    z.number().int().min(0).max(86400).optional(),
+  ),
   // Target internal/doneness temperature in °C + a short doneness cue (#417).
   // Bounds cover freezer (-50) through a very hot oven (400 °C); NULL passes.
   targetTempC: optionalNumber.pipe(
@@ -143,11 +147,19 @@ export const recipeInput = z
     coverImageUrl: mediaUrl,
     servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
     servingsNoun: optionalString(40),
-    prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
-    cookMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
-    totalMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    prepMinutes: optionalNumber.pipe(
+      z.number().int().min(0).max(100000).optional(),
+    ),
+    cookMinutes: optionalNumber.pipe(
+      z.number().int().min(0).max(100000).optional(),
+    ),
+    totalMinutes: optionalNumber.pipe(
+      z.number().int().min(0).max(100000).optional(),
+    ),
     // Inactive/rest time + make-ahead callout (#409).
-    restMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    restMinutes: optionalNumber.pipe(
+      z.number().int().min(0).max(100000).optional(),
+    ),
     makeAheadNote: optionalString(500),
     difficulty: recipeDifficulty.optional(),
     cuisine: optionalString(80),
@@ -164,14 +176,18 @@ export const recipeInput = z
     // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
     // and sodium (mg) are whole numbers, macronutrients are grams and may be
     // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
-    calories: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    calories: optionalNumber.pipe(
+      z.number().int().min(0).max(100000).optional(),
+    ),
     proteinGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     carbsGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     fatGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     saturatedFatGrams: optionalNumber.pipe(
       z.number().min(0).max(100000).optional(),
     ),
-    sodiumMg: optionalNumber.pipe(z.number().int().min(0).max(1000000).optional()),
+    sodiumMg: optionalNumber.pipe(
+      z.number().int().min(0).max(1000000).optional(),
+    ),
     sugarGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     fiberGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     visibility: recipeVisibility.default("private"),

@@ -69,7 +69,9 @@ export function ConsentProvider({
         typeof navigator === "undefined" ? undefined : navigator,
         typeof window === "undefined"
           ? undefined
-          : { doNotTrack: (window as { doNotTrack?: string | null }).doNotTrack },
+          : {
+              doNotTrack: (window as { doNotTrack?: string | null }).doNotTrack,
+            },
       ),
     );
   }, []);

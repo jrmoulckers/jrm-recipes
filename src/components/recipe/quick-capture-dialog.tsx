@@ -149,12 +149,16 @@ export function QuickCaptureDialog() {
             />
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quick-notes">Ingredients &amp; steps (optional)</Label>
+              <Label htmlFor="quick-notes">
+                Ingredients &amp; steps (optional)
+              </Label>
               <Textarea
                 id="quick-notes"
                 value={freeform}
                 onChange={(event) => setFreeform(event.target.value)}
-                placeholder={"Paste or type anything — e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."}
+                placeholder={
+                  "Paste or type anything — e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."
+                }
                 rows={6}
                 maxLength={4000}
               />

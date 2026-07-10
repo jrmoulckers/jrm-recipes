@@ -57,11 +57,7 @@ import {
   type TimerStatus,
 } from "~/lib/cook-state";
 import { cn, formatMinutes } from "~/lib/utils";
-import {
-  displayUnit,
-  formatQuantity,
-  scaleQuantity,
-} from "~/lib/units";
+import { displayUnit, formatQuantity, scaleQuantity } from "~/lib/units";
 import { detectStepHazards } from "~/lib/kid-safety";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import { useReducedMotion } from "~/lib/use-reduced-motion";
@@ -170,7 +166,15 @@ export function CookExperience({
       onToggleChecked: toggleChecked,
       householdSize: household.size,
     }),
-    [servings, setServings, system, setSystem, checked, toggleChecked, household.size],
+    [
+      servings,
+      setServings,
+      system,
+      setSystem,
+      checked,
+      toggleChecked,
+      household.size,
+    ],
   );
 
   const [celebrating, setCelebrating] = React.useState(false);
@@ -210,7 +214,8 @@ export function CookExperience({
   const [precookReady, setPrecookReady] = React.useState(false);
   React.useEffect(() => {
     try {
-      if (sessionStorage.getItem(readyStorageKey) === "1") setPrecookReady(true);
+      if (sessionStorage.getItem(readyStorageKey) === "1")
+        setPrecookReady(true);
     } catch {
       /* storage unavailable — the gate simply shows once this session */
     }
@@ -422,7 +427,7 @@ export function CookExperience({
         >
           <span className="relative flex items-center justify-center">
             <span className="absolute inline-flex size-28 rounded-full bg-success/25 motion-safe:animate-celebrate-burst" />
-            <span className="absolute inline-flex size-40 rounded-full bg-success/10 motion-safe:animate-celebrate-burst [animation-delay:80ms]" />
+            <span className="absolute inline-flex size-40 rounded-full bg-success/10 [animation-delay:80ms] motion-safe:animate-celebrate-burst" />
             <CheckCircle2 className="relative size-24 text-success drop-shadow-lg motion-safe:animate-celebrate-pop" />
           </span>
         </div>
@@ -458,7 +463,7 @@ export function CookExperience({
         {stepAnnouncement}
       </p>
 
-      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 sm:px-5 sm:py-6 short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-5 px-3 py-4 short-landscape:grid-cols-[minmax(0,1fr)_16rem] short-landscape:gap-3 short-landscape:py-2 sm:px-5 sm:py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section
           key={currentStep.id}
           aria-labelledby="current-step-title"
@@ -497,7 +502,7 @@ export function CookExperience({
             recipeTitle={recipe.title}
           />
 
-          <div className="flex flex-col gap-8 p-5 sm:p-8 short-landscape:gap-4 short-landscape:p-4 lg:p-10">
+          <div className="flex flex-col gap-8 p-5 short-landscape:gap-4 short-landscape:p-4 sm:p-8 lg:p-10">
             <div className="flex flex-wrap items-center gap-2">
               {currentStep.section && (
                 <Badge variant="secondary" className="text-sm">
@@ -544,7 +549,9 @@ export function CookExperience({
               <p className="text-sm font-semibold text-muted-foreground">
                 Step {stepIndex + 1} of {totalSteps}
                 {!canGoNext && totalSteps > 1 && (
-                  <span className="ms-2 font-medium text-primary">· Last step</span>
+                  <span className="ms-2 font-medium text-primary">
+                    · Last step
+                  </span>
                 )}
               </p>
               <h1
@@ -648,7 +655,7 @@ export function CookExperience({
           <IngredientsDrawer
             recipe={recipe}
             prominent
-            className="col-span-2 order-first mb-1 w-full justify-center sm:hidden"
+            className="order-first col-span-2 mb-1 w-full justify-center sm:hidden"
             label="Ingredients"
             compactLabel="Ingredients"
             controls={ingredientControls}
@@ -823,7 +830,7 @@ function StepTrail({
   return (
     <nav
       aria-label={label}
-      className="w-full overflow-x-auto px-3 py-2 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="w-full overflow-x-auto px-3 py-2 [scrollbar-width:none] sm:px-5 [&::-webkit-scrollbar]:hidden"
     >
       <ol className="mx-auto flex w-max items-center gap-1.5">
         {Array.from({ length: totalSteps }, (_, i) => {
@@ -1131,12 +1138,19 @@ function StepTimerCard({
           <div
             className={cn(
               "font-mono text-5xl font-bold tabular-nums tracking-tight transition-colors sm:text-6xl",
-              critical ? "text-destructive" : urgent ? "text-warning" : undefined,
+              critical
+                ? "text-destructive"
+                : urgent
+                  ? "text-warning"
+                  : undefined,
             )}
           >
             <span
               key={urgent ? timer.remaining : "steady"}
-              className={cn("inline-block", urgent && "motion-safe:animate-tick-pulse")}
+              className={cn(
+                "inline-block",
+                urgent && "motion-safe:animate-tick-pulse",
+              )}
             >
               {formatCountdown(timer.remaining)}
             </span>
@@ -1189,7 +1203,9 @@ function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
     previousStatusRef.current = timer.status;
 
     if (timer.status === "running") {
-      setMessage(`Timer started, ${formatCountdown(timer.remaining)} remaining`);
+      setMessage(
+        `Timer started, ${formatCountdown(timer.remaining)} remaining`,
+      );
     } else if (timer.status === "paused") {
       setMessage(`Timer paused, ${formatCountdown(timer.remaining)} remaining`);
     } else if (timer.status === "complete") {
@@ -1237,7 +1253,10 @@ function StepIngredients({
           const amount = formatQuantity(scaled, ing.unit, locale);
           const unit = displayUnit(ing.unit, scaled, locale);
           return (
-            <li key={ing.id} className="flex flex-wrap items-baseline gap-x-1.5">
+            <li
+              key={ing.id}
+              className="flex flex-wrap items-baseline gap-x-1.5"
+            >
               {amount && (
                 <span className="font-semibold tabular-nums text-foreground">
                   {amount}
@@ -1291,13 +1310,18 @@ function EquipmentPanel({ equipment }: { equipment: string[] }) {
                 <span
                   className={cn(
                     "flex size-5 shrink-0 items-center justify-center rounded-md border border-input",
-                    isChecked && "border-primary bg-primary text-primary-foreground",
+                    isChecked &&
+                      "border-primary bg-primary text-primary-foreground",
                   )}
                   aria-hidden="true"
                 >
                   {isChecked && <Check className="size-3.5" />}
                 </span>
-                <span className={cn(isChecked && "text-muted-foreground line-through")}>
+                <span
+                  className={cn(
+                    isChecked && "text-muted-foreground line-through",
+                  )}
+                >
                   {tool}
                 </span>
               </button>
@@ -1445,7 +1469,8 @@ function ActiveTimersPanel({
               className={cn(
                 "relative rounded-xl border border-border bg-background p-3",
                 isCurrent && "border-primary/40 bg-primary/10",
-                timer.status === "complete" && "border-success/40 bg-success/10",
+                timer.status === "complete" &&
+                  "border-success/40 bg-success/10",
               )}
             >
               {timer.status === "complete" && (
@@ -1466,7 +1491,9 @@ function ActiveTimersPanel({
                 })}
               >
                 <span className="min-w-0">
-                  <span className="block font-medium">Step {stepIndex + 1}</span>
+                  <span className="block font-medium">
+                    Step {stepIndex + 1}
+                  </span>
                   <span className="line-clamp-1 text-sm text-muted-foreground">
                     {step.section ?? step.instruction}
                   </span>
@@ -1632,7 +1659,7 @@ function CookTimersPanel({
                     >
                       {formatCountdown(timer.remaining)}
                       {isComplete && (
-                        <span className="ms-2 text-sm font-sans font-normal text-success">
+                        <span className="ms-2 font-sans text-sm font-normal text-success">
                           Done
                         </span>
                       )}
@@ -1767,7 +1794,12 @@ function OverviewDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="lg" className="h-12 sm:h-14">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="h-12 sm:h-14"
+        >
           <ListOrdered />
           <span className="hidden sm:inline">Overview</span>
         </Button>
@@ -1804,7 +1836,8 @@ function OverviewDialog({
                   <span
                     className={cn(
                       "flex size-10 shrink-0 items-center justify-center rounded-full border border-border font-display text-lg font-semibold",
-                      isCurrent && "border-primary bg-primary text-primary-foreground",
+                      isCurrent &&
+                        "border-primary bg-primary text-primary-foreground",
                     )}
                   >
                     {index + 1}
@@ -1890,7 +1923,7 @@ function EmptyCookExperience({
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-10">
         <section className="w-full rounded-2xl border border-border bg-card p-8 text-center text-card-foreground shadow-token-lg">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/12 text-primary">
+          <div className="bg-primary/12 mx-auto flex size-16 items-center justify-center rounded-full text-primary">
             <ChefHat className="size-8" />
           </div>
           <h2 className="mt-6 font-display text-3xl font-semibold tracking-tight">

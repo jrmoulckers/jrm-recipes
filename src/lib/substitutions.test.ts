@@ -75,7 +75,9 @@ describe("matchIngredient", () => {
     expect(matchIngredient("sour cream")?.name).toBe("Sour cream");
     expect(matchIngredient("heavy cream")?.name).toBe("Heavy cream");
     expect(matchIngredient("cream cheese")?.name).toBe("Cream cheese");
-    expect(matchIngredient("self-rising flour")?.name).toBe("Self-rising flour");
+    expect(matchIngredient("self-rising flour")?.name).toBe(
+      "Self-rising flour",
+    );
     expect(matchIngredient("brown sugar")?.name).toBe("Brown sugar");
     expect(matchIngredient("cake flour")?.name).toBe("Cake flour");
   });
@@ -150,7 +152,9 @@ describe("matchIngredientDetailed", () => {
   it("derives confidence from alias specificity", () => {
     expect(matchIngredientDetailed("buttermilk")?.confidence).toBe("medium");
     expect(matchIngredientDetailed("oil")?.confidence).toBe("low");
-    expect(matchIngredientDetailed("self-rising flour")?.confidence).toBe("high");
+    expect(matchIngredientDetailed("self-rising flour")?.confidence).toBe(
+      "high",
+    );
   });
 
   it("returns null for unmatched ingredients", () => {

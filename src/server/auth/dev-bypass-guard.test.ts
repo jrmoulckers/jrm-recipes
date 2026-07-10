@@ -77,7 +77,10 @@ describe("isProductionDeploy", () => {
 
   it("is false when env validation is explicitly skipped", () => {
     expect(
-      isProductionDeploy({ VERCEL_ENV: "production", SKIP_ENV_VALIDATION: "1" }),
+      isProductionDeploy({
+        VERCEL_ENV: "production",
+        SKIP_ENV_VALIDATION: "1",
+      }),
     ).toBe(false);
   });
 });

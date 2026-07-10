@@ -79,7 +79,7 @@ describe("Button focus-visible indicator", () => {
 describe("Button data-variant hook (issue #131)", () => {
   // Forced-colors CSS targets buttons by variant (brand fills are ignored by the
   // OS), so the variant must be exposed on the DOM node, not just in classes.
-  it("defaults to data-variant=\"default\" when no variant is given", () => {
+  it('defaults to data-variant="default" when no variant is given', () => {
     render(<Button>Save</Button>);
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
       "data-variant",
