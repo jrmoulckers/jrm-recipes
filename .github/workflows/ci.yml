@@ -284,7 +284,10 @@ jobs:
 
       # Publish the production build so E2E can start it directly instead of
       # rebuilding (#244). Exclude the local build cache — E2E only needs the
-      # compiled output to `next start`.
+      # compiled output to `next start`. The Serwist service worker is emitted
+      # to `public/sw.js` at build time (gitignored), so it must ride along in
+      # the artifact — otherwise `pnpm start` in the E2E job serves no `/sw.js`
+      # and the offline specs hang waiting for the worker to activate.
       - name: Upload build output
         uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         with:
@@ -292,6 +295,9 @@ jobs:
           path: |
             .next
             !.next/cache
+            public/sw.js
+            public/sw.js.map
+            public/swe-worker-*.js
           # `.next` is a dotfile directory, so upload-artifact v4 (which excludes
           # hidden files by default) would skip its entire contents and fail with
           # "No files were found". Opt in so the production build is actually
@@ -357,11 +363,14 @@ jobs:
 
       # Reuse the production build from the `build` job instead of compiling
       # again — playwright.config.ts runs `pnpm start` (not build) under CI.
+      # The artifact is rooted at the repo (it carries both `.next` and the
+      # generated `public/sw.js`), so extract it at the repo root to restore
+      # each file to its original path.
       - name: Download build output
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: next-build
-          path: .next
+          path: .
 
       - name: Run migrations
         run: node scripts/migrate.mjs
