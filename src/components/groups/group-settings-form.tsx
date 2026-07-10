@@ -30,9 +30,9 @@ export function GroupSettingsForm({
   const [name, setName] = React.useState(group.name);
   const [description, setDescription] = React.useState(group.description ?? "");
   const [avatarUrl, setAvatarUrl] = React.useState(group.avatarUrl ?? "");
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>(
-    {},
-  );
+  const [fieldErrors, setFieldErrors] = React.useState<
+    Record<string, string[]>
+  >({});
   const [isPending, startTransition] = React.useTransition();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {

@@ -156,9 +156,7 @@ describe("InstallPrompt modal dialog semantics", () => {
     act(() => (document.activeElement as HTMLElement | null)?.blur());
     fireEvent.keyDown(document, { key: "Escape" });
 
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog")).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // Escape is a real dismissal — remembered like clicking the X.
     expect(window.localStorage.getItem(DISMISS_KEY)).not.toBeNull();
   });
@@ -195,9 +193,16 @@ describe("InstallPrompt modal dialog semantics", () => {
     fireBeforeInstallPrompt();
     await screen.findByRole("dialog", { name: /install heirloom/i });
 
-    const added = addSpy.mock.calls.filter((c) => c[0] === "keydown");
+    // The keydown listener is bound by an effect that runs after the dialog
+    // commits (it needs the container ref), so poll until it registers rather
+    // than asserting synchronously — otherwise the check races the effect flush.
+    await waitFor(() =>
+      expect(addSpy.mock.calls.filter((c) => c[0] === "keydown")).toHaveLength(
+        1,
+      ),
+    );
     // Exactly one registration — no double-binding.
-    expect(added).toHaveLength(1);
+    const added = addSpy.mock.calls.filter((c) => c[0] === "keydown");
 
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

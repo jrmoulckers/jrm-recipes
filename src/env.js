@@ -115,9 +115,7 @@ export const env = createEnv({
     // can log without triggering env validation; declared here only so it's a
     // documented, validated part of the schema. Unset ⇒ `info` in production,
     // `debug` elsewhere.
-    LOG_LEVEL: z
-      .enum(["debug", "info", "warn", "error", "silent"])
-      .optional(),
+    LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).optional(),
   },
 
   client: {

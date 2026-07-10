@@ -26,7 +26,9 @@ describe("image-upload lazy widget (#201)", () => {
   it("imports the Cloudinary widget as a dynamic (code-split) chunk", () => {
     expect(src).toMatch(/dynamic\(\s*\(\)\s*=>\s*import\("next-cloudinary"\)/);
     // No eager top-level value import of the heavy widget.
-    expect(src).not.toMatch(/import\s*\{[^}]*CldUploadWidget[^}]*\}\s*from\s*"next-cloudinary"/);
+    expect(src).not.toMatch(
+      /import\s*\{[^}]*CldUploadWidget[^}]*\}\s*from\s*"next-cloudinary"/,
+    );
   });
 
   it("degrades to a plain URL input without mounting the widget when Cloudinary is unconfigured", () => {
@@ -37,6 +39,8 @@ describe("image-upload lazy widget (#201)", () => {
     // The URL fallback input is present…
     expect(screen.getByLabelText("Cover photo URL")).toBeInTheDocument();
     // …and the upload dropzone (which is what mounts the dynamic widget) is not.
-    expect(screen.queryByRole("button", { name: /upload a photo/i })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /upload a photo/i }),
+    ).toBeNull();
   });
 });

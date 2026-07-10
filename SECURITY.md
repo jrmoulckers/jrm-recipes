@@ -8,10 +8,10 @@ This document describes the supported version, vulnerability reporting process, 
 
 Heirloom follows a rolling support model:
 
-| Version | Supported |
-| --- | --- |
-| Deployed `main` branch | Yes |
-| Older commits, forks, local branches, or archived releases | No |
+| Version                                                    | Supported |
+| ---------------------------------------------------------- | --------- |
+| Deployed `main` branch                                     | Yes       |
+| Older commits, forks, local branches, or archived releases | No        |
 
 Security fixes should be made against `main` and deployed through the normal Vercel production flow.
 
@@ -48,21 +48,21 @@ Safe harbor: good-faith security research that follows this process and avoids h
 
 ### Realistic threats and current mitigations
 
-| Threat | Current mitigations evidenced in the repo |
-| --- | --- |
-| Unauthorized access to private or group recipes | `src/server/recipes/queries.ts` enforces per-viewer access through `canView`, group membership checks, and `getRecipe`. Public feeds only return `public` + `published` recipes. |
-| Unlisted recipe link leakage | Unlisted recipes are not public by slug/id. `getRecipeByShareToken` only resolves enabled unlisted links with the stored token, and owner-only share-link rotation/revocation is implemented in `src/server/recipes/mutations.ts`. |
-| Shared family kitchen tablet showing one user's private recipe to another | `src/app/sw.ts` deliberately uses `NetworkFirst` for recipe pages because recipe HTML is per-viewer and access-controlled. It avoids serving stale authorized recipe pages before the network on shared browser profiles. |
-| Deployed auth accidentally falling back to the shared dev user | `src/env.js`, `src/server/auth/index.ts`, and `src/middleware.ts` fail closed in production/deployed contexts when Clerk keys are missing or `NEXT_PUBLIC_DEV_AUTH_BYPASS=1`. |
-| Web spoofing/clickjacking/XSS blast radius | `src/lib/security/headers.ts` applies a nonce-based CSP with `strict-dynamic`, `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, `nosniff`, a conservative referrer policy, and a locked-down permissions policy through `src/middleware.ts`. |
-| Malicious or malformed recipe input | `src/server/recipes/validation.ts` uses Zod schemas for recipe, ingredient, step, media URL, visibility, status, and numeric bounds. Several invariants are mirrored with Drizzle/Postgres `CHECK` constraints in `src/server/db/schema/recipes.ts`. |
-| Arbitrary media-host tracking through stored recipe images/videos | When Cloudinary is configured, recipe media URLs are restricted by `src/server/recipes/validation.ts` to the configured media allowlist that also backs Next image configuration. |
-| Destructive recipe deletion losing family history | Recipes are soft-deleted with `deletedAt`/`deletedBy` tombstones in `src/server/db/schema/recipes.ts` and `src/server/recipes/mutations.ts`; read paths filter tombstones while preserving versions/events/ratings/comments for restore. |
-| Sensitive authorization changes lacking investigation history | `src/server/audit.ts` and `src/server/db/schema/audit.ts` record a best-effort append-only audit trail for group membership/role changes, ownership transfer, group deletion, recipe deletion, visibility changes, and share-link changes. |
-| Spoofed webhooks | Clerk webhooks verify Svix signatures against `CLERK_WEBHOOK_SECRET` in `src/app/api/webhooks/clerk/route.ts`. Stripe webhooks verify `Stripe-Signature` against `STRIPE_WEBHOOK_SECRET` in `src/app/api/stripe/webhook/route.ts`. |
-| Secret leakage in source control | `.gitignore` excludes `.env`, `.env*.local`, `.vercel`, and `.clerk/`. `.github/workflows/ci.yml` runs a Gitleaks secret scan, and `.gitleaks.toml` keeps the default ruleset with a narrow test-fixture allowlist. |
-| Dependency or CI supply-chain issues | `.github/workflows/ci.yml` includes a dependency audit, SHA-pinned third-party actions, least-privilege job permissions, and Dependabot is configured for npm and GitHub Actions updates. |
-| Preview deploys mutating production schema | `scripts/migrate.mjs` skips migrations on `VERCEL_ENV=preview` unless `ALLOW_PREVIEW_MIGRATIONS=1` is explicitly set for an isolated preview database. |
+| Threat                                                                    | Current mitigations evidenced in the repo                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unauthorized access to private or group recipes                           | `src/server/recipes/queries.ts` enforces per-viewer access through `canView`, group membership checks, and `getRecipe`. Public feeds only return `public` + `published` recipes.                                                                     |
+| Unlisted recipe link leakage                                              | Unlisted recipes are not public by slug/id. `getRecipeByShareToken` only resolves enabled unlisted links with the stored token, and owner-only share-link rotation/revocation is implemented in `src/server/recipes/mutations.ts`.                   |
+| Shared family kitchen tablet showing one user's private recipe to another | `src/app/sw.ts` deliberately uses `NetworkFirst` for recipe pages because recipe HTML is per-viewer and access-controlled. It avoids serving stale authorized recipe pages before the network on shared browser profiles.                            |
+| Deployed auth accidentally falling back to the shared dev user            | `src/env.js`, `src/server/auth/index.ts`, and `src/middleware.ts` fail closed in production/deployed contexts when Clerk keys are missing or `NEXT_PUBLIC_DEV_AUTH_BYPASS=1`.                                                                        |
+| Web spoofing/clickjacking/XSS blast radius                                | `src/lib/security/headers.ts` applies a nonce-based CSP with `strict-dynamic`, `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, `nosniff`, a conservative referrer policy, and a locked-down permissions policy through `src/middleware.ts`. |
+| Malicious or malformed recipe input                                       | `src/server/recipes/validation.ts` uses Zod schemas for recipe, ingredient, step, media URL, visibility, status, and numeric bounds. Several invariants are mirrored with Drizzle/Postgres `CHECK` constraints in `src/server/db/schema/recipes.ts`. |
+| Arbitrary media-host tracking through stored recipe images/videos         | When Cloudinary is configured, recipe media URLs are restricted by `src/server/recipes/validation.ts` to the configured media allowlist that also backs Next image configuration.                                                                    |
+| Destructive recipe deletion losing family history                         | Recipes are soft-deleted with `deletedAt`/`deletedBy` tombstones in `src/server/db/schema/recipes.ts` and `src/server/recipes/mutations.ts`; read paths filter tombstones while preserving versions/events/ratings/comments for restore.             |
+| Sensitive authorization changes lacking investigation history             | `src/server/audit.ts` and `src/server/db/schema/audit.ts` record a best-effort append-only audit trail for group membership/role changes, ownership transfer, group deletion, recipe deletion, visibility changes, and share-link changes.           |
+| Spoofed webhooks                                                          | Clerk webhooks verify Svix signatures against `CLERK_WEBHOOK_SECRET` in `src/app/api/webhooks/clerk/route.ts`. Stripe webhooks verify `Stripe-Signature` against `STRIPE_WEBHOOK_SECRET` in `src/app/api/stripe/webhook/route.ts`.                   |
+| Secret leakage in source control                                          | `.gitignore` excludes `.env`, `.env*.local`, `.vercel`, and `.clerk/`. `.github/workflows/ci.yml` runs a Gitleaks secret scan, and `.gitleaks.toml` keeps the default ruleset with a narrow test-fixture allowlist.                                  |
+| Dependency or CI supply-chain issues                                      | `.github/workflows/ci.yml` includes a dependency audit, SHA-pinned third-party actions, least-privilege job permissions, and Dependabot is configured for npm and GitHub Actions updates.                                                            |
+| Preview deploys mutating production schema                                | `scripts/migrate.mjs` skips migrations on `VERCEL_ENV=preview` unless `ALLOW_PREVIEW_MIGRATIONS=1` is explicitly set for an isolated preview database.                                                                                               |
 
 ## Secrets-handling policy
 

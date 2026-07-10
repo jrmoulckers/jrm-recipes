@@ -1,12 +1,24 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { KidsModeToggle } from "./kids-mode-toggle";
 import { ThemeProvider } from "./theme-provider";
 import { A11yProvider } from "~/components/a11y/a11y-provider";
 import { A11Y_COOKIE, A11Y_PREVIOUS_COOKIE } from "~/config/a11y";
-import { THEME_COOKIE, THEME_PREVIOUS_COOKIE, type UITheme } from "~/config/themes";
+import {
+  THEME_COOKIE,
+  THEME_PREVIOUS_COOKIE,
+  type UITheme,
+} from "~/config/themes";
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
 beforeAll(() => {
@@ -74,7 +86,9 @@ describe("KidsModeToggle (issue #435)", () => {
     document.cookie = `${THEME_PREVIOUS_COOKIE}=whimsy;path=/`;
     renderToggle("kids");
 
-    await user.click(screen.getByRole("button", { name: "Turn off Kids mode" }));
+    await user.click(
+      screen.getByRole("button", { name: "Turn off Kids mode" }),
+    );
 
     expect(
       screen.getByRole("button", { name: "Turn on Kids mode" }),

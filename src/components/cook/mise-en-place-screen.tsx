@@ -51,7 +51,12 @@ export function MiseEnPlaceScreen({
               {recipe.title}
             </h1>
           </div>
-          <Button asChild variant="ghost" size="icon" aria-label="Exit cook mode">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            aria-label="Exit cook mode"
+          >
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
             </Link>
@@ -69,8 +74,9 @@ export function MiseEnPlaceScreen({
           </h2>
           <p className="max-w-prose text-muted-foreground">
             Lay out all {ingredientCount}{" "}
-            {ingredientCount === 1 ? "ingredient" : "ingredients"} and finish any
-            prep so you can cook without pausing. Tap items as you set them out.
+            {ingredientCount === 1 ? "ingredient" : "ingredients"} and finish
+            any prep so you can cook without pausing. Tap items as you set them
+            out.
           </p>
         </div>
 

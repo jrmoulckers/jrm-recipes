@@ -115,7 +115,6 @@ export function ShareButton({
     }
   }
 
-
   async function loadCardFile(): Promise<File | null> {
     if (fileRef.current) return fileRef.current;
     try {

@@ -153,7 +153,8 @@ function recipeImages(recipe: SeoRecipe): string[] {
  */
 function buildVideo(recipe: SeoRecipe): Record<string, unknown> | undefined {
   const withVideo = recipe.steps.find(
-    (step) => typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0,
+    (step) =>
+      typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0,
   );
   if (!withVideo?.videoUrl) return undefined;
 

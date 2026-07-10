@@ -29,9 +29,9 @@ function dbGuard(): ActionResult | null {
 }
 
 /** Block another member (issue #355). */
-export async function blockUserAction(
-  input: { blockedId: string },
-): Promise<ActionResult> {
+export async function blockUserAction(input: {
+  blockedId: string;
+}): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
   const parsed = blockUserInput.safeParse(input);
@@ -54,9 +54,9 @@ export async function blockUserAction(
 }
 
 /** Reverse a block (issue #355). */
-export async function unblockUserAction(
-  input: { blockedId: string },
-): Promise<ActionResult> {
+export async function unblockUserAction(input: {
+  blockedId: string;
+}): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
   const parsed = unblockUserInput.safeParse(input);

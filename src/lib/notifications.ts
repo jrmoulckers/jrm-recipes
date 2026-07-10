@@ -30,9 +30,13 @@ export function notificationSentence(
     case "cook":
       return on ? `${who} cooked ${on}` : `${who} cooked your recipe`;
     case "reaction":
-      return on ? `${who} reacted to your ${on}` : `${who} reacted to your post`;
+      return on
+        ? `${who} reacted to your ${on}`
+        : `${who} reacted to your post`;
     case "group_invite":
-      return on ? `${who} invited you to ${on}` : `${who} invited you to a group`;
+      return on
+        ? `${who} invited you to ${on}`
+        : `${who} invited you to a group`;
     case "group_join":
       return on ? `${who} joined ${on}` : `${who} joined your group`;
     case "cook_along_invite":

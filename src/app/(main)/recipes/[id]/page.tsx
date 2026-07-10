@@ -43,7 +43,11 @@ import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
-import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "~/lib/recipe-seo";
+import {
+  buildRecipeJsonLd,
+  buildBreadcrumbJsonLd,
+  serializeJsonLd,
+} from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
 import { Badge, badgeVariants } from "~/components/ui/badge";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
@@ -91,8 +95,7 @@ export async function generateMetadata({
   const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
   if (!recipe) return { title: "Recipe not found" };
-  const description =
-    recipe.description ?? `A family recipe on ${brand.name}.`;
+  const description = recipe.description ?? `A family recipe on ${brand.name}.`;
   const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
   const isPublic = recipe.visibility === "public";
   return {
@@ -174,14 +177,13 @@ export default async function RecipePage({
   // Only owners ever see Delete, so this matters when a kid authored the recipe.
   const viewerRole =
     isOwner && recipe.groupId && user
-      ? (await getMembership(recipe.groupId, user.id))?.role ?? null
+      ? ((await getMembership(recipe.groupId, user.id))?.role ?? null)
       : null;
   const viewerIsKid = isKid(viewerRole);
   const dbEnabled = isDbConfigured();
   // Two-week add-to-plan picker for signed-in viewers (#362); reuses the quick
   // planner action so a cook can plan a recipe the moment they decide to make it.
-  const addToPlanContext =
-    user && dbEnabled ? buildTwoWeekPlanContext() : null;
+  const addToPlanContext = user && dbEnabled ? buildTwoWeekPlanContext() : null;
   // Exclude any owner self-rating so the shown average matches the JSON-LD
   // aggregateRating (authors can't rate their own recipe).
   const { average, count } = ratingSummary(
@@ -348,7 +350,9 @@ export default async function RecipePage({
               {recipe.description}
             </p>
           )}
-          {(recipe.handedDownFrom ?? recipe.originYear ?? recipe.originPlace) && (
+          {(recipe.handedDownFrom ??
+            recipe.originYear ??
+            recipe.originPlace) && (
             <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-secondary-foreground">
               <Sparkles className="size-4 text-secondary" aria-hidden="true" />
               {[
@@ -422,92 +426,92 @@ export default async function RecipePage({
               </Link>
             </Button>
             <RecipeActionsMenu>
-            <Button asChild size="lg" variant="outline">
-              <Link href={`/recipes/${recipe.slug}/print`}>
-                <Printer /> {t("actions.print")}
-              </Link>
-            </Button>
-            <GrownUpControls>
-              <ShareButton
-                title={recipe.title}
-                author={recipe.author?.name}
-                shareUrl={shareUrl}
-                recipeId={recipe.id}
-                manageable={isOwner && recipe.visibility === "unlisted"}
-                shareEnabled={recipe.shareLinkEnabled}
-              />
-              <HandDownButton
-                slug={recipe.slug}
-                defaultFrom={user?.name ?? recipe.author?.name}
-                token={shareUrl ? recipe.shareToken : undefined}
-              />
-              <CreateReelButton reel={mapRecipeToReel(recipe)} />
-            </GrownUpControls>
-            <AddToShoppingList
-              dbEnabled={dbEnabled}
-              recipe={{
-                id: recipe.id,
-                title: recipe.title,
-                servings: recipe.servings,
-                servingsNoun: recipe.servingsNoun,
-                ingredients: recipe.ingredients.map((ing) => ({
-                  item: ing.item,
-                  quantity: ing.quantity,
-                  quantityMax: ing.quantityMax,
-                  unit: ing.unit,
-                  optional: ing.optional,
-                })),
-              }}
-            />
-            {addToPlanContext && (
-              <QuickPlanButton
-                recipeId={recipe.id}
-                recipeTitle={recipe.title}
-                days={addToPlanContext.days}
-                defaultDate={addToPlanContext.defaultDate}
-                variant="button"
-                heading="Add to a meal plan"
-              />
-            )}
-            <GrownUpControls>
-              <AdaptButton
-                sourceId={recipe.id}
-                sourceTitle={recipe.title}
-                canAdapt={Boolean(user)}
-              />
-            </GrownUpControls>
-            <FavoriteButton
-              recipeId={recipe.id}
-              recipeSlug={recipe.slug}
-              initialFavorited={favorited}
-              variant="button"
-              canFavorite={Boolean(user)}
-            />
-            <SaveToCollectionButton
-              recipeId={recipe.id}
-              collections={savedCollections}
-              canSave={Boolean(user)}
-            />
-            {isOwner && (
+              <Button asChild size="lg" variant="outline">
+                <Link href={`/recipes/${recipe.slug}/print`}>
+                  <Printer /> {t("actions.print")}
+                </Link>
+              </Button>
               <GrownUpControls>
-                <Button asChild size="lg" variant="outline">
-                  <Link href={`/recipes/${recipe.slug}/edit`}>
-                    <Pencil /> {t("actions.edit")}
-                  </Link>
-                </Button>
-                {viewerIsKid ? (
-                  <p className="px-3 py-2 text-sm text-muted-foreground">
-                    {t("kidSafe.deleteHidden")}
-                  </p>
-                ) : (
-                  <DeleteRecipeButton
-                    id={recipe.id}
-                    slug={recipe.slug}
-                    title={recipe.title}
-                  />
-                )}
+                <ShareButton
+                  title={recipe.title}
+                  author={recipe.author?.name}
+                  shareUrl={shareUrl}
+                  recipeId={recipe.id}
+                  manageable={isOwner && recipe.visibility === "unlisted"}
+                  shareEnabled={recipe.shareLinkEnabled}
+                />
+                <HandDownButton
+                  slug={recipe.slug}
+                  defaultFrom={user?.name ?? recipe.author?.name}
+                  token={shareUrl ? recipe.shareToken : undefined}
+                />
+                <CreateReelButton reel={mapRecipeToReel(recipe)} />
               </GrownUpControls>
-            )}
+              <AddToShoppingList
+                dbEnabled={dbEnabled}
+                recipe={{
+                  id: recipe.id,
+                  title: recipe.title,
+                  servings: recipe.servings,
+                  servingsNoun: recipe.servingsNoun,
+                  ingredients: recipe.ingredients.map((ing) => ({
+                    item: ing.item,
+                    quantity: ing.quantity,
+                    quantityMax: ing.quantityMax,
+                    unit: ing.unit,
+                    optional: ing.optional,
+                  })),
+                }}
+              />
+              {addToPlanContext && (
+                <QuickPlanButton
+                  recipeId={recipe.id}
+                  recipeTitle={recipe.title}
+                  days={addToPlanContext.days}
+                  defaultDate={addToPlanContext.defaultDate}
+                  variant="button"
+                  heading="Add to a meal plan"
+                />
+              )}
+              <GrownUpControls>
+                <AdaptButton
+                  sourceId={recipe.id}
+                  sourceTitle={recipe.title}
+                  canAdapt={Boolean(user)}
+                />
+              </GrownUpControls>
+              <FavoriteButton
+                recipeId={recipe.id}
+                recipeSlug={recipe.slug}
+                initialFavorited={favorited}
+                variant="button"
+                canFavorite={Boolean(user)}
+              />
+              <SaveToCollectionButton
+                recipeId={recipe.id}
+                collections={savedCollections}
+                canSave={Boolean(user)}
+              />
+              {isOwner && (
+                <GrownUpControls>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href={`/recipes/${recipe.slug}/edit`}>
+                      <Pencil /> {t("actions.edit")}
+                    </Link>
+                  </Button>
+                  {viewerIsKid ? (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">
+                      {t("kidSafe.deleteHidden")}
+                    </p>
+                  ) : (
+                    <DeleteRecipeButton
+                      id={recipe.id}
+                      slug={recipe.slug}
+                      title={recipe.title}
+                    />
+                  )}
+                </GrownUpControls>
+              )}
             </RecipeActionsMenu>
           </div>
         </header>
@@ -645,68 +649,68 @@ export default async function RecipePage({
                           id={`recipe-step-${i}`}
                           className="flex gap-4"
                         >
-                        <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
-                          {i + 1}
-                        </span>
-                        <div className="flex flex-1 flex-col gap-2 pt-1">
-                          {step.section && (
-                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              {step.section}
-                            </span>
-                          )}
-                          <p className="text-[1.02rem] leading-relaxed">
-                            {step.instruction}
-                          </p>
-                          {step.imageUrl && (
-                            <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
-                              <CloudinaryImage
-                                src={step.imageUrl}
-                                alt={t("method.stepImageAlt", {
-                                  title: recipe.title,
-                                  position: i + 1,
-                                })}
-                                fill
-                                sizes="(max-width: 768px) 100vw, 28rem"
-                                className="object-cover"
-                              />
+                          <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
+                            {i + 1}
+                          </span>
+                          <div className="flex flex-1 flex-col gap-2 pt-1">
+                            {step.section && (
+                              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                {step.section}
+                              </span>
+                            )}
+                            <p className="text-[1.02rem] leading-relaxed">
+                              {step.instruction}
+                            </p>
+                            {step.imageUrl && (
+                              <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
+                                <CloudinaryImage
+                                  src={step.imageUrl}
+                                  alt={t("method.stepImageAlt", {
+                                    title: recipe.title,
+                                    position: i + 1,
+                                  })}
+                                  fill
+                                  sizes="(max-width: 768px) 100vw, 28rem"
+                                  className="object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {step.timerSeconds != null && (
+                                <Badge variant="secondary" className="gap-1">
+                                  <Timer className="size-3" />
+                                  {formatTimer(step.timerSeconds)}
+                                </Badge>
+                              )}
+                              {step.targetTempC != null && (
+                                <Badge variant="secondary" className="gap-1">
+                                  <Thermometer className="size-3" />
+                                  {step.targetTempC}°C
+                                </Badge>
+                              )}
+                              {step.doneness && (
+                                <Badge variant="muted" className="gap-1">
+                                  {step.doneness}
+                                </Badge>
+                              )}
+                              <TechniqueChips techniques={step.techniques} />
                             </div>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            {step.timerSeconds != null && (
-                              <Badge variant="secondary" className="gap-1">
-                                <Timer className="size-3" />
-                                {formatTimer(step.timerSeconds)}
-                              </Badge>
-                            )}
-                            {step.targetTempC != null && (
-                              <Badge variant="secondary" className="gap-1">
-                                <Thermometer className="size-3" />
-                                {step.targetTempC}°C
-                              </Badge>
-                            )}
-                            {step.doneness && (
-                              <Badge variant="muted" className="gap-1">
-                                {step.doneness}
-                              </Badge>
-                            )}
-                            <TechniqueChips techniques={step.techniques} />
+                            <AnchoredSuggestions
+                              recipeId={recipe.id}
+                              recipeSlug={recipe.slug}
+                              anchorType="step"
+                              anchorId={step.id}
+                              anchorLabel={t("method.stepLabel", {
+                                position: i + 1,
+                              })}
+                              canInteract={canSuggest}
+                              suggestions={
+                                suggestionsByAnchor.get(`step:${step.id}`) ?? []
+                              }
+                            />
                           </div>
-                          <AnchoredSuggestions
-                            recipeId={recipe.id}
-                            recipeSlug={recipe.slug}
-                            anchorType="step"
-                            anchorId={step.id}
-                            anchorLabel={t("method.stepLabel", {
-                              position: i + 1,
-                            })}
-                            canInteract={canSuggest}
-                            suggestions={
-                              suggestionsByAnchor.get(`step:${step.id}`) ?? []
-                            }
-                          />
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      ))}
                     </ol>
                   </>
                 ) : (
@@ -775,7 +779,10 @@ export default async function RecipePage({
                               className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
                             >
                               {recipe.sourceName ?? recipe.sourceUrl}
-                              <ExternalLink className="size-3.5" aria-hidden="true" />
+                              <ExternalLink
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
                               <span className="sr-only">
                                 ({t("opensInNewTab")})
                               </span>

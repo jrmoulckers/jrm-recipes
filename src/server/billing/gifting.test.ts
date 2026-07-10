@@ -9,7 +9,10 @@ type GiftRow = {
 const { state, db } = vi.hoisted(() => {
   const state = {
     configured: true,
-    updateReturning: [] as { planId: "free" | "family"; durationMonths: number }[],
+    updateReturning: [] as {
+      planId: "free" | "family";
+      durationMonths: number;
+    }[],
     findFirst: undefined as { status: string } | undefined,
     findMany: [] as GiftRow[],
     inserted: null as Record<string, unknown> | null,
@@ -74,14 +77,18 @@ describe("generateGiftCode", () => {
   });
 
   it("is effectively unique across calls", () => {
-    const codes = new Set(Array.from({ length: 200 }, () => generateGiftCode()));
+    const codes = new Set(
+      Array.from({ length: 200 }, () => generateGiftCode()),
+    );
     expect(codes.size).toBe(200);
   });
 });
 
 describe("normalizeGiftCode", () => {
   it("trims and upper-cases so casual input still matches", () => {
-    expect(normalizeGiftCode("  gift-ab3d-7f9k-2qx4 ")).toBe("GIFT-AB3D-7F9K-2QX4");
+    expect(normalizeGiftCode("  gift-ab3d-7f9k-2qx4 ")).toBe(
+      "GIFT-AB3D-7F9K-2QX4",
+    );
   });
 });
 
@@ -120,7 +127,10 @@ describe("mintGiftCode", () => {
 describe("redeemGiftCode", () => {
   it("claims an issued code and returns the granted plan + duration", async () => {
     state.updateReturning = [{ planId: "family", durationMonths: 12 }];
-    const result = await redeemGiftCode({ code: "gift-ab3d-7f9k-2qx4", userId: "u1" });
+    const result = await redeemGiftCode({
+      code: "gift-ab3d-7f9k-2qx4",
+      userId: "u1",
+    });
     expect(result.planId).toBe("family");
     expect(result.durationMonths).toBe(12);
     expect(result.redeemedAt).toBeInstanceOf(Date);

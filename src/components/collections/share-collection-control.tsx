@@ -29,7 +29,11 @@ const VISIBILITY_OPTIONS: {
   label: string;
   hint: string;
 }[] = [
-  { value: "private", label: "Private", hint: "Only you can see this cookbook." },
+  {
+    value: "private",
+    label: "Private",
+    hint: "Only you can see this cookbook.",
+  },
   {
     value: "unlisted",
     label: "Unlisted",

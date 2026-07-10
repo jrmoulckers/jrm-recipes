@@ -127,8 +127,7 @@ export function createZip(entries: ZipEntry[]): Uint8Array {
   ev.setUint32(16, centralOffset, true);
   ev.setUint16(20, 0, true); // archive comment length
 
-  const total =
-    offset + centralSize + eocd.length;
+  const total = offset + centralSize + eocd.length;
   const out = new Uint8Array(total);
   let pos = 0;
   for (const chunk of [...localChunks, ...centralChunks, eocd]) {

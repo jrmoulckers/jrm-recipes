@@ -40,7 +40,9 @@ describe("billing schema (issue #300)", () => {
       expect(names).toContain(n);
     }
     // Exactly-one-owner CHECK and a unique stripe customer id.
-    expect(checks.map((c) => c.name)).toContain("billing_customers_owner_check");
+    expect(checks.map((c) => c.name)).toContain(
+      "billing_customers_owner_check",
+    );
     expect(uniqueConstraints.map((u) => u.name)).toContain(
       "billing_customers_stripe_customer_uq",
     );
@@ -73,11 +75,9 @@ describe("billing schema (issue #300)", () => {
       (i) => i.config.name === "usage_counters_owner_metric_period_uq",
     );
     expect(unique?.config.unique).toBe(true);
-    expect(unique?.config.columns.map((c) => (c as { name: string }).name)).toEqual([
-      "ownerId",
-      "metric",
-      "periodStart",
-    ]);
+    expect(
+      unique?.config.columns.map((c) => (c as { name: string }).name),
+    ).toEqual(["ownerId", "metric", "periodStart"]);
   });
 
   it("gift_codes is single-use per code and idempotent per stripe session", () => {

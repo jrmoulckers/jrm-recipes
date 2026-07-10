@@ -14,7 +14,12 @@ vi.mock("~/server/billing/entitlements", () => ({
 }));
 
 import type { MemberRole, User } from "~/server/db/schema";
-import { addMember, deleteGroup, transferOwnership, updateMemberRole } from "./mutations";
+import {
+  addMember,
+  deleteGroup,
+  transferOwnership,
+  updateMemberRole,
+} from "./mutations";
 
 type Membership = {
   id: string;
@@ -100,7 +105,12 @@ describe("addMember role authorization (sp01)", () => {
       memberWithUser: {
         id: "gm_new",
         role: "admin",
-        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+        user: {
+          id: "target_1",
+          name: "Aunt Mary",
+          handle: "aunt-mary",
+          avatarUrl: null,
+        },
       },
     });
     runWith(tx);
@@ -136,7 +146,12 @@ describe("addMember role authorization (sp01)", () => {
       memberWithUser: {
         id: "gm_new",
         role: "member",
-        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+        user: {
+          id: "target_1",
+          name: "Aunt Mary",
+          handle: "aunt-mary",
+          avatarUrl: null,
+        },
       },
     });
     runWith(tx);
@@ -179,7 +194,12 @@ describe("addMember seat enforcement (#325)", () => {
       memberWithUser: {
         id: "gm_new",
         role: "member",
-        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+        user: {
+          id: "target_1",
+          name: "Aunt Mary",
+          handle: "aunt-mary",
+          avatarUrl: null,
+        },
       },
     });
     runWith(tx);
@@ -202,7 +222,12 @@ describe("addMember seat enforcement (#325)", () => {
       memberWithUser: {
         id: "gm_kid",
         role: "kid",
-        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+        user: {
+          id: "target_1",
+          name: "Aunt Mary",
+          handle: "aunt-mary",
+          avatarUrl: null,
+        },
       },
     });
     runWith(tx);
@@ -221,12 +246,22 @@ describe("updateMemberRole authorization (sp01)", () => {
     const tx = fakeTx({
       memberships: [
         { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        { id: "gm_target", role: "member", userId: "target_1", groupId: group.id },
+        {
+          id: "gm_target",
+          role: "member",
+          userId: "target_1",
+          groupId: group.id,
+        },
       ],
       memberWithUser: {
         id: "gm_target",
         role: "admin",
-        user: { id: "target_1", name: "Aunt Mary", handle: "aunt-mary", avatarUrl: null },
+        user: {
+          id: "target_1",
+          name: "Aunt Mary",
+          handle: "aunt-mary",
+          avatarUrl: null,
+        },
       },
     });
     runWith(tx);
@@ -285,7 +320,12 @@ describe("group authz regression guards (i220)", () => {
     const tx = fakeTx({
       memberships: [
         { id: "gm_actor", role: "owner", userId: owner.id, groupId: group.id },
-        { id: "gm_target", role: "member", userId: "target_1", groupId: group.id },
+        {
+          id: "gm_target",
+          role: "member",
+          userId: "target_1",
+          groupId: group.id,
+        },
       ],
     });
     runWith(tx);

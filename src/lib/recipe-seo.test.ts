@@ -37,7 +37,13 @@ function makeRecipe(overrides: Partial<SeoRecipe> = {}): SeoRecipe {
         item: "brown sugar",
         note: null,
       },
-      { quantity: null, quantityMax: null, unit: null, item: "salt", note: null },
+      {
+        quantity: null,
+        quantityMax: null,
+        unit: null,
+        item: "salt",
+        note: null,
+      },
     ],
     steps: [
       {
@@ -244,8 +250,12 @@ describe("buildRecipeJsonLd taxonomy", () => {
   });
 
   it("omits recipeCuisine for blank/whitespace cuisine", () => {
-    expect(buildRecipeJsonLd(makeRecipe({ cuisine: "   " })).recipeCuisine).toBeUndefined();
-    expect(buildRecipeJsonLd(makeRecipe({ cuisine: null })).recipeCuisine).toBeUndefined();
+    expect(
+      buildRecipeJsonLd(makeRecipe({ cuisine: "   " })).recipeCuisine,
+    ).toBeUndefined();
+    expect(
+      buildRecipeJsonLd(makeRecipe({ cuisine: null })).recipeCuisine,
+    ).toBeUndefined();
   });
 
   it("emits keywords as a de-duplicated, trimmed, comma-joined list", () => {
@@ -318,8 +328,16 @@ describe("buildRecipeJsonLd video", () => {
     const jsonLd = buildRecipeJsonLd(
       makeRecipe({
         steps: [
-          { section: null, instruction: "One.", videoUrl: "https://v/first.mp4" },
-          { section: null, instruction: "Two.", videoUrl: "https://v/second.mp4" },
+          {
+            section: null,
+            instruction: "One.",
+            videoUrl: "https://v/first.mp4",
+          },
+          {
+            section: null,
+            instruction: "Two.",
+            videoUrl: "https://v/second.mp4",
+          },
         ],
       }),
     );

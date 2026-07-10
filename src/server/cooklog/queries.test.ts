@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { recipesFindFirst, groupMembersFindFirst, cookLogFindMany, userBlocksFindMany } =
-  vi.hoisted(() => ({
-    recipesFindFirst: vi.fn(),
-    groupMembersFindFirst: vi.fn(),
-    cookLogFindMany: vi.fn(),
-    userBlocksFindMany: vi.fn(),
-  }));
+const {
+  recipesFindFirst,
+  groupMembersFindFirst,
+  cookLogFindMany,
+  userBlocksFindMany,
+} = vi.hoisted(() => ({
+  recipesFindFirst: vi.fn(),
+  groupMembersFindFirst: vi.fn(),
+  cookLogFindMany: vi.fn(),
+  userBlocksFindMany: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: {

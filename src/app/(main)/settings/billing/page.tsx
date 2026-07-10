@@ -108,8 +108,8 @@ export default async function BillingSettingsPage({
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success"
         >
-          You&apos;re all set — welcome to {getPlan("family").name}! It may take a
-          moment for your new plan to appear below.
+          You&apos;re all set — welcome to {getPlan("family").name}! It may take
+          a moment for your new plan to appear below.
         </p>
       ) : null}
 
@@ -216,7 +216,7 @@ function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <CreditCard className="size-7" aria-hidden="true" />
         </span>
         <div>
@@ -237,8 +237,8 @@ function ConnectDbNotice() {
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-6 text-center text-sm text-muted-foreground">
       <p className="mx-auto max-w-md">
         Billing isn&apos;t set up in this environment yet. You can preview the
-        plans below, but subscriptions aren&apos;t available until a database and
-        Stripe are configured.
+        plans below, but subscriptions aren&apos;t available until a database
+        and Stripe are configured.
       </p>
     </div>
   );

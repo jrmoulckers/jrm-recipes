@@ -32,12 +32,7 @@ function hasWord(tokens: string[], word: string): boolean {
 
 // Flours form the 100% base of a baker's formula. Match on the word "flour"
 // plus the common milled staples bakers weigh as flour.
-const FLOUR_WORDS = [
-  "flour",
-  "semolina",
-  "cornmeal",
-  "polenta",
-];
+const FLOUR_WORDS = ["flour", "semolina", "cornmeal", "polenta"];
 
 /** True when an ingredient counts toward the total-flour (100%) base. */
 export function isFlour(item: string | null | undefined): boolean {

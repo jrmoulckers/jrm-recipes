@@ -45,7 +45,10 @@ const candidate = (id: string, title: string): DinnerCandidate => ({
   difficulty: "easy",
 });
 
-const TWO = [candidate("tacos", "Taco night"), candidate("pasta", "Weeknight pasta")];
+const TWO = [
+  candidate("tacos", "Taco night"),
+  candidate("pasta", "Weeknight pasta"),
+];
 
 describe("DinnerSuggestion (#375)", () => {
   it("prompts to create/browse when there are no candidates", () => {
@@ -57,10 +60,9 @@ describe("DinnerSuggestion (#375)", () => {
       "href",
       "/recipes/new",
     );
-    expect(screen.getByRole("link", { name: /browse recipes/i })).toHaveAttribute(
-      "href",
-      "/recipes",
-    );
+    expect(
+      screen.getByRole("link", { name: /browse recipes/i }),
+    ).toHaveAttribute("href", "/recipes");
   });
 
   it("reveals one recipe with Cook + add-to-tonight actions", async () => {
@@ -71,7 +73,9 @@ describe("DinnerSuggestion (#375)", () => {
     await user.click(screen.getByRole("button", { name: /pick my dinner/i }));
 
     const cook = screen.getByRole("link", { name: /^cook$/i });
-    expect(cook.getAttribute("href")).toMatch(/\/recipes\/(tacos|pasta)\/cook$/);
+    expect(cook.getAttribute("href")).toMatch(
+      /\/recipes\/(tacos|pasta)\/cook$/,
+    );
 
     await user.click(
       screen.getByRole("button", { name: /add to tonight's plan/i }),
@@ -110,7 +114,10 @@ describe("DinnerSuggestion (#375)", () => {
   it("hides 'pick again' when there is only one candidate", async () => {
     const user = userEvent.setup();
     render(
-      <DinnerSuggestion candidates={[candidate("solo", "Solo stew")]} today="2026-07-06" />,
+      <DinnerSuggestion
+        candidates={[candidate("solo", "Solo stew")]}
+        today="2026-07-06"
+      />,
     );
     await user.click(screen.getByRole("button", { name: /pick my dinner/i }));
     expect(
@@ -127,6 +134,8 @@ describe("DinnerSuggestion (#375)", () => {
     await user.click(
       screen.getByRole("button", { name: /add to tonight's plan/i }),
     );
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("No plan today"));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("No plan today"),
+    );
   });
 });

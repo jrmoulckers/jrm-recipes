@@ -81,7 +81,11 @@ export function ImportRecipePanel({
           Start from an existing recipe
         </h2>
       </div>
-      <div className="mt-3 flex gap-2" role="tablist" aria-label="Import method">
+      <div
+        className="mt-3 flex gap-2"
+        role="tablist"
+        aria-label="Import method"
+      >
         <Button
           type="button"
           size="sm"

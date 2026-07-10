@@ -79,7 +79,9 @@ describe("getSharedCollection group sharing (#365)", () => {
   it("denies a non-member even when the collection is shared with some group", async () => {
     dbMock.query.collections.findFirst.mockResolvedValue(collection());
     // The viewer belongs to a *different* group, not the shared one.
-    dbMock.query.groupMembers.findMany.mockResolvedValue([{ groupId: "other" }]);
+    dbMock.query.groupMembers.findMany.mockResolvedValue([
+      { groupId: "other" },
+    ]);
 
     await expect(getSharedCollection("c1", stranger)).resolves.toBeNull();
   });
@@ -100,8 +102,8 @@ describe("shareCollectionWithGroup / unshareCollectionWithGroup (#365)", () => {
   });
 
   function withTx(tx: unknown) {
-    dbMock.transaction.mockImplementation(
-      async (cb: (t: unknown) => unknown) => cb(tx),
+    dbMock.transaction.mockImplementation(async (cb: (t: unknown) => unknown) =>
+      cb(tx),
     );
   }
 
@@ -122,9 +124,10 @@ describe("shareCollectionWithGroup / unshareCollectionWithGroup (#365)", () => {
     };
     withTx(tx);
 
-    await expect(
-      shareCollectionWithGroup("c1", "g1", owner),
-    ).resolves.toEqual({ collectionId: "c1", groupId: "g1" });
+    await expect(shareCollectionWithGroup("c1", "g1", owner)).resolves.toEqual({
+      collectionId: "c1",
+      groupId: "g1",
+    });
     expect(values).toHaveBeenCalledWith({
       collectionId: "c1",
       groupId: "g1",
@@ -160,9 +163,9 @@ describe("shareCollectionWithGroup / unshareCollectionWithGroup (#365)", () => {
     };
     withTx(tx);
 
-    await expect(
-      shareCollectionWithGroup("c1", "g1", owner),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(shareCollectionWithGroup("c1", "g1", owner)).rejects.toThrow(
+      "NOT_FOUND",
+    );
     expect(insert).not.toHaveBeenCalled();
   });
 

@@ -106,7 +106,11 @@ export interface EventProperties {
 
   // --- Group collaboration & invite funnel (#317) ---
   group_created: { groupId: string; sizeBucket: GroupSizeBucket };
-  invite_sent: { groupId: string; role: InviteRole; sizeBucket: GroupSizeBucket };
+  invite_sent: {
+    groupId: string;
+    role: InviteRole;
+    sizeBucket: GroupSizeBucket;
+  };
   invite_accepted: { groupId: string; role: string };
   // Shareable invite links (#343): a manager minted a link; joins reuse
   // `invite_accepted`. Role is the (non-privileged) role the link grants.

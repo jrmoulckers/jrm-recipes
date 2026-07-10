@@ -379,9 +379,9 @@ describe("groupByCategory", () => {
 
 describe("describeQuantity", () => {
   it("formats counts, units and ranges", () => {
-    expect(describeQuantity({ quantity: 3, quantityMax: null, unit: null })).toBe(
-      "3",
-    );
+    expect(
+      describeQuantity({ quantity: 3, quantityMax: null, unit: null }),
+    ).toBe("3");
     expect(
       describeQuantity({ quantity: 2, quantityMax: null, unit: "cup" }),
     ).toBe("2 cups");
@@ -548,7 +548,8 @@ describe("isPantryStaple — compound ingredients keep their head noun (#412)", 
 
 describe("formatShoppingListText", () => {
   function item(
-    over: Partial<ShoppingTextItem> & Pick<ShoppingTextItem, "item" | "category">,
+    over: Partial<ShoppingTextItem> &
+      Pick<ShoppingTextItem, "item" | "category">,
   ): ShoppingTextItem {
     return {
       quantity: null,
@@ -560,10 +561,21 @@ describe("formatShoppingListText", () => {
   }
 
   const sample: ShoppingTextItem[] = [
-    item({ item: "Chicken thighs", quantity: 2, unit: "lb", category: "Meat & Seafood" }),
+    item({
+      item: "Chicken thighs",
+      quantity: 2,
+      unit: "lb",
+      category: "Meat & Seafood",
+    }),
     item({ item: "Spinach", quantity: 1, unit: "bunch", category: "Produce" }),
     item({ item: "Apples", quantity: 6, category: "Produce" }),
-    item({ item: "Milk", quantity: 1, unit: "gal", category: "Dairy & Eggs", checked: true }),
+    item({
+      item: "Milk",
+      quantity: 1,
+      unit: "gal",
+      category: "Dairy & Eggs",
+      checked: true,
+    }),
   ];
 
   it("groups by aisle with markdown checkboxes, excluding checked items", () => {
@@ -580,7 +592,9 @@ describe("formatShoppingListText", () => {
 
   it("orders categories by aisle and items alphabetically within one", () => {
     const text = formatShoppingListText(sample);
-    expect(text.indexOf("Produce:")).toBeLessThan(text.indexOf("Meat & Seafood:"));
+    expect(text.indexOf("Produce:")).toBeLessThan(
+      text.indexOf("Meat & Seafood:"),
+    );
     expect(text.indexOf("Apples")).toBeLessThan(text.indexOf("Spinach"));
   });
 

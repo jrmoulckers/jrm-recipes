@@ -2,11 +2,7 @@ import { Star, Users } from "lucide-react";
 
 import type { RatingBreakdownResult } from "~/server/engagement/queries";
 import { cn } from "~/lib/utils";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 function initialsOf(name: string | null, handle: string | null): string {
   const source = (name ?? handle ?? "?").trim();
@@ -82,7 +78,10 @@ export function RatingSummary({
               <li key={row.star} className="flex items-center gap-2 text-sm">
                 <span className="flex w-10 shrink-0 items-center gap-0.5 text-muted-foreground">
                   {row.star}
-                  <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden />
+                  <Star
+                    className="size-3 fill-amber-400 text-amber-400"
+                    aria-hidden
+                  />
                 </span>
                 <span
                   className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
@@ -128,7 +127,9 @@ export function RatingSummary({
             })}
           </div>
           {overflow > 0 ? (
-            <span className="text-xs text-muted-foreground">+{overflow} more</span>
+            <span className="text-xs text-muted-foreground">
+              +{overflow} more
+            </span>
           ) : null}
         </div>
       ) : null}

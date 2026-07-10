@@ -42,10 +42,20 @@ const future = () => new Date(Date.now() + 24 * HOUR);
 const past = () => new Date(Date.now() - HOUR);
 
 function ownerMember(): Membership {
-  return { id: "m_owner", role: "owner", userId: "owner_1", groupId: "group_1" };
+  return {
+    id: "m_owner",
+    role: "owner",
+    userId: "owner_1",
+    groupId: "group_1",
+  };
 }
 function adminMember(): Membership {
-  return { id: "m_admin", role: "admin", userId: "admin_1", groupId: "group_1" };
+  return {
+    id: "m_admin",
+    role: "admin",
+    userId: "admin_1",
+    groupId: "group_1",
+  };
 }
 
 function fakeTx(opts: {
@@ -59,10 +69,16 @@ function fakeTx(opts: {
     set: vi.fn((_arg?: unknown) => chain),
     values: vi.fn((_arg?: unknown) => chain),
     where: vi.fn((_arg?: unknown) => chain),
-    returning: vi.fn(async () =>
-      opts.returning ?? [
-        { id: "inv_1", token: "tok_1", status: "pending", expiresAt: future() },
-      ],
+    returning: vi.fn(
+      async () =>
+        opts.returning ?? [
+          {
+            id: "inv_1",
+            token: "tok_1",
+            status: "pending",
+            expiresAt: future(),
+          },
+        ],
     ),
   };
   const memberships = [...(opts.memberships ?? [])];
@@ -309,16 +325,16 @@ describe("revokeInvitation (issue #181)", () => {
       invitation: { id: "inv_1", groupId: "group_1", status: "accepted" },
     });
     runWith(tx);
-    await expect(
-      revokeInvitation("family", owner, "inv_1"),
-    ).rejects.toThrow("NOT_PENDING");
+    await expect(revokeInvitation("family", owner, "inv_1")).rejects.toThrow(
+      "NOT_PENDING",
+    );
   });
 
   it("rejects a non-manager", async () => {
     runWith(fakeTx({ memberships: [] }));
-    await expect(
-      revokeInvitation("family", admin, "inv_1"),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(revokeInvitation("family", admin, "inv_1")).rejects.toThrow(
+      "FORBIDDEN",
+    );
   });
 });
 

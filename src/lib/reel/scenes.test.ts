@@ -24,7 +24,8 @@ function makeRecipe(overrides: Partial<ReelRecipe> = {}): ReelRecipe {
   return {
     title: "Buttermilk Pancakes",
     description: "Fluffy weekend pancakes.",
-    coverImageUrl: "https://res.cloudinary.com/demo/image/upload/v1/pancakes.jpg",
+    coverImageUrl:
+      "https://res.cloudinary.com/demo/image/upload/v1/pancakes.jpg",
     author: "Grandma Jo",
     group: "The Moulckers",
     totalMinutes: 25,
@@ -66,7 +67,12 @@ describe("formatIngredientLine", () => {
 
   it("renders a range when quantityMax is larger", () => {
     expect(
-      formatIngredientLine({ quantity: 2, quantityMax: 3, unit: "cup", item: "stock" }),
+      formatIngredientLine({
+        quantity: 2,
+        quantityMax: 3,
+        unit: "cup",
+        item: "stock",
+      }),
     ).toBe("2\u20133 cup stock");
   });
 
@@ -112,7 +118,9 @@ describe("metaChips", () => {
 
 describe("coverByline", () => {
   it("joins author and group", () => {
-    expect(coverByline(makeRecipe())).toBe("by Grandma Jo  \u00b7  The Moulckers");
+    expect(coverByline(makeRecipe())).toBe(
+      "by Grandma Jo  \u00b7  The Moulckers",
+    );
   });
 
   it("returns null when neither is present", () => {
@@ -138,9 +146,9 @@ describe("selectKeyIngredients", () => {
     expect(picked).toHaveLength(REEL_LIMITS.maxIngredients);
     // optional "b" should be pushed to the back, so it is dropped by the cap
     expect(picked.map((p) => p.text)).not.toContain("b");
-    expect(picked.every((p, i) => i === 0 || !picked[i - 1]!.optional || p.optional)).toBe(
-      true,
-    );
+    expect(
+      picked.every((p, i) => i === 0 || !picked[i - 1]!.optional || p.optional),
+    ).toBe(true);
   });
 
   it("ignores blank items", () => {
@@ -189,12 +197,16 @@ describe("selectKeySteps", () => {
 
   it("returns an empty list when there are no usable steps", () => {
     expect(selectKeySteps(makeRecipe({ steps: [] }))).toEqual([]);
-    expect(selectKeySteps(makeRecipe({ steps: [{ instruction: "   " }] }))).toEqual([]);
+    expect(
+      selectKeySteps(makeRecipe({ steps: [{ instruction: "   " }] })),
+    ).toEqual([]);
   });
 
   it("preserves a step image url", () => {
     const steps = selectKeySteps(
-      makeRecipe({ steps: [{ instruction: "Sear", imageUrl: "http://x/i.jpg" }] }),
+      makeRecipe({
+        steps: [{ instruction: "Sear", imageUrl: "http://x/i.jpg" }],
+      }),
     );
     expect(steps[0]!.imageUrl).toBe("http://x/i.jpg");
   });
@@ -359,21 +371,15 @@ describe("reelExportMode", () => {
   });
 
   it("falls back to image on Safari/iOS (MediaRecorder but no webm encoding)", () => {
-    expect(
-      reelExportMode({ ...full, webmMimeType: false }),
-    ).toBe("image");
+    expect(reelExportMode({ ...full, webmMimeType: false })).toBe("image");
   });
 
   it("falls back to image when canvas capture is unavailable", () => {
-    expect(
-      reelExportMode({ ...full, canvasCapture: false }),
-    ).toBe("image");
+    expect(reelExportMode({ ...full, canvasCapture: false })).toBe("image");
   });
 
   it("falls back to image when MediaRecorder is missing", () => {
-    expect(
-      reelExportMode({ ...full, mediaRecorder: false }),
-    ).toBe("image");
+    expect(reelExportMode({ ...full, mediaRecorder: false })).toBe("image");
   });
 
   it("reports none when even a still image can't be produced", () => {
@@ -387,4 +393,3 @@ describe("reelExportMode", () => {
     ).toBe("none");
   });
 });
-

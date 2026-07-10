@@ -48,7 +48,7 @@ export function KeepsakeView({
       <article className="rounded-3xl border border-border bg-card p-8 shadow-token print:rounded-none print:border-0 print:p-0 print:shadow-none">
         {/* Keepsake header: the personal note comes first, warmly framed. */}
         <header className="mb-8 border-b border-border pb-8 text-center">
-          <span className="inline-flex size-12 items-center justify-center rounded-full bg-primary/12 text-primary">
+          <span className="bg-primary/12 inline-flex size-12 items-center justify-center rounded-full text-primary">
             <Heart className="size-6" aria-hidden="true" />
           </span>
           <p className="mt-4 font-display text-sm uppercase tracking-[0.2em] text-muted-foreground">
@@ -92,7 +92,9 @@ export function KeepsakeView({
                 ) : null}
                 <ul className="mt-1 list-disc space-y-1 pl-5">
                   {group.items.map((ingredient) => (
-                    <li key={ingredient.id}>{formatIngredientLine(ingredient)}</li>
+                    <li key={ingredient.id}>
+                      {formatIngredientLine(ingredient)}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -143,7 +145,10 @@ export function KeepsakeView({
           <section className="mt-8">
             <h2 className="font-display text-xl font-semibold">Story</h2>
             {provenance.map((line) => (
-              <p key={line} className="mt-1 text-sm italic text-muted-foreground">
+              <p
+                key={line}
+                className="mt-1 text-sm italic text-muted-foreground"
+              >
                 {line}
               </p>
             ))}

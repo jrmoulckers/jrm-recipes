@@ -65,7 +65,6 @@ describe("ratingBreakdown (issue #334)", () => {
   });
 });
 
-
 describe("ratingSummary", () => {
   it("returns an empty summary when there are no ratings", () => {
     expect(ratingSummary([])).toEqual({ average: 0, count: 0 });

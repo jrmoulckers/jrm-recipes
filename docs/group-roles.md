@@ -21,12 +21,12 @@ A group is a family or shared space that recipes belong to and members
 collaborate in. Every membership carries exactly one role, stored on
 `group_members.role` and defaulting to `member`.
 
-| Role       | Who they are                                                        |
-| ---------- | ------------------------------------------------------------------- |
+| Role       | Who they are                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
 | **Owner**  | The person ultimately responsible for the group. The creator starts as owner; there is always at least one. |
-| **Admin**  | A trusted manager who helps run day-to-day membership and settings. |
-| **Member** | A regular family member: reads the shared cookbook and adds recipes. |
-| **Kid**    | A child account with the kid-safe experience. Rides free — never consumes a paid seat. |
+| **Admin**  | A trusted manager who helps run day-to-day membership and settings.                                         |
+| **Member** | A regular family member: reads the shared cookbook and adds recipes.                                        |
+| **Kid**    | A child account with the kid-safe experience. Rides free — never consumes a paid seat.                      |
 
 Roles are ordered `owner → admin → member → kid` (see `ROLE_ORDER` in
 `queries.ts`), which is only used for sorting the member list.
@@ -39,20 +39,20 @@ the UI uses to decide whether to show management surfaces.
 
 Legend: ✅ allowed · ⚠️ allowed with limits (see notes) · ❌ not allowed.
 
-| Capability                                     | Owner | Admin | Member | Kid |
-| ---------------------------------------------- | :---: | :---: | :----: | :-: |
-| View the group cookbook & shared recipes       |  ✅   |  ✅   |   ✅   | ✅  |
-| Add recipes to the group                       |  ✅   |  ✅   |   ✅   | ✅  |
-| Edit group settings (name, note, photo)        |  ✅   |  ✅   |   ❌   | ❌  |
-| Invite people / create invite links            |  ✅   |  ⚠️   |   ❌   | ❌  |
-| Add an **admin** (grant elevated role)         |  ✅   |  ❌   |   ❌   | ❌  |
-| Add a member or kid                            |  ✅   |  ✅   |   ❌   | ❌  |
-| Change another member's role                   |  ✅   |  ❌   |   ❌   | ❌  |
-| Remove a member or kid                         |  ✅   |  ⚠️   |   ❌   | ❌  |
-| Remove another admin                           |  ✅   |  ❌   |   ❌   | ❌  |
-| Transfer ownership                             |  ✅   |  ❌   |   ❌   | ❌  |
-| Delete the group                               |  ✅   |  ❌   |   ❌   | ❌  |
-| Leave the group                                |  ⚠️   |  ✅   |   ✅   | ✅  |
+| Capability                               | Owner | Admin | Member | Kid |
+| ---------------------------------------- | :---: | :---: | :----: | :-: |
+| View the group cookbook & shared recipes |  ✅   |  ✅   |   ✅   | ✅  |
+| Add recipes to the group                 |  ✅   |  ✅   |   ✅   | ✅  |
+| Edit group settings (name, note, photo)  |  ✅   |  ✅   |   ❌   | ❌  |
+| Invite people / create invite links      |  ✅   |  ⚠️   |   ❌   | ❌  |
+| Add an **admin** (grant elevated role)   |  ✅   |  ❌   |   ❌   | ❌  |
+| Add a member or kid                      |  ✅   |  ✅   |   ❌   | ❌  |
+| Change another member's role             |  ✅   |  ❌   |   ❌   | ❌  |
+| Remove a member or kid                   |  ✅   |  ⚠️   |   ❌   | ❌  |
+| Remove another admin                     |  ✅   |  ❌   |   ❌   | ❌  |
+| Transfer ownership                       |  ✅   |  ❌   |   ❌   | ❌  |
+| Delete the group                         |  ✅   |  ❌   |   ❌   | ❌  |
+| Leave the group                          |  ⚠️   |  ✅   |   ✅   | ✅  |
 
 ## The enforcement rules (what the server guarantees)
 
@@ -106,14 +106,14 @@ There are two ways to bring someone in, both manager-only:
 
 - **Targeted invitation** (`group_invitations`): keyed to an email and/or handle,
   carries the role the invitee will get on accept, an opaque accept-link `token`,
-  and an optional expiry. At most one *pending* invite per (group, email).
+  and an optional expiry. At most one _pending_ invite per (group, email).
 - **Shareable invite link** (`group_invite_links`): carries no invitee — anyone
   who opens the URL joins at the link's role. Capped to `member`/`kid`, and can be
   time-limited (`expiresAt`), use-limited (`maxUses`), or revoked (`revokedAt`).
 
 ## Recipe visibility inside a group
 
-Role governs *management*; recipe **visibility** governs what shows up in the
+Role governs _management_; recipe **visibility** governs what shows up in the
 cookbook (`canListInGroupCookbook` in `queries.ts`):
 
 - Authors always see their own recipes.

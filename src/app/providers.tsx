@@ -2,10 +2,7 @@
 
 import * as React from "react";
 
-import {
-  type ColorScheme,
-  type UITheme,
-} from "~/config/themes";
+import { type ColorScheme, type UITheme } from "~/config/themes";
 import { type A11yPrefs } from "~/config/a11y";
 import { type ConsentStatus } from "~/config/consent";
 import { type FlagMap } from "~/lib/analytics/flags";

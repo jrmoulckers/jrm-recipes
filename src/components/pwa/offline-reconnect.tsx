@@ -30,8 +30,7 @@ export function scheduleReconnect(
 ): number | undefined {
   if (!online) return undefined;
   handlers.onRetrying();
-  const setTimer =
-    handlers.setTimer ?? ((cb, ms) => window.setTimeout(cb, ms));
+  const setTimer = handlers.setTimer ?? ((cb, ms) => window.setTimeout(cb, ms));
   return setTimer(handlers.reload, delayMs);
 }
 

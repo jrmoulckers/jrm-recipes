@@ -53,7 +53,13 @@ export async function resolveTarget(
   if (targetType === "comment") {
     const row = await exec.query.comments.findFirst({
       where: eqId(comments.id, targetId),
-      columns: { id: true, userId: true, recipeId: true, body: true, hiddenAt: true },
+      columns: {
+        id: true,
+        userId: true,
+        recipeId: true,
+        body: true,
+        hiddenAt: true,
+      },
       with: { recipe: recipeColumns },
     });
     if (!row?.recipe) return null;
@@ -95,7 +101,13 @@ export async function resolveTarget(
 
   const row = await exec.query.cookLogEntries.findFirst({
     where: eqId(cookLogEntries.id, targetId),
-    columns: { id: true, userId: true, recipeId: true, note: true, hiddenAt: true },
+    columns: {
+      id: true,
+      userId: true,
+      recipeId: true,
+      note: true,
+      hiddenAt: true,
+    },
     with: { recipe: recipeColumns },
   });
   if (!row?.recipe) return null;

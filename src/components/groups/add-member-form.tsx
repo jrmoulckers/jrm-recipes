@@ -27,9 +27,9 @@ export function AddMemberForm({ slug }: { slug: string }) {
   const roleId = React.useId();
   const [identifier, setIdentifier] = React.useState("");
   const [role, setRole] = React.useState<InviteRole>("member");
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>(
-    {},
-  );
+  const [fieldErrors, setFieldErrors] = React.useState<
+    Record<string, string[]>
+  >({});
   const [isPending, startTransition] = React.useTransition();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -93,7 +93,10 @@ export function AddMemberForm({ slug }: { slug: string }) {
         </Button>
       </div>
       {fieldErrors.identifier?.[0] ? (
-        <p id={`${identifierId}-error`} className="mt-2 text-sm text-destructive">
+        <p
+          id={`${identifierId}-error`}
+          className="mt-2 text-sm text-destructive"
+        >
           {fieldErrors.identifier[0]}
         </p>
       ) : null}

@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Clapperboard, Download, Loader2, Share } from "lucide-react";
+import {
+  AlertTriangle,
+  Clapperboard,
+  Download,
+  Loader2,
+  Share,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { slugify } from "~/lib/utils";
@@ -182,7 +188,9 @@ export function ReelStudio({
         kind: exportMode === "video" ? "video" : "image",
         method: "download",
       });
-      toast.success(exportMode === "image" ? "Image downloaded" : "Reel downloaded");
+      toast.success(
+        exportMode === "image" ? "Image downloaded" : "Reel downloaded",
+      );
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
         toast.error(`Couldn't create the reel ${noun}`);
@@ -317,7 +325,9 @@ export function ReelStudio({
             type="button"
             variant="outline"
             onClick={() => void onShare()}
-            disabled={Boolean(busy) || state !== "ready" || exportMode === "none"}
+            disabled={
+              Boolean(busy) || state !== "ready" || exportMode === "none"
+            }
           >
             {busy === "share" ? (
               <Loader2 className="animate-spin" />

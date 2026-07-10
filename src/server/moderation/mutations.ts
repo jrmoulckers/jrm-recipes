@@ -79,7 +79,12 @@ export async function hideContent(
     if (target.recipe.groupId !== group.id) throw new DomainError("FORBIDDEN");
 
     await setHidden(tx, input.targetType, input.targetId, user.id);
-    await resolveReportsForTarget(tx, input.targetType, input.targetId, user.id);
+    await resolveReportsForTarget(
+      tx,
+      input.targetType,
+      input.targetId,
+      user.id,
+    );
   });
 }
 

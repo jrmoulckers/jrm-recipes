@@ -43,7 +43,7 @@ export default async function RedeemPage({
   return (
     <div className="container flex max-w-lg flex-col gap-8 py-12">
       <header className="text-center">
-        <span className="mx-auto inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 mx-auto inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <Gift className="size-7" aria-hidden="true" />
         </span>
         <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">
@@ -60,8 +60,8 @@ export default async function RedeemPage({
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-center text-sm text-success"
         >
-          Thank you for gifting Heirloom! Your code is on its way — share it with
-          someone you love, or redeem it below.
+          Thank you for gifting Heirloom! Your code is on its way — share it
+          with someone you love, or redeem it below.
         </p>
       ) : null}
 
@@ -69,8 +69,9 @@ export default async function RedeemPage({
         <CardHeader>
           <CardTitle>Enter your gift code</CardTitle>
           <CardDescription>
-            Codes look like <span className="font-mono">GIFT-XXXX-XXXX-XXXX</span>{" "}
-            and can be redeemed once.
+            Codes look like{" "}
+            <span className="font-mono">GIFT-XXXX-XXXX-XXXX</span> and can be
+            redeemed once.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -78,8 +79,8 @@ export default async function RedeemPage({
             <RedeemForm initialCode={code ?? ""} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Gift redemption isn&apos;t available in this environment yet. Once a
-              database is configured, your code will unlock Family here.
+              Gift redemption isn&apos;t available in this environment yet. Once
+              a database is configured, your code will unlock Family here.
             </p>
           )}
         </CardContent>
@@ -92,7 +93,7 @@ function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <Gift className="size-7" aria-hidden="true" />
         </span>
         <div>

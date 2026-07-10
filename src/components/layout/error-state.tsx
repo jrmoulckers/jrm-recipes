@@ -47,7 +47,7 @@ export function ErrorState({
       />
 
       <div className="flex w-full max-w-md flex-col items-center gap-6">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-destructive/12 text-destructive">
+        <span className="bg-destructive/12 inline-flex size-16 items-center justify-center rounded-2xl text-destructive">
           <TriangleAlert className="size-8" aria-hidden="true" />
         </span>
 
@@ -80,8 +80,7 @@ export function ErrorState({
 
         {digest && (
           <p className="text-xs text-muted-foreground/70">
-            Reference:{" "}
-            <code className="font-mono">{digest}</code>
+            Reference: <code className="font-mono">{digest}</code>
           </p>
         )}
       </div>

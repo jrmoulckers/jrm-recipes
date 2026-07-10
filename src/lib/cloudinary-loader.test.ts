@@ -14,7 +14,9 @@ describe("isCloudinaryUrl", () => {
     expect(isCloudinaryUrl("https://img.clerk.com/abc.png")).toBe(false);
     expect(isCloudinaryUrl("https://example.com/photo.jpg")).toBe(false);
     expect(
-      isCloudinaryUrl("https://res.cloudinary.com/heirloom/video/upload/v1/x.mp4"),
+      isCloudinaryUrl(
+        "https://res.cloudinary.com/heirloom/video/upload/v1/x.mp4",
+      ),
     ).toBe(false);
   });
 
@@ -41,9 +43,9 @@ describe("cloudinaryLoader", () => {
   it("preserves the version and the full nested public id", () => {
     const out = cloudinaryLoader({ src: CLOUD, width: 1080 });
     expect(out).toContain("/v1699999999/heirloom/cover.jpg");
-    expect(out.startsWith("https://res.cloudinary.com/heirloom/image/upload/")).toBe(
-      true,
-    );
+    expect(
+      out.startsWith("https://res.cloudinary.com/heirloom/image/upload/"),
+    ).toBe(true);
   });
 
   it("leaves non-Cloudinary URLs untouched (Clerk avatars, pasted URLs)", () => {

@@ -53,101 +53,101 @@ Current call sites are in the paths named in the "When it fires" column.
 
 ### Pageviews and navigation
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
+| Event       | Properties                                 | When it fires                                                                                                                                            |
+| ----------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `$pageview` | `pathname: string`; `$current_url: string` | On initial load and App Router client navigation in `src/components/analytics/pageview-tracker.tsx`; paths are normalized and query strings are dropped. |
 
 ### Recipe creation and editing funnel
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `recipe_created` | `recipeId: string`; `ingredientCount: number`; `stepCount: number`; `hasPhoto: boolean`; `visibility: RecipeVisibility`; `source: RecipeSource` | After `createRecipeAction` creates a recipe in `src/server/recipes/actions.ts`. Current source is `"manual"`. |
-| `recipe_updated` | `recipeId: string`; `ingredientCount: number`; `stepCount: number`; `hasPhoto: boolean`; `visibility: RecipeVisibility` | After `updateRecipeAction` updates an existing recipe in `src/server/recipes/actions.ts`. |
-| `recipe_deleted` | `recipeId: string` | After `deleteRecipeAction` deletes a recipe in `src/server/recipes/actions.ts`. |
-| `recipe_forked` | `recipeId: string`; `sourceId: string` | After `forkRecipeAction` / `createAdaptationAction` creates an adaptation in `src/server/recipes/actions.ts`. |
-| `recipe_reverted` | `recipeId: string`; `versionNumber: number` | After `revertRecipeAction` restores a saved version in `src/server/recipes/actions.ts`. |
-| `recipe_imported` | `ok: boolean` | After URL import succeeds/fails, or text import succeeds, in `src/server/recipes/actions.ts`. |
-| `editor_opened` | `mode: "create" \| "edit"` | When the recipe editor mounts in `src/components/recipe/recipe-editor.tsx`. |
-| `editor_save_failed` | `mode: "create" \| "edit"`; `fieldCount: number` | When the editor receives a failed create/update result in `src/components/recipe/recipe-editor.tsx`. |
+| Event                | Properties                                                                                                                                      | When it fires                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `recipe_created`     | `recipeId: string`; `ingredientCount: number`; `stepCount: number`; `hasPhoto: boolean`; `visibility: RecipeVisibility`; `source: RecipeSource` | After `createRecipeAction` creates a recipe in `src/server/recipes/actions.ts`. Current source is `"manual"`. |
+| `recipe_updated`     | `recipeId: string`; `ingredientCount: number`; `stepCount: number`; `hasPhoto: boolean`; `visibility: RecipeVisibility`                         | After `updateRecipeAction` updates an existing recipe in `src/server/recipes/actions.ts`.                     |
+| `recipe_deleted`     | `recipeId: string`                                                                                                                              | After `deleteRecipeAction` deletes a recipe in `src/server/recipes/actions.ts`.                               |
+| `recipe_forked`      | `recipeId: string`; `sourceId: string`                                                                                                          | After `forkRecipeAction` / `createAdaptationAction` creates an adaptation in `src/server/recipes/actions.ts`. |
+| `recipe_reverted`    | `recipeId: string`; `versionNumber: number`                                                                                                     | After `revertRecipeAction` restores a saved version in `src/server/recipes/actions.ts`.                       |
+| `recipe_imported`    | `ok: boolean`                                                                                                                                   | After URL import succeeds/fails, or text import succeeds, in `src/server/recipes/actions.ts`.                 |
+| `editor_opened`      | `mode: "create" \| "edit"`                                                                                                                      | When the recipe editor mounts in `src/components/recipe/recipe-editor.tsx`.                                   |
+| `editor_save_failed` | `mode: "create" \| "edit"`; `fieldCount: number`                                                                                                | When the editor receives a failed create/update result in `src/components/recipe/recipe-editor.tsx`.          |
 
 ### Cook Mode lifecycle
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `cook_started` | `recipeId: string`; `totalSteps: number`; `householdId: string \| null` | Once per Cook Mode session, deduped across reloads, in `src/components/cook/use-cook-session.ts`. |
-| `cook_step_advanced` | `recipeId: string`; `stepIndex: number`; `totalSteps: number` | When the cook advances to a later step in `src/components/cook/use-cook-session.ts`. |
-| `cook_completed` | `recipeId: string`; `totalSteps: number`; `durationMs: number`; `householdId: string \| null` | When the cook reaches the final step for the first time in a session in `src/components/cook/use-cook-session.ts`. |
-| `cook_timer_started` | `recipeId: string` | When a step timer is started in `src/components/cook/use-cook-session.ts`. |
-| `cook_timer_completed` | `recipeId: string` | Once per timer when it completes in `src/components/cook/use-cook-session.ts`. |
-| `cook_servings_scaled` | `recipeId: string`; `servings: number` | When servings are changed in Cook Mode in `src/components/cook/use-cook-session.ts`. |
-| `cook_unit_system_changed` | `recipeId: string`; `system: CookUnitSystem` | When the Cook Mode unit system changes in `src/components/cook/use-cook-session.ts`. |
+| Event                      | Properties                                                                                    | When it fires                                                                                                      |
+| -------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `cook_started`             | `recipeId: string`; `totalSteps: number`; `householdId: string \| null`                       | Once per Cook Mode session, deduped across reloads, in `src/components/cook/use-cook-session.ts`.                  |
+| `cook_step_advanced`       | `recipeId: string`; `stepIndex: number`; `totalSteps: number`                                 | When the cook advances to a later step in `src/components/cook/use-cook-session.ts`.                               |
+| `cook_completed`           | `recipeId: string`; `totalSteps: number`; `durationMs: number`; `householdId: string \| null` | When the cook reaches the final step for the first time in a session in `src/components/cook/use-cook-session.ts`. |
+| `cook_timer_started`       | `recipeId: string`                                                                            | When a step timer is started in `src/components/cook/use-cook-session.ts`.                                         |
+| `cook_timer_completed`     | `recipeId: string`                                                                            | Once per timer when it completes in `src/components/cook/use-cook-session.ts`.                                     |
+| `cook_servings_scaled`     | `recipeId: string`; `servings: number`                                                        | When servings are changed in Cook Mode in `src/components/cook/use-cook-session.ts`.                               |
+| `cook_unit_system_changed` | `recipeId: string`; `system: CookUnitSystem`                                                  | When the Cook Mode unit system changes in `src/components/cook/use-cook-session.ts`.                               |
 
 ### Share and reel virality loop
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `recipe_shared` | `method: ShareMethod` | When a recipe is shared by file, native share sheet, or copied link in `src/components/recipe/share-button.tsx`. |
-| `share_card_downloaded` | `Record<string, never>` | When the share card image is downloaded in `src/components/recipe/share-button.tsx`. |
-| `share_link_copied` | `Record<string, never>` | After the recipe share link text is copied in `src/components/recipe/share-button.tsx`. |
-| `share_link_disabled` | `Record<string, never>` | After an owner disables a share link in `src/components/recipe/share-button.tsx`. |
-| `share_link_rotated` | `Record<string, never>` | After an owner rotates/resets a share link in `src/components/recipe/share-button.tsx`. |
-| `reel_exported` | `kind: ReelExportKind`; `method: ReelExportMethod` | After a reel/image export is downloaded or shared in `src/components/recipe/reel-studio.tsx`. |
+| Event                   | Properties                                         | When it fires                                                                                                    |
+| ----------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `recipe_shared`         | `method: ShareMethod`                              | When a recipe is shared by file, native share sheet, or copied link in `src/components/recipe/share-button.tsx`. |
+| `share_card_downloaded` | `Record<string, never>`                            | When the share card image is downloaded in `src/components/recipe/share-button.tsx`.                             |
+| `share_link_copied`     | `Record<string, never>`                            | After the recipe share link text is copied in `src/components/recipe/share-button.tsx`.                          |
+| `share_link_disabled`   | `Record<string, never>`                            | After an owner disables a share link in `src/components/recipe/share-button.tsx`.                                |
+| `share_link_rotated`    | `Record<string, never>`                            | After an owner rotates/resets a share link in `src/components/recipe/share-button.tsx`.                          |
+| `reel_exported`         | `kind: ReelExportKind`; `method: ReelExportMethod` | After a reel/image export is downloaded or shared in `src/components/recipe/reel-studio.tsx`.                    |
 
 ### Group collaboration and invite funnel
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `group_created` | `groupId: string`; `sizeBucket: GroupSizeBucket` | After `createGroupAction` creates a group in `src/server/groups/actions.ts`; a new group uses size bucket `"1"`. |
-| `invite_sent` | `groupId: string`; `role: InviteRole`; `sizeBucket: GroupSizeBucket` | When `addMemberAction` adds an existing user to a group in `src/server/groups/actions.ts`. |
-| `invite_accepted` | `groupId: string`; `role: string` | When a directly added member is activated, or when a new member accepts an invite link, in `src/server/groups/actions.ts`. |
-| `invite_link_created` | `groupId: string`; `role: InviteRole` | When a manager creates a shareable invite link in `src/server/groups/actions.ts`. |
-| `invite_link_revoked` | `slug: string` | When a manager revokes a shareable invite link in `src/server/groups/actions.ts`. |
-| `member_role_changed` | `groupId: string`; `role: InviteRole` | After `updateMemberRoleAction` changes a member role in `src/server/groups/actions.ts`. |
-| `group_left` | `groupId: string` | After `leaveGroupAction` removes the current user from a group in `src/server/groups/actions.ts`. |
-| `group_deleted` | `groupId: string` | After `deleteGroupAction` deletes a group in `src/server/groups/actions.ts`. |
+| Event                 | Properties                                                           | When it fires                                                                                                              |
+| --------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `group_created`       | `groupId: string`; `sizeBucket: GroupSizeBucket`                     | After `createGroupAction` creates a group in `src/server/groups/actions.ts`; a new group uses size bucket `"1"`.           |
+| `invite_sent`         | `groupId: string`; `role: InviteRole`; `sizeBucket: GroupSizeBucket` | When `addMemberAction` adds an existing user to a group in `src/server/groups/actions.ts`.                                 |
+| `invite_accepted`     | `groupId: string`; `role: string`                                    | When a directly added member is activated, or when a new member accepts an invite link, in `src/server/groups/actions.ts`. |
+| `invite_link_created` | `groupId: string`; `role: InviteRole`                                | When a manager creates a shareable invite link in `src/server/groups/actions.ts`.                                          |
+| `invite_link_revoked` | `slug: string`                                                       | When a manager revokes a shareable invite link in `src/server/groups/actions.ts`.                                          |
+| `member_role_changed` | `groupId: string`; `role: InviteRole`                                | After `updateMemberRoleAction` changes a member role in `src/server/groups/actions.ts`.                                    |
+| `group_left`          | `groupId: string`                                                    | After `leaveGroupAction` removes the current user from a group in `src/server/groups/actions.ts`.                          |
+| `group_deleted`       | `groupId: string`                                                    | After `deleteGroupAction` deletes a group in `src/server/groups/actions.ts`.                                               |
 
 ### Activation and onboarding
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `landing_viewed` | `Record<string, never>` | Once when the marketing landing tracker mounts in `src/components/analytics/landing-viewed.tsx`. |
-| `signup_started` | `Record<string, never>` | When Clerk sign-up CTAs are clicked in `src/components/auth/auth-controls.tsx` and `src/components/groups/join-group-panel.tsx`. |
-| `signup_completed` | `Record<string, never>` | When the app first inserts a new user row in `src/server/auth/index.ts`. |
-| `first_recipe_created` | `recipeId: string` | Once, when the author's recipe count first reaches one after create, in `src/server/recipes/actions.ts`. |
-| `first_cook_started` | `recipeId: string` | On the user's first-ever Cook Mode start on that device in `src/components/cook/use-cook-session.ts`. |
+| Event                  | Properties              | When it fires                                                                                                                    |
+| ---------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `landing_viewed`       | `Record<string, never>` | Once when the marketing landing tracker mounts in `src/components/analytics/landing-viewed.tsx`.                                 |
+| `signup_started`       | `Record<string, never>` | When Clerk sign-up CTAs are clicked in `src/components/auth/auth-controls.tsx` and `src/components/groups/join-group-panel.tsx`. |
+| `signup_completed`     | `Record<string, never>` | When the app first inserts a new user row in `src/server/auth/index.ts`.                                                         |
+| `first_recipe_created` | `recipeId: string`      | Once, when the author's recipe count first reaches one after create, in `src/server/recipes/actions.ts`.                         |
+| `first_cook_started`   | `recipeId: string`      | On the user's first-ever Cook Mode start on that device in `src/components/cook/use-cook-session.ts`.                            |
 
 ### Waitlist
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
+| Event             | Properties                                     | When it fires                                                                                                               |
+| ----------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `waitlist_joined` | `source: WaitlistSource`; `duplicate: boolean` | After a successful waitlist submission in `src/components/marketing/waitlist-form.tsx`; the email is not an event property. |
 
 ### Weekly digest
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
+| Event                   | Properties         | When it fires                                                             |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------- |
 | `digest_opt_in_changed` | `optedIn: boolean` | After weekly digest preference changes in `src/server/digest/actions.ts`. |
 
 ### Experimentation
 
-| Event | Properties | When it fires |
-| --- | --- | --- |
-| `$feature_flag_called` | `$feature_flag: string`; `$feature_flag_response: string \| boolean` | When `useFeatureFlag()` resolves a key/value and records an exposure in `src/components/analytics/flags-provider.tsx`; deduped per key/value and consent-gated by `track()`. |
-| `experiment_exposed` | `experiment: string`; `variant: string` | Taxonomy-defined for explicit experiment exposure events in `src/lib/analytics/events.ts`; current code search found `$feature_flag_called` as the active exposure mechanism. |
+| Event                  | Properties                                                           | When it fires                                                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$feature_flag_called` | `$feature_flag: string`; `$feature_flag_response: string \| boolean` | When `useFeatureFlag()` resolves a key/value and records an exposure in `src/components/analytics/flags-provider.tsx`; deduped per key/value and consent-gated by `track()`.  |
+| `experiment_exposed`   | `experiment: string`; `variant: string`                              | Taxonomy-defined for explicit experiment exposure events in `src/lib/analytics/events.ts`; current code search found `$feature_flag_called` as the active exposure mechanism. |
 
 ## Type aliases used by event properties
 
-| Type | Values |
-| --- | --- |
+| Type               | Values                                           |
+| ------------------ | ------------------------------------------------ |
 | `RecipeVisibility` | `"private"`, `"group"`, `"unlisted"`, `"public"` |
-| `RecipeSource` | `"manual"`, `"import"` |
-| `CookUnitSystem` | `"original"`, `"us"`, `"metric"`, `"grams"` |
-| `ShareMethod` | `"native"`, `"file"`, `"copy_link"` |
-| `ReelExportKind` | `"image"`, `"video"` |
-| `ReelExportMethod` | `"download"`, `"share"` |
-| `InviteRole` | `"admin"`, `"member"`, `"kid"` |
-| `WaitlistSource` | `"landing"`, `"hero"`, `"closing"` |
-| `GroupSizeBucket` | `"1"`, `"2-5"`, `"6-10"`, `"11+"` |
+| `RecipeSource`     | `"manual"`, `"import"`                           |
+| `CookUnitSystem`   | `"original"`, `"us"`, `"metric"`, `"grams"`      |
+| `ShareMethod`      | `"native"`, `"file"`, `"copy_link"`              |
+| `ReelExportKind`   | `"image"`, `"video"`                             |
+| `ReelExportMethod` | `"download"`, `"share"`                          |
+| `InviteRole`       | `"admin"`, `"member"`, `"kid"`                   |
+| `WaitlistSource`   | `"landing"`, `"hero"`, `"closing"`               |
+| `GroupSizeBucket`  | `"1"`, `"2-5"`, `"6-10"`, `"11+"`                |
 
 ## Adding a new event
 

@@ -106,7 +106,9 @@ function redact(value, depth, seen) {
   /** @type {Record<string, unknown>} */
   const out = {};
   for (const [key, val] of Object.entries(/** @type {object} */ (value))) {
-    out[key] = SENSITIVE_KEY.test(key) ? REDACTED : redact(val, depth + 1, seen);
+    out[key] = SENSITIVE_KEY.test(key)
+      ? REDACTED
+      : redact(val, depth + 1, seen);
   }
   return out;
 }
@@ -118,7 +120,9 @@ function redact(value, depth, seen) {
  * @returns {Record<string, unknown>}
  */
 export function redactFields(fields) {
-  return /** @type {Record<string, unknown>} */ (redact(fields, 0, new WeakSet()));
+  return /** @type {Record<string, unknown>} */ (
+    redact(fields, 0, new WeakSet())
+  );
 }
 
 /**

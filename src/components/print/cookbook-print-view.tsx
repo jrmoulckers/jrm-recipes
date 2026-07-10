@@ -34,7 +34,7 @@ export function CookbookPrintView({
   if (recipes.length === 0) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-5 py-24 text-center">
-        <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
           <BookMarked className="size-7" aria-hidden="true" />
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight">
@@ -67,7 +67,7 @@ export function CookbookPrintView({
       </div>
 
       {/* Cover page */}
-      <section className="flex min-h-[60vh] flex-col items-center justify-center break-after-page text-center print:min-h-screen">
+      <section className="flex min-h-[60vh] break-after-page flex-col items-center justify-center text-center print:min-h-screen">
         {collection.coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- print reliability: avoid the optimizer in the print pipeline.
           <img
@@ -76,7 +76,7 @@ export function CookbookPrintView({
             className="mb-8 h-48 w-48 rounded-2xl object-cover shadow-token"
           />
         ) : (
-          <span className="mb-8 inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+          <span className="bg-primary/12 mb-8 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
             <BookMarked className="size-8" aria-hidden="true" />
           </span>
         )}

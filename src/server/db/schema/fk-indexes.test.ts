@@ -67,9 +67,9 @@ describe("schema covers unindexed foreign keys (issue #153)", () => {
         (i) => i.config.name === index,
       );
       expect(found, `expected index "${index}"`).toBeDefined();
-      expect(found?.config.columns.map((c) => (c as { name: string }).name)).toEqual(
-        columns,
-      );
+      expect(
+        found?.config.columns.map((c) => (c as { name: string }).name),
+      ).toEqual(columns);
     },
   );
 });

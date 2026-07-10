@@ -55,45 +55,45 @@ The schema also uses DB-level `CHECK` constraints as a backstop for Zod validati
 
 ## Main tables
 
-| Table | Source | Purpose |
-| --- | --- | --- |
-| `users` | [`users.ts`](../src/server/db/schema/users.ts) | Local app users mirrored from Clerk, with digest preference and account tombstone. |
-| `groups` | [`groups.ts`](../src/server/db/schema/groups.ts) | Family/group cookbook container with a unique slug and optional creator attribution. |
-| `group_members` | [`groups.ts`](../src/server/db/schema/groups.ts) | User membership and role (`owner`, `admin`, `member`, `kid`) within a group. |
-| `group_invitations` | [`groups.ts`](../src/server/db/schema/groups.ts) | Single-invitee group invitations by email and/or handle. |
-| `group_invite_links` | [`groups.ts`](../src/server/db/schema/groups.ts) | Shareable multi-use invite links with expiry, use limits, and revocation. |
-| `recipes` | [`recipes.ts`](../src/server/db/schema/recipes.ts) | Core recipe record, visibility, provenance, nutrition, sharing, rating aggregates, and soft delete. |
-| `recipe_ingredients` | [`recipes.ts`](../src/server/db/schema/recipes.ts) | Ordered ingredient lines for a recipe. |
-| `recipe_steps` | [`recipes.ts`](../src/server/db/schema/recipes.ts) | Ordered instruction steps, timers, media, temperatures, and techniques. |
-| `recipe_versions` | [`recipes.ts`](../src/server/db/schema/recipes.ts) | Immutable recipe snapshots with monotonically allocated version numbers. |
-| `recipe_events` | [`recipes.ts`](../src/server/db/schema/recipes.ts) | Append-only recipe timeline events such as created, adapted, updated, and published. |
-| `tags` | [`engagement.ts`](../src/server/db/schema/engagement.ts) | Shared free-form recipe tags. |
-| `recipe_tags` | [`engagement.ts`](../src/server/db/schema/engagement.ts) | Join table between recipes and tags. |
-| `ratings` | [`engagement.ts`](../src/server/db/schema/engagement.ts) | Lightweight one-tap 1-5 star ratings, one per user per recipe. |
-| `comments` | [`engagement.ts`](../src/server/db/schema/engagement.ts) | Threaded comments and anchored suggestions on recipes. |
-| `reviews` | [`reviews.ts`](../src/server/db/schema/reviews.ts) | Written recipe reviews with an independent 1-5 rating and optional photo. |
-| `favorites` | [`collections.ts`](../src/server/db/schema/collections.ts) | Per-user recipe bookmarks. |
-| `collections` | [`collections.ts`](../src/server/db/schema/collections.ts) | User-owned personal cookbooks with private/unlisted/public visibility. |
-| `collection_recipes` | [`collections.ts`](../src/server/db/schema/collections.ts) | Ordered recipes inside a collection. |
-| `recipe_views` | [`views.ts`](../src/server/db/schema/views.ts) | Recently viewed recipes, one row per user and recipe. |
-| `saved_searches` | [`searches.ts`](../src/server/db/schema/searches.ts) | User-saved normalized recipe search query strings. |
-| `cook_log_entries` | [`cooklog.ts`](../src/server/db/schema/cooklog.ts) | "I cooked this" entries with optional notes, photos, family sharing, and moderation hide fields. |
-| `cook_alongs` | [`cookalong.ts`](../src/server/db/schema/cookalong.ts) | Scheduled family cook-along events for a recipe. |
-| `cook_along_rsvps` | [`cookalong.ts`](../src/server/db/schema/cookalong.ts) | One RSVP per user per cook-along. |
-| `reactions` | [`reactions.ts`](../src/server/db/schema/reactions.ts) | Polymorphic emoji reactions on comments, reviews, and cook-log posts. |
-| `notifications` | [`notifications.ts`](../src/server/db/schema/notifications.ts) | In-app notification rows for one recipient. |
-| `user_blocks` | [`moderation.ts`](../src/server/db/schema/moderation.ts) | One-way user blocks. |
-| `content_reports` | [`moderation.ts`](../src/server/db/schema/moderation.ts) | Reports for comments, reviews, and cook-log posts. |
-| `shopping_lists` | [`shopping.ts`](../src/server/db/schema/shopping.ts) | User-owned grocery lists. |
-| `shopping_list_items` | [`shopping.ts`](../src/server/db/schema/shopping.ts) | Ordered consolidated shopping-list lines, optionally linked to a recipe. |
-| `meal_plan_entries` | [`planner.ts`](../src/server/db/schema/planner.ts) | Weekly meal-plan slots for a user, optionally scoped to a group and/or recipe. |
-| `member_dietary_profiles` | [`dietary.ts`](../src/server/db/schema/dietary.ts) | Per-person dietary/allergen profiles owned by a user and optionally scoped to a group. |
-| `billing_customers` | [`billing.ts`](../src/server/db/schema/billing.ts) | Stripe customer mapping for exactly one user or group owner. |
-| `subscriptions` | [`billing.ts`](../src/server/db/schema/billing.ts) | Synced Stripe subscription state, plan, trial, period, cancellation, and seats. |
-| `usage_counters` | [`billing.ts`](../src/server/db/schema/billing.ts) | Metered usage keyed by owner id/type, metric, and period. |
-| `gift_codes` | [`billing.ts`](../src/server/db/schema/billing.ts) | One-time Family gift purchases and redemption state. |
-| `audit_log` | [`audit.ts`](../src/server/db/schema/audit.ts) | Append-only security audit trail for sensitive authorization-changing actions. |
-| `waitlist_signups` | [`waitlist.ts`](../src/server/db/schema/waitlist.ts) | Landing-page email capture with source tagging. |
+| Table                     | Source                                                         | Purpose                                                                                             |
+| ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `users`                   | [`users.ts`](../src/server/db/schema/users.ts)                 | Local app users mirrored from Clerk, with digest preference and account tombstone.                  |
+| `groups`                  | [`groups.ts`](../src/server/db/schema/groups.ts)               | Family/group cookbook container with a unique slug and optional creator attribution.                |
+| `group_members`           | [`groups.ts`](../src/server/db/schema/groups.ts)               | User membership and role (`owner`, `admin`, `member`, `kid`) within a group.                        |
+| `group_invitations`       | [`groups.ts`](../src/server/db/schema/groups.ts)               | Single-invitee group invitations by email and/or handle.                                            |
+| `group_invite_links`      | [`groups.ts`](../src/server/db/schema/groups.ts)               | Shareable multi-use invite links with expiry, use limits, and revocation.                           |
+| `recipes`                 | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Core recipe record, visibility, provenance, nutrition, sharing, rating aggregates, and soft delete. |
+| `recipe_ingredients`      | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Ordered ingredient lines for a recipe.                                                              |
+| `recipe_steps`            | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Ordered instruction steps, timers, media, temperatures, and techniques.                             |
+| `recipe_versions`         | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Immutable recipe snapshots with monotonically allocated version numbers.                            |
+| `recipe_events`           | [`recipes.ts`](../src/server/db/schema/recipes.ts)             | Append-only recipe timeline events such as created, adapted, updated, and published.                |
+| `tags`                    | [`engagement.ts`](../src/server/db/schema/engagement.ts)       | Shared free-form recipe tags.                                                                       |
+| `recipe_tags`             | [`engagement.ts`](../src/server/db/schema/engagement.ts)       | Join table between recipes and tags.                                                                |
+| `ratings`                 | [`engagement.ts`](../src/server/db/schema/engagement.ts)       | Lightweight one-tap 1-5 star ratings, one per user per recipe.                                      |
+| `comments`                | [`engagement.ts`](../src/server/db/schema/engagement.ts)       | Threaded comments and anchored suggestions on recipes.                                              |
+| `reviews`                 | [`reviews.ts`](../src/server/db/schema/reviews.ts)             | Written recipe reviews with an independent 1-5 rating and optional photo.                           |
+| `favorites`               | [`collections.ts`](../src/server/db/schema/collections.ts)     | Per-user recipe bookmarks.                                                                          |
+| `collections`             | [`collections.ts`](../src/server/db/schema/collections.ts)     | User-owned personal cookbooks with private/unlisted/public visibility.                              |
+| `collection_recipes`      | [`collections.ts`](../src/server/db/schema/collections.ts)     | Ordered recipes inside a collection.                                                                |
+| `recipe_views`            | [`views.ts`](../src/server/db/schema/views.ts)                 | Recently viewed recipes, one row per user and recipe.                                               |
+| `saved_searches`          | [`searches.ts`](../src/server/db/schema/searches.ts)           | User-saved normalized recipe search query strings.                                                  |
+| `cook_log_entries`        | [`cooklog.ts`](../src/server/db/schema/cooklog.ts)             | "I cooked this" entries with optional notes, photos, family sharing, and moderation hide fields.    |
+| `cook_alongs`             | [`cookalong.ts`](../src/server/db/schema/cookalong.ts)         | Scheduled family cook-along events for a recipe.                                                    |
+| `cook_along_rsvps`        | [`cookalong.ts`](../src/server/db/schema/cookalong.ts)         | One RSVP per user per cook-along.                                                                   |
+| `reactions`               | [`reactions.ts`](../src/server/db/schema/reactions.ts)         | Polymorphic emoji reactions on comments, reviews, and cook-log posts.                               |
+| `notifications`           | [`notifications.ts`](../src/server/db/schema/notifications.ts) | In-app notification rows for one recipient.                                                         |
+| `user_blocks`             | [`moderation.ts`](../src/server/db/schema/moderation.ts)       | One-way user blocks.                                                                                |
+| `content_reports`         | [`moderation.ts`](../src/server/db/schema/moderation.ts)       | Reports for comments, reviews, and cook-log posts.                                                  |
+| `shopping_lists`          | [`shopping.ts`](../src/server/db/schema/shopping.ts)           | User-owned grocery lists.                                                                           |
+| `shopping_list_items`     | [`shopping.ts`](../src/server/db/schema/shopping.ts)           | Ordered consolidated shopping-list lines, optionally linked to a recipe.                            |
+| `meal_plan_entries`       | [`planner.ts`](../src/server/db/schema/planner.ts)             | Weekly meal-plan slots for a user, optionally scoped to a group and/or recipe.                      |
+| `member_dietary_profiles` | [`dietary.ts`](../src/server/db/schema/dietary.ts)             | Per-person dietary/allergen profiles owned by a user and optionally scoped to a group.              |
+| `billing_customers`       | [`billing.ts`](../src/server/db/schema/billing.ts)             | Stripe customer mapping for exactly one user or group owner.                                        |
+| `subscriptions`           | [`billing.ts`](../src/server/db/schema/billing.ts)             | Synced Stripe subscription state, plan, trial, period, cancellation, and seats.                     |
+| `usage_counters`          | [`billing.ts`](../src/server/db/schema/billing.ts)             | Metered usage keyed by owner id/type, metric, and period.                                           |
+| `gift_codes`              | [`billing.ts`](../src/server/db/schema/billing.ts)             | One-time Family gift purchases and redemption state.                                                |
+| `audit_log`               | [`audit.ts`](../src/server/db/schema/audit.ts)                 | Append-only security audit trail for sensitive authorization-changing actions.                      |
+| `waitlist_signups`        | [`waitlist.ts`](../src/server/db/schema/waitlist.ts)           | Landing-page email capture with source tagging.                                                     |
 
 ## Entity relationship diagram
 

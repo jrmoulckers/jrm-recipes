@@ -35,7 +35,9 @@ function setup(opts: {
   headers?: Record<string, string>;
   requireConsent?: boolean;
 }) {
-  configMock.analyticsRequiresConsent.mockReturnValue(opts.requireConsent ?? false);
+  configMock.analyticsRequiresConsent.mockReturnValue(
+    opts.requireConsent ?? false,
+  );
   headersMock.cookies.mockResolvedValue(cookieStore(opts.consent));
   headersMock.headers.mockResolvedValue(headerStore(opts.headers));
 }

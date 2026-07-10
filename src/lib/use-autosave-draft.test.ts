@@ -1,17 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  draftStorageKey,
-  useAutosaveDraft,
-} from "./use-autosave-draft";
+import { draftStorageKey, useAutosaveDraft } from "./use-autosave-draft";
 
 type Draft = { title: string };
 
@@ -46,7 +36,12 @@ describe("useAutosaveDraft (#421)", () => {
   it("debounce-saves the snapshot once dirty and no draft is pending", () => {
     const { result, rerender } = renderHook(
       ({ snapshot, dirty }) =>
-        useAutosaveDraft<Draft>({ key: "new", snapshot, dirty, debounceMs: 500 }),
+        useAutosaveDraft<Draft>({
+          key: "new",
+          snapshot,
+          dirty,
+          debounceMs: 500,
+        }),
       { initialProps: { snapshot: { title: "Pi" }, dirty: true } },
     );
 

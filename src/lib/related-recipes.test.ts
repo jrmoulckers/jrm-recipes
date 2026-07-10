@@ -7,7 +7,11 @@ import {
   type RecipeSignals,
 } from "./related-recipes";
 
-const empty: RecipeSignals = { tagSlugs: [], cuisine: null, ingredientTokens: [] };
+const empty: RecipeSignals = {
+  tagSlugs: [],
+  cuisine: null,
+  ingredientTokens: [],
+};
 
 describe("similarityScore (#275)", () => {
   it("rewards shared tags most heavily", () => {
@@ -36,7 +40,11 @@ describe("similarityScore (#275)", () => {
       ingredientTokens: [],
     };
     expect(
-      similarityScore(source, { tagSlugs: [], cuisine: "thai", ingredientTokens: [] }),
+      similarityScore(source, {
+        tagSlugs: [],
+        cuisine: "thai",
+        ingredientTokens: [],
+      }),
     ).toBe(2);
     expect(similarityScore(source, empty)).toBe(0);
   });
@@ -74,7 +82,11 @@ describe("rankBySimilarity (#275)", () => {
       [
         {
           id: "no-overlap",
-          signals: { tagSlugs: ["bbq"], cuisine: "American", ingredientTokens: [] },
+          signals: {
+            tagSlugs: ["bbq"],
+            cuisine: "American",
+            ingredientTokens: [],
+          },
         },
         {
           id: "two-tags",
@@ -94,9 +106,22 @@ describe("rankBySimilarity (#275)", () => {
     const ranked = rankBySimilarity(
       source,
       [
-        { id: "a", signals: { tagSlugs: ["quick"], cuisine: null, ingredientTokens: [] } },
-        { id: "b", signals: { tagSlugs: ["vegan"], cuisine: null, ingredientTokens: [] } },
-        { id: "c", signals: { tagSlugs: ["unrelated"], cuisine: null, ingredientTokens: [] } },
+        {
+          id: "a",
+          signals: { tagSlugs: ["quick"], cuisine: null, ingredientTokens: [] },
+        },
+        {
+          id: "b",
+          signals: { tagSlugs: ["vegan"], cuisine: null, ingredientTokens: [] },
+        },
+        {
+          id: "c",
+          signals: {
+            tagSlugs: ["unrelated"],
+            cuisine: null,
+            ingredientTokens: [],
+          },
+        },
       ],
       1,
     );
@@ -107,8 +132,17 @@ describe("rankBySimilarity (#275)", () => {
 
 describe("tokenizeIngredients (#275)", () => {
   it("lowercases, splits on non-alphanumerics, and drops short words", () => {
-    expect(tokenizeIngredients(["2 cups All-Purpose Flour", "a bit of Salt"])).toEqual(
-      expect.arrayContaining(["cups", "all", "purpose", "flour", "bit", "salt"]),
+    expect(
+      tokenizeIngredients(["2 cups All-Purpose Flour", "a bit of Salt"]),
+    ).toEqual(
+      expect.arrayContaining([
+        "cups",
+        "all",
+        "purpose",
+        "flour",
+        "bit",
+        "salt",
+      ]),
     );
     expect(tokenizeIngredients(["a of"])).toEqual([]);
   });

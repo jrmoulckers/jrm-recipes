@@ -32,7 +32,10 @@ export async function generateMetadata({
   const profile = await load(handle);
   if (!profile) return { title: "Cook not found", robots: { index: false } };
 
-  const displayName = displayNameFrom(profile.user.name, `@${profile.user.handle}`);
+  const displayName = displayNameFrom(
+    profile.user.name,
+    `@${profile.user.handle}`,
+  );
   const count = profile.recipes.length;
   const canonical = absoluteUrl(`/cooks/${profile.user.handle}`);
   const description = `${count} public recipe${count === 1 ? "" : "s"} by ${displayName} on ${brand.name}.`;

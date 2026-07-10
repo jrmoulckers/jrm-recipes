@@ -67,7 +67,7 @@ function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <UtensilsCrossed className="size-7" aria-hidden="true" />
         </span>
         <div>

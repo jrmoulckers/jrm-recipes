@@ -200,7 +200,10 @@ export const recipes = pgTable(
     check("recipes_protein_grams_check", sql`${t.proteinGrams} >= 0`),
     check("recipes_carbs_grams_check", sql`${t.carbsGrams} >= 0`),
     check("recipes_fat_grams_check", sql`${t.fatGrams} >= 0`),
-    check("recipes_saturated_fat_grams_check", sql`${t.saturatedFatGrams} >= 0`),
+    check(
+      "recipes_saturated_fat_grams_check",
+      sql`${t.saturatedFatGrams} >= 0`,
+    ),
     check("recipes_sodium_mg_check", sql`${t.sodiumMg} >= 0`),
     check("recipes_sugar_grams_check", sql`${t.sugarGrams} >= 0`),
     check("recipes_fiber_grams_check", sql`${t.fiberGrams} >= 0`),

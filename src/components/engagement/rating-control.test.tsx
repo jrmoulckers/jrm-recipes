@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -64,7 +70,9 @@ describe("RatingControl", () => {
     );
 
     expect(screen.getByText("No ratings yet")).toBeInTheDocument();
-    expect(screen.getByText("Be the first to leave stars.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Be the first to leave stars."),
+    ).toBeInTheDocument();
   });
 
   it("exposes five keyboard-operable star buttons with accessible labels", () => {
@@ -77,9 +85,7 @@ describe("RatingControl", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "Rate 1 star" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Rate 1 star" })).toBeEnabled();
     for (const value of [2, 3, 4, 5]) {
       expect(
         screen.getByRole("button", { name: `Rate ${value} stars` }),
@@ -115,9 +121,7 @@ describe("RatingControl", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "Rate 5 stars" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rate 5 stars" })).toBeDisabled();
     expect(
       screen.getByText("Sign in to rate this recipe."),
     ).toBeInTheDocument();
@@ -182,7 +186,10 @@ describe("RatingControl", () => {
       const name = value === 1 ? "Rate 1 star" : `Rate ${value} stars`;
       const star = screen.getByRole("button", { name });
       expect(star).toBeDisabled();
-      expect(star).toHaveClass("focus-visible:ring-2", "focus-visible:ring-ring");
+      expect(star).toHaveClass(
+        "focus-visible:ring-2",
+        "focus-visible:ring-ring",
+      );
     }
 
     rerender(

@@ -4,7 +4,9 @@ import { isFlagEnabled, resolveFlag } from "./flags";
 
 describe("resolveFlag", () => {
   it("returns the fallback (control) when analytics is off / map is empty", () => {
-    expect(resolveFlag(undefined, "empty-library-cta", "control")).toBe("control");
+    expect(resolveFlag(undefined, "empty-library-cta", "control")).toBe(
+      "control",
+    );
     expect(resolveFlag({}, "empty-library-cta", "control")).toBe("control");
     // Default fallback is false (boolean off).
     expect(resolveFlag({}, "some-flag")).toBe(false);
@@ -13,7 +15,11 @@ describe("resolveFlag", () => {
   it("returns the evaluated value when present (boolean or variant)", () => {
     expect(resolveFlag({ "new-nav": true }, "new-nav", false)).toBe(true);
     expect(
-      resolveFlag({ "empty-library-cta": "benefit" }, "empty-library-cta", "control"),
+      resolveFlag(
+        { "empty-library-cta": "benefit" },
+        "empty-library-cta",
+        "control",
+      ),
     ).toBe("benefit");
   });
 

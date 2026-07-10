@@ -1,5 +1,11 @@
 import { relations, sql } from "drizzle-orm";
-import { index, pgEnum, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgEnum,
+  pgTable,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";

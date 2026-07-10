@@ -39,9 +39,9 @@ describe("scrubProperties", () => {
   });
 
   it("redacts email/phone values even under a safe-looking key", () => {
-    expect(
-      scrubProperties({ note: "reach me at nonna@example.com" }),
-    ).toEqual({ note: "[redacted]" });
+    expect(scrubProperties({ note: "reach me at nonna@example.com" })).toEqual({
+      note: "[redacted]",
+    });
     expect(scrubProperties({ ref: "call 555-123-4567 now" })).toEqual({
       ref: "[redacted]",
     });

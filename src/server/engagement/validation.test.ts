@@ -70,13 +70,18 @@ describe("reviewInput photoUrl (#341/#355)", () => {
   });
 
   it("treats an empty photo field as no photo", () => {
-    expect(reviewInput.parse({ ...base, photoUrl: "" }).photoUrl).toBeUndefined();
+    expect(
+      reviewInput.parse({ ...base, photoUrl: "" }).photoUrl,
+    ).toBeUndefined();
     expect(reviewInput.parse(base).photoUrl).toBeUndefined();
   });
 
   it("rejects an off-host URL that could be a tracking beacon", () => {
     expect(() =>
-      reviewInput.parse({ ...base, photoUrl: "https://evil.example/beacon.gif" }),
+      reviewInput.parse({
+        ...base,
+        photoUrl: "https://evil.example/beacon.gif",
+      }),
     ).toThrow();
   });
 

@@ -35,7 +35,8 @@ export function formatLeftoversNote(title: string, multiple: number): string {
   const mult = normalizeBatchMultiple(multiple);
   const suffix = ` · ${mult}× batch`;
   const room = MAX_NOTE - LEFTOVERS_PREFIX.length - suffix.length;
-  const name = clean.length > room ? clean.slice(0, Math.max(1, room)).trim() : clean;
+  const name =
+    clean.length > room ? clean.slice(0, Math.max(1, room)).trim() : clean;
   return `${LEFTOVERS_PREFIX}${name}${suffix}`;
 }
 

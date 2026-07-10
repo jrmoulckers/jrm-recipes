@@ -18,7 +18,9 @@ describe("buildWebSiteJsonLd", () => {
     const target = action.target as Record<string, unknown>;
     expect(target["@type"]).toBe("EntryPoint");
     // Targets the real search param (q) with the required placeholder.
-    expect(String(target.urlTemplate)).toContain("/recipes?q={search_term_string}");
+    expect(String(target.urlTemplate)).toContain(
+      "/recipes?q={search_term_string}",
+    );
     expect(String(target.urlTemplate)).toMatch(/^https?:\/\//);
   });
 });
@@ -30,7 +32,9 @@ describe("buildOrganizationJsonLd", () => {
     expect(jsonLd["@type"]).toBe("Organization");
     expect(jsonLd.name).toBe("Heirloom");
     expect(String(jsonLd.url)).toMatch(/^https?:\/\//);
-    expect(String(jsonLd.logo)).toMatch(/^https?:\/\/.+\/icons\/icon-512\.png$/);
+    expect(String(jsonLd.logo)).toMatch(
+      /^https?:\/\/.+\/icons\/icon-512\.png$/,
+    );
   });
 
   it("serializes without a script breakout", () => {

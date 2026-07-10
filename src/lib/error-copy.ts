@@ -56,7 +56,8 @@ export function friendlyError(
   error: unknown,
   fallback: string = DEFAULT_ERROR_COPY,
 ): string {
-  const safeFallback = fallback.trim().length > 0 ? fallback : DEFAULT_ERROR_COPY;
+  const safeFallback =
+    fallback.trim().length > 0 ? fallback : DEFAULT_ERROR_COPY;
 
   const raw =
     typeof error === "string"

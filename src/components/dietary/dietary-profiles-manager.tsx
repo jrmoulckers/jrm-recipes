@@ -171,7 +171,7 @@ export function DietaryProfilesManager({
 
       {profiles.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-          <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+          <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
             <UtensilsCrossed className="size-7" aria-hidden="true" />
           </span>
           <div>
@@ -290,7 +290,9 @@ export function DietaryProfilesManager({
                 autoFocus
               />
               {fieldErrors.name?.[0] ? (
-                <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
+                <p className="text-sm text-destructive">
+                  {fieldErrors.name[0]}
+                </p>
               ) : null}
             </div>
 

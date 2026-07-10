@@ -89,8 +89,11 @@ export function QuickPlanButton({
     startTransition(async () => {
       const result = await addEntryAction({ date, slot, recipeId });
       if (result.ok) {
-        const dayLabel = days.find((d) => d.value === date)?.label ?? "your plan";
-        toast.success(`Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}`);
+        const dayLabel =
+          days.find((d) => d.value === date)?.label ?? "your plan";
+        toast.success(
+          `Added ${recipeTitle} to ${dayLabel} ${MEAL_SLOT_LABELS[slot].toLowerCase()}`,
+        );
         setOpen(false);
         router.refresh();
       } else {
@@ -153,7 +156,11 @@ export function QuickPlanButton({
               ))}
             </select>
           </label>
-          <Button type="submit" size="sm" disabled={pending || days.length === 0}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={pending || days.length === 0}
+          >
             {pending ? "Adding…" : "Add to plan"}
           </Button>
         </form>

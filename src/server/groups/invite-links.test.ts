@@ -19,7 +19,11 @@ import {
   type MemberRole,
   type User,
 } from "~/server/db/schema";
-import { acceptInviteLink, createInviteLink, revokeInviteLink } from "./mutations";
+import {
+  acceptInviteLink,
+  createInviteLink,
+  revokeInviteLink,
+} from "./mutations";
 
 type Membership = {
   id: string;
@@ -38,7 +42,12 @@ const future = () => new Date(Date.now() + 24 * HOUR);
 const past = () => new Date(Date.now() - HOUR);
 
 function ownerMember(): Membership {
-  return { id: "m_owner", role: "owner", userId: "owner_1", groupId: "group_1" };
+  return {
+    id: "m_owner",
+    role: "owner",
+    userId: "owner_1",
+    groupId: "group_1",
+  };
 }
 
 function fakeTx(opts: {
@@ -51,16 +60,17 @@ function fakeTx(opts: {
     set: vi.fn((_arg?: unknown) => chain),
     values: vi.fn((_arg?: unknown) => chain),
     where: vi.fn((_arg?: unknown) => chain),
-    returning: vi.fn(async () =>
-      opts.returning ?? [
-        {
-          id: "link_1",
-          token: "tok_link",
-          role: "member",
-          expiresAt: null,
-          maxUses: null,
-        },
-      ],
+    returning: vi.fn(
+      async () =>
+        opts.returning ?? [
+          {
+            id: "link_1",
+            token: "tok_link",
+            role: "member",
+            expiresAt: null,
+            maxUses: null,
+          },
+        ],
     ),
   };
   const memberships = [...(opts.memberships ?? [])];

@@ -148,7 +148,9 @@ describe("engagement mutations enforce view permission", () => {
         user,
       ),
     ).resolves.toBeDefined();
-    expect((tx as { insert: ReturnType<typeof vi.fn> }).insert).toHaveBeenCalled();
+    expect(
+      (tx as { insert: ReturnType<typeof vi.fn> }).insert,
+    ).toHaveBeenCalled();
   });
 
   it("setRating reports NOT_FOUND before checking visibility", async () => {
@@ -156,10 +158,7 @@ describe("engagement mutations enforce view permission", () => {
     mockCanView.mockResolvedValue(true);
 
     await expect(
-      setRating(
-        { recipeId: "missing", recipeSlug: "missing", value: 3 },
-        user,
-      ),
+      setRating({ recipeId: "missing", recipeSlug: "missing", value: 3 }, user),
     ).rejects.toThrow("NOT_FOUND");
     expect(mockCanView).not.toHaveBeenCalled();
   });
@@ -474,8 +473,14 @@ describe("applySuggestion folds a suggestion into the recipe (owner-only)", () =
 
     await applySuggestion(applyArgs, ownerUser);
 
-    const chain = (tx as { chain: { set: ReturnType<typeof vi.fn>; values: ReturnType<typeof vi.fn> } })
-      .chain;
+    const chain = (
+      tx as {
+        chain: {
+          set: ReturnType<typeof vi.fn>;
+          values: ReturnType<typeof vi.fn>;
+        };
+      }
+    ).chain;
 
     // (b) the change is applied INTO the recipe — merged into notes, credited.
     const recipeUpdate = payloadWith(chain.set.mock.calls, "notes");
@@ -685,9 +690,9 @@ describe("resolveComment guards an applied suggestion", () => {
     runWith(fakeTx({ comment: appliedSuggestionRow }));
     mockCanView.mockResolvedValue(true);
 
-    await expect(
-      resolveComment("sugg_1", ownerUser, false),
-    ).rejects.toThrow("ALREADY_APPLIED");
+    await expect(resolveComment("sugg_1", ownerUser, false)).rejects.toThrow(
+      "ALREADY_APPLIED",
+    );
   });
 
   it("still allows closing (resolved=true) an applied suggestion", async () => {
@@ -726,8 +731,8 @@ describe("resolveComment guards an applied suggestion", () => {
     );
     mockCanView.mockResolvedValue(true);
 
-    await expect(
-      resolveComment("sugg_1", ownerUser, true),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(resolveComment("sugg_1", ownerUser, true)).rejects.toThrow(
+      "FORBIDDEN",
+    );
   });
 });

@@ -176,9 +176,7 @@ describe("safeSubstitutions (#429 safe-swap safety)", () => {
     expect(names).not.toContain("Cashew cream");
     expect(names).not.toContain("Almond milk + oil");
     // Nut-free options survive (coconut is deliberately not treated as tree-nut).
-    expect(names).toEqual(
-      expect.arrayContaining(["Olive oil", "Coconut oil"]),
-    );
+    expect(names).toEqual(expect.arrayContaining(["Olive oil", "Coconut oil"]));
   });
 
   it("leaves the list untouched when the member avoids nothing", () => {

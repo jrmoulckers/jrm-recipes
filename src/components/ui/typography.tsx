@@ -21,8 +21,7 @@ type HeadingLevel = 1 | 2 | 3 | 4;
 type HeadingSize = keyof typeof HEADING_SIZE;
 type HeadingElement = "h1" | "h2" | "h3" | "h4" | "p" | "div" | "span";
 
-export interface HeadingProps
-  extends React.HTMLAttributes<HTMLHeadingElement> {
+export interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   /** Semantic heading level; also drives the default visual size. */
   level?: HeadingLevel;
   /** Visual size override, decoupled from the semantic `level`. */
@@ -59,8 +58,7 @@ const TEXT_VARIANT = {
 type TextVariant = keyof typeof TEXT_VARIANT;
 type TextElement = "p" | "span" | "div";
 
-export interface TextProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {
+export interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {
   variant?: TextVariant;
   as?: TextElement;
 }

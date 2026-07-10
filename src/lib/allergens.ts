@@ -538,7 +538,9 @@ type IndexedRule = {
 const RULE_INDEX: IndexedRule[] = ALLERGEN_RULES.map((rule) => ({
   rule,
   aliasTokens: rule.aliases.map((a) => tokenize(normalizeIngredient(a))),
-  unlessTokens: (rule.unless ?? []).map((u) => tokenize(normalizeIngredient(u))),
+  unlessTokens: (rule.unless ?? []).map((u) =>
+    tokenize(normalizeIngredient(u)),
+  ),
 }));
 
 /** A single allergen detection, tagged with whether it's hidden/derived. */
@@ -564,7 +566,9 @@ function sortAllergens(list: Allergen[]): Allergen[] {
 }
 
 /** Every rule hit for an ingredient (direct + hidden), before de-duplication. */
-export function detectAllergenHits(item: string | null | undefined): AllergenHit[] {
+export function detectAllergenHits(
+  item: string | null | undefined,
+): AllergenHit[] {
   const tokens = tokenize(normalizeIngredient(item));
   if (tokens.length === 0) return [];
 

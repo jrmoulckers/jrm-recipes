@@ -33,8 +33,7 @@ export type ActionResult =
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export type ToggleFavoriteResult =
-  | { ok: true; favorited: boolean }
-  | { ok: false; error: string };
+  { ok: true; favorited: boolean } | { ok: false; error: string };
 
 export type CreateCollectionResult =
   | { ok: true; id: string }
@@ -130,7 +129,9 @@ export async function renameCollectionAction(
   }
 }
 
-export async function deleteCollectionAction(id: string): Promise<ActionResult> {
+export async function deleteCollectionAction(
+  id: string,
+): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   try {
@@ -144,7 +145,11 @@ export async function deleteCollectionAction(id: string): Promise<ActionResult> 
 }
 
 export type SetVisibilityResult =
-  | { ok: true; visibility: CollectionVisibilityValue; shareToken: string | null }
+  | {
+      ok: true;
+      visibility: CollectionVisibilityValue;
+      shareToken: string | null;
+    }
   | { ok: false; error: string };
 
 export async function setCollectionVisibilityAction(
@@ -155,7 +160,10 @@ export async function setCollectionVisibilityAction(
 
   const parsed = setCollectionVisibilityInput.safeParse({ id, visibility });
   if (!parsed.success) {
-    return { ok: false, error: "We couldn't update sharing for that collection." };
+    return {
+      ok: false,
+      error: "We couldn't update sharing for that collection.",
+    };
   }
 
   try {

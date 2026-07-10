@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { type SQL } from "drizzle-orm";
 
-import {
-  TOP_RATED_PRIOR_COUNT,
-  TOP_RATED_PRIOR_MEAN,
-} from "~/lib/ratings";
+import { TOP_RATED_PRIOR_COUNT, TOP_RATED_PRIOR_MEAN } from "~/lib/ratings";
 import { topRatedOrderBy, topRatedScoreSql } from "./queries";
 import { relevanceOrderBy, relevanceScoreSql } from "./queries";
 import { popularOrderBy, popularityScoreSql } from "./queries";
@@ -76,7 +73,9 @@ describe("best-match relevance is a weighted field score in SQL (#260)", () => {
     // A later term breaks ties with the weighted rating score, now read from the
     // denormalized aggregate columns on `recipes` (issue #154) rather than a
     // per-row scan of the ratings table.
-    expect(clauses.some((c) => c.includes('"recipes"."rating_sum"'))).toBe(true);
+    expect(clauses.some((c) => c.includes('"recipes"."rating_sum"'))).toBe(
+      true,
+    );
   });
 });
 

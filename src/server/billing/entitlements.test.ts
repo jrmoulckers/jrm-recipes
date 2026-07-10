@@ -112,9 +112,7 @@ describe("getEntitlements", () => {
 
   it("grants Family from a redeemed gift with no subscription (#331)", async () => {
     state.customers = [];
-    state.gifts = [
-      { planId: "family", durationMonths: 12, redeemedAt: past },
-    ];
+    state.gifts = [{ planId: "family", durationMonths: 12, redeemedAt: past }];
     expect(await getEffectivePlanId(user)).toBe("family");
     const ent = await getEntitlements(user);
     expect(ent.aiGeneration).toBe(true);
@@ -160,7 +158,9 @@ describe("requireEntitlement", () => {
     } catch (error) {
       expect(isUpgradeRequiredError(error)).toBe(true);
       expect(error).toBeInstanceOf(UpgradeRequiredError);
-      expect((error as UpgradeRequiredError).message).not.toBe("UNAUTHENTICATED");
+      expect((error as UpgradeRequiredError).message).not.toBe(
+        "UNAUTHENTICATED",
+      );
       expect((error as UpgradeRequiredError).entitlement).toBe("aiGeneration");
     }
   });

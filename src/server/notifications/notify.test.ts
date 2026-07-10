@@ -59,11 +59,11 @@ describe("notify() (issue #348)", () => {
 describe("notifyMany() (issue #348)", () => {
   it("de-dupes recipients and skips the actor", async () => {
     const { exec, values } = fakeExec();
-    await notifyMany(
-      exec,
-      ["a", "b", "b", "actor", "c"],
-      { actorId: "actor", type: "cook_along_invite", groupId: "group_1" },
-    );
+    await notifyMany(exec, ["a", "b", "b", "actor", "c"], {
+      actorId: "actor",
+      type: "cook_along_invite",
+      groupId: "group_1",
+    });
     const rows = values.mock.calls[0]![0] as Array<{ recipientId: string }>;
     expect(rows.map((r) => r.recipientId).sort()).toEqual(["a", "b", "c"]);
   });

@@ -12,11 +12,7 @@ import type { ReviewListItem, ReviewSort } from "~/server/engagement/reviews";
 import { cn } from "~/lib/utils";
 import { formatRelativeTime } from "~/lib/dates";
 import { useServerAction } from "~/lib/use-server-action";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -90,7 +86,10 @@ export type ReviewsSectionProps = {
   initialReviews: ReviewListItem[];
   reactionsByReview?: Record<
     string,
-    { counts: ReactionCount[]; reactors: Partial<Record<ReactionEmojiKey, string[]>> }
+    {
+      counts: ReactionCount[];
+      reactors: Partial<Record<ReactionEmojiKey, string[]>>;
+    }
   >;
   viewerReview: ViewerReview | null;
   currentUserId: string | null;
@@ -136,8 +135,7 @@ export function ReviewsSection({
     const copy = [...initialReviews];
     copy.sort((a, b) =>
       sort === "rating"
-        ? b.rating - a.rating ||
-          b.createdAt.getTime() - a.createdAt.getTime()
+        ? b.rating - a.rating || b.createdAt.getTime() - a.createdAt.getTime()
         : b.createdAt.getTime() - a.createdAt.getTime(),
     );
     return copy;
@@ -152,7 +150,7 @@ export function ReviewsSection({
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="rounded-full bg-primary/12 p-2 text-primary">
+        <span className="bg-primary/12 rounded-full p-2 text-primary">
           <NotebookPen className="size-5" />
         </span>
         <div>
@@ -285,7 +283,8 @@ export function ReviewsSection({
       ) : (
         <ul className="space-y-4">
           {sorted.map((review) => {
-            const name = review.author?.name ?? review.author?.handle ?? "Family cook";
+            const name =
+              review.author?.name ?? review.author?.handle ?? "Family cook";
             const canDelete =
               isRecipeOwner ||
               (currentUserId != null && currentUserId === review.author?.id);
@@ -305,7 +304,9 @@ export function ReviewsSection({
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-medium text-foreground">{name}</span>
+                      <span className="font-medium text-foreground">
+                        {name}
+                      </span>
                       <time
                         dateTime={new Date(review.createdAt).toISOString()}
                         className="text-xs text-muted-foreground"
@@ -346,7 +347,9 @@ export function ReviewsSection({
                         targetType="review"
                         targetId={review.id}
                         recipeSlug={recipeSlug}
-                        initialCounts={reactionsByReview[review.id]?.counts ?? []}
+                        initialCounts={
+                          reactionsByReview[review.id]?.counts ?? []
+                        }
                         initialReactors={
                           reactionsByReview[review.id]?.reactors ?? {}
                         }

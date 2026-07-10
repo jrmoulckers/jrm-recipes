@@ -43,10 +43,7 @@ export async function getUnreadCount(userId: string | null): Promise<number> {
     .select({ id: notifications.id, actorId: notifications.actorId })
     .from(notifications)
     .where(
-      and(
-        eq(notifications.recipientId, userId),
-        isNull(notifications.readAt),
-      ),
+      and(eq(notifications.recipientId, userId), isNull(notifications.readAt)),
     );
   return filterBlocked(rows, (row) => row.actorId, hiddenAuthorIds).length;
 }
@@ -77,7 +74,10 @@ function hrefFor(row: {
  */
 export async function listNotifications(
   userId: string | null,
-  { limit = 20, cursor = null }: { limit?: number; cursor?: string | null } = {},
+  {
+    limit = 20,
+    cursor = null,
+  }: { limit?: number; cursor?: string | null } = {},
 ): Promise<NotificationPage> {
   if (!isDbConfigured() || !userId) return { items: [], nextCursor: null };
 

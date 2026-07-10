@@ -5,12 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
-import {
-  groupMembers,
-  recipes,
-  users,
-  type User,
-} from "~/server/db/schema";
+import { groupMembers, recipes, users, type User } from "~/server/db/schema";
 import { DEV_USER } from "~/server/auth/dev-user";
 import { getEntitlements } from "~/server/billing/entitlements";
 import type { Entitlements } from "~/config/plans";
@@ -109,7 +104,8 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   const joinedName = [profile.firstName, profile.lastName]
     .filter(Boolean)
     .join(" ");
-  const name = joinedName.length > 0 ? joinedName : (profile.username ?? "Cook");
+  const name =
+    joinedName.length > 0 ? joinedName : (profile.username ?? "Cook");
 
   const [created] = await db
     .insert(users)

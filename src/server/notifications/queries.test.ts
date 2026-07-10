@@ -61,9 +61,11 @@ describe("notification block filtering (#355)", () => {
   beforeEach(() => {
     notificationsFindMany.mockReset().mockResolvedValue(notifRows);
     userBlocksFindMany.mockReset().mockResolvedValue([]);
-    selectWhere.mockReset().mockResolvedValue(
-      notifRows.map((r) => ({ id: r.id, actorId: r.actorId })),
-    );
+    selectWhere
+      .mockReset()
+      .mockResolvedValue(
+        notifRows.map((r) => ({ id: r.id, actorId: r.actorId })),
+      );
   });
 
   it("lists every notification when nothing is blocked", async () => {

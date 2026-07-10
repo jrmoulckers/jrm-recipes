@@ -10,11 +10,7 @@ import { readBadges, type KidBadge } from "./kids-rewards";
  * collection (read from localStorage) so a young chef can look back at everything
  * they've made.
  */
-export function KidsBadgeReward({
-  newlyEarned,
-}: {
-  newlyEarned: KidBadge[];
-}) {
+export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
   const [allBadges, setAllBadges] = React.useState<KidBadge[]>([]);
   const [showShelf, setShowShelf] = React.useState(false);
 
@@ -27,7 +23,9 @@ export function KidsBadgeReward({
       {newlyEarned.length > 0 && (
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
           <p className="text-sm font-bold uppercase tracking-wide text-warning-foreground">
-            {newlyEarned.length > 1 ? "New badges earned!" : "New badge earned!"}
+            {newlyEarned.length > 1
+              ? "New badges earned!"
+              : "New badge earned!"}
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-4">
             {newlyEarned.map((badge) => (
@@ -63,10 +61,7 @@ export function KidsBadgeReward({
           {showShelf && (
             <ul className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-5">
               {allBadges.map((badge) => (
-                <li
-                  key={badge.id}
-                  className="flex flex-col items-center gap-1"
-                >
+                <li key={badge.id} className="flex flex-col items-center gap-1">
                   <span className="text-3xl" aria-hidden="true">
                     {badge.emoji}
                   </span>

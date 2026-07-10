@@ -56,9 +56,10 @@ export function RatingControl(props: {
   // The just-committed value (plus a retrigger key) that drives the staggered
   // fill. Null except immediately after a rating is set, so hover, mount, and
   // clearing never animate.
-  const [commit, setCommit] = React.useState<{ value: number; key: number } | null>(
-    null,
-  );
+  const [commit, setCommit] = React.useState<{
+    value: number;
+    key: number;
+  } | null>(null);
   // Snapshot of pre-click state so a failed submit can roll the stars back.
   const rollbackRef = React.useRef<{
     rating: number | null;
@@ -112,7 +113,10 @@ export function RatingControl(props: {
     setHoverRating(nextRating);
     // Punctuate a *set* (not a clear) with a left-to-right staggered pop.
     if (nextRating != null && !reducedMotion) {
-      setCommit((current) => ({ value: nextRating, key: (current?.key ?? 0) + 1 }));
+      setCommit((current) => ({
+        value: nextRating,
+        key: (current?.key ?? 0) + 1,
+      }));
     } else {
       setCommit(null);
     }

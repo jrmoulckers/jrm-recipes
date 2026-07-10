@@ -42,7 +42,10 @@ export function AllergenSummary({
           className,
         )}
       >
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+        <ShieldCheck
+          className="mt-0.5 size-4 shrink-0 text-success"
+          aria-hidden
+        />
         <p>
           No common allergens detected — always double-check the ingredients.
         </p>
@@ -68,7 +71,10 @@ export function AllergenSummary({
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
             Contains
           </span>
-          <ul className="flex flex-wrap gap-1.5" aria-label="Contains allergens">
+          <ul
+            className="flex flex-wrap gap-1.5"
+            aria-label="Contains allergens"
+          >
             {allergens.map((allergen) => (
               <li key={allergen}>
                 <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>

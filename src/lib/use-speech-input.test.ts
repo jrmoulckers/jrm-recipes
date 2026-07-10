@@ -10,7 +10,10 @@ class FakeRecognition {
   continuous = false;
   interimResults = false;
   onresult:
-    | ((event: { resultIndex: number; results: Record<number, ResultRow> & { length: number } }) => void)
+    | ((event: {
+        resultIndex: number;
+        results: Record<number, ResultRow> & { length: number };
+      }) => void)
     | null = null;
   onend: (() => void) | null = null;
   onerror: (() => void) | null = null;
@@ -27,7 +30,8 @@ class FakeRecognition {
 }
 
 afterEach(() => {
-  delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
+  delete (window as unknown as { SpeechRecognition?: unknown })
+    .SpeechRecognition;
   vi.restoreAllMocks();
 });
 
@@ -42,9 +46,7 @@ describe("appendDictation", () => {
 
 describe("useSpeechInput (#373)", () => {
   it("reports unsupported when the API is absent", () => {
-    const { result } = renderHook(() =>
-      useSpeechInput({ onResult: vi.fn() }),
-    );
+    const { result } = renderHook(() => useSpeechInput({ onResult: vi.fn() }));
     expect(result.current.supported).toBe(false);
   });
 

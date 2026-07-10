@@ -9,11 +9,7 @@ import {
   type MentionCandidate,
 } from "~/lib/mentions";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 type Props = Omit<
   React.ComponentPropsWithoutRef<typeof Textarea>,
@@ -53,25 +49,20 @@ export function MentionTextarea({
 
   const suggestions = React.useMemo(() => {
     if (!open) return [];
-    return candidates
-      .filter((c) => c.handle && matches(c, query))
-      .slice(0, 6);
+    return candidates.filter((c) => c.handle && matches(c, query)).slice(0, 6);
   }, [open, candidates, query]);
 
-  const refreshFromCaret = React.useCallback(
-    (el: HTMLTextAreaElement) => {
-      const caret = el.selectionStart ?? el.value.length;
-      const q = activeMentionQuery(el.value.slice(0, caret));
-      if (q === null) {
-        setOpen(false);
-        return;
-      }
-      setQuery(q);
-      setActive(0);
-      setOpen(true);
-    },
-    [],
-  );
+  const refreshFromCaret = React.useCallback((el: HTMLTextAreaElement) => {
+    const caret = el.selectionStart ?? el.value.length;
+    const q = activeMentionQuery(el.value.slice(0, caret));
+    if (q === null) {
+      setOpen(false);
+      return;
+    }
+    setQuery(q);
+    setActive(0);
+    setOpen(true);
+  }, []);
 
   const insertMention = (candidate: MentionCandidate) => {
     const el = ref.current;
@@ -79,7 +70,10 @@ export function MentionTextarea({
     const caret = el.selectionStart ?? value.length;
     const before = value.slice(0, caret);
     const after = value.slice(caret);
-    const replaced = before.replace(/(^|\s)@[a-zA-Z0-9_.-]*$/, `$1@${candidate.handle} `);
+    const replaced = before.replace(
+      /(^|\s)@[a-zA-Z0-9_.-]*$/,
+      `$1@${candidate.handle} `,
+    );
     const next = replaced + after;
     onChange(next);
     setOpen(false);

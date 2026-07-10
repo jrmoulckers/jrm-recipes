@@ -172,7 +172,15 @@ export function ThemeProvider({
       setScheme,
       toggleScheme,
     }),
-    [theme, scheme, resolvedScheme, setTheme, setKidsMode, setScheme, toggleScheme],
+    [
+      theme,
+      scheme,
+      resolvedScheme,
+      setTheme,
+      setKidsMode,
+      setScheme,
+      toggleScheme,
+    ],
   );
 
   return (

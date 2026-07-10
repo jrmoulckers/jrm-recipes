@@ -154,8 +154,7 @@ export function parseRecipeText(raw: string): ImportedRecipe {
       ingredientLines = lines.slice(ingredientsAt + 1, end);
     }
     if (stepsAt !== -1) {
-      const end =
-        ingredientsAt > stepsAt ? ingredientsAt : lines.length;
+      const end = ingredientsAt > stepsAt ? ingredientsAt : lines.length;
       stepLines = lines.slice(stepsAt + 1, end);
     }
   } else {
@@ -180,7 +179,10 @@ export function parseRecipeText(raw: string): ImportedRecipe {
     stepLines = body.slice(splitAt).map((b) => b.line);
 
     // If nothing looked like an ingredient, treat the whole body as steps.
-    if (ingredientLines.every((l) => !looksLikeIngredient(l)) && stepLines.length === 0) {
+    if (
+      ingredientLines.every((l) => !looksLikeIngredient(l)) &&
+      stepLines.length === 0
+    ) {
       stepLines = ingredientLines;
       ingredientLines = [];
     }

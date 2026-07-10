@@ -60,7 +60,9 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
           )}
           {hiddenLabels.length > 0 && (
             <p className="text-sm font-medium leading-tight sm:text-base">
-              <span className="font-semibold">May also contain (check labels):</span>{" "}
+              <span className="font-semibold">
+                May also contain (check labels):
+              </span>{" "}
               {formatList(hiddenLabels, locale)}
             </p>
           )}

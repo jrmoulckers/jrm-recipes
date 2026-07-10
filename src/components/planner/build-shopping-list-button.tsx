@@ -31,12 +31,16 @@ export function BuildShoppingListButton({ week }: { week: string }) {
         return;
       }
       if (result.added === 0 && result.merged === 0) {
-        toast.info("Everything from this week's recipes is already on your list.");
+        toast.info(
+          "Everything from this week's recipes is already on your list.",
+        );
         return;
       }
       const parts: string[] = [];
       if (result.added > 0) {
-        parts.push(`added ${result.added} ${result.added === 1 ? "item" : "items"}`);
+        parts.push(
+          `added ${result.added} ${result.added === 1 ? "item" : "items"}`,
+        );
       }
       if (result.merged > 0) {
         parts.push(`merged ${result.merged}`);
@@ -52,7 +56,12 @@ export function BuildShoppingListButton({ week }: { week: string }) {
   }
 
   return (
-    <Button type="button" variant="outline" onClick={build} disabled={isPending}>
+    <Button
+      type="button"
+      variant="outline"
+      onClick={build}
+      disabled={isPending}
+    >
       <ShoppingCart />
       {isPending ? "Building…" : "Build shopping list"}
     </Button>

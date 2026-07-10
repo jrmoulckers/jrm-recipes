@@ -52,8 +52,7 @@ module.exports = {
       // Write HTML/JSON reports locally; CI publishes them as build artifacts.
       target: "filesystem",
       outputDir: ".lighthouseci",
-      reportFilenamePattern:
-        "%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%",
+      reportFilenamePattern: "%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%",
     },
   },
 };

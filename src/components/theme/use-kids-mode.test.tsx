@@ -1,6 +1,14 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { KidsModeToggle } from "./kids-mode-toggle";
 import { ThemeProvider } from "./theme-provider";
@@ -11,7 +19,11 @@ import {
   A11Y_PREVIOUS_COOKIE,
   DEFAULT_A11Y,
 } from "~/config/a11y";
-import { THEME_COOKIE, THEME_PREVIOUS_COOKIE, type UITheme } from "~/config/themes";
+import {
+  THEME_COOKIE,
+  THEME_PREVIOUS_COOKIE,
+  type UITheme,
+} from "~/config/themes";
 
 // ThemeProvider + A11yProvider effects lean on matchMedia (not in jsdom).
 beforeAll(() => {
@@ -92,7 +104,9 @@ describe("Kids mode a11y coupling (issue #445)", () => {
     await user.click(screen.getByRole("button", { name: "Turn on Kids mode" }));
     expect(html()).toHaveAttribute("data-text", "large");
 
-    await user.click(screen.getByRole("button", { name: "Turn off Kids mode" }));
+    await user.click(
+      screen.getByRole("button", { name: "Turn off Kids mode" }),
+    );
 
     // Back to the pre-Kids defaults: no forced large text / easy-reading.
     expect(html()).not.toHaveAttribute("data-text");

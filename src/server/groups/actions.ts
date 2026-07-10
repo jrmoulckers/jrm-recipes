@@ -69,7 +69,9 @@ function revalidateGroup(slug?: string) {
   if (slug) revalidatePath(`/groups/${slug}`);
 }
 
-export async function createGroupAction(input: GroupInput): Promise<ActionResult> {
+export async function createGroupAction(
+  input: GroupInput,
+): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = groupInput.safeParse(input);
@@ -121,7 +123,12 @@ export async function addMemberAction(
 
   const user = await requireUser();
   try {
-    const member = await addMember(slug, user, parsed.data.identifier, parsed.data.role);
+    const member = await addMember(
+      slug,
+      user,
+      parsed.data.identifier,
+      parsed.data.role,
+    );
     revalidateGroup(slug);
     const sizeBucket = groupSizeBucket(member.memberCount);
     // invite_sent is attributed to the inviter; invite_accepted is attributed
@@ -156,7 +163,12 @@ export async function updateMemberRoleAction(
 
   const user = await requireUser();
   try {
-    const member = await updateMemberRole(slug, user, memberUserId, parsed.data.role);
+    const member = await updateMemberRole(
+      slug,
+      user,
+      memberUserId,
+      parsed.data.role,
+    );
     revalidateGroup(slug);
     void captureServer(user.id, "member_role_changed", {
       groupId: member.groupId,
@@ -223,11 +235,16 @@ export async function transferOwnershipAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = transferOwnershipInput.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error, "Please choose a new owner.");
+  if (!parsed.success)
+    return fromZodError(parsed.error, "Please choose a new owner.");
 
   const user = await requireUser();
   try {
-    const group = await transferOwnership(slug, user, parsed.data.newOwnerUserId);
+    const group = await transferOwnership(
+      slug,
+      user,
+      parsed.data.newOwnerUserId,
+    );
     revalidateGroup(group.slug);
     return { ok: true, slug: group.slug };
   } catch (error) {
@@ -258,7 +275,11 @@ export async function createInviteLinkAction(
       groupId: link.groupId,
       role: parsed.data.role ?? "member",
     });
-    return { ok: true, url: absoluteUrl(`/join/${link.token}`), token: link.token };
+    return {
+      ok: true,
+      url: absoluteUrl(`/join/${link.token}`),
+      token: link.token,
+    };
   } catch (error) {
     return groupError(error);
   }
@@ -280,7 +301,8 @@ export async function acceptInviteLinkAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = z.string().trim().min(1).safeParse(token);
-  if (!parsed.success) return { ok: false, error: "That invite link is invalid." };
+  if (!parsed.success)
+    return { ok: false, error: "That invite link is invalid." };
 
   const user = await requireUser();
   try {
@@ -310,7 +332,8 @@ export async function revokeInviteLinkAction(
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
   const parsed = z.string().trim().min(1).safeParse(token);
-  if (!parsed.success) return { ok: false, error: "That invite link is invalid." };
+  if (!parsed.success)
+    return { ok: false, error: "That invite link is invalid." };
 
   const user = await requireUser();
   try {

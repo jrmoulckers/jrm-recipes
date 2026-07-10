@@ -56,7 +56,11 @@ export function parseKeepsakeMessage(input: {
  */
 export function buildKeepsakePath(
   idOrSlug: string,
-  message: { from?: string | null; note?: string | null; token?: string | null },
+  message: {
+    from?: string | null;
+    note?: string | null;
+    token?: string | null;
+  },
 ): string {
   const params = new URLSearchParams();
   const from = tidy(message.from, KEEPSAKE_FROM_MAX);

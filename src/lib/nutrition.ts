@@ -66,7 +66,10 @@ export function hasNutrition(n: Nutrition): boolean {
  * ones are multiplied. A non-finite or negative factor is treated as 1 so the
  * panel can never show nonsense from a bad serving count.
  */
-export function scaleNutrition(perServing: Nutrition, factor: number): Nutrition {
+export function scaleNutrition(
+  perServing: Nutrition,
+  factor: number,
+): Nutrition {
   const safe = Number.isFinite(factor) && factor >= 0 ? factor : 1;
   const out: Nutrition = {};
   for (const { key } of NUTRIENTS) {
@@ -90,7 +93,13 @@ export function nutritionRows(n: Nutrition): NutritionRow[] {
     const v = n[m.key];
     if (typeof v !== "number" || !Number.isFinite(v)) return [];
     return [
-      { key: m.key, label: m.label, unit: m.unit, value: v, decimals: m.decimals },
+      {
+        key: m.key,
+        label: m.label,
+        unit: m.unit,
+        value: v,
+        decimals: m.decimals,
+      },
     ];
   });
 }
@@ -132,7 +141,10 @@ export const DAILY_VALUES = [
  * FDA "5/20 rule" bands: ≤5% DV is low, ≥20% DV is high, anything between is
  * moderate. Adjust here to retune every badge at once.
  */
-export const LEVEL_THRESHOLDS = { lowMaxPercent: 5, highMinPercent: 20 } as const;
+export const LEVEL_THRESHOLDS = {
+  lowMaxPercent: 5,
+  highMinPercent: 20,
+} as const;
 
 export function classifyLevel(percentDV: number): NutrientLevel {
   if (percentDV <= LEVEL_THRESHOLDS.lowMaxPercent) return "low";
@@ -196,7 +208,11 @@ export function caloriePercentOfGoal(
   calories: number | null | undefined,
   dailyGoal: number | null | undefined,
 ): number | null {
-  if (typeof calories !== "number" || !Number.isFinite(calories) || calories < 0) {
+  if (
+    typeof calories !== "number" ||
+    !Number.isFinite(calories) ||
+    calories < 0
+  ) {
     return null;
   }
   if (

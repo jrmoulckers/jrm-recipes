@@ -102,7 +102,11 @@ export function FavoriteButton({
         className,
       )}
     >
-      <HeartGlyph favorited={favorited} burstKey={burstKey} iconClassName="size-5" />
+      <HeartGlyph
+        favorited={favorited}
+        burstKey={burstKey}
+        iconClassName="size-5"
+      />
     </button>
   );
 }

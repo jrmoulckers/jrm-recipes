@@ -39,7 +39,11 @@ import {
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -122,28 +126,106 @@ function Section({
   );
 }
 
-const COLOR_SWATCHES: { label: string; varName: string; box: string; text: string }[] =
-  [
-    { label: "background", varName: "--background", box: "bg-background", text: "text-foreground" },
-    { label: "foreground", varName: "--foreground", box: "bg-foreground", text: "text-background" },
-    { label: "surface", varName: "--surface", box: "bg-surface", text: "text-surface-foreground" },
-    { label: "surface-muted", varName: "--surface-muted", box: "bg-surface-muted", text: "text-surface-foreground" },
-    { label: "card", varName: "--card", box: "bg-card", text: "text-card-foreground" },
-    { label: "popover", varName: "--popover", box: "bg-popover", text: "text-popover-foreground" },
-    { label: "primary", varName: "--primary", box: "bg-primary", text: "text-primary-foreground" },
-    { label: "secondary", varName: "--secondary", box: "bg-secondary", text: "text-secondary-foreground" },
-    { label: "muted", varName: "--muted", box: "bg-muted", text: "text-muted-foreground" },
-    { label: "accent", varName: "--accent", box: "bg-accent", text: "text-accent-foreground" },
-    { label: "destructive", varName: "--destructive", box: "bg-destructive", text: "text-destructive-foreground" },
-    { label: "success", varName: "--success", box: "bg-success", text: "text-success-foreground" },
-    { label: "warning", varName: "--warning", box: "bg-warning", text: "text-warning-foreground" },
-    { label: "info", varName: "--info", box: "bg-info", text: "text-info-foreground" },
-  ];
+const COLOR_SWATCHES: {
+  label: string;
+  varName: string;
+  box: string;
+  text: string;
+}[] = [
+  {
+    label: "background",
+    varName: "--background",
+    box: "bg-background",
+    text: "text-foreground",
+  },
+  {
+    label: "foreground",
+    varName: "--foreground",
+    box: "bg-foreground",
+    text: "text-background",
+  },
+  {
+    label: "surface",
+    varName: "--surface",
+    box: "bg-surface",
+    text: "text-surface-foreground",
+  },
+  {
+    label: "surface-muted",
+    varName: "--surface-muted",
+    box: "bg-surface-muted",
+    text: "text-surface-foreground",
+  },
+  {
+    label: "card",
+    varName: "--card",
+    box: "bg-card",
+    text: "text-card-foreground",
+  },
+  {
+    label: "popover",
+    varName: "--popover",
+    box: "bg-popover",
+    text: "text-popover-foreground",
+  },
+  {
+    label: "primary",
+    varName: "--primary",
+    box: "bg-primary",
+    text: "text-primary-foreground",
+  },
+  {
+    label: "secondary",
+    varName: "--secondary",
+    box: "bg-secondary",
+    text: "text-secondary-foreground",
+  },
+  {
+    label: "muted",
+    varName: "--muted",
+    box: "bg-muted",
+    text: "text-muted-foreground",
+  },
+  {
+    label: "accent",
+    varName: "--accent",
+    box: "bg-accent",
+    text: "text-accent-foreground",
+  },
+  {
+    label: "destructive",
+    varName: "--destructive",
+    box: "bg-destructive",
+    text: "text-destructive-foreground",
+  },
+  {
+    label: "success",
+    varName: "--success",
+    box: "bg-success",
+    text: "text-success-foreground",
+  },
+  {
+    label: "warning",
+    varName: "--warning",
+    box: "bg-warning",
+    text: "text-warning-foreground",
+  },
+  {
+    label: "info",
+    varName: "--info",
+    box: "bg-info",
+    text: "text-info-foreground",
+  },
+];
 
 const LINE_TOKENS: { label: string; varName: string; cls: string }[] = [
   { label: "border", varName: "--border", cls: "border-4 border-border" },
   { label: "input", varName: "--input", cls: "border-4 border-input" },
-  { label: "ring", varName: "--ring", cls: "ring-4 ring-ring ring-offset-2 ring-offset-background" },
+  {
+    label: "ring",
+    varName: "--ring",
+    cls: "ring-4 ring-ring ring-offset-2 ring-offset-background",
+  },
 ];
 
 const RADIUS_STEPS: { label: string; cls: string }[] = [
@@ -263,7 +345,7 @@ export default function DesignGalleryPage() {
             <div key={r.label} className="flex flex-col items-center gap-2">
               <div
                 className={cn(
-                  "size-20 border border-border bg-primary/12",
+                  "bg-primary/12 size-20 border border-border",
                   r.cls,
                 )}
                 aria-hidden="true"
@@ -319,7 +401,11 @@ export default function DesignGalleryPage() {
         </div>
       </Section>
 
-      <Section id="buttons" title="Buttons" description="Variants, sizes, and states.">
+      <Section
+        id="buttons"
+        title="Buttons"
+        description="Variants, sizes, and states."
+      >
         <div className="flex flex-wrap gap-3">
           {BUTTON_VARIANTS.map((v) => (
             <Button key={v} variant={v}>
@@ -348,7 +434,11 @@ export default function DesignGalleryPage() {
         </div>
       </Section>
 
-      <Section id="badges" title="Badges" description="Status and emphasis variants.">
+      <Section
+        id="badges"
+        title="Badges"
+        description="Status and emphasis variants."
+      >
         <div className="flex flex-wrap gap-2">
           {BADGE_VARIANTS.map((v) => (
             <Badge key={v} variant={v}>
@@ -363,11 +453,14 @@ export default function DesignGalleryPage() {
           <Card>
             <CardHeader>
               <CardTitle>Weeknight ragù</CardTitle>
-              <CardDescription>Slow-simmered, freezer-friendly.</CardDescription>
+              <CardDescription>
+                Slow-simmered, freezer-friendly.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Text variant="muted">
-                Cards compose the Heading/Text primitives and tokenized elevation.
+                Cards compose the Heading/Text primitives and tokenized
+                elevation.
               </Text>
             </CardContent>
             <CardFooter className="gap-2">
@@ -391,7 +484,11 @@ export default function DesignGalleryPage() {
         </div>
       </Section>
 
-      <Section id="forms" title="Form controls" description="Inputs, selects, and validation.">
+      <Section
+        id="forms"
+        title="Form controls"
+        description="Inputs, selects, and validation."
+      >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="dg-name">Name</Label>
@@ -401,7 +498,11 @@ export default function DesignGalleryPage() {
             <Label htmlFor="dg-search">With icon</Label>
             <div className="relative">
               <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input id="dg-search" className="ps-9" placeholder="Search recipes" />
+              <Input
+                id="dg-search"
+                className="ps-9"
+                placeholder="Search recipes"
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -435,7 +536,10 @@ export default function DesignGalleryPage() {
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="dg-notes">Notes</Label>
-            <Textarea id="dg-notes" placeholder="Method, tweaks, family notes…" />
+            <Textarea
+              id="dg-notes"
+              placeholder="Method, tweaks, family notes…"
+            />
           </div>
         </div>
       </Section>
@@ -483,7 +587,11 @@ export default function DesignGalleryPage() {
         </Tabs>
       </Section>
 
-      <Section id="overlays" title="Overlays" description="Dialog, dropdown, popover, and tooltips.">
+      <Section
+        id="overlays"
+        title="Overlays"
+        description="Dialog, dropdown, popover, and tooltips."
+      >
         <div className="flex flex-wrap items-center gap-3">
           <Dialog>
             <DialogTrigger asChild>
@@ -493,7 +601,8 @@ export default function DesignGalleryPage() {
               <DialogHeader>
                 <DialogTitle>Delete recipe?</DialogTitle>
                 <DialogDescription>
-                  This can&apos;t be undone. The recipe leaves every collection it&apos;s in.
+                  This can&apos;t be undone. The recipe leaves every collection
+                  it&apos;s in.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

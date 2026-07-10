@@ -6,11 +6,7 @@ import { UserX } from "lucide-react";
 import { unblockUserAction } from "~/server/moderation/actions";
 import type { BlockedPerson } from "~/server/moderation/blocks";
 import { Button } from "~/components/ui/button";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { useServerAction } from "~/lib/use-server-action";
 
 function personName(person: BlockedPerson) {

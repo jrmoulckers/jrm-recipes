@@ -187,7 +187,10 @@ function notifyCustomTimerComplete(input: {
 
 /** Generate a collision-resistant id for a custom timer. */
 function newCustomTimerId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `ct_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -239,13 +242,17 @@ export function useCookSession(
     const stored = parseCookState(window.localStorage.getItem(storageKey));
     if (stored) {
       const timers = reconcileTimers(stored.timers, Date.now());
-      const customTimers = reconcileCustomTimers(stored.customTimers, Date.now());
+      const customTimers = reconcileCustomTimers(
+        stored.customTimers,
+        Date.now(),
+      );
       // Don't replay tones/toasts for timers that finished while we were away.
       for (const [id, timer] of Object.entries(timers)) {
         if (timer.status === "complete") announcedTimersRef.current.add(id);
       }
       for (const timer of customTimers) {
-        if (timer.status === "complete") announcedTimersRef.current.add(timer.id);
+        if (timer.status === "complete")
+          announcedTimersRef.current.add(timer.id);
       }
       setState({
         stepIndex: clampStepIndex(stored.stepIndex, totalSteps),
@@ -274,7 +281,9 @@ export function useCookSession(
   React.useEffect(() => {
     setState((prev) => {
       const clamped = clampStepIndex(prev.stepIndex, totalSteps);
-      return clamped === prev.stepIndex ? prev : { ...prev, stepIndex: clamped };
+      return clamped === prev.stepIndex
+        ? prev
+        : { ...prev, stepIndex: clamped };
     });
   }, [totalSteps]);
 
@@ -420,14 +429,18 @@ export function useCookSession(
   const goPrevious = React.useCallback(() => {
     setState((prev) => {
       const clamped = clampStepIndex(prev.stepIndex - 1, totalSteps);
-      return clamped === prev.stepIndex ? prev : { ...prev, stepIndex: clamped };
+      return clamped === prev.stepIndex
+        ? prev
+        : { ...prev, stepIndex: clamped };
     });
   }, [totalSteps]);
 
   const goNext = React.useCallback(() => {
     setState((prev) => {
       const clamped = clampStepIndex(prev.stepIndex + 1, totalSteps);
-      return clamped === prev.stepIndex ? prev : { ...prev, stepIndex: clamped };
+      return clamped === prev.stepIndex
+        ? prev
+        : { ...prev, stepIndex: clamped };
     });
   }, [totalSteps]);
 
@@ -506,7 +519,10 @@ export function useCookSession(
       durationSeconds: number;
       stepPosition?: number | null;
     }): string | null => {
-      if (!Number.isFinite(input.durationSeconds) || input.durationSeconds <= 0) {
+      if (
+        !Number.isFinite(input.durationSeconds) ||
+        input.durationSeconds <= 0
+      ) {
         return null;
       }
 
@@ -634,7 +650,9 @@ export function useCookSession(
     // Clear the cook_started marker too, so re-cooking starts a fresh session.
     endCookSession(cookStorage(), recipe.id);
     announcedTimersRef.current.clear();
-    setState(defaultState(recipe, householdSize, defaultSystemForLocale(locale)));
+    setState(
+      defaultState(recipe, householdSize, defaultSystemForLocale(locale)),
+    );
   }, [recipe, storageKey, householdSize, locale]);
 
   const activeTimers = React.useMemo<ActiveTimer[]>(() => {

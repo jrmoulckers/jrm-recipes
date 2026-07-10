@@ -52,7 +52,6 @@ export function ratingBreakdown(values: { value: number }[]): RatingBreakdown {
   return { average: summary.average, count: summary.count, distribution };
 }
 
-
 /**
  * Build a {@link RatingSummary} from denormalized aggregates (issue #154):
  * `recipes.ratingCount` + `recipes.ratingSum`. Same rounding as

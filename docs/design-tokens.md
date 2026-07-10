@@ -18,13 +18,13 @@ Heirloom has two orthogonal appearance axes:
 
 The current UI modes are:
 
-| Id | Label | Character |
-| --- | --- | --- |
-| `kitchen` | Kitchen | Warm and cozy; creams, terracotta, home-baked charm. This is the default. |
-| `whimsy` | Whimsy | Playful, colorful, bubbly. |
-| `professional` | Professional | Clean, editorial, quiet, confident. |
-| `kids` | Kids | Big, bright, friendly, with easier taps. |
-| `barebones` | Simple | Ultra-simple, high-contrast, minimal chrome. |
+| Id             | Label        | Character                                                                 |
+| -------------- | ------------ | ------------------------------------------------------------------------- |
+| `kitchen`      | Kitchen      | Warm and cozy; creams, terracotta, home-baked charm. This is the default. |
+| `whimsy`       | Whimsy       | Playful, colorful, bubbly.                                                |
+| `professional` | Professional | Clean, editorial, quiet, confident.                                       |
+| `kids`         | Kids         | Big, bright, friendly, with easier taps.                                  |
+| `barebones`    | Simple       | Ultra-simple, high-contrast, minimal chrome.                              |
 
 Defaults live in `src/config/themes.ts`:
 
@@ -123,13 +123,13 @@ hit target from `--tap-min`.
 `THEME_BEHAVIOR` in `src/config/themes.ts` carries UX behavior beyond visuals.
 The current values are:
 
-| Mode | `largeTargets` | `reduceMotion` | `simplifiedChrome` | `kidSafe` |
-| --- | --- | --- | --- | --- |
-| `kitchen` | false | false | false | false |
-| `whimsy` | false | false | false | false |
-| `professional` | false | false | false | false |
-| `kids` | true | false | true | true |
-| `barebones` | true | true | true | false |
+| Mode           | `largeTargets` | `reduceMotion` | `simplifiedChrome` | `kidSafe` |
+| -------------- | -------------- | -------------- | ------------------ | --------- |
+| `kitchen`      | false          | false          | false              | false     |
+| `whimsy`       | false          | false          | false              | false     |
+| `professional` | false          | false          | false              | false     |
+| `kids`         | true           | false          | true               | true      |
+| `barebones`    | true           | true           | true               | false     |
 
 What the flags mean in code:
 

@@ -228,7 +228,7 @@ export function InstallPrompt() {
             : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
         )}
       >
-        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12">
+        <span className="bg-primary/12 inline-flex size-11 shrink-0 items-center justify-center rounded-xl">
           <LogoMark className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
@@ -241,7 +241,10 @@ export function InstallPrompt() {
               className="text-xs leading-snug text-muted-foreground"
             >
               Tap{" "}
-              <Share className="inline-block size-3.5 -translate-y-px" aria-hidden />
+              <Share
+                className="inline-block size-3.5 -translate-y-px"
+                aria-hidden
+              />
               <span className="sr-only">Share</span> then &ldquo;Add to Home
               Screen&rdquo;.
             </p>

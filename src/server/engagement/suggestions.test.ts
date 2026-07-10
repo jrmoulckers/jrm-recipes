@@ -11,13 +11,21 @@ describe("mergeSuggestionIntoNotes", () => {
 
   it("appends the suggestion after existing notes as its own paragraph", () => {
     expect(
-      mergeSuggestionIntoNotes("Simmer low and slow.", "Add a bay leaf", "Nonna"),
+      mergeSuggestionIntoNotes(
+        "Simmer low and slow.",
+        "Add a bay leaf",
+        "Nonna",
+      ),
     ).toBe("Simmer low and slow.\n\nAdd a bay leaf — suggested by Nonna");
   });
 
   it("trims surrounding whitespace on both the notes and the suggestion", () => {
     expect(
-      mergeSuggestionIntoNotes("  Simmer low.  ", "  Add a bay leaf  ", "Nonna"),
+      mergeSuggestionIntoNotes(
+        "  Simmer low.  ",
+        "  Add a bay leaf  ",
+        "Nonna",
+      ),
     ).toBe("Simmer low.\n\nAdd a bay leaf — suggested by Nonna");
   });
 
@@ -38,7 +46,9 @@ describe("contributorLabel", () => {
   it("prefers a name, then a handle, then a friendly fallback", () => {
     expect(contributorLabel({ name: "Nonna", handle: "nonna" })).toBe("Nonna");
     expect(contributorLabel({ name: null, handle: "rae" })).toBe("rae");
-    expect(contributorLabel({ name: "  ", handle: null })).toBe("a family cook");
+    expect(contributorLabel({ name: "  ", handle: null })).toBe(
+      "a family cook",
+    );
     expect(contributorLabel(null)).toBe("a family cook");
   });
 });

@@ -100,8 +100,11 @@ describe("moveEntryInput", () => {
 
   it("requires an entry id and a valid date", () => {
     expect(
-      moveEntryInput.safeParse({ entryId: "", date: "2026-07-08", slot: "snack" })
-        .success,
+      moveEntryInput.safeParse({
+        entryId: "",
+        date: "2026-07-08",
+        slot: "snack",
+      }).success,
     ).toBe(false);
     expect(
       moveEntryInput.safeParse({

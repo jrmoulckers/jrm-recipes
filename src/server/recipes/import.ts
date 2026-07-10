@@ -50,8 +50,7 @@ export type ImportedRecipe = {
 };
 
 export type ImportResult =
-  | { ok: true; recipe: ImportedRecipe }
-  | { ok: false; error: string };
+  { ok: true; recipe: ImportedRecipe } | { ok: false; error: string };
 
 // --- small typed helpers over unknown JSON ------------------------------
 
@@ -79,7 +78,9 @@ function decodeEntities(input: string): string {
     .replace(/&quot;/gi, '"')
     .replace(/&#0*39;|&#x0*27;|&apos;/gi, "'")
     .replace(/&nbsp;/gi, " ")
-    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => safeCodePoint(parseInt(h, 16)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) =>
+      safeCodePoint(parseInt(h, 16)),
+    )
     .replace(/&#(\d+);/g, (_m, d: string) => safeCodePoint(parseInt(d, 10)))
     .replace(/&amp;/gi, "&");
 }
@@ -192,7 +193,10 @@ export function parseYield(value: unknown): { servings: string; noun: string } {
   const servings = m ? (m[1] ?? "") : "";
   const noun = raw
     .replace(/\d+(?:\s*[-–]\s*\d+)?/g, " ")
-    .replace(/\b(?:serves?|serving|yields?|makes?|about|approximately|roughly)\b/gi, " ")
+    .replace(
+      /\b(?:serves?|serving|yields?|makes?|about|approximately|roughly)\b/gi,
+      " ",
+    )
     .replace(/[^a-z ]/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -203,7 +207,8 @@ export function parseYield(value: unknown): { servings: string; noun: string } {
 // --- images / source ----------------------------------------------------
 
 function firstImageUrl(v: unknown): string {
-  if (typeof v === "string") return /^https?:\/\//i.test(v.trim()) ? v.trim() : "";
+  if (typeof v === "string")
+    return /^https?:\/\//i.test(v.trim()) ? v.trim() : "";
   for (const x of asArray(v)) {
     const u = firstImageUrl(x);
     if (u) return u;
@@ -249,21 +254,79 @@ function normalizeTags(v: unknown): string {
 
 const GLYPHS = "¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒";
 const VULGAR: Record<string, number> = {
-  "¼": 0.25, "½": 0.5, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3,
-  "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8, "⅙": 1 / 6, "⅚": 5 / 6,
-  "⅐": 1 / 7, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
-  "⅑": 1 / 9, "⅒": 0.1,
+  "¼": 0.25,
+  "½": 0.5,
+  "¾": 0.75,
+  "⅓": 1 / 3,
+  "⅔": 2 / 3,
+  "⅕": 0.2,
+  "⅖": 0.4,
+  "⅗": 0.6,
+  "⅘": 0.8,
+  "⅙": 1 / 6,
+  "⅚": 5 / 6,
+  "⅐": 1 / 7,
+  "⅛": 0.125,
+  "⅜": 0.375,
+  "⅝": 0.625,
+  "⅞": 0.875,
+  "⅑": 1 / 9,
+  "⅒": 0.1,
 };
 
 /** Units the app can't convert but should still recognize as a unit word. */
 const EXTRA_UNITS = new Set([
-  "pinch", "pinches", "dash", "dashes", "clove", "cloves", "can", "cans",
-  "package", "packages", "pkg", "slice", "slices", "stick", "sticks",
-  "sprig", "sprigs", "stalk", "stalks", "handful", "handfuls", "bunch",
-  "bunches", "head", "heads", "piece", "pieces", "strip", "strips",
-  "fillet", "fillets", "jar", "jars", "bottle", "bottles", "container",
-  "containers", "cube", "cubes", "drop", "drops", "scoop", "scoops",
-  "packet", "packets", "sheet", "sheets", "ear", "ears", "wedge", "wedges",
+  "pinch",
+  "pinches",
+  "dash",
+  "dashes",
+  "clove",
+  "cloves",
+  "can",
+  "cans",
+  "package",
+  "packages",
+  "pkg",
+  "slice",
+  "slices",
+  "stick",
+  "sticks",
+  "sprig",
+  "sprigs",
+  "stalk",
+  "stalks",
+  "handful",
+  "handfuls",
+  "bunch",
+  "bunches",
+  "head",
+  "heads",
+  "piece",
+  "pieces",
+  "strip",
+  "strips",
+  "fillet",
+  "fillets",
+  "jar",
+  "jars",
+  "bottle",
+  "bottles",
+  "container",
+  "containers",
+  "cube",
+  "cubes",
+  "drop",
+  "drops",
+  "scoop",
+  "scoops",
+  "packet",
+  "packets",
+  "sheet",
+  "sheets",
+  "ear",
+  "ears",
+  "wedge",
+  "wedges",
 ]);
 
 function parseQuantityToken(raw: string): number | undefined {
@@ -343,7 +406,9 @@ export function parseIngredientLine(raw: string): ImportedIngredient {
   const paren = /\(([^)]*)\)/.exec(line);
   if (paren) {
     note = (paren[1] ?? "").trim();
-    line = (line.slice(0, paren.index) + line.slice(paren.index + paren[0].length))
+    line = (
+      line.slice(0, paren.index) + line.slice(paren.index + paren[0].length)
+    )
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -396,12 +461,7 @@ function cleanStep(text: string): string {
 
 function mapInstructions(value: unknown): ImportedStep[] {
   const steps: ImportedStep[] = [];
-  const push = (
-    text: string,
-    image = "",
-    section = "",
-    video = "",
-  ): void => {
+  const push = (text: string, image = "", section = "", video = ""): void => {
     const instruction = cleanStep(text);
     if (instruction)
       steps.push({
@@ -415,7 +475,10 @@ function mapInstructions(value: unknown): ImportedStep[] {
   };
   const walk = (node: unknown, section = ""): void => {
     if (typeof node === "string") {
-      const parts = node.split(/\r?\n+/).map((s) => s.trim()).filter(Boolean);
+      const parts = node
+        .split(/\r?\n+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (parts.length > 1) parts.forEach((p) => push(p, "", section));
       else push(node, "", section);
       return;
@@ -427,7 +490,9 @@ function mapInstructions(value: unknown): ImportedStep[] {
     }
     if (node && typeof node === "object") {
       const o = node as Record<string, unknown>;
-      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "howtosection")) {
+      if (
+        typeArray(o["@type"]).some((t) => t.toLowerCase() === "howtosection")
+      ) {
         const name = typeof o.name === "string" ? cleanStep(o.name) : "";
         walk(o.itemListElement, name || section);
         return;
@@ -460,7 +525,8 @@ function findRecipeNode(data: unknown): Record<string, unknown> | null {
     }
     if (cur && typeof cur === "object") {
       const o = cur as Record<string, unknown>;
-      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "recipe")) return o;
+      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "recipe"))
+        return o;
       if (o["@graph"]) queue.push(o["@graph"]);
       if (o.mainEntity) queue.push(o.mainEntity);
     }
@@ -468,7 +534,10 @@ function findRecipeNode(data: unknown): Record<string, unknown> | null {
   return null;
 }
 
-function mapRecipe(node: Record<string, unknown>, sourceUrl: string): ImportedRecipe {
+function mapRecipe(
+  node: Record<string, unknown>,
+  sourceUrl: string,
+): ImportedRecipe {
   const { servings, noun } = parseYield(node.recipeYield ?? node.yield);
   const prep = parseDurationToMinutes(node.prepTime);
   const cook = parseDurationToMinutes(node.cookTime);
@@ -484,7 +553,9 @@ function mapRecipe(node: Record<string, unknown>, sourceUrl: string): ImportedRe
     servingsNoun: noun,
     prepMinutes: prep ? String(prep) : "",
     cookMinutes: cook ? String(cook) : "",
-    cuisine: (joinList(node.recipeCuisine).split(",")[0] ?? "").trim().slice(0, 80),
+    cuisine: (joinList(node.recipeCuisine).split(",")[0] ?? "")
+      .trim()
+      .slice(0, 80),
     sourceName: textFrom(node.author).slice(0, 200),
     sourceUrl: canonical.slice(0, 2048),
     tags: normalizeTags(node.keywords),
@@ -594,7 +665,8 @@ export function isPublicHost(host: string): boolean {
 
 const IPV4_DOTTED_QUAD_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 const NUMERIC_HOST_RE = /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)$/i;
-const NUMERIC_DOTTED_HOST_RE = /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)(?:\.(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*))*$/i;
+const NUMERIC_DOTTED_HOST_RE =
+  /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)(?:\.(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*))*$/i;
 
 function stripIpv6Brackets(host: string): string {
   return host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
@@ -624,7 +696,9 @@ function isPublicIpv4(host: string): boolean {
     if (!part || (part.length > 1 && part.startsWith("0"))) return NaN;
     return Number(part);
   });
-  if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255))
+  if (
+    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+  )
     return false;
 
   const [a = 0, b = 0] = octets;
@@ -764,7 +838,10 @@ async function fetchGuardingRedirects(
  * an unbounded stream cannot exhaust memory (issue #222). The excess is dropped
  * and the underlying stream cancelled rather than buffered.
  */
-async function readCappedText(res: Response, maxBytes: number): Promise<string> {
+async function readCappedText(
+  res: Response,
+  maxBytes: number,
+): Promise<string> {
   const body = res.body;
   if (!body) return (await res.text()).slice(0, maxBytes);
 
@@ -802,7 +879,8 @@ export async function importRecipeFromUrl(
 ): Promise<ImportResult> {
   const lookup = options.lookup ?? defaultHostLookup;
   const url = normalizeInputUrl(rawUrl);
-  if (!url) return { ok: false, error: "That doesn't look like a valid web address." };
+  if (!url)
+    return { ok: false, error: "That doesn't look like a valid web address." };
   if (!isPublicHost(url.hostname))
     return { ok: false, error: "That address can't be imported." };
 
@@ -813,7 +891,8 @@ export async function importRecipeFromUrl(
     if (e instanceof BlockedRedirectError)
       return { ok: false, error: "That address can't be imported." };
     const timedOut =
-      e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+      e instanceof Error &&
+      (e.name === "TimeoutError" || e.name === "AbortError");
     return {
       ok: false,
       error: timedOut

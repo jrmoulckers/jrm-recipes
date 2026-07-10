@@ -61,7 +61,10 @@ export async function listMyCollections(userId: string) {
       },
       recipes: {
         columns: { recipeId: true },
-        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
+        orderBy: [
+          asc(collectionRecipes.position),
+          asc(collectionRecipes.addedAt),
+        ],
         with: { recipe: { columns: { coverImageUrl: true } } },
       },
     },
@@ -96,7 +99,10 @@ export async function getCollection(id: string, viewer: User | null) {
     where: and(eq(collections.id, id), eq(collections.userId, viewer.id)),
     with: {
       recipes: {
-        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
+        orderBy: [
+          asc(collectionRecipes.position),
+          asc(collectionRecipes.addedAt),
+        ],
         with: { recipe: { with: recipeCardWith } },
       },
     },
@@ -148,7 +154,10 @@ export async function getSharedCollection(
         },
       },
       recipes: {
-        orderBy: [asc(collectionRecipes.position), asc(collectionRecipes.addedAt)],
+        orderBy: [
+          asc(collectionRecipes.position),
+          asc(collectionRecipes.addedAt),
+        ],
         with: { recipe: { with: recipeCardWith } },
       },
     },
@@ -246,7 +255,10 @@ export { ROTATION_WINDOW_DAYS, ROTATION_MIN };
  */
 export async function listBackInRotation(
   userId: string,
-  { windowDays = ROTATION_WINDOW_DAYS, limit = 12 }: { windowDays?: number; limit?: number } = {},
+  {
+    windowDays = ROTATION_WINDOW_DAYS,
+    limit = 12,
+  }: { windowDays?: number; limit?: number } = {},
 ) {
   if (!isDbConfigured()) return [];
   const favorited = await db.query.favorites.findMany({
@@ -270,7 +282,8 @@ export async function listBackInRotation(
     .groupBy(cookLogEntries.recipeId);
   const lastCooked = new Map<string, number>();
   for (const row of cookedRows) {
-    if (row.last != null) lastCooked.set(row.recipeId, new Date(row.last).getTime());
+    if (row.last != null)
+      lastCooked.set(row.recipeId, new Date(row.last).getTime());
   }
 
   return selectBackInRotation(recipes, lastCooked, { windowDays, limit });
@@ -280,7 +293,10 @@ export async function listBackInRotation(
  * The user's collections annotated with whether each already contains `recipeId`
  * — powers the "Save to collection" picker.
  */
-export async function getCollectionsForRecipe(userId: string, recipeId: string) {
+export async function getCollectionsForRecipe(
+  userId: string,
+  recipeId: string,
+) {
   if (!isDbConfigured()) return [];
   const rows = await db.query.collections.findMany({
     where: eq(collections.userId, userId),

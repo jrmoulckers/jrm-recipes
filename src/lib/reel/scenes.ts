@@ -294,7 +294,10 @@ export function selectKeySteps(recipe: ReelRecipe): ReelStep[] {
   const total = all.length;
   if (total === 0) return [];
 
-  const pickedIdx = evenlySpacedIndices(total, Math.min(REEL_LIMITS.maxSteps, total));
+  const pickedIdx = evenlySpacedIndices(
+    total,
+    Math.min(REEL_LIMITS.maxSteps, total),
+  );
 
   return pickedIdx.map((idx) => {
     const { step, number } = all[idx]!;
@@ -316,7 +319,9 @@ export function selectKeySteps(recipe: ReelRecipe): ReelStep[] {
  */
 export function buildReelScenes(recipe: ReelRecipe): ReelScene[] {
   const scenes: ReelScene[] = [];
-  const cover = recipe.coverImageUrl?.trim() ? recipe.coverImageUrl.trim() : null;
+  const cover = recipe.coverImageUrl?.trim()
+    ? recipe.coverImageUrl.trim()
+    : null;
 
   scenes.push({
     kind: "cover",

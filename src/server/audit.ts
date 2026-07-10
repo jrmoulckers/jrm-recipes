@@ -50,7 +50,10 @@ export type AuditEntry = {
  * surrounding transaction when one is available so the audit row commits
  * atomically with the change; otherwise the top-level `db` is used.
  */
-export async function recordAudit(exec: Db | Tx, entry: AuditEntry): Promise<void> {
+export async function recordAudit(
+  exec: Db | Tx,
+  entry: AuditEntry,
+): Promise<void> {
   try {
     await exec.insert(auditLog).values({
       actorId: entry.actorId,

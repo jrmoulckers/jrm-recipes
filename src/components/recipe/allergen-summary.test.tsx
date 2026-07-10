@@ -23,7 +23,9 @@ describe("AllergenSummary", () => {
 
   it("shows a best-effort disclaimer alongside the badges", () => {
     render(<AllergenSummary items={["peanut butter"]} />);
-    expect(screen.getByText(/double-check the ingredients/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/double-check the ingredients/i),
+    ).toBeInTheDocument();
   });
 
   it("renders a non-alarming empty state that never claims safety", () => {
@@ -44,11 +46,11 @@ describe("AllergenSummary", () => {
     const hiddenList = within(region).getByRole("list", {
       name: /possibly hidden allergens/i,
     });
-    expect(
-      within(hiddenList).getByText("Wheat/gluten"),
-    ).toBeInTheDocument();
+    expect(within(hiddenList).getByText("Wheat/gluten")).toBeInTheDocument();
     // The cautionary label note is shown.
-    expect(screen.getByText(/check for a gluten-free tamari/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/check for a gluten-free tamari/i),
+    ).toBeInTheDocument();
   });
 
   it("keeps direct and hidden allergens in separate sections", () => {

@@ -84,8 +84,7 @@ export function buildWeeklyDigest(input: {
     }
 
     const isNew = recipe.createdAt.getTime() >= since.getTime();
-    const isUpdated =
-      !isNew && recipe.updatedAt.getTime() >= since.getTime();
+    const isUpdated = !isNew && recipe.updatedAt.getTime() >= since.getTime();
     if (!isNew && !isUpdated) continue;
 
     let summary = summaries.get(recipe.groupId);

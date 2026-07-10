@@ -1,7 +1,14 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "next-intl/server";
-import { CalendarDays, ChevronLeft, ChevronRight, Printer, UserRound, Users } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+  UserRound,
+  Users,
+} from "lucide-react";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -87,7 +94,7 @@ export default async function PlanPage({
     // membership is enforced here, not just hidden.
     activeGroup =
       scope != null
-        ? viewerGroups.find((group) => group.slug === scope) ?? null
+        ? (viewerGroups.find((group) => group.slug === scope) ?? null)
         : null;
     const isGroupScope = activeGroup != null;
 
@@ -191,11 +198,14 @@ export default async function PlanPage({
               {formatWeekRange(start, end, locale)}
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Plan the week&rsquo;s meals — assign recipes or quick notes to each
-              day.
+              Plan the week&rsquo;s meals — assign recipes or quick notes to
+              each day.
             </p>
           </div>
-          <nav className="flex flex-wrap items-center gap-2" aria-label="Week navigation">
+          <nav
+            className="flex flex-wrap items-center gap-2"
+            aria-label="Week navigation"
+          >
             {dbConfigured && user && !isGroupScope && (
               <CopyLastWeekButton week={startParam} />
             )}
@@ -236,7 +246,12 @@ export default async function PlanPage({
                 This week
               </Link>
             </Button>
-            <Button asChild variant="outline" size="icon" aria-label="Next week">
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              aria-label="Next week"
+            >
               <Link
                 href={
                   activeGroup
@@ -261,7 +276,11 @@ export default async function PlanPage({
               size="sm"
               variant={isGroupScope ? "outline" : "default"}
             >
-              <Link href={`/plan?week=${startParam}`} role="tab" aria-selected={!isGroupScope}>
+              <Link
+                href={`/plan?week=${startParam}`}
+                role="tab"
+                aria-selected={!isGroupScope}
+              >
                 <UserRound /> My plan
               </Link>
             </Button>
@@ -329,7 +348,7 @@ function ConnectDbNotice() {
 function SignInNudge() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+      <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
         <CalendarDays className="size-7" aria-hidden="true" />
       </span>
       <div>

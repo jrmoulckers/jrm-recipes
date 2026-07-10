@@ -11,9 +11,7 @@ import { parseRecipeSearch } from "./search";
 import { searchFilterConditions } from "./queries";
 
 const dialect = new PgDialect({ casing: "snake_case" });
-const render = (
-  ...args: Parameters<typeof searchFilterConditions>
-): string => {
+const render = (...args: Parameters<typeof searchFilterConditions>): string => {
   const conditions = searchFilterConditions(...args);
   const combined = and(...conditions);
   return combined ? dialect.sqlToQuery(combined).sql.toLowerCase() : "";
@@ -22,7 +20,11 @@ const render = (
 describe("searchFilterConditions (scoped facet counts, #274)", () => {
   it("includes every active filter by default", () => {
     const sql = render(
-      parseRecipeSearch({ cuisine: "Italian", difficulty: "easy", maxTime: "30" }),
+      parseRecipeSearch({
+        cuisine: "Italian",
+        difficulty: "easy",
+        maxTime: "30",
+      }),
     );
     expect(sql).toContain("cuisine");
     expect(sql).toContain("difficulty");

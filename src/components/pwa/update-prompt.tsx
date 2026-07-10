@@ -178,7 +178,7 @@ export function UpdatePrompt() {
             : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
         )}
       >
-        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-primary">
           <RefreshCw className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">

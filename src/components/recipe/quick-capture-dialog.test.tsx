@@ -6,8 +6,7 @@ import { QuickCaptureDialog } from "./quick-capture-dialog";
 import { createRecipeAction } from "~/server/recipes/actions";
 
 type CreateResult =
-  | { ok: true; id: string; slug: string | null }
-  | { ok: false; error: string };
+  { ok: true; id: string; slug: string | null } | { ok: false; error: string };
 
 vi.mock("~/server/recipes/actions", () => ({
   createRecipeAction: vi.fn<(input: unknown) => Promise<CreateResult>>(),
@@ -61,7 +60,11 @@ describe("QuickCaptureDialog (#389)", () => {
 
   it("saves a draft with the freeform text preserved in notes", async () => {
     const user = await openDialog();
-    mockedCreate.mockResolvedValue({ ok: true, id: "r9", slug: "grandmas-meatballs" });
+    mockedCreate.mockResolvedValue({
+      ok: true,
+      id: "r9",
+      slug: "grandmas-meatballs",
+    });
 
     await user.type(screen.getByLabelText("Title"), "Grandma's meatballs");
     await user.type(
@@ -83,7 +86,9 @@ describe("QuickCaptureDialog (#389)", () => {
     );
 
     // Offers a one-tap path into the full editor.
-    const finish = await screen.findByRole("link", { name: /finish in full editor/i });
+    const finish = await screen.findByRole("link", {
+      name: /finish in full editor/i,
+    });
     expect(finish).toHaveAttribute("href", "/recipes/grandmas-meatballs/edit");
   });
 
@@ -94,7 +99,9 @@ describe("QuickCaptureDialog (#389)", () => {
     await user.type(screen.getByLabelText("Title"), "Untitled dump");
     await user.click(screen.getByRole("button", { name: /save draft/i }));
 
-    const finish = await screen.findByRole("link", { name: /finish in full editor/i });
+    const finish = await screen.findByRole("link", {
+      name: /finish in full editor/i,
+    });
     expect(finish).toHaveAttribute("href", "/recipes/r10/edit");
   });
 

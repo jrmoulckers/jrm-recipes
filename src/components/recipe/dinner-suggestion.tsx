@@ -192,7 +192,11 @@ export function DinnerSuggestion({
                   )}
                 </Button>
                 {candidates.length > 1 && (
-                  <Button variant="ghost" onClick={pickAgain} disabled={pending}>
+                  <Button
+                    variant="ghost"
+                    onClick={pickAgain}
+                    disabled={pending}
+                  >
                     <Shuffle /> Not that — pick again
                   </Button>
                 )}

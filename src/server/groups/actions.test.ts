@@ -77,14 +77,21 @@ describe("addMemberAction invite funnel", () => {
       sizeBucket: "2-5",
     });
     // Acceptance is attributed to the invited user's internal id — no PII.
-    expect(captureServerMock).toHaveBeenCalledWith("target_1", "invite_accepted", {
-      groupId: "group_1",
-      role: "member",
-    });
+    expect(captureServerMock).toHaveBeenCalledWith(
+      "target_1",
+      "invite_accepted",
+      {
+        groupId: "group_1",
+        role: "member",
+      },
+    );
   });
 
   it("does not emit when validation fails", async () => {
-    const res = await addMemberAction("family", { identifier: "", role: "member" });
+    const res = await addMemberAction("family", {
+      identifier: "",
+      role: "member",
+    });
 
     expect(res.ok).toBe(false);
     expect(addMemberMock).not.toHaveBeenCalled();

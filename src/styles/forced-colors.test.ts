@@ -13,10 +13,10 @@ import { describe, expect, it } from "vitest";
  */
 
 const ROOT = process.cwd();
-const A11Y_CSS = readFileSync(join(ROOT, "src", "styles", "a11y.css"), "utf8").replace(
-  /\r\n/g,
-  "\n",
-);
+const A11Y_CSS = readFileSync(
+  join(ROOT, "src", "styles", "a11y.css"),
+  "utf8",
+).replace(/\r\n/g, "\n");
 
 function block(css: string, atRule: string): string {
   // Anchor to the real rule (`atRule {`), not a mention inside a comment.

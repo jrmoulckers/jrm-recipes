@@ -55,7 +55,12 @@ describe("addRecipe consolidation", () => {
   });
 
   it("preserves noted items untouched across a re-consolidation", () => {
-    store().addManual({ item: "Flour", quantity: 1, unit: "cup", note: "organic" });
+    store().addManual({
+      item: "Flour",
+      quantity: 1,
+      unit: "cup",
+      note: "organic",
+    });
     store().addRecipe(recipe([{ item: "Flour", quantity: 2, unit: "cup" }]));
 
     const noted = store().items.find((i) => i.note === "organic");
@@ -65,7 +70,9 @@ describe("addRecipe consolidation", () => {
 
   it("carries the optional flag through consolidation (#56)", () => {
     store().addRecipe(
-      recipe([{ item: "Cilantro", quantity: 1, unit: "bunch", optional: true }]),
+      recipe([
+        { item: "Cilantro", quantity: 1, unit: "bunch", optional: true },
+      ]),
     );
 
     const cilantro = store().items.find(
@@ -83,7 +90,9 @@ describe("addRecipe consolidation", () => {
 
     // A line is optional only when every contribution is optional: merging a
     // required contribution of the same item clears it.
-    store().addRecipe(recipe([{ item: "Cilantro", quantity: 1, unit: "bunch" }]));
+    store().addRecipe(
+      recipe([{ item: "Cilantro", quantity: 1, unit: "bunch" }]),
+    );
     const merged = store().items.find(
       (i) => i.item.toLowerCase() === "cilantro",
     );

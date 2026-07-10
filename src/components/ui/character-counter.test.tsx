@@ -13,7 +13,9 @@ function renderCounter(ui: ReactElement) {
 
 describe("<CharacterCounter />", () => {
   it("stays quiet well under the limit", () => {
-    renderCounter(<CharacterCounter value={10} max={4000} overMessage={OVER} />);
+    renderCounter(
+      <CharacterCounter value={10} max={4000} overMessage={OVER} />,
+    );
     expect(screen.queryByText(/left/)).toBeNull();
   });
 

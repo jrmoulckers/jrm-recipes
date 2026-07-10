@@ -13,7 +13,12 @@ vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
 }));
 
-import { anyHidden, blockUser, filterBlocked, getHiddenAuthorIds } from "./blocks";
+import {
+  anyHidden,
+  blockUser,
+  filterBlocked,
+  getHiddenAuthorIds,
+} from "./blocks";
 
 beforeEach(() => {
   vi.clearAllMocks();

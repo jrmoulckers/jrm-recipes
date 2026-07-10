@@ -60,7 +60,11 @@ describe("findPreheatCue", () => {
   // findPreheatCue returns a 1-based stepNumber for display.
   const steps: CueStep[] = [
     { position: 0, instruction: "Mix the dry ingredients." },
-    { position: 1, instruction: "Preheat the oven to 200°C.", targetTempC: 200 },
+    {
+      position: 1,
+      instruction: "Preheat the oven to 200°C.",
+      targetTempC: 200,
+    },
     { position: 2, instruction: "Fold in the butter." },
   ];
 
@@ -91,7 +95,11 @@ describe("findPreheatCue", () => {
     expect(
       findPreheatCue([
         { position: 2, instruction: "Bake until golden." },
-        { position: 1, instruction: "Heat the oven to 220°C.", targetTempC: 220 },
+        {
+          position: 1,
+          instruction: "Heat the oven to 220°C.",
+          targetTempC: 220,
+        },
         { position: 0, instruction: "Roll out the dough." },
       ]),
     ).toEqual({ stepNumber: 2, targetTempC: 220 });

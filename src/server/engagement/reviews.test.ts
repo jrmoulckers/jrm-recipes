@@ -113,7 +113,9 @@ describe("upsertReview (issue #341)", () => {
 
     await upsertReview({ ...baseInput, rating: 4 }, user);
 
-    const conflict = (tx.chain.onConflictDoUpdate.mock.calls[0] as unknown[])[0] as {
+    const conflict = (
+      tx.chain.onConflictDoUpdate.mock.calls[0] as unknown[]
+    )[0] as {
       set: Record<string, unknown>;
     };
     expect(conflict.set.rating).toBe(4);
@@ -142,7 +144,11 @@ describe("deleteReview (issue #341)", () => {
       reviewForDelete: {
         id: "rev_1",
         userId: user.id,
-        recipe: { authorId: "owner_9", visibility: "group", groupId: "group_1" },
+        recipe: {
+          authorId: "owner_9",
+          visibility: "group",
+          groupId: "group_1",
+        },
       },
     });
     runWith(tx);
@@ -158,7 +164,11 @@ describe("deleteReview (issue #341)", () => {
         reviewForDelete: {
           id: "rev_1",
           userId: "someone_else",
-          recipe: { authorId: "owner_9", visibility: "group", groupId: "group_1" },
+          recipe: {
+            authorId: "owner_9",
+            visibility: "group",
+            groupId: "group_1",
+          },
         },
       }),
     );

@@ -160,9 +160,7 @@ export async function listViewerGroups(userId: string) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export type ViewerGroup = Awaited<
-  ReturnType<typeof listViewerGroups>
->[number];
+export type ViewerGroup = Awaited<ReturnType<typeof listViewerGroups>>[number];
 
 /**
  * Every member's entries for a group's week (issue #363). Membership is enforced

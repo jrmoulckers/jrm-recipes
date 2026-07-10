@@ -98,7 +98,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Neutral or olive oil",
-        ratioOrNotes: "Use about ¾ cup oil per 1 cup butter (baking results vary).",
+        ratioOrNotes:
+          "Use about ¾ cup oil per 1 cup butter (baking results vary).",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
@@ -261,7 +262,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Oat or soy milk (nut-free)",
-        ratioOrNotes: "1:1; closest body to dairy milk and safe for nut allergies.",
+        ratioOrNotes:
+          "1:1; closest body to dairy milk and safe for nut allergies.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
@@ -285,12 +287,14 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Cashew cream",
-        ratioOrNotes: "Blend soaked cashews with a little water until thick; 1:1.",
+        ratioOrNotes:
+          "Blend soaked cashews with a little water until thick; 1:1.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
         substitute: "Heavy cream",
-        ratioOrNotes: "1:1 if dairy is fine; not vegan and without coconut flavor.",
+        ratioOrNotes:
+          "1:1 if dairy is fine; not vegan and without coconut flavor.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -306,7 +310,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Heavy cream + buttermilk",
-        ratioOrNotes: "1 cup cream + 2 tbsp buttermilk; rest 12–24h to thicken.",
+        ratioOrNotes:
+          "1 cup cream + 2 tbsp buttermilk; rest 12–24h to thicken.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -375,7 +380,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Cream cheese + cream",
-        ratioOrNotes: "8 oz cream cheese + 2–3 tbsp heavy cream, beaten smooth.",
+        ratioOrNotes:
+          "8 oz cream cheese + 2–3 tbsp heavy cream, beaten smooth.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -419,7 +425,13 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
   },
   {
     name: "All-purpose flour",
-    aliases: ["all purpose flour", "plain flour", "ap flour", "white flour", "flour"],
+    aliases: [
+      "all purpose flour",
+      "plain flour",
+      "ap flour",
+      "white flour",
+      "flour",
+    ],
     substitutions: [
       {
         substitute: "Cake + bread flour",
@@ -562,7 +574,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Blended sugar + cornstarch",
-        ratioOrNotes: "1 cup granulated sugar + 1 tbsp cornstarch, blended fine.",
+        ratioOrNotes:
+          "1 cup granulated sugar + 1 tbsp cornstarch, blended fine.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -820,7 +833,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Broth + red wine vinegar",
-        ratioOrNotes: "1 cup beef or vegetable broth + 1 tbsp red wine vinegar.",
+        ratioOrNotes:
+          "1 cup beef or vegetable broth + 1 tbsp red wine vinegar.",
         dietaryTags: ["gluten-free"],
       },
       {
@@ -841,7 +855,8 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "White grape juice + vinegar",
-        ratioOrNotes: "1 cup juice + 1 tbsp white wine vinegar (non-alcoholic).",
+        ratioOrNotes:
+          "1 cup juice + 1 tbsp white wine vinegar (non-alcoholic).",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -1034,7 +1049,9 @@ type IndexedEntry = { entry: SubstitutionEntry; aliasTokens: string[][] };
 
 const INDEX: IndexedEntry[] = SUBSTITUTIONS.map((entry) => ({
   entry,
-  aliasTokens: entry.aliases.map((alias) => tokenize(normalizeIngredient(alias))),
+  aliasTokens: entry.aliases.map((alias) =>
+    tokenize(normalizeIngredient(alias)),
+  ),
 }));
 
 export type IngredientMatchConfidence = "high" | "medium" | "low";

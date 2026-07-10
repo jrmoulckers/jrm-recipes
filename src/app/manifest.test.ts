@@ -77,8 +77,8 @@ describe("manifest", () => {
     const files = m.share_target?.params.files;
     const file = Array.isArray(files) ? files[0] : files;
     expect(file?.name).toBe("photo");
-    expect(Array.isArray(file?.accept) ? file?.accept : [file?.accept]).toContain(
-      "image/jpeg",
-    );
+    expect(
+      Array.isArray(file?.accept) ? file?.accept : [file?.accept],
+    ).toContain("image/jpeg");
   });
 });

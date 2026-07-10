@@ -19,29 +19,89 @@ type TaxonomyEntry = CanonicalTag & { aliases: string[] };
  * "side") are intentionally omitted so we never mis-merge a free-form tag.
  */
 const TAXONOMY: TaxonomyEntry[] = [
-  { slug: "vegetarian", name: "Vegetarian", aliases: ["veggie", "vegetarians"] },
-  { slug: "vegan", name: "Vegan", aliases: ["vegans", "plant based", "plant-based"] },
-  { slug: "gluten-free", name: "Gluten-Free", aliases: ["gf", "gluten free", "glutenfree"] },
-  { slug: "dairy-free", name: "Dairy-Free", aliases: ["df", "dairy free", "dairyfree", "non dairy", "non-dairy"] },
+  {
+    slug: "vegetarian",
+    name: "Vegetarian",
+    aliases: ["veggie", "vegetarians"],
+  },
+  {
+    slug: "vegan",
+    name: "Vegan",
+    aliases: ["vegans", "plant based", "plant-based"],
+  },
+  {
+    slug: "gluten-free",
+    name: "Gluten-Free",
+    aliases: ["gf", "gluten free", "glutenfree"],
+  },
+  {
+    slug: "dairy-free",
+    name: "Dairy-Free",
+    aliases: ["df", "dairy free", "dairyfree", "non dairy", "non-dairy"],
+  },
   { slug: "egg-free", name: "Egg-Free", aliases: ["egg free", "eggfree"] },
-  { slug: "weeknight", name: "Weeknight", aliases: ["week night", "weeknights"] },
-  { slug: "quick", name: "Quick", aliases: ["fast", "speedy", "quick and easy"] },
+  {
+    slug: "weeknight",
+    name: "Weeknight",
+    aliases: ["week night", "weeknights"],
+  },
+  {
+    slug: "quick",
+    name: "Quick",
+    aliases: ["fast", "speedy", "quick and easy"],
+  },
   { slug: "dinner", name: "Dinner", aliases: ["dinners", "supper", "suppers"] },
-  { slug: "dessert", name: "Dessert", aliases: ["desserts", "sweets", "puddings"] },
-  { slug: "appetizer", name: "Appetizer", aliases: ["appetizers", "starter", "starters"] },
+  {
+    slug: "dessert",
+    name: "Dessert",
+    aliases: ["desserts", "sweets", "puddings"],
+  },
+  {
+    slug: "appetizer",
+    name: "Appetizer",
+    aliases: ["appetizers", "starter", "starters"],
+  },
   { slug: "side-dish", name: "Side Dish", aliases: ["sides", "side dish"] },
-  { slug: "main-course", name: "Main Course", aliases: ["mains", "main dish", "main course", "entree", "entrée"] },
+  {
+    slug: "main-course",
+    name: "Main Course",
+    aliases: ["mains", "main dish", "main course", "entree", "entrée"],
+  },
   { slug: "soup", name: "Soup", aliases: ["soups"] },
   { slug: "salad", name: "Salad", aliases: ["salads"] },
   { slug: "snack", name: "Snack", aliases: ["snacks"] },
   { slug: "breakfast", name: "Breakfast", aliases: ["breakfasts"] },
-  { slug: "barbecue", name: "Barbecue", aliases: ["bbq", "barbeque", "bar b q"] },
-  { slug: "slow-cooker", name: "Slow Cooker", aliases: ["crockpot", "crock pot", "slow cooker", "slowcooker"] },
-  { slug: "instant-pot", name: "Instant Pot", aliases: ["instapot", "instant pot", "instantpot"] },
-  { slug: "one-pot", name: "One-Pot", aliases: ["one pot", "onepot", "one pan", "one-pan"] },
-  { slug: "kid-friendly", name: "Kid-Friendly", aliases: ["kid friendly", "family friendly", "family-friendly"] },
+  {
+    slug: "barbecue",
+    name: "Barbecue",
+    aliases: ["bbq", "barbeque", "bar b q"],
+  },
+  {
+    slug: "slow-cooker",
+    name: "Slow Cooker",
+    aliases: ["crockpot", "crock pot", "slow cooker", "slowcooker"],
+  },
+  {
+    slug: "instant-pot",
+    name: "Instant Pot",
+    aliases: ["instapot", "instant pot", "instantpot"],
+  },
+  {
+    slug: "one-pot",
+    name: "One-Pot",
+    aliases: ["one pot", "onepot", "one pan", "one-pan"],
+  },
+  {
+    slug: "kid-friendly",
+    name: "Kid-Friendly",
+    aliases: ["kid friendly", "family friendly", "family-friendly"],
+  },
   { slug: "healthy", name: "Healthy", aliases: ["wholesome"] },
-  { slug: "comfort-food", name: "Comfort Food", aliases: ["comfort food", "comfort"] },
+  {
+    slug: "comfort-food",
+    name: "Comfort Food",
+    aliases: ["comfort food", "comfort"],
+  },
   { slug: "low-carb", name: "Low-Carb", aliases: ["low carb", "lowcarb"] },
   { slug: "meal-prep", name: "Meal Prep", aliases: ["meal prep", "mealprep"] },
   { slug: "holiday", name: "Holiday", aliases: ["holidays"] },
@@ -81,7 +141,9 @@ export function isCanonicalTag(name: string): boolean {
 }
 
 /** The curated vocabulary, A–Z — surfaced as quick-add chips in the editor. */
-export const SUGGESTED_TAGS: CanonicalTag[] = TAXONOMY.map(({ slug, name }) => ({
-  slug,
-  name,
-})).sort((a, b) => a.name.localeCompare(b.name));
+export const SUGGESTED_TAGS: CanonicalTag[] = TAXONOMY.map(
+  ({ slug, name }) => ({
+    slug,
+    name,
+  }),
+).sort((a, b) => a.name.localeCompare(b.name));

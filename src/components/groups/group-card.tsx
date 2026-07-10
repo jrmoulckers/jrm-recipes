@@ -22,7 +22,7 @@ export function GroupCard({ group }: { group: MyGroup }) {
       className="group flex min-h-56 flex-col rounded-2xl border border-border bg-card p-5 shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-primary/12 font-display text-lg font-bold text-primary">
+        <div className="bg-primary/12 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-lg font-bold text-primary">
           {group.avatarUrl ? (
             <CloudinaryImage
               src={group.avatarUrl}

@@ -130,8 +130,8 @@ describe("setCollectionVisibility (#281)", () => {
   });
 
   function withTx(tx: unknown) {
-    dbMock.transaction.mockImplementation(
-      async (cb: (t: unknown) => unknown) => cb(tx),
+    dbMock.transaction.mockImplementation(async (cb: (t: unknown) => unknown) =>
+      cb(tx),
     );
   }
 
@@ -140,14 +140,16 @@ describe("setCollectionVisibility (#281)", () => {
     const returning = vi
       .fn()
       .mockImplementation(() => Promise.resolve([capturedRow]));
-    const set = vi.fn().mockImplementation((values: Record<string, unknown>) => {
-      capturedRow = {
-        id: "c1",
-        visibility: values.visibility,
-        shareToken: values.shareToken,
-      };
-      return { where: () => ({ returning }) };
-    });
+    const set = vi
+      .fn()
+      .mockImplementation((values: Record<string, unknown>) => {
+        capturedRow = {
+          id: "c1",
+          visibility: values.visibility,
+          shareToken: values.shareToken,
+        };
+        return { where: () => ({ returning }) };
+      });
     const tx = {
       query: {
         collections: {

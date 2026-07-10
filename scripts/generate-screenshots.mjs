@@ -136,7 +136,9 @@ function narrowSvg(w = 800, h = 1280) {
 }
 
 async function emit(name, svg) {
-  await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(join(outDir, name));
+  await sharp(Buffer.from(svg))
+    .png({ compressionLevel: 9 })
+    .toFile(join(outDir, name));
   console.log("wrote", name);
 }
 

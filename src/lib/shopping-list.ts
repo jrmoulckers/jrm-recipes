@@ -333,7 +333,10 @@ function escapeRegExp(value: string): string {
  * "tomato" also matches "tomatoes".
  */
 function keywordMatcher(keyword: string): RegExp {
-  const body = escapeRegExp(keyword.trim().toLowerCase()).replace(/\s+/g, "\\s+");
+  const body = escapeRegExp(keyword.trim().toLowerCase()).replace(
+    /\s+/g,
+    "\\s+",
+  );
   return new RegExp(`(?<![a-z0-9])${body}(?:es|s)?(?![a-z0-9])`, "i");
 }
 
@@ -541,10 +544,7 @@ export function isPantryStaple(item: string): boolean {
   // Defensive: drop a leading quantity/number ("2 eggs", "1/2 cup ...") so the
   // head-noun check sees the ingredient words. Item names are usually
   // quantity-free, but free-text entries aren't guaranteed to be.
-  const cleaned = name.replace(
-    /^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/,
-    "",
-  );
+  const cleaned = name.replace(/^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/, "");
   if (STAPLE_EXCEPTIONS.has(cleaned)) return false;
   if (matchesStaplePhrase(cleaned)) return true;
   // Tolerate a plural head noun ("peppercorns" → "peppercorn"); the prefix guard
@@ -594,7 +594,11 @@ function bucketFor(rawUnit: string | null | undefined): Bucket {
     return { id: dimension, dimension, unit: normalizeUnit(unit) };
   }
   const normalized = normalizeUnit(unit) ?? unit;
-  return { id: `u:${normalized.toLowerCase()}`, dimension: null, unit: normalized };
+  return {
+    id: `u:${normalized.toLowerCase()}`,
+    dimension: null,
+    unit: normalized,
+  };
 }
 
 type Accumulator = {
@@ -653,7 +657,8 @@ export function mergeShoppingItems(
       if (bucket.dimension) {
         const base = baseUnitFor(bucket.dimension);
         acc.min += convertUnit(quantity, input.unit ?? base, base) ?? 0;
-        acc.max += convertUnit(quantityMax ?? quantity, input.unit ?? base, base) ?? 0;
+        acc.max +=
+          convertUnit(quantityMax ?? quantity, input.unit ?? base, base) ?? 0;
       } else {
         acc.min += quantity;
         acc.max += quantityMax ?? quantity;
@@ -680,7 +685,8 @@ function finalize(acc: Accumulator): AggregatedItem {
   if (acc.hasQuantity) {
     if (acc.dimension) {
       const base = baseUnitFor(acc.dimension);
-      const system = acc.unit && METRIC_CANONICAL.has(acc.unit) ? "metric" : "us";
+      const system =
+        acc.unit && METRIC_CANONICAL.has(acc.unit) ? "metric" : "us";
       const friendly = toSystem(acc.min, base, system);
       if (friendly) {
         quantity = friendly.quantity;
@@ -729,7 +735,9 @@ export function groupByCategory(items: AggregatedItem[]): AggregatedGroup[] {
   for (const item of items) {
     // Any missing or non-canonical category falls back to "Other" so the item
     // is never silently dropped from the grouped view.
-    const category = CATEGORY_INDEX.has(item.category) ? item.category : "Other";
+    const category = CATEGORY_INDEX.has(item.category)
+      ? item.category
+      : "Other";
     const list = groups.get(category) ?? [];
     list.push(item);
     groups.set(category, list);
@@ -820,7 +828,9 @@ export function formatShoppingListText(
 
   const byCategory = new Map<ShoppingCategory, ShoppingTextItem[]>();
   for (const item of visible) {
-    const category = CATEGORY_INDEX.has(item.category) ? item.category : "Other";
+    const category = CATEGORY_INDEX.has(item.category)
+      ? item.category
+      : "Other";
     const list = byCategory.get(category) ?? [];
     list.push(item);
     byCategory.set(category, list);

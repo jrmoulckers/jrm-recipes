@@ -33,9 +33,9 @@ export function CreateGroupDialog({
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>(
-    {},
-  );
+  const [fieldErrors, setFieldErrors] = React.useState<
+    Record<string, string[]>
+  >({});
   const [isPending, startTransition] = React.useTransition();
 
   function resetForm() {

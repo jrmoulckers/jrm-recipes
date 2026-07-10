@@ -20,8 +20,7 @@ const SIZES = {
   lg: { dot: "size-8", overlap: "-space-x-2" },
 } as const;
 
-export interface ThemeSwatchProps
-  extends React.HTMLAttributes<HTMLSpanElement> {
+export interface ThemeSwatchProps extends React.HTMLAttributes<HTMLSpanElement> {
   theme: UITheme;
   /** Force a scheme; defaults to the app's active (resolved) scheme. */
   scheme?: Exclude<ColorScheme, "system">;

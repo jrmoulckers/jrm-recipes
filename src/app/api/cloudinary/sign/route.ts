@@ -54,8 +54,8 @@ const MAX_TIMESTAMP_SKEW_SECONDS = 60;
  */
 const paramsToSignSchema = z
   .object({
-    timestamp: z
-      .coerce.number()
+    timestamp: z.coerce
+      .number()
       .int()
       .positive()
       .refine((ts) => {
@@ -143,7 +143,10 @@ export async function POST(request: Request) {
   if (!limit.ok) {
     return Response.json(
       { error: "Too many upload requests. Please slow down." },
-      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } },
+      {
+        status: 429,
+        headers: { "retry-after": String(limit.retryAfterSeconds) },
+      },
     );
   }
 

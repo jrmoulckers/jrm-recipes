@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { date, index, integer, pgEnum, pgTable, varchar } from "drizzle-orm/pg-core";
+import {
+  date,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
@@ -43,20 +50,23 @@ export const mealPlanEntries = pgTable(
   ],
 );
 
-export const mealPlanEntriesRelations = relations(mealPlanEntries, ({ one }) => ({
-  user: one(users, {
-    fields: [mealPlanEntries.userId],
-    references: [users.id],
+export const mealPlanEntriesRelations = relations(
+  mealPlanEntries,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [mealPlanEntries.userId],
+      references: [users.id],
+    }),
+    group: one(groups, {
+      fields: [mealPlanEntries.groupId],
+      references: [groups.id],
+    }),
+    recipe: one(recipes, {
+      fields: [mealPlanEntries.recipeId],
+      references: [recipes.id],
+    }),
   }),
-  group: one(groups, {
-    fields: [mealPlanEntries.groupId],
-    references: [groups.id],
-  }),
-  recipe: one(recipes, {
-    fields: [mealPlanEntries.recipeId],
-    references: [recipes.id],
-  }),
-}));
+);
 
 export type MealPlanEntry = typeof mealPlanEntries.$inferSelect;
 export type NewMealPlanEntry = typeof mealPlanEntries.$inferInsert;

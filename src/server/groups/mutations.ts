@@ -76,7 +76,10 @@ async function findGroup(tx: Tx, slugOrId: string) {
 async function membershipFor(tx: Tx, groupId: string, userId: string) {
   return (
     (await tx.query.groupMembers.findFirst({
-      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
+      where: and(
+        eq(groupMembers.groupId, groupId),
+        eq(groupMembers.userId, userId),
+      ),
     })) ?? null
   );
 }
@@ -198,13 +201,20 @@ export async function createGroup(input: GroupInput, user: User) {
   });
 }
 
-export async function updateGroup(slugOrId: string, input: GroupInput, user: User) {
+export async function updateGroup(
+  slugOrId: string,
+  input: GroupInput,
+  user: User,
+) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, slugOrId);
     if (!group) throw new DomainError("NOT_FOUND");
 
     await requireManager(tx, group.id, user);
-    await tx.update(groups).set(groupFields(input)).where(eq(groups.id, group.id));
+    await tx
+      .update(groups)
+      .set(groupFields(input))
+      .where(eq(groups.id, group.id));
 
     return { slug: group.slug };
   });
@@ -350,7 +360,10 @@ export async function leaveGroup(groupSlugOrId: string, user: User) {
 
     if (membership.role === "owner") {
       const owners = await tx.query.groupMembers.findMany({
-        where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.role, "owner")),
+        where: and(
+          eq(groupMembers.groupId, group.id),
+          eq(groupMembers.role, "owner"),
+        ),
         columns: { id: true },
       });
       if (owners.length <= 1) throw new DomainError("OWNER_CANT_LEAVE");
@@ -527,7 +540,10 @@ export async function acceptInvitation(token: string, user: User) {
     const overdue =
       invitation.expiresAt != null &&
       invitation.expiresAt.getTime() <= Date.now();
-    if (invitation.status === "expired" || (invitation.status === "pending" && overdue)) {
+    if (
+      invitation.status === "expired" ||
+      (invitation.status === "pending" && overdue)
+    ) {
       if (invitation.status === "pending") {
         await tx
           .update(groupInvitations)
@@ -543,7 +559,11 @@ export async function acceptInvitation(token: string, user: User) {
       // Already consumed. Idempotent only if this user is still the member it
       // produced; otherwise the (single-use) token can't mint a new membership.
       if (existing) {
-        return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
+        return {
+          groupId: invitation.groupId,
+          role: existing.role,
+          alreadyMember: true,
+        };
       }
       throw new DomainError("ALREADY_ACCEPTED");
     }
@@ -554,7 +574,11 @@ export async function acceptInvitation(token: string, user: User) {
         .update(groupInvitations)
         .set({ status: "accepted", userId: user.id })
         .where(eq(groupInvitations.id, invitation.id));
-      return { groupId: invitation.groupId, role: existing.role, alreadyMember: true };
+      return {
+        groupId: invitation.groupId,
+        role: existing.role,
+        alreadyMember: true,
+      };
     }
 
     // Seat enforcement (#325): invite-accept is a primary join path, so the cap
@@ -573,7 +597,11 @@ export async function acceptInvitation(token: string, user: User) {
       .set({ status: "accepted", userId: user.id })
       .where(eq(groupInvitations.id, invitation.id));
 
-    return { groupId: invitation.groupId, role: invitation.role, alreadyMember: false };
+    return {
+      groupId: invitation.groupId,
+      role: invitation.role,
+      alreadyMember: false,
+    };
   });
 }
 

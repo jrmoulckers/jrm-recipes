@@ -118,7 +118,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function daysAgo(days: number, extraMinutes = 0): Date {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
-  return new Date(midnight.getTime() - days * DAY_MS + extraMinutes * 60 * 1000);
+  return new Date(
+    midnight.getTime() - days * DAY_MS + extraMinutes * 60 * 1000,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -406,7 +408,9 @@ async function resolveOwner(tx: Tx): Promise<User> {
         set: { email: DEV_USER.email, name: DEV_USER.name },
       })
       .returning();
-    console.log(`Owner: local dev user (${DEV_USER.id}). Set OWNER_USER_ID to own these as your Clerk account.`);
+    console.log(
+      `Owner: local dev user (${DEV_USER.id}). Set OWNER_USER_ID to own these as your Clerk account.`,
+    );
     return row!;
   }
 
@@ -414,11 +418,15 @@ async function resolveOwner(tx: Tx): Promise<User> {
     where: eq(users.clerkId, ownerEnv),
   });
   if (byClerk) {
-    console.log(`Owner: existing user for clerkId ${ownerEnv} (${byClerk.id}).`);
+    console.log(
+      `Owner: existing user for clerkId ${ownerEnv} (${byClerk.id}).`,
+    );
     return byClerk;
   }
 
-  const byId = await tx.query.users.findFirst({ where: eq(users.id, ownerEnv) });
+  const byId = await tx.query.users.findFirst({
+    where: eq(users.id, ownerEnv),
+  });
   if (byId) {
     console.log(`Owner: existing user id ${ownerEnv}.`);
     return byId;
@@ -575,7 +583,9 @@ async function upsertRecipe(
 
 /** Rebuild a recipe's ingredients + steps from scratch (stable row counts). */
 async function rebuildRecipeContent(tx: Tx, r: SeedRecipe): Promise<void> {
-  await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, r.id));
+  await tx
+    .delete(recipeIngredients)
+    .where(eq(recipeIngredients.recipeId, r.id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, r.id));
 
   if (r.ingredients.length > 0) {
@@ -667,7 +677,9 @@ async function rebuildRecipeVersion(
  * so the lineage shows on both sides.
  */
 async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
-  await tx.delete(recipeEvents).where(inArray(recipeEvents.recipeId, RECIPE_IDS));
+  await tx
+    .delete(recipeEvents)
+    .where(inArray(recipeEvents.recipeId, RECIPE_IDS));
 
   type EventRow = {
     recipeId: string;
@@ -1032,10 +1044,7 @@ async function countAll() {
       ),
     ),
     db.$count(cookLogEntries, inArray(cookLogEntries.recipeId, RECIPE_IDS)),
-    db.$count(
-      collections,
-      inArray(collections.id, [...SEED_COLLECTION_IDS]),
-    ),
+    db.$count(collections, inArray(collections.id, [...SEED_COLLECTION_IDS])),
     db.$count(
       collectionRecipes,
       inArray(collectionRecipes.collectionId, [...SEED_COLLECTION_IDS]),

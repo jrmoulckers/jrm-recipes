@@ -54,9 +54,7 @@ export default async function EmbedRecipePage({
           label: `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`,
         }
       : null,
-    recipe.difficulty
-      ? { icon: Flame, label: recipe.difficulty }
-      : null,
+    recipe.difficulty ? { icon: Flame, label: recipe.difficulty } : null,
   ].filter(Boolean) as { icon: typeof Clock3; label: string }[];
 
   return (
@@ -118,7 +116,7 @@ export default async function EmbedRecipePage({
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
               View full recipe
               <ArrowUpRight
-                className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 aria-hidden="true"
               />
             </span>

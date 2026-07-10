@@ -10,7 +10,8 @@ import {
 } from "./cook-warm";
 
 /** Stand-in for the Cloudinary loader: encodes src + width deterministically. */
-const fakeTransform = (src: string, width: number): string => `${src}@w${width}`;
+const fakeTransform = (src: string, width: number): string =>
+  `${src}@w${width}`;
 
 describe("cookPagePath", () => {
   it("builds the Cook Mode route for a slug or id", () => {
@@ -38,7 +39,12 @@ describe("cookImageWidths", () => {
 describe("cookImageUrlsToWarm", () => {
   it("transforms each non-blank source at each target width, de-duplicated", () => {
     const urls = cookImageUrlsToWarm(
-      ["https://res.cloudinary.com/x/image/upload/v1/a.jpg", "", null, undefined],
+      [
+        "https://res.cloudinary.com/x/image/upload/v1/a.jpg",
+        "",
+        null,
+        undefined,
+      ],
       390,
       3,
       fakeTransform,
@@ -50,7 +56,9 @@ describe("cookImageUrlsToWarm", () => {
   });
 
   it("returns nothing when there are no usable sources", () => {
-    expect(cookImageUrlsToWarm([null, "  "], 800, 2, fakeTransform)).toEqual([]);
+    expect(cookImageUrlsToWarm([null, "  "], 800, 2, fakeTransform)).toEqual(
+      [],
+    );
   });
 });
 

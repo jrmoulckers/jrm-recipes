@@ -120,7 +120,10 @@ export function InstallAppButton() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Tap{" "}
-            <Share className="inline-block size-4 -translate-y-px" aria-hidden />
+            <Share
+              className="inline-block size-4 -translate-y-px"
+              aria-hidden
+            />
             <span className="sr-only">the Share button</span> in Safari&rsquo;s
             toolbar, then choose{" "}
             <span className="font-medium text-foreground">

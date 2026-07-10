@@ -44,7 +44,8 @@ export function ContentActionsMenu({
   const [pending, startTransition] = React.useTransition();
 
   const isOwnContent = authorId != null && authorId === currentUserId;
-  const canModerate = currentUserId != null && !isOwnContent && authorId != null;
+  const canModerate =
+    currentUserId != null && !isOwnContent && authorId != null;
   const showMenu = canDelete || canModerate;
   if (!showMenu) return null;
 

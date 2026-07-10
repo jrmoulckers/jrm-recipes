@@ -42,7 +42,10 @@ test("steps forward and back through Cook Mode", async ({ page }) => {
   await expect(previous).toBeDisabled();
 
   // Advance one step; the visible step heading must change.
-  await page.getByRole("button", { name: /^next$/i }).first().click();
+  await page
+    .getByRole("button", { name: /^next$/i })
+    .first()
+    .click();
   await expect
     .poll(async () => (await title.textContent())?.trim())
     .not.toBe(firstStep);

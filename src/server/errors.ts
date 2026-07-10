@@ -72,7 +72,8 @@ export function raise(code: DomainCode): never {
  */
 export function domainCodeOf(error: unknown): DomainCode | null {
   if (error instanceof DomainError) return error.code;
-  if (error instanceof Error && isDomainCode(error.message)) return error.message;
+  if (error instanceof Error && isDomainCode(error.message))
+    return error.message;
   return null;
 }
 

@@ -42,7 +42,9 @@ export function MainNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground",
-              active ? "font-semibold text-foreground" : "text-muted-foreground",
+              active
+                ? "font-semibold text-foreground"
+                : "text-muted-foreground",
             )}
           >
             {t(item.labelKey)}
@@ -87,7 +89,8 @@ export function BottomNav() {
   const activeIndex = tabs.findIndex((item) => isActive(pathname, item));
   // When the active route lives in the overflow set, highlight the More tab
   // (the last slot) instead of leaving nothing active.
-  const moreActive = hasMore && mobileMoreNav.some((item) => isActive(pathname, item));
+  const moreActive =
+    hasMore && mobileMoreNav.some((item) => isActive(pathname, item));
   const indicatorIndex =
     activeIndex >= 0 ? activeIndex : moreActive ? count - 1 : -1;
 
@@ -124,7 +127,9 @@ export function BottomNav() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted",
-                  active ? "font-semibold text-primary" : "text-muted-foreground",
+                  active
+                    ? "font-semibold text-primary"
+                    : "text-muted-foreground",
                 )}
               >
                 <Icon
@@ -144,7 +149,7 @@ export function BottomNav() {
               <DropdownMenuTrigger
                 aria-current={moreActive ? "page" : undefined}
                 className={cn(
-                  "flex w-full flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium outline-none transition-colors active:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex w-full flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring active:bg-muted",
                   moreActive
                     ? "font-semibold text-primary"
                     : "text-muted-foreground",

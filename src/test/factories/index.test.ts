@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { recipeInput, ingredientInput, stepInput } from "~/server/recipes/validation";
+import {
+  recipeInput,
+  ingredientInput,
+  stepInput,
+} from "~/server/recipes/validation";
 import {
   makeFullRecipe,
   makeIngredientInput,
@@ -22,7 +26,10 @@ describe("test-data factories (#224)", () => {
     const input = makeRecipeInput({
       title: "Loaf",
       visibility: "public",
-      ingredients: [makeIngredientInput(), makeIngredientInput({ item: "Water" })],
+      ingredients: [
+        makeIngredientInput(),
+        makeIngredientInput({ item: "Water" }),
+      ],
       steps: [makeStepInput(), makeStepInput({ instruction: "Bake it." })],
       tags: ["bread"],
     });

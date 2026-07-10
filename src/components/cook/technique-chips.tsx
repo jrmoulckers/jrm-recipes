@@ -35,7 +35,11 @@ export function TechniqueChips({ techniques, className }: TechniqueChipsProps) {
   return (
     <>
       {labels.map((label, index) => (
-        <TechniqueChip key={`${label}-${index}`} rawLabel={label} className={className} />
+        <TechniqueChip
+          key={`${label}-${index}`}
+          rawLabel={label}
+          className={className}
+        />
       ))}
     </>
   );
@@ -106,7 +110,7 @@ function TechniqueChip({
           aria-label={`Learn the ${match.label} technique`}
           className={cn(
             badgeVariants({ variant: "outline" }),
-            "cursor-pointer gap-1 border-dashed underline decoration-dotted decoration-muted-foreground/60 underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             className,
           )}
         >
@@ -119,7 +123,10 @@ function TechniqueChip({
           <span className="text-sm font-semibold text-foreground">
             {match.label}
           </span>
-          <Badge variant="muted" className="text-[10px] uppercase tracking-wide">
+          <Badge
+            variant="muted"
+            className="text-[10px] uppercase tracking-wide"
+          >
             Technique
           </Badge>
         </div>

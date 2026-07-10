@@ -20,9 +20,17 @@ const TAILWIND = read("tailwind.config.ts");
 
 describe("motion tokens (issue #95)", () => {
   it("defines duration tokens scaled by --motion-scale", () => {
-    for (const name of ["--duration-fast", "--duration-base", "--duration-slow"]) {
-      const decl = new RegExp(`${name}:\\s*calc\\([^;]*var\\(--motion-scale\\)`);
-      expect(decl.test(THEMES_CSS), `${name} scaled by --motion-scale`).toBe(true);
+    for (const name of [
+      "--duration-fast",
+      "--duration-base",
+      "--duration-slow",
+    ]) {
+      const decl = new RegExp(
+        `${name}:\\s*calc\\([^;]*var\\(--motion-scale\\)`,
+      );
+      expect(decl.test(THEMES_CSS), `${name} scaled by --motion-scale`).toBe(
+        true,
+      );
     }
   });
 

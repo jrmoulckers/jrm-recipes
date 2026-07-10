@@ -145,7 +145,7 @@ function SharedWithYouCard({
       href={`/collections/${collection.id}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-primary/12">
+      <div className="bg-primary/12 relative aspect-[16/10] overflow-hidden">
         {collection.coverImageUrl ? (
           <CloudinaryImage
             src={collection.coverImageUrl}
@@ -198,7 +198,7 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-16 text-center">
-      <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+      <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
         {icon}
       </span>
       <div>
@@ -214,7 +214,7 @@ function SignInNudge() {
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
-        <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+        <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
           <Heart className="size-7" aria-hidden="true" />
         </span>
         <div>

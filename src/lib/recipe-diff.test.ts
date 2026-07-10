@@ -22,30 +22,45 @@ function recipe(overrides: Partial<RecipeInput> = {}): RecipeInput {
 }
 
 function ing(item: string, extra: Record<string, unknown> = {}) {
-  return { item, optional: false, ...extra } as RecipeInput["ingredients"][number];
+  return {
+    item,
+    optional: false,
+    ...extra,
+  } as RecipeInput["ingredients"][number];
 }
 
 function step(instruction: string, extra: Record<string, unknown> = {}) {
-  return { instruction, techniques: [], ...extra } as RecipeInput["steps"][number];
+  return {
+    instruction,
+    techniques: [],
+    ...extra,
+  } as RecipeInput["steps"][number];
 }
 
 describe("formatIngredientLine", () => {
   it("renders quantity, unit and item", () => {
-    expect(formatIngredientLine(ing("flour", { quantity: 2, unit: "cup" }))).toBe(
-      "2 cup flour",
-    );
+    expect(
+      formatIngredientLine(ing("flour", { quantity: 2, unit: "cup" })),
+    ).toBe("2 cup flour");
   });
 
   it("renders a quantity range", () => {
     expect(
-      formatIngredientLine(ing("water", { quantity: 1, quantityMax: 2, unit: "cup" })),
+      formatIngredientLine(
+        ing("water", { quantity: 1, quantityMax: 2, unit: "cup" }),
+      ),
     ).toBe("1–2 cup water");
   });
 
   it("appends prep, note and optional marker", () => {
     expect(
       formatIngredientLine(
-        ing("onion", { quantity: 1, prep: "diced", note: "yellow", optional: true }),
+        ing("onion", {
+          quantity: 1,
+          prep: "diced",
+          note: "yellow",
+          optional: true,
+        }),
       ),
     ).toBe("1 onion (diced, yellow) · optional");
   });
@@ -111,7 +126,9 @@ describe("diffRecipeSnapshots", () => {
     const after = recipe({ steps: [step("Mix"), step("Bake for 30 min")] });
     const diff = diffRecipeSnapshots(before, after);
     expect(diff.steps.changed).toBe(1);
-    expect(diff.steps.lines.filter((l) => l.kind === "unchanged")).toHaveLength(1);
+    expect(diff.steps.lines.filter((l) => l.kind === "unchanged")).toHaveLength(
+      1,
+    );
   });
 
   it("treats a null (legacy/empty) snapshot as an empty recipe without crashing", () => {

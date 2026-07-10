@@ -80,7 +80,7 @@ export function IngredientsDrawer({
       </DialogTrigger>
       <DialogContent
         variant="sheet"
-        className="start-auto end-0 top-0 grid h-dvh max-h-dvh w-full max-w-xl translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-none border-y-0 border-e-0 bg-popover p-0 sm:rounded-s-2xl"
+        className="end-0 start-auto top-0 grid h-dvh max-h-dvh w-full max-w-xl translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 rounded-none border-y-0 border-e-0 bg-popover p-0 sm:rounded-s-2xl"
       >
         <DialogHeader className="border-b border-border p-5 pe-14 pt-[max(1.25rem,env(safe-area-inset-top))] text-start">
           <DialogTitle className="flex items-center gap-2 text-2xl">
@@ -107,8 +107,8 @@ export function IngredientsDrawer({
                 No ingredients listed yet
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                The recipe owner has not added an ingredient list, but you can still
-                follow the cooking steps.
+                The recipe owner has not added an ingredient list, but you can
+                still follow the cooking steps.
               </p>
             </div>
           )}

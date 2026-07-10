@@ -22,8 +22,16 @@ export type ReportTargetType = "comment" | "review" | "cook_log";
 type Reason = "spam" | "harassment" | "inappropriate" | "other";
 
 const REASONS: { value: Reason; label: string; hint: string }[] = [
-  { value: "inappropriate", label: "Inappropriate", hint: "Not right for a family space" },
-  { value: "harassment", label: "Harassment", hint: "Targeting or bullying someone" },
+  {
+    value: "inappropriate",
+    label: "Inappropriate",
+    hint: "Not right for a family space",
+  },
+  {
+    value: "harassment",
+    label: "Harassment",
+    hint: "Targeting or bullying someone",
+  },
   { value: "spam", label: "Spam", hint: "Off-topic or promotional" },
   { value: "other", label: "Something else", hint: "Tell us more below" },
 ];

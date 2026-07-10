@@ -30,7 +30,8 @@ export function MentionText({
         if (segment.type === "text") {
           return <React.Fragment key={i}>{segment.text}</React.Fragment>;
         }
-        const label = segment.user.name ?? segment.user.handle ?? segment.handle;
+        const label =
+          segment.user.name ?? segment.user.handle ?? segment.handle;
         return segment.user.handle ? (
           <Link
             key={i}

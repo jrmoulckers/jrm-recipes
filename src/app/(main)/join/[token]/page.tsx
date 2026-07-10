@@ -9,11 +9,7 @@ import {
   type InviteLinkStatus,
 } from "~/server/groups/queries";
 import { JoinGroupPanel } from "~/components/groups/join-group-panel";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { brand } from "~/config/brand";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";

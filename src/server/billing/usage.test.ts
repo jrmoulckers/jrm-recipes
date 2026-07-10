@@ -56,13 +56,22 @@ beforeEach(() => {
 
 describe("currentPeriodStart", () => {
   it("buckets metered metrics into the first of the current UTC month", () => {
-    const jan = currentPeriodStart("ai_credits", new Date("2025-01-17T09:00:00Z"));
+    const jan = currentPeriodStart(
+      "ai_credits",
+      new Date("2025-01-17T09:00:00Z"),
+    );
     expect(jan.toISOString()).toBe("2025-01-01T00:00:00.000Z");
   });
 
   it("rolls metered metrics to a new bucket the next month", () => {
-    const jan = currentPeriodStart("ai_credits", new Date("2025-01-31T23:59:59Z"));
-    const feb = currentPeriodStart("ai_credits", new Date("2025-02-01T00:00:00Z"));
+    const jan = currentPeriodStart(
+      "ai_credits",
+      new Date("2025-01-31T23:59:59Z"),
+    );
+    const feb = currentPeriodStart(
+      "ai_credits",
+      new Date("2025-02-01T00:00:00Z"),
+    );
     expect(jan.toISOString()).toBe("2025-01-01T00:00:00.000Z");
     expect(feb.toISOString()).toBe("2025-02-01T00:00:00.000Z");
     expect(feb.getTime()).toBeGreaterThan(jan.getTime());
@@ -70,7 +79,10 @@ describe("currentPeriodStart", () => {
 
   it("uses a single lifetime bucket for count metrics", () => {
     const a = currentPeriodStart("recipes", new Date("2025-01-01T00:00:00Z"));
-    const b = currentPeriodStart("storage_mb", new Date("2030-06-01T00:00:00Z"));
+    const b = currentPeriodStart(
+      "storage_mb",
+      new Date("2030-06-01T00:00:00Z"),
+    );
     expect(a.getTime()).toBe(0);
     expect(b.getTime()).toBe(0);
   });

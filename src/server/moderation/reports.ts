@@ -7,11 +7,7 @@ import { DomainError } from "~/server/errors";
 import { canViewRecipe } from "~/server/recipes/queries";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { notifyMany } from "~/server/notifications/notify";
-import {
-  contentReports,
-  groupMembers,
-  type User,
-} from "~/server/db/schema";
+import { contentReports, groupMembers, type User } from "~/server/db/schema";
 import type { ReportContentInput } from "./validation";
 import { resolveTarget } from "./targets";
 

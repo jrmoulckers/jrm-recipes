@@ -65,7 +65,9 @@ function consolidate(
   const preserved = existing.filter(
     (i) => i.checked || (i.note ?? "").length > 0,
   );
-  const pool = existing.filter((i) => !i.checked && (i.note ?? "").length === 0);
+  const pool = existing.filter(
+    (i) => !i.checked && (i.note ?? "").length === 0,
+  );
 
   const poolInputs: ShoppingItemInput[] = pool.map((i) => ({
     item: i.item,
@@ -122,15 +124,11 @@ export const useShoppingStore = create<ShoppingStore>()(
         })),
       setChecked: (id, checked) =>
         set((state) => ({
-          items: state.items.map((i) =>
-            i.id === id ? { ...i, checked } : i,
-          ),
+          items: state.items.map((i) => (i.id === id ? { ...i, checked } : i)),
         })),
       setCategory: (id, category) =>
         set((state) => ({
-          items: state.items.map((i) =>
-            i.id === id ? { ...i, category } : i,
-          ),
+          items: state.items.map((i) => (i.id === id ? { ...i, category } : i)),
         })),
       remove: (id) =>
         set((state) => ({ items: state.items.filter((i) => i.id !== id) })),

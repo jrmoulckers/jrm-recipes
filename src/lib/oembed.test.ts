@@ -32,7 +32,10 @@ describe("recipeSlugFromUrl", () => {
 
   it("tolerates a trailing slash", () => {
     expect(
-      recipeSlugFromUrl("https://heirloom.example.com/recipes/apple-pie/", BASE),
+      recipeSlugFromUrl(
+        "https://heirloom.example.com/recipes/apple-pie/",
+        BASE,
+      ),
     ).toBe("apple-pie");
   });
 

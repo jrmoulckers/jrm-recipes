@@ -65,7 +65,8 @@ describe("getRecipeVersions pagination (#159)", () => {
 
     await getRecipeVersions("r1", { limit: 5 });
 
-    const arg = dbMock.query.recipeVersions.findMany.mock.calls[0]![0] as FindManyArg;
+    const arg = dbMock.query.recipeVersions.findMany.mock
+      .calls[0]![0] as FindManyArg;
     expect(arg.columns).toEqual({ snapshot: false });
     expect(arg.limit).toBe(6);
     expect(arg.where).toBeDefined();

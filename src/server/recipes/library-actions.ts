@@ -24,9 +24,7 @@ export async function loadMoreLibraryAction(
   const page = await listLibrary(user, { offset: start });
 
   const members = user ? await listMemberProfiles(user.id) : [];
-  const showBadges = members.some((m) =>
-    (m.allergens ?? []).some(isAllergen),
-  );
+  const showBadges = members.some((m) => (m.allergens ?? []).some(isAllergen));
   const items: CardRecipe[] = showBadges
     ? await attachCardAllergens(page.items)
     : page.items;

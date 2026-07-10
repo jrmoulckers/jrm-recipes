@@ -42,10 +42,7 @@ vi.mock("~/server/db", () => ({
 }));
 
 import { listPublicRecipes } from "./queries";
-import {
-  PUBLIC_RECIPES_REVALIDATE_SECONDS,
-  PUBLIC_RECIPES_TAG,
-} from "./cache";
+import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from "./cache";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,7 +54,9 @@ describe("listPublicRecipes caching (#215)", () => {
     // The wrapper is created when the module loads, so assert on the captured
     // config (call counts are reset by beforeEach's clearAllMocks).
     expect(captured.options?.tags).toEqual([PUBLIC_RECIPES_TAG]);
-    expect(captured.options?.revalidate).toBe(PUBLIC_RECIPES_REVALIDATE_SECONDS);
+    expect(captured.options?.revalidate).toBe(
+      PUBLIC_RECIPES_REVALIDATE_SECONDS,
+    );
     expect(captured.keyParts).toBeTruthy();
   });
 

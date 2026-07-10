@@ -42,8 +42,7 @@ export function HandDownButton({
 
   function keepsakeUrl(): string {
     const path = buildKeepsakePath(slug, { from, note, token });
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
     return `${origin}${path}`;
   }
 

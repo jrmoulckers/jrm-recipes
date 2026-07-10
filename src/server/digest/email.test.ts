@@ -14,8 +14,18 @@ function sampleDigest(overrides: Partial<WeeklyDigest> = {}): WeeklyDigest {
         groupId: "g1",
         groupName: "The Moulckers",
         newRecipes: [
-          { id: "r1", slug: "nonna-sauce", title: "Nonna's Sauce", authorName: "Ada" },
-          { id: "r2", slug: "rye-bread", title: "Rye & Butter", authorName: null },
+          {
+            id: "r1",
+            slug: "nonna-sauce",
+            title: "Nonna's Sauce",
+            authorName: "Ada",
+          },
+          {
+            id: "r2",
+            slug: "rye-bread",
+            title: "Rye & Butter",
+            authorName: null,
+          },
         ],
         updatedCount: 1,
       },
@@ -37,9 +47,7 @@ describe("renderDigestEmail", () => {
         {
           groupId: "g1",
           groupName: "Fam",
-          newRecipes: [
-            { id: "r1", slug: "s", title: "One", authorName: null },
-          ],
+          newRecipes: [{ id: "r1", slug: "s", title: "One", authorName: null }],
           updatedCount: 0,
         },
       ],

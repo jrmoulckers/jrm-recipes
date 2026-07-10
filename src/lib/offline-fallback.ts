@@ -34,7 +34,9 @@ export interface OfflineFallbackRequest {
  *   Next.js router fall back to a hard navigation that lands on `/~offline`,
  *   instead of the click silently dying.
  */
-export function isOfflineFallbackRequest(request: OfflineFallbackRequest): boolean {
+export function isOfflineFallbackRequest(
+  request: OfflineFallbackRequest,
+): boolean {
   if (request.destination === "document") {
     return true;
   }

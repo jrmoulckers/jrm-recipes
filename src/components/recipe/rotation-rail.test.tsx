@@ -24,7 +24,10 @@ const recipes = [
   { id: "r2", slug: "pasta", title: "Weeknight pasta" },
 ] as unknown as CardRecipe[];
 
-const quickPlan = { days: [{ value: "2026-07-06", label: "Mon, Jul 6" }], defaultDate: "2026-07-06" };
+const quickPlan = {
+  days: [{ value: "2026-07-06", label: "Mon, Jul 6" }],
+  defaultDate: "2026-07-06",
+};
 
 describe("RotationRail (#426)", () => {
   it("renders nothing when there are no recipes", () => {
@@ -53,7 +56,9 @@ describe("RotationRail (#426)", () => {
 
   it("omits the add-to-plan action when quick-plan is unavailable", () => {
     render(<RotationRail recipes={recipes} quickPlan={null} />);
-    expect(screen.queryByRole("button", { name: /^plan / })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^plan / }),
+    ).not.toBeInTheDocument();
     // Cook is still offered.
     expect(screen.getAllByRole("link", { name: /cook/i })).toHaveLength(2);
   });

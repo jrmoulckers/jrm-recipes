@@ -22,7 +22,11 @@ export default async function MainLayout({
         {t("skipToContent")}
       </a>
       <SiteHeader />
-      <main id="main-content" tabIndex={-1} className="flex-1 pb-24 outline-none md:pb-0">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 pb-24 outline-none md:pb-0"
+      >
         {children}
       </main>
       <SiteFooter />

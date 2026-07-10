@@ -65,7 +65,7 @@ export function CookCompletion({
       role="dialog"
       aria-modal="true"
       aria-labelledby="cook-completion-title"
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-background/95 p-4 backdrop-blur pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur"
     >
       <div
         className={cn(
@@ -129,8 +129,7 @@ export function CookCompletion({
             className="mt-6 w-full gap-2"
             onClick={() => inputRef.current?.click()}
           >
-            <Camera />
-            I made it! 📸 Take a photo
+            <Camera />I made it! 📸 Take a photo
           </Button>
         )}
 

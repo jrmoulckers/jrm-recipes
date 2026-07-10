@@ -106,9 +106,19 @@ async function emitSplash(device, orientation) {
 
 await emit("icon-192.png", { size: 192, mark: 100, radius: 42 });
 await emit("icon-512.png", { size: 512, mark: 260, radius: 112 });
-await emit("icon-maskable-512.png", { size: 512, mark: 200, radius: 0, bleed: true });
+await emit("icon-maskable-512.png", {
+  size: 512,
+  mark: 200,
+  radius: 0,
+  bleed: true,
+});
 // Opaque, full-bleed home-screen glyph for iOS (it applies its own rounding).
-await emit("apple-touch-icon.png", { size: 180, mark: 96, radius: 0, bleed: true });
+await emit("apple-touch-icon.png", {
+  size: 180,
+  mark: 96,
+  radius: 0,
+  bleed: true,
+});
 
 const splashDevices = JSON.parse(
   readFileSync(join(root, "src/config/ios-splash-devices.json"), "utf8"),

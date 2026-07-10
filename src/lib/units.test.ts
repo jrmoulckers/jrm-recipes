@@ -387,7 +387,7 @@ describe("temperature (#249)", () => {
     expect(normalizeUnit("celsius")).toBe("°C");
   });
 
-  it("keeps the bare \"c\" alias meaning cups, not Celsius", () => {
+  it('keeps the bare "c" alias meaning cups, not Celsius', () => {
     expect(normalizeUnit("c")).toBe("cup");
     expect(unitDimension("c")).toBe("volume");
   });
@@ -413,7 +413,10 @@ describe("temperature (#249)", () => {
 
   it("selects °F for US and °C for metric via toSystem", () => {
     expect(toSystem(180, "°C", "us")).toEqual({ quantity: 356, unit: "°F" });
-    expect(toSystem(350, "°F", "metric")).toEqual({ quantity: 177, unit: "°C" });
+    expect(toSystem(350, "°F", "metric")).toEqual({
+      quantity: 177,
+      unit: "°C",
+    });
     // Already in the target system: value unchanged, unit canonicalized.
     expect(toSystem(350, "°F", "us")).toEqual({ quantity: 350, unit: "°F" });
   });
@@ -478,7 +481,10 @@ describe("formatKidAmount (issue #447)", () => {
 
   it("uses singular units for one or less and plural above one", () => {
     expect(formatKidAmount(1, "cup")).toEqual({ number: "1", unit: "cup" });
-    expect(formatKidAmount(3, "tsp")).toEqual({ number: "3", unit: "teaspoons" });
+    expect(formatKidAmount(3, "tsp")).toEqual({
+      number: "3",
+      unit: "teaspoons",
+    });
   });
 
   it("spells fraction-only amounts without a unit as a bare count", () => {

@@ -12,9 +12,7 @@ afterEach(cleanup);
 async function openSubstitutions(item: string) {
   const user = userEvent.setup({ pointerEventsCheck: 0 });
   render(<IngredientSubstitutions item={item} />);
-  await user.click(
-    screen.getByRole("button", { name: /substitutions for/i }),
-  );
+  await user.click(screen.getByRole("button", { name: /substitutions for/i }));
   return user;
 }
 

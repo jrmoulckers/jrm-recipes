@@ -38,7 +38,9 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
   React.useEffect(() => setCount(initialCount), [initialCount]);
   React.useEffect(() => setItems(initialItems), [initialItems]);
 
-  const markOne = useServerAction(markNotificationReadAction, { refresh: true });
+  const markOne = useServerAction(markNotificationReadAction, {
+    refresh: true,
+  });
   const markAll = useServerAction(markAllNotificationsReadAction, {
     refresh: true,
   });

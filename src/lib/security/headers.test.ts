@@ -41,7 +41,9 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("https://upload-widget.cloudinary.com");
     expect(csp).toContain("https://api.cloudinary.com");
     // The upload widget renders in an iframe.
-    const frameSrc = csp.split(";").find((d) => d.trim().startsWith("frame-src"));
+    const frameSrc = csp
+      .split(";")
+      .find((d) => d.trim().startsWith("frame-src"));
     expect(frameSrc).toContain("https://upload-widget.cloudinary.com");
     // …and calls its API over XHR/fetch.
     const connectSrc = csp
@@ -55,7 +57,12 @@ describe("buildContentSecurityPolicy", () => {
     // connect-src (no https: fallback) + a session iframe — must be allowlisted
     // or sign-in/session hydration break in production (#212).
     const prod = buildContentSecurityPolicy("n", PK_LIVE);
-    for (const directive of ["script-src", "connect-src", "img-src", "frame-src"]) {
+    for (const directive of [
+      "script-src",
+      "connect-src",
+      "img-src",
+      "frame-src",
+    ]) {
       const line = prod.split(";").find((d) => d.trim().startsWith(directive));
       expect(line).toContain("https://clerk.example.com");
     }

@@ -1,9 +1,21 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { ThemeProvider, useTheme } from "./theme-provider";
-import { THEME_COOKIE, THEME_PREVIOUS_COOKIE, type UITheme } from "~/config/themes";
+import {
+  THEME_COOKIE,
+  THEME_PREVIOUS_COOKIE,
+  type UITheme,
+} from "~/config/themes";
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
 beforeAll(() => {
@@ -40,7 +52,9 @@ function Harness() {
       <button onClick={() => setKidsMode(true)}>kids-on</button>
       <button onClick={() => setKidsMode(false)}>kids-off</button>
       <button onClick={() => setTheme("kids")}>pick-kids</button>
-      <button onClick={() => setTheme("professional")}>pick-professional</button>
+      <button onClick={() => setTheme("professional")}>
+        pick-professional
+      </button>
     </div>
   );
 }

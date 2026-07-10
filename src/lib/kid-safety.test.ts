@@ -43,7 +43,9 @@ describe("detectStepHazards (issue #423)", () => {
   it("does not false-match hazard words hidden inside safe words", () => {
     // "cut" must not match inside "cute"; "peel" (banana) is not a hazard —
     // only the peeler *tool* is.
-    expect(detectStepHazards({ text: "This cute biscuit is done." })).toEqual([]);
+    expect(detectStepHazards({ text: "This cute biscuit is done." })).toEqual(
+      [],
+    );
     expect(detectStepHazards({ text: "Peel the banana and mash it." })).toEqual(
       [],
     );

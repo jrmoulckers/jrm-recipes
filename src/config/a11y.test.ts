@@ -23,7 +23,12 @@ describe("parseA11y", () => {
 
   it("coerces unknown contrast/motion values to unset (follow the OS)", () => {
     const prefs = parseA11y(
-      JSON.stringify({ textSize: "huge", contrast: "yes", motion: 1, reading: true }),
+      JSON.stringify({
+        textSize: "huge",
+        contrast: "yes",
+        motion: 1,
+        reading: true,
+      }),
     );
     expect(prefs).toEqual({
       textSize: "default", // "huge" is not a valid size

@@ -4,7 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { BookMarked, BookOpen, Plus, ShieldAlert, Settings, Users } from "lucide-react";
+import {
+  BookMarked,
+  BookOpen,
+  Plus,
+  ShieldAlert,
+  Settings,
+  Users,
+} from "lucide-react";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -54,8 +61,7 @@ export async function generateMetadata({
   if (!group) return { title: "Group not found" };
   const canonical = absoluteUrl(`/groups/${group.slug}`);
   const description =
-    group.description ??
-    `A shared family cookbook on ${brand.name}.`;
+    group.description ?? `A shared family cookbook on ${brand.name}.`;
   const title = `${group.name} cookbook`;
   return {
     title,
@@ -141,7 +147,7 @@ export default async function GroupPage({
       <header className="rounded-2xl border border-border bg-card p-5 shadow-token sm:p-7">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-primary/12 font-display text-2xl font-bold text-primary">
+            <div className="bg-primary/12 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-2xl font-bold text-primary">
               {group.avatarUrl ? (
                 <Image
                   src={group.avatarUrl}
@@ -272,8 +278,8 @@ export default async function GroupPage({
               <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-6 text-center text-muted-foreground">
                 <p className="mx-auto max-w-md">
                   {group.members.length}{" "}
-                  {group.members.length === 1 ? "cook keeps" : "cooks keep"} this
-                  table. Only members can see who&apos;s gathered here.
+                  {group.members.length === 1 ? "cook keeps" : "cooks keep"}{" "}
+                  this table. Only members can see who&apos;s gathered here.
                 </p>
               </div>
             )}
@@ -370,7 +376,7 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
       href={`/recipes/${recipe.slug}`}
       className="group overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-primary/12">
+      <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
         {recipe.coverImageUrl ? (
           <Image
             src={recipe.coverImageUrl}
@@ -409,7 +415,9 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
         {recipe.author?.name ? (
           <p className="mt-3 text-xs text-muted-foreground">
             Shared by{" "}
-            <span className="font-medium text-foreground">{recipe.author.name}</span>
+            <span className="font-medium text-foreground">
+              {recipe.author.name}
+            </span>
           </p>
         ) : null}
       </div>
@@ -429,7 +437,7 @@ function SharedCollectionCard({
       href={`/collections/${collection.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-primary/12">
+      <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
         {collection.coverImageUrl ? (
           <Image
             src={collection.coverImageUrl}

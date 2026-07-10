@@ -21,7 +21,10 @@ describe("lookupTechnique", () => {
   });
 
   it("is case-insensitive", () => {
-    expect(lookupTechnique("DICE")).toMatchObject({ slug: "dice", known: true });
+    expect(lookupTechnique("DICE")).toMatchObject({
+      slug: "dice",
+      known: true,
+    });
     expect(lookupTechnique("Braise")).toMatchObject({
       slug: "braise",
       known: true,
@@ -51,7 +54,9 @@ describe("lookupTechnique", () => {
     expect(lookupTechnique("dicing")).toMatchObject({ slug: "dice" });
     expect(lookupTechnique("reduced")).toMatchObject({ slug: "reduce" });
     expect(lookupTechnique("searing")).toMatchObject({ slug: "sear" });
-    expect(lookupTechnique("caramelising")).toMatchObject({ slug: "caramelize" });
+    expect(lookupTechnique("caramelising")).toMatchObject({
+      slug: "caramelize",
+    });
     expect(lookupTechnique("whisked")).toMatchObject({ slug: "whisk" });
   });
 
@@ -101,8 +106,14 @@ describe("lookupTechnique", () => {
 
 describe("suggestTechnique", () => {
   it("suggests the closest known technique for a typo", () => {
-    expect(suggestTechnique("braize")).toEqual({ slug: "braise", label: "Braise" });
-    expect(suggestTechnique("minse")).toEqual({ slug: "mince", label: "Mince" });
+    expect(suggestTechnique("braize")).toEqual({
+      slug: "braise",
+      label: "Braise",
+    });
+    expect(suggestTechnique("minse")).toEqual({
+      slug: "mince",
+      label: "Mince",
+    });
     expect(suggestTechnique("wisk")).toEqual({ slug: "whisk", label: "Whisk" });
   });
 

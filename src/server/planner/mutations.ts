@@ -16,7 +16,11 @@ import {
   parseDateParam,
   toDateParam,
 } from "./week";
-import type { AddEntryInput, BatchCookInput, MoveEntryInput } from "./validation";
+import type {
+  AddEntryInput,
+  BatchCookInput,
+  MoveEntryInput,
+} from "./validation";
 import { formatLeftoversNote } from "~/lib/planner-batch";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -82,7 +86,13 @@ async function nextPosition(
       next: sql<number>`coalesce(max(${mealPlanEntries.position}), -1) + 1`,
     })
     .from(mealPlanEntries)
-    .where(and(scope, eq(mealPlanEntries.date, date), eq(mealPlanEntries.slot, slot)));
+    .where(
+      and(
+        scope,
+        eq(mealPlanEntries.date, date),
+        eq(mealPlanEntries.slot, slot),
+      ),
+    );
   return Number(rows[0]?.next ?? 0);
 }
 

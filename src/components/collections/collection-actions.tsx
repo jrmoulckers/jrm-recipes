@@ -98,7 +98,12 @@ export function CollectionActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" size="icon" aria-label="Collection options">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Collection options"
+          >
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>

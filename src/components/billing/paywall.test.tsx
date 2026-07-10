@@ -56,8 +56,6 @@ describe("UpgradeDialog", () => {
 
   it("offers a dismiss control (no forced conversion)", () => {
     render(<UpgradeDialog open />);
-    expect(
-      screen.getByRole("button", { name: "Not now" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Not now" })).toBeInTheDocument();
   });
 });

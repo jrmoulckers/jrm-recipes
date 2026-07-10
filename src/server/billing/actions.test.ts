@@ -107,7 +107,10 @@ describe("createCheckoutSessionAction", () => {
 
   it("rejects the free plan", async () => {
     const result = await createCheckoutSessionAction("free");
-    expect(result).toEqual({ ok: false, error: "Choose a paid plan to upgrade." });
+    expect(result).toEqual({
+      ok: false,
+      error: "Choose a paid plan to upgrade.",
+    });
   });
 
   it("reports not-available when the price env var is unset", async () => {

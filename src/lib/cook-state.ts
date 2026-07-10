@@ -63,7 +63,9 @@ export function clampStepIndex(index: number, totalSteps: number): number {
 }
 
 /** A fresh, idle timer for a step's configured duration. */
-export function makeTimer(durationSeconds: number | null | undefined): TimerRecord {
+export function makeTimer(
+  durationSeconds: number | null | undefined,
+): TimerRecord {
   const duration = Math.max(0, durationSeconds ?? 0);
   return { duration, remaining: duration, status: "idle", endsAt: null };
 }
@@ -164,7 +166,9 @@ export function reconcileTimers(
 }
 
 /** Count only timers that are actively counting down. */
-export function countRunningTimers(timers: Record<string, TimerRecord>): number {
+export function countRunningTimers(
+  timers: Record<string, TimerRecord>,
+): number {
   let count = 0;
   for (const timer of Object.values(timers)) {
     if (timer.status === "running") count += 1;
@@ -193,7 +197,10 @@ export function hasRunningCookTimers(
     const state = parseCookState(storage.getItem(key));
     if (!state) continue;
     if (countRunningTimers(reconcileTimers(state.timers, now)) > 0) return true;
-    if (countRunningCustomTimers(reconcileCustomTimers(state.customTimers, now)) > 0) {
+    if (
+      countRunningCustomTimers(reconcileCustomTimers(state.customTimers, now)) >
+      0
+    ) {
       return true;
     }
   }
@@ -254,7 +261,9 @@ const INTERACTIVE_SHORTCUT_SELECTOR =
  * owns keys like Space/Enter (e.g. a step video's play/pause), so global
  * step-navigation shortcuts should stand down.
  */
-export function isInteractiveShortcutTarget(target: EventTarget | null): boolean {
+export function isInteractiveShortcutTarget(
+  target: EventTarget | null,
+): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.closest(INTERACTIVE_SHORTCUT_SELECTOR) != null;
 }
@@ -310,7 +319,10 @@ function parseTimer(value: unknown): TimerRecord | null {
   if (typeof duration !== "number" || !Number.isFinite(duration)) return null;
   if (typeof remaining !== "number" || !Number.isFinite(remaining)) return null;
   if (!isTimerStatus(status)) return null;
-  if (endsAt !== null && (typeof endsAt !== "number" || !Number.isFinite(endsAt))) {
+  if (
+    endsAt !== null &&
+    (typeof endsAt !== "number" || !Number.isFinite(endsAt))
+  ) {
     return null;
   }
 
@@ -341,13 +353,17 @@ function parseChecked(value: unknown): string[] {
 function parseCustomTimer(value: unknown): CustomTimer | null {
   if (!isRecord(value)) return null;
 
-  const { id, label, stepPosition, duration, remaining, status, endsAt } = value;
+  const { id, label, stepPosition, duration, remaining, status, endsAt } =
+    value;
   if (typeof id !== "string" || id.length === 0) return null;
   if (typeof label !== "string") return null;
   if (typeof duration !== "number" || !Number.isFinite(duration)) return null;
   if (typeof remaining !== "number" || !Number.isFinite(remaining)) return null;
   if (!isTimerStatus(status)) return null;
-  if (endsAt !== null && (typeof endsAt !== "number" || !Number.isFinite(endsAt))) {
+  if (
+    endsAt !== null &&
+    (typeof endsAt !== "number" || !Number.isFinite(endsAt))
+  ) {
     return null;
   }
 

@@ -28,9 +28,6 @@ export async function markAllNotificationsRead(user: User): Promise<void> {
     .update(notifications)
     .set({ readAt: new Date() })
     .where(
-      and(
-        eq(notifications.recipientId, user.id),
-        isNull(notifications.readAt),
-      ),
+      and(eq(notifications.recipientId, user.id), isNull(notifications.readAt)),
     );
 }

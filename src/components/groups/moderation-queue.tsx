@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { EyeOff, ShieldCheck, MessageSquare, NotebookPen, CookingPot } from "lucide-react";
+import {
+  EyeOff,
+  ShieldCheck,
+  MessageSquare,
+  NotebookPen,
+  CookingPot,
+} from "lucide-react";
 
 import {
   dismissReportAction,

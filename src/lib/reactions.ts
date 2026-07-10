@@ -8,12 +8,7 @@
  */
 
 export type ReactionEmojiKey =
-  | "love"
-  | "yum"
-  | "clap"
-  | "wow"
-  | "fire"
-  | "party";
+  "love" | "yum" | "clap" | "wow" | "fire" | "party";
 
 /** The fixed display order + glyph + accessible label for each reaction. */
 export const REACTION_EMOJI: {

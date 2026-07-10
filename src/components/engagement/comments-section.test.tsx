@@ -1,4 +1,10 @@
-import { cleanup, render as rtlRender, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as React from "react";
@@ -35,7 +41,9 @@ vi.mock("sonner", () => ({
 const addComment = vi.mocked(addCommentAction);
 const applySuggestion = vi.mocked(applySuggestionAction);
 
-function makeComment(overrides: Partial<ThreadedComment> = {}): ThreadedComment {
+function makeComment(
+  overrides: Partial<ThreadedComment> = {},
+): ThreadedComment {
   return {
     id: "comment_1",
     kind: "comment",
@@ -236,7 +244,11 @@ describe("CommentsSection", () => {
       <CommentsSection
         {...baseProps}
         initialComments={[
-          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+          makeComment({
+            id: "sugg_1",
+            kind: "suggestion",
+            body: "Add a bay leaf",
+          }),
         ]}
         currentUserId="owner_9"
         isRecipeOwner
@@ -254,7 +266,11 @@ describe("CommentsSection", () => {
       <CommentsSection
         {...baseProps}
         initialComments={[
-          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+          makeComment({
+            id: "sugg_1",
+            kind: "suggestion",
+            body: "Add a bay leaf",
+          }),
         ]}
         currentUserId="user_2"
         isRecipeOwner={false}
@@ -300,7 +316,11 @@ describe("CommentsSection", () => {
       <CommentsSection
         {...baseProps}
         initialComments={[
-          makeComment({ id: "sugg_1", kind: "suggestion", body: "Add a bay leaf" }),
+          makeComment({
+            id: "sugg_1",
+            kind: "suggestion",
+            body: "Add a bay leaf",
+          }),
         ]}
         currentUserId="owner_9"
         isRecipeOwner

@@ -67,7 +67,9 @@ export default async function CookWithPage({
           {results.map((recipe) => (
             <div key={recipe.id} className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Badge variant={recipe.coverage.missing === 0 ? "default" : "muted"}>
+                <Badge
+                  variant={recipe.coverage.missing === 0 ? "default" : "muted"}
+                >
                   You have {recipe.coverage.matched} of {recipe.coverage.total}
                 </Badge>
                 {recipe.coverage.missing === 0 && (
@@ -95,7 +97,9 @@ function Prompt() {
       <UtensilsCrossed className="size-10 text-muted-foreground" />
       <p className="max-w-md text-muted-foreground">
         Add a few ingredients above — like{" "}
-        <span className="font-medium text-foreground">chicken, rice, spinach</span>{" "}
+        <span className="font-medium text-foreground">
+          chicken, rice, spinach
+        </span>{" "}
         — and we&apos;ll rank recipes by how much of each you already have.
       </p>
     </div>

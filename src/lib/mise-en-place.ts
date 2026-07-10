@@ -78,6 +78,8 @@ export function derivePrepTasks(
 }
 
 /** Whether a recipe has anything to gather (i.e. a mise en place is useful). */
-export function hasMiseEnPlace(ingredients: readonly MiseIngredient[]): boolean {
+export function hasMiseEnPlace(
+  ingredients: readonly MiseIngredient[],
+): boolean {
   return ingredients.length > 0;
 }

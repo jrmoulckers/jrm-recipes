@@ -32,7 +32,9 @@ afterEach(() => {
 describe("useServerAction (#198)", () => {
   it("runs the action, toasts success, calls onSuccess with args, and refreshes", async () => {
     const action = vi.fn(
-      async (_input: { id: string }): Promise<ActionResult<{ slug: string }>> => ({
+      async (_input: {
+        id: string;
+      }): Promise<ActionResult<{ slug: string }>> => ({
         ok: true,
         slug: "sunday-sauce",
       }),
@@ -54,7 +56,10 @@ describe("useServerAction (#198)", () => {
 
     expect(action).toHaveBeenCalledWith({ id: "r1" });
     expect(toastSuccess).toHaveBeenCalledWith("Saved");
-    expect(onSuccess).toHaveBeenCalledWith({ ok: true, slug: "sunday-sauce" }, { id: "r1" });
+    expect(onSuccess).toHaveBeenCalledWith(
+      { ok: true, slug: "sunday-sauce" },
+      { id: "r1" },
+    );
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(result.current.error).toBeNull();
     expect(result.current.fieldErrors).toBeNull();
@@ -83,13 +88,11 @@ describe("useServerAction (#198)", () => {
   });
 
   it("exposes error + fieldErrors, toasts the error, and calls onError on failure", async () => {
-    const action = vi.fn(
-      async (): Promise<ActionResult> => ({
-        ok: false,
-        error: "Please fix the highlighted fields.",
-        fieldErrors: { title: ["Title is required."] },
-      }),
-    );
+    const action = vi.fn(async (): Promise<ActionResult> => ({
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: { title: ["Title is required."] },
+    }));
     const onError = vi.fn();
 
     const { result } = renderHook(() =>
@@ -101,8 +104,12 @@ describe("useServerAction (#198)", () => {
     });
 
     expect(result.current.error).toBe("Please fix the highlighted fields.");
-    expect(result.current.fieldErrors).toEqual({ title: ["Title is required."] });
-    expect(toastError).toHaveBeenCalledWith("Please fix the highlighted fields.");
+    expect(result.current.fieldErrors).toEqual({
+      title: ["Title is required."],
+    });
+    expect(toastError).toHaveBeenCalledWith(
+      "Please fix the highlighted fields.",
+    );
     expect(onError).toHaveBeenCalledTimes(1);
     // No success side effects on failure.
     expect(refresh).not.toHaveBeenCalled();
@@ -110,9 +117,10 @@ describe("useServerAction (#198)", () => {
   });
 
   it("stays silent when errorToast is not set, but still exposes the error", async () => {
-    const action = vi.fn(
-      async (): Promise<ActionResult> => ({ ok: false, error: "Nope" }),
-    );
+    const action = vi.fn(async (): Promise<ActionResult> => ({
+      ok: false,
+      error: "Nope",
+    }));
 
     const { result } = renderHook(() => useServerAction(action));
 

@@ -27,7 +27,10 @@ afterEach(cleanup);
 
 function renderSwatch(
   ui: ReactElement,
-  { theme = "kitchen", scheme = "light" }: { theme?: UITheme; scheme?: ColorScheme } = {},
+  {
+    theme = "kitchen",
+    scheme = "light",
+  }: { theme?: UITheme; scheme?: ColorScheme } = {},
 ) {
   return render(
     <ThemeProvider initialTheme={theme} initialScheme={scheme}>
@@ -78,15 +81,20 @@ describe("ThemeSwatch", () => {
   });
 
   it("lets an explicit scheme prop override the active scheme", () => {
-    const { container } = renderSwatch(<ThemeSwatch theme="barebones" scheme="dark" />, {
-      scheme: "light",
-    });
+    const { container } = renderSwatch(
+      <ThemeSwatch theme="barebones" scheme="dark" />,
+      {
+        scheme: "light",
+      },
+    );
     const wrapper = container.querySelector('[data-theme="barebones"]')!;
     expect(wrapper.className).toContain("dark");
   });
 
   it("scales the dots for the large size", () => {
-    const { container } = renderSwatch(<ThemeSwatch theme="kitchen" size="lg" />);
+    const { container } = renderSwatch(
+      <ThemeSwatch theme="kitchen" size="lg" />,
+    );
     const wrapper = container.querySelector('[data-theme="kitchen"]')!;
     const dot = wrapper.querySelector("span")!;
     expect(dot.className).toContain("size-8");

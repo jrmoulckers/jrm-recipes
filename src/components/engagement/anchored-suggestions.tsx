@@ -127,7 +127,11 @@ export function AnchoredSuggestions({
               disabled={pending}
             />
             <div className="flex items-center gap-2">
-              <Button type="submit" size="sm" disabled={pending || !body.trim()}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={pending || !body.trim()}
+              >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (

@@ -276,7 +276,9 @@ function CookLogTimeline({
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                 <div className="min-w-0">
                   <p className="font-medium leading-tight">
-                    {valid ? formatDate(cookedAt, "PPP", locale) : "Logged earlier"}
+                    {valid
+                      ? formatDate(cookedAt, "PPP", locale)
+                      : "Logged earlier"}
                   </p>
                   {valid && (
                     <p className="text-xs text-muted-foreground">
@@ -389,10 +391,7 @@ function LogCookButton({
 
   if (!canLog) {
     return (
-      <Button
-        type="button"
-        onClick={() => toast("Sign in to log a cook")}
-      >
+      <Button type="button" onClick={() => toast("Sign in to log a cook")}>
         <CookingPot /> I cooked this
       </Button>
     );
@@ -413,8 +412,9 @@ function LogCookButton({
             </div>
             <DialogTitle>Log a cook</DialogTitle>
             <DialogDescription>
-              Add {recipeTitle} to your cooking journal. Jot down how it went and
-              add a photo if you have one — it all becomes part of the story.
+              Add {recipeTitle} to your cooking journal. Jot down how it went
+              and add a photo if you have one — it all becomes part of the
+              story.
             </DialogDescription>
           </DialogHeader>
 
@@ -471,8 +471,8 @@ function LogCookButton({
                   Share with my family
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Post this cook to {shareGroup.name}&apos;s activity feed and the
-                  recipe&apos;s family photo strip.
+                  Post this cook to {shareGroup.name}&apos;s activity feed and
+                  the recipe&apos;s family photo strip.
                 </p>
               </div>
               <Switch

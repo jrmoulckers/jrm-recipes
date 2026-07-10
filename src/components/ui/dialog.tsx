@@ -21,7 +21,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+      "fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
       className,
     )}
     {...props}
@@ -50,9 +50,9 @@ const dialogContentVariants = cva(
       // itself is supplied by the caller's className.
       variant: {
         center:
-          "data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
+          "data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in",
         sheet:
-          "ltr:data-[state=open]:animate-slide-in-from-right ltr:data-[state=closed]:animate-slide-out-to-right rtl:data-[state=open]:animate-slide-in-from-left rtl:data-[state=closed]:animate-slide-out-to-left",
+          "ltr:data-[state=closed]:animate-slide-out-to-right ltr:data-[state=open]:animate-slide-in-from-right rtl:data-[state=closed]:animate-slide-out-to-left rtl:data-[state=open]:animate-slide-in-from-left",
       },
     },
     defaultVariants: { size: "lg", variant: "center" },
@@ -88,16 +88,25 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col gap-1.5 text-center sm:text-start", className)}
+      className={cn(
+        "flex flex-col gap-1.5 text-center sm:text-start",
+        className,
+      )}
       {...props}
     />
   );
 }
 
-function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function DialogFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

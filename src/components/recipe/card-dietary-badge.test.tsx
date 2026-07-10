@@ -39,9 +39,7 @@ describe("CardDietaryBadge", () => {
 
   it("reassures when the recipe trips none of the member's allergens", () => {
     useActiveMemberStore.setState({ activeMemberId: "m1" });
-    render(
-      <CardDietaryBadge members={MEMBERS} recipeAllergens={["soy"]} />,
-    );
+    render(<CardDietaryBadge members={MEMBERS} recipeAllergens={["soy"]} />);
     expect(screen.getByText(/looks safe for ada/i)).toBeInTheDocument();
   });
 
@@ -57,19 +55,14 @@ describe("CardDietaryBadge", () => {
 
   it("still warns on a conflict even from an otherwise sparse recipe", () => {
     useActiveMemberStore.setState({ activeMemberId: "m1" });
-    render(
-      <CardDietaryBadge members={MEMBERS} recipeAllergens={["dairy"]} />,
-    );
+    render(<CardDietaryBadge members={MEMBERS} recipeAllergens={["dairy"]} />);
     expect(screen.getByText(/contains dairy/i)).toBeInTheDocument();
   });
 
   it("warns and names the conflicting allergen", () => {
     useActiveMemberStore.setState({ activeMemberId: "m1" });
     render(
-      <CardDietaryBadge
-        members={MEMBERS}
-        recipeAllergens={["dairy", "soy"]}
-      />,
+      <CardDietaryBadge members={MEMBERS} recipeAllergens={["dairy", "soy"]} />,
     );
     expect(screen.getByText(/contains dairy/i)).toBeInTheDocument();
     // Best-effort disclaimer is exposed for assistive tech.

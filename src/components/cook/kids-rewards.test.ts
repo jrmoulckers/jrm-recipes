@@ -12,7 +12,10 @@ describe("kids-rewards", () => {
   });
 
   it("awards a First Cook badge and a recipe sticker on the first completion", () => {
-    const { newlyEarned, badges } = awardForCompletion("Banana Bread", "banana-bread");
+    const { newlyEarned, badges } = awardForCompletion(
+      "Banana Bread",
+      "banana-bread",
+    );
 
     const ids = newlyEarned.map((b) => b.id);
     expect(ids).toContain("first-cook");
@@ -42,10 +45,15 @@ describe("kids-rewards", () => {
 
   it("does not duplicate a recipe sticker when the same recipe is finished twice", () => {
     awardForCompletion("Banana Bread", "banana-bread");
-    const { newlyEarned, badges } = awardForCompletion("Banana Bread", "banana-bread");
+    const { newlyEarned, badges } = awardForCompletion(
+      "Banana Bread",
+      "banana-bread",
+    );
 
     expect(newlyEarned).toHaveLength(0);
-    expect(badges.filter((b) => b.id === "recipe:banana-bread")).toHaveLength(1);
+    expect(badges.filter((b) => b.id === "recipe:banana-bread")).toHaveLength(
+      1,
+    );
   });
 
   it("grants a milestone badge after three cooks", () => {

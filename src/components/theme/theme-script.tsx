@@ -31,5 +31,11 @@ export function ThemeScript({ nonce }: { nonce?: string }) {
   } catch (e) {}
 })();
 `;
-  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} suppressHydrationWarning />;
+  return (
+    <script
+      nonce={nonce}
+      dangerouslySetInnerHTML={{ __html: script }}
+      suppressHydrationWarning
+    />
+  );
 }

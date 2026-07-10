@@ -34,8 +34,7 @@ export function extractProfile(data: ClerkUserData): ClerkUserProfile {
   const joinedName = [data.first_name, data.last_name]
     .filter((part): part is string => Boolean(part))
     .join(" ");
-  const name =
-    joinedName.length > 0 ? joinedName : (data.username ?? null);
+  const name = joinedName.length > 0 ? joinedName : (data.username ?? null);
   return {
     email: primaryEmail(data),
     name,
@@ -50,7 +49,9 @@ export function extractProfile(data: ClerkUserData): ClerkUserProfile {
  * soft-deletes + anonymizes it. Unknown event types are ignored so Clerk can
  * fan out additional events without this endpoint erroring.
  */
-export async function handleClerkEvent(event: ClerkWebhookEvent): Promise<void> {
+export async function handleClerkEvent(
+  event: ClerkWebhookEvent,
+): Promise<void> {
   const clerkId = event.data?.id;
   if (!clerkId) return;
   switch (event.type) {

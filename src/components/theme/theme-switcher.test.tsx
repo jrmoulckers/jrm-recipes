@@ -72,7 +72,9 @@ describe("ThemeSwitcher", () => {
     renderSwitcher("kitchen", "dark");
     await openMenu();
 
-    const active = await screen.findByRole("menuitemradio", { name: /^dark$/i });
+    const active = await screen.findByRole("menuitemradio", {
+      name: /^dark$/i,
+    });
     expect(active).toHaveAttribute("aria-checked", "true");
 
     expect(
