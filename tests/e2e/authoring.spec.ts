@@ -29,7 +29,10 @@ test("blocks saving a recipe with no title and surfaces an error", async ({
   // problem via the accessible error summary — no navigation, no database.
   await page.getByRole("button", { name: /save recipe/i }).click();
 
-  await expect(page.getByRole("alert")).toBeVisible();
+  // Scope to the editor's error summary by its accessible name. A bare
+  // getByRole("alert") also matches Next's empty route announcer
+  // (#__next-route-announcer__, role="alert"), which trips strict mode.
+  await expect(page.getByRole("alert", { name: /please fix/i })).toBeVisible();
   await expect(page).toHaveURL(/\/recipes\/new$/);
 });
 
