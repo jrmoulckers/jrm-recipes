@@ -18,7 +18,7 @@ export interface WelcomeCopy {
   steps: [OnboardingStep, OnboardingStep, OnboardingStep];
   /** Primary CTA on step one. */
   cta: string;
-  /** Dismiss affordance. */
+  /** Accessible label for the dismiss control. */
   dismiss: string;
 }
 
@@ -40,7 +40,7 @@ export const WELCOME_COPY: WelcomeCopy = {
     },
   ],
   cta: "Create your first recipe",
-  dismiss: "Maybe later",
+  dismiss: "Dismiss welcome",
 };
 
 /** A single onboarding-checklist step: copy plus its call-to-action label. */

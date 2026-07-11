@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 import {
   WELCOME_DISMISS_KEY,
@@ -27,16 +33,19 @@ describe("WelcomeChecklist (issue #147)", () => {
     expect(cta).toHaveAttribute("href", "/recipes/new");
   });
 
-  it("persists dismissal so it never reappears", () => {
+  it("persists dismissal so it never reappears", async () => {
     render(<WelcomeChecklist />);
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss welcome" }));
 
+    // Dismissal is persisted immediately; the card then eases out and unmounts.
     expect(window.localStorage.getItem(WELCOME_DISMISS_KEY)).toBe("1");
     expect(welcomeDismissed()).toBe(true);
-    expect(
-      screen.queryByRole("heading", { name: /welcome to heirloom/i }),
-    ).toBeNull();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("heading", { name: /welcome to heirloom/i }),
+      ).toBeNull(),
+    );
   });
 
   it("stays hidden when already dismissed", () => {

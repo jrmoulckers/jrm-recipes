@@ -138,7 +138,7 @@ export function WeekMenuPrintView({
 
                 <div className="flex-1">
                   {day.dinners.length === 0 ? (
-                    <p className="text-muted-foreground/70">&mdash;</p>
+                    <p className="text-muted-foreground">&mdash;</p>
                   ) : (
                     <ul className="flex flex-col gap-1.5">
                       {day.dinners.map((dinner, index) => (

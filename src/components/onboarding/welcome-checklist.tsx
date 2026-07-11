@@ -31,10 +31,18 @@ export function welcomeDismissed(): boolean {
 export function WelcomeChecklist() {
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
-  const [visible, setVisible] = React.useState(false);
+  // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
+  // arrival and a fade-out on dismiss, so it eases in and out instead of a hard
+  // pop-in / snap-out (mirrors OnboardingChecklist + the install-prompt).
+  const [mounted, setMounted] = React.useState(false);
+  const [entered, setEntered] = React.useState(false);
 
   React.useEffect(() => {
-    if (!welcomeDismissed()) setVisible(true);
+    if (welcomeDismissed()) return;
+    setMounted(true);
+    // Flip to the entered state on the next frame so the transition animates.
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const dismiss = React.useCallback(() => {
@@ -43,21 +51,29 @@ export function WelcomeChecklist() {
     } catch {
       // Storage unavailable (private mode) — just hide for this session.
     }
-    setVisible(false);
+    // Play the exit transition first, then unmount once it has settled.
+    setEntered(false);
+    window.setTimeout(() => setMounted(false), 200);
   }, []);
 
-  if (!visible) return null;
+  if (!mounted) return null;
 
   return (
     <section
       aria-labelledby="welcome-checklist-heading"
-      className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-token-sm sm:p-8"
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-token-sm sm:p-8",
+        "transition-all duration-base ease-standard motion-reduce:transition-none",
+        entered
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
+      )}
     >
       <Button
         size="icon"
         variant="ghost"
         onClick={dismiss}
-        aria-label="Dismiss welcome"
+        aria-label={WELCOME_COPY.dismiss}
         className="absolute end-3 top-3 size-9 text-muted-foreground"
       >
         <X className="size-4" />
@@ -75,10 +91,7 @@ export function WelcomeChecklist() {
 
       <ol className="mt-6 grid gap-4 sm:grid-cols-3">
         {WELCOME_COPY.steps.map((step, i) => (
-          <li
-            key={step.title}
-            className="flex flex-col gap-2 rounded-xl border border-border/60 bg-surface/50 p-4"
-          >
+          <li key={step.title} className="flex flex-col gap-2">
             <span
               aria-hidden
               className={cn(
@@ -100,14 +113,6 @@ export function WelcomeChecklist() {
           </li>
         ))}
       </ol>
-
-      <button
-        type="button"
-        onClick={dismiss}
-        className="mt-5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        {WELCOME_COPY.dismiss}
-      </button>
     </section>
   );
 }

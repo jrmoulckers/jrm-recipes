@@ -214,7 +214,7 @@ function ItemRow({
         }
         aria-label={`Aisle for ${item.item}`}
         title="Change aisle"
-        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
@@ -227,7 +227,7 @@ function ItemRow({
         disabled={disabled}
         onClick={() => onRemove(item.id)}
         aria-label={`Remove ${item.item}`}
-        className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+        className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
       >
         <X className="size-4" />
       </button>

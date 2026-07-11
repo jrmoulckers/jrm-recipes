@@ -79,7 +79,7 @@ export function ErrorState({
         </div>
 
         {digest && (
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Reference: <code className="font-mono">{digest}</code>
           </p>
         )}

@@ -45,10 +45,18 @@ export function OnboardingChecklist({
 }) {
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
-  const [visible, setVisible] = React.useState(false);
+  // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
+  // arrival and a fade-out on dismiss, so it eases in and out instead of a hard
+  // pop-in / snap-out — matching the install-prompt's transition pattern.
+  const [mounted, setMounted] = React.useState(false);
+  const [entered, setEntered] = React.useState(false);
 
   React.useEffect(() => {
-    if (!onboardingChecklistDismissed()) setVisible(true);
+    if (onboardingChecklistDismissed()) return;
+    setMounted(true);
+    // Flip to the entered state on the next frame so the transition animates.
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const dismiss = React.useCallback(() => {
@@ -57,7 +65,9 @@ export function OnboardingChecklist({
     } catch {
       // Storage unavailable (private mode) — just hide for this session.
     }
-    setVisible(false);
+    // Play the exit transition first, then unmount once it has settled.
+    setEntered(false);
+    window.setTimeout(() => setMounted(false), 200);
   }, []);
 
   const completion = [
@@ -70,7 +80,7 @@ export function OnboardingChecklist({
 
   // Retire once the user has finished the whole loop — nothing left to guide.
   if (doneCount === total) return null;
-  if (!visible) return null;
+  if (!mounted) return null;
 
   const pct = Math.round((doneCount / total) * 100);
   // The first not-yet-done step gets the emphasized primary CTA.
@@ -79,7 +89,13 @@ export function OnboardingChecklist({
   return (
     <section
       aria-labelledby="onboarding-checklist-heading"
-      className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-6"
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-6",
+        "transition-all duration-base ease-standard motion-reduce:transition-none",
+        entered
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
+      )}
     >
       <Button
         size="icon"
@@ -103,7 +119,7 @@ export function OnboardingChecklist({
         </p>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-5 flex items-center gap-3">
         <div
           className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
           role="progressbar"
@@ -125,7 +141,7 @@ export function OnboardingChecklist({
         </span>
       </div>
 
-      <ol className="mt-4 flex flex-col gap-2">
+      <ol className="mt-6 flex flex-col gap-2">
         {ONBOARDING_CHECKLIST_COPY.steps.map((step, i) => {
           const done = completion[i] ?? false;
           const Icon = STEP_ICONS[i] ?? ChefHat;
@@ -135,10 +151,11 @@ export function OnboardingChecklist({
             <li
               key={step.title}
               className={cn(
-                "flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between",
-                done
-                  ? "border-border/60 bg-surface/40"
-                  : "border-border bg-surface/60",
+                "flex flex-col gap-3 rounded-xl p-3 transition-colors sm:flex-row sm:items-center sm:justify-between",
+                // Only the recommended next step is lifted — a subtle tint plus
+                // an inset ring — so the card reads as one surface, not a stack
+                // of nested cards.
+                isNext && "bg-primary/5 ring-1 ring-inset ring-primary/15",
               )}
             >
               <div className="flex items-start gap-3">
@@ -189,14 +206,6 @@ export function OnboardingChecklist({
           );
         })}
       </ol>
-
-      <button
-        type="button"
-        onClick={dismiss}
-        className="mt-4 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        {ONBOARDING_CHECKLIST_COPY.dismiss}
-      </button>
     </section>
   );
 }
