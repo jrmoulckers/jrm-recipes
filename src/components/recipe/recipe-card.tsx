@@ -240,13 +240,13 @@ export function RecipeCard({
               </span>
             )}
             {rating.unrated ? (
-              <span className="text-muted-foreground/70">Unrated</span>
+              <span className="text-muted-foreground">Unrated</span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <StarRating filled={rating.filled} label={rating.label} />
                 <span className="tabular-nums">
                   {rating.average.toFixed(1)}
-                  <span className="text-muted-foreground/70">
+                  <span className="text-muted-foreground">
                     {" "}
                     ({rating.count})
                   </span>
