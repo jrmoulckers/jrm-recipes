@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 import { slugify } from "~/lib/utils";
+import {
+  DIETARY_TAGS,
+  isDietaryTag,
+  type DietaryTag,
+} from "~/lib/substitutions";
 import type { SearchParams } from "~/lib/route-params";
 
 /**
@@ -9,7 +14,7 @@ import type { SearchParams } from "~/lib/route-params";
  * This module is deliberately free of `server-only` and database imports so it
  * can be shared by the server query (`searchRecipes`) and the client controls
  * that push URL params. State lives entirely in the querystring
- * (`?q=&cuisine=&difficulty=&maxTime=&tag=&sort=`) so results are shareable and
+ * (`?q=&cuisine=&difficulty=&maxTime=&tag=&diet=&sort=`) so results are shareable and
  * SSR-friendly. `cuisine` and `tag` may repeat (`?tag=quick&tag=vegan`) or be
  * comma-joined (`?tag=quick,vegan`) to select several facet values at once,
  * while a single value stays back-compatible with older shared links.
@@ -93,6 +98,24 @@ export function parseFacetList(
   return out;
 }
 
+/**
+ * Parse a dietary facet param (`?diet=vegan,gluten-free` or repeated) into a
+ * de-duped list of canonical {@link DietaryTag}s, ordered as in
+ * {@link DIETARY_TAGS}. Reuses {@link parseFacetList} for tolerant
+ * comma/repeat/case handling, then narrows to known tags (lower-cased) so a
+ * hand-edited or stale value can never inject a non-tag into the SQL filter.
+ */
+export function parseDietList(
+  value: string | string[] | undefined,
+): DietaryTag[] {
+  const selected = new Set(
+    parseFacetList(value, 20)
+      .map((v) => v.toLowerCase())
+      .filter(isDietaryTag),
+  );
+  return DIETARY_TAGS.filter((tag) => selected.has(tag));
+}
+
 const trimmedOptional = (max: number) =>
   z
     .string()
@@ -134,6 +157,11 @@ export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
   cuisines: string[];
   /** Selected tags (AND-matched — a recipe must carry every one). */
   tags: string[];
+  /**
+   * Selected dietary tags (AND-matched — a recipe must satisfy every one,
+   * via its declared ∪ derived dietary tags). Empty when unfiltered (#273).
+   */
+  diets: DietaryTag[];
   sort: RecipeSort;
 };
 
@@ -150,6 +178,7 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     ...parsed,
     cuisines: parseFacetList(params.cuisine, 80),
     tags: parseFacetList(params.tag, 60),
+    diets: parseDietList(params.diet),
     sort: parsed.sort ?? defaultSortFor(parsed.q),
   };
 }
@@ -162,6 +191,7 @@ export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
     search.difficulty != null ||
     search.maxTime != null ||
     search.tags.length > 0 ||
+    search.diets.length > 0 ||
     search.safeFor != null
   );
 }
@@ -189,6 +219,7 @@ export function recipeSearchToParams(
   if (search.difficulty) params.set("difficulty", search.difficulty);
   if (search.maxTime != null) params.set("maxTime", String(search.maxTime));
   for (const tag of search.tags ?? []) params.append("tag", tag);
+  for (const diet of search.diets ?? []) params.append("diet", diet);
   if (search.safeFor) params.set("safeFor", search.safeFor);
   if (search.sort && search.sort !== defaultSortFor(search.q))
     params.set("sort", search.sort);

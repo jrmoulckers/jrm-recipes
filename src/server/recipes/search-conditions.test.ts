@@ -62,3 +62,27 @@ describe("searchFilterConditions (scoped facet counts, #274)", () => {
     expect((sql.match(/cuisine/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("searchFilterConditions — dietary filter (#273)", () => {
+  it("matches a selected diet against BOTH derived and declared columns", () => {
+    const sql = render(parseRecipeSearch({ diet: "vegan" }));
+    expect(sql).toContain("dietary_tags");
+    expect(sql).toContain("dietary_flags");
+    // The single diet is satisfied by either column → an OR over the two.
+    expect(sql).toContain(" or ");
+  });
+
+  it("AND-combines multiple selected diets (one predicate each)", () => {
+    const search = parseRecipeSearch({ diet: ["vegan", "gluten-free"] });
+    // One condition per diet, each an (dietary_tags OR dietary_flags) clause.
+    expect(searchFilterConditions(search)).toHaveLength(2);
+    const sql = render(search);
+    expect((sql.match(/dietary_tags/g) ?? []).length).toBe(2);
+    expect((sql.match(/dietary_flags/g) ?? []).length).toBe(2);
+  });
+
+  it("adds no dietary predicate when none is selected", () => {
+    const sql = render(parseRecipeSearch({ cuisine: "Italian" }));
+    expect(sql).not.toContain("dietary_tags");
+  });
+});

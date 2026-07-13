@@ -17,6 +17,7 @@ import {
   type User,
 } from "~/server/db/schema";
 import { canonicalizeTag } from "~/lib/tag-taxonomy";
+import { deriveDietaryTags } from "~/lib/dietary-derive";
 import { AuditAction, recordAudit } from "~/server/audit";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { recipeSlug, type RecipeInput } from "./validation";
@@ -195,6 +196,12 @@ export async function resolveGroupId(
 }
 
 function scalarFields(input: RecipeInput, groupId: string | null) {
+  // Derived "-free" dietary tags, recomputed from ingredients on every write
+  // (issue #273). Stored NULL when nothing is derivable (no ingredients / no
+  // "-free" tag holds), mirroring the other optional array columns.
+  const derivedDietaryTags = deriveDietaryTags(
+    input.ingredients.map((ing) => ing.item),
+  );
   return {
     title: input.title,
     description: input.description ?? null,
@@ -217,6 +224,8 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
     // "safe for" filtering has a trustworthy, structured source (issue #404).
     dietaryFlags: input.dietaryFlags.length > 0 ? input.dietaryFlags : null,
+    // Derived "-free" tags (issue #273); union'd with dietaryFlags at search.
+    dietaryTags: derivedDietaryTags.length > 0 ? derivedDietaryTags : null,
     sourceName: input.sourceName ?? null,
     sourceUrl: input.sourceUrl ?? null,
     notes: input.notes ?? null,
