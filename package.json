@@ -63,7 +63,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.475.0",
-    "next": "^15.1.7",
+    "next": "^16.2.10",
     "next-cloudinary": "^6.17.5",
     "next-intl": "4.13.2",
     "postgres": "^3.4.5",
