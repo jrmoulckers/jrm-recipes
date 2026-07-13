@@ -27,6 +27,17 @@
       "breadcrumb": "مسار التنقّل"
     }
   },
+  "search": {
+    "title": "بحث",
+    "trigger": "بحث…",
+    "triggerAria": "ابحث في الوصفات والصفحات",
+    "placeholder": "ابحث في الوصفات والصفحات…",
+    "navHeading": "الانتقال إلى",
+    "recipesHeading": "الوصفات",
+    "allResults": "ابحث في كل الوصفات عن ”{q}“",
+    "empty": "لا نتائج لـ ”{q}“",
+    "loading": "جارٍ البحث…"
+  },
   "cook": {
     "timer": {
       "complete": "انتهى الوقت!",

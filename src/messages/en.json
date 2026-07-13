@@ -27,6 +27,17 @@
       "breadcrumb": "Breadcrumb"
     }
   },
+  "search": {
+    "title": "Search",
+    "trigger": "Search…",
+    "triggerAria": "Search recipes and pages",
+    "placeholder": "Search recipes and pages…",
+    "navHeading": "Go to",
+    "recipesHeading": "Recipes",
+    "allResults": "Search all recipes for “{q}”",
+    "empty": "No results for “{q}”",
+    "loading": "Searching…"
+  },
   "cook": {
     "timer": {
       "complete": "Time's up!",
