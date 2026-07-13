@@ -5,6 +5,11 @@
 # "Format" gate fight `pnpm db:generate` (the "Migration drift" gate) forever.
 drizzle/
 
+# release-please owns CHANGELOG.md; it regenerates it from commit history on
+# every release, so formatting it here would just make the "Format" gate fight
+# the release automation each time it opens a release PR.
+CHANGELOG.md
+
 # Build, test, and tooling artifacts (gitignored, but keep local `format:*`
 # fast and prevent it from rewriting generated output).
 .next/

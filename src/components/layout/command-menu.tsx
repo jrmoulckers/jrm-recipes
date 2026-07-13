@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { CornerDownLeft, Search, UtensilsCrossed } from "lucide-react";
@@ -188,11 +189,13 @@ export function CommandMenu() {
     (command: Command | undefined) => {
       if (!command) return;
       if (command.group === "nav") {
-        router.push(command.href);
+        router.push(command.href as Route);
       } else if (command.kind === "all") {
-        router.push(`/recipes?${recipeSearchToQueryString({ q: trimmed })}`);
+        router.push(
+          `/recipes?${recipeSearchToQueryString({ q: trimmed })}` as Route,
+        );
       } else {
-        router.push(`/recipes/${command.recipe.slug}`);
+        router.push(`/recipes/${command.recipe.slug}` as Route);
       }
       setOpen(false);
     },
