@@ -27,6 +27,17 @@
       "breadcrumb": "Brotkrümelnavigation"
     }
   },
+  "search": {
+    "title": "Suche",
+    "trigger": "Suchen…",
+    "triggerAria": "Rezepte und Seiten suchen",
+    "placeholder": "Rezepte und Seiten suchen…",
+    "navHeading": "Gehe zu",
+    "recipesHeading": "Rezepte",
+    "allResults": "Alle Rezepte nach „{q}“ durchsuchen",
+    "empty": "Keine Ergebnisse für „{q}“",
+    "loading": "Suche läuft…"
+  },
   "cook": {
     "timer": {
       "complete": "Zeit ist um!",

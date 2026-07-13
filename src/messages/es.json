@@ -27,6 +27,17 @@
       "breadcrumb": "Ruta de navegación"
     }
   },
+  "search": {
+    "title": "Buscar",
+    "trigger": "Buscar…",
+    "triggerAria": "Buscar recetas y páginas",
+    "placeholder": "Buscar recetas y páginas…",
+    "navHeading": "Ir a",
+    "recipesHeading": "Recetas",
+    "allResults": "Buscar todas las recetas de “{q}”",
+    "empty": "Sin resultados para “{q}”",
+    "loading": "Buscando…"
+  },
   "cook": {
     "timer": {
       "complete": "¡Se acabó el tiempo!",

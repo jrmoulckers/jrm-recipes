@@ -6,6 +6,7 @@ import { getAuthState } from "~/server/auth";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
+import { CommandMenu } from "~/components/layout/command-menu";
 import { ThemeSwitcher } from "~/components/theme/theme-switcher";
 import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
 import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
@@ -31,6 +32,7 @@ export async function SiteHeader() {
         </div>
 
         <div className="ms-auto flex items-center gap-2">
+          <CommandMenu />
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
