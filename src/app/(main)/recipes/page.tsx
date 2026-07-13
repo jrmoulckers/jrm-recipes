@@ -21,6 +21,7 @@ import {
   listRecentlyViewed,
   listRecipeFacets,
   listTagsWithCounts,
+  listUserGroups,
   searchRecipes,
   suggestSearchTerm,
   type RecipeSearchResult,
@@ -78,12 +79,13 @@ export default async function RecipesPage({
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
   const dbReady = isDbConfigured();
-  const [facets, savedSearches, quickPlan] = await Promise.all([
+  const [facets, savedSearches, quickPlan, groups] = await Promise.all([
     dbReady
       ? listRecipeFacets(user, search)
       : Promise.resolve({ cuisines: [], tags: [] }),
     listMySavedSearches(user?.id),
     dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
+    dbReady && user ? listUserGroups(user.id) : Promise.resolve([]),
   ]);
   const members: CardDietaryMember[] =
     dbReady && user
@@ -129,6 +131,8 @@ export default async function RecipesPage({
             facets={facets}
             savedSearches={savedSearches}
             members={members}
+            groups={groups}
+            signedIn={Boolean(user)}
           />
           {browsing ? (
             <BrowseSections

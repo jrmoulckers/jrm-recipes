@@ -120,6 +120,7 @@ describe("recipe read paths exclude soft-deleted rows (issue #165)", () => {
       cuisines: [],
       tags: [],
       diets: [],
+      mine: false,
       sort: "newest",
     });
     expect(

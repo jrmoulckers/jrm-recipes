@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 import { SavedSearches } from "~/components/recipe/saved-searches";
 import { pathnameWithQuery } from "~/lib/routes";
 import {
@@ -59,6 +60,9 @@ type Facets = {
 /** A saved family member the results can be filtered "safe for". */
 type SafeForMember = { id: string; name: string };
 
+/** A family/group the viewer belongs to, for the group filter (#91). */
+type GroupOption = { id: string; name: string };
+
 type ParamKey =
   | "q"
   | "cuisine"
@@ -67,6 +71,8 @@ type ParamKey =
   | "tag"
   | "diet"
   | "safeFor"
+  | "group"
+  | "mine"
   | "sort";
 
 export function RecipeSearchControls({
@@ -74,11 +80,15 @@ export function RecipeSearchControls({
   facets,
   savedSearches = [],
   members = [],
+  groups = [],
+  signedIn = false,
 }: {
   search: RecipeSearch;
   facets: Facets;
   savedSearches?: SavedSearch[];
   members?: SafeForMember[];
+  groups?: GroupOption[];
+  signedIn?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -196,6 +206,11 @@ export function RecipeSearchControls({
     for (const m of members) map.set(m.id, m.name);
     return map;
   }, [members]);
+  const groupNameById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of groups) map.set(g.id, g.name);
+    return map;
+  }, [groups]);
 
   const activeChips: { key: string; label: string; onRemove: () => void }[] =
     [];
@@ -265,6 +280,21 @@ export function RecipeSearchControls({
       key: "safeFor",
       label: name ? `Safe for: ${name}` : "Safe for",
       onRemove: () => pushParams({ safeFor: undefined }),
+    });
+  }
+  if (search.group) {
+    const name = groupNameById.get(search.group);
+    activeChips.push({
+      key: "group",
+      label: name ? `Family: ${name}` : "Family",
+      onRemove: () => pushParams({ group: undefined }),
+    });
+  }
+  if (search.mine) {
+    activeChips.push({
+      key: "mine",
+      label: "Only mine",
+      onRemove: () => pushParams({ mine: undefined }),
     });
   }
 
@@ -479,6 +509,44 @@ export function RecipeSearchControls({
               </Button>
             )}
           </FilterField>
+
+          {groups.length > 0 && (
+            <FilterField label="Family">
+              <Select
+                value={search.group ?? ANY}
+                onValueChange={(value) => pushParams({ group: value })}
+              >
+                <SelectTrigger className="min-w-[9rem]">
+                  <SelectValue placeholder="Any family" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Any family</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FilterField>
+          )}
+
+          {signedIn && (
+            <FilterField label="Only mine">
+              <label className="inline-flex h-10 items-center gap-2">
+                <Switch
+                  checked={search.mine}
+                  onCheckedChange={(on) =>
+                    pushParams({ mine: on ? "1" : undefined })
+                  }
+                  aria-label="Only my recipes"
+                />
+                <span className="text-sm text-muted-foreground">
+                  My recipes
+                </span>
+              </label>
+            </FilterField>
+          )}
 
           <FilterField label="Sort">
             <Select

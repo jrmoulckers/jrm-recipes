@@ -106,6 +106,7 @@ describe("searchRecipes pagination (#58)", () => {
     cuisines: [],
     tags: [],
     diets: [],
+    mine: false,
     sort: "newest",
   };
 

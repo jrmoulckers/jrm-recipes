@@ -976,6 +976,22 @@ export async function searchRecipes(
     ...searchFilterConditions(search),
   ];
 
+  // "Only mine" (#91): narrow to the signed-in viewer's own recipes. Guarded on a
+  // non-null viewer so a `?mine=1` link opened while signed out simply no-ops
+  // instead of matching nobody.
+  if (search.mine && viewer) {
+    conditions.push(eq(recipes.authorId, viewer.id));
+  }
+
+  // Family/group filter (#91): narrow to one group the viewer belongs to. Validate
+  // membership first (mirrors the `safeFor` ownership check below) so a stale or
+  // hand-edited id cleanly no-ops rather than silently emptying the list —
+  // `visibleRecipesScope` already bounds rows to the viewer's own ∪ their groups,
+  // so this only ever narrows within what they may already see.
+  if (search.group && groupIds.includes(search.group)) {
+    conditions.push(eq(recipes.groupId, search.group));
+  }
+
   // "Safe for <member>" (#405): resolve the chosen profile (owner-scoped) into
   // the allergens they must avoid and the diets they follow. Diets are declared
   // structurally on the recipe, so they filter in SQL; allergens are detected
