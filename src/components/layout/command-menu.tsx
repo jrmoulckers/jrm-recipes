@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { Route } from "next";
 import { useTranslations } from "next-intl";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { CornerDownLeft, Search, UtensilsCrossed } from "lucide-react";
@@ -10,6 +9,7 @@ import { CornerDownLeft, Search, UtensilsCrossed } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { primaryNav } from "~/config/nav";
 import { recipeSearchToQueryString } from "~/server/recipes/search";
+import { pathnameWithQuery } from "~/lib/routes";
 import { filterNavCommands, wrapIndex } from "~/lib/command-menu";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { OVERLAY_SURFACE } from "~/components/ui/overlay-surface";
@@ -189,13 +189,16 @@ export function CommandMenu() {
     (command: Command | undefined) => {
       if (!command) return;
       if (command.group === "nav") {
-        router.push(command.href as Route);
+        router.push(pathnameWithQuery(command.href));
       } else if (command.kind === "all") {
         router.push(
-          `/recipes?${recipeSearchToQueryString({ q: trimmed })}` as Route,
+          pathnameWithQuery(
+            "/recipes",
+            recipeSearchToQueryString({ q: trimmed }),
+          ),
         );
       } else {
-        router.push(`/recipes/${command.recipe.slug}` as Route);
+        router.push(pathnameWithQuery(`/recipes/${command.recipe.slug}`));
       }
       setOpen(false);
     },
