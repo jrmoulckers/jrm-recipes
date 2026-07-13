@@ -43,6 +43,7 @@ import {
   recipeSortValues,
   type RecipeSearch,
 } from "~/server/recipes/search";
+import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { type SavedSearch } from "~/server/searches/queries";
 
 /** Sentinel for "no filter" — Radix Select forbids empty-string item values. */
@@ -59,7 +60,14 @@ type Facets = {
 type SafeForMember = { id: string; name: string };
 
 type ParamKey =
-  "q" | "cuisine" | "difficulty" | "maxTime" | "tag" | "safeFor" | "sort";
+  | "q"
+  | "cuisine"
+  | "difficulty"
+  | "maxTime"
+  | "tag"
+  | "diet"
+  | "safeFor"
+  | "sort";
 
 export function RecipeSearchControls({
   search,
@@ -113,7 +121,7 @@ export function RecipeSearchControls({
   // Multi-select facets (cuisine, tag) carry several repeated params; replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
-    (key: "cuisine" | "tag", values: string[]) => {
+    (key: "cuisine" | "tag" | "diet", values: string[]) => {
       const params = new URLSearchParams(currentParams.toString());
       params.delete(key);
       for (const value of values) params.append(key, value);
@@ -128,7 +136,12 @@ export function RecipeSearchControls({
   );
 
   const toggleListValue = React.useCallback(
-    (key: "cuisine" | "tag", current: string[], value: string, on: boolean) => {
+    (
+      key: "cuisine" | "tag" | "diet",
+      current: string[],
+      value: string,
+      on: boolean,
+    ) => {
       const lower = value.toLowerCase();
       const next = on
         ? [...current, value]
@@ -232,6 +245,17 @@ export function RecipeSearchControls({
         pushListParam(
           "tag",
           search.tags.filter((t) => t.toLowerCase() !== tag.toLowerCase()),
+        ),
+    });
+  }
+  for (const diet of search.diets) {
+    activeChips.push({
+      key: `diet:${diet}`,
+      label: `Diet: ${DIETARY_TAG_LABELS[diet]}`,
+      onRemove: () =>
+        pushListParam(
+          "diet",
+          search.diets.filter((d) => d !== diet),
         ),
     });
   }
@@ -410,6 +434,19 @@ export function RecipeSearchControls({
               }
             />
           )}
+
+          <FacetMultiSelect
+            label="Dietary"
+            placeholder="Any diet"
+            selected={search.diets}
+            options={DIETARY_TAGS.map((tag) => ({
+              value: tag,
+              label: DIETARY_TAG_LABELS[tag],
+            }))}
+            onToggle={(value, on) =>
+              toggleListValue("diet", search.diets, value, on)
+            }
+          />
 
           <FilterField label="Safe for">
             {members.length > 0 ? (

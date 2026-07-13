@@ -130,6 +130,7 @@ export function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
     difficulty: null,
     cuisine: null,
     dietaryFlags: null,
+    dietaryTags: null,
     sourceName: null,
     sourceUrl: null,
     notes: null,

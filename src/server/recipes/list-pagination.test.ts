@@ -105,6 +105,7 @@ describe("searchRecipes pagination (#58)", () => {
   const baseSearch: RecipeSearch = {
     cuisines: [],
     tags: [],
+    diets: [],
     sort: "newest",
   };
 

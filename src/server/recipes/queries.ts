@@ -929,6 +929,21 @@ export function searchFilterConditions(
     }
   }
 
+  // Dietary tags (#273) narrow conjunctively, but each is satisfied by the UNION
+  // of the derived `dietaryTags` (auto "-free" from ingredients) and the
+  // author-declared `dietaryFlags` (#404). So a recipe must, for *every*
+  // selected diet, carry it in *either* column — hence an AND over per-diet ORs.
+  // (A single `or(arrayContains(tags, diets), arrayContains(flags, diets))`
+  // would be wrong for mixed sources, e.g. dairy-free derived + vegan declared.)
+  for (const diet of search.diets) {
+    conditions.push(
+      or(
+        arrayContains(recipes.dietaryTags, [diet]),
+        arrayContains(recipes.dietaryFlags, [diet]),
+      ),
+    );
+  }
+
   return conditions.filter((c): c is SQL => c != null);
 }
 

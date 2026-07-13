@@ -19,6 +19,7 @@ describe("parseRecipeSearch", () => {
       difficulty: undefined,
       maxTime: undefined,
       tags: [],
+      diets: [],
       safeFor: undefined,
       sort: "newest",
     });
@@ -226,5 +227,33 @@ describe("defaultSortFor", () => {
     expect(defaultSortFor("")).toBe("newest");
     expect(defaultSortFor(undefined)).toBe("newest");
     expect(defaultSortFor(null)).toBe(DEFAULT_RECIPE_SORT);
+  });
+});
+
+describe("dietary filter (#273)", () => {
+  it("parses repeated and comma-joined diets, dropping unknown values", () => {
+    expect(
+      parseRecipeSearch({ diet: ["vegan", "gluten-free,not-a-diet"] }).diets,
+    ).toEqual(["vegan", "gluten-free"]);
+  });
+
+  it("normalizes case and de-dupes to canonical order", () => {
+    expect(
+      parseRecipeSearch({ diet: "Egg-Free, vegan , VEGAN" }).diets,
+    ).toEqual(["vegan", "egg-free"]);
+  });
+
+  it("counts a diet as an active filter", () => {
+    const search = parseRecipeSearch({ diet: "vegan" });
+    expect(hasActiveRecipeFilters(search)).toBe(true);
+    expect(isDefaultRecipeView(search)).toBe(false);
+  });
+
+  it("serializes diets as repeated params and round-trips", () => {
+    const original = parseRecipeSearch({ diet: ["vegan", "dairy-free"] });
+    const params = recipeSearchToParams(original);
+    expect(params.getAll("diet")).toEqual(["vegan", "dairy-free"]);
+    const reparsed = parseRecipeSearch({ diet: params.getAll("diet") });
+    expect(reparsed).toEqual(original);
   });
 });
