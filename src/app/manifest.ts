@@ -18,6 +18,7 @@ export default function manifest(): MetadataRoute.Manifest {
   ];
 
   const { description, shortcuts } = en.metadata;
+  const screenshotLabels = en.pwa.manifest;
 
   return {
     name: brand.name,
@@ -100,14 +101,14 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "1280x800",
         type: "image/png",
         form_factor: "wide",
-        label: "Browse your family cookbook",
+        label: screenshotLabels.screenshotWide,
       },
       {
         src: "/screenshots/cook-mode-narrow.png",
         sizes: "800x1280",
         type: "image/png",
         form_factor: "narrow",
-        label: "Hands-free Cook Mode with step timers",
+        label: screenshotLabels.screenshotNarrow,
       },
     ],
     // Receive a link/text OR a shared photo from another app and forward it

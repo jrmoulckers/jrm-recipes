@@ -68,6 +68,66 @@
       }
     }
   },
+  "pwa": {
+    "offline": {
+      "metaTitle": "Du bist offline",
+      "metaDescription": "{brand} funktioniert offline – verbinde dich neu, um das Neueste zu synchronisieren.",
+      "heading": "Du bist offline",
+      "body": "Gerade kein Internet – aber die Küche schließt nie. Verbinde dich neu, um die Rezepte deiner Familie zu durchstöbern, zu speichern und zu synchronisieren.",
+      "stillWorksTitle": "Funktioniert auch ohne Verbindung",
+      "cookModeTitle": "Kochmodus",
+      "cookModeBody": "Jedes bereits geöffnete Rezept bleibt freihändig nutzbar – mit Timern und Skalierung.",
+      "viewedTitle": "Zuletzt angesehene Rezepte",
+      "viewedBody": "Kürzlich geöffnete Rezepte sind zwischengespeichert und lesebereit.",
+      "home": "Zur {brand}-Startseite"
+    },
+    "reconnect": {
+      "online": "Wieder online – wird neu geladen…",
+      "offline": "Keine Verbindung",
+      "retry": "Erneut versuchen",
+      "retrying": "Verbinde neu…"
+    },
+    "install": {
+      "title": "{brand} installieren",
+      "body": "Füge sie zum Startbildschirm hinzu für den Kochmodus mit einem Tipp.",
+      "iosTip": "Tippe auf <share></share> und dann auf „Zum Home-Bildschirm“.",
+      "iosShareLabel": "Teilen",
+      "action": "Installieren",
+      "dismiss": "Installationshinweis schließen"
+    },
+    "installButton": {
+      "label": "App installieren",
+      "dialogTitle": "{brand} installieren",
+      "dialogDescription": "Füge {brand} zum Startbildschirm hinzu für den Kochmodus mit einem Tipp.",
+      "iosSteps": "Tippe in der Safari-Leiste auf <share></share> und wähle dann <b>Zum Home-Bildschirm</b>.",
+      "iosShareLabel": "die Teilen-Schaltfläche"
+    },
+    "update": {
+      "title": "Update verfügbar",
+      "body": "Eine neue Version von {brand} ist bereit.",
+      "action": "Neu laden",
+      "dismiss": "Update-Hinweis schließen"
+    },
+    "connectivity": {
+      "offline": "Du bist offline – bereits geöffnete Rezepte funktionieren weiter. Änderungen synchronisieren wir, sobald du zurück bist.",
+      "online": "Wieder online – dein Neuestes wird synchronisiert."
+    },
+    "storage": {
+      "trigger": "Offline-Speicher",
+      "title": "Offline-Speicher",
+      "description": "{brand} speichert Rezepte und Fotos auf diesem Gerät, damit sie ohne Verbindung funktionieren. Lösche sie jederzeit, um Platz zu schaffen.",
+      "used": "Auf diesem Gerät belegt",
+      "usedLabel": "Belegter Offline-Speicher",
+      "unavailable": "Die Speichernutzung ist auf diesem Gerät nicht verfügbar, aber du kannst zwischengespeicherte Rezepte und Fotos unten trotzdem löschen.",
+      "clear": "Zwischengespeicherte Rezepte & Bilder löschen",
+      "clearing": "Wird gelöscht…",
+      "cleared": "Offline-Cache gelöscht. Rezepte werden beim Stöbern neu aufgebaut."
+    },
+    "manifest": {
+      "screenshotWide": "Durchstöbere das Kochbuch deiner Familie",
+      "screenshotNarrow": "Freihändiger Kochmodus mit Schritt-Timern"
+    }
+  },
   "accessibilityMenu": {
     "trigger": "Einstellungen für Barrierefreiheit und Komfort",
     "textSizeGroup": "Textgröße",

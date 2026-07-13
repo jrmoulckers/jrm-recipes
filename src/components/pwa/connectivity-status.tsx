@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Wifi, WifiOff } from "lucide-react";
-
-import { CONNECTIVITY_COPY } from "~/lib/connectivity-copy";
 
 /** Shared toast id so the offline notice is replaced (not stacked) by "back online". */
 const CONNECTIVITY_TOAST_ID = "connectivity-status";
@@ -17,16 +16,17 @@ const CONNECTIVITY_TOAST_ID = "connectivity-status";
  * markup of its own; the standalone `/~offline` page keeps its own controls.
  */
 export function ConnectivityStatus() {
+  const t = useTranslations("pwa.connectivity");
   React.useEffect(() => {
     const handleOffline = () => {
-      toast(CONNECTIVITY_COPY.offline, {
+      toast(t("offline"), {
         id: CONNECTIVITY_TOAST_ID,
         icon: <WifiOff className="size-4" />,
         duration: Infinity,
       });
     };
     const handleOnline = () => {
-      toast.success(CONNECTIVITY_COPY.online, {
+      toast.success(t("online"), {
         id: CONNECTIVITY_TOAST_ID,
         icon: <Wifi className="size-4" />,
         duration: 3000,
@@ -38,7 +38,7 @@ export function ConnectivityStatus() {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
     };
-  }, []);
+  }, [t]);
 
   return null;
 }
