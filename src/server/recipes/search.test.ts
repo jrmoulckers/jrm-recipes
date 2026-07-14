@@ -21,6 +21,8 @@ describe("parseRecipeSearch", () => {
       tags: [],
       diets: [],
       safeFor: undefined,
+      group: undefined,
+      mine: false,
       sort: "newest",
     });
   });
@@ -112,6 +114,26 @@ describe("parseRecipeSearch", () => {
       safeFor: undefined,
     });
   });
+
+  it("keeps a group id and drops an empty one (#91)", () => {
+    expect(parseRecipeSearch({ group: "grp123" })).toMatchObject({
+      group: "grp123",
+    });
+    expect(parseRecipeSearch({ group: "  " })).toMatchObject({
+      group: undefined,
+    });
+  });
+
+  it("parses the mine flag tolerantly and defaults to false (#91)", () => {
+    expect(parseRecipeSearch({ mine: "1" })).toMatchObject({ mine: true });
+    expect(parseRecipeSearch({ mine: "true" })).toMatchObject({ mine: true });
+    expect(parseRecipeSearch({ mine: "TRUE" })).toMatchObject({ mine: true });
+    expect(parseRecipeSearch({ mine: "yes" })).toMatchObject({ mine: true });
+    expect(parseRecipeSearch({ mine: "0" })).toMatchObject({ mine: false });
+    expect(parseRecipeSearch({ mine: "nope" })).toMatchObject({ mine: false });
+    expect(parseRecipeSearch({ mine: "" })).toMatchObject({ mine: false });
+    expect(parseRecipeSearch({})).toMatchObject({ mine: false });
+  });
 });
 
 describe("hasActiveRecipeFilters / isDefaultRecipeView", () => {
@@ -129,6 +151,18 @@ describe("hasActiveRecipeFilters / isDefaultRecipeView", () => {
 
   it("treats a safeFor member as an active filter", () => {
     const search = parseRecipeSearch({ safeFor: "mbr123" });
+    expect(hasActiveRecipeFilters(search)).toBe(true);
+    expect(isDefaultRecipeView(search)).toBe(false);
+  });
+
+  it("treats a group filter as an active filter (#91)", () => {
+    const search = parseRecipeSearch({ group: "grp123" });
+    expect(hasActiveRecipeFilters(search)).toBe(true);
+    expect(isDefaultRecipeView(search)).toBe(false);
+  });
+
+  it("treats the mine toggle as an active filter (#91)", () => {
+    const search = parseRecipeSearch({ mine: "1" });
     expect(hasActiveRecipeFilters(search)).toBe(true);
     expect(isDefaultRecipeView(search)).toBe(false);
   });
@@ -166,6 +200,8 @@ describe("recipeSearchToParams", () => {
       maxTime: 30,
       tags: ["weeknight"],
       safeFor: "mbr123",
+      group: "grp123",
+      mine: true,
       sort: "quickest",
     });
     const params = new URLSearchParams(qs);
@@ -175,7 +211,25 @@ describe("recipeSearchToParams", () => {
     expect(params.get("maxTime")).toBe("30");
     expect(params.get("tag")).toBe("weeknight");
     expect(params.get("safeFor")).toBe("mbr123");
+    expect(params.get("group")).toBe("grp123");
+    expect(params.get("mine")).toBe("1");
     expect(params.get("sort")).toBe("quickest");
+  });
+
+  it("omits an empty group and a false mine (#91)", () => {
+    const params = recipeSearchToParams({ group: undefined, mine: false });
+    expect(params.get("group")).toBeNull();
+    expect(params.get("mine")).toBeNull();
+  });
+
+  it("round-trips group and mine through parseRecipeSearch (#91)", () => {
+    const original = parseRecipeSearch({ group: "grp123", mine: "1" });
+    const params = recipeSearchToParams(original);
+    const reparsed = parseRecipeSearch({
+      group: params.get("group") ?? undefined,
+      mine: params.get("mine") ?? undefined,
+    });
+    expect(reparsed).toMatchObject({ group: "grp123", mine: true });
   });
 
   it("serializes multi-select facets as repeated params (#271)", () => {

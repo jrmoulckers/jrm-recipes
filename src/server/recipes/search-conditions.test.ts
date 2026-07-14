@@ -86,3 +86,15 @@ describe("searchFilterConditions — dietary filter (#273)", () => {
     expect(sql).not.toContain("dietary_tags");
   });
 });
+
+describe("searchFilterConditions — viewer-scoped params stay out (#91)", () => {
+  it("emits no predicate for group or mine (they filter in searchRecipes)", () => {
+    // `group`/`mine` need the viewer + their group ids, so they're applied in
+    // `searchRecipes` (like `safeFor`), never in this pure, viewer-less builder.
+    const search = parseRecipeSearch({ group: "grp123", mine: "1" });
+    expect(searchFilterConditions(search)).toHaveLength(0);
+    const sql = render(search);
+    expect(sql).not.toContain("group_id");
+    expect(sql).not.toContain("author_id");
+  });
+});

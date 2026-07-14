@@ -14,8 +14,8 @@ import type { SearchParams } from "~/lib/route-params";
  * This module is deliberately free of `server-only` and database imports so it
  * can be shared by the server query (`searchRecipes`) and the client controls
  * that push URL params. State lives entirely in the querystring
- * (`?q=&cuisine=&difficulty=&maxTime=&tag=&diet=&sort=`) so results are shareable and
- * SSR-friendly. `cuisine` and `tag` may repeat (`?tag=quick&tag=vegan`) or be
+ * (`?q=&cuisine=&difficulty=&maxTime=&tag=&diet=&safeFor=&group=&mine=&sort=`) so results
+ * are shareable and SSR-friendly. `cuisine` and `tag` may repeat (`?tag=quick&tag=vegan`) or be
  * comma-joined (`?tag=quick,vegan`) to select several facet values at once,
  * while a single value stays back-compatible with older shared links.
  */
@@ -125,6 +125,20 @@ const trimmedOptional = (max: number) =>
     .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
 /**
+ * A tolerant boolean coerced from a querystring flag. Accepts `1`/`true`/`yes`/`on`
+ * (case-insensitive) as `true`; anything else — including missing — is `false`, so
+ * a hand-edited or absent value degrades to "off" rather than throwing.
+ */
+const booleanFromParam = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => {
+    if (v == null) return false;
+    return ["1", "true", "yes", "on"].includes(v.toLowerCase());
+  });
+
+/**
  * A positive integer coerced from a possibly-empty/garbage querystring value.
  * Invalid input (empty, non-numeric, <= 0) collapses to `undefined` rather than
  * throwing so a hand-edited URL never 500s the page.
@@ -147,6 +161,13 @@ export const recipeSearchSchema = z.object({
   maxTime: positiveIntFromParam,
   // A saved family member's id — filters to recipes "safe for" them (#405).
   safeFor: trimmedOptional(24),
+  // A group id the viewer belongs to — filters to that family/group's recipes
+  // (#91). Single-value because `recipes.groupId` is single-valued; validated
+  // against the viewer's own groups in `searchRecipes`.
+  group: trimmedOptional(24),
+  // "Only mine" — narrows to the signed-in viewer's own recipes (#91). Only
+  // meaningful when a viewer is present; ignored server-side when signed out.
+  mine: booleanFromParam,
   // Left optional here so the *contextual* default (relevance for a text query,
   // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
   sort: z.enum(recipeSortValues).optional().catch(undefined),
@@ -172,6 +193,8 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     difficulty: first(params.difficulty),
     maxTime: first(params.maxTime),
     safeFor: first(params.safeFor),
+    group: first(params.group),
+    mine: first(params.mine),
     sort: first(params.sort),
   });
   return {
@@ -192,7 +215,9 @@ export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
     search.maxTime != null ||
     search.tags.length > 0 ||
     search.diets.length > 0 ||
-    search.safeFor != null
+    search.safeFor != null ||
+    search.group != null ||
+    search.mine
   );
 }
 
@@ -221,6 +246,8 @@ export function recipeSearchToParams(
   for (const tag of search.tags ?? []) params.append("tag", tag);
   for (const diet of search.diets ?? []) params.append("diet", diet);
   if (search.safeFor) params.set("safeFor", search.safeFor);
+  if (search.group) params.set("group", search.group);
+  if (search.mine) params.set("mine", "1");
   if (search.sort && search.sort !== defaultSortFor(search.q))
     params.set("sort", search.sort);
   return params;
