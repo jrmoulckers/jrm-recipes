@@ -31,7 +31,7 @@ export async function SiteHeader() {
           <MainNav />
         </div>
 
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
           <CommandMenu />
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
