@@ -563,21 +563,17 @@ export default async function RecipePage({
                     servingsNoun={recipe.servingsNoun}
                     nutrition={pickNutrition(recipe)}
                     members={calorieMembers}
-                    renderSuggestions={(ingredientId, label) => (
-                      <AnchoredSuggestions
-                        recipeId={recipe.id}
-                        recipeSlug={recipe.slug}
-                        anchorType="ingredient"
-                        anchorId={ingredientId}
-                        anchorLabel={label}
-                        canInteract={canSuggest}
-                        suggestions={
-                          suggestionsByAnchor.get(
-                            `ingredient:${ingredientId}`,
-                          ) ?? []
-                        }
-                      />
-                    )}
+                    ingredientSuggestions={{
+                      recipeId: recipe.id,
+                      recipeSlug: recipe.slug,
+                      canInteract: canSuggest,
+                      byIngredientId: Object.fromEntries(
+                        recipe.ingredients.map((ing) => [
+                          ing.id,
+                          suggestionsByAnchor.get(`ingredient:${ing.id}`) ?? [],
+                        ]),
+                      ),
+                    }}
                   />
                 ) : (
                   <p className="text-muted-foreground">

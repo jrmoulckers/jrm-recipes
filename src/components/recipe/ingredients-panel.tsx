@@ -46,7 +46,22 @@ import {
   NutritionPanel,
   type CalorieMember,
 } from "~/components/recipe/nutrition-panel";
+import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
 import { type Nutrition } from "~/lib/nutrition";
+import { type AnchoredSuggestion } from "~/server/engagement/queries";
+
+/**
+ * Serializable payload for the per-ingredient anchored-suggestion slot (#346).
+ * We pass plain data (not a render-prop function) so this Client Component can
+ * be rendered from the Server Component recipe page without tripping React's
+ * "Functions cannot be passed directly to Client Components" boundary error.
+ */
+export type IngredientSuggestions = {
+  recipeId: string;
+  recipeSlug: string;
+  canInteract: boolean;
+  byIngredientId: Record<string, AnchoredSuggestion[]>;
+};
 
 type PanelIngredient = {
   id: string;
@@ -191,7 +206,7 @@ export function IngredientsPanel({
   controls,
   nutrition,
   members,
-  renderSuggestions,
+  ingredientSuggestions,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -201,8 +216,8 @@ export function IngredientsPanel({
   nutrition?: Nutrition;
   /** Optional saved family members (calorie goals #430 + conflict flags #429). */
   members?: DietaryMember[];
-  /** Optional anchored-suggestion slot rendered under each ingredient row (#346). */
-  renderSuggestions?: (ingredientId: string, label: string) => React.ReactNode;
+  /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
+  ingredientSuggestions?: IngredientSuggestions;
 }) {
   const canScale = baseServings != null && baseServings > 0;
   const [servingsInternal, setServingsInternal] = React.useState(
@@ -929,9 +944,19 @@ export function IngredientsPanel({
                         </span>
                       </p>
                     )}
-                    {renderSuggestions && (
+                    {ingredientSuggestions && (
                       <div className="ms-9">
-                        {renderSuggestions(ing.id, ing.item)}
+                        <AnchoredSuggestions
+                          recipeId={ingredientSuggestions.recipeId}
+                          recipeSlug={ingredientSuggestions.recipeSlug}
+                          anchorType="ingredient"
+                          anchorId={ing.id}
+                          anchorLabel={ing.item}
+                          canInteract={ingredientSuggestions.canInteract}
+                          suggestions={
+                            ingredientSuggestions.byIngredientId[ing.id] ?? []
+                          }
+                        />
                       </div>
                     )}
                   </li>
