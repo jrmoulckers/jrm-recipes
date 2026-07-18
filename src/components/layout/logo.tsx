@@ -51,16 +51,23 @@ export function LogoMark({
 /** Full lockup: mark + wordmark. */
 export function Logo({
   className,
+  wordmarkClassName,
   showWordmark = true,
 }: {
   className?: string;
+  wordmarkClassName?: string;
   showWordmark?: boolean;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       <LogoMark />
       {showWordmark && (
-        <span className="font-display text-xl font-semibold tracking-tight">
+        <span
+          className={cn(
+            "font-display text-xl font-semibold tracking-tight",
+            wordmarkClassName,
+          )}
+        >
           {brand.name}
         </span>
       )}
