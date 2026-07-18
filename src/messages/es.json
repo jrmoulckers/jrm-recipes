@@ -21,6 +21,15 @@
     "skipToContent": "Saltar al contenido",
     "newRecipe": "Nueva receta",
     "homeLink": "Inicio de Heirloom",
+    "overflow": {
+      "trigger": "Más opciones",
+      "heading": "Más",
+      "appearance": "Apariencia",
+      "kidsMode": "Modo infantil",
+      "language": "Idioma",
+      "accessibility": "Accesibilidad",
+      "offline": "Almacenamiento sin conexión"
+    },
     "landmarks": {
       "primary": "Principal",
       "primaryMobile": "Principal móvil",

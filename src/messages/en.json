@@ -21,6 +21,15 @@
     "skipToContent": "Skip to content",
     "newRecipe": "New recipe",
     "homeLink": "Heirloom home",
+    "overflow": {
+      "trigger": "More options",
+      "heading": "More",
+      "appearance": "Appearance",
+      "kidsMode": "Kids mode",
+      "language": "Language",
+      "accessibility": "Accessibility",
+      "offline": "Offline storage"
+    },
     "landmarks": {
       "primary": "Primary",
       "primaryMobile": "Primary mobile",

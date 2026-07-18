@@ -21,6 +21,15 @@
     "skipToContent": "تخطّي إلى المحتوى",
     "newRecipe": "وصفة جديدة",
     "homeLink": "الصفحة الرئيسية لـ Heirloom",
+    "overflow": {
+      "trigger": "خيارات إضافية",
+      "heading": "المزيد",
+      "appearance": "المظهر",
+      "kidsMode": "وضع الأطفال",
+      "language": "اللغة",
+      "accessibility": "إمكانية الوصول",
+      "offline": "التخزين دون اتصال"
+    },
     "landmarks": {
       "primary": "التنقّل الرئيسي",
       "primaryMobile": "التنقّل الرئيسي للجوال",

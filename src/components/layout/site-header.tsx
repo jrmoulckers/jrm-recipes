@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
 import { CommandMenu } from "~/components/layout/command-menu";
+import { HeaderOverflowMenu } from "~/components/layout/header-overflow-menu";
 import { ThemeSwitcher } from "~/components/theme/theme-switcher";
 import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
 import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
@@ -22,25 +23,34 @@ export async function SiteHeader() {
 
   return (
     <header className="no-print sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 [@media(display-mode:standalone)]:pt-safe-t">
-      <div className="container flex min-h-16 items-center gap-4">
+      <div className="container flex min-h-16 items-center gap-2 sm:gap-4">
         <Link href="/" className="shrink-0" aria-label={t("homeLink")}>
-          <Logo />
+          {/* Drop the wordmark on the very narrowest phones (<360px) so the
+              action row stays a single clean line; the mark keeps brand
+              presence (issue #536 follow-up). */}
+          <Logo wordmarkClassName="hidden min-[360px]:inline" />
         </Link>
 
         <div className="mx-2 hidden md:block">
           <MainNav />
         </div>
 
-        <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+        <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
           <CommandMenu />
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
-          <ThemeSwitcher />
-          <KidsModeToggle />
-          <LocaleSwitcher />
-          <AccessibilityMenu />
-          <OfflineStorageMenu />
+          {/* Secondary utility controls: inline once there's room (lg+), and
+              collapsed into the mobile/tablet overflow menu below to keep the
+              header a single row without wrapping (issue #536 follow-up). */}
+          <div className="hidden items-center gap-2 lg:flex">
+            <ThemeSwitcher />
+            <KidsModeToggle />
+            <LocaleSwitcher />
+            <AccessibilityMenu />
+            <OfflineStorageMenu />
+          </div>
+          <HeaderOverflowMenu className="lg:hidden" />
           <NotificationBellServer />
           <AuthControls
             isConfigured={isConfigured}
