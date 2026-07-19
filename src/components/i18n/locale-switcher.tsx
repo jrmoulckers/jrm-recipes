@@ -34,7 +34,7 @@ import {
  * `useLocale()`, which is correct during SSR too, so the current language is
  * checked on first paint.
  */
-export function LocaleSwitcher() {
+export function LocaleSwitcher({ label }: { label?: string } = {}) {
   const t = useTranslations("localeSwitcher");
   const activeLocale = useLocale();
   const router = useRouter();
@@ -51,14 +51,25 @@ export function LocaleSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t("trigger")}
-          disabled={isPending}
-        >
-          <Languages className="size-5" />
-        </Button>
+        {label ? (
+          <Button
+            variant="ghost"
+            disabled={isPending}
+            className="h-11 w-full justify-start gap-3 px-2 font-medium"
+          >
+            <Languages className="size-5" />
+            {label}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t("trigger")}
+            disabled={isPending}
+          >
+            <Languages className="size-5" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>{t("label")}</DropdownMenuLabel>

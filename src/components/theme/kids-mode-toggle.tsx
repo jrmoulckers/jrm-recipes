@@ -16,21 +16,38 @@ import { cn } from "~/lib/utils";
  * a11y comfort defaults (#445). The filled/active state makes the current mode
  * obvious at a glance without opening any dialog.
  */
-export function KidsModeToggle({ className }: { className?: string }) {
+export function KidsModeToggle({
+  className,
+  label,
+}: {
+  className?: string;
+  /**
+   * When set, render a full-width, left-aligned labeled row (icon + text) for
+   * the mobile overflow menu instead of the icon-only header button. The
+   * on/off state stays conveyed through `aria-pressed` and the filled icon.
+   */
+  label?: string;
+}) {
   const { kidsOn, setKidsMode } = useKidsMode();
 
   return (
     <Button
       type="button"
-      variant={kidsOn ? "default" : "outline"}
-      size="icon"
+      variant={kidsOn ? "default" : label ? "ghost" : "outline"}
+      size={label ? "default" : "icon"}
       aria-pressed={kidsOn}
-      aria-label={kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"}
+      aria-label={
+        label ? undefined : kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"
+      }
       title={kidsOn ? "Kids mode is on" : "Kids mode"}
       onClick={() => setKidsMode(!kidsOn)}
-      className={className}
+      className={cn(
+        label && "h-11 w-full justify-start gap-3 px-2 font-medium",
+        className,
+      )}
     >
       <Blocks className={cn("size-5", kidsOn && "fill-current")} />
+      {label}
     </Button>
   );
 }
