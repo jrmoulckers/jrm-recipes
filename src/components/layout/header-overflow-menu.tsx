@@ -34,16 +34,27 @@ import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
 export function HeaderOverflowMenu({ className }: { className?: string }) {
   const t = useTranslations("nav.overflow");
 
-  const items: { key: string; label: string; control: React.ReactNode }[] = [
-    { key: "appearance", label: t("appearance"), control: <ThemeSwitcher /> },
-    { key: "kidsMode", label: t("kidsMode"), control: <KidsModeToggle /> },
-    { key: "language", label: t("language"), control: <LocaleSwitcher /> },
+  const items: { key: string; control: React.ReactNode }[] = [
+    {
+      key: "appearance",
+      control: <ThemeSwitcher label={t("appearance")} />,
+    },
+    {
+      key: "kidsMode",
+      control: <KidsModeToggle label={t("kidsMode")} />,
+    },
+    {
+      key: "language",
+      control: <LocaleSwitcher label={t("language")} />,
+    },
     {
       key: "accessibility",
-      label: t("accessibility"),
-      control: <AccessibilityMenu />,
+      control: <AccessibilityMenu label={t("accessibility")} />,
     },
-    { key: "offline", label: t("offline"), control: <OfflineStorageMenu /> },
+    {
+      key: "offline",
+      control: <OfflineStorageMenu label={t("offline")} />,
+    },
   ];
 
   return (
@@ -79,15 +90,7 @@ export function HeaderOverflowMenu({ className }: { className?: string }) {
         </p>
         <ul className="grid gap-1">
           {items.map((item) => (
-            <li
-              key={item.key}
-              className="flex items-center gap-3 rounded-lg px-1 py-1"
-            >
-              {item.control}
-              <span className="min-w-0 flex-1 text-sm font-medium">
-                {item.label}
-              </span>
-            </li>
+            <li key={item.key}>{item.control}</li>
           ))}
         </ul>
       </PopoverContent>

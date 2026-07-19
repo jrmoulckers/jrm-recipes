@@ -81,7 +81,7 @@ function ToggleRow({
  * Text size, contrast, motion and easy-reading type for everyone, plus a
  * one-tap Kids mode that switches to the big, bright, simplified theme.
  */
-export function AccessibilityMenu() {
+export function AccessibilityMenu({ label }: { label?: string } = {}) {
   const t = useTranslations("accessibilityMenu");
   const { prefs, effective, update, reset } = useA11y();
   const { kidsOn, setKidsMode } = useKidsMode();
@@ -92,17 +92,30 @@ export function AccessibilityMenu() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t("trigger")}
-          className="relative"
-        >
-          <Accessibility className="size-5" />
-          {active && (
-            <span className="absolute -end-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
-          )}
-        </Button>
+        {label ? (
+          <Button
+            variant="ghost"
+            className="relative h-11 w-full justify-start gap-3 px-2 font-medium"
+          >
+            <Accessibility className="size-5" />
+            {label}
+            {active && (
+              <span className="ms-auto size-2.5 rounded-full bg-primary" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t("trigger")}
+            className="relative"
+          >
+            <Accessibility className="size-5" />
+            {active && (
+              <span className="absolute -end-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
+            )}
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-h-[85dvh] max-w-md overflow-y-auto">

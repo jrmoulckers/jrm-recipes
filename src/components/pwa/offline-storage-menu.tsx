@@ -45,7 +45,7 @@ function cacheStorage(): CacheStorage | undefined {
  * still loads offline afterward — cleared recipes simply rebuild as the user
  * browses again.
  */
-export function OfflineStorageMenu() {
+export function OfflineStorageMenu({ label }: { label?: string } = {}) {
   const t = useTranslations("pwa.storage");
   const [open, setOpen] = React.useState(false);
   const [estimate, setEstimate] = React.useState<StorageEstimateResult | null>(
@@ -83,9 +83,19 @@ export function OfflineStorageMenu() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" aria-label={t("trigger")}>
-          <HardDrive className="size-5" />
-        </Button>
+        {label ? (
+          <Button
+            variant="ghost"
+            className="h-11 w-full justify-start gap-3 px-2 font-medium"
+          >
+            <HardDrive className="size-5" />
+            {label}
+          </Button>
+        ) : (
+          <Button variant="outline" size="icon" aria-label={t("trigger")}>
+            <HardDrive className="size-5" />
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-md">
