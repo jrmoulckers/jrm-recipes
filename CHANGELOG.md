@@ -5,6 +5,20 @@ automatically by [release-please](https://github.com/googleapis/release-please)
 from [Conventional Commits](https://www.conventionalcommits.org/) merged to
 `main` (see `.github/workflows/release.yml`).
 
+## [0.3.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.2.0...heirloom-v0.3.0) (2026-07-19)
+
+
+### Features
+
+* **search:** dietary filter ([#273](https://github.com/jrmoulckers/jrm-recipes/issues/273)) ([#533](https://github.com/jrmoulckers/jrm-recipes/issues/533)) ([76619cb](https://github.com/jrmoulckers/jrm-recipes/commit/76619cb3ad0d185ad3979e5a51f8f4ec066b987e))
+* **search:** family/group filter and "only mine" toggle ([#91](https://github.com/jrmoulckers/jrm-recipes/issues/91)) ([#535](https://github.com/jrmoulckers/jrm-recipes/issues/535)) ([08c96e9](https://github.com/jrmoulckers/jrm-recipes/commit/08c96e9935e30e8e7b3ddc88e949b41fde3e1204))
+* **search:** global search + ⌘K command palette ([#74](https://github.com/jrmoulckers/jrm-recipes/issues/74)) ([#532](https://github.com/jrmoulckers/jrm-recipes/issues/532)) ([2861fe4](https://github.com/jrmoulckers/jrm-recipes/commit/2861fe4fdbda635d68bcd910f433703e04de8c16))
+
+
+### Bug Fixes
+
+* **recipes:** stop passing render-prop function across the RSC boundary ([#537](https://github.com/jrmoulckers/jrm-recipes/issues/537)) ([5120b54](https://github.com/jrmoulckers/jrm-recipes/commit/5120b5417c04856181ecca87c985d72d977700b4))
+
 ## [0.2.0](https://github.com/jrmoulckers/jrm-recipes/compare/heirloom-v0.1.0...heirloom-v0.2.0) (2026-07-13)
 
 
