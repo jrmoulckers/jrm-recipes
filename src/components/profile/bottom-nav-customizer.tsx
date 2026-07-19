@@ -4,12 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 
-import {
-  MAX_PINNED,
-  navByKey,
-  pinnableNav,
-  type NavKey,
-} from "~/config/nav";
+import { MAX_PINNED, navByKey, pinnableNav, type NavKey } from "~/config/nav";
 import { useBottomNavStore } from "~/lib/bottom-nav-store";
 import { Button } from "~/components/ui/button";
 import {

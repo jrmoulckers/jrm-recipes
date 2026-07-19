@@ -79,7 +79,8 @@ export const useBottomNavStore = create<BottomNavStore>()(
           }
           return { pinned: [...state.pinned, key] };
         }),
-      moveUp: (key) => set((state) => ({ pinned: move(state.pinned, key, -1) })),
+      moveUp: (key) =>
+        set((state) => ({ pinned: move(state.pinned, key, -1) })),
       moveDown: (key) =>
         set((state) => ({ pinned: move(state.pinned, key, 1) })),
       reset: () => set({ pinned: [...DEFAULT_MOBILE_PINNED] }),
@@ -91,7 +92,9 @@ export const useBottomNavStore = create<BottomNavStore>()(
       merge: (persisted, current) => {
         const saved = (persisted as { pinned?: unknown } | undefined)?.pinned;
         const pinned = Array.isArray(saved)
-          ? normalizePinned(saved.filter((k): k is string => typeof k === "string"))
+          ? normalizePinned(
+              saved.filter((k): k is string => typeof k === "string"),
+            )
           : current.pinned;
         return { ...current, pinned };
       },

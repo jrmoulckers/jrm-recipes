@@ -113,9 +113,7 @@ export function ProfileHub({
       {/* Identity / auth. */}
       <header className="flex items-center gap-4">
         <Avatar className="size-14">
-          {user?.avatarUrl ? (
-            <AvatarImage src={user.avatarUrl} alt="" />
-          ) : null}
+          {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt="" /> : null}
           <AvatarFallback>{initialsOf(user?.name ?? null)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
@@ -156,7 +154,10 @@ export function ProfileHub({
       {/* Customizable bottom bar. */}
       <Section title={t("tabs.title")} description={t("tabs.description")}>
         {hydrated ? (
-          <ul className="mb-4 flex flex-wrap gap-2" aria-label={t("tabs.current")}>
+          <ul
+            className="mb-4 flex flex-wrap gap-2"
+            aria-label={t("tabs.current")}
+          >
             {pinned.map((key) => {
               const Icon = navByKey[key].icon;
               return (
@@ -164,7 +165,10 @@ export function ProfileHub({
                   key={key}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/50 px-3 py-1 text-sm font-medium"
                 >
-                  <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+                  <Icon
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   {tNav(navByKey[key].labelKey)}
                 </li>
               );
@@ -233,7 +237,9 @@ export function ProfileHub({
                     className="size-4 shrink-0 text-muted-foreground"
                     aria-hidden="true"
                   />
-                  <span className="truncate">{t(`settings.${link.labelKey}`)}</span>
+                  <span className="truncate">
+                    {t(`settings.${link.labelKey}`)}
+                  </span>
                 </Link>
               </li>
             );

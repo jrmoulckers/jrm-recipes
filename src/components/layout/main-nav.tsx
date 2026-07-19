@@ -174,7 +174,8 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
               <Avatar
                 className={cn(
                   "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
-                  profileActive && "-translate-y-0.5 scale-110 ring-2 ring-primary",
+                  profileActive &&
+                    "-translate-y-0.5 scale-110 ring-2 ring-primary",
                 )}
               >
                 {user.avatarUrl ? (
