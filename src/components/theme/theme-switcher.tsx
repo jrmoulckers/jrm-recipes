@@ -46,16 +46,32 @@ export function SchemeToggle({ className }: { className?: string }) {
   );
 }
 
-/** Full theme picker: five UI modes + light/dark/system. */
-export function ThemeSwitcher() {
+/**
+ * Full theme picker: five UI modes + light/dark/system.
+ *
+ * Pass `label` to render a full-width, left-aligned row trigger (icon + text in
+ * the same button) for the mobile overflow menu; omit it for the icon-only
+ * header button. The dropdown still anchors to whichever trigger is rendered.
+ */
+export function ThemeSwitcher({ label }: { label?: string } = {}) {
   const { theme, scheme, setTheme, setScheme } = useTheme();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Change appearance">
-          <Palette className="size-5" />
-        </Button>
+        {label ? (
+          <Button
+            variant="ghost"
+            className="h-11 w-full justify-start gap-3 px-2 font-medium"
+          >
+            <Palette className="size-5" />
+            {label}
+          </Button>
+        ) : (
+          <Button variant="outline" size="icon" aria-label="Change appearance">
+            <Palette className="size-5" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>Appearance</DropdownMenuLabel>
