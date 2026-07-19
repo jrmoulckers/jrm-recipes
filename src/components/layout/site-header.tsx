@@ -36,7 +36,7 @@ export async function SiteHeader() {
 
         <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
           <CommandMenu />
-          <Button asChild size="sm" className="hidden lg:inline-flex">
+          <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
           {/* Secondary utility controls stay inline on desktop (lg+). On
@@ -51,17 +51,13 @@ export async function SiteHeader() {
             <OfflineStorageMenu />
           </div>
           <NotificationBellServer />
-          {/* Account/auth is the mobile Profile tab's job; keep the header
-              avatar and sign-in CTAs to desktop to avoid a second account
-              entry point on phones. */}
-          <div className="hidden items-center gap-2 lg:flex">
-            <AuthControls
-              isConfigured={isConfigured}
-              user={
-                user ? { name: user.name, avatarUrl: user.avatarUrl } : null
-              }
-            />
-          </div>
+          {/* Account avatar / sign-in stays visible on every breakpoint as a
+              lightweight account entry point; on mobile it complements the
+              bottom bar's Profile tab. */}
+          <AuthControls
+            isConfigured={isConfigured}
+            user={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
+          />
         </div>
       </div>
     </header>
