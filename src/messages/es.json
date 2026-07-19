@@ -17,23 +17,70 @@
     "shopping": "Compra",
     "family": "Familia",
     "create": "Crear",
-    "more": "Más",
+    "profile": "Perfil",
     "skipToContent": "Saltar al contenido",
     "newRecipe": "Nueva receta",
     "homeLink": "Inicio de Heirloom",
-    "overflow": {
-      "trigger": "Más opciones",
-      "heading": "Más",
+    "landmarks": {
+      "primary": "Principal",
+      "primaryMobile": "Principal móvil",
+      "breadcrumb": "Ruta de navegación"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "guest": "Invitado",
+    "guestBlurb": "Inicia sesión para sincronizar tu recetario entre dispositivos.",
+    "startCookbook": "Crea tu recetario",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "tabs": {
+      "title": "Tus pestañas",
+      "description": "Elige qué accesos directos aparecen en la barra inferior. La pestaña Perfil siempre se muestra.",
+      "current": "Pestañas actuales",
+      "customize": "Personalizar pestañas"
+    },
+    "navigate": {
+      "title": "Ir a"
+    },
+    "preferences": {
+      "title": "Preferencias",
       "appearance": "Apariencia",
       "kidsMode": "Modo infantil",
       "language": "Idioma",
       "accessibility": "Accesibilidad",
       "offline": "Almacenamiento sin conexión"
     },
-    "landmarks": {
-      "primary": "Principal",
-      "primaryMobile": "Principal móvil",
-      "breadcrumb": "Ruta de navegación"
+    "settings": {
+      "title": "Cuenta y ajustes",
+      "dietary": "Perfiles dietéticos",
+      "notifications": "Notificaciones",
+      "blocked": "Usuarios bloqueados",
+      "data": "Tus datos",
+      "billing": "Facturación",
+      "pricing": "Precios"
+    },
+    "customize": {
+      "trigger": "Personalizar pestañas",
+      "title": "Personalizar pestañas",
+      "description": "Ancla hasta {max} accesos directos a la barra inferior. La pestaña Perfil siempre se muestra.",
+      "pinnedHeading": "Ancladas ({count}/{max})",
+      "emptyPinned": "Aún no hay pestañas ancladas. Añade algunas abajo.",
+      "availableHeading": "Añadir una pestaña",
+      "capReached": "Puedes anclar hasta {max} pestañas. Quita una para añadir otra.",
+      "moveUp": "Mover {label} antes",
+      "moveDown": "Mover {label} después",
+      "remove": "Quitar {label}",
+      "add": "Añadir {label}",
+      "addShort": "Añadir",
+      "reset": "Restablecer valores predeterminados",
+      "done": "Listo",
+      "announce": {
+        "pinned": "{label} anclada. {total} pestañas ancladas.",
+        "unpinned": "{label} quitada de las pestañas.",
+        "position": "{label} movida a la posición {position} de {total}.",
+        "reset": "Pestañas restablecidas a los valores predeterminados."
+      }
     }
   },
   "search": {

@@ -28,7 +28,16 @@ export type NavLabelKey =
   | "family"
   | "create";
 
+/**
+ * Stable identity for a nav destination, decoupled from its route so the
+ * user's pinned-tab preference survives href changes. We reuse the label key
+ * since it is already unique per destination.
+ */
+export type NavKey = NavLabelKey;
+
 export type NavItem = {
+  /** Stable id used to persist bottom-bar pin/order preferences. */
+  id: NavKey;
   href: Route;
   /** Key into the `nav` message namespace. */
   labelKey: NavLabelKey;
@@ -36,15 +45,16 @@ export type NavItem = {
   /** Match nested routes (e.g. /recipes/*) for active state. */
   match?: (pathname: string) => boolean;
   /**
-   * Surface this destination as a dedicated tab in the mobile bottom bar.
-   * A phone bottom bar reads best with ~4 primary tabs plus a "More" menu, so
-   * only the highest-traffic destinations are flagged; the rest fall into More.
+   * Seed the default mobile bottom bar with this destination. Users can pin a
+   * different set (see {@link DEFAULT_MOBILE_PINNED}); this only feeds the
+   * out-of-the-box defaults.
    */
   mobile?: boolean;
 };
 
 export const primaryNav: NavItem[] = [
   {
+    id: "home",
     href: "/",
     labelKey: "home",
     icon: Home,
@@ -52,6 +62,7 @@ export const primaryNav: NavItem[] = [
     mobile: true,
   },
   {
+    id: "recipes",
     href: "/recipes",
     labelKey: "recipes",
     icon: BookOpen,
@@ -61,18 +72,21 @@ export const primaryNav: NavItem[] = [
     mobile: true,
   },
   {
+    id: "discover",
     href: "/discover",
     labelKey: "discover",
     icon: Compass,
     match: (p) => p.startsWith("/discover"),
   },
   {
+    id: "saved",
     href: "/collections",
     labelKey: "saved",
     icon: Heart,
     match: (p) => p.startsWith("/collections"),
   },
   {
+    id: "plan",
     href: "/plan",
     labelKey: "plan",
     icon: CalendarDays,
@@ -80,12 +94,14 @@ export const primaryNav: NavItem[] = [
     mobile: true,
   },
   {
+    id: "journal",
     href: "/journal",
     labelKey: "journal",
     icon: CookingPot,
     match: (p) => p.startsWith("/journal"),
   },
   {
+    id: "shopping",
     href: "/shopping",
     labelKey: "shopping",
     icon: ShoppingCart,
@@ -93,12 +109,14 @@ export const primaryNav: NavItem[] = [
     mobile: true,
   },
   {
+    id: "family",
     href: "/groups",
     labelKey: "family",
     icon: Users,
     match: (p) => p.startsWith("/groups"),
   },
   {
+    id: "create",
     href: "/recipes/new",
     labelKey: "create",
     icon: ChefHat,
@@ -106,15 +124,53 @@ export const primaryNav: NavItem[] = [
   },
 ];
 
-/** Destinations shown as dedicated tabs in the mobile bottom bar. */
-export const mobilePrimaryNav: NavItem[] = primaryNav.filter(
-  (item) => item.mobile,
+/** Lookup a nav destination by its stable {@link NavKey}. */
+export const navByKey: Record<NavKey, NavItem> = Object.fromEntries(
+  primaryNav.map((item) => [item.id, item]),
+) as Record<NavKey, NavItem>;
+
+/**
+ * Destinations a user may pin to the mobile bottom bar. "Create" is excluded —
+ * it lives as a header CTA and a Profile action rather than a tab (and the
+ * bottom bar hides itself on the editor routes anyway).
+ */
+export const pinnableNav: NavItem[] = primaryNav.filter(
+  (item) => item.id !== "create",
 );
 
-/** Destinations that overflow into the mobile "More" menu. */
-export const mobileMoreNav: NavItem[] = primaryNav.filter(
-  (item) => !item.mobile,
-);
+/** Maximum number of user-pinned tabs; the Profile slot is always the 5th. */
+export const MAX_PINNED = 4;
+
+/**
+ * Out-of-the-box pinned tabs, matching the historical mobile bar (Home,
+ * Recipes, Plan, Shopping). Order here is the default bar order.
+ */
+export const DEFAULT_MOBILE_PINNED: NavKey[] = pinnableNav
+  .filter((item) => item.mobile)
+  .map((item) => item.id);
+
+/** True when `key` names a destination the user is allowed to pin. */
+export function isPinnableKey(key: string): key is NavKey {
+  return pinnableNav.some((item) => item.id === key);
+}
+
+/**
+ * Normalize an arbitrary (possibly stale/persisted) list of keys into a valid
+ * pinned set: only pinnable keys, de-duplicated, capped at {@link MAX_PINNED}.
+ * Falls back to {@link DEFAULT_MOBILE_PINNED} when nothing valid remains.
+ */
+export function normalizePinned(keys: readonly string[]): NavKey[] {
+  const seen = new Set<NavKey>();
+  const result: NavKey[] = [];
+  for (const key of keys) {
+    if (isPinnableKey(key) && !seen.has(key)) {
+      seen.add(key);
+      result.push(key);
+      if (result.length >= MAX_PINNED) break;
+    }
+  }
+  return result.length > 0 ? result : [...DEFAULT_MOBILE_PINNED];
+}
 
 /** A marketing/informational link surfaced in the site footer. */
 export type FooterNavItem = {

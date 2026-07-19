@@ -69,23 +69,28 @@ describe("BottomNav", () => {
     expect(active.className).toContain("font-semibold");
   });
 
-  it("surfaces overflow destinations behind a More menu instead of as tabs", () => {
+  it("surfaces a Profile tab in the fixed last slot instead of a More menu", () => {
     pathnameMock.mockReturnValue("/plan");
     renderNav(<BottomNav />);
 
-    // Journal is an overflow destination, so it is not a top-level tab link.
+    // Overflow destinations are no longer top-level tabs.
     expect(
       screen.queryByRole("link", { name: "Journal" }),
     ).not.toBeInTheDocument();
-    // The More trigger is present to reach it.
-    expect(screen.getByRole("button", { name: "More" })).toBeInTheDocument();
+    // There is no longer a duplicate "More" menu.
+    expect(
+      screen.queryByRole("button", { name: "More" }),
+    ).not.toBeInTheDocument();
+    // The Profile tab links to the hub.
+    const profile = screen.getByRole("link", { name: "Profile" });
+    expect(profile).toHaveAttribute("href", "/profile");
   });
 
-  it("marks the More trigger active when the route lives in the overflow set", () => {
-    pathnameMock.mockReturnValue("/journal");
+  it("marks the Profile tab active on profile routes", () => {
+    pathnameMock.mockReturnValue("/profile");
     renderNav(<BottomNav />);
 
-    expect(screen.getByRole("button", { name: "More" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Profile" })).toHaveAttribute(
       "aria-current",
       "page",
     );

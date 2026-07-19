@@ -17,23 +17,70 @@
     "shopping": "Shopping",
     "family": "Family",
     "create": "Create",
-    "more": "More",
+    "profile": "Profile",
     "skipToContent": "Skip to content",
     "newRecipe": "New recipe",
     "homeLink": "Heirloom home",
-    "overflow": {
-      "trigger": "More options",
-      "heading": "More",
+    "landmarks": {
+      "primary": "Primary",
+      "primaryMobile": "Primary mobile",
+      "breadcrumb": "Breadcrumb"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "guest": "Guest",
+    "guestBlurb": "Sign in to sync your cookbook across devices.",
+    "startCookbook": "Start your cookbook",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "tabs": {
+      "title": "Your tabs",
+      "description": "Choose which shortcuts appear in the bottom bar. The Profile tab is always shown.",
+      "current": "Current tabs",
+      "customize": "Customize tabs"
+    },
+    "navigate": {
+      "title": "Go to"
+    },
+    "preferences": {
+      "title": "Preferences",
       "appearance": "Appearance",
       "kidsMode": "Kids mode",
       "language": "Language",
       "accessibility": "Accessibility",
       "offline": "Offline storage"
     },
-    "landmarks": {
-      "primary": "Primary",
-      "primaryMobile": "Primary mobile",
-      "breadcrumb": "Breadcrumb"
+    "settings": {
+      "title": "Account & settings",
+      "dietary": "Dietary profiles",
+      "notifications": "Notifications",
+      "blocked": "Blocked users",
+      "data": "Your data",
+      "billing": "Billing",
+      "pricing": "Pricing"
+    },
+    "customize": {
+      "trigger": "Customize tabs",
+      "title": "Customize tabs",
+      "description": "Pin up to {max} shortcuts to the bottom bar. The Profile tab is always shown.",
+      "pinnedHeading": "Pinned ({count}/{max})",
+      "emptyPinned": "No tabs pinned yet. Add some below.",
+      "availableHeading": "Add a tab",
+      "capReached": "You can pin up to {max} tabs. Remove one to add another.",
+      "moveUp": "Move {label} earlier",
+      "moveDown": "Move {label} later",
+      "remove": "Remove {label}",
+      "add": "Add {label}",
+      "addShort": "Add",
+      "reset": "Reset to defaults",
+      "done": "Done",
+      "announce": {
+        "pinned": "{label} pinned. {total} tabs pinned.",
+        "unpinned": "{label} removed from tabs.",
+        "position": "{label} moved to position {position} of {total}.",
+        "reset": "Tabs reset to defaults."
+      }
     }
   },
   "search": {

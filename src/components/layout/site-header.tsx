@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
 import { CommandMenu } from "~/components/layout/command-menu";
-import { HeaderOverflowMenu } from "~/components/layout/header-overflow-menu";
 import { ThemeSwitcher } from "~/components/theme/theme-switcher";
 import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
 import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
@@ -37,12 +36,13 @@ export async function SiteHeader() {
 
         <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
           <CommandMenu />
-          <Button asChild size="sm" className="hidden sm:inline-flex">
+          <Button asChild size="sm" className="hidden lg:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
-          {/* Secondary utility controls: inline once there's room (lg+), and
-              collapsed into the mobile/tablet overflow menu below to keep the
-              header a single row without wrapping (issue #536 follow-up). */}
+          {/* Secondary utility controls stay inline on desktop (lg+). On
+              phones/tablets they now live in the Profile hub (reached via the
+              bottom bar's Profile tab), so the header stays a clean single row
+              without a duplicate "More" menu. */}
           <div className="hidden items-center gap-2 lg:flex">
             <ThemeSwitcher />
             <KidsModeToggle />
@@ -50,12 +50,18 @@ export async function SiteHeader() {
             <AccessibilityMenu />
             <OfflineStorageMenu />
           </div>
-          <HeaderOverflowMenu className="lg:hidden" />
           <NotificationBellServer />
-          <AuthControls
-            isConfigured={isConfigured}
-            user={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
-          />
+          {/* Account/auth is the mobile Profile tab's job; keep the header
+              avatar and sign-in CTAs to desktop to avoid a second account
+              entry point on phones. */}
+          <div className="hidden items-center gap-2 lg:flex">
+            <AuthControls
+              isConfigured={isConfigured}
+              user={
+                user ? { name: user.name, avatarUrl: user.avatarUrl } : null
+              }
+            />
+          </div>
         </div>
       </div>
     </header>
