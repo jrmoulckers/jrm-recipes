@@ -36,7 +36,9 @@ export function KidsModeToggle({
       variant={kidsOn ? "default" : label ? "ghost" : "outline"}
       size={label ? "default" : "icon"}
       aria-pressed={kidsOn}
-      aria-label={label ? undefined : kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"}
+      aria-label={
+        label ? undefined : kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"
+      }
       title={kidsOn ? "Kids mode is on" : "Kids mode"}
       onClick={() => setKidsMode(!kidsOn)}
       className={cn(
