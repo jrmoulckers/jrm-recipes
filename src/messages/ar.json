@@ -17,23 +17,70 @@
     "shopping": "التسوق",
     "family": "العائلة",
     "create": "إنشاء",
-    "more": "المزيد",
+    "profile": "الملف الشخصي",
     "skipToContent": "تخطّي إلى المحتوى",
     "newRecipe": "وصفة جديدة",
     "homeLink": "الصفحة الرئيسية لـ Heirloom",
-    "overflow": {
-      "trigger": "خيارات إضافية",
-      "heading": "المزيد",
+    "landmarks": {
+      "primary": "التنقّل الرئيسي",
+      "primaryMobile": "التنقّل الرئيسي للجوال",
+      "breadcrumb": "مسار التنقّل"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "guest": "زائر",
+    "guestBlurb": "سجّل الدخول لمزامنة كتاب طبخك عبر الأجهزة.",
+    "startCookbook": "ابدأ كتاب طبخك",
+    "signIn": "تسجيل الدخول",
+    "signOut": "تسجيل الخروج",
+    "tabs": {
+      "title": "علاماتك",
+      "description": "اختر الاختصارات التي تظهر في الشريط السفلي. تظهر علامة الملف الشخصي دائمًا.",
+      "current": "العلامات الحالية",
+      "customize": "تخصيص العلامات"
+    },
+    "navigate": {
+      "title": "انتقل إلى"
+    },
+    "preferences": {
+      "title": "التفضيلات",
       "appearance": "المظهر",
       "kidsMode": "وضع الأطفال",
       "language": "اللغة",
       "accessibility": "إمكانية الوصول",
       "offline": "التخزين دون اتصال"
     },
-    "landmarks": {
-      "primary": "التنقّل الرئيسي",
-      "primaryMobile": "التنقّل الرئيسي للجوال",
-      "breadcrumb": "مسار التنقّل"
+    "settings": {
+      "title": "الحساب والإعدادات",
+      "dietary": "الملفات الغذائية",
+      "notifications": "الإشعارات",
+      "blocked": "المستخدمون المحظورون",
+      "data": "بياناتك",
+      "billing": "الفوترة",
+      "pricing": "الأسعار"
+    },
+    "customize": {
+      "trigger": "تخصيص العلامات",
+      "title": "تخصيص العلامات",
+      "description": "ثبّت حتى {max} اختصارات في الشريط السفلي. تظهر علامة الملف الشخصي دائمًا.",
+      "pinnedHeading": "مثبّتة ({count}/{max})",
+      "emptyPinned": "لا توجد علامات مثبّتة بعد. أضف بعضها أدناه.",
+      "availableHeading": "إضافة علامة",
+      "capReached": "يمكنك تثبيت حتى {max} علامات. أزل واحدة لإضافة أخرى.",
+      "moveUp": "نقل {label} للأعلى",
+      "moveDown": "نقل {label} للأسفل",
+      "remove": "إزالة {label}",
+      "add": "إضافة {label}",
+      "addShort": "إضافة",
+      "reset": "إعادة التعيين إلى الافتراضي",
+      "done": "تم",
+      "announce": {
+        "pinned": "تم تثبيت {label}. {total} علامات مثبّتة.",
+        "unpinned": "تمت إزالة {label} من العلامات.",
+        "position": "تم نقل {label} إلى الموضع {position} من {total}.",
+        "reset": "أُعيدت العلامات إلى الإعدادات الافتراضية."
+      }
     }
   },
   "search": {

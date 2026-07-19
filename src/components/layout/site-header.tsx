@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
 import { CommandMenu } from "~/components/layout/command-menu";
-import { HeaderOverflowMenu } from "~/components/layout/header-overflow-menu";
 import { ThemeSwitcher } from "~/components/theme/theme-switcher";
 import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
 import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
@@ -40,9 +39,10 @@ export async function SiteHeader() {
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
-          {/* Secondary utility controls: inline once there's room (lg+), and
-              collapsed into the mobile/tablet overflow menu below to keep the
-              header a single row without wrapping (issue #536 follow-up). */}
+          {/* Secondary utility controls stay inline on desktop (lg+). On
+              phones/tablets they now live in the Profile hub (reached via the
+              bottom bar's Profile tab), so the header stays a clean single row
+              without a duplicate "More" menu. */}
           <div className="hidden items-center gap-2 lg:flex">
             <ThemeSwitcher />
             <KidsModeToggle />
@@ -50,8 +50,10 @@ export async function SiteHeader() {
             <AccessibilityMenu />
             <OfflineStorageMenu />
           </div>
-          <HeaderOverflowMenu className="lg:hidden" />
           <NotificationBellServer />
+          {/* Account avatar / sign-in stays visible on every breakpoint as a
+              lightweight account entry point; on mobile it complements the
+              bottom bar's Profile tab. */}
           <AuthControls
             isConfigured={isConfigured}
             user={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}

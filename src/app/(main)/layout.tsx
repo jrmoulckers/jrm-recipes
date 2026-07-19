@@ -1,6 +1,7 @@
 import * as React from "react";
 import { getTranslations } from "next-intl/server";
 
+import { getAuthState } from "~/server/auth";
 import { SiteHeader } from "~/components/layout/site-header";
 import { SiteFooter } from "~/components/layout/site-footer";
 import { BottomNav } from "~/components/layout/main-nav";
@@ -13,6 +14,7 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("nav");
+  const { user } = await getAuthState();
   return (
     <div className="flex min-h-dvh flex-col">
       <a
@@ -30,7 +32,11 @@ export default async function MainLayout({
         {children}
       </main>
       <SiteFooter />
-      <BottomNav />
+      <BottomNav
+        user={
+          user ? { name: user.name, avatarUrl: user.avatarUrl } : null
+        }
+      />
       <InstallPrompt />
       <UpdatePrompt />
     </div>

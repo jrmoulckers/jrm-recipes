@@ -4,24 +4,36 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { MoreHorizontal } from "lucide-react";
+import { CircleUser } from "lucide-react";
 
 import {
-  mobileMoreNav,
-  mobilePrimaryNav,
+  DEFAULT_MOBILE_PINNED,
+  navByKey,
   primaryNav,
   type NavItem,
 } from "~/config/nav";
+import { useBottomNavStore } from "~/lib/bottom-nav-store";
 import { cn } from "~/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+
+export type BottomNavUser = {
+  name: string | null;
+  avatarUrl: string | null;
+};
 
 function isActive(pathname: string, item: NavItem) {
   return item.match ? item.match(pathname) : pathname === item.href;
+}
+
+function initialsOf(name: string | null): string {
+  const initials = name
+    ?.split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return initials && initials.length > 0 ? initials : "";
 }
 
 /** Horizontal nav for the desktop header. */
@@ -63,10 +75,13 @@ export function MainNav() {
   );
 }
 
-/** App-like bottom tab bar for mobile. */
-export function BottomNav() {
+/** App-like bottom tab bar for mobile with a customizable set of tabs. */
+export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const hydrated = useBottomNavStore((s) => s.hydrated);
+  const storedPinned = useBottomNavStore((s) => s.pinned);
+
   // Hide chrome in immersive / focused routes (cook mode, print, and the
   // recipe editor — its sticky mobile Save/Cancel bar owns the bottom edge,
   // issue #294).
@@ -78,21 +93,20 @@ export function BottomNav() {
   )
     return null;
 
-  // A phone bottom bar reads best with a handful of primary tabs plus a "More"
-  // menu, so we surface the curated `mobilePrimaryNav` set as tabs and overflow
-  // the rest into a menu rather than cramming all nine destinations in.
-  const tabs = mobilePrimaryNav;
-  const hasMore = mobileMoreNav.length > 0;
-  const count = tabs.length + (hasMore ? 1 : 0);
+  // Render the out-of-the-box tabs on the server and first client paint, then
+  // swap in the user's saved selection once localStorage has rehydrated. This
+  // keeps SSR markup stable (no hydration mismatch / flash).
+  const pinnedKeys = hydrated ? storedPinned : DEFAULT_MOBILE_PINNED;
+  const tabs = pinnedKeys.map((key) => navByKey[key]).filter(Boolean);
+
+  const profileActive = pathname.startsWith("/profile");
+  // The Profile slot is always the fixed last tab.
+  const count = tabs.length + 1;
   // First matching tab drives the sliding indicator. Computed from the pathname
   // so it's correct on SSR, initial load, and back/forward — no flash.
   const activeIndex = tabs.findIndex((item) => isActive(pathname, item));
-  // When the active route lives in the overflow set, highlight the More tab
-  // (the last slot) instead of leaving nothing active.
-  const moreActive =
-    hasMore && mobileMoreNav.some((item) => isActive(pathname, item));
   const indicatorIndex =
-    activeIndex >= 0 ? activeIndex : moreActive ? count - 1 : -1;
+    activeIndex >= 0 ? activeIndex : profileActive ? count - 1 : -1;
 
   return (
     <nav
@@ -143,51 +157,44 @@ export function BottomNav() {
             </li>
           );
         })}
-        {hasMore && (
-          <li className="flex-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                aria-current={moreActive ? "page" : undefined}
+        {/* Fixed Profile / account slot — the single hub for utilities, the
+            non-pinned destinations, and account actions. */}
+        <li className="flex-1">
+          <Link
+            href="/profile"
+            aria-current={profileActive ? "page" : undefined}
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted",
+              profileActive
+                ? "font-semibold text-primary"
+                : "text-muted-foreground",
+            )}
+          >
+            {user ? (
+              <Avatar
                 className={cn(
-                  "flex w-full flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring active:bg-muted",
-                  moreActive
-                    ? "font-semibold text-primary"
-                    : "text-muted-foreground",
+                  "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
+                  profileActive && "-translate-y-0.5 scale-110 ring-2 ring-primary",
                 )}
               >
-                <MoreHorizontal
-                  className={cn(
-                    "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
-                    moreActive && "-translate-y-0.5 scale-110",
-                  )}
-                />
-                {t("more")}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="end"
-                className="mb-1 min-w-[12rem]"
-              >
-                {mobileMoreNav.map((item) => {
-                  const active = isActive(pathname, item);
-                  const Icon = item.icon;
-                  return (
-                    <DropdownMenuItem key={item.href} asChild>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(active && "font-semibold text-primary")}
-                      >
-                        <Icon className="size-4" />
-                        {t(item.labelKey)}
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </li>
-        )}
+                {user.avatarUrl ? (
+                  <AvatarImage src={user.avatarUrl} alt="" />
+                ) : null}
+                <AvatarFallback className="text-[0.6rem]">
+                  {initialsOf(user.name)}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <CircleUser
+                className={cn(
+                  "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
+                  profileActive && "-translate-y-0.5 scale-110",
+                )}
+              />
+            )}
+            {t("profile")}
+          </Link>
+        </li>
       </ul>
     </nav>
   );

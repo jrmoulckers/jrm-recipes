@@ -17,23 +17,70 @@
     "shopping": "Einkauf",
     "family": "Familie",
     "create": "Erstellen",
-    "more": "Mehr",
+    "profile": "Profil",
     "skipToContent": "Zum Inhalt springen",
     "newRecipe": "Neues Rezept",
     "homeLink": "Heirloom Startseite",
-    "overflow": {
-      "trigger": "Weitere Optionen",
-      "heading": "Mehr",
+    "landmarks": {
+      "primary": "Hauptnavigation",
+      "primaryMobile": "Mobile Hauptnavigation",
+      "breadcrumb": "Brotkrümelnavigation"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "guest": "Gast",
+    "guestBlurb": "Melde dich an, um dein Kochbuch geräteübergreifend zu synchronisieren.",
+    "startCookbook": "Kochbuch starten",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "tabs": {
+      "title": "Deine Tabs",
+      "description": "Wähle, welche Verknüpfungen in der unteren Leiste erscheinen. Der Profil-Tab wird immer angezeigt.",
+      "current": "Aktuelle Tabs",
+      "customize": "Tabs anpassen"
+    },
+    "navigate": {
+      "title": "Gehe zu"
+    },
+    "preferences": {
+      "title": "Einstellungen",
       "appearance": "Darstellung",
       "kidsMode": "Kindermodus",
       "language": "Sprache",
       "accessibility": "Barrierefreiheit",
       "offline": "Offline-Speicher"
     },
-    "landmarks": {
-      "primary": "Hauptnavigation",
-      "primaryMobile": "Mobile Hauptnavigation",
-      "breadcrumb": "Brotkrümelnavigation"
+    "settings": {
+      "title": "Konto & Einstellungen",
+      "dietary": "Ernährungsprofile",
+      "notifications": "Benachrichtigungen",
+      "blocked": "Blockierte Nutzer",
+      "data": "Deine Daten",
+      "billing": "Abrechnung",
+      "pricing": "Preise"
+    },
+    "customize": {
+      "trigger": "Tabs anpassen",
+      "title": "Tabs anpassen",
+      "description": "Hefte bis zu {max} Verknüpfungen an die untere Leiste. Der Profil-Tab wird immer angezeigt.",
+      "pinnedHeading": "Angeheftet ({count}/{max})",
+      "emptyPinned": "Noch keine Tabs angeheftet. Füge unten welche hinzu.",
+      "availableHeading": "Tab hinzufügen",
+      "capReached": "Du kannst bis zu {max} Tabs anheften. Entferne einen, um einen anderen hinzuzufügen.",
+      "moveUp": "{label} nach vorne verschieben",
+      "moveDown": "{label} nach hinten verschieben",
+      "remove": "{label} entfernen",
+      "add": "{label} hinzufügen",
+      "addShort": "Hinzufügen",
+      "reset": "Auf Standard zurücksetzen",
+      "done": "Fertig",
+      "announce": {
+        "pinned": "{label} angeheftet. {total} Tabs angeheftet.",
+        "unpinned": "{label} aus den Tabs entfernt.",
+        "position": "{label} auf Position {position} von {total} verschoben.",
+        "reset": "Tabs auf Standard zurückgesetzt."
+      }
     }
   },
   "search": {

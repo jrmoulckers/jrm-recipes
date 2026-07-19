@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 // widens the layout viewport to fit it, which lets the user pinch-zoom out
 // below fit-to-width into a shrunken, margin-padded view. The document's
 // scroll width must never exceed the viewport width at our 320px minimum.
-const routes = ["/", "/recipes", "/collections"];
+const routes = ["/", "/recipes", "/collections", "/profile"];
 
 // 320px = iPhone SE / smallest supported width; 390px = iPhone 14.
 for (const width of [320, 390]) {
