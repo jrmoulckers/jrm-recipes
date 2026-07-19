@@ -1,6 +1,12 @@
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 
 import { IntlWrapper } from "~/test/intl";
 import { DEFAULT_MOBILE_PINNED, MAX_PINNED } from "~/config/nav";
@@ -84,7 +90,9 @@ describe("BottomNavCustomizer", () => {
 
   it("resets to defaults", () => {
     const dialog = openDialog();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Remove Plan" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Remove Plan" }),
+    );
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Reset to defaults" }),
     );
