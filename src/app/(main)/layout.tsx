@@ -33,9 +33,7 @@ export default async function MainLayout({
       </main>
       <SiteFooter />
       <BottomNav
-        user={
-          user ? { name: user.name, avatarUrl: user.avatarUrl } : null
-        }
+        user={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
       />
       <InstallPrompt />
       <UpdatePrompt />
