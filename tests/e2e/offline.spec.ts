@@ -27,6 +27,18 @@ async function bootServiceWorker(page: Page): Promise<void> {
   );
 }
 
+/**
+ * A seeded recipe lists ingredients, so Cook Mode opens on the mise en place
+ * pre-cook screen (#402). Step through it to reach step 1 so the
+ * `#current-step-title` heading is present. Mirrors tests/e2e/cook-journey.spec.ts.
+ */
+async function startCooking(page: Page): Promise<void> {
+  const startCooking = page.getByRole("button", { name: /start cooking/i });
+  if (await startCooking.count()) {
+    await startCooking.first().click();
+  }
+}
+
 test("serves the offline fallback for an uncached navigation", async ({
   page,
   context,
@@ -63,6 +75,7 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   await expect(cookLink).toBeVisible();
 
   await page.goto(COOK_PATH);
+  await startCooking(page);
   await expect(page.locator("#current-step-title")).toBeVisible();
 
   // Drop the connection and confirm both still load — from the SW cache, not
@@ -73,6 +86,7 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   await expect(page.locator(`a[href="${COOK_PATH}"]`).first()).toBeVisible();
 
   await page.goto(COOK_PATH);
+  await startCooking(page);
   await expect(page.locator("#current-step-title")).toBeVisible();
   // The seeded recipe's real first-step content proves Cook Mode rendered from
   // cache, not a generic offline shell.
