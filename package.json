@@ -109,7 +109,7 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.23.1",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.6"
+    "vitest": "^4.1.10"
   },
   "packageManager": "pnpm@10.6.1",
   "pnpm": {
