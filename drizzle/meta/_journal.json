@@ -183,6 +183,13 @@
       "when": 1785182457751,
       "tag": "0025_flippant_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785347067524,
+      "tag": "0026_luxuriant_gabe_jones",
+      "breakpoints": true
     }
   ]
 }

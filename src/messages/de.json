@@ -295,5 +295,26 @@
       "cooked": "Gekocht",
       "discussion": "Diskussion"
     }
+  },
+  "foodCategories": {
+    "liquid": "Flüssigkeit",
+    "dairy": "Milchprodukt",
+    "baking": "Backzutat",
+    "dry-good": "Trockenware",
+    "grain": "Getreide",
+    "legume": "Hülsenfrucht",
+    "produce-whole": "Ganzes Gemüse",
+    "produce-leafy": "Blattgemüse",
+    "produce-fruit": "Obst",
+    "herb": "Kraut",
+    "spice": "Gewürz",
+    "meat": "Fleisch",
+    "seafood": "Meeresfrüchte",
+    "egg": "Ei",
+    "fat-oil": "Fett & Öl",
+    "sweetener": "Süßungsmittel",
+    "nut-seed": "Nuss & Samen",
+    "condiment": "Würzmittel",
+    "other": "Sonstiges"
   }
 }

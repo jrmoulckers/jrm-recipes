@@ -18,6 +18,7 @@ export * from "./collections";
 export * from "./views";
 export * from "./searches";
 export * from "./dietary";
+export * from "./ingredients";
 export * from "./waitlist";
 export * from "./billing";
 export * from "./audit";

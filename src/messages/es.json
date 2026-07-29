@@ -295,5 +295,26 @@
       "cooked": "Cocinada",
       "discussion": "Comentarios"
     }
+  },
+  "foodCategories": {
+    "liquid": "Líquido",
+    "dairy": "Lácteo",
+    "baking": "Ingrediente de repostería",
+    "dry-good": "Alimento seco",
+    "grain": "Grano",
+    "legume": "Legumbre",
+    "produce-whole": "Verdura entera",
+    "produce-leafy": "Hoja verde",
+    "produce-fruit": "Fruta",
+    "herb": "Hierba",
+    "spice": "Especia",
+    "meat": "Carne",
+    "seafood": "Marisco",
+    "egg": "Huevo",
+    "fat-oil": "Grasa y aceite",
+    "sweetener": "Endulzante",
+    "nut-seed": "Fruto seco y semilla",
+    "condiment": "Condimento",
+    "other": "Otro"
   }
 }

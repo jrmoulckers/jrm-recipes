@@ -295,5 +295,26 @@
       "cooked": "Cooked it",
       "discussion": "Discussion"
     }
+  },
+  "foodCategories": {
+    "liquid": "Liquid",
+    "dairy": "Dairy",
+    "baking": "Baking staple",
+    "dry-good": "Dry good",
+    "grain": "Grain",
+    "legume": "Legume",
+    "produce-whole": "Whole produce",
+    "produce-leafy": "Leafy greens",
+    "produce-fruit": "Fruit",
+    "herb": "Herb",
+    "spice": "Spice",
+    "meat": "Meat",
+    "seafood": "Seafood",
+    "egg": "Egg",
+    "fat-oil": "Fat & oil",
+    "sweetener": "Sweetener",
+    "nut-seed": "Nut & seed",
+    "condiment": "Condiment",
+    "other": "Other"
   }
 }
