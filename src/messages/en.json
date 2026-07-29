@@ -54,6 +54,7 @@
     "settings": {
       "title": "Account & settings",
       "dietary": "Dietary profiles",
+      "units": "Units & measurements",
       "notifications": "Notifications",
       "blocked": "Blocked users",
       "data": "Your data",
@@ -295,5 +296,37 @@
       "cooked": "Cooked it",
       "discussion": "Discussion"
     }
+  },
+  "foodCategories": {
+    "liquid": "Liquid",
+    "dairy": "Dairy",
+    "baking": "Baking staple",
+    "dry-good": "Dry good",
+    "grain": "Grain",
+    "legume": "Legume",
+    "produce-whole": "Whole produce",
+    "produce-leafy": "Leafy greens",
+    "produce-fruit": "Fruit",
+    "herb": "Herb",
+    "spice": "Spice",
+    "meat": "Meat",
+    "seafood": "Seafood",
+    "egg": "Egg",
+    "fat-oil": "Fat & oil",
+    "sweetener": "Sweetener",
+    "nut-seed": "Nut & seed",
+    "condiment": "Condiment",
+    "other": "Other"
+  },
+  "foodGraph": {
+    "variants": "Varieties",
+    "pairings": "You might also add",
+    "preps": "Common preparations",
+    "commonAmounts": "Common amounts",
+    "suggestedUnits": "Suggested units",
+    "yourUsual": "Your usual",
+    "usedInRecipes": "Used in recipes",
+    "nutrition": "Nutrition",
+    "perServing": "Per serving"
   }
 }

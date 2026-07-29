@@ -54,6 +54,7 @@
     "settings": {
       "title": "الحساب والإعدادات",
       "dietary": "الملفات الغذائية",
+      "units": "الوحدات والقياسات",
       "notifications": "الإشعارات",
       "blocked": "المستخدمون المحظورون",
       "data": "بياناتك",
@@ -295,5 +296,37 @@
       "cooked": "طُبِخت",
       "discussion": "النقاش"
     }
+  },
+  "foodCategories": {
+    "liquid": "سائل",
+    "dairy": "منتج ألبان",
+    "baking": "مكوّن خبز",
+    "dry-good": "سلعة جافة",
+    "grain": "حبوب",
+    "legume": "بقوليات",
+    "produce-whole": "خضار كاملة",
+    "produce-leafy": "خضار ورقية",
+    "produce-fruit": "فاكهة",
+    "herb": "أعشاب",
+    "spice": "توابل",
+    "meat": "لحم",
+    "seafood": "مأكولات بحرية",
+    "egg": "بيض",
+    "fat-oil": "دهون وزيوت",
+    "sweetener": "محلّي",
+    "nut-seed": "مكسرات وبذور",
+    "condiment": "منكّه",
+    "other": "أخرى"
+  },
+  "foodGraph": {
+    "variants": "الأنواع",
+    "pairings": "قد ترغب أيضًا بإضافة",
+    "preps": "التحضيرات الشائعة",
+    "commonAmounts": "الكميات الشائعة",
+    "suggestedUnits": "الوحدات المقترحة",
+    "yourUsual": "المعتاد لديك",
+    "usedInRecipes": "مستخدم في الوصفات",
+    "nutrition": "القيمة الغذائية",
+    "perServing": "لكل حصة"
   }
 }

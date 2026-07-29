@@ -53,6 +53,9 @@ export function NutritionPanel({
   servingsNoun,
   className,
   members,
+  estimated = false,
+  sourced,
+  total,
 }: {
   /** Per-serving nutrition as stored on the recipe. */
   nutrition: Nutrition;
@@ -65,6 +68,17 @@ export function NutritionPanel({
    * panel frames the shown calories against the active member's goal.
    */
   members?: CalorieMember[];
+  /**
+   * When true, the numbers were auto-estimated from the ingredient list (via the
+   * food graph) rather than entered by the cook, so the panel labels them as an
+   * estimate. `sourced`/`total` add a "based on N of M ingredients" caveat when
+   * some ingredients couldn't be matched.
+   */
+  estimated?: boolean;
+  /** Ingredient lines that fed the estimate (for the coverage caveat). */
+  sourced?: number;
+  /** Ingredient lines considered (for the coverage caveat). */
+  total?: number;
 }) {
   const [basis, setBasis] = React.useState<Basis>("serving");
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
@@ -219,7 +233,14 @@ export function NutritionPanel({
       </dl>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Estimated values as entered by the cook.
+        {estimated
+          ? typeof sourced === "number" &&
+            typeof total === "number" &&
+            total > 0 &&
+            sourced < total
+            ? `Estimated from the ingredient list (${sourced} of ${total} ingredients).`
+            : "Estimated from the ingredient list."
+          : "Estimated values as entered by the cook."}
       </p>
     </section>
   );

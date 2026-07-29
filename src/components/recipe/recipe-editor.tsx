@@ -25,6 +25,7 @@ import {
   type LucideIcon,
   Pencil,
   Plus,
+  Repeat,
   Save,
   Trash2,
   Users,
@@ -48,6 +49,16 @@ import {
   type DietaryTag,
 } from "~/lib/substitutions";
 import { type ImportedRecipe } from "~/server/recipes/import";
+import {
+  convertAmount,
+  dimensionOf,
+  formatQuantity,
+  listUnits,
+  parseAmount,
+  type CustomUnitDef,
+} from "~/lib/units";
+import { unitLabel } from "~/lib/unit-labels";
+import { getSuggestedUnitsForFood } from "~/lib/food-units";
 import {
   createRecipeAction,
   updateRecipeAction,
@@ -301,6 +312,11 @@ function numOrUndef(s: string): number | undefined {
   if (t === "") return undefined;
   const n = Number(t);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/** Fraction-aware amount parse for ingredient quantities ("1 1/2", "½", "0.5"). */
+function amountOrUndef(s: string): number | undefined {
+  return parseAmount(s) ?? undefined;
 }
 
 const selectClass =
@@ -612,6 +628,7 @@ export function RecipeEditor({
   initialTitle,
   initialImportUrl,
   groups = [],
+  customUnits = [],
 }: {
   mode: "create" | "edit";
   recipeId?: string;
@@ -623,6 +640,8 @@ export function RecipeEditor({
   /** Recipe URL shared into the PWA to import from on mount (#50/#55). */
   initialImportUrl?: string;
   groups?: { id: string; name: string }[];
+  /** The author's saved custom units, offered in the unit picker (e.g. "pinch"). */
+  customUnits?: CustomUnitDef[];
 }) {
   const router = useRouter();
   const t = useTranslations("recipeEditor");
@@ -1014,6 +1033,119 @@ export function RecipeEditor({
     });
   }
 
+  // Unit picker options: every built-in unit plus the author's own custom units,
+  // offered as datalist suggestions so the field is pickable yet still accepts a
+  // free-typed unit the catalog doesn't know (recipes carry all sorts).
+  const unitOptions = React.useMemo(() => {
+    const builtIns = listUnits().map((u) => ({
+      value: u.id,
+      label: unitLabel(u.id),
+    }));
+    const customs = customUnits.map((c) => ({
+      value: c.name,
+      label: c.abbreviation ? `${c.name} (${c.abbreviation})` : c.name,
+    }));
+    return [...builtIns, ...customs];
+  }, [customUnits]);
+  const unitDatalistId = React.useId();
+
+  // Food-type unit groupings: when a row names a food the food graph knows,
+  // surface that food's most-appropriate units first in its unit picker (index
+  // 0 = smartest default), then the rest of the catalog. Keyed by the food name
+  // so rows sharing an ingredient reuse the same computed option list. Rows with
+  // no food match fall back to the shared catalog datalist.
+  const foodUnitOptionsByItem = React.useMemo(() => {
+    const cache = new Map<
+      string,
+      { value: string; label: string }[] | null
+    >();
+    for (const r of ingredients) {
+      const key = r.item.trim().toLowerCase();
+      if (!key || cache.has(key)) continue;
+      const suggestions = getSuggestedUnitsForFood(r.item);
+      if (suggestions.length === 0) {
+        cache.set(key, null);
+        continue;
+      }
+      const seen = new Set<string>();
+      const suggested: { value: string; label: string }[] = [];
+      for (const s of suggestions) {
+        const value = s.unit.trim();
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        suggested.push({ value, label: unitLabel(value) });
+      }
+      const rest = unitOptions.filter((o) => !seen.has(o.value));
+      cache.set(key, [...suggested, ...rest]);
+    }
+    return cache;
+  }, [ingredients, unitOptions]);
+
+  // "Convert old amount?" affordance, per ingredient row. When a cook swaps a
+  // unit for a compatible one and there's an amount to carry over, we stash the
+  // converted value; the chip clears the moment the amount is edited or the unit
+  // changes again — matching the requested "disappears when the amount changes".
+  const [convertHints, setConvertHints] = React.useState<
+    Record<
+      string,
+      { fromLabel: string; fromUnit: string; toUnit: string; toLabel: string }
+    >
+  >({});
+
+  function clearConvertHint(key: string) {
+    setConvertHints((h) => {
+      if (!(key in h)) return h;
+      const { [key]: _removed, ...rest } = h;
+      return rest;
+    });
+  }
+
+  function changeIngredientUnit(row: IngRow, nextUnit: string) {
+    setIngredients((l) =>
+      l.map((r) => (r.key === row.key ? { ...r, unit: nextUnit } : r)),
+    );
+    const amount = parseAmount(row.quantity);
+    const fromUnit = row.unit.trim();
+    const toUnit = nextUnit.trim();
+    const sameUnit = fromUnit.toLowerCase() === toUnit.toLowerCase();
+    if (amount == null || fromUnit === "" || toUnit === "" || sameUnit) {
+      clearConvertHint(row.key);
+      return;
+    }
+    const converted = convertAmount(amount, fromUnit, toUnit, customUnits);
+    // Only offer the swap when the dimensions actually line up (null) and the
+    // number would genuinely change; a no-op conversion isn't worth a prompt.
+    if (converted == null || dimensionOf(fromUnit, customUnits) == null) {
+      clearConvertHint(row.key);
+      return;
+    }
+    setConvertHints((h) => ({
+      ...h,
+      [row.key]: {
+        fromLabel: row.quantity.trim(),
+        fromUnit,
+        toUnit,
+        toLabel: formatQuantity(converted, toUnit),
+      },
+    }));
+  }
+
+  function changeIngredientQuantity(row: IngRow, nextQuantity: string) {
+    setIngredients((l) =>
+      l.map((r) => (r.key === row.key ? { ...r, quantity: nextQuantity } : r)),
+    );
+    clearConvertHint(row.key);
+  }
+
+  function applyConvertHint(rowKey: string) {
+    const hint = convertHints[rowKey];
+    if (!hint) return;
+    setIngredients((l) =>
+      l.map((r) => (r.key === rowKey ? { ...r, quantity: hint.toLabel } : r)),
+    );
+    clearConvertHint(rowKey);
+  }
+
   // Append a new ungrouped ingredient, then partition so it joins the single
   // ungrouped block (never spawns a second one) even when a group sits above.
   function addIngredient() {
@@ -1119,8 +1251,8 @@ export function RecipeEditor({
         .filter((r) => r.item.trim() !== "")
         .map((r) => ({
           section: r.section.trim() || undefined,
-          quantity: numOrUndef(r.quantity),
-          quantityMax: numOrUndef(r.quantityMax),
+          quantity: amountOrUndef(r.quantity),
+          quantityMax: amountOrUndef(r.quantityMax),
           unit: r.unit.trim() || undefined,
           item: r.item.trim(),
           note: r.note.trim() || undefined,
@@ -1554,6 +1686,13 @@ export function RecipeEditor({
               <h2 className="font-display text-xl font-semibold">
                 Ingredients
               </h2>
+              <datalist id={unitDatalistId}>
+                {unitOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </datalist>
               <div className="flex flex-col gap-4">
                 {blocksByGroup(ingredients).map((block) => {
                   const rowList = block.rows.map((row, indexInBlock) => {
@@ -1566,11 +1705,26 @@ export function RecipeEditor({
                     );
                     const optionsOpen =
                       hasOptionData || openIngOptions.has(row.key);
+                    const rowUnitOptions =
+                      foodUnitOptionsByItem.get(row.item.trim().toLowerCase()) ??
+                      null;
+                    const rowUnitListId = rowUnitOptions
+                      ? `${unitDatalistId}-${row.key}`
+                      : unitDatalistId;
                     return (
                       <div
                         key={row.key}
                         className="group flex flex-col gap-2 rounded-lg border border-border bg-surface/60 p-3 sm:p-3.5"
                       >
+                        {rowUnitOptions ? (
+                          <datalist id={rowUnitListId}>
+                            {rowUnitOptions.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                          </datalist>
+                        ) : null}
                         <div className="flex items-start gap-2">
                           <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_6rem]">
                             <RowField
@@ -1595,32 +1749,45 @@ export function RecipeEditor({
                               <Input
                                 value={row.quantity}
                                 onChange={(e) =>
-                                  setIngredients((l) =>
-                                    l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, quantity: e.target.value }
-                                        : r,
-                                    ),
-                                  )
+                                  changeIngredientQuantity(row, e.target.value)
                                 }
-                                placeholder="e.g. 2"
+                                placeholder="e.g. 2 or 1 1/2"
                                 inputMode="decimal"
                               />
                             </RowField>
                             <RowField label={t("unit")}>
                               <Input
                                 value={row.unit}
+                                list={rowUnitListId}
                                 onChange={(e) =>
-                                  setIngredients((l) =>
-                                    l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, unit: e.target.value }
-                                        : r,
-                                    ),
-                                  )
+                                  changeIngredientUnit(row, e.target.value)
                                 }
                                 placeholder="e.g. cups"
+                                autoComplete="off"
                               />
+                              {convertHints[row.key] ? (
+                                <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => applyConvertHint(row.key)}
+                                    className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-medium text-primary transition-colors hover:bg-primary/20"
+                                  >
+                                    <Repeat className="size-3" aria-hidden="true" />
+                                    Convert {convertHints[row.key]!.fromLabel}{" "}
+                                    {convertHints[row.key]!.fromUnit} →{" "}
+                                    {convertHints[row.key]!.toLabel}{" "}
+                                    {convertHints[row.key]!.toUnit}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => clearConvertHint(row.key)}
+                                    aria-label="Dismiss conversion"
+                                    className="text-muted-foreground hover:text-foreground"
+                                  >
+                                    <X className="size-3.5" aria-hidden="true" />
+                                  </button>
+                                </div>
+                              ) : null}
                             </RowField>
                           </div>
                           <RowControls

@@ -17,6 +17,7 @@ import {
   CreditCard,
   Database,
   LogOut,
+  Ruler,
   Salad,
   ShieldBan,
   Tag,
@@ -43,6 +44,7 @@ type SettingsLink = { href: Route; labelKey: string; icon: LucideIcon };
 
 const SETTINGS_LINKS: SettingsLink[] = [
   { href: "/settings/dietary", labelKey: "dietary", icon: Salad },
+  { href: "/settings/units", labelKey: "units", icon: Ruler },
   { href: "/settings/notifications", labelKey: "notifications", icon: Bell },
   { href: "/settings/blocked", labelKey: "blocked", icon: ShieldBan },
   { href: "/settings/data", labelKey: "data", icon: Database },

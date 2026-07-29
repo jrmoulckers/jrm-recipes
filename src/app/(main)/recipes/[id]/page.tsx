@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import {
   BookOpen,
   ChefHat,
@@ -43,6 +43,8 @@ import { pickNutrition } from "~/lib/nutrition";
 import { isAllergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
+import { getUnitSettings } from "~/server/units/queries";
+import { toUnitPrefs, toCustomUnitDefs } from "~/lib/unit-prefs";
 import {
   buildRecipeJsonLd,
   buildBreadcrumbJsonLd,
@@ -210,6 +212,7 @@ export default async function RecipePage({
     favoriteIds,
     memberProfiles,
     anchoredSuggestions,
+    unitSettings,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -219,6 +222,7 @@ export default async function RecipePage({
     getFavoriteRecipeIds(user?.id),
     user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
     dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
+    user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -241,6 +245,17 @@ export default async function RecipePage({
     allergens: (m.allergens ?? []).filter(isAllergen),
     diets: (m.diets ?? []).filter(isDietaryTag),
   }));
+
+  // Viewer's unit preferences drive display-time auto-conversion (#…): a signed-in
+  // cook sees amounts in their saved system + per-dimension defaults + custom
+  // units. Signed-out viewers get the author's original units untouched.
+  const locale = await getLocale();
+  const viewerUnitPrefs = user
+    ? toUnitPrefs(unitSettings?.preferences, locale)
+    : undefined;
+  const viewerCustomUnits = user
+    ? toCustomUnitDefs(unitSettings?.customUnits)
+    : undefined;
 
   // schema.org structured data — public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
@@ -563,6 +578,8 @@ export default async function RecipePage({
                     servingsNoun={recipe.servingsNoun}
                     nutrition={pickNutrition(recipe)}
                     members={calorieMembers}
+                    unitPrefs={viewerUnitPrefs}
+                    customUnits={viewerCustomUnits}
                     ingredientSuggestions={{
                       recipeId: recipe.id,
                       recipeSlug: recipe.slug,

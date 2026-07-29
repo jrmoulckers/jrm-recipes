@@ -71,6 +71,45 @@ describe("NutritionPanel", () => {
     expect(within(flags).getByText(/sodium ·/i)).toBeInTheDocument();
     expect(within(flags).getByText(/low sugars · 4% dv/i)).toBeInTheDocument();
   });
+
+  it("labels cook-entered numbers by default", () => {
+    render(<NutritionPanel nutrition={PER_SERVING} servings={4} />);
+    expect(
+      screen.getByText(/as entered by the cook/i),
+    ).toBeInTheDocument();
+  });
+
+  it("labels an estimate and cites full coverage without a caveat", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        estimated
+        sourced={3}
+        total={3}
+      />,
+    );
+    expect(
+      screen.getByText(/estimated from the ingredient list\./i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/of 3 ingredients/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/as entered by the cook/i)).not.toBeInTheDocument();
+  });
+
+  it("adds a coverage caveat when some ingredients weren't matched", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        estimated
+        sourced={2}
+        total={5}
+      />,
+    );
+    expect(
+      screen.getByText(/estimated from the ingredient list \(2 of 5 ingredients\)/i),
+    ).toBeInTheDocument();
+  });
 });
 
 describe("NutritionPanel calorie goal (issue #430)", () => {
