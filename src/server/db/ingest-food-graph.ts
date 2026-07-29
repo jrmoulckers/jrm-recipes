@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, sql } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 
 import {
   mineFoodGraph,
@@ -16,6 +16,7 @@ import {
   foodPrepStats,
   foodUnitStats,
   recipeIngredients,
+  recipes,
 } from "~/server/db/schema";
 
 /**
@@ -29,7 +30,9 @@ import {
  * from scratch each run, so it is idempotent and self-correcting (foods that
  * stop being used drop back to zero). Curated data — the seeded `food_items`
  * nodes and their `source = 'curated'` aliases — is preserved; only mined data
- * is replaced. Incremental fold-on-save is a Phase-2 optimization on top.
+ * is replaced. Phase 2 keeps the graph *live* by triggering this pass on every
+ * recipe write through the coalescing scheduler in `food-graph-refresh.ts`
+ * (save-bursts collapse into a bounded number of recomputes).
  */
 
 /** How many rows to insert per statement (keeps bind-parameter counts sane). */
@@ -75,7 +78,11 @@ export async function ingestFoodGraph(
       quantity: recipeIngredients.quantity,
       prep: recipeIngredients.prep,
     })
-    .from(recipeIngredients);
+    .from(recipeIngredients)
+    // Soft-deleted recipes (issue #165 tombstones) must not skew the graph:
+    // join their parent and keep only live rows. Restoring heals on next pass.
+    .innerJoin(recipes, eq(recipeIngredients.recipeId, recipes.id))
+    .where(isNull(recipes.deletedAt));
 
   const mined = mineFoodGraph(rows satisfies MinedIngredient[], options);
 

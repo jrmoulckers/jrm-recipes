@@ -23,6 +23,7 @@ import {
   foodPairs,
   foodPrepStats,
   foodUnitStats,
+  recipeIngredients,
 } from "~/server/db/schema";
 
 /**
@@ -276,4 +277,28 @@ export async function getPairedFoods(
       ? [{ ...node, coCount: r.coCount, lift: r.lift }]
       : [];
   });
+}
+
+/**
+ * "You might also add…" for a whole recipe: reads the recipe's current
+ * ingredients and returns the strongest co-occurrence partners not already in
+ * it. A thin convenience over {@link getPairedFoods} for the recipe editor /
+ * detail page (the editor can also call `getPairedFoods` directly with the
+ * ingredients being typed). Empty when the recipe is unknown, has no matched
+ * ingredients, or no DB is configured. Copy: `foodGraph.pairings`.
+ */
+export async function getSuggestedAdditions(
+  recipeId: string,
+  options: { limit?: number; minCoCount?: number } = {},
+): Promise<FoodSuggestion[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await db
+    .select({ item: recipeIngredients.item })
+    .from(recipeIngredients)
+    .where(eq(recipeIngredients.recipeId, recipeId));
+  if (rows.length === 0) return [];
+  return getPairedFoods(
+    rows.map((r) => r.item),
+    options,
+  );
 }
