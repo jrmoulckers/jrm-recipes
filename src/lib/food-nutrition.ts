@@ -15,6 +15,7 @@
  * table, but this module is the single source of truth.
  */
 import { canonicalFood, densityForFood, foodSlug } from "./food-db";
+import type { Nutrition } from "./nutrition";
 
 /**
  * Nutrition per 100 g of the edible portion of a food. Macros are always
@@ -360,4 +361,57 @@ export function estimateRecipeNutrition(
   }
   acc.coverage = acc.total === 0 ? 0 : acc.sourced / acc.total;
   return acc;
+}
+
+/**
+ * An estimated per-serving nutrition record derived from a recipe's ingredient
+ * list, in the app's `Nutrition` shape (per serving) plus the provenance of the
+ * estimate. `perServing` is empty (`{}`) when nothing could be sourced, so it
+ * flows straight into `hasNutrition` / `NutritionPanel` and simply renders
+ * nothing. `saturatedFatGrams` is always absent — the USDA generic items this is
+ * built from don't break fat out that far.
+ */
+export type EstimatedNutrition = {
+  /** Estimated per-serving nutrition (empty when nothing was sourced). */
+  perServing: Nutrition;
+  /** Fraction (0–1) of ingredient lines that contributed. */
+  coverage: number;
+  /** Ingredient lines that contributed. */
+  sourced: number;
+  /** Ingredient lines considered. */
+  total: number;
+};
+
+/**
+ * Estimate a recipe's **per-serving** nutrition from its ingredient list by
+ * rolling the whole-recipe totals up (via {@link estimateRecipeNutrition}) and
+ * dividing by the serving count. This is the bridge the recipe view uses to
+ * auto-fill a Nutrition Facts panel when the cook hasn't entered any numbers —
+ * the same per-serving basis the panel already scales with. A non-positive or
+ * non-finite `servings` is treated as 1. Pure and framework-free.
+ */
+export function estimatePerServingNutrition(
+  ingredients: readonly NutritionIngredient[],
+  servings: number,
+): EstimatedNutrition {
+  const roll = estimateRecipeNutrition(ingredients);
+  const s = Number.isFinite(servings) && servings > 0 ? servings : 1;
+  const perServing: Nutrition =
+    roll.sourced === 0
+      ? {}
+      : {
+          calories: roll.kcal / s,
+          proteinGrams: roll.proteinG / s,
+          carbsGrams: roll.carbsG / s,
+          fatGrams: roll.fatG / s,
+          fiberGrams: roll.fiberG / s,
+          sugarGrams: roll.sugarG / s,
+          sodiumMg: roll.sodiumMg / s,
+        };
+  return {
+    perServing,
+    coverage: roll.coverage,
+    sourced: roll.sourced,
+    total: roll.total,
+  };
 }

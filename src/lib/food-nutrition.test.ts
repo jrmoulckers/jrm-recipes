@@ -4,6 +4,7 @@ import { foodSlug } from "./food-db";
 import {
   NUTRITION_BY_SLUG,
   estimateIngredientGrams,
+  estimatePerServingNutrition,
   estimateRecipeNutrition,
   nutritionForFood,
   toGrams,
@@ -146,5 +147,74 @@ describe("estimateRecipeNutrition", () => {
       { item: "flour", quantity: 100, unit: "g" },
     ]);
     expect(a).toEqual(b);
+  });
+});
+
+describe("estimatePerServingNutrition", () => {
+  it("divides the whole-recipe roll-up by the serving count", () => {
+    const whole = estimateRecipeNutrition([
+      { item: "chicken", quantity: 400, unit: "g" },
+    ]);
+    const per = estimatePerServingNutrition(
+      [{ item: "chicken", quantity: 400, unit: "g" }],
+      4,
+    );
+    expect(per.perServing.calories).toBeCloseTo(whole.kcal / 4, 5);
+    expect(per.perServing.proteinGrams).toBeCloseTo(whole.proteinG / 4, 5);
+    // chicken 165 kcal/100g * 400g = 660 kcal / 4 = 165
+    expect(per.perServing.calories).toBeCloseTo(165, 5);
+  });
+
+  it("maps to the app Nutrition shape (no saturated fat)", () => {
+    const per = estimatePerServingNutrition(
+      [{ item: "beef", quantity: 200, unit: "g" }],
+      2,
+    );
+    for (const key of [
+      "calories",
+      "proteinGrams",
+      "carbsGrams",
+      "fatGrams",
+      "fiberGrams",
+      "sugarGrams",
+      "sodiumMg",
+    ] as const) {
+      expect(typeof per.perServing[key]).toBe("number");
+    }
+    expect(per.perServing.saturatedFatGrams).toBeUndefined();
+  });
+
+  it("carries coverage/sourced/total through", () => {
+    const per = estimatePerServingNutrition(
+      [
+        { item: "chicken", quantity: 100, unit: "g" },
+        { item: "onion", quantity: 1, unit: "each" }, // no grams
+      ],
+      4,
+    );
+    expect(per.total).toBe(2);
+    expect(per.sourced).toBe(1);
+    expect(per.coverage).toBeCloseTo(0.5, 5);
+  });
+
+  it("returns an empty record when nothing can be sourced", () => {
+    const per = estimatePerServingNutrition(
+      [{ item: "onion", quantity: 1, unit: "each" }],
+      4,
+    );
+    expect(per.perServing).toEqual({});
+    expect(per.sourced).toBe(0);
+  });
+
+  it("treats a non-positive serving count as 1", () => {
+    const one = estimatePerServingNutrition(
+      [{ item: "chicken", quantity: 100, unit: "g" }],
+      0,
+    );
+    const also = estimatePerServingNutrition(
+      [{ item: "chicken", quantity: 100, unit: "g" }],
+      1,
+    );
+    expect(one.perServing.calories).toBeCloseTo(also.perServing.calories!, 5);
   });
 });

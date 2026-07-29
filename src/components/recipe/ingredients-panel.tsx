@@ -47,7 +47,8 @@ import {
   type CalorieMember,
 } from "~/components/recipe/nutrition-panel";
 import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
-import { type Nutrition } from "~/lib/nutrition";
+import { hasNutrition, type Nutrition } from "~/lib/nutrition";
+import { estimatePerServingNutrition } from "~/lib/food-nutrition";
 import { type AnchoredSuggestion } from "~/server/engagement/queries";
 
 /**
@@ -267,6 +268,32 @@ export function IngredientsPanel({
   const checked = controls ? controls.checked : checkedInternal;
 
   const factor = canScale ? servings / baseServings : 1;
+
+  // Nutrition Facts: prefer the cook's stored per-serving numbers; when a recipe
+  // carries none, auto-estimate them from the ingredient list via the food graph
+  // (Phase 4 hub-wiring) so the panel still appears, clearly labelled as an
+  // estimate. Computed from the base (unscaled) quantities per base serving — the
+  // same per-serving basis the panel scales with.
+  const nutritionView = React.useMemo(() => {
+    if (nutrition && hasNutrition(nutrition)) {
+      return { nutrition, estimated: false as const };
+    }
+    const est = estimatePerServingNutrition(
+      ingredients.map((i) => ({
+        item: i.item,
+        quantity: i.quantity,
+        unit: i.unit,
+      })),
+      baseServings ?? 1,
+    );
+    if (!hasNutrition(est.perServing)) return null;
+    return {
+      nutrition: est.perServing,
+      estimated: true as const,
+      sourced: est.sourced,
+      total: est.total,
+    };
+  }, [nutrition, ingredients, baseServings]);
 
   const householdSize = controls?.householdSize ?? null;
   const scaledToHousehold =
@@ -967,12 +994,15 @@ export function IngredientsPanel({
         ))}
       </ul>
 
-      {nutrition && (
+      {nutritionView && (
         <NutritionPanel
-          nutrition={nutrition}
+          nutrition={nutritionView.nutrition}
           servings={servings}
           servingsNoun={servingsNoun}
           members={memberList}
+          estimated={nutritionView.estimated}
+          sourced={nutritionView.estimated ? nutritionView.sourced : undefined}
+          total={nutritionView.estimated ? nutritionView.total : undefined}
         />
       )}
     </div>
