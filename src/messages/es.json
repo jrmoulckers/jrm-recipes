@@ -316,5 +316,12 @@
     "nut-seed": "Fruto seco y semilla",
     "condiment": "Condimento",
     "other": "Otro"
+  },
+  "foodGraph": {
+    "variants": "Variedades",
+    "pairings": "También podrías añadir",
+    "preps": "Preparaciones habituales",
+    "commonAmounts": "Cantidades habituales",
+    "suggestedUnits": "Unidades sugeridas"
   }
 }

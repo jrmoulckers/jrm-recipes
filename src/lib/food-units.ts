@@ -209,3 +209,68 @@ export function getSuggestedUnitsForFood(
   const category = foodCategoryForItem(item);
   return category ? suggestedUnitsForCategory(category) : [];
 }
+
+// --- Learned-unit merge (live graph enrichment) --------------------------
+
+const VOLUME_TOKENS: ReadonlySet<string> = new Set([
+  "cup",
+  "tbsp",
+  "tsp",
+  "fl oz",
+  "ml",
+  "l",
+]);
+const MASS_TOKENS: ReadonlySet<string> = new Set(["g", "kg", "oz", "lb"]);
+const COUNT_TOKENS: ReadonlySet<string> = new Set([
+  "each",
+  "pinch",
+  "bunch",
+  "sprig",
+  "clove",
+  "can",
+]);
+
+/**
+ * The measurement dimension for a unit token. Recognizes the canonical
+ * `units.ts` volume/mass tokens and the food-graph's informal count/portion
+ * tokens; anything unrecognized is treated as `count` (a literal portion token
+ * the units layer resolves), never dropped. Pure.
+ */
+export function dimensionForUnit(unit: string): FoodDimension {
+  const u = unit.trim().toLowerCase();
+  if (VOLUME_TOKENS.has(u)) return "volume";
+  if (MASS_TOKENS.has(u)) return "mass";
+  if (COUNT_TOKENS.has(u)) return "count";
+  return "count";
+}
+
+/** A unit the corpus has been observed using for a food, with its usage count. */
+export type LearnedUnit = { unit: string; useCount: number };
+
+/**
+ * Merge a food's **learned** units (mined from the corpus, most-used first) with
+ * the static category `fallback`, producing an ordered {@link SuggestedUnit}
+ * list for the picker: learned units lead (by usage), then any static
+ * suggestions not already present, de-duplicated by unit token. This keeps the
+ * `getSuggestedUnitsForFood` shape (flat, ordered, index 0 = default) while
+ * letting live data reprioritize it. Pure; when `learned` is empty it returns a
+ * copy of `fallback`.
+ */
+export function mergeLearnedUnits(
+  learned: readonly LearnedUnit[],
+  fallback: readonly SuggestedUnit[],
+): SuggestedUnit[] {
+  const seen = new Set<string>();
+  const merged: SuggestedUnit[] = [];
+  const push = (unit: string, dimension: FoodDimension) => {
+    const key = unit.trim().toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    merged.push({ dimension, unit });
+  };
+  for (const { unit } of [...learned].sort((a, b) => b.useCount - a.useCount)) {
+    push(unit, dimensionForUnit(unit));
+  }
+  for (const s of fallback) push(s.unit, s.dimension);
+  return merged;
+}

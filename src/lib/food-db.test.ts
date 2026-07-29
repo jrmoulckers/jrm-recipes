@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canonicalFood,
   densityForFood,
   FOOD_CATEGORIES,
   FOOD_CATEGORY_LABELS,
   FOOD_ITEMS,
   foodCategoryForItem,
+  foodNodeId,
+  foodSlug,
   isFoodCategory,
   matchFood,
   normalizeFoodText,
+  stableHash,
   type FoodCategory,
 } from "./food-db";
 
@@ -126,5 +130,44 @@ describe("taxonomy integrity", () => {
   it("isFoodCategory narrows correctly", () => {
     expect(isFoodCategory("spice")).toBe(true);
     expect(isFoodCategory("not-a-category")).toBe(false);
+  });
+});
+
+describe("canonical identity", () => {
+  it("stableHash is deterministic and short", () => {
+    expect(stableHash("onion")).toBe(stableHash("onion"));
+    expect(stableHash("onion")).not.toBe(stableHash("tomato"));
+    expect(stableHash("worcestershire sauce").length).toBeLessThanOrEqual(14);
+  });
+
+  it("foodSlug hyphenates a normalized name", () => {
+    expect(foodSlug("Brown Sugar")).toBe("brown-sugar");
+    expect(foodSlug("Fat / oil")).toBe("fat-oil");
+  });
+
+  it("foodNodeId is prefixed and always fits varchar(24)", () => {
+    for (const food of FOOD_ITEMS) {
+      const id = foodNodeId(food.name);
+      expect(id).toMatch(/^food_[0-9a-z]+$/);
+      expect(id.length).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it("foodNodeId is unique across the curated set", () => {
+    const ids = new Set(FOOD_ITEMS.map((f) => foodNodeId(f.name)));
+    expect(ids.size).toBe(FOOD_ITEMS.length);
+  });
+
+  it("canonicalFood resolves free text to a stable node identity", () => {
+    const match = canonicalFood("2 cups chopped yellow onion");
+    expect(match?.name).toBe("Onion");
+    expect(match?.category).toBe("produce-whole");
+    expect(match?.id).toBe(foodNodeId("Onion"));
+    expect(match?.slug).toBe("onion");
+  });
+
+  it("canonicalFood returns null for unknown ingredients", () => {
+    expect(canonicalFood("unicorn horn")).toBeNull();
+    expect(canonicalFood("")).toBeNull();
   });
 });

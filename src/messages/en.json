@@ -316,5 +316,12 @@
     "nut-seed": "Nut & seed",
     "condiment": "Condiment",
     "other": "Other"
+  },
+  "foodGraph": {
+    "variants": "Varieties",
+    "pairings": "You might also add",
+    "preps": "Common preparations",
+    "commonAmounts": "Common amounts",
+    "suggestedUnits": "Suggested units"
   }
 }

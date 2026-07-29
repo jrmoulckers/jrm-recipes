@@ -579,3 +579,72 @@ export function foodCategoryForItem(
 export function densityForFood(item: string | null | undefined): number | null {
   return matchFood(item)?.densityGPerMl ?? null;
 }
+
+// --- Canonical identity --------------------------------------------------
+
+/**
+ * Small, fast, deterministic string hash (two FNV-1a-style accumulators mixed
+ * together for a wider, lower-collision digest), rendered base36. Used to derive
+ * stable, compact graph ids that fit the `varchar(24)` id columns regardless of
+ * how long the food name is. Pure and dependency-free.
+ */
+export function stableHash(input: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x1000193 ^ input.length;
+  for (let i = 0; i < input.length; i++) {
+    const c = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ c, 0x85ebca6b);
+  }
+  return `${(h1 >>> 0).toString(36)}${(h2 >>> 0).toString(36)}`;
+}
+
+/**
+ * Slugify a food name into a stable, unique, URL-safe key: normalize (lowercase,
+ * strip accents/punctuation/parentheticals), then hyphenate. Bounded to the
+ * `food_items.slug` column width (80). This is the single source of truth for a
+ * food's slug — the seed and the corpus miner both derive ids from it so mined
+ * stats attach to the same node the seed created.
+ */
+export function foodSlug(name: string): string {
+  return normalizeFoodText(name).replace(/\s+/g, "-").slice(0, 80);
+}
+
+/**
+ * The canonical `food_items.id` for a food name — a compact, deterministic hash
+ * of its slug (`food_<hash>`) that always fits the `varchar(24)` id column. The
+ * seed and the miner both call this, so mined stats key onto the seeded node.
+ */
+export function foodNodeId(name: string): string {
+  return `food_${stableHash(foodSlug(name))}`;
+}
+
+/** A resolved canonical food identity: enough to key graph rows onto a node. */
+export type CanonicalFood = {
+  /** The `food_items.id` this text resolves to. */
+  id: string;
+  /** The food's stable slug. */
+  slug: string;
+  /** The canonical display name. */
+  name: string;
+  /** The food category. */
+  category: FoodCategory;
+};
+
+/**
+ * Resolve a free-text ingredient to its canonical food-node identity, or `null`
+ * when nothing matches. The canonicalization seam the corpus miner and any
+ * server-side food feature share, so every surface keys onto the *same* node.
+ */
+export function canonicalFood(
+  item: string | null | undefined,
+): CanonicalFood | null {
+  const food = matchFood(item);
+  if (!food) return null;
+  return {
+    id: foodNodeId(food.name),
+    slug: foodSlug(food.name),
+    name: food.name,
+    category: food.category,
+  };
+}

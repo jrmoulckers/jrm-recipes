@@ -316,5 +316,12 @@
     "nut-seed": "مكسرات وبذور",
     "condiment": "منكّه",
     "other": "أخرى"
+  },
+  "foodGraph": {
+    "variants": "الأنواع",
+    "pairings": "قد ترغب أيضًا بإضافة",
+    "preps": "التحضيرات الشائعة",
+    "commonAmounts": "الكميات الشائعة",
+    "suggestedUnits": "الوحدات المقترحة"
   }
 }

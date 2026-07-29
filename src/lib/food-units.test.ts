@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { FOOD_CATEGORIES } from "./food-db";
 import {
   CATEGORY_UNIT_SUGGESTIONS,
+  dimensionForUnit,
   getSuggestedUnitsForFood,
+  mergeLearnedUnits,
   suggestedUnitsForCategory,
   type SuggestedUnit,
 } from "./food-units";
@@ -91,5 +93,49 @@ describe("suggestion shape", () => {
         expect(s.unit.length).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("dimensionForUnit", () => {
+  it("classifies canonical volume/mass tokens", () => {
+    expect(dimensionForUnit("cup")).toBe("volume");
+    expect(dimensionForUnit("fl oz")).toBe("volume");
+    expect(dimensionForUnit("g")).toBe("mass");
+    expect(dimensionForUnit("LB")).toBe("mass");
+  });
+
+  it("treats count/portion tokens and unknowns as count (never dropped)", () => {
+    expect(dimensionForUnit("each")).toBe("count");
+    expect(dimensionForUnit("pinch")).toBe("count");
+    expect(dimensionForUnit("glug")).toBe("count");
+  });
+});
+
+describe("mergeLearnedUnits", () => {
+  const fallback: SuggestedUnit[] = [
+    { dimension: "count", unit: "each" },
+    { dimension: "mass", unit: "g" },
+  ];
+
+  it("leads with learned units by usage, then appends missing fallbacks", () => {
+    const merged = mergeLearnedUnits(
+      [
+        { unit: "cup", useCount: 3 },
+        { unit: "g", useCount: 9 },
+      ],
+      fallback,
+    );
+    // g (9) before cup (3), then the fallback `each` not already present.
+    expect(tokens(merged)).toEqual(["g", "cup", "each"]);
+    expect(merged[0]).toEqual({ dimension: "mass", unit: "g" });
+  });
+
+  it("returns a copy of the fallback when there is no learned data", () => {
+    expect(mergeLearnedUnits([], fallback)).toEqual(fallback);
+  });
+
+  it("de-duplicates by unit token", () => {
+    const merged = mergeLearnedUnits([{ unit: "each", useCount: 2 }], fallback);
+    expect(tokens(merged).filter((u) => u === "each")).toHaveLength(1);
   });
 });

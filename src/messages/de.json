@@ -316,5 +316,12 @@
     "nut-seed": "Nuss & Samen",
     "condiment": "Würzmittel",
     "other": "Sonstiges"
+  },
+  "foodGraph": {
+    "variants": "Sorten",
+    "pairings": "Das könnte auch dazu passen",
+    "preps": "Übliche Zubereitungen",
+    "commonAmounts": "Übliche Mengen",
+    "suggestedUnits": "Vorgeschlagene Einheiten"
   }
 }

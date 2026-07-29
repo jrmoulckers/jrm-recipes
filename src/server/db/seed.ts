@@ -40,6 +40,7 @@ import {
   comments,
   cookLogEntries,
   favorites,
+  foodAliases,
   foodItems,
   groupMembers,
   groups,
@@ -71,7 +72,7 @@ import {
   SEED_SHOPPING_LIST_ID,
   type LibraryIds,
 } from "~/server/db/seed-library";
-import { buildFoodItemRows } from "~/server/db/seed-ingredients";
+import { buildFoodAliasRows, buildFoodItemRows } from "~/server/db/seed-ingredients";
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -1034,6 +1035,15 @@ async function seedFoodItems(tx: Tx): Promise<void> {
           densityGPerMl: row.densityGPerMl ?? null,
           updatedAt: new Date(),
         },
+      });
+  }
+  for (const row of buildFoodAliasRows()) {
+    await tx
+      .insert(foodAliases)
+      .values(row)
+      .onConflictDoUpdate({
+        target: foodAliases.id,
+        set: { foodId: row.foodId, alias: row.alias, updatedAt: new Date() },
       });
   }
 }

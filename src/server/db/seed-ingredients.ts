@@ -8,25 +8,24 @@
  * food name, so re-running `pnpm db:seed` updates in place and row counts stay
  * constant.
  */
-import { FOOD_ITEMS, normalizeFoodText } from "~/lib/food-db";
-import type { NewFoodItem } from "./schema";
+import {
+  FOOD_ITEMS,
+  foodNodeId,
+  foodSlug,
+  normalizeFoodText,
+  stableHash,
+} from "~/lib/food-db";
+import type { NewFoodAlias, NewFoodItem } from "./schema";
 
-/** Deterministic prefix so seeded food ids are recognizable + collision-free. */
-const FOOD_ID_PREFIX = "seed_food_";
-
-/**
- * Slugify a food name into a stable, unique, URL-safe key: reuse the shared
- * normalizer (lowercase, strip accents/punctuation), then hyphenate. Bounded to
- * the `food_items.slug` column width (80).
- */
-export function foodSlug(name: string): string {
-  return normalizeFoodText(name).replace(/\s+/g, "-").slice(0, 80);
-}
+/** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
+export { foodSlug };
 
 /**
  * Build the `food_items` rows from the static dataset. Ids are derived from the
  * slug so upserts are idempotent. Throws if two foods slugify to the same key
  * (a data error the seed should surface loudly rather than silently drop a row).
+ * Seeded rows are `source = 'curated'`; the graph miner later adds `'mined'`
+ * rows/stats onto the same nodes.
  */
 export function buildFoodItemRows(): NewFoodItem[] {
   const seen = new Set<string>();
@@ -37,11 +36,45 @@ export function buildFoodItemRows(): NewFoodItem[] {
     }
     seen.add(slug);
     return {
-      id: `${FOOD_ID_PREFIX}${slug}`,
+      id: foodNodeId(food.name),
       slug,
       name: food.name,
       category: food.category,
       densityGPerMl: food.densityGPerMl ?? null,
+      source: "curated",
     } satisfies NewFoodItem;
   });
+}
+
+/**
+ * Build the curated `food_aliases` rows from the static dataset: every food's
+ * name plus its match phrases, normalized and de-duplicated per node. These seed
+ * the alias table (`source = 'curated'`) so free-text resolution works before
+ * any corpus mining has run; the miner later layers `'mined'` phrasings on top.
+ * Ids are a deterministic hash of (nodeId, alias) so re-seeding upserts in place.
+ */
+export function buildFoodAliasRows(): NewFoodAlias[] {
+  const seen = new Set<string>();
+  const rows: NewFoodAlias[] = [];
+  for (const food of FOOD_ITEMS) {
+    const foodId = foodNodeId(food.name);
+    const phrases = new Set<string>();
+    for (const phrase of [food.name, ...food.aliases]) {
+      const alias = normalizeFoodText(phrase).slice(0, 160);
+      if (alias) phrases.add(alias);
+    }
+    for (const alias of phrases) {
+      const key = `${foodId}\u0000${alias}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push({
+        id: `alias_${stableHash(key)}`,
+        foodId,
+        alias,
+        source: "curated",
+        useCount: 0,
+      } satisfies NewFoodAlias);
+    }
+  }
+  return rows;
 }
