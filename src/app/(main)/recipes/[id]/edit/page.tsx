@@ -75,6 +75,7 @@ export default async function EditRecipePage({
     })),
     steps: recipe.steps.map((step) => ({
       section: step.section ?? "",
+      title: step.title ?? "",
       instruction: step.instruction,
       imageUrl: step.imageUrl ?? "",
       videoUrl: step.videoUrl ?? "",

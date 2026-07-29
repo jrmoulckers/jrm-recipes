@@ -20,6 +20,11 @@ export const DIETARY_TAGS = [
   "dairy-free",
   "gluten-free",
   "egg-free",
+  "nut-free",
+  "soy-free",
+  "shellfish-free",
+  "fish-free",
+  "sesame-free",
 ] as const;
 
 /** Dietary badges surfaced alongside a suggested swap. */
@@ -32,6 +37,11 @@ export const DIETARY_TAG_LABELS: Record<DietaryTag, string> = {
   "dairy-free": "Dairy-free",
   "gluten-free": "Gluten-free",
   "egg-free": "Egg-free",
+  "nut-free": "Nut-free",
+  "soy-free": "Soy-free",
+  "shellfish-free": "Shellfish-free",
+  "fish-free": "Fish-free",
+  "sesame-free": "Sesame-free",
 };
 
 const DIETARY_TAG_SET: ReadonlySet<string> = new Set(DIETARY_TAGS);

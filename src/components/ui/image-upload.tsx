@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { ImagePlus, X } from "lucide-react";
+import { ImageOff, ImagePlus, X } from "lucide-react";
 import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 import { env } from "~/env";
@@ -48,6 +48,14 @@ export function ImageUploadField({
 }) {
   const compact = size === "compact";
 
+  // A pasted URL can be a typo, a hotlink-blocked host, or a since-deleted
+  // image. Track load failures so we can swap the browser's broken-image glyph
+  // for a readable fallback (and re-surface the URL input to fix it inline).
+  const [errored, setErrored] = React.useState(false);
+  React.useEffect(() => {
+    setErrored(false);
+  }, [value]);
+
   return (
     <div className="flex flex-col gap-2">
       {label ? <Label>{label}</Label> : null}
@@ -63,8 +71,28 @@ export function ImageUploadField({
           <img
             src={value}
             alt="Selected photo preview"
-            className="size-full object-cover"
+            loading="lazy"
+            decoding="async"
+            onError={() => setErrored(true)}
+            onLoad={() => setErrored(false)}
+            className={cn("size-full object-cover", errored && "hidden")}
           />
+          {errored ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-muted p-3 text-center text-muted-foreground">
+              <ImageOff
+                className={compact ? "size-5" : "size-6"}
+                aria-hidden="true"
+              />
+              <span
+                className={cn("font-medium", compact ? "text-xs" : "text-sm")}
+              >
+                Couldn&apos;t load image
+              </span>
+              {compact ? null : (
+                <span className="text-xs">Check the link, then try again</span>
+              )}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => onChange("")}
@@ -137,7 +165,7 @@ export function ImageUploadField({
         </div>
       ) : null}
 
-      {value ? null : (
+      {value && !errored ? null : (
         <Input
           type="url"
           inputMode="url"

@@ -101,6 +101,11 @@ export const DIET_FORBIDDEN_ALLERGENS: Record<DietaryTag, Allergen[]> = {
   "dairy-free": ["dairy"],
   "gluten-free": ["wheat"],
   "egg-free": ["egg"],
+  "nut-free": ["peanut", "tree-nut"],
+  "soy-free": ["soy"],
+  "shellfish-free": ["shellfish"],
+  "fish-free": ["fish"],
+  "sesame-free": ["sesame"],
 };
 
 /**

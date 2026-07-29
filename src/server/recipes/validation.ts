@@ -102,6 +102,7 @@ export const ingredientInput = z.object({
 
 export const stepInput = z.object({
   section: optionalString(120),
+  title: optionalString(200),
   instruction: z
     .string()
     .trim()

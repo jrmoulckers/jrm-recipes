@@ -654,6 +654,11 @@ export default async function RecipePage({
                                 {step.section}
                               </span>
                             )}
+                            {step.title && (
+                              <h3 className="font-display text-lg font-semibold leading-snug">
+                                {step.title}
+                              </h3>
+                            )}
                             <p className="text-[1.02rem] leading-relaxed">
                               {step.instruction}
                             </p>

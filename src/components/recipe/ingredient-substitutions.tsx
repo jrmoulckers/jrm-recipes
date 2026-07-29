@@ -26,6 +26,11 @@ const TAG_VARIANT: Record<DietaryTag, NonNullable<BadgeProps["variant"]>> = {
   "dairy-free": "accent",
   "gluten-free": "warning",
   "egg-free": "muted",
+  "nut-free": "warning",
+  "soy-free": "muted",
+  "shellfish-free": "secondary",
+  "fish-free": "accent",
+  "sesame-free": "muted",
 };
 
 const FILTER_TAGS = [

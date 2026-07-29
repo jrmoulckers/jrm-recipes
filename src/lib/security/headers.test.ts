@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   applySecurityHeaders,
@@ -75,6 +75,27 @@ describe("buildContentSecurityPolicy", () => {
   it("emits valueless directives without a trailing space", () => {
     expect(csp).toContain("upgrade-insecure-requests");
     expect(csp).not.toContain("upgrade-insecure-requests ");
+  });
+
+  describe("dev-only 'unsafe-eval'", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    const scriptSrc = (policy: string) =>
+      policy.split(";").find((d) => d.trim().startsWith("script-src")) ?? "";
+
+    it("allows eval under `next dev` so HMR can hydrate", () => {
+      vi.stubEnv("NODE_ENV", "development");
+      expect(scriptSrc(buildContentSecurityPolicy("n"))).toContain(
+        "'unsafe-eval'",
+      );
+    });
+
+    it("never ships 'unsafe-eval' in the production policy", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      expect(scriptSrc(buildContentSecurityPolicy("n"))).not.toContain(
+        "'unsafe-eval'",
+      );
+    });
   });
 });
 
