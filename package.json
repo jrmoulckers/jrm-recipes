@@ -63,7 +63,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^0.475.0",
-    "next": "^15.1.7",
+    "next": "^15.5.21",
     "next-cloudinary": "^6.17.5",
     "next-intl": "4.13.2",
     "postgres": "^3.4.5",
@@ -120,6 +120,11 @@
       "sharp",
       "unrs-resolver"
     ],
+    "overrides": {
+      "sharp": "^0.35.0",
+      "next>postcss": "^8.5.18",
+      "brace-expansion": "^5.0.8"
+    },
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-gpj5-g38j-94v9",
