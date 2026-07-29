@@ -42,6 +42,7 @@ import {
   favorites,
   foodAliases,
   foodItems,
+  foodNutrition,
   groupMembers,
   groups,
   mealPlanEntries,
@@ -72,7 +73,11 @@ import {
   SEED_SHOPPING_LIST_ID,
   type LibraryIds,
 } from "~/server/db/seed-library";
-import { buildFoodAliasRows, buildFoodItemRows } from "~/server/db/seed-ingredients";
+import {
+  buildFoodAliasRows,
+  buildFoodItemRows,
+  buildFoodNutritionRows,
+} from "~/server/db/seed-ingredients";
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -1044,6 +1049,25 @@ async function seedFoodItems(tx: Tx): Promise<void> {
       .onConflictDoUpdate({
         target: foodAliases.id,
         set: { foodId: row.foodId, alias: row.alias, updatedAt: new Date() },
+      });
+  }
+  for (const row of buildFoodNutritionRows()) {
+    await tx
+      .insert(foodNutrition)
+      .values(row)
+      .onConflictDoUpdate({
+        target: foodNutrition.foodId,
+        set: {
+          kcal: row.kcal,
+          proteinG: row.proteinG,
+          carbsG: row.carbsG,
+          fatG: row.fatG,
+          fiberG: row.fiberG ?? null,
+          sugarG: row.sugarG ?? null,
+          sodiumMg: row.sodiumMg ?? null,
+          sourceRef: row.sourceRef,
+          updatedAt: new Date(),
+        },
       });
   }
 }

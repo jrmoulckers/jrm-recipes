@@ -314,10 +314,14 @@ default), matching the convention the units session relies on.
   `getVariantsForFood`, `getCommonQuantitiesForFood`, `getPrepsForFood`.
 - **Phase 2 — Near‑neighbour graph.** `food_pairs` + nightly lift; incremental
   update on recipe save; `getPairedFoods`; editor "you might also add…".
-- **Phase 3 — Personalization.** `user_food_prefs`; re‑rank per user; reverse
+- **Phase 3 — Personalization. DONE.** `user_food_prefs`; re‑rank per user; reverse
   index `getRecipesUsingFood`.
-- **Phase 4 — Nutrition.** `food_nutrition` from USDA FDC; per‑recipe nutrition
-  roll‑ups (complements the existing nutrition fields in `recipes`).
+- **Phase 4 — Nutrition. DONE.** `food_nutrition` per canonical node from the
+  public‑domain USDA FDC dataset (curated static module `food-nutrition.ts`,
+  mirrored to the table by the seed; untouched by the mining recompute).
+  `getNutritionForFood` (DB with static fallback) + pure `estimateRecipeNutrition`
+  roll‑up (unit→grams via local density, honest `coverage`), complementing the
+  existing nullable nutrition fields in `recipes`.
 
 Each phase is independently shippable and additive.
 

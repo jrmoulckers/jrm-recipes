@@ -236,6 +236,50 @@ export const foodRecipeLinks = pgTable(
   ],
 );
 
+/**
+ * Authoritative per-100 g nutrition per canonical food (Phase 4,
+ * `docs/food-graph.md` §8, ADR-4). Unlike the affinity tables this is **not**
+ * crowd-mined: it mirrors the curated, public-domain static dataset in
+ * `src/lib/food-nutrition.ts` (USDA FoodData Central), seeded by
+ * `seed-ingredients.ts`, and is left untouched by the graph-mining recompute.
+ * `foodId` is the PK (one row per node); `sourceRef` carries the FDC id. Macros
+ * are NOT NULL (a food always has energy/macros in the source); the finer
+ * breakdowns are nullable because source coverage is uneven — NULL means
+ * "unknown", not zero.
+ */
+export const foodNutrition = pgTable(
+  "food_nutrition",
+  {
+    foodId: fk()
+      .primaryKey()
+      .references(() => foodItems.id, { onDelete: "cascade" }),
+    /** Energy in kilocalories per 100 g. */
+    kcal: real().notNull(),
+    /** Protein in grams per 100 g. */
+    proteinG: real().notNull(),
+    /** Total carbohydrate in grams per 100 g. */
+    carbsG: real().notNull(),
+    /** Total fat in grams per 100 g. */
+    fatG: real().notNull(),
+    /** Dietary fibre (g/100 g), or NULL when unknown. */
+    fiberG: real(),
+    /** Total sugars (g/100 g), or NULL when unknown. */
+    sugarG: real(),
+    /** Sodium (mg/100 g), or NULL when unknown. */
+    sodiumMg: real(),
+    /** Provenance — the USDA FDC id (or other authoritative reference). */
+    sourceRef: varchar({ length: 64 }).notNull(),
+    ...timestamps(),
+  },
+  (t) => [
+    index("food_nutrition_source_idx").on(t.sourceRef),
+    check("food_nutrition_kcal_check", sql`${t.kcal} >= 0`),
+    check("food_nutrition_protein_check", sql`${t.proteinG} >= 0`),
+    check("food_nutrition_carbs_check", sql`${t.carbsG} >= 0`),
+    check("food_nutrition_fat_check", sql`${t.fatG} >= 0`),
+  ],
+);
+
 export type FoodItemRow = typeof foodItems.$inferSelect;
 export type NewFoodItem = typeof foodItems.$inferInsert;
 export type FoodAliasRow = typeof foodAliases.$inferSelect;
@@ -250,3 +294,5 @@ export type UserFoodPrefRow = typeof userFoodPrefs.$inferSelect;
 export type NewUserFoodPref = typeof userFoodPrefs.$inferInsert;
 export type FoodRecipeLinkRow = typeof foodRecipeLinks.$inferSelect;
 export type NewFoodRecipeLink = typeof foodRecipeLinks.$inferInsert;
+export type FoodNutritionRow = typeof foodNutrition.$inferSelect;
+export type NewFoodNutrition = typeof foodNutrition.$inferInsert;

@@ -324,6 +324,8 @@
     "commonAmounts": "الكميات الشائعة",
     "suggestedUnits": "الوحدات المقترحة",
     "yourUsual": "المعتاد لديك",
-    "usedInRecipes": "مستخدم في الوصفات"
+    "usedInRecipes": "مستخدم في الوصفات",
+    "nutrition": "القيمة الغذائية",
+    "perServing": "لكل حصة"
   }
 }

@@ -4,6 +4,7 @@ import { FOOD_ITEMS } from "~/lib/food-db";
 import {
   buildFoodAliasRows,
   buildFoodItemRows,
+  buildFoodNutritionRows,
   foodSlug,
 } from "./seed-ingredients";
 
@@ -69,5 +70,27 @@ describe("buildFoodAliasRows", () => {
   it("is unique per (foodId, alias)", () => {
     const keys = new Set(rows.map((r) => `${r.foodId}\u0000${r.alias}`));
     expect(keys.size).toBe(rows.length);
+  });
+});
+
+describe("buildFoodNutritionRows", () => {
+  const rows = buildFoodNutritionRows();
+  const itemIds = new Set(buildFoodItemRows().map((r) => r.id));
+
+  it("emits curated nutrition, at most one row per food", () => {
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThanOrEqual(FOOD_ITEMS.length);
+    const foodIds = new Set(rows.map((r) => r.foodId));
+    expect(foodIds.size).toBe(rows.length);
+  });
+
+  it("keys every row onto an existing food node with a source ref", () => {
+    for (const row of rows) {
+      expect(itemIds.has(row.foodId)).toBe(true);
+      expect(row.sourceRef.length).toBeGreaterThan(0);
+      expect(row.sourceRef.length).toBeLessThanOrEqual(64);
+      expect(row.kcal).toBeGreaterThanOrEqual(0);
+      expect(row.proteinG).toBeGreaterThanOrEqual(0);
+    }
   });
 });

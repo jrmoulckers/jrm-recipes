@@ -4,6 +4,10 @@ import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import { canonicalFood, normalizeFoodText } from "~/lib/food-db";
 import {
+  nutritionForFood,
+  type NutritionFacts,
+} from "~/lib/food-nutrition";
+import {
   rankNeighbours,
   rankUnitStats,
   type PairEdge,
@@ -22,6 +26,7 @@ import { db, isDbConfigured } from "~/server/db";
 import {
   foodAliases,
   foodItems,
+  foodNutrition,
   foodPairs,
   foodPrepStats,
   foodRecipeLinks,
@@ -409,4 +414,46 @@ export async function getRecipesUsingFood(
     .orderBy(desc(foodRecipeLinks.useCount), desc(recipes.publishedAt))
     .limit(options.limit ?? 24);
   return rows;
+}
+
+/**
+ * Authoritative per-100 g nutrition for a free-text ingredient (Phase 4). Reads
+ * the seeded `food_nutrition` table (which a future USDA sync could refresh
+ * independently of the curated static module), and falls back to the pure
+ * static dataset in `food-nutrition.ts` when the DB isn't configured or has no
+ * row — so nutrition is available offline just like the unit suggestions.
+ * Returns `null` when the food doesn't resolve or has no curated facts.
+ */
+export async function getNutritionForFood(
+  item: string | null | undefined,
+): Promise<NutritionFacts | null> {
+  const staticFacts = nutritionForFood(item);
+  if (!isDbConfigured()) return staticFacts;
+  const id = await resolveNodeId(item);
+  if (!id) return staticFacts;
+  const [row] = await db
+    .select({
+      kcal: foodNutrition.kcal,
+      proteinG: foodNutrition.proteinG,
+      carbsG: foodNutrition.carbsG,
+      fatG: foodNutrition.fatG,
+      fiberG: foodNutrition.fiberG,
+      sugarG: foodNutrition.sugarG,
+      sodiumMg: foodNutrition.sodiumMg,
+      sourceRef: foodNutrition.sourceRef,
+    })
+    .from(foodNutrition)
+    .where(eq(foodNutrition.foodId, id))
+    .limit(1);
+  if (!row) return staticFacts;
+  return {
+    kcal: row.kcal,
+    proteinG: row.proteinG,
+    carbsG: row.carbsG,
+    fatG: row.fatG,
+    fiberG: row.fiberG ?? undefined,
+    sugarG: row.sugarG ?? undefined,
+    sodiumMg: row.sodiumMg ?? undefined,
+    sourceRef: row.sourceRef,
+  };
 }

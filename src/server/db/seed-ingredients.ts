@@ -15,7 +15,12 @@ import {
   normalizeFoodText,
   stableHash,
 } from "~/lib/food-db";
-import type { NewFoodAlias, NewFoodItem } from "./schema";
+import { NUTRITION_BY_SLUG } from "~/lib/food-nutrition";
+import type {
+  NewFoodAlias,
+  NewFoodItem,
+  NewFoodNutrition,
+} from "./schema";
 
 /** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
 export { foodSlug };
@@ -75,6 +80,33 @@ export function buildFoodAliasRows(): NewFoodAlias[] {
         useCount: 0,
       } satisfies NewFoodAlias);
     }
+  }
+  return rows;
+}
+
+/**
+ * Build the curated `food_nutrition` rows from the static dataset
+ * (`src/lib/food-nutrition.ts`). Keyed by the same slug/id as `food_items`, so
+ * each row's `foodId` points at the node the food seed created. Only foods with
+ * curated facts get a row (partial coverage is expected). Idempotent: the PK is
+ * the node id, so re-seeding upserts in place.
+ */
+export function buildFoodNutritionRows(): NewFoodNutrition[] {
+  const rows: NewFoodNutrition[] = [];
+  for (const food of FOOD_ITEMS) {
+    const facts = NUTRITION_BY_SLUG.get(foodSlug(food.name));
+    if (!facts) continue;
+    rows.push({
+      foodId: foodNodeId(food.name),
+      kcal: facts.kcal,
+      proteinG: facts.proteinG,
+      carbsG: facts.carbsG,
+      fatG: facts.fatG,
+      fiberG: facts.fiberG ?? null,
+      sugarG: facts.sugarG ?? null,
+      sodiumMg: facts.sodiumMg ?? null,
+      sourceRef: facts.sourceRef,
+    } satisfies NewFoodNutrition);
   }
   return rows;
 }
