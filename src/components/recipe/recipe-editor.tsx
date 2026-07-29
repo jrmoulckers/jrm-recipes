@@ -58,6 +58,7 @@ import {
   type CustomUnitDef,
 } from "~/lib/units";
 import { unitLabel } from "~/lib/unit-labels";
+import { getSuggestedUnitsForFood } from "~/lib/food-units";
 import {
   createRecipeAction,
   updateRecipeAction,
@@ -1048,6 +1049,38 @@ export function RecipeEditor({
   }, [customUnits]);
   const unitDatalistId = React.useId();
 
+  // Food-type unit groupings: when a row names a food the food graph knows,
+  // surface that food's most-appropriate units first in its unit picker (index
+  // 0 = smartest default), then the rest of the catalog. Keyed by the food name
+  // so rows sharing an ingredient reuse the same computed option list. Rows with
+  // no food match fall back to the shared catalog datalist.
+  const foodUnitOptionsByItem = React.useMemo(() => {
+    const cache = new Map<
+      string,
+      { value: string; label: string }[] | null
+    >();
+    for (const r of ingredients) {
+      const key = r.item.trim().toLowerCase();
+      if (!key || cache.has(key)) continue;
+      const suggestions = getSuggestedUnitsForFood(r.item);
+      if (suggestions.length === 0) {
+        cache.set(key, null);
+        continue;
+      }
+      const seen = new Set<string>();
+      const suggested: { value: string; label: string }[] = [];
+      for (const s of suggestions) {
+        const value = s.unit.trim();
+        if (!value || seen.has(value)) continue;
+        seen.add(value);
+        suggested.push({ value, label: unitLabel(value) });
+      }
+      const rest = unitOptions.filter((o) => !seen.has(o.value));
+      cache.set(key, [...suggested, ...rest]);
+    }
+    return cache;
+  }, [ingredients, unitOptions]);
+
   // "Convert old amount?" affordance, per ingredient row. When a cook swaps a
   // unit for a compatible one and there's an amount to carry over, we stash the
   // converted value; the chip clears the moment the amount is edited or the unit
@@ -1672,11 +1705,26 @@ export function RecipeEditor({
                     );
                     const optionsOpen =
                       hasOptionData || openIngOptions.has(row.key);
+                    const rowUnitOptions =
+                      foodUnitOptionsByItem.get(row.item.trim().toLowerCase()) ??
+                      null;
+                    const rowUnitListId = rowUnitOptions
+                      ? `${unitDatalistId}-${row.key}`
+                      : unitDatalistId;
                     return (
                       <div
                         key={row.key}
                         className="group flex flex-col gap-2 rounded-lg border border-border bg-surface/60 p-3 sm:p-3.5"
                       >
+                        {rowUnitOptions ? (
+                          <datalist id={rowUnitListId}>
+                            {rowUnitOptions.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
+                          </datalist>
+                        ) : null}
                         <div className="flex items-start gap-2">
                           <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_6rem]">
                             <RowField
@@ -1710,7 +1758,7 @@ export function RecipeEditor({
                             <RowField label={t("unit")}>
                               <Input
                                 value={row.unit}
-                                list={unitDatalistId}
+                                list={rowUnitListId}
                                 onChange={(e) =>
                                   changeIngredientUnit(row, e.target.value)
                                 }

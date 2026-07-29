@@ -40,6 +40,9 @@ import {
   comments,
   cookLogEntries,
   favorites,
+  foodAliases,
+  foodItems,
+  foodNutrition,
   groupMembers,
   groups,
   mealPlanEntries,
@@ -70,6 +73,11 @@ import {
   SEED_SHOPPING_LIST_ID,
   type LibraryIds,
 } from "~/server/db/seed-library";
+import {
+  buildFoodAliasRows,
+  buildFoodItemRows,
+  buildFoodNutritionRows,
+} from "~/server/db/seed-ingredients";
 
 // ---------------------------------------------------------------------------
 // Connection (own client so we can honour the non-pooled URL + snake_case).
@@ -1014,6 +1022,56 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
 // Run.
 // ---------------------------------------------------------------------------
 
+/**
+ * Seed the food/ingredient reference table from the curated static dataset.
+ * Idempotent: each row upserts on its stable id so re-seeding updates in place.
+ */
+async function seedFoodItems(tx: Tx): Promise<void> {
+  for (const row of buildFoodItemRows()) {
+    await tx
+      .insert(foodItems)
+      .values(row)
+      .onConflictDoUpdate({
+        target: foodItems.id,
+        set: {
+          slug: row.slug,
+          name: row.name,
+          category: row.category,
+          densityGPerMl: row.densityGPerMl ?? null,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  for (const row of buildFoodAliasRows()) {
+    await tx
+      .insert(foodAliases)
+      .values(row)
+      .onConflictDoUpdate({
+        target: foodAliases.id,
+        set: { foodId: row.foodId, alias: row.alias, updatedAt: new Date() },
+      });
+  }
+  for (const row of buildFoodNutritionRows()) {
+    await tx
+      .insert(foodNutrition)
+      .values(row)
+      .onConflictDoUpdate({
+        target: foodNutrition.foodId,
+        set: {
+          kcal: row.kcal,
+          proteinG: row.proteinG,
+          carbsG: row.carbsG,
+          fatG: row.fatG,
+          fiberG: row.fiberG ?? null,
+          sugarG: row.sugarG ?? null,
+          sodiumMg: row.sodiumMg ?? null,
+          sourceRef: row.sourceRef,
+          updatedAt: new Date(),
+        },
+      });
+  }
+}
+
 async function countAll() {
   const [
     recipeCount,
@@ -1029,6 +1087,7 @@ async function countAll() {
     favoriteCount,
     shoppingItemCount,
     mealPlanCount,
+    foodItemCount,
   ] = await Promise.all([
     db.$count(recipes, inArray(recipes.id, RECIPE_IDS)),
     db.$count(recipeEvents, inArray(recipeEvents.recipeId, RECIPE_IDS)),
@@ -1055,6 +1114,7 @@ async function countAll() {
       eq(shoppingListItems.listId, SEED_SHOPPING_LIST_ID),
     ),
     db.$count(mealPlanEntries, inArray(mealPlanEntries.recipeId, RECIPE_IDS)),
+    db.$count(foodItems),
   ]);
   return {
     recipeCount,
@@ -1070,6 +1130,7 @@ async function countAll() {
     favoriteCount,
     shoppingItemCount,
     mealPlanCount,
+    foodItemCount,
   };
 }
 
@@ -1083,6 +1144,7 @@ async function main() {
     await seedRecipes(tx, owner.id, groupId);
     await seedEngagement(tx, owner.id);
     await seedLibrary(tx, owner.id, groupId);
+    await seedFoodItems(tx);
   });
 
   const c = await countAll();
@@ -1103,6 +1165,7 @@ async function main() {
     `  ${c.shoppingItemCount} shopping-list items, ` +
       `${c.mealPlanCount} recipe-linked meal-plan entries`,
   );
+  console.log(`  ${c.foodItemCount} food/ingredient reference rows`);
 
   await client.end();
   process.exit(0);

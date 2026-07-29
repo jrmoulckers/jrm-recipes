@@ -20,6 +20,7 @@ import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import { deriveDietaryTags } from "~/lib/dietary-derive";
 import { AuditAction, recordAudit } from "~/server/audit";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
+import { scheduleFoodGraphRefresh } from "~/server/db/food-graph-refresh";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
@@ -421,7 +422,7 @@ async function applyRecipeInput(
 }
 
 export async function createRecipe(input: RecipeInput, author: User) {
-  return withSlugConflictRetry(() =>
+  const recipe = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       const groupId = await resolveGroupId(tx, input, author);
       const slug = await uniqueSlug(tx, recipeSlug(input.title));
@@ -457,6 +458,10 @@ export async function createRecipe(input: RecipeInput, author: User) {
       return recipe;
     }),
   );
+  // Fold the new ingredients into the live food graph (Phase 2). Post-commit and
+  // fire-and-forget so graph maintenance never blocks or fails the save.
+  scheduleFoodGraphRefresh();
+  return recipe;
 }
 
 export async function updateRecipe(
@@ -464,7 +469,7 @@ export async function updateRecipe(
   input: RecipeInput,
   author: User,
 ) {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
       columns: {
@@ -503,6 +508,8 @@ export async function updateRecipe(
     }
     return result;
   });
+  scheduleFoodGraphRefresh();
+  return result;
 }
 
 export async function forkRecipe(
@@ -510,7 +517,7 @@ export async function forkRecipe(
   author: User,
   forkNote?: string,
 ) {
-  return withSlugConflictRetry(() =>
+  const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       const source = await tx.query.recipes.findFirst({
         where: or(
@@ -584,6 +591,8 @@ export async function forkRecipe(
       return { ...recipe, source: { id: source.id, slug: source.slug } };
     }),
   );
+  scheduleFoodGraphRefresh();
+  return result;
 }
 
 export async function revertRecipe(
@@ -591,7 +600,7 @@ export async function revertRecipe(
   versionNumber: number,
   author: User,
 ) {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const current = await tx.query.recipes.findFirst({
       where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
       columns: { id: true, slug: true, publishedAt: true, status: true },
@@ -626,6 +635,8 @@ export async function revertRecipe(
     });
     return result;
   });
+  scheduleFoodGraphRefresh();
+  return result;
 }
 
 /**
@@ -677,6 +688,9 @@ export async function deleteRecipe(id: string, author: User) {
     targetType: "recipe",
     targetId: id,
   });
+  // A tombstoned recipe drops out of the mined corpus (ingest filters
+  // `deleted_at IS NULL`), so refresh to retire its now-orphaned signal.
+  scheduleFoodGraphRefresh();
   return row;
 }
 
@@ -698,6 +712,8 @@ export async function restoreRecipe(id: string, author: User) {
     )
     .returning({ id: recipes.id, slug: recipes.slug });
   if (!row) throw new DomainError("NOT_FOUND");
+  // Restoring returns the recipe's ingredients to the live corpus.
+  scheduleFoodGraphRefresh();
   return row;
 }
 
