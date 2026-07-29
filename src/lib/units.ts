@@ -27,6 +27,48 @@ export function roundNice(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
+const VULGAR_VALUES: Record<string, number> = Object.fromEntries(
+  VULGAR.map(([value, glyph]) => [glyph, value]),
+);
+
+/**
+ * Parse a cook-entered amount into a number, understanding the ways people write
+ * quantities: decimals ("1.5", or "1,5" with a comma separator), ascii fractions
+ * ("1/2", "1 1/2"), and vulgar glyphs ("½", "1½", "1 ½"). Returns null for blank
+ * or unparseable input so callers can distinguish "no amount" from zero. Used by
+ * the editor's native amount entry and the unit-conversion affordance.
+ */
+export function parseAmount(input: string | null | undefined): number | null {
+  if (input == null) return null;
+  const s = input.trim();
+  if (s === "") return null;
+
+  // Vulgar glyph, optionally preceded by a whole number ("1½", "1 ½", "½").
+  const glyph = /[⅛⅙¼⅓⅜½⅝⅔¾⅚⅞]/.exec(s)?.[0];
+  if (glyph) {
+    const frac = VULGAR_VALUES[glyph];
+    if (frac == null) return null;
+    const rest = s.replace(glyph, " ").trim();
+    if (rest === "") return roundNice(frac);
+    const whole = Number(rest.replace(",", "."));
+    return Number.isFinite(whole) ? roundNice(whole + frac) : null;
+  }
+
+  // Ascii fraction, optionally with a leading whole ("1/2", "1 1/2").
+  const asciiFraction = /^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/.exec(s);
+  if (asciiFraction) {
+    const whole = asciiFraction[1] ? Number(asciiFraction[1]) : 0;
+    const numerator = Number(asciiFraction[2]);
+    const denominator = Number(asciiFraction[3]);
+    if (denominator === 0) return null;
+    return roundNice(whole + numerator / denominator);
+  }
+
+  // Plain decimal; tolerate a comma decimal separator (de/es keyboards).
+  const n = Number(s.replace(",", "."));
+  return Number.isFinite(n) ? roundNice(n) : null;
+}
+
 /**
  * Map an app locale id to a BCP-47 tag suitable for `Intl` number formatting.
  * Current CLDR resolves a region-less `ar` to Western ("latn") digits, but
@@ -828,4 +870,223 @@ export function defaultSystemForLocale(locale: string): "us" | "metric" {
     region = undefined;
   }
   return region && US_CUSTOMARY_REGIONS.has(region) ? "us" : "metric";
+}
+
+// --- Public unit catalog + custom units (interchangeable units) ----------
+
+/**
+ * Public, `base`-free view of a canonical unit, for enumerating the units a
+ * picker can offer (editor unit combobox, settings per-dimension defaults). The
+ * internal {@link UnitDef} keeps its conversion `base` private; this is the
+ * shape UI code should consume.
+ */
+export type UnitInfo = {
+  /** Canonical id — what's stored and passed to {@link convertUnit}. */
+  id: string;
+  dimension: Dimension;
+  system: "us" | "metric" | "any";
+  aliases: string[];
+  plural?: string;
+};
+
+function toUnitInfo(def: UnitDef): UnitInfo {
+  return {
+    id: def.canonical,
+    dimension: def.dimension,
+    system: def.system,
+    aliases: def.aliases,
+    plural: def.plural,
+  };
+}
+
+/** Every built-in canonical unit, in catalog order. */
+export function listUnits(): UnitInfo[] {
+  return UNIT_DEFS.map(toUnitInfo);
+}
+
+/** Built-in canonical units of one dimension (e.g. all volume units). */
+export function unitsForDimension(dimension: Dimension): UnitInfo[] {
+  return UNIT_DEFS.filter((d) => d.dimension === dimension).map(toUnitInfo);
+}
+
+/** Look up a built-in unit by canonical id or any alias; null if unknown. */
+export function getUnitInfo(unit: string | null | undefined): UnitInfo | null {
+  if (!unit) return null;
+  const def = UNIT_INDEX.get(unit.trim().toLowerCase());
+  return def ? toUnitInfo(def) : null;
+}
+
+/** True when a unit string resolves to a built-in canonical unit. */
+export function isKnownUnit(unit: string | null | undefined): boolean {
+  return getUnitInfo(unit) != null;
+}
+
+/**
+ * A user-defined unit (see the `custom_units` table). `baseUnit`/`baseAmount`
+ * express its equivalence — one custom unit equals `baseAmount` of the canonical
+ * `baseUnit` (a "pinch" → baseUnit "tsp", baseAmount 0.0625). Both null means a
+ * display-only unit with no conversion. `displayAsTrue` asks the UI to render
+ * the converted true amount ("1/16 tsp") instead of the custom label.
+ */
+export type CustomUnitDef = {
+  name: string;
+  dimension: Dimension;
+  baseUnit: string | null;
+  baseAmount: number | null;
+  abbreviation?: string | null;
+  displayAsTrue?: boolean;
+};
+
+function findCustom(
+  unit: string | null | undefined,
+  customs: readonly CustomUnitDef[] | undefined,
+): CustomUnitDef | null {
+  if (!unit || !customs || customs.length === 0) return null;
+  const key = unit.trim().toLowerCase();
+  return (
+    customs.find(
+      (c) =>
+        c.name.trim().toLowerCase() === key ||
+        c.abbreviation?.trim().toLowerCase() === key,
+    ) ?? null
+  );
+}
+
+/**
+ * The dimension a unit measures, resolving built-in units and a user's custom
+ * units alike. Custom units win only when they aren't also a built-in name.
+ */
+export function dimensionOf(
+  unit: string | null | undefined,
+  customs?: readonly CustomUnitDef[],
+): Dimension | null {
+  return unitDimension(unit) ?? findCustom(unit, customs)?.dimension ?? null;
+}
+
+/**
+ * Reduce a (possibly custom) measure to a built-in canonical measure so the
+ * core `convertUnit` math can run. A custom unit with an equivalence multiplies
+ * through to its base unit; a bare built-in passes through; anything with no
+ * conversion path returns null.
+ */
+function reduceToCanonical(
+  quantity: number,
+  unit: string,
+  customs: readonly CustomUnitDef[] | undefined,
+): { quantity: number; unit: string } | null {
+  if (isKnownUnit(unit)) {
+    return { quantity, unit: normalizeUnit(unit)! };
+  }
+  const custom = findCustom(unit, customs);
+  if (custom?.baseUnit != null && custom.baseAmount != null) {
+    return { quantity: quantity * custom.baseAmount, unit: custom.baseUnit };
+  }
+  return null;
+}
+
+/**
+ * Convert a quantity between any two units — built-in or custom — returning null
+ * when the units share no dimension or a custom unit has no equivalence. Built-in
+ * → built-in delegates to {@link convertUnit}; custom units are resolved through
+ * their canonical equivalence first (and, for a custom target, divided back out).
+ */
+export function convertAmount(
+  quantity: number,
+  from: string,
+  to: string,
+  customs?: readonly CustomUnitDef[],
+): number | null {
+  if (from.trim().toLowerCase() === to.trim().toLowerCase()) {
+    return roundNice(quantity);
+  }
+  const reduced = reduceToCanonical(quantity, from, customs);
+  if (!reduced) return null;
+
+  if (isKnownUnit(to)) {
+    return convertUnit(reduced.quantity, reduced.unit, to);
+  }
+  const target = findCustom(to, customs);
+  if (target?.baseUnit != null && target.baseAmount != null) {
+    const inBase = convertUnit(reduced.quantity, reduced.unit, target.baseUnit);
+    if (inBase == null) return null;
+    return roundNice(inBase / target.baseAmount);
+  }
+  return null;
+}
+
+/**
+ * A user's unit preferences, mirroring the `user_unit_preferences` row. The
+ * per-dimension fields are a canonical unit id (or custom unit name) the user
+ * always wants that dimension shown in; null falls back to `defaultSystem`'s
+ * friendly ladder. `autoConvert` off means "always show the author's original".
+ */
+export type UnitPrefs = {
+  defaultSystem: "us" | "metric";
+  volumeUnit?: string | null;
+  massUnit?: string | null;
+  temperatureUnit?: string | null;
+  autoConvert: boolean;
+};
+
+/** Sensible built-in defaults: metric, no per-dimension overrides, auto-convert on. */
+export const DEFAULT_UNIT_PREFS: UnitPrefs = {
+  defaultSystem: "metric",
+  volumeUnit: null,
+  massUnit: null,
+  temperatureUnit: null,
+  autoConvert: true,
+};
+
+function overrideFor(prefs: UnitPrefs, dimension: Dimension): string | null {
+  if (dimension === "volume") return prefs.volumeUnit ?? null;
+  if (dimension === "mass") return prefs.massUnit ?? null;
+  if (dimension === "temperature") return prefs.temperatureUnit ?? null;
+  return null;
+}
+
+/**
+ * Resolve how an ingredient amount should be displayed for a viewer, honoring
+ * their preferences (issue: interchangeable units). The recipe keeps the
+ * author's original amount+unit as the source of truth; this converts a copy for
+ * display only.
+ *
+ * Order of resolution:
+ *   1. `autoConvert` off, no unit, or a count/unknown unit → the original.
+ *   2. A per-dimension override unit set → convert to exactly that unit (a custom
+ *      unit that asks to display as its true amount resolves to the true amount).
+ *   3. Otherwise → the friendly {@link toSystem} unit for `defaultSystem`.
+ *
+ * Returns null only when there's no unit at all; callers then show the bare
+ * number. Falls back to the friendly ladder if an override conversion fails.
+ */
+export function resolveDisplayMeasure(
+  quantity: number,
+  unit: string | null | undefined,
+  prefs: UnitPrefs,
+  customs?: readonly CustomUnitDef[],
+): Measure | null {
+  if (!unit) return null;
+  const dim = dimensionOf(unit, customs);
+  if (!prefs.autoConvert || dim == null || dim === "count") {
+    return { quantity: roundNice(quantity), unit };
+  }
+
+  const override = overrideFor(prefs, dim);
+  if (override) {
+    const custom = findCustom(override, customs);
+    // A custom target that wants its true amount shown resolves to that amount
+    // in the custom's own base unit instead of the custom label.
+    if (custom?.displayAsTrue && custom.baseUnit != null) {
+      const converted = convertAmount(quantity, unit, custom.baseUnit, customs);
+      if (converted != null) {
+        return { quantity: converted, unit: custom.baseUnit };
+      }
+    } else {
+      const converted = convertAmount(quantity, unit, override, customs);
+      if (converted != null) return { quantity: converted, unit: override };
+    }
+    // Override didn't apply (incompatible dimension / no equivalence): fall back.
+  }
+
+  return toSystem(quantity, unit, prefs.defaultSystem);
 }

@@ -54,6 +54,7 @@
     "settings": {
       "title": "Konto & Einstellungen",
       "dietary": "Ernährungsprofile",
+      "units": "Einheiten & Maße",
       "notifications": "Benachrichtigungen",
       "blocked": "Blockierte Nutzer",
       "data": "Deine Daten",

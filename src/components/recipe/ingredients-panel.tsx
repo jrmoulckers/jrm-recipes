@@ -7,16 +7,20 @@ import { useLocale } from "next-intl";
 import { cn } from "~/lib/utils";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
+  convertAmount,
   decomposeMeasure,
   deriveScaleFactor,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
   formatQuantity,
+  resolveDisplayMeasure,
   scaleQuantity,
   toSystem,
   toSystemRange,
   toWeight,
+  type CustomUnitDef,
+  type UnitPrefs,
 } from "~/lib/units";
 import { computeBakersFormula, computeBatchYield } from "~/lib/bakers-math";
 import { type UnitSystem } from "~/lib/cook-state";
@@ -42,6 +46,7 @@ import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
+import { useUnitPrefsContext } from "~/components/recipe/unit-prefs-context";
 import {
   NutritionPanel,
   type CalorieMember,
@@ -105,11 +110,28 @@ export type IngredientsPanelControls = {
   householdSize?: number | null;
 };
 
+/**
+ * Build the effective {@link UnitPrefs} for a live conversion: the viewer's saved
+ * per-dimension overrides + custom units, but with `defaultSystem` pinned to the
+ * system the panel toggle currently shows so switching us↔metric still works.
+ */
+function effectivePrefs(prefs: UnitPrefs, system: "us" | "metric"): UnitPrefs {
+  return {
+    defaultSystem: system,
+    volumeUnit: prefs.volumeUnit,
+    massUnit: prefs.massUnit,
+    temperatureUnit: prefs.temperatureUnit,
+    autoConvert: true,
+  };
+}
+
 function measure(
   q: number | null,
   unit: string | null,
   system: System,
   item: string,
+  prefs?: UnitPrefs,
+  customs?: readonly CustomUnitDef[],
 ) {
   if (q == null) return { q: null as number | null, unit: unit ?? "" };
   if (system === "original" || !unit) return { q, unit: unit ?? "" };
@@ -118,6 +140,12 @@ function measure(
     // leaving count/unknown ingredients (e.g. "1 egg", "pinch") untouched.
     const grams = toWeight(q, unit, item);
     return grams != null ? { q: grams, unit: "g" } : { q, unit };
+  }
+  // us/metric: honor the viewer's per-dimension defaults + custom units when we
+  // have their prefs; otherwise fall back to the friendly-ladder default.
+  if (prefs) {
+    const m = resolveDisplayMeasure(q, unit, effectivePrefs(prefs, system), customs);
+    return m ? { q: m.quantity, unit: m.unit } : { q, unit };
   }
   const converted = toSystem(q, unit, system);
   return converted
@@ -139,6 +167,8 @@ function measureRange(
   unit: string | null,
   system: System,
   item: string,
+  prefs?: UnitPrefs,
+  customs?: readonly CustomUnitDef[],
 ): { q: number | null; qMax: number | null; unit: string } {
   if (q == null) return { q: null, qMax: null, unit: unit ?? "" };
   if (system === "original" || !unit) return { q, qMax, unit: unit ?? "" };
@@ -147,6 +177,18 @@ function measureRange(
     if (grams == null) return { q, qMax, unit };
     const gramsMax = qMax != null ? toWeight(qMax, unit, item) : null;
     return { q: grams, qMax: gramsMax, unit: "g" };
+  }
+  // us/metric with the viewer's prefs: resolve the low end to the target unit,
+  // then bring the high end onto that same unit so the range stays coherent.
+  if (prefs) {
+    const low = resolveDisplayMeasure(q, unit, effectivePrefs(prefs, system), customs);
+    if (!low) return { q, qMax, unit };
+    const hi = qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
+    return {
+      q: low.quantity,
+      qMax: qMax != null ? (hi ?? qMax) : null,
+      unit: low.unit,
+    };
   }
   const range = toSystemRange(q, qMax, unit, system);
   return range
@@ -160,10 +202,12 @@ function amountLabel(
   system: System,
   locale: string,
   kid = false,
+  prefs?: UnitPrefs,
+  customs?: readonly CustomUnitDef[],
 ) {
   const q = scaleQuantity(ing.quantity, factor);
   const qMax = scaleQuantity(ing.quantityMax, factor);
-  const m = measureRange(q, qMax, ing.unit, system, ing.item);
+  const m = measureRange(q, qMax, ing.unit, system, ing.item, prefs, customs);
   const mMax = m.qMax != null ? { q: m.qMax, unit: m.unit } : null;
   if (m.q == null) {
     return {
@@ -207,6 +251,8 @@ export function IngredientsPanel({
   nutrition,
   members,
   ingredientSuggestions,
+  unitPrefs,
+  customUnits,
 }: {
   ingredients: PanelIngredient[];
   baseServings: number | null;
@@ -218,13 +264,26 @@ export function IngredientsPanel({
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
   ingredientSuggestions?: IngredientSuggestions;
+  /** Viewer's saved unit preferences: seeds the initial system + per-dimension conversion. */
+  unitPrefs?: UnitPrefs;
+  /** Viewer's custom units (e.g. "pinch"), consulted during live conversion. */
+  customUnits?: readonly CustomUnitDef[];
 }) {
   const canScale = baseServings != null && baseServings > 0;
+  // Props win, but fall back to the ambient viewer prefs (Cook Mode threads them
+  // via context instead of prop-drilling through its sub-components).
+  const ctxPrefs = useUnitPrefsContext();
+  const prefs = unitPrefs ?? ctxPrefs.prefs;
+  const customs = customUnits ?? ctxPrefs.customs;
   const [servingsInternal, setServingsInternal] = React.useState(
     baseServings ?? 1,
   );
-  const [systemInternal, setSystemInternal] =
-    React.useState<System>("original");
+  // Seed the display system from the viewer's saved preference so amounts
+  // auto-convert on open; "original" preserves the author's units when the
+  // viewer opts out of auto-conversion.
+  const [systemInternal, setSystemInternal] = React.useState<System>(
+    prefs?.autoConvert ? prefs.defaultSystem : "original",
+  );
   const [checkedInternal, setCheckedInternal] = React.useState<Set<string>>(
     new Set(),
   );
@@ -291,10 +350,13 @@ export function IngredientsPanel({
   const amounts = React.useMemo(() => {
     const map = new Map<string, { number: string; unit: string }>();
     for (const ing of ingredients) {
-      map.set(ing.id, amountLabel(ing, factor, system, locale, kidSafe));
+      map.set(
+        ing.id,
+        amountLabel(ing, factor, system, locale, kidSafe, prefs, customs),
+      );
     }
     return map;
-  }, [ingredients, factor, system, locale, kidSafe]);
+  }, [ingredients, factor, system, locale, kidSafe, prefs, customs]);
 
   const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
 
@@ -757,6 +819,8 @@ export function IngredientsPanel({
                         ing.unit,
                         system,
                         ing.item,
+                        prefs,
+                        customs,
                       )
                     : null;
                 const breakdown = displayed

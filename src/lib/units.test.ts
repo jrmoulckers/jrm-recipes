@@ -1,23 +1,34 @@
 ﻿import { describe, expect, it } from "vitest";
 
 import {
+  convertAmount,
   convertTemperature,
   convertUnit,
   decomposeMeasure,
+  DEFAULT_UNIT_PREFS,
   defaultSystemForLocale,
   densityForItem,
   deriveScaleFactor,
+  dimensionOf,
   displayUnit,
   expandKidUnit,
   formatKidAmount,
   formatMetricQuantity,
   formatQuantity,
+  getUnitInfo,
+  isKnownUnit,
+  listUnits,
   normalizeUnit,
+  parseAmount,
+  resolveDisplayMeasure,
   scaleQuantity,
   toSystem,
   toSystemRange,
   toWeight,
   unitDimension,
+  unitsForDimension,
+  type CustomUnitDef,
+  type UnitPrefs,
 } from "./units";
 
 describe("formatQuantity", () => {
@@ -517,3 +528,153 @@ describe("expandKidUnit (issue #447)", () => {
     expect(expandKidUnit(null, 2)).toBe("");
   });
 });
+
+
+const PINCH: CustomUnitDef = {
+  name: "pinch",
+  dimension: "volume",
+  baseUnit: "tsp",
+  baseAmount: 1 / 16,
+  abbreviation: "pn",
+};
+
+const KNOB: CustomUnitDef = {
+  name: "knob",
+  dimension: "mass",
+  baseUnit: null,
+  baseAmount: null,
+};
+
+describe("unit catalog", () => {
+  it("lists built-in units and filters by dimension", () => {
+    const all = listUnits();
+    expect(all.some((u) => u.id === "cup")).toBe(true);
+    expect(all.every((u) => !("base" in u))).toBe(true);
+    const volume = unitsForDimension("volume");
+    expect(volume.every((u) => u.dimension === "volume")).toBe(true);
+    expect(volume.some((u) => u.id === "ml")).toBe(true);
+    expect(volume.some((u) => u.id === "g")).toBe(false);
+  });
+
+  it("resolves unit info by id or alias, and reports known units", () => {
+    expect(getUnitInfo("Tablespoons")?.id).toBe("tbsp");
+    expect(getUnitInfo("pinch")).toBeNull();
+    expect(isKnownUnit("cups")).toBe(true);
+    expect(isKnownUnit("pinch")).toBe(false);
+  });
+});
+
+describe("dimensionOf", () => {
+  it("resolves built-in and custom units", () => {
+    expect(dimensionOf("cup")).toBe("volume");
+    expect(dimensionOf("kg")).toBe("mass");
+    expect(dimensionOf("pinch")).toBeNull();
+    expect(dimensionOf("pinch", [PINCH])).toBe("volume");
+  });
+});
+
+describe("convertAmount (custom units)", () => {
+  it("converts between built-in units like convertUnit", () => {
+    expect(convertAmount(3, "tsp", "tbsp")).toBe(convertUnit(3, "tsp", "tbsp"));
+  });
+
+  it("converts a custom unit to its true amount", () => {
+    // 16 pinches = 1 tsp
+    expect(convertAmount(16, "pinch", "tsp", [PINCH])).toBeCloseTo(1, 5);
+    // 1 tsp = 16 pinches
+    expect(convertAmount(1, "tsp", "pinch", [PINCH])).toBeCloseTo(16, 5);
+  });
+
+  it("returns null for display-only custom units and incompatible dims", () => {
+    expect(convertAmount(1, "knob", "g", [KNOB])).toBeNull();
+    expect(convertAmount(1, "pinch", "g", [PINCH])).toBeNull();
+    expect(convertAmount(1, "unknownium", "g")).toBeNull();
+  });
+});
+
+describe("resolveDisplayMeasure", () => {
+  const prefs = (over: Partial<UnitPrefs> = {}): UnitPrefs => ({
+    ...DEFAULT_UNIT_PREFS,
+    ...over,
+  });
+
+  it("returns the original when auto-convert is off", () => {
+    expect(
+      resolveDisplayMeasure(2, "cup", prefs({ autoConvert: false })),
+    ).toEqual({ quantity: 2, unit: "cup" });
+  });
+
+  it("leaves counts and unitless amounts untouched", () => {
+    expect(resolveDisplayMeasure(3, null, prefs())).toBeNull();
+    expect(resolveDisplayMeasure(2, "egg", prefs())).toEqual({
+      quantity: 2,
+      unit: "egg",
+    });
+  });
+
+  it("converts to a per-dimension override unit", () => {
+    const m = resolveDisplayMeasure(
+      1,
+      "cup",
+      prefs({ volumeUnit: "ml" }),
+    );
+    expect(m?.unit).toBe("ml");
+    expect(m?.quantity).toBeCloseTo(236.588, 1);
+  });
+
+  it("falls back to the friendly ladder with no override", () => {
+    const m = resolveDisplayMeasure(500, "ml", prefs({ defaultSystem: "us" }));
+    expect(m?.unit).toBe("cup");
+  });
+
+  it("converts into a custom unit, or its true amount when asked", () => {
+    const asCustom = resolveDisplayMeasure(1, "tsp", prefs({ volumeUnit: "pinch" }), [
+      PINCH,
+    ]);
+    expect(asCustom).toEqual({ quantity: 16, unit: "pinch" });
+
+    const asTrue = resolveDisplayMeasure(
+      1,
+      "tsp",
+      prefs({ volumeUnit: "pinch" }),
+      [{ ...PINCH, displayAsTrue: true }],
+    );
+    expect(asTrue?.unit).toBe("tsp");
+    expect(asTrue?.quantity).toBeCloseTo(1, 5);
+  });
+});
+
+describe("parseAmount", () => {
+  it("parses plain decimals", () => {
+    expect(parseAmount("2")).toBe(2);
+    expect(parseAmount("1.5")).toBe(1.5);
+    expect(parseAmount("0.25")).toBe(0.25);
+  });
+
+  it("parses ascii fractions with and without a whole part", () => {
+    expect(parseAmount("1/2")).toBe(0.5);
+    expect(parseAmount("3/4")).toBe(0.75);
+    expect(parseAmount("1 1/2")).toBe(1.5);
+    expect(parseAmount("2 2/3")).toBeCloseTo(2.667, 3);
+  });
+
+  it("parses vulgar-fraction glyphs, alone or after a whole", () => {
+    expect(parseAmount("½")).toBe(0.5);
+    expect(parseAmount("1½")).toBe(1.5);
+    expect(parseAmount("1 ¾")).toBe(1.75);
+    expect(parseAmount("⅓")).toBeCloseTo(0.333, 3);
+  });
+
+  it("tolerates a comma decimal separator", () => {
+    expect(parseAmount("1,5")).toBe(1.5);
+  });
+
+  it("returns null for blank or unparseable input", () => {
+    expect(parseAmount("")).toBeNull();
+    expect(parseAmount("   ")).toBeNull();
+    expect(parseAmount(null)).toBeNull();
+    expect(parseAmount("abc")).toBeNull();
+    expect(parseAmount("1/0")).toBeNull();
+  });
+});
+

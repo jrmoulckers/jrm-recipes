@@ -6,6 +6,9 @@ import {
   RecipeEditor,
   type RecipeEditorValue,
 } from "~/components/recipe/recipe-editor";
+import { listCustomUnits } from "~/server/units/queries";
+import { toCustomUnitDefs } from "~/lib/unit-prefs";
+import { isDbConfigured } from "~/server/db";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 
@@ -24,6 +27,9 @@ export default async function EditRecipePage({
   if (!recipe) notFound();
 
   const groups = await listUserGroups(user.id);
+  const customUnits = isDbConfigured()
+    ? toCustomUnitDefs(await listCustomUnits(user.id))
+    : [];
 
   const initial: RecipeEditorValue = {
     title: recipe.title,
@@ -95,6 +101,7 @@ export default async function EditRecipePage({
       recipeId={recipe.id}
       initial={initial}
       groups={groups}
+      customUnits={customUnits}
     />
   );
 }

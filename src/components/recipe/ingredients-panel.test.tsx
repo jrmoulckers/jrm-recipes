@@ -198,3 +198,77 @@ describe("IngredientsPanel anchored suggestions (RSC boundary regression)", () =
     expect(queryAllByTestId("anchored-suggestions")).toHaveLength(0);
   });
 });
+
+describe("IngredientsPanel display-time unit conversion", () => {
+  const water = [
+    {
+      id: "water",
+      section: null,
+      quantity: 240,
+      quantityMax: null,
+      unit: "ml",
+      item: "water",
+      note: null,
+      optional: false,
+    },
+  ];
+
+  it("auto-converts to the viewer's saved system on first paint", () => {
+    const { container } = render(
+      <IngredientsPanel
+        ingredients={water}
+        baseServings={1}
+        servingsNoun={null}
+        unitPrefs={{
+          defaultSystem: "us",
+          volumeUnit: null,
+          massUnit: null,
+          temperatureUnit: null,
+          autoConvert: true,
+        }}
+      />,
+    );
+    // 240 ml ≈ 1 cup: the panel should open already in US units.
+    expect(container.textContent).toMatch(/cup/i);
+    expect(container.textContent).not.toMatch(/\bml\b/i);
+  });
+
+  it("keeps the author's original units when auto-convert is off", () => {
+    const { container } = render(
+      <IngredientsPanel
+        ingredients={water}
+        baseServings={1}
+        servingsNoun={null}
+        unitPrefs={{
+          defaultSystem: "us",
+          volumeUnit: null,
+          massUnit: null,
+          temperatureUnit: null,
+          autoConvert: false,
+        }}
+      />,
+    );
+    expect(container.textContent).toMatch(/\bml\b/i);
+    expect(container.textContent).not.toMatch(/cup/i);
+  });
+
+  it("honors a per-dimension unit override", () => {
+    const { container } = render(
+      <IngredientsPanel
+        ingredients={water}
+        baseServings={1}
+        servingsNoun={null}
+        unitPrefs={{
+          defaultSystem: "metric",
+          volumeUnit: "cup",
+          massUnit: null,
+          temperatureUnit: null,
+          autoConvert: true,
+        }}
+      />,
+    );
+    // Metric system, but volume is pinned to cups → cups win.
+    expect(container.textContent).toMatch(/cup/i);
+  });
+});
+

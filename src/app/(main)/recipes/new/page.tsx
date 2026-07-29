@@ -4,6 +4,9 @@ import { getCurrentUser } from "~/server/auth";
 import { getLimitStatus } from "~/server/billing/entitlements";
 import { listUserGroups } from "~/server/recipes/queries";
 import { RecipeEditor } from "~/components/recipe/recipe-editor";
+import { listCustomUnits } from "~/server/units/queries";
+import { toCustomUnitDefs } from "~/lib/unit-prefs";
+import { isDbConfigured } from "~/server/db";
 import { safeSharedImageUrl } from "~/lib/share-target";
 import { UsageLimitNotice } from "~/components/billing/usage-limit-notice";
 
@@ -33,6 +36,10 @@ export default async function NewRecipePage({
 
   const user = await getCurrentUser();
   const groups = user ? await listUserGroups(user.id) : [];
+  const customUnits =
+    user && isDbConfigured()
+      ? toCustomUnitDefs(await listCustomUnits(user.id))
+      : [];
 
   // Surface the recipe soft-limit (#318) before the editor: a gentle heads-up as
   // the free cap approaches, and a calm note once reached. Creating is still
@@ -56,6 +63,7 @@ export default async function NewRecipePage({
       <RecipeEditor
         mode="create"
         groups={groups}
+        customUnits={customUnits}
         initialCoverImageUrl={initialCoverImageUrl}
         initialTitle={initialTitle}
         initialImportUrl={initialImportUrl}
