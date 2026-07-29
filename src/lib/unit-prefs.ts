@@ -17,6 +17,9 @@ import {
 export type UnitPreferencesRow = {
   defaultSystem: "us" | "metric";
   volumeUnit: string | null;
+  liquidVolumeUnit: string | null;
+  dryVolumeUnit: string | null;
+  smallVolumeUnit: string | null;
   massUnit: string | null;
   temperatureUnit: string | null;
   autoConvert: boolean;
@@ -52,6 +55,9 @@ export function toUnitPrefs(
   return {
     defaultSystem: row.defaultSystem,
     volumeUnit: row.volumeUnit,
+    liquidVolumeUnit: row.liquidVolumeUnit,
+    dryVolumeUnit: row.dryVolumeUnit,
+    smallVolumeUnit: row.smallVolumeUnit,
     massUnit: row.massUnit,
     temperatureUnit: row.temperatureUnit,
     autoConvert: row.autoConvert,

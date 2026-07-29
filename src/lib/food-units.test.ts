@@ -9,6 +9,8 @@ import {
   getSuggestedUnitsForFood,
   mergeLearnedUnits,
   suggestedUnitsForCategory,
+  volumeClassForCategory,
+  volumeClassForItem,
   type SuggestedUnit,
 } from "./food-units";
 
@@ -167,6 +169,34 @@ describe("applyUnitPreference", () => {
     const copy = applyUnitPreference(units, null);
     expect(copy).toEqual(units);
     expect(copy).not.toBe(units);
+  });
+});
+
+describe("volumeClassForCategory / volumeClassForItem", () => {
+  it("assigns every category a valid volume class", () => {
+    for (const category of FOOD_CATEGORIES) {
+      expect(["liquid", "dry", "small"]).toContain(
+        volumeClassForCategory(category),
+      );
+    }
+  });
+
+  it("treats pourables as liquid and seasonings as small", () => {
+    expect(volumeClassForCategory("liquid")).toBe("liquid");
+    expect(volumeClassForCategory("dairy")).toBe("liquid");
+    expect(volumeClassForCategory("fat-oil")).toBe("liquid");
+    expect(volumeClassForCategory("spice")).toBe("small");
+    expect(volumeClassForCategory("herb")).toBe("small");
+    expect(volumeClassForCategory("baking")).toBe("dry");
+    expect(volumeClassForCategory("grain")).toBe("dry");
+  });
+
+  it("classifies free-text ingredients, defaulting unknowns to dry", () => {
+    expect(volumeClassForItem("2 cups water")).toBe("liquid");
+    expect(volumeClassForItem("a pinch of cinnamon")).toBe("small");
+    expect(volumeClassForItem("1 cup flour")).toBe("dry");
+    expect(volumeClassForItem("something unrecognizable")).toBe("dry");
+    expect(volumeClassForItem(null)).toBe("dry");
   });
 });
 

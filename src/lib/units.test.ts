@@ -7,6 +7,7 @@ import {
   decomposeMeasure,
   DEFAULT_UNIT_PREFS,
   defaultSystemForLocale,
+  defaultUnitFor,
   densityForItem,
   deriveScaleFactor,
   dimensionOf,
@@ -641,6 +642,65 @@ describe("resolveDisplayMeasure", () => {
     );
     expect(asTrue?.unit).toBe("tsp");
     expect(asTrue?.quantity).toBeCloseTo(1, 5);
+  });
+
+  it("honors per-volume-class overrides by ingredient kind", () => {
+    // Liquids in mL, dry goods in cups, seasonings in tsp — all at once.
+    const p = prefs({
+      defaultSystem: "us",
+      liquidVolumeUnit: "ml",
+      dryVolumeUnit: "cup",
+      smallVolumeUnit: "tsp",
+    });
+    expect(resolveDisplayMeasure(1, "cup", p, undefined, "liquid")?.unit).toBe(
+      "ml",
+    );
+    expect(resolveDisplayMeasure(1, "cup", p, undefined, "dry")?.unit).toBe(
+      "cup",
+    );
+    expect(resolveDisplayMeasure(3, "tsp", p, undefined, "small")?.unit).toBe(
+      "tsp",
+    );
+  });
+
+  it("falls back to the general volume slot when a class has no override", () => {
+    const m = resolveDisplayMeasure(
+      1,
+      "cup",
+      prefs({ volumeUnit: "ml" }),
+      undefined,
+      "liquid",
+    );
+    expect(m?.unit).toBe("ml");
+  });
+
+  it("caps small-amount volumes at tbsp instead of scaling to cups", () => {
+    // 12 tsp = 4 tbsp = 0.25 cup; the small-amounts ladder stops at tbsp.
+    const m = resolveDisplayMeasure(
+      12,
+      "tsp",
+      prefs({ defaultSystem: "us" }),
+      undefined,
+      "small",
+    );
+    expect(m?.unit).toBe("tbsp");
+  });
+});
+
+describe("defaultUnitFor", () => {
+  it("names the representative default unit per dimension and system", () => {
+    expect(defaultUnitFor("mass", "us")).toBe("oz");
+    expect(defaultUnitFor("mass", "metric")).toBe("g");
+    expect(defaultUnitFor("temperature", "us")).toBe("°F");
+    expect(defaultUnitFor("temperature", "metric")).toBe("°C");
+  });
+
+  it("distinguishes volume classes for US, and uses mL for metric", () => {
+    expect(defaultUnitFor("volume", "us", "small")).toBe("tsp");
+    expect(defaultUnitFor("volume", "us", "dry")).toBe("cup");
+    expect(defaultUnitFor("volume", "us", "liquid")).toBe("cup");
+    expect(defaultUnitFor("volume", "metric", "small")).toBe("ml");
+    expect(defaultUnitFor("volume", "metric", "dry")).toBe("ml");
   });
 });
 

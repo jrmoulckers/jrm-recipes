@@ -29,6 +29,9 @@ export default async function UnitsSettingsPage() {
     ? {
         defaultSystem: settings.preferences.defaultSystem,
         volumeUnit: settings.preferences.volumeUnit,
+        liquidVolumeUnit: settings.preferences.liquidVolumeUnit,
+        dryVolumeUnit: settings.preferences.dryVolumeUnit,
+        smallVolumeUnit: settings.preferences.smallVolumeUnit,
         massUnit: settings.preferences.massUnit,
         temperatureUnit: settings.preferences.temperatureUnit,
         autoConvert: settings.preferences.autoConvert,

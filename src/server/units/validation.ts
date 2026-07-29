@@ -44,17 +44,27 @@ export const unitPreferencesInput = z
   .object({
     defaultSystem: z.enum(MEASUREMENT_SYSTEMS).default("metric"),
     volumeUnit: optionalUnit,
+    liquidVolumeUnit: optionalUnit,
+    dryVolumeUnit: optionalUnit,
+    smallVolumeUnit: optionalUnit,
     massUnit: optionalUnit,
     temperatureUnit: optionalUnit,
     autoConvert: z.boolean().default(true),
   })
   .superRefine((val, ctx) => {
-    if (!overrideMatchesDimension(val.volumeUnit, "volume")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["volumeUnit"],
-        message: "Pick a volume unit.",
-      });
+    for (const key of [
+      "volumeUnit",
+      "liquidVolumeUnit",
+      "dryVolumeUnit",
+      "smallVolumeUnit",
+    ] as const) {
+      if (!overrideMatchesDimension(val[key], "volume")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: "Pick a volume unit.",
+        });
+      }
     }
     if (!overrideMatchesDimension(val.massUnit, "mass")) {
       ctx.addIssue({

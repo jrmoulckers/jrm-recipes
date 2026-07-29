@@ -25,6 +25,9 @@ function prefFields(input: UnitPreferencesInput) {
   return {
     defaultSystem: input.defaultSystem,
     volumeUnit: input.volumeUnit ?? null,
+    liquidVolumeUnit: input.liquidVolumeUnit ?? null,
+    dryVolumeUnit: input.dryVolumeUnit ?? null,
+    smallVolumeUnit: input.smallVolumeUnit ?? null,
     massUnit: input.massUnit ?? null,
     temperatureUnit: input.temperatureUnit ?? null,
     autoConvert: input.autoConvert,

@@ -362,12 +362,66 @@ const VOLUME_LADDER_METRIC = ["ml", "l"];
 const MASS_LADDER_US = ["oz", "lb"];
 const MASS_LADDER_METRIC = ["g", "kg"];
 
+/**
+ * Volume splits into three "classes" so a viewer can prefer different units for
+ * different kinds of ingredient (issue: interchangeable units): pourable liquids,
+ * scoopable dry goods, and tiny seasoning amounts. Each class has its own
+ * friendly ladder so "follow the system default" still lands on the unit a cook
+ * expects — fluids in fl oz/cups, dry goods in cups, seasonings capped at
+ * teaspoons/tablespoons rather than scaling up to cups.
+ */
+export type VolumeClass = "liquid" | "dry" | "small";
+
+export const VOLUME_CLASSES = ["liquid", "dry", "small"] as const;
+
+const VOLUME_CLASS_LADDERS: Record<
+  VolumeClass,
+  { us: string[]; metric: string[] }
+> = {
+  liquid: { us: ["fl oz", "cup", "pint", "quart", "gallon"], metric: ["ml", "l"] },
+  dry: { us: ["tsp", "tbsp", "cup", "quart"], metric: ["ml", "l"] },
+  small: { us: ["tsp", "tbsp"], metric: ["ml"] },
+};
+
 function ladderFor(dimension: Dimension, system: "us" | "metric"): string[] {
   if (dimension === "volume")
     return system === "us" ? VOLUME_LADDER_US : VOLUME_LADDER_METRIC;
   if (dimension === "mass")
     return system === "us" ? MASS_LADDER_US : MASS_LADDER_METRIC;
   return [];
+}
+
+/** The ladder for a measure, refined by volume class when one is known. */
+function ladderForContext(
+  dimension: Dimension,
+  system: "us" | "metric",
+  volumeClass?: VolumeClass | null,
+): string[] {
+  if (dimension === "volume" && volumeClass)
+    return VOLUME_CLASS_LADDERS[volumeClass][system];
+  return ladderFor(dimension, system);
+}
+
+/**
+ * The single representative unit a picker should name as its default for a given
+ * dimension/system (and volume class), e.g. "Default: Teaspoon (tsp)". This is
+ * the unit typical amounts land on — not the only unit the friendly ladder can
+ * produce, but the honest headline for what "follow the system default" means.
+ */
+export function defaultUnitFor(
+  dimension: Dimension,
+  system: "us" | "metric",
+  volumeClass?: VolumeClass | null,
+): string {
+  if (dimension === "mass") return system === "us" ? "oz" : "g";
+  if (dimension === "temperature") return system === "us" ? "°F" : "°C";
+  if (dimension === "volume") {
+    if (system === "metric") return "ml";
+    if (volumeClass === "small") return "tsp";
+    if (volumeClass === "liquid") return "cup";
+    return "cup"; // dry / unspecified
+  }
+  return "";
 }
 
 export type Measure = { quantity: number; unit: string };
@@ -381,6 +435,7 @@ export function toSystem(
   quantity: number,
   unit: string | null | undefined,
   system: "us" | "metric",
+  volumeClass?: VolumeClass | null,
 ): Measure | null {
   const def = unit ? UNIT_INDEX.get(unit.trim().toLowerCase()) : null;
   if (!def || def.dimension === "count") {
@@ -393,7 +448,7 @@ export function toSystem(
       ? { quantity: roundNice(quantity), unit: def.canonical }
       : { quantity: converted, unit: target };
   }
-  const ladder = ladderFor(def.dimension, system);
+  const ladder = ladderForContext(def.dimension, system, volumeClass);
   if (ladder.length === 0)
     return { quantity: roundNice(quantity), unit: def.canonical };
 
@@ -1022,7 +1077,12 @@ export function convertAmount(
  */
 export type UnitPrefs = {
   defaultSystem: "us" | "metric";
+  /** General volume fallback (legacy/unclassified). Class prefs below win when set. */
   volumeUnit?: string | null;
+  /** Per-volume-class overrides: pourable liquids, scoopable dry goods, seasonings. */
+  liquidVolumeUnit?: string | null;
+  dryVolumeUnit?: string | null;
+  smallVolumeUnit?: string | null;
   massUnit?: string | null;
   temperatureUnit?: string | null;
   autoConvert: boolean;
@@ -1032,13 +1092,36 @@ export type UnitPrefs = {
 export const DEFAULT_UNIT_PREFS: UnitPrefs = {
   defaultSystem: "metric",
   volumeUnit: null,
+  liquidVolumeUnit: null,
+  dryVolumeUnit: null,
+  smallVolumeUnit: null,
   massUnit: null,
   temperatureUnit: null,
   autoConvert: true,
 };
 
-function overrideFor(prefs: UnitPrefs, dimension: Dimension): string | null {
-  if (dimension === "volume") return prefs.volumeUnit ?? null;
+/** The volume override a viewer wants for a given class, falling back to the general slot. */
+function volumeOverrideFor(
+  prefs: UnitPrefs,
+  volumeClass?: VolumeClass | null,
+): string | null {
+  const byClass =
+    volumeClass === "liquid"
+      ? prefs.liquidVolumeUnit
+      : volumeClass === "small"
+        ? prefs.smallVolumeUnit
+        : volumeClass === "dry"
+          ? prefs.dryVolumeUnit
+          : null;
+  return byClass ?? prefs.volumeUnit ?? null;
+}
+
+function overrideFor(
+  prefs: UnitPrefs,
+  dimension: Dimension,
+  volumeClass?: VolumeClass | null,
+): string | null {
+  if (dimension === "volume") return volumeOverrideFor(prefs, volumeClass);
   if (dimension === "mass") return prefs.massUnit ?? null;
   if (dimension === "temperature") return prefs.temperatureUnit ?? null;
   return null;
@@ -1064,6 +1147,7 @@ export function resolveDisplayMeasure(
   unit: string | null | undefined,
   prefs: UnitPrefs,
   customs?: readonly CustomUnitDef[],
+  volumeClass?: VolumeClass | null,
 ): Measure | null {
   if (!unit) return null;
   const dim = dimensionOf(unit, customs);
@@ -1071,7 +1155,7 @@ export function resolveDisplayMeasure(
     return { quantity: roundNice(quantity), unit };
   }
 
-  const override = overrideFor(prefs, dim);
+  const override = overrideFor(prefs, dim, volumeClass);
   if (override) {
     const custom = findCustom(override, customs);
     // A custom target that wants its true amount shown resolves to that amount
@@ -1088,5 +1172,5 @@ export function resolveDisplayMeasure(
     // Override didn't apply (incompatible dimension / no equivalence): fall back.
   }
 
-  return toSystem(quantity, unit, prefs.defaultSystem);
+  return toSystem(quantity, unit, prefs.defaultSystem, volumeClass);
 }

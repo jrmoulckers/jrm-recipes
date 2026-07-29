@@ -53,7 +53,13 @@ export const userUnitPreferences = pgTable(
     // Canonical unit ids (from src/lib/units.ts UNIT_DEFS), or a user's custom
     // unit name. NULL = follow `defaultSystem` for that dimension. Validation
     // guarantees each references a real unit of the matching dimension.
+    // `volumeUnit` is a general fallback; the three class-specific columns below
+    // refine it by kind of ingredient (interchangeable units): pourable liquids,
+    // scoopable dry goods, and tiny seasoning amounts each get their own default.
     volumeUnit: varchar({ length: 40 }),
+    liquidVolumeUnit: varchar({ length: 40 }),
+    dryVolumeUnit: varchar({ length: 40 }),
+    smallVolumeUnit: varchar({ length: 40 }),
     massUnit: varchar({ length: 40 }),
     temperatureUnit: varchar({ length: 40 }),
     autoConvert: boolean().notNull().default(true),
