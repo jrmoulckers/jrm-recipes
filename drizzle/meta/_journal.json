@@ -176,6 +176,13 @@
       "when": 1783978638007,
       "tag": "0024_tiny_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785182457751,
+      "tag": "0025_flippant_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

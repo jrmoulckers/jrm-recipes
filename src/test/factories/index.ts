@@ -192,6 +192,7 @@ export function makeRecipeStep(
     recipeId: "recipe_1",
     position: 0,
     section: null,
+    title: null,
     instruction: "Mix the dry ingredients.",
     imageUrl: null,
     videoUrl: null,

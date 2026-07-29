@@ -272,6 +272,7 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
         recipeId,
         position: i,
         section: step.section ?? null,
+        title: step.title ?? null,
         instruction: step.instruction,
         imageUrl: step.imageUrl ?? null,
         videoUrl: step.videoUrl ?? null,

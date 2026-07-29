@@ -74,6 +74,14 @@ export function buildContentSecurityPolicy(
     ...(clerkHost ? [`https://${clerkHost}`] : []),
   ];
 
+  // `next dev` compiles with webpack's `eval`-based devtool and drives HMR
+  // through `eval()`, which `strict-dynamic` does NOT permit (it only relaxes
+  // host/`'self'`/`'unsafe-inline'`, never `'unsafe-eval'`). Without this the
+  // dev bundle throws a CSP violation before React can hydrate, leaving the
+  // whole app non-interactive. Scoped to NODE_ENV==='development' so the
+  // production build — which ships no `eval` — keeps its strict policy.
+  const isDev = process.env.NODE_ENV === "development";
+
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     "base-uri": ["'self'"],
@@ -85,6 +93,8 @@ export function buildContentSecurityPolicy(
       "'self'",
       `'nonce-${nonce}'`,
       "'strict-dynamic'",
+      // Dev-only: unblock `next dev`'s eval-based HMR/source maps (see above).
+      ...(isDev ? ["'unsafe-eval'"] : []),
       // Cloudinary upload widget + Clerk prod FAPI load scripts that
       // strict-dynamic covers transitively, but list the widget host explicitly
       // for engines that gate the initial <script src> on the origin.

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Force the "Cloudinary not configured" branch deterministically, regardless of
@@ -42,5 +42,28 @@ describe("image-upload lazy widget (#201)", () => {
     expect(
       screen.queryByRole("button", { name: /upload a photo/i }),
     ).toBeNull();
+  });
+});
+
+describe("broken image fallback", () => {
+  it("swaps the broken-image glyph for a readable fallback and re-surfaces the URL input when a pasted image fails to load", () => {
+    render(
+      <ImageUploadField
+        value="https://example.invalid/nope.png"
+        onChange={vi.fn()}
+        label="Cover photo"
+      />,
+    );
+
+    const img = screen.getByAltText("Selected photo preview");
+    // While the image is (optimistically) loading, the URL input is hidden.
+    expect(screen.queryByLabelText("Cover photo URL")).toBeNull();
+
+    fireEvent.error(img);
+
+    // A human-readable message replaces the browser's broken-image icon…
+    expect(screen.getByText(/couldn.t load image/i)).toBeInTheDocument();
+    // …and the URL input returns so the link can be corrected inline.
+    expect(screen.getByLabelText("Cover photo URL")).toBeInTheDocument();
   });
 });

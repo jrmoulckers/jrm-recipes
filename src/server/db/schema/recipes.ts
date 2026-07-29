@@ -287,6 +287,9 @@ export const recipeSteps = pgTable(
       .references(() => recipes.id, { onDelete: "cascade" }),
     position: integer().notNull().default(0),
     section: varchar({ length: 120 }),
+    // Optional short title/name for a single step ("Make the dough"), distinct
+    // from `section` (the phase/group heading shared by several steps).
+    title: varchar({ length: 200 }),
     instruction: text().notNull(),
     imageUrl: varchar({ length: 2048 }),
     videoUrl: varchar({ length: 2048 }),

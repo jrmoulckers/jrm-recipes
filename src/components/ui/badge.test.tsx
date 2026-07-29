@@ -8,7 +8,7 @@ describe("Badge", () => {
     const { getByText } = render(<Badge>Default</Badge>);
     const el = getByText("Default");
     expect(el.className).toContain("bg-primary/12");
-    expect(el.className).toContain("text-primary");
+    expect(el.className).toContain("text-[color:var(--badge-ink-primary)]");
   });
 
   it("renders status variants with semantic tokens", () => {
@@ -26,9 +26,11 @@ describe("Badge", () => {
     }
   });
 
-  it("maps the info variant to the info foreground token", () => {
+  it("maps the info variant to a legible on-tint ink", () => {
     const { getByText } = render(<Badge variant="info">Info</Badge>);
-    expect(getByText("Info").className).toContain("text-info");
+    expect(getByText("Info").className).toContain(
+      "text-[color:var(--badge-ink-info)]",
+    );
   });
 
   it("merges custom className with variant classes", () => {

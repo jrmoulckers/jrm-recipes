@@ -6,23 +6,37 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   AlertCircle,
+  Carrot,
   CheckCircle2,
+  ChefHat,
   ChevronDown,
   ChevronUp,
   Circle,
-  GripVertical,
+  Clock,
+  Eye,
+  Globe,
   History,
+  Info,
+  Layers,
+  Link2,
+  ListOrdered,
   Loader2,
+  Lock,
+  type LucideIcon,
+  Pencil,
   Plus,
   Save,
   Trash2,
+  Users,
+  Utensils,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 import { pickKidCopy } from "~/config/kid-copy";
 import { useThemeBehavior } from "~/components/theme/theme-provider";
 
-import { cn } from "~/lib/utils";
+import { cn, formatMinutes } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
 import { useAutosaveDraft } from "~/lib/use-autosave-draft";
 import { track } from "~/lib/analytics";
@@ -43,7 +57,11 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
-import { appendDictation } from "~/lib/append-dictation";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 
 /**
  * The upgrade prompt is only needed when a create hits the plan's recipe cap
@@ -62,18 +80,21 @@ const ImportRecipePanel = dynamic(
   { ssr: false },
 );
 
-// Voice dictation (issue #373) is a progressive enhancement, so it is
-// code-split out of the editor's first-load JS and loaded on the client only.
-const DictationButton = dynamic(
+// Preview mode is opt-in (toggled on demand), so the preview renderer — which
+// mirrors the full recipe detail view — is code-split out of the editor's
+// first-load JS and fetched only when the user first opens Preview.
+const RecipePreview = dynamic(
   () =>
-    import("~/components/recipe/dictation-button").then(
-      (m) => m.DictationButton,
-    ),
+    import("~/components/recipe/recipe-preview").then((m) => m.RecipePreview),
   { ssr: false },
 );
 
 type IngRow = {
   key: string;
+  /** Stable editor-only id that groups rows into a named section container
+   *  (#425). Not persisted — the saved `section` string is re-derived into
+   *  group ids on load, so two rows sharing a section name share a container. */
+  groupId: string;
   section: string;
   quantity: string;
   quantityMax: string;
@@ -86,7 +107,9 @@ type IngRow = {
 };
 type StepRow = {
   key: string;
+  groupId: string;
   section: string;
+  title: string;
   instruction: string;
   imageUrl: string;
   videoUrl: string;
@@ -129,14 +152,15 @@ export type RecipeEditorValue = {
   groupId: string;
   tags: string;
   dietaryFlags: DietaryTag[];
-  ingredients: Omit<IngRow, "key">[];
-  steps: Omit<StepRow, "key">[];
+  ingredients: Omit<IngRow, "key" | "groupId">[];
+  steps: Omit<StepRow, "key" | "groupId">[];
 };
 
 let idCounter = 0;
 const nextKey = () => `row-${idCounter++}`;
 
 const EMPTY_ING: Omit<IngRow, "key"> = {
+  groupId: "",
   section: "",
   quantity: "",
   quantityMax: "",
@@ -148,7 +172,9 @@ const EMPTY_ING: Omit<IngRow, "key"> = {
   optional: false,
 };
 const EMPTY_STEP: Omit<StepRow, "key"> = {
+  groupId: "",
   section: "",
+  title: "",
   instruction: "",
   imageUrl: "",
   videoUrl: "",
@@ -160,6 +186,81 @@ const EMPTY_STEP: Omit<StepRow, "key"> = {
 
 /** Stable empty field-error map — the initial/cleared useActionState value. */
 const NO_ERRORS: Record<string, string[]> = {};
+
+type LoadedIngRow = Omit<IngRow, "groupId"> & { groupId?: string };
+type LoadedStepRow = Omit<StepRow, "groupId"> & { groupId?: string };
+
+/**
+ * Reorder rows so rows sharing a `groupId` are contiguous, keeping the
+ * first-appearance order of groups. Mirrors how the read side buckets by section
+ * (a Map keyed on the section name), so the editor preview matches the saved view.
+ */
+function partitionByGroup<T extends { groupId: string }>(rows: T[]): T[] {
+  const order: string[] = [];
+  const byId = new Map<string, T[]>();
+  for (const r of rows) {
+    if (!byId.has(r.groupId)) {
+      byId.set(r.groupId, []);
+      order.push(r.groupId);
+    }
+    byId.get(r.groupId)!.push(r);
+  }
+  return order.flatMap((id) => byId.get(id)!);
+}
+
+/**
+ * Hydrate loaded rows with an editor-only `groupId` derived from their saved
+ * section name (same non-empty name → same group), then partition so each
+ * group's rows are contiguous. Ungrouped rows (blank section) share id "".
+ */
+function hydrateIngredientGroups(rows: LoadedIngRow[]): IngRow[] {
+  const idBySection = new Map<string, string>();
+  const withIds: IngRow[] = rows.map((r) => {
+    const section = r.section.trim();
+    if (section === "") return { ...r, section: "", groupId: "" };
+    let groupId = idBySection.get(section);
+    if (!groupId) {
+      groupId = nextKey();
+      idBySection.set(section, groupId);
+    }
+    return { ...r, section, groupId };
+  });
+  return partitionByGroup(withIds);
+}
+
+/** Steps mirror of {@link hydrateIngredientGroups}: derive an editor-only
+ *  `groupId` from each saved section name and partition so a section's steps
+ *  stay contiguous. Ungrouped steps (blank section) share id "". */
+function hydrateStepGroups(rows: LoadedStepRow[]): StepRow[] {
+  const idBySection = new Map<string, string>();
+  const withIds: StepRow[] = rows.map((r) => {
+    const section = r.section.trim();
+    if (section === "") return { ...r, section: "", groupId: "" };
+    let groupId = idBySection.get(section);
+    if (!groupId) {
+      groupId = nextKey();
+      idBySection.set(section, groupId);
+    }
+    return { ...r, section, groupId };
+  });
+  return partitionByGroup(withIds);
+}
+
+/** Split rows into consecutive group blocks for rendering (relies on the
+ *  contiguity invariant that {@link partitionByGroup} and the mutation
+ *  handlers maintain). The blank-id block renders as loose, un-boxed rows. */
+function blocksByGroup<T extends { groupId: string; section: string }>(
+  rows: T[],
+): { groupId: string; section: string; rows: T[] }[] {
+  const blocks: { groupId: string; section: string; rows: T[] }[] = [];
+  for (const row of rows) {
+    const last = blocks[blocks.length - 1];
+    if (last?.groupId === row.groupId) last.rows.push(row);
+    else
+      blocks.push({ groupId: row.groupId, section: row.section, rows: [row] });
+  }
+  return blocks;
+}
 
 /**
  * The per-serving nutrition keys shared by {@link RecipeEditorValue}, the editor
@@ -205,6 +306,100 @@ function numOrUndef(s: string): number | undefined {
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm";
 
+/** Trigger summary + icon for the consolidated visibility settings popdown. */
+const VISIBILITY_LABELS = {
+  private: "Only me",
+  group: "A family/group",
+  unlisted: "Anyone with the link",
+  public: "Everyone (public)",
+} as const;
+
+const VISIBILITY_ICON = {
+  private: Lock,
+  group: Users,
+  unlisted: Link2,
+  public: Globe,
+} as const;
+
+/** Human-friendly labels for the difficulty select (mirrors its options). */
+const DIFFICULTY_LABELS = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
+} as const;
+
+/**
+ * Dietary tags surfaced in the editor's primary (collapsed) view. The rest —
+ * egg-free plus the allergen-free declarations — live behind the "more options"
+ * disclosure. Kept as an explicit ordered list (not a filter over DIETARY_TAGS)
+ * so the primary chips read Vegan · Vegetarian · Gluten-free · Dairy-free
+ * regardless of the canonical badge order.
+ */
+const PRIMARY_DIETARY_TAGS: readonly DietaryTag[] = [
+  "vegan",
+  "vegetarian",
+  "gluten-free",
+  "dairy-free",
+];
+
+/**
+ * Compact labelled wrapper for the dense ingredient/step row fields (#425). A
+ * small sentence-case header sits above each control so its placeholder can read
+ * as an obvious example ("e.g. …") instead of looking like a pre-filled value.
+ * The <label> wraps the control, so clicking the header focuses it and the
+ * visible text becomes the control's accessible name.
+ */
+function RowField({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+/**
+ * A small ⓘ affordance that reveals a short explanatory hint on click/tap or
+ * keyboard focus (#425, round 10). Replaces always-on descriptive paragraphs
+ * beside a field label so the form stays uncluttered while the guidance stays
+ * one tap away. Uses a Popover (not a hover-only Tooltip) so it works on touch.
+ */
+function InfoHint({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`About ${label}`}
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <Info className="size-4" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-64 text-sm leading-relaxed text-muted-foreground"
+      >
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** One entry in the in-editor section navigator (#112). */
 type EditorSection = {
   /** DOM id of the section this anchor jumps to. */
@@ -224,82 +419,187 @@ type EditorSection = {
  * links plus a progress bar so writers can see how far along they are and jump
  * between Basics / Ingredients / Steps / Details without endless scrolling.
  *
- * Anchors use `scrollIntoView` (respecting each section's `scroll-mt`) rather
- * than hash navigation so the sticky app header + this bar never hide the
- * target heading, and so the URL isn't polluted mid-edit. It sits above the
- * autosave/dictation machinery and touches none of it.
+ * Anchors call `onJump`, which scrolls with a runtime offset for the (variable
+ * height) sticky app header + this bar so the target heading never hides behind
+ * them and jumps don't overshoot. It sits above the autosave/dictation
+ * machinery and touches none of it.
  */
-function EditorSectionNav({ sections }: { sections: EditorSection[] }) {
+function EditorSectionNav({
+  sections,
+  topOffset,
+  onJump,
+}: {
+  sections: EditorSection[];
+  topOffset: number;
+  onJump: (id: string) => void;
+}) {
   const done = sections.filter((s) => s.complete).length;
   const total = sections.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  const panelId = React.useId();
+  // Always starts expanded on every visit (no persistence).
+  const [collapsed, setCollapsed] = React.useState(false);
+  const toggle = React.useCallback(() => setCollapsed((v) => !v), []);
+
+  // Only wear the "docked" flush look (square top, no top border) once the bar
+  // is actually pinned under the header. In its natural in-flow position it
+  // stays a normal rounded card, so it never looks like a cut-off panel.
+  const navRef = React.useRef<HTMLElement>(null);
+  const [stuck, setStuck] = React.useState(false);
+  React.useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    let raf = 0;
+    const check = () => {
+      raf = 0;
+      const isLg =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(min-width: 1024px)").matches;
+      setStuck(isLg && el.getBoundingClientRect().top <= topOffset - 0.5);
+    };
+    const onScroll = () => {
+      if (!raf) raf = window.requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [topOffset]);
+
+  // Collapsing only makes sense while the bar is pinned under the header. Once
+  // it un-pins (scrolled back up past its natural spot), spring it open again.
+  React.useEffect(() => {
+    if (!stuck) setCollapsed(false);
+  }, [stuck]);
+
   return (
     <nav
+      ref={navRef}
       aria-label="Recipe sections"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-surface/60 p-3 shadow-token-sm lg:sticky lg:top-16 lg:z-20 lg:backdrop-blur lg:supports-[backdrop-filter]:bg-surface/75"
+      // When pinned, sit flush under the sticky site header sharing its glass
+      // finish (the 1px overlap closes the hairline seam). When not pinned it
+      // stays a normal rounded card so it never looks like a cut-off panel.
+      style={{ top: topOffset - 1 }}
+      className={cn(
+        "overflow-hidden rounded-xl border border-border shadow-token-sm lg:sticky lg:z-20",
+        stuck
+          ? "bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 lg:rounded-t-none lg:border-t-0"
+          : "bg-card",
+      )}
     >
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-foreground">
-          {done === total ? "All sections started 🎉" : "Recipe progress"}
-        </span>
-        <span
-          className="text-xs font-medium tabular-nums text-muted-foreground"
-          aria-hidden="true"
+      {collapsed ? (
+        /* Collapsed: an ~12px progress sliver; the whole strip re-opens the
+           section list. */
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={false}
+          aria-controls={panelId}
+          aria-label={`Recipe progress: ${done} of ${total} sections started. Show sections.`}
+          title="Show sections"
+          className="group flex min-h-0 w-full items-center px-3 py-[3px] transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:px-4"
         >
-          {done}/{total}
-        </span>
-      </div>
+          <span
+            className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+            aria-hidden="true"
+          >
+            <span
+              className="block h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
+              style={{ width: `${pct}%` }}
+            />
+          </span>
+        </button>
+      ) : (
+        /* Expanded: progress bar + count + collapse control. */
+        <div className="flex items-center gap-3 px-3 py-2 lg:px-4">
+          <span
+            className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-valuenow={done}
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-label={`${done} of ${total} sections started`}
+          >
+            <span
+              className="block h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
+              style={{ width: `${pct}%` }}
+            />
+          </span>
+          <span
+            className="text-xs font-medium tabular-nums text-muted-foreground"
+            aria-hidden="true"
+          >
+            {done}/{total}
+          </span>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={true}
+            aria-controls={panelId}
+            className="-me-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <span className="sr-only">Hide recipe sections</span>
+            <ChevronUp className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* Collapsible section links. Height animates via grid-rows; the inner
+          region is inert when hidden so keyboard/AT skip the off-screen links. */}
       <div
-        className="h-1.5 overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuenow={done}
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-label={`${done} of ${total} sections started`}
+        id={panelId}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-standard motion-reduce:transition-none",
+          collapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+        )}
       >
-        <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="overflow-hidden" inert={collapsed}>
+          <div className="flex flex-col gap-2 px-3 pb-3 lg:px-4">
+            <span className="text-xs font-medium text-muted-foreground">
+              {done === total ? "All sections started 🎉" : "Jump to a section"}
+            </span>
+            <ul className="flex flex-wrap gap-1.5">
+              {sections.map((section) => (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onJump(section.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    {section.complete ? (
+                      <CheckCircle2
+                        className="size-4 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Circle
+                        className="size-4 shrink-0 text-muted-foreground/50"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {section.label}
+                    <span className="sr-only">
+                      {section.complete
+                        ? " (started)"
+                        : section.optional
+                          ? " (optional, not started)"
+                          : " (not started)"}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
-      <ul className="flex flex-wrap gap-1.5">
-        {sections.map((section) => (
-          <li key={section.id}>
-            <a
-              href={`#${section.id}`}
-              onClick={(event) => {
-                const el = document.getElementById(section.id);
-                if (el) {
-                  event.preventDefault();
-                  el.scrollIntoView({ block: "start", behavior: "smooth" });
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              {section.complete ? (
-                <CheckCircle2
-                  className="size-4 shrink-0 text-primary"
-                  aria-hidden="true"
-                />
-              ) : (
-                <Circle
-                  className="size-4 shrink-0 text-muted-foreground/50"
-                  aria-hidden="true"
-                />
-              )}
-              {section.label}
-              <span className="sr-only">
-                {section.complete
-                  ? " (started)"
-                  : section.optional
-                    ? " (optional, not started)"
-                    : " (not started)"}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
     </nav>
   );
 }
@@ -328,6 +628,7 @@ export function RecipeEditor({
   const t = useTranslations("recipeEditor");
   const { kidSafe } = useThemeBehavior();
   const [upgrade, setUpgrade] = React.useState<string | null>(null);
+  const [previewMode, setPreviewMode] = React.useState(false);
   const errorSummaryRef = React.useRef<HTMLDivElement>(null);
 
   // Editor-open is the top of the creation/edit funnel (#310).
@@ -371,17 +672,72 @@ export function RecipeEditor({
   }));
 
   const [ingredients, setIngredients] = React.useState<IngRow[]>(() =>
-    (initial?.ingredients?.length
-      ? initial.ingredients
-      : [EMPTY_ING, EMPTY_ING]
-    ).map((r) => ({ ...r, key: nextKey() })),
+    hydrateIngredientGroups(
+      (initial?.ingredients?.length ? initial.ingredients : [EMPTY_ING]).map(
+        (r) => ({ ...r, key: nextKey() }),
+      ),
+    ),
   );
   const [steps, setSteps] = React.useState<StepRow[]>(() =>
-    (initial?.steps?.length ? initial.steps : [EMPTY_STEP]).map((r) => ({
-      ...r,
-      key: nextKey(),
-    })),
+    hydrateStepGroups(
+      (initial?.steps?.length ? initial.steps : [EMPTY_STEP]).map((r) => ({
+        ...r,
+        key: nextKey(),
+      })),
+    ),
   );
+
+  // Row-level UI state for the redesigned lists (#425): step rows can reveal an
+  // opt-in group-heading field, and ingredient rows expand advanced options.
+  // Keyed by stable row key so reordering and removal never mismatch a row.
+  const [openStepOptions, setOpenStepOptions] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [openIngOptions, setOpenIngOptions] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleInSet =
+    (setter: React.Dispatch<React.SetStateAction<Set<string>>>) =>
+    (key: string, on?: boolean) =>
+      setter((prev) => {
+        const next = new Set(prev);
+        const shouldAdd = on ?? !next.has(key);
+        if (shouldAdd) next.add(key);
+        else next.delete(key);
+        return next;
+      });
+  const toggleStepOptions = toggleInSet(setOpenStepOptions);
+  const toggleIngOptions = toggleInSet(setOpenIngOptions);
+
+  // The sticky app header wraps to two or three rows at some widths, so its
+  // height is dynamic (64–245px observed). Track it live and offset the section
+  // navigator + anchor jumps from it; a hard-coded top-16 buried the nav behind
+  // the header and made section jumps overshoot (user report).
+  const [appHeaderH, setAppHeaderH] = React.useState(64);
+  React.useEffect(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    const measure = () =>
+      setAppHeaderH(Math.round(header.getBoundingClientRect().height));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
+
+  const jumpToSection = React.useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const header = document.querySelector("header");
+    const nav = document.querySelector('nav[aria-label="Recipe sections"]');
+    const headerH = header?.getBoundingClientRect().height ?? 0;
+    const lg = window.matchMedia("(min-width: 1024px)").matches;
+    const navH = lg ? (nav?.getBoundingClientRect().height ?? 0) : 0;
+    const offset = headerH + navH + 12;
+    const top = window.scrollY + el.getBoundingClientRect().top - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }, []);
 
   // Auto-save & draft recovery (#421): mirror the in-progress editor value to
   // localStorage (debounced) so a locked phone or a stray "back" tap never
@@ -390,8 +746,10 @@ export function RecipeEditor({
   const draftSnapshot: RecipeEditorValue = React.useMemo(
     () => ({
       ...form,
-      ingredients: ingredients.map(({ key: _key, ...rest }) => rest),
-      steps: steps.map(({ key: _key, ...rest }) => rest),
+      ingredients: ingredients.map(
+        ({ key: _key, groupId: _groupId, ...rest }) => rest,
+      ),
+      steps: steps.map(({ key: _key, groupId: _groupId, ...rest }) => rest),
     }),
     [form, ingredients, steps],
   );
@@ -415,39 +773,25 @@ export function RecipeEditor({
     } = value;
     setForm((f) => ({ ...f, ...scalars }));
     setIngredients(
-      (draftIngredients ?? []).map((r) => ({
-        ...EMPTY_ING,
-        ...r,
-        key: nextKey(),
-      })),
+      hydrateIngredientGroups(
+        (draftIngredients ?? []).map((r) => ({
+          ...EMPTY_ING,
+          ...r,
+          key: nextKey(),
+        })),
+      ),
     );
     setSteps(
-      (draftSteps ?? []).map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })),
+      hydrateStepGroups(
+        (draftSteps ?? []).map((r) => ({
+          ...EMPTY_STEP,
+          ...r,
+          key: nextKey(),
+        })),
+      ),
     );
     draft.acceptDraft();
     toast.success("Restored your unfinished recipe.");
-  }
-
-  // Voice dictation append helpers (#373): always append, never overwrite, and
-  // update functionally so rapid transcript chunks can't clobber each other.
-  function appendToField(key: "description" | "notes" | "story", text: string) {
-    setForm((f) => ({ ...f, [key]: appendDictation(f[key], text) }));
-  }
-  function appendIngredientItem(rowKey: string, text: string) {
-    setIngredients((l) =>
-      l.map((r) =>
-        r.key === rowKey ? { ...r, item: appendDictation(r.item, text) } : r,
-      ),
-    );
-  }
-  function appendStepInstruction(rowKey: string, text: string) {
-    setSteps((l) =>
-      l.map((r) =>
-        r.key === rowKey
-          ? { ...r, instruction: appendDictation(r.instruction, text) }
-          : r,
-      ),
-    );
   }
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
@@ -477,6 +821,24 @@ export function RecipeEditor({
     }));
   }
 
+  // Dietary: the main view shows the common declarations (Vegan, Vegetarian,
+  // Gluten-free, Dairy-free); egg-free and the allergen-free tags sit behind a
+  // disclosure so the section stays uncluttered (round 10). Expanding appends
+  // the rest after the primary four (no reflow). Auto-open when editing a recipe
+  // that already declares a non-primary flag so nothing hides.
+  const [showMoreDietary, setShowMoreDietary] = React.useState(() =>
+    (initial?.dietaryFlags ?? []).some(
+      (t) => !PRIMARY_DIETARY_TAGS.includes(t),
+    ),
+  );
+  const dietaryTagsShown = showMoreDietary
+    ? [
+        ...PRIMARY_DIETARY_TAGS,
+        ...DIETARY_TAGS.filter((t) => !PRIMARY_DIETARY_TAGS.includes(t)),
+      ]
+    : PRIMARY_DIETARY_TAGS;
+  const VisibilityIcon = VISIBILITY_ICON[form.visibility];
+
   function applyImported(v: ImportedRecipe) {
     setForm((f) => ({
       ...f,
@@ -494,18 +856,221 @@ export function RecipeEditor({
     }));
     if (v.ingredients.length)
       setIngredients(
-        v.ingredients.map((r) => ({ ...EMPTY_ING, ...r, key: nextKey() })),
+        hydrateIngredientGroups(
+          v.ingredients.map((r) => ({ ...EMPTY_ING, ...r, key: nextKey() })),
+        ),
       );
     if (v.steps.length)
-      setSteps(v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })));
+      setSteps(
+        hydrateStepGroups(
+          v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })),
+        ),
+      );
   }
 
-  function move<T>(list: T[], i: number, dir: -1 | 1): T[] {
-    const j = i + dir;
-    if (j < 0 || j >= list.length) return list;
-    const copy = [...list];
-    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
-    return copy;
+  // Steps mirror the ingredient grouping handlers below: an explicit per-step
+  // Section picker (not positional headings) drives grouping, arrows are
+  // block-bounded, and each mutation keeps same-group steps contiguous so the
+  // global 1..N numbering (shared with the ingredient "Used in step" picker and
+  // the read-side list) stays stable and predictable.
+  function moveStep(key: string, dir: -1 | 1) {
+    setSteps((l) => {
+      const i = l.findIndex((r) => r.key === key);
+      if (i < 0) return l;
+      const j = i + dir;
+      if (j < 0 || j >= l.length) return l;
+      if (l[j]!.groupId !== l[i]!.groupId) return l;
+      const copy = [...l];
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+      return copy;
+    });
+  }
+
+  function assignStepToGroup(rowKey: string, targetGroupId: string) {
+    setSteps((l) => {
+      const section =
+        targetGroupId === ""
+          ? ""
+          : (l.find((r) => r.groupId === targetGroupId)?.section ?? "");
+      return partitionByGroup(
+        l.map((r) =>
+          r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r,
+        ),
+      );
+    });
+  }
+
+  function createGroupFromStep(rowKey: string) {
+    const gid = nextKey();
+    setSteps((l) =>
+      partitionByGroup(
+        l.map((r) =>
+          r.key === rowKey ? { ...r, groupId: gid, section: "" } : r,
+        ),
+      ),
+    );
+    requestAnimationFrame(() => {
+      document.getElementById(`step-group-name-${gid}`)?.focus();
+    });
+  }
+
+  function addStep() {
+    setSteps((l) =>
+      partitionByGroup([
+        ...l,
+        { ...EMPTY_STEP, key: nextKey(), groupId: "", section: "" },
+      ]),
+    );
+  }
+
+  function addStepToGroup(groupId: string, section: string) {
+    setSteps((l) => {
+      const row = { ...EMPTY_STEP, key: nextKey(), groupId, section };
+      let lastIdx = -1;
+      for (let i = 0; i < l.length; i++)
+        if (l[i]!.groupId === groupId) lastIdx = i;
+      if (lastIdx === -1) return [...l, row];
+      const copy = [...l];
+      copy.splice(lastIdx + 1, 0, row);
+      return copy;
+    });
+  }
+
+  function addStepGroup() {
+    const gid = nextKey();
+    setSteps((l) => [
+      ...l,
+      { ...EMPTY_STEP, key: nextKey(), groupId: gid, section: "" },
+    ]);
+    requestAnimationFrame(() => {
+      document.getElementById(`step-group-name-${gid}`)?.focus();
+    });
+  }
+
+  function renameStepGroup(groupId: string, name: string) {
+    setSteps((l) =>
+      l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)),
+    );
+  }
+
+  function dissolveStepGroup(groupId: string) {
+    setSteps((l) =>
+      partitionByGroup(
+        l.map((r) =>
+          r.groupId === groupId ? { ...r, groupId: "", section: "" } : r,
+        ),
+      ),
+    );
+  }
+
+  // Move an ingredient up/down only *within* its own group block. Reordering no
+  // longer changes a row's group (that was confusing) — grouping is done solely
+  // with the explicit per-row group picker below (#425). The swap is a no-op at a
+  // block edge (the arrows are also disabled there via block-relative first/last).
+  function moveIngredient(key: string, dir: -1 | 1) {
+    setIngredients((l) => {
+      const i = l.findIndex((r) => r.key === key);
+      if (i < 0) return l;
+      const j = i + dir;
+      if (j < 0 || j >= l.length) return l;
+      if (l[j]!.groupId !== l[i]!.groupId) return l;
+      const copy = [...l];
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+      return copy;
+    });
+  }
+
+  // Reassign a single row to a different group (or ungroup it with target "").
+  // The row adopts the target group's current name, then we re-partition so it
+  // physically moves into that group's contiguous block. This is the explicit
+  // "add an existing ingredient to a group" the reorder model couldn't do (#425).
+  function assignIngredientToGroup(rowKey: string, targetGroupId: string) {
+    setIngredients((l) => {
+      const section =
+        targetGroupId === ""
+          ? ""
+          : (l.find((r) => r.groupId === targetGroupId)?.section ?? "");
+      return partitionByGroup(
+        l.map((r) =>
+          r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r,
+        ),
+      );
+    });
+  }
+
+  // Wrap a single existing row in a brand-new group and focus its name field, so
+  // "+ New group" from the row picker both creates the group and moves the row in.
+  function createGroupFromIngredient(rowKey: string) {
+    const gid = nextKey();
+    setIngredients((l) =>
+      partitionByGroup(
+        l.map((r) =>
+          r.key === rowKey ? { ...r, groupId: gid, section: "" } : r,
+        ),
+      ),
+    );
+    requestAnimationFrame(() => {
+      document.getElementById(`ing-group-name-${gid}`)?.focus();
+    });
+  }
+
+  // Append a new ungrouped ingredient, then partition so it joins the single
+  // ungrouped block (never spawns a second one) even when a group sits above.
+  function addIngredient() {
+    setIngredients((l) =>
+      partitionByGroup([
+        ...l,
+        { ...EMPTY_ING, key: nextKey(), groupId: "", section: "" },
+      ]),
+    );
+  }
+
+  // Insert a fresh row directly after the last row of the target group so the
+  // group's own "+ Add ingredient" always lands inside that group's span (#425).
+  function addIngredientToGroup(groupId: string, section: string) {
+    setIngredients((l) => {
+      const row = { ...EMPTY_ING, key: nextKey(), groupId, section };
+      let lastIdx = -1;
+      for (let i = 0; i < l.length; i++)
+        if (l[i]!.groupId === groupId) lastIdx = i;
+      if (lastIdx === -1) return [...l, row];
+      const copy = [...l];
+      copy.splice(lastIdx + 1, 0, row);
+      return copy;
+    });
+  }
+
+  // Start a new, empty named group at the end of the list and focus its name
+  // input so the user can title it immediately (fixes the "janky" group naming).
+  function addIngredientGroup() {
+    const gid = nextKey();
+    setIngredients((l) => [
+      ...l,
+      { ...EMPTY_ING, key: nextKey(), groupId: gid, section: "" },
+    ]);
+    requestAnimationFrame(() => {
+      document.getElementById(`ing-group-name-${gid}`)?.focus();
+    });
+  }
+
+  // Rename a group in place: only the section string changes, never groupId, so
+  // the name <input> stays mounted mid-keystroke (no focus loss / remount jank).
+  function renameIngredientGroup(groupId: string, name: string) {
+    setIngredients((l) =>
+      l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)),
+    );
+  }
+
+  // Dissolve a group's container without deleting its rows: clear their group id
+  // + section, then re-partition so they merge into the trailing ungrouped block.
+  function dissolveIngredientGroup(groupId: string) {
+    setIngredients((l) =>
+      partitionByGroup(
+        l.map((r) =>
+          r.groupId === groupId ? { ...r, groupId: "", section: "" } : r,
+        ),
+      ),
+    );
   }
 
   function buildPayload(): RecipeInput {
@@ -567,6 +1132,7 @@ export function RecipeEditor({
         .filter((r) => r.instruction.trim() !== "")
         .map((r) => ({
           section: r.section.trim() || undefined,
+          title: r.title.trim() || undefined,
           instruction: r.instruction.trim(),
           imageUrl: r.imageUrl.trim() || undefined,
           videoUrl: r.videoUrl.trim() || undefined,
@@ -675,6 +1241,79 @@ export function RecipeEditor({
     },
   ];
 
+  // Live recipe vitals for the floating action bar (rendered at the end of the
+  // form). The bar populates as the writer fills the form in and stays visible
+  // while scrolling, giving an at-a-glance summary of the recipe's shape.
+  // Derived straight from working state — no new sources of truth.
+  const filledIngredientCount = ingredients.filter(
+    (row) => row.item.trim() !== "",
+  ).length;
+  const filledStepCount = steps.filter(
+    (row) => row.instruction.trim() !== "",
+  ).length;
+  const parseMinutes = (value: string): number => {
+    const n = Number.parseInt(value, 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const totalMinutes =
+    parseMinutes(form.prepMinutes) +
+    parseMinutes(form.cookMinutes) +
+    parseMinutes(form.restMinutes);
+  const trimmedServings = form.servings.trim();
+  const trimmedServingsNoun = form.servingsNoun.trim();
+  const summaryVitals: { key: string; icon: LucideIcon; text: string }[] = [];
+  if (filledIngredientCount > 0) {
+    summaryVitals.push({
+      key: "ingredients",
+      icon: Carrot,
+      text: `${filledIngredientCount} ${
+        filledIngredientCount === 1 ? "ingredient" : "ingredients"
+      }`,
+    });
+  }
+  if (filledStepCount > 0) {
+    summaryVitals.push({
+      key: "steps",
+      icon: ListOrdered,
+      text: `${filledStepCount} ${filledStepCount === 1 ? "step" : "steps"}`,
+    });
+  }
+  if (totalMinutes > 0) {
+    summaryVitals.push({
+      key: "time",
+      icon: Clock,
+      text: formatMinutes(totalMinutes),
+    });
+  }
+  if (trimmedServings !== "") {
+    summaryVitals.push({
+      key: "servings",
+      icon: Users,
+      text: `${trimmedServings} ${
+        trimmedServingsNoun === "" ? "servings" : trimmedServingsNoun
+      }`,
+    });
+  }
+  const difficulty = form.difficulty;
+  if (difficulty !== "") {
+    summaryVitals.push({
+      key: "difficulty",
+      icon: ChefHat,
+      text: DIFFICULTY_LABELS[difficulty],
+    });
+  }
+  const trimmedCuisine = form.cuisine.trim();
+  if (trimmedCuisine !== "") {
+    summaryVitals.push({
+      key: "cuisine",
+      icon: Utensils,
+      text: trimmedCuisine,
+    });
+  }
+  const trimmedTitle = form.title.trim();
+  const barFallbackTitle = mode === "edit" ? "Editing recipe" : "New recipe";
+  const barTitle = trimmedTitle === "" ? barFallbackTitle : trimmedTitle;
+
   // Move focus to the summary whenever a submit attempt produces errors so
   // screen-reader and keyboard users land on the list of what needs fixing.
   React.useEffect(() => {
@@ -682,6 +1321,42 @@ export function RecipeEditor({
       errorSummaryRef.current?.focus();
     }
   }, [errors]);
+
+  // Distinct ingredient groups in first-appearance order — drives the per-row
+  // "assign to group" picker and whether the ungrouped rows get a labelled band.
+  const ingredientGroupChoices = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: { id: string; name: string }[] = [];
+    for (const r of ingredients) {
+      if (r.groupId !== "" && !seen.has(r.groupId)) {
+        seen.add(r.groupId);
+        out.push({ id: r.groupId, name: r.section });
+      }
+    }
+    return out;
+  }, [ingredients]);
+  const hasIngredientGroups = ingredientGroupChoices.length > 0;
+  const hasUngroupedIngredients = ingredients.some((r) => r.groupId === "");
+
+  const stepGroupChoices = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: { id: string; name: string }[] = [];
+    for (const r of steps) {
+      if (r.groupId !== "" && !seen.has(r.groupId)) {
+        seen.add(r.groupId);
+        out.push({ id: r.groupId, name: r.section });
+      }
+    }
+    return out;
+  }, [steps]);
+  const hasStepGroups = stepGroupChoices.length > 0;
+  const hasUngroupedSteps = steps.some((r) => r.groupId === "");
+  // Global 1..N step numbers keyed by row, so grouped rendering keeps the same
+  // continuous numbering the read side and the ingredient "Used in step" use.
+  const stepNumberByKey = React.useMemo(
+    () => new Map(steps.map((r, i) => [r.key, i + 1])),
+    [steps],
+  );
 
   return (
     <form action={formAction} className="container flex flex-col gap-8 py-8">
@@ -700,18 +1375,33 @@ export function RecipeEditor({
         <h1 className="font-display text-3xl font-bold tracking-tight">
           {mode === "edit" ? "Edit recipe" : "New recipe"}
         </h1>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" onClick={() => router.back()}>
-            Cancel
+        <div
+          className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1"
+          role="group"
+          aria-label="Editor view"
+        >
+          <Button
+            type="button"
+            variant={previewMode ? "ghost" : "secondary"}
+            size="sm"
+            aria-pressed={!previewMode}
+            onClick={() => setPreviewMode(false)}
+          >
+            <Pencil /> Edit
           </Button>
-          <Button type="submit" size="lg" disabled={pending}>
-            {pending ? <Loader2 className="animate-spin" /> : <Save />}
-            {mode === "edit" ? "Save changes" : "Save recipe"}
+          <Button
+            type="button"
+            variant={previewMode ? "secondary" : "ghost"}
+            size="sm"
+            aria-pressed={previewMode}
+            onClick={() => setPreviewMode(true)}
+          >
+            <Eye /> Preview
           </Button>
         </div>
       </div>
 
-      {draft.availableDraft ? (
+      {!previewMode && draft.availableDraft ? (
         <div
           role="region"
           aria-label="Unfinished recipe"
@@ -750,7 +1440,7 @@ export function RecipeEditor({
         </div>
       ) : null}
 
-      {errorKeys.length > 0 && (
+      {!previewMode && errorKeys.length > 0 && (
         <div
           ref={errorSummaryRef}
           tabIndex={-1}
@@ -798,7 +1488,7 @@ export function RecipeEditor({
                     </span>
                   )}
                   {message ? (
-                    <span className="text-muted-foreground"> — {message}</span>
+                    <span className="text-muted-foreground">: {message}</span>
                   ) : null}
                 </li>
               );
@@ -807,802 +1497,1210 @@ export function RecipeEditor({
         </div>
       )}
 
-      <EditorSectionNav sections={editorSections} />
+      {!previewMode && (
+        <EditorSectionNav
+          sections={editorSections}
+          topOffset={appHeaderH}
+          onJump={jumpToSection}
+        />
+      )}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        {/* Main column */}
-        <div className="flex flex-col gap-8">
-          {mode === "create" ? (
-            <ImportRecipePanel
-              onImported={applyImported}
-              urlLabel={t("importUrl")}
-              initialUrl={initialImportUrl}
-            />
-          ) : null}
+      {previewMode && <RecipePreview recipe={buildPayload()} mode={mode} />}
 
-          <section
-            id="editor-basics"
-            className="flex scroll-mt-28 flex-col gap-4"
-          >
-            <Field label="Title" name="title" error={errors.title} required>
-              <Input
-                value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                placeholder="Grandma's Sunday Marinara"
-                autoFocus
+      {!previewMode && (
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          {/* Main column */}
+          <div className="flex flex-col gap-8">
+            {mode === "create" ? (
+              <ImportRecipePanel
+                onImported={applyImported}
+                urlLabel={t("importUrl")}
+                initialUrl={initialImportUrl}
               />
-            </Field>
-            <Field
-              label="Description"
-              name="description"
-              hint="A sentence about the dish."
-              error={errors.description}
+            ) : null}
+
+            <section
+              id="editor-basics"
+              className="flex scroll-mt-28 flex-col gap-4"
             >
-              <Textarea
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-                placeholder="The slow-simmered sauce that started every Sunday."
-                rows={2}
-              />
-            </Field>
-            <div className="-mt-1 flex justify-end">
-              <DictationButton
-                fieldLabel="description"
-                onAppend={(text) => appendToField("description", text)}
-              />
-            </div>
-          </section>
-
-          {/* Ingredients */}
-          <section
-            id="editor-ingredients"
-            className="flex scroll-mt-28 flex-col gap-3"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">
-                Ingredients
-              </h2>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setIngredients((l) => [
-                    ...l,
-                    { ...EMPTY_ING, key: nextKey() },
-                  ])
-                }
-              >
-                <Plus /> Add
-              </Button>
-            </div>
-            <div className="flex flex-col gap-2">
-              {ingredients.map((row, i) => (
-                <div
-                  key={row.key}
-                  className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
-                >
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Input
-                      aria-label="Ingredient section"
-                      value={row.section}
-                      onChange={(e) =>
-                        setIngredients((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, section: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="Section — For the sauce…"
-                    />
-                    <div className="grid gap-2 sm:grid-cols-[4rem_4rem_5rem_1fr]">
-                      <Input
-                        aria-label={t("quantity")}
-                        value={row.quantity}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, quantity: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="2"
-                        inputMode="decimal"
-                      />
-                      <Input
-                        aria-label="Maximum quantity"
-                        value={row.quantityMax}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, quantityMax: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="to 3"
-                        inputMode="decimal"
-                      />
-                      <Input
-                        aria-label={t("unit")}
-                        value={row.unit}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, unit: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="cup"
-                      />
-                      <div className="flex items-start gap-1.5">
-                        <Input
-                          aria-label={t("ingredient")}
-                          value={row.item}
-                          onChange={(e) =>
-                            setIngredients((l) =>
-                              l.map((r) =>
-                                r.key === row.key
-                                  ? { ...r, item: e.target.value }
-                                  : r,
-                              ),
-                            )
-                          }
-                          placeholder="all-purpose flour"
-                          className="flex-1"
-                        />
-                        <DictationButton
-                          fieldLabel="ingredient"
-                          onAppend={(text) =>
-                            appendIngredientItem(row.key, text)
-                          }
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-[1fr_9rem]">
-                      <Input
-                        aria-label="Ingredient prep"
-                        value={row.prep}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, prep: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Prep — diced, softened…"
-                      />
-                      <select
-                        className={selectClass}
-                        aria-label="Step that uses this ingredient"
-                        value={row.stepPosition}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, stepPosition: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="">Any step</option>
-                        {steps.map((_, si) => (
-                          <option key={si} value={String(si + 1)}>
-                            Step {si + 1}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto]">
-                      <Input
-                        aria-label="Ingredient note"
-                        value={row.note}
-                        onChange={(e) =>
-                          setIngredients((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, note: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Note — room temperature, divided…"
-                      />
-                      <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <input
-                          type="checkbox"
-                          className="size-4 accent-primary"
-                          checked={row.optional}
-                          onChange={(e) =>
-                            setIngredients((l) =>
-                              l.map((r) =>
-                                r.key === row.key
-                                  ? { ...r, optional: e.target.checked }
-                                  : r,
-                              ),
-                            )
-                          }
-                        />
-                        Optional
-                      </label>
-                    </div>
-                  </div>
-                  <RowControls
-                    objectLabel={t("ingredientObject")}
-                    onUp={() => setIngredients((l) => move(l, i, -1))}
-                    onDown={() => setIngredients((l) => move(l, i, 1))}
-                    onRemove={() =>
-                      setIngredients((l) =>
-                        l.length > 1 ? l.filter((r) => r.key !== row.key) : l,
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Steps */}
-          <section
-            id="editor-steps"
-            className="flex scroll-mt-28 flex-col gap-3"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">Steps</h2>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setSteps((l) => [...l, { ...EMPTY_STEP, key: nextKey() }])
-                }
-              >
-                <Plus /> Add
-              </Button>
-            </div>
-            <div className="flex flex-col gap-2">
-              {steps.map((row, i) => (
-                <div
-                  key={row.key}
-                  className="flex items-start gap-2 rounded-lg border border-border bg-card p-2"
-                >
-                  <span className="bg-primary/12 mt-2 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-primary">
-                    {i + 1}
-                  </span>
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Input
-                      aria-label="Step section"
-                      value={row.section}
-                      onChange={(e) =>
-                        setSteps((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, section: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="Section — Make the dough…"
-                    />
-                    <Textarea
-                      aria-label={t("step", { position: i + 1 })}
-                      value={row.instruction}
-                      onChange={(e) =>
-                        setSteps((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, instruction: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="Whisk the dry ingredients together…"
-                      rows={2}
-                    />
-                    <div className="flex justify-end">
-                      <DictationButton
-                        fieldLabel={`step ${i + 1}`}
-                        onAppend={(text) =>
-                          appendStepInstruction(row.key, text)
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Input
-                        aria-label={t("timerMinutes")}
-                        value={row.timerMinutes}
-                        onChange={(e) =>
-                          setSteps((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, timerMinutes: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Timer (min)"
-                        inputMode="decimal"
-                      />
-                      <Input
-                        aria-label={t("techniques")}
-                        value={row.techniques}
-                        onChange={(e) =>
-                          setSteps((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, techniques: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Techniques (comma sep.)"
-                      />
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-[8rem_1fr]">
-                      <Input
-                        aria-label="Target temperature in °C"
-                        value={row.targetTempC}
-                        onChange={(e) =>
-                          setSteps((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, targetTempC: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Target °C"
-                        inputMode="numeric"
-                      />
-                      <Input
-                        aria-label="Doneness cue"
-                        value={row.doneness}
-                        onChange={(e) =>
-                          setSteps((l) =>
-                            l.map((r) =>
-                              r.key === row.key
-                                ? { ...r, doneness: e.target.value }
-                                : r,
-                            ),
-                          )
-                        }
-                        placeholder="Doneness — golden brown, springs back…"
-                      />
-                    </div>
-                    <Input
-                      type="url"
-                      inputMode="url"
-                      aria-label="Step video URL"
-                      value={row.videoUrl}
-                      onChange={(e) =>
-                        setSteps((l) =>
-                          l.map((r) =>
-                            r.key === row.key
-                              ? { ...r, videoUrl: e.target.value }
-                              : r,
-                          ),
-                        )
-                      }
-                      placeholder="Video URL — https://…"
-                    />
-                    <ImageUploadField
-                      size="compact"
-                      label={`Step ${i + 1} photo`}
-                      value={row.imageUrl}
-                      onChange={(url) =>
-                        setSteps((l) =>
-                          l.map((r) =>
-                            r.key === row.key ? { ...r, imageUrl: url } : r,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <RowControls
-                    objectLabel={t("stepObject")}
-                    onUp={() => setSteps((l) => move(l, i, -1))}
-                    onDown={() => setSteps((l) => move(l, i, 1))}
-                    onRemove={() =>
-                      setSteps((l) =>
-                        l.length > 1 ? l.filter((r) => r.key !== row.key) : l,
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section
-            id="editor-story"
-            className="flex scroll-mt-28 flex-col gap-8"
-          >
-            <Field
-              label="Notes"
-              name="notes"
-              hint="Tips, substitutions, the story behind it."
-              error={errors.notes}
-            >
-              <Textarea
-                value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                rows={3}
-              />
-            </Field>
-            <div className="-mt-1 flex justify-end">
-              <DictationButton
-                fieldLabel="notes"
-                onAppend={(text) => appendToField("notes", text)}
-              />
-            </div>
-
-            <Field
-              label="Story & memories"
-              name="story"
-              hint="Who it came from, when you make it, what it means — in your own words."
-              error={errors.story}
-            >
-              <Textarea
-                value={form.story}
-                onChange={(e) => set("story", e.target.value)}
-                placeholder="Nonna learned this from her mother in Calabria. We make it every Christmas Eve…"
-                rows={4}
-              />
-            </Field>
-            <div className="-mt-1 flex justify-end">
-              <DictationButton
-                fieldLabel="story"
-                onAppend={(text) => appendToField("story", text)}
-              />
-            </div>
-          </section>
-
-          <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
-            <legend className="px-1 text-sm font-medium text-foreground">
-              Handed down from
-            </legend>
-            <p className="text-xs text-muted-foreground">
-              Who this recipe came from and roughly when — shown as a small
-              heirloom label. All optional.
-            </p>
-            <Field
-              label="Name"
-              name="handedDownFrom"
-              error={errors.handedDownFrom}
-            >
-              <Input
-                value={form.handedDownFrom}
-                onChange={(e) => set("handedDownFrom", e.target.value)}
-                placeholder="Great-Grandma Rosa Bianchi"
-              />
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="When" name="originYear" error={errors.originYear}>
+              <Field label="Title" name="title" error={errors.title} required>
                 <Input
-                  value={form.originYear}
-                  onChange={(e) => set("originYear", e.target.value)}
-                  placeholder="1935 or 1930s"
+                  value={form.title}
+                  onChange={(e) => set("title", e.target.value)}
+                  placeholder="e.g. Grandma's Sunday marinara"
+                  autoFocus
                 />
               </Field>
               <Field
-                label="Place"
-                name="originPlace"
-                error={errors.originPlace}
+                label="Description"
+                name="description"
+                hint="A sentence about the dish."
+                error={errors.description}
+              >
+                <Textarea
+                  value={form.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  placeholder="e.g. A slow-simmered sauce for Sunday dinners"
+                  rows={2}
+                />
+              </Field>
+            </section>
+
+            {/* Ingredients */}
+            <section
+              id="editor-ingredients"
+              className="flex scroll-mt-28 flex-col gap-3"
+            >
+              <h2 className="font-display text-xl font-semibold">
+                Ingredients
+              </h2>
+              <div className="flex flex-col gap-4">
+                {blocksByGroup(ingredients).map((block) => {
+                  const rowList = block.rows.map((row, indexInBlock) => {
+                    const hasOptionData = Boolean(
+                      row.quantityMax ||
+                      row.prep ||
+                      row.note ||
+                      row.stepPosition ||
+                      row.optional,
+                    );
+                    const optionsOpen =
+                      hasOptionData || openIngOptions.has(row.key);
+                    return (
+                      <div
+                        key={row.key}
+                        className="group flex flex-col gap-2 rounded-lg border border-border bg-surface/60 p-3 sm:p-3.5"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_6rem]">
+                            <RowField
+                              label={t("ingredient")}
+                              className="col-span-2 sm:col-span-1"
+                            >
+                              <Input
+                                value={row.item}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, item: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. All-purpose flour"
+                              />
+                            </RowField>
+                            <RowField label={t("quantity")}>
+                              <Input
+                                value={row.quantity}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, quantity: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. 2"
+                                inputMode="decimal"
+                              />
+                            </RowField>
+                            <RowField label={t("unit")}>
+                              <Input
+                                value={row.unit}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, unit: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. cups"
+                              />
+                            </RowField>
+                          </div>
+                          <RowControls
+                            objectLabel={t("ingredientObject")}
+                            isFirst={indexInBlock === 0}
+                            isLast={indexInBlock === block.rows.length - 1}
+                            onUp={() => moveIngredient(row.key, -1)}
+                            onDown={() => moveIngredient(row.key, 1)}
+                            onRemove={() =>
+                              setIngredients((l) =>
+                                l.length > 1
+                                  ? l.filter((r) => r.key !== row.key)
+                                  : [{ ...EMPTY_ING, key: nextKey() }],
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <Layers className="size-3.5 shrink-0" />
+                            <span className="shrink-0">Group</span>
+                            <select
+                              className={cn(
+                                selectClass,
+                                "w-auto min-w-[8rem] max-w-[13rem]",
+                              )}
+                              value={row.groupId}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "__new__")
+                                  createGroupFromIngredient(row.key);
+                                else assignIngredientToGroup(row.key, v);
+                              }}
+                            >
+                              <option value="">No group</option>
+                              {ingredientGroupChoices.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                  {g.name.trim() || "Untitled group"}
+                                </option>
+                              ))}
+                              <option value="__new__">+ New group…</option>
+                            </select>
+                          </label>
+                          {!hasOptionData && (
+                            <button
+                              type="button"
+                              aria-expanded={optionsOpen}
+                              onClick={() => toggleIngOptions(row.key)}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 transition-transform",
+                                  optionsOpen && "rotate-180",
+                                )}
+                              />
+                              {optionsOpen ? "Fewer options" : "More options"}
+                            </button>
+                          )}
+                        </div>
+
+                        {optionsOpen && (
+                          <div className="grid gap-x-3 gap-y-2 border-t border-border/70 pt-3 sm:grid-cols-2">
+                            <RowField label="Max quantity">
+                              <Input
+                                value={row.quantityMax}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, quantityMax: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. 3"
+                                inputMode="decimal"
+                              />
+                            </RowField>
+                            <RowField label="Prep">
+                              <Input
+                                value={row.prep}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, prep: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. finely diced"
+                              />
+                            </RowField>
+                            <RowField label="Note" className="sm:col-span-2">
+                              <Input
+                                value={row.note}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, note: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. divided"
+                              />
+                            </RowField>
+                            <RowField label="Used in step">
+                              <select
+                                className={selectClass}
+                                value={row.stepPosition}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, stepPosition: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              >
+                                <option value="">No specific step</option>
+                                {steps.map((_, si) => (
+                                  <option key={si} value={String(si + 1)}>
+                                    Step {si + 1}
+                                  </option>
+                                ))}
+                              </select>
+                            </RowField>
+                            <label className="flex items-center gap-2 self-end pb-2 text-sm text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                className="size-4 accent-primary"
+                                checked={row.optional}
+                                onChange={(e) =>
+                                  setIngredients((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, optional: e.target.checked }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              />
+                              Optional ingredient
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+
+                  if (block.groupId === "") {
+                    if (!hasIngredientGroups) {
+                      return (
+                        <div
+                          key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                          className="flex flex-col gap-3"
+                        >
+                          {rowList}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div
+                        key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                        className="flex flex-col gap-2.5"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <span>Ungrouped</span>
+                          <span className="text-muted-foreground/60">
+                            · {block.rows.length}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-3">{rowList}</div>
+                        <button
+                          type="button"
+                          onClick={addIngredient}
+                          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <Plus className="size-3.5" /> Add ingredient
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={block.groupId}
+                      className="overflow-hidden rounded-xl border border-primary/25 bg-surface-muted shadow-token-sm"
+                    >
+                      <div className="flex items-end gap-3 border-b border-border/70 bg-primary/10 p-4 sm:p-5">
+                        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                          <Layers className="size-5" />
+                        </span>
+                        <RowField label="Group name" className="flex-1">
+                          <Input
+                            id={`ing-group-name-${block.groupId}`}
+                            value={block.section}
+                            onChange={(e) =>
+                              renameIngredientGroup(
+                                block.groupId,
+                                e.target.value,
+                              )
+                            }
+                            placeholder="e.g. Dry Ingredients"
+                          />
+                        </RowField>
+                        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                          {block.rows.length}{" "}
+                          {block.rows.length === 1 ? "item" : "items"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => dissolveIngredientGroup(block.groupId)}
+                          aria-label="Remove group (keep its ingredients)"
+                          title="Remove group (keep its ingredients)"
+                          className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-3 p-4 sm:p-5">
+                        <div className="flex flex-col gap-3">{rowList}</div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addIngredientToGroup(block.groupId, block.section)
+                          }
+                          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                        >
+                          <Plus className="size-3.5" /> Add ingredient
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {!(hasIngredientGroups && hasUngroupedIngredients) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addIngredient}
+                  >
+                    <Plus /> Add ingredient
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={addIngredientGroup}
+                >
+                  <Plus /> Add group
+                </Button>
+              </div>
+            </section>
+
+            {/* Steps */}
+            <section
+              id="editor-steps"
+              className="flex scroll-mt-28 flex-col gap-3"
+            >
+              <h2 className="font-display text-xl font-semibold">Steps</h2>
+              <div className="flex flex-col gap-4">
+                {blocksByGroup(steps).map((block) => {
+                  const rowList = block.rows.map((row, indexInBlock) => {
+                    const hasOptionData = Boolean(
+                      row.timerMinutes ||
+                      row.techniques ||
+                      row.targetTempC ||
+                      row.doneness ||
+                      row.videoUrl ||
+                      row.imageUrl,
+                    );
+                    const optionsOpen =
+                      hasOptionData || openStepOptions.has(row.key);
+                    return (
+                      <div
+                        key={row.key}
+                        className="group flex flex-col gap-2 rounded-lg border border-border bg-surface/60 p-3 sm:p-3.5"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="flex flex-1 flex-col gap-2">
+                            <RowField
+                              label={`Step ${stepNumberByKey.get(row.key)}`}
+                            >
+                              <Input
+                                value={row.title}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, title: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="Name this step (optional)"
+                              />
+                            </RowField>
+                            <RowField label="Instruction">
+                              <Textarea
+                                value={row.instruction}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, instruction: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. Whisk the eggs and sugar until fully incorporated"
+                                rows={2}
+                              />
+                            </RowField>
+                          </div>
+                          <RowControls
+                            objectLabel={t("stepObject")}
+                            isFirst={indexInBlock === 0}
+                            isLast={indexInBlock === block.rows.length - 1}
+                            onUp={() => moveStep(row.key, -1)}
+                            onDown={() => moveStep(row.key, 1)}
+                            onRemove={() =>
+                              setSteps((l) =>
+                                l.length > 1
+                                  ? l.filter((r) => r.key !== row.key)
+                                  : [{ ...EMPTY_STEP, key: nextKey() }],
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <Layers className="size-3.5 shrink-0" />
+                            <span className="shrink-0">Section</span>
+                            <select
+                              className={cn(
+                                selectClass,
+                                "w-auto min-w-[8rem] max-w-[13rem]",
+                              )}
+                              value={row.groupId}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "__new__")
+                                  createGroupFromStep(row.key);
+                                else assignStepToGroup(row.key, v);
+                              }}
+                            >
+                              <option value="">No section</option>
+                              {stepGroupChoices.map((g) => (
+                                <option key={g.id} value={g.id}>
+                                  {g.name.trim() || "Untitled section"}
+                                </option>
+                              ))}
+                              <option value="__new__">+ New section…</option>
+                            </select>
+                          </label>
+                          {!hasOptionData && (
+                            <button
+                              type="button"
+                              aria-expanded={optionsOpen}
+                              onClick={() => toggleStepOptions(row.key)}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 transition-transform",
+                                  optionsOpen && "rotate-180",
+                                )}
+                              />
+                              {optionsOpen ? "Fewer options" : "More options"}
+                            </button>
+                          )}
+                        </div>
+
+                        {optionsOpen && (
+                          <div className="grid gap-x-3 gap-y-2 border-t border-border/70 pt-3 sm:grid-cols-2">
+                            <RowField label={t("timerMinutes")}>
+                              <Input
+                                value={row.timerMinutes}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, timerMinutes: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. 10"
+                                inputMode="decimal"
+                              />
+                            </RowField>
+                            <RowField label={t("techniques")}>
+                              <Input
+                                value={row.techniques}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, techniques: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. fold, whisk"
+                              />
+                            </RowField>
+                            <RowField label="Target °C">
+                              <Input
+                                value={row.targetTempC}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, targetTempC: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. 180"
+                                inputMode="numeric"
+                              />
+                            </RowField>
+                            <RowField label="Doneness cue">
+                              <Input
+                                value={row.doneness}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, doneness: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. golden brown"
+                              />
+                            </RowField>
+                            <RowField
+                              label="Video URL"
+                              className="sm:col-span-2"
+                            >
+                              <Input
+                                type="url"
+                                inputMode="url"
+                                value={row.videoUrl}
+                                onChange={(e) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, videoUrl: e.target.value }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                                placeholder="e.g. https://…"
+                              />
+                            </RowField>
+                            <div className="flex min-w-0 flex-col gap-1 sm:col-span-2">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Photo
+                              </span>
+                              <ImageUploadField
+                                size="compact"
+                                value={row.imageUrl}
+                                onChange={(url) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, imageUrl: url }
+                                        : r,
+                                    ),
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+
+                  if (block.groupId === "") {
+                    if (!hasStepGroups) {
+                      return (
+                        <div
+                          key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                          className="flex flex-col gap-3"
+                        >
+                          {rowList}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div
+                        key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                        className="flex flex-col gap-2.5"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <span>Ungrouped steps</span>
+                          <span className="text-muted-foreground/60">
+                            · {block.rows.length}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-3">{rowList}</div>
+                        <button
+                          type="button"
+                          onClick={addStep}
+                          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <Plus className="size-3.5" /> Add step
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={block.groupId}
+                      className="overflow-hidden rounded-xl border border-primary/25 bg-surface-muted shadow-token-sm"
+                    >
+                      <div className="flex items-end gap-3 border-b border-border/70 bg-primary/10 p-4 sm:p-5">
+                        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                          <Layers className="size-5" />
+                        </span>
+                        <RowField label="Section name" className="flex-1">
+                          <Input
+                            id={`step-group-name-${block.groupId}`}
+                            value={block.section}
+                            onChange={(e) =>
+                              renameStepGroup(block.groupId, e.target.value)
+                            }
+                            placeholder="e.g. Prepare the dough"
+                          />
+                        </RowField>
+                        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                          {block.rows.length}{" "}
+                          {block.rows.length === 1 ? "step" : "steps"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => dissolveStepGroup(block.groupId)}
+                          aria-label="Remove section (keep its steps)"
+                          title="Remove section (keep its steps)"
+                          className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-3 p-4 sm:p-5">
+                        <div className="flex flex-col gap-3">{rowList}</div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addStepToGroup(block.groupId, block.section)
+                          }
+                          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                        >
+                          <Plus className="size-3.5" /> Add step
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {!(hasStepGroups && hasUngroupedSteps) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addStep}
+                  >
+                    <Plus /> Add step
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={addStepGroup}
+                >
+                  <Plus /> Add section
+                </Button>
+              </div>
+            </section>
+
+            <section
+              id="editor-story"
+              className="flex scroll-mt-28 flex-col gap-4"
+            >
+              <div className="flex flex-col gap-1">
+                <h2 className="font-display text-xl font-semibold">
+                  Notes &amp; story
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  About the whole recipe. Not tied to any single step.
+                </p>
+              </div>
+              <Field
+                label="Notes"
+                name="notes"
+                hint="Overall tips, substitutions and serving ideas."
+                error={errors.notes}
+              >
+                <Textarea
+                  value={form.notes}
+                  onChange={(e) => set("notes", e.target.value)}
+                  rows={3}
+                />
+              </Field>
+
+              <Field
+                label="Story & memories"
+                name="story"
+                hint="In your own words: who it came from, when you make it, what it means."
+                error={errors.story}
+              >
+                <Textarea
+                  value={form.story}
+                  onChange={(e) => set("story", e.target.value)}
+                  placeholder="e.g. Nonna learned this from her mother in Calabria…"
+                  rows={4}
+                />
+              </Field>
+            </section>
+
+            <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
+              <legend className="px-1 text-sm font-medium text-foreground">
+                Handed down from
+              </legend>
+              <p className="text-xs text-muted-foreground">
+                Details about the original creator of this recipe. All optional.
+              </p>
+              <Field
+                label="Name"
+                name="handedDownFrom"
+                error={errors.handedDownFrom}
               >
                 <Input
-                  value={form.originPlace}
-                  onChange={(e) => set("originPlace", e.target.value)}
-                  placeholder="Calabria, Italy"
+                  value={form.handedDownFrom}
+                  onChange={(e) => set("handedDownFrom", e.target.value)}
+                  placeholder="e.g. Great-Grandma Rosa Bianchi"
+                />
+              </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="When" name="originYear" error={errors.originYear}>
+                  <Input
+                    value={form.originYear}
+                    onChange={(e) => set("originYear", e.target.value)}
+                    placeholder="e.g. 1935 or 1930s"
+                  />
+                </Field>
+                <Field
+                  label="Place"
+                  name="originPlace"
+                  error={errors.originPlace}
+                >
+                  <Input
+                    value={form.originPlace}
+                    onChange={(e) => set("originPlace", e.target.value)}
+                    placeholder="e.g. Calabria, Italy"
+                  />
+                </Field>
+              </div>
+            </fieldset>
+          </div>
+
+          {/* Sidebar */}
+          <aside
+            id="editor-details"
+            style={{ top: appHeaderH + 12 }}
+            className="flex h-fit scroll-mt-28 flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Servings" name="servings" error={errors.servings}>
+                <Input
+                  value={form.servings}
+                  onChange={(e) => set("servings", e.target.value)}
+                  inputMode="numeric"
+                />
+              </Field>
+              <Field
+                label="Unit"
+                name="servingsNoun"
+                error={errors.servingsNoun}
+              >
+                <Input
+                  value={form.servingsNoun}
+                  onChange={(e) => set("servingsNoun", e.target.value)}
+                />
+              </Field>
+              <Field
+                label="Prep (min)"
+                name="prepMinutes"
+                error={errors.prepMinutes}
+              >
+                <Input
+                  value={form.prepMinutes}
+                  onChange={(e) => set("prepMinutes", e.target.value)}
+                  inputMode="numeric"
+                />
+              </Field>
+              <Field
+                label="Cook (min)"
+                name="cookMinutes"
+                error={errors.cookMinutes}
+              >
+                <Input
+                  value={form.cookMinutes}
+                  onChange={(e) => set("cookMinutes", e.target.value)}
+                  inputMode="numeric"
+                />
+              </Field>
+              <Field
+                label="Rest / Inactive Time"
+                name="restMinutes"
+                info="Inactive time, such as chilling, proving, or resting."
+                error={errors.restMinutes}
+                className="col-span-2"
+              >
+                <Input
+                  value={form.restMinutes}
+                  onChange={(e) => set("restMinutes", e.target.value)}
+                  inputMode="numeric"
                 />
               </Field>
             </div>
-          </fieldset>
-        </div>
 
-        {/* Sidebar */}
-        <aside
-          id="editor-details"
-          className="flex h-fit scroll-mt-28 flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky lg:top-20"
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Servings" name="servings" error={errors.servings}>
-              <Input
-                value={form.servings}
-                onChange={(e) => set("servings", e.target.value)}
-                inputMode="numeric"
-              />
-            </Field>
-            <Field label="Unit" name="servingsNoun" error={errors.servingsNoun}>
-              <Input
-                value={form.servingsNoun}
-                onChange={(e) => set("servingsNoun", e.target.value)}
-              />
-            </Field>
             <Field
-              label="Prep (min)"
-              name="prepMinutes"
-              error={errors.prepMinutes}
+              label="Make-ahead"
+              name="makeAheadNote"
+              info="A description of what can be prepared in advance, and how far ahead."
+              error={errors.makeAheadNote}
             >
-              <Input
-                value={form.prepMinutes}
-                onChange={(e) => set("prepMinutes", e.target.value)}
-                inputMode="numeric"
+              <Textarea
+                value={form.makeAheadNote}
+                onChange={(e) => set("makeAheadNote", e.target.value)}
+                placeholder="e.g. Dough can be made up to 2 days ahead"
+                rows={2}
               />
             </Field>
+
             <Field
-              label="Cook (min)"
-              name="cookMinutes"
-              error={errors.cookMinutes}
+              label="Equipment & tools"
+              name="equipment"
+              hint="Comma-separated. Shown as a gather-your-tools pass in Cook Mode."
+              error={errors.equipment}
             >
               <Input
-                value={form.cookMinutes}
-                onChange={(e) => set("cookMinutes", e.target.value)}
-                inputMode="numeric"
+                value={form.equipment}
+                onChange={(e) => set("equipment", e.target.value)}
+                placeholder="e.g. stand mixer, cake tin, bench scraper"
               />
             </Field>
+
             <Field
-              label="Rest / inactive (min)"
-              name="restMinutes"
-              hint="Chilling, proving, resting — inactive time."
-              error={errors.restMinutes}
+              label="Difficulty"
+              name="difficulty"
+              error={errors.difficulty}
             >
-              <Input
-                value={form.restMinutes}
-                onChange={(e) => set("restMinutes", e.target.value)}
-                inputMode="numeric"
-              />
-            </Field>
-          </div>
-
-          <Field
-            label="Make-ahead"
-            name="makeAheadNote"
-            hint="What can be done in advance, and how far ahead."
-            error={errors.makeAheadNote}
-          >
-            <Textarea
-              value={form.makeAheadNote}
-              onChange={(e) => set("makeAheadNote", e.target.value)}
-              placeholder="Dough can be made up to 2 days ahead and kept chilled."
-              rows={2}
-            />
-          </Field>
-
-          <Field
-            label="Equipment & tools"
-            name="equipment"
-            hint="Comma-separated. Shown as a gather-your-tools pass in Cook Mode."
-            error={errors.equipment}
-          >
-            <Input
-              value={form.equipment}
-              onChange={(e) => set("equipment", e.target.value)}
-              placeholder="stand mixer, 9-inch cake tin, bench scraper"
-            />
-          </Field>
-
-          <Field label="Difficulty" name="difficulty" error={errors.difficulty}>
-            <select
-              className={selectClass}
-              value={form.difficulty}
-              onChange={(e) =>
-                set("difficulty", e.target.value as typeof form.difficulty)
-              }
-            >
-              <option value="">—</option>
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </Field>
-
-          <Field label="Cuisine" name="cuisine" error={errors.cuisine}>
-            <Input
-              value={form.cuisine}
-              onChange={(e) => set("cuisine", e.target.value)}
-              placeholder="Italian"
-            />
-          </Field>
-
-          <div className="h-px bg-border" />
-
-          <fieldset className="flex flex-col gap-3">
-            <legend className="text-sm font-medium text-foreground">
-              Nutrition
-              <span className="ms-1 font-normal text-muted-foreground">
-                (per serving)
-              </span>
-            </legend>
-            <p className="text-xs text-muted-foreground">
-              Optional. Leave blank if you don&apos;t have the numbers.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {NUTRITION_FIELDS.map((f) => (
-                <Field
-                  key={f.key}
-                  name={f.key}
-                  label={`${f.label} (${f.unit})`}
-                  error={errors[f.key]}
-                >
-                  <Input
-                    value={form[f.key]}
-                    onChange={(e) => set(f.key, e.target.value)}
-                    inputMode="decimal"
-                    placeholder="—"
-                  />
-                </Field>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="h-px bg-border" />
-
-          <fieldset className="flex flex-col gap-3">
-            <legend className="text-sm font-medium text-foreground">
-              Dietary
-            </legend>
-            <p className="text-xs text-muted-foreground">
-              Declare what this recipe is suitable for. These power dietary
-              filters and “safe for” badges — leave unchecked if unsure.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {DIETARY_TAGS.map((tag) => {
-                const checked = form.dietaryFlags.includes(tag);
-                return (
-                  <label
-                    key={tag}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
-                      checked
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
-                      checked={checked}
-                      onChange={() => toggleDietaryFlag(tag)}
-                    />
-                    {DIETARY_TAG_LABELS[tag]}
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <div className="h-px bg-border" />
-
-          <Field
-            label="Tags"
-            name="tags"
-            hint="Comma separated."
-            error={errors.tags}
-          >
-            <Input
-              id="recipe-field-tags"
-              value={form.tags}
-              onChange={(e) => set("tags", e.target.value)}
-              placeholder="dinner, weeknight"
-            />
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {SUGGESTED_TAGS.map((tag) => {
-                const active = tagList.some(
-                  (t) => t.toLowerCase() === tag.name.toLowerCase(),
-                );
-                return (
-                  <button
-                    key={tag.slug}
-                    type="button"
-                    onClick={() => toggleTag(tag.name)}
-                    aria-pressed={active}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                      active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-
-          <ImageUploadField
-            label="Cover photo"
-            hint="Upload a photo or paste an image URL."
-            value={form.coverImageUrl}
-            onChange={(url) => set("coverImageUrl", url)}
-          />
-
-          <div className="h-px bg-border" />
-
-          <Field
-            label="Who can see this?"
-            name="visibility"
-            error={errors.visibility}
-          >
-            <select
-              className={selectClass}
-              value={form.visibility}
-              onChange={(e) =>
-                set("visibility", e.target.value as typeof form.visibility)
-              }
-            >
-              <option value="private">Only me</option>
-              <option value="group" disabled={groups.length === 0}>
-                A family/group
-              </option>
-              <option value="unlisted">Anyone with the link</option>
-              <option value="public">Everyone (public)</option>
-            </select>
-          </Field>
-
-          {form.visibility === "group" && groups.length > 0 && (
-            <Field label="Group" name="groupId" error={errors.groupId}>
               <select
                 className={selectClass}
-                value={form.groupId}
-                onChange={(e) => set("groupId", e.target.value)}
+                value={form.difficulty}
+                onChange={(e) =>
+                  set("difficulty", e.target.value as typeof form.difficulty)
+                }
               >
-                <option value="">Choose a group…</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
+                <option value="">—</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
               </select>
             </Field>
-          )}
 
-          <Field label="Status" name="status" error={errors.status}>
-            <select
-              className={selectClass}
-              value={form.status}
-              onChange={(e) =>
-                set("status", e.target.value as typeof form.status)
-              }
+            <Field label="Cuisine" name="cuisine" error={errors.cuisine}>
+              <Input
+                value={form.cuisine}
+                onChange={(e) => set("cuisine", e.target.value)}
+                placeholder="e.g. Italian"
+              />
+            </Field>
+
+            <div className="h-px bg-border" />
+
+            <fieldset className="flex flex-col gap-3">
+              <legend className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                Dietary
+                <InfoHint label="Dietary">
+                  Declare what this recipe is suitable for. If you are unsure,
+                  it is best to leave it unchecked.
+                </InfoHint>
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {dietaryTagsShown.map((tag) => {
+                  const checked = form.dietaryFlags.includes(tag);
+                  return (
+                    <label
+                      key={tag}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                        checked
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => toggleDietaryFlag(tag)}
+                      />
+                      {DIETARY_TAG_LABELS[tag]}
+                    </label>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoreDietary((v) => !v)}
+                aria-expanded={showMoreDietary}
+                className="inline-flex items-center gap-1 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showMoreDietary ? (
+                  <ChevronUp className="size-3.5" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                )}
+                {showMoreDietary
+                  ? "Fewer options"
+                  : "More options (egg-free, allergen-free…)"}
+              </button>
+            </fieldset>
+
+            <div className="h-px bg-border" />
+
+            <fieldset className="flex flex-col gap-3">
+              <legend className="text-sm font-medium text-foreground">
+                Nutrition
+                <span className="ms-1 font-normal text-muted-foreground">
+                  (per serving)
+                </span>
+              </legend>
+              <p className="text-xs text-muted-foreground">
+                Optional. Leave blank if you don&apos;t have the numbers.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {NUTRITION_FIELDS.map((f) => (
+                  <Field
+                    key={f.key}
+                    name={f.key}
+                    label={`${f.label} (${f.unit})`}
+                    error={errors[f.key]}
+                  >
+                    <Input
+                      value={form[f.key]}
+                      onChange={(e) => set(f.key, e.target.value)}
+                      inputMode="decimal"
+                      placeholder="—"
+                    />
+                  </Field>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="h-px bg-border" />
+
+            <Field
+              label="Tags"
+              name="tags"
+              hint="Comma separated."
+              error={errors.tags}
             >
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-            </select>
-          </Field>
-        </aside>
-      </div>
+              <Input
+                id="recipe-field-tags"
+                value={form.tags}
+                onChange={(e) => set("tags", e.target.value)}
+                placeholder="e.g. dinner, weeknight"
+              />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {SUGGESTED_TAGS.map((tag) => {
+                  const active = tagList.some(
+                    (t) => t.toLowerCase() === tag.name.toLowerCase(),
+                  );
+                  return (
+                    <button
+                      key={tag.slug}
+                      type="button"
+                      onClick={() => toggleTag(tag.name.toLowerCase())}
+                      aria-pressed={active}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {tag.name.toLowerCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
 
-      {/* Sticky mobile action bar: keeps Save/Cancel in the thumb zone on
-          small viewports where the top action row scrolls out of reach. It
-          mirrors the top actions exactly — same form submission and shared
-          `pending` state — and is hidden from md up where the top row stays
-          visible. Bottom padding respects the home-indicator safe area; the
-          BottomNav is suppressed on editor routes so this bar owns the bottom
-          edge (issue #294). */}
-      <div className="sticky bottom-0 z-30 -mx-4 mt-2 flex gap-2 border-t border-border bg-background/90 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden">
-        <Button
-          type="button"
-          variant="ghost"
-          className="flex-1"
-          onClick={() => router.back()}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" className="flex-1" disabled={pending}>
-          {pending ? <Loader2 className="animate-spin" /> : <Save />}
-          {mode === "edit" ? "Save changes" : "Save recipe"}
-        </Button>
+            <ImageUploadField
+              label="Cover photo"
+              hint="Upload a photo or paste an image URL."
+              value={form.coverImageUrl}
+              onChange={(url) => set("coverImageUrl", url)}
+            />
+
+            <div className="h-px bg-border" />
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-foreground">
+                Visibility &amp; status
+              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Visibility settings: ${VISIBILITY_LABELS[form.visibility]}, ${
+                      form.status === "published" ? "Published" : "Draft"
+                    }`}
+                    className={cn(
+                      selectClass,
+                      "flex items-center justify-between gap-2 text-left",
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <VisibilityIcon
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">
+                        {VISIBILITY_LABELS[form.visibility]}
+                      </span>
+                      <span className="shrink-0 text-muted-foreground">
+                        · {form.status === "published" ? "Published" : "Draft"}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 space-y-4">
+                  <Field
+                    label="Who can see this?"
+                    name="visibility"
+                    error={errors.visibility}
+                  >
+                    <select
+                      className={selectClass}
+                      value={form.visibility}
+                      onChange={(e) =>
+                        set(
+                          "visibility",
+                          e.target.value as typeof form.visibility,
+                        )
+                      }
+                    >
+                      <option value="private">Only me</option>
+                      <option value="group" disabled={groups.length === 0}>
+                        A family/group
+                      </option>
+                      <option value="unlisted">Anyone with the link</option>
+                      <option value="public">Everyone (public)</option>
+                    </select>
+                  </Field>
+
+                  {form.visibility === "group" && groups.length > 0 && (
+                    <Field label="Group" name="groupId" error={errors.groupId}>
+                      <select
+                        className={selectClass}
+                        value={form.groupId}
+                        onChange={(e) => set("groupId", e.target.value)}
+                      >
+                        <option value="">Choose a group…</option>
+                        {groups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+
+                  <Field label="Status" name="status" error={errors.status}>
+                    <select
+                      className={selectClass}
+                      value={form.status}
+                      onChange={(e) =>
+                        set("status", e.target.value as typeof form.status)
+                      }
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </Field>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Floating action bar (round 10): Save/Cancel float on a rounded,
+          shadowed, blurred pill pinned to the bottom of the viewport at every
+          breakpoint, so they stay within reach on this long form without
+          scrolling back to the top. It's the last flow child with
+          `sticky bottom-0`, so it rides the viewport bottom while scrolling and
+          settles beneath the content at the end. The transparent gutter is
+          click-through (pointer-events-none) with an interactive inner bar;
+          bottom padding respects the home-indicator safe area. The BottomNav is
+          suppressed on editor routes so this bar owns the bottom edge (#294). */}
+      <div className="pointer-events-none sticky bottom-0 z-30 -mx-4 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/85 px-4 py-2 shadow-token-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span
+              className={cn(
+                "truncate text-sm font-semibold leading-tight",
+                trimmedTitle === ""
+                  ? "text-muted-foreground"
+                  : "text-foreground",
+              )}
+            >
+              {barTitle}
+            </span>
+            {summaryVitals.length > 0 && (
+              <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
+                {summaryVitals.map((vital) => {
+                  const Icon = vital.icon;
+                  return (
+                    <span
+                      key={vital.key}
+                      className="inline-flex items-center gap-1 tabular-nums"
+                    >
+                      <Icon
+                        className="size-3.5 shrink-0 text-muted-foreground/70"
+                        aria-hidden="true"
+                      />
+                      {vital.text}
+                    </span>
+                  );
+                })}
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1 sm:flex-none"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 sm:flex-none"
+              disabled={pending}
+            >
+              {pending ? <Loader2 className="animate-spin" /> : <Save />}
+              {mode === "edit" ? "Save changes" : "Save recipe"}
+            </Button>
+          </div>
+        </div>
       </div>
     </form>
   );
@@ -1613,20 +2711,25 @@ function RowControls({
   onDown,
   onRemove,
   objectLabel,
+  isFirst,
+  isLast,
 }: {
   onUp: () => void;
   onDown: () => void;
   onRemove: () => void;
   objectLabel: string;
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const t = useTranslations("recipeEditor");
   return (
     <div className="flex shrink-0 items-center">
-      <GripVertical className="hidden size-4 text-muted-foreground sm:block" />
       <Button
         type="button"
         size="icon"
         variant="ghost"
+        className="size-8 text-muted-foreground disabled:opacity-30"
+        disabled={isFirst}
         aria-label={t("moveUpNamed", { object: objectLabel })}
         onClick={onUp}
       >
@@ -1636,6 +2739,8 @@ function RowControls({
         type="button"
         size="icon"
         variant="ghost"
+        className="size-8 text-muted-foreground disabled:opacity-30"
+        disabled={isLast}
         aria-label={t("moveDownNamed", { object: objectLabel })}
         onClick={onDown}
       >
@@ -1646,7 +2751,7 @@ function RowControls({
         size="icon"
         variant="ghost"
         aria-label={t("removeNamed", { object: objectLabel })}
-        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
       >
         <Trash2 />
@@ -1727,16 +2832,20 @@ function prettifyFieldKey(key: string) {
 function Field({
   label,
   hint,
+  info,
   error,
   required,
   name,
+  className,
   children,
 }: {
   label: string;
   hint?: string;
+  info?: React.ReactNode;
   error?: string[];
   required?: boolean;
   name?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   const reactId = React.useId();
@@ -1770,15 +2879,18 @@ function Field({
     : children;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={controlId} className="flex items-center gap-1">
-        {label}
-        {required && (
-          <span className="text-destructive" aria-hidden="true">
-            *
-          </span>
-        )}
-      </Label>
+    <div className={cn("flex flex-col gap-1.5", className)}>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={controlId} className="flex items-center gap-1">
+          {label}
+          {required && (
+            <span className="text-destructive" aria-hidden="true">
+              *
+            </span>
+          )}
+        </Label>
+        {info && <InfoHint label={label}>{info}</InfoHint>}
+      </div>
       {control}
       {hint && !hasError && (
         <p id={hintId} className="text-xs text-muted-foreground">

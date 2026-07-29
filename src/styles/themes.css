@@ -45,6 +45,37 @@
   --control-scale: 1;
   --control-min: 0px;
 
+  /* Soft-badge text inks. A tinted badge (bg-<color>/12–20) can't legibly show
+   * its own saturated color as text — the tint sits too close to the page. So
+   * we synthesize a legible "step" of the badge's own hue by blending it toward
+   * --foreground (a "soft"/label-style token, like Radix step-11 or a Primer
+   * label). --foreground flips per scheme, so one declaration adapts to every
+   * mode x light/dark: the blend lands deep in light, pastel in dark. var()s
+   * resolve against the badge's cascade, so each theme's own hue is used.
+   * Blend % is the minimum that clears WCAG AA (>=4.5:1, verified >=4.7:1)
+   * over every badge surface. Light-only hues (amber/accent) can't reach it and
+   * use text-foreground directly in badge.tsx instead. */
+  --badge-ink-primary: color-mix(
+    in oklab,
+    hsl(var(--primary)),
+    hsl(var(--foreground)) 35%
+  );
+  --badge-ink-success: color-mix(
+    in oklab,
+    hsl(var(--success)),
+    hsl(var(--foreground)) 50%
+  );
+  --badge-ink-info: color-mix(
+    in oklab,
+    hsl(var(--info)),
+    hsl(var(--foreground)) 50%
+  );
+  --badge-ink-destructive: color-mix(
+    in oklab,
+    hsl(var(--destructive)),
+    hsl(var(--foreground)) 50%
+  );
+
   color-scheme: light;
 }
 

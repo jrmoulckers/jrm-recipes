@@ -50,8 +50,8 @@ export function PasteImportPanel({
   return (
     <>
       <p className="mt-3 text-sm text-muted-foreground">
-        Paste a recipe as plain text — a message from a relative, a typed note —
-        and we&apos;ll structure it for you to review.
+        Paste any recipe as plain text and we&apos;ll structure it for you to
+        review.
       </p>
       <div className="mt-3 flex flex-col gap-2">
         <Textarea

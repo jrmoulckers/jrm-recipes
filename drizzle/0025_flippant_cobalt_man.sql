@@ -1,0 +1,1 @@
+ALTER TABLE "recipe_steps" ADD COLUMN "title" varchar(200);
