@@ -57,7 +57,6 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
-import { RecipePreview } from "~/components/recipe/recipe-preview";
 import {
   Popover,
   PopoverContent,
@@ -78,6 +77,15 @@ const ImportRecipePanel = dynamic(
     import("~/components/recipe/import-recipe-panel").then(
       (m) => m.ImportRecipePanel,
     ),
+  { ssr: false },
+);
+
+// Preview mode is opt-in (toggled on demand), so the preview renderer — which
+// mirrors the full recipe detail view — is code-split out of the editor's
+// first-load JS and fetched only when the user first opens Preview.
+const RecipePreview = dynamic(
+  () =>
+    import("~/components/recipe/recipe-preview").then((m) => m.RecipePreview),
   { ssr: false },
 );
 
