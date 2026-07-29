@@ -322,6 +322,8 @@
     "pairings": "Das könnte auch dazu passen",
     "preps": "Übliche Zubereitungen",
     "commonAmounts": "Übliche Mengen",
-    "suggestedUnits": "Vorgeschlagene Einheiten"
+    "suggestedUnits": "Vorgeschlagene Einheiten",
+    "yourUsual": "Wie üblich",
+    "usedInRecipes": "In Rezepten verwendet"
   }
 }

@@ -12,6 +12,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { fk, pk, timestamps } from "./_shared";
+import { users } from "./users";
+import { recipes } from "./recipes";
 
 /**
  * The food knowledge graph (issue: interchangeable units → live food graph, see
@@ -169,6 +171,71 @@ export const foodPairs = pgTable(
   ],
 );
 
+/**
+ * Per-user personalization (Phase 3, `docs/food-graph.md` §6.2). Derived from a
+ * user's *own* recipes, it records the unit / variety / prep they most often use
+ * for a given food, so the shared crowd suggestions can be re-ranked to float
+ * "your usual" to the top. Composite PK (`userId`, `foodId`); rebuilt by the
+ * ingestion job. `preferredVariantId` is reserved for when variety child nodes
+ * are mined — the miner leaves it NULL until then.
+ */
+export const userFoodPrefs = pgTable(
+  "user_food_prefs",
+  {
+    userId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    foodId: fk()
+      .notNull()
+      .references(() => foodItems.id, { onDelete: "cascade" }),
+    /** The unit this user most often measures this food in (canonical token). */
+    preferredUnit: varchar({ length: 40 }),
+    /** The variety this user reaches for (yellow onion), or NULL. */
+    preferredVariantId: fk().references((): AnyPgColumn => foodItems.id, {
+      onDelete: "set null",
+    }),
+    /** The prep this user most often applies (diced), or NULL. */
+    preferredPrep: varchar({ length: 200 }),
+    /** How many of this user's ingredient lines reference the food. */
+    useCount: integer().notNull().default(0),
+    ...timestamps(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.foodId] }),
+    index("user_food_prefs_user_idx").on(t.userId),
+    index("user_food_prefs_food_idx").on(t.foodId),
+    check("user_food_prefs_use_count_check", sql`${t.useCount} >= 0`),
+  ],
+);
+
+/**
+ * Reverse index food → recipe (Phase 3). One row per (food, recipe) the food
+ * appears in, with `useCount` = how many ingredient lines in that recipe
+ * reference it. Powers `getRecipesUsingFood` ("recipes that use tomato") and, by
+ * persisting the app-side canonicalization the miner computes, is the provenance
+ * that a future *bounded* incremental ingestion can scope deltas by. Rebuilt by
+ * the ingestion job; only live (non-tombstoned) recipes are linked. Composite PK
+ * (`foodId`, `recipeId`), plus a `recipeId` index for the reverse lookup.
+ */
+export const foodRecipeLinks = pgTable(
+  "food_recipe_links",
+  {
+    foodId: fk()
+      .notNull()
+      .references(() => foodItems.id, { onDelete: "cascade" }),
+    recipeId: fk()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    useCount: integer().notNull().default(1),
+    ...timestamps(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.foodId, t.recipeId] }),
+    index("food_recipe_links_recipe_idx").on(t.recipeId),
+    check("food_recipe_links_use_count_check", sql`${t.useCount} >= 1`),
+  ],
+);
+
 export type FoodItemRow = typeof foodItems.$inferSelect;
 export type NewFoodItem = typeof foodItems.$inferInsert;
 export type FoodAliasRow = typeof foodAliases.$inferSelect;
@@ -179,3 +246,7 @@ export type FoodPrepStatRow = typeof foodPrepStats.$inferSelect;
 export type NewFoodPrepStat = typeof foodPrepStats.$inferInsert;
 export type FoodPairRow = typeof foodPairs.$inferSelect;
 export type NewFoodPair = typeof foodPairs.$inferInsert;
+export type UserFoodPrefRow = typeof userFoodPrefs.$inferSelect;
+export type NewUserFoodPref = typeof userFoodPrefs.$inferInsert;
+export type FoodRecipeLinkRow = typeof foodRecipeLinks.$inferSelect;
+export type NewFoodRecipeLink = typeof foodRecipeLinks.$inferInsert;

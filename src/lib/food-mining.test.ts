@@ -134,3 +134,50 @@ describe("rankUnitStats", () => {
     expect(ranked.map((r) => r.unit)).toEqual(["cup", "tbsp"]);
   });
 });
+
+describe("mineFoodGraph — personalization + reverse index", () => {
+  // u1 authored r1 + r3, u2 authored r2 (see recipe ids in CORPUS).
+  const AUTHORED: MinedIngredient[] = [
+    { recipeId: "r1", item: "onion", unit: "each", quantity: 1, authorId: "u1" },
+    { recipeId: "r1", item: "onion", unit: "cup", quantity: 1, authorId: "u1" },
+    { recipeId: "r3", item: "onion", unit: "each", quantity: 1, prep: "sliced", authorId: "u1" },
+    { recipeId: "r2", item: "yellow onion", unit: "g", quantity: 200, prep: "diced", authorId: "u2" },
+    { recipeId: "r2", item: "tomato", unit: "g", quantity: 100, authorId: "u2" },
+    { recipeId: "r4", item: "onion", unit: "each", quantity: 1 }, // no author
+  ];
+  const mined = mineFoodGraph(AUTHORED);
+
+  it("derives each user's most-used unit and prep per food", () => {
+    const u1Onion = mined.userPrefs.find(
+      (p) => p.userId === "u1" && p.foodId === onion,
+    );
+    // u1 used onion 3 times (each, each, cup) → preferredUnit "each"; prep only
+    // recorded once ("sliced").
+    expect(u1Onion?.useCount).toBe(3);
+    expect(u1Onion?.preferredUnit).toBe("each");
+    expect(u1Onion?.preferredPrep).toBe("sliced");
+    expect(u1Onion?.preferredVariantId).toBeNull();
+
+    const u2Onion = mined.userPrefs.find(
+      (p) => p.userId === "u2" && p.foodId === onion,
+    );
+    expect(u2Onion?.preferredUnit).toBe("g");
+    expect(u2Onion?.preferredPrep).toBe("diced");
+  });
+
+  it("does not emit prefs for author-less lines", () => {
+    expect(
+      mined.userPrefs.some((p) => p.userId === "" || p.userId == null),
+    ).toBe(false);
+  });
+
+  it("builds a food → recipe reverse index with per-recipe line counts", () => {
+    const onionLinks = mined.recipeLinks.filter((l) => l.foodId === onion);
+    const recipesWithOnion = onionLinks.map((l) => l.recipeId).sort();
+    // "yellow onion" in r2 canonicalizes to Onion too, so onion spans r1–r4.
+    expect(recipesWithOnion).toEqual(["r1", "r2", "r3", "r4"]);
+    // onion appears twice in r1 → useCount 2 there, once elsewhere.
+    expect(onionLinks.find((l) => l.recipeId === "r1")?.useCount).toBe(2);
+    expect(onionLinks.find((l) => l.recipeId === "r3")?.useCount).toBe(1);
+  });
+});

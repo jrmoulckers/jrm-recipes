@@ -24,6 +24,8 @@ export type MinedIngredient = {
   unit?: string | null;
   quantity?: number | null;
   prep?: string | null;
+  /** The recipe's author, when known — drives per-user personalization. */
+  authorId?: string | null;
 };
 
 /** A canonical node touched by the corpus, with its distinct-recipe popularity. */
@@ -59,6 +61,27 @@ export type MinedPair = {
   lift: number;
 };
 
+/**
+ * A user's learned preference for a food: the unit/prep they most often use, and
+ * how many of their lines reference it. `preferredVariantId` is reserved (variety
+ * child nodes aren't mined yet) and is always `null` here.
+ */
+export type MinedUserPref = {
+  userId: string;
+  foodId: string;
+  preferredUnit: string | null;
+  preferredVariantId: string | null;
+  preferredPrep: string | null;
+  useCount: number;
+};
+
+/** A food → recipe reverse-index link, with the food's line count in that recipe. */
+export type MinedRecipeLink = {
+  foodId: string;
+  recipeId: string;
+  useCount: number;
+};
+
 /** The full mined graph, as row-ready arrays for an idempotent upsert. */
 export type FoodGraphMining = {
   nodes: MinedNode[];
@@ -66,6 +89,8 @@ export type FoodGraphMining = {
   unitStats: MinedUnitStat[];
   prepStats: MinedPrepStat[];
   pairs: MinedPair[];
+  userPrefs: MinedUserPref[];
+  recipeLinks: MinedRecipeLink[];
 };
 
 export type MiningOptions = {
@@ -117,6 +142,22 @@ function percentile(sortedAsc: number[], p: number): number | null {
 type UnitBucket = { useCount: number; samples: number[] };
 
 /**
+ * Argmax over a token→count map with a deterministic tie-break (lexicographic on
+ * the token), so the same corpus always yields the same "preferred" value.
+ */
+function topToken(counts: Map<string, number>): string | null {
+  let best: string | null = null;
+  let bestCount = -1;
+  for (const [token, count] of counts) {
+    if (count > bestCount || (count === bestCount && (best === null || token < best))) {
+      best = token;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/**
  * Mine a batch of recipe-ingredient lines into the food graph's rows. Lines
  * whose `item` doesn't resolve to a known food are skipped (they don't yet join
  * the graph). Deterministic and order-independent; safe to run over the whole
@@ -138,8 +179,24 @@ export function mineFoodGraph(
   const recipeNodes = new Map<string, Set<string>>();
   const allRecipes = new Set<string>();
 
+  // Phase 3: per-(user,food) unit/prep tallies + total line count → preferences,
+  // and per-(food,recipe) line count → the reverse index.
+  const userFoodUnits = new Map<string, Map<string, number>>();
+  const userFoodPreps = new Map<string, Map<string, number>>();
+  const userFoodUse = new Map<string, number>();
+  const userFoodKeys = new Map<string, { userId: string; foodId: string }>();
+  const recipeLinkCounts = new Map<string, number>();
+
   const bump = (map: Map<string, number>, key: string) =>
     map.set(key, (map.get(key) ?? 0) + 1);
+  const bumpNested = (
+    map: Map<string, Map<string, number>>,
+    outer: string,
+    inner: string,
+  ) => {
+    const sub = map.get(outer) ?? map.set(outer, new Map()).get(outer)!;
+    sub.set(inner, (sub.get(inner) ?? 0) + 1);
+  };
 
   for (const row of rows) {
     const canon = canonicalFood(row.item);
@@ -164,6 +221,8 @@ export function mineFoodGraph(
       recipeNodes.set(row.recipeId, new Set()).get(row.recipeId)!
     ).add(id);
 
+    bump(recipeLinkCounts, `${id}${SEP}${row.recipeId}`);
+
     const alias = normalizeFoodText(row.item).slice(0, 160);
     if (alias) bump(aliasCounts, `${id}${SEP}${alias}`);
 
@@ -178,6 +237,16 @@ export function mineFoodGraph(
 
     const prep = normalizePrep(row.prep);
     if (prep) bump(prepCounts, `${id}${SEP}${prep}`);
+
+    const authorId = row.authorId;
+    if (authorId) {
+      const ufKey = `${authorId}${SEP}${id}`;
+      if (!userFoodKeys.has(ufKey))
+        userFoodKeys.set(ufKey, { userId: authorId, foodId: id });
+      userFoodUse.set(ufKey, (userFoodUse.get(ufKey) ?? 0) + 1);
+      bumpNested(userFoodUnits, ufKey, unit);
+      if (prep) bumpNested(userFoodPreps, ufKey, prep);
+    }
   }
 
   const nodes: MinedNode[] = [];
@@ -222,7 +291,25 @@ export function mineFoodGraph(
     minPairCoCount,
   );
 
-  return { nodes, aliases, unitStats, prepStats, pairs };
+  const userPrefs: MinedUserPref[] = [];
+  for (const [ufKey, { userId, foodId }] of userFoodKeys) {
+    userPrefs.push({
+      userId,
+      foodId,
+      preferredUnit: topToken(userFoodUnits.get(ufKey) ?? new Map<string, number>()),
+      preferredVariantId: null,
+      preferredPrep: topToken(userFoodPreps.get(ufKey) ?? new Map<string, number>()),
+      useCount: userFoodUse.get(ufKey) ?? 0,
+    });
+  }
+
+  const recipeLinks: MinedRecipeLink[] = [];
+  for (const [key, useCount] of recipeLinkCounts) {
+    const [foodId, recipeId] = key.split(SEP);
+    recipeLinks.push({ foodId: foodId!, recipeId: recipeId!, useCount });
+  }
+
+  return { nodes, aliases, unitStats, prepStats, pairs, userPrefs, recipeLinks };
 }
 
 /** Build undirected co-occurrence edges with precomputed lift. */

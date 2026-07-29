@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import { canonicalFood, normalizeFoodText } from "~/lib/food-db";
 import {
@@ -10,7 +10,9 @@ import {
   type UnitStatRow,
 } from "~/lib/food-mining";
 import {
+  applyUnitPreference,
   dimensionForUnit,
+  floatPreferredToFront,
   getSuggestedUnitsForFood,
   mergeLearnedUnits,
   type FoodDimension,
@@ -22,8 +24,11 @@ import {
   foodItems,
   foodPairs,
   foodPrepStats,
+  foodRecipeLinks,
   foodUnitStats,
   recipeIngredients,
+  recipes,
+  userFoodPrefs,
 } from "~/server/db/schema";
 
 /**
@@ -301,4 +306,107 @@ export async function getSuggestedAdditions(
     rows.map((r) => r.item),
     options,
   );
+}
+
+// --- Phase 3: personalization + reverse index ----------------------------
+
+/** A user's learned preference for a food, from their own recipes. */
+export type UserFoodPref = {
+  foodId: string;
+  preferredUnit: string | null;
+  preferredVariantId: string | null;
+  preferredPrep: string | null;
+  useCount: number;
+};
+
+/** A recipe that uses a given food (reverse-index hit). */
+export type RecipeUsingFood = {
+  id: string;
+  slug: string;
+  title: string;
+  useCount: number;
+};
+
+/**
+ * Load a user's learned preference row for a food, or `null`. Resolves the food
+ * the same way as the rest of the serving layer (static canonicalizer, then the
+ * mined alias table).
+ */
+export async function getUserFoodPref(
+  userId: string,
+  item: string | null | undefined,
+): Promise<UserFoodPref | null> {
+  if (!isDbConfigured()) return null;
+  const id = await resolveNodeId(item);
+  if (!id) return null;
+  const [row] = await db
+    .select({
+      foodId: userFoodPrefs.foodId,
+      preferredUnit: userFoodPrefs.preferredUnit,
+      preferredVariantId: userFoodPrefs.preferredVariantId,
+      preferredPrep: userFoodPrefs.preferredPrep,
+      useCount: userFoodPrefs.useCount,
+    })
+    .from(userFoodPrefs)
+    .where(and(eq(userFoodPrefs.userId, userId), eq(userFoodPrefs.foodId, id)))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * {@link getLearnedUnitsForFood} re-ranked for one user: their most-used unit for
+ * this food floats to index 0 (the picker's default), with the crowd/static
+ * order preserved behind it. Falls back to the shared learned units when the
+ * user has no preference. Same flat, ordered {@link SuggestedUnit} shape.
+ */
+export async function getPersonalizedUnitsForFood(
+  userId: string,
+  item: string | null | undefined,
+): Promise<SuggestedUnit[]> {
+  const units = await getLearnedUnitsForFood(item);
+  const pref = await getUserFoodPref(userId, item);
+  return applyUnitPreference(units, pref?.preferredUnit);
+}
+
+/**
+ * {@link getPrepsForFood} re-ranked for one user: their most-used prep for this
+ * food floats to the front. Falls back to the shared prep order when the user
+ * has no preference (we never invent a prep with no crowd signal).
+ */
+export async function getPersonalizedPrepsForFood(
+  userId: string,
+  item: string | null | undefined,
+  options: { limit?: number; minUseCount?: number } = {},
+): Promise<PrepSuggestion[]> {
+  const preps = await getPrepsForFood(item, options);
+  const pref = await getUserFoodPref(userId, item);
+  return floatPreferredToFront(preps, pref?.preferredPrep, (p) => p.prep);
+}
+
+/**
+ * Reverse index: the live recipes that use a food, most-referencing first — the
+ * "what can I make with tomatoes / recipes using this food" signal. Tombstoned
+ * recipes are excluded (the link table only holds live rows, but we join and
+ * re-check defensively). Empty when the food is unknown or no DB is configured.
+ */
+export async function getRecipesUsingFood(
+  item: string | null | undefined,
+  options: { limit?: number } = {},
+): Promise<RecipeUsingFood[]> {
+  if (!isDbConfigured()) return [];
+  const id = await resolveNodeId(item);
+  if (!id) return [];
+  const rows = await db
+    .select({
+      id: recipes.id,
+      slug: recipes.slug,
+      title: recipes.title,
+      useCount: foodRecipeLinks.useCount,
+    })
+    .from(foodRecipeLinks)
+    .innerJoin(recipes, eq(foodRecipeLinks.recipeId, recipes.id))
+    .where(and(eq(foodRecipeLinks.foodId, id), isNull(recipes.deletedAt)))
+    .orderBy(desc(foodRecipeLinks.useCount), desc(recipes.publishedAt))
+    .limit(options.limit ?? 24);
+  return rows;
 }

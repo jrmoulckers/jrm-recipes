@@ -14,9 +14,11 @@ import {
   foodItems,
   foodPairs,
   foodPrepStats,
+  foodRecipeLinks,
   foodUnitStats,
   recipeIngredients,
   recipes,
+  userFoodPrefs,
 } from "~/server/db/schema";
 
 /**
@@ -51,6 +53,8 @@ export type IngestResult = {
   unitStats: number;
   prepStats: number;
   pairs: number;
+  userPrefs: number;
+  recipeLinks: number;
 };
 
 /**
@@ -67,6 +71,8 @@ export async function ingestFoodGraph(
     unitStats: 0,
     prepStats: 0,
     pairs: 0,
+    userPrefs: 0,
+    recipeLinks: 0,
   };
   if (!isDbConfigured()) return empty;
 
@@ -77,6 +83,7 @@ export async function ingestFoodGraph(
       unit: recipeIngredients.unit,
       quantity: recipeIngredients.quantity,
       prep: recipeIngredients.prep,
+      authorId: recipes.authorId,
     })
     .from(recipeIngredients)
     // Soft-deleted recipes (issue #165 tombstones) must not skew the graph:
@@ -95,6 +102,8 @@ export async function ingestFoodGraph(
     await tx.delete(foodUnitStats);
     await tx.delete(foodPrepStats);
     await tx.delete(foodPairs);
+    await tx.delete(userFoodPrefs);
+    await tx.delete(foodRecipeLinks);
     await tx.delete(foodAliases).where(eq(foodAliases.source, "mined"));
 
     for (const node of mined.nodes) {
@@ -112,6 +121,12 @@ export async function ingestFoodGraph(
     }
     for (const part of chunk(mined.pairs, INSERT_CHUNK)) {
       await tx.insert(foodPairs).values(part);
+    }
+    for (const part of chunk(mined.userPrefs, INSERT_CHUNK)) {
+      await tx.insert(userFoodPrefs).values(part);
+    }
+    for (const part of chunk(mined.recipeLinks, INSERT_CHUNK)) {
+      await tx.insert(foodRecipeLinks).values(part);
     }
 
     // Mined aliases upsert onto their node: a phrasing that matches a curated
@@ -140,5 +155,7 @@ export async function ingestFoodGraph(
     unitStats: mined.unitStats.length,
     prepStats: mined.prepStats.length,
     pairs: mined.pairs.length,
+    userPrefs: mined.userPrefs.length,
+    recipeLinks: mined.recipeLinks.length,
   };
 }

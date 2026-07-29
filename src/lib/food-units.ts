@@ -274,3 +274,45 @@ export function mergeLearnedUnits(
   for (const s of fallback) push(s.unit, s.dimension);
   return merged;
 }
+
+/**
+ * Float a user's preferred unit to index 0 of an ordered {@link SuggestedUnit}
+ * list (Phase 3 personalization). If the preference already appears it is moved
+ * to the front (rest order preserved); if it's new it is prepended with its
+ * derived dimension. A nullish/empty preference returns a copy unchanged. Same
+ * flat, ordered shape (index 0 = default), so it drops into the picker path.
+ * Pure.
+ */
+export function applyUnitPreference(
+  units: readonly SuggestedUnit[],
+  preferredUnit: string | null | undefined,
+): SuggestedUnit[] {
+  const pref = (preferredUnit ?? "").trim();
+  if (!pref) return [...units];
+  const key = pref.toLowerCase();
+  const rest = units.filter((u) => u.unit.trim().toLowerCase() !== key);
+  const existing = units.find((u) => u.unit.trim().toLowerCase() === key);
+  const head: SuggestedUnit = existing ?? {
+    dimension: dimensionForUnit(pref),
+    unit: pref,
+  };
+  return [head, ...rest];
+}
+
+/**
+ * Float a user's preferred value to the front of a ranked token list (prep
+ * methods, variety names, …), preserving the order of the rest. Case-insensitive
+ * match; a nullish preference or one absent from the list returns a copy
+ * unchanged (we never invent a prep/variety that has no crowd signal). Pure.
+ */
+export function floatPreferredToFront<T>(
+  items: readonly T[],
+  value: string | null | undefined,
+  keyOf: (item: T) => string,
+): T[] {
+  const pref = (value ?? "").trim().toLowerCase();
+  if (!pref) return [...items];
+  const match = items.find((it) => keyOf(it).trim().toLowerCase() === pref);
+  if (!match) return [...items];
+  return [match, ...items.filter((it) => it !== match)];
+}

@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { FOOD_CATEGORIES } from "./food-db";
 import {
   CATEGORY_UNIT_SUGGESTIONS,
+  applyUnitPreference,
   dimensionForUnit,
+  floatPreferredToFront,
   getSuggestedUnitsForFood,
   mergeLearnedUnits,
   suggestedUnitsForCategory,
@@ -137,5 +139,53 @@ describe("mergeLearnedUnits", () => {
   it("de-duplicates by unit token", () => {
     const merged = mergeLearnedUnits([{ unit: "each", useCount: 2 }], fallback);
     expect(tokens(merged).filter((u) => u === "each")).toHaveLength(1);
+  });
+});
+
+describe("applyUnitPreference", () => {
+  const units: SuggestedUnit[] = [
+    { dimension: "mass", unit: "g" },
+    { dimension: "volume", unit: "cup" },
+    { dimension: "count", unit: "each" },
+  ];
+
+  it("floats an existing preferred unit to index 0, keeping the rest in order", () => {
+    const out = applyUnitPreference(units, "cup");
+    expect(tokens(out)).toEqual(["cup", "g", "each"]);
+    // The moved entry keeps its dimension.
+    expect(out[0]).toEqual({ dimension: "volume", unit: "cup" });
+  });
+
+  it("prepends a preferred unit that isn't in the list, with a derived dimension", () => {
+    const out = applyUnitPreference(units, "tbsp");
+    expect(tokens(out)).toEqual(["tbsp", "g", "cup", "each"]);
+    expect(out[0]).toEqual({ dimension: "volume", unit: "tbsp" });
+  });
+
+  it("matches case-insensitively and returns a copy for a blank preference", () => {
+    expect(tokens(applyUnitPreference(units, "CUP"))[0]).toBe("cup");
+    const copy = applyUnitPreference(units, null);
+    expect(copy).toEqual(units);
+    expect(copy).not.toBe(units);
+  });
+});
+
+describe("floatPreferredToFront", () => {
+  const preps = [
+    { prep: "minced", useCount: 5 },
+    { prep: "diced", useCount: 3 },
+    { prep: "sliced", useCount: 1 },
+  ];
+
+  it("moves the preferred item to the front, preserving the rest", () => {
+    const out = floatPreferredToFront(preps, "diced", (p) => p.prep);
+    expect(out.map((p) => p.prep)).toEqual(["diced", "minced", "sliced"]);
+  });
+
+  it("returns a copy unchanged when the preference is absent or blank", () => {
+    expect(floatPreferredToFront(preps, "grated", (p) => p.prep)).toEqual(preps);
+    const copy = floatPreferredToFront(preps, undefined, (p) => p.prep);
+    expect(copy).toEqual(preps);
+    expect(copy).not.toBe(preps);
   });
 });
