@@ -11,7 +11,10 @@ food‑DB has been built yet)
 ## 1. Vision
 
 Evolve the food/ingredient data from a **static curated table** into a **live,
-crowd‑sourced knowledge graph of foods, mined from the recipes on the site**.
+crowd‑sourced knowledge graph of foods, mined from the recipes on the site** —
+and make it a **first‑class connective hub**: a shared food‑identity layer that
+recipes, shopping lists, meal plans, dietary profiles, search and nutrition all
+read from and feed back into, so datapoints compound across the product (§5).
 It should power:
 
 - **Smart ingredient entry** — typing "onion" surfaces the canonical food, its
@@ -20,6 +23,10 @@ It should power:
   julienned) — ranked by overall popularity *and* what this user tends to use.
 - **Near‑neighbour suggestions** — after adding onion to a pasta dish, tomato
   surfaces quickly because it co‑occurs with onion across many recipes.
+- **Connected features across the site** — the same canonical food powers
+  shopping‑list aisle categorization + de‑duplication, one‑click shopping from a
+  meal plan, dietary/allergen flagging, synonym‑aware search, and substitutions
+  keyed off one identity (§5).
 - **Richer food facts over time** — nutrition, and reverse links to the
   recipes that use a food.
 
@@ -43,9 +50,9 @@ interchangeable‑units session) **before** writing schema or code.
 - A dedicated graph database. At recipe‑site scale a Postgres adjacency (edge)
   table with the right indexes is simpler and sufficient (see ADR‑1).
 - Authoritative branded/packaged nutrition. Nutrition starts from a public,
-  generic source (see §7 and ADR‑4).
+  generic source (see §8 and ADR‑4).
 - Real‑time ML recommendations. Ranking is transparent counts + lift +
-  light personalization (see §6).
+  light personalization (see §7).
 
 ## 3. What exists today (Phase 0, shipped)
 
@@ -100,13 +107,69 @@ Two planes:
    suggestions, and falls back to the static lib for instant/offline defaults.
    Same `getSuggestedUnitsForFood` signature; new sibling APIs for the rest.
 
-## 5. Data model
+## 5. The food graph as a connective hub
+
+The graph is **not** a units helper bolted onto the editor. It is a **shared
+food‑identity layer**: `food_nodes` gives the whole app *one stable id* for
+"onion" no matter how it was typed, so a signal captured in one feature enriches
+every other, and any feature that touches food can read a consistent set of
+facts (identity, category, density, units, variants, prep, pairings, nutrition,
+allergens). This is what makes "a connected ability across datapoints" real —
+the graph is the join table between recipes, users, shopping, planning, dietary
+needs, and discovery.
+
+```mermaid
+graph LR
+  subgraph core[Food graph]
+    FN[food_nodes + aliases]
+    ST[unit / prep / pair stats]
+    NUT[food_nutrition]
+    FN --- ST
+    FN --- NUT
+  end
+
+  RE[Recipe editor\nrecipe_ingredients] -->|mines units/prep/pairs| ST
+  RE -->|reads variants/units/neighbours| FN
+  SL[Shopping lists\nshopping_list_items] -->|reads category+density,\nmines units| FN
+  MP[Meal planner\nmealPlanEntries] -->|reads nutrition roll-ups| NUT
+  DP[Dietary profiles\nallergens/diets] -->|flags nodes| FN
+  SUB[Substitutions lib] -->|shares canonicalization| FN
+  CL[Cook log\ncookLogEntries] -->|weights real usage| ST
+  SR[Search / saved searches] -->|aliases + neighbours| FN
+  NU[Units session\ngetSuggestedUnitsForFood] -->|learned units| ST
+  RN[Recipe nutrition fields] -->|auto-fill from ingredients| NUT
+```
+
+**Integration surface** (every row is an existing table/lib in this repo):
+
+| Feature / source | Reads from graph | Feeds the graph | Unlocks |
+| --- | --- | --- | --- |
+| **Recipe editor** (`recipe_ingredients`) | variants, units, common qty, prep, near‑neighbours | aliases, unit/qty/prep, co‑occurrence — on save | smart entry + "you might also add tomato" |
+| **Shopping lists** (`shopping_list_items` — already has `item`/`quantity`/`unit`/`category`) | canonical id, `category` (aisle), density for unit math | more unit/qty signal | auto aisle‑categorization, merge the same food across recipes, scale + unit‑convert a combined list |
+| **Meal planner** (`mealPlanEntries`) | per‑node nutrition | — | one‑click shopping list for a week; nutrition roll‑up for a plan |
+| **Dietary profiles** (`memberDietaryProfiles.allergens/diets`) | node → allergen/diet flags | — | flag/hide conflicting suggestions, warn on a recipe, drive swaps |
+| **Substitutions** (`substitutions.ts`) | shared canonical identity; node → swap options | shared normalizer | allergen‑aware substitutions keyed off the *same* food id |
+| **Cook log** (`cookLogEntries`) | — | "actually cooked" weight | personalization ranked by real behaviour, not just saved recipes |
+| **Collections / favorites** (`collections`) | a user's food affinity | affinity signal | better personalization + ingredient‑led discovery |
+| **Search** (`searches`, `savedSearches`) | aliases (synonyms), neighbours | — | synonym‑aware ingredient search, "recipes using X", pantry/near‑neighbour discovery |
+| **Reviews / ratings** (`engagement`) | recipe quality score | — | weight mined pair/unit signal by rating so we don't learn from junk recipes |
+| **Recipe nutrition** (`recipes.calories/proteinGrams/…`, all nullable today) | `food_nutrition` per node | — | auto‑suggest per‑serving nutrition from the ingredient list |
+| **Units session** (`getSuggestedUnitsForFood`) | learned units per food | — | smarter unit picker — **unchanged contract** |
+
+The through‑line: because everything resolves to the **same canonical node via
+the same normalizer**, signals compound. Units learned in the editor improve the
+shopping list; a variety promoted from crowd aliases shows up in search;
+nutrition attached once rolls up into both recipes and meal plans. This is the
+"live, connected" quality the vision calls for — see ADR‑7 for the one
+consolidation this implies (a single shared canonicalizer).
+
+## 6. Data model
 
 Uses the shared helpers in
 [`_shared.ts`](../src/server/db/schema/_shared.ts) (`pk`, `fk`, `timestamps`).
 Illustrative, not final.
 
-### 5.1 Identity vs. modifiers (key modelling decision)
+### 6.1 Identity vs. modifiers (key modelling decision)
 
 - **Canonical node** = a food *identity* (Onion, Tomato). Nutritionally and
   semantically distinct things are distinct nodes.
@@ -120,7 +183,7 @@ Illustrative, not final.
 This keeps the node graph clean and pushes the messy, high‑cardinality stuff
 (sizes, preps, phrasings) into stat tables where it belongs.
 
-### 5.2 Tables
+### 6.2 Tables
 
 **`food_nodes`** — canonical foods + varieties.
 `id` pk · `slug` unique · `name` · `category` · `parentId` fk→food_nodes
@@ -150,7 +213,7 @@ Sourced from the existing `recipe_ingredients.prep` column.
 pair is one row) · `coCount` int (recipes containing both) · `lift` real
 (precomputed nightly). PK (`foodAId`,`foodBId`), plus an index on `foodAId` and
 on `foodBId` for neighbour lookups. `lift = P(A,B) / (P(A)·P(B))`; rank
-neighbours by `lift` with a `coCount` floor (see §6).
+neighbours by `lift` with a `coCount` floor (see §7).
 
 **`user_food_prefs`** — personalization.
 `userId` fk · `foodId` fk · `preferredUnit`? · `preferredVariantId`? ·
@@ -162,7 +225,7 @@ Derived from that user's own recipes; used to re‑rank the shared suggestions.
 …) · `sourceRef` (e.g. USDA FDC id) · `timestamps`. Deliberately per canonical
 node, from an authoritative source — not crowd‑sourced (ADR‑4).
 
-## 6. Ranking
+## 7. Ranking
 
 - **Popularity**: `useCount` / `recipeCount`.
 - **Near‑neighbours**: order candidate foods by `lift` (surfaces *distinctive*
@@ -174,7 +237,7 @@ node, from an authoritative source — not crowd‑sourced (ADR‑4).
 - **Cold start**: when a food has thin/no live data, fall back to the static
   category defaults from `food-units.ts`.
 
-## 7. Nutrition sourcing
+## 8. Nutrition sourcing
 
 Nutrition is authoritative, not crowd‑sourced. Proposed source: **USDA
 FoodData Central** (public domain, generic "Foundation"/"SR Legacy" foods).
@@ -182,7 +245,7 @@ Store per canonical node, per 100 g, with the FDC id in `sourceRef`. Branded /
 packaged nutrition is explicitly out of scope for v1 (licensing + accuracy).
 This is Phase 4 and independent of the crowd‑sourced graph.
 
-## 8. Privacy, quality & moderation
+## 9. Privacy, quality & moderation
 
 - **k‑anonymity for surfacing**: only surface a mined variety / alias / pairing
   once it has support from **≥ N distinct recipes (and ideally ≥ N users)**, so
@@ -195,7 +258,7 @@ This is Phase 4 and independent of the crowd‑sourced graph.
   counts feed the shared graph. Fits the existing privacy posture in
   [`docs/data-model.md`](./data-model.md).
 
-## 9. Serving API (contract)
+## 10. Serving API (contract)
 
 Preserve the units session's integration; **add**, don't change:
 
@@ -216,7 +279,7 @@ The static lib keeps synchronous versions for instant/offline defaults; the
 server versions enrich with live data. Shapes stay flat + ordered (index 0 =
 default), matching the convention the units session relies on.
 
-## 10. Decisions (ADR)
+## 11. Decisions (ADR)
 
 - **ADR‑1 — Postgres adjacency, not a graph DB.** At this scale, `food_pairs`
   as an indexed edge table answers neighbour queries in ms and avoids a new
@@ -224,7 +287,7 @@ default), matching the convention the units session relies on.
 - **ADR‑2 — Static set stays as backbone + cold start.** Keep `food-db.ts` as
   seed, offline default, and canonicalizer; the live graph augments it. Avoids a
   cold‑start dead zone and keeps the editor offline‑capable.
-- **ADR‑3 — Identity vs. modifiers split (§5.1).** Varieties are nodes; size and
+- **ADR‑3 — Identity vs. modifiers split (§6.1).** Varieties are nodes; size and
   prep are learned facets. Keeps the graph clean and conversions correct.
 - **ADR‑4 — Nutrition is authoritative & separate.** External public‑domain
   source per node; not crowd‑sourced; not v1‑blocking.
@@ -232,8 +295,15 @@ default), matching the convention the units session relies on.
   functions so the units session's wiring is stable.
 - **ADR‑6 — Threshold‑gated surfacing.** Mined data is only shown past a support
   threshold, giving both quality and k‑anonymity.
+- **ADR‑7 — One shared canonicalizer (the graph is the identity layer).** The
+  editor, shopping list, substitutions, search and ingestion must all resolve
+  free‑text to the *same* `food_nodes` id, or the "connected datapoints" break.
+  `matchFood` (food‑db) and `normalizeIngredient` (substitutions) overlap today;
+  converge them onto one normalizer that the graph owns and others consume.
+  Requires a light refactor of `substitutions.ts` to call the shared resolver —
+  coordinate so it doesn't collide with the units session's files.
 
-## 11. Roadmap
+## 12. Roadmap
 
 - **Phase 0 — DONE.** Static food‑DB, category unit suggestions, `food_items`
   table + seed.
@@ -251,7 +321,7 @@ default), matching the convention the units session relies on.
 
 Each phase is independently shippable and additive.
 
-## 12. Open questions
+## 13. Open questions
 
 1. **Ingestion trigger** — fold on recipe save (server action) *and* nightly
    batch, or nightly‑only to start? (Leaning: nightly batch first, add
@@ -265,3 +335,9 @@ Each phase is independently shippable and additive.
    registry, so this is a food‑graph‑owned convention).
 5. **Scope of v1** — Phases 1–2 (the "smart entry + neighbours" core) before
    personalization/nutrition?
+6. **Which connected surfaces are in v1?** The hub (§5) can wire into many
+   features; which are v1 vs. later — e.g. is shopping‑list auto‑categorization
+   or synonym search worth pulling forward next to smart entry?
+7. **Canonicalizer consolidation (ADR‑7)** — refactor `substitutions.ts` onto the
+   shared resolver now, or keep them parallel until Phase 1 lands? Coordinate the
+   `substitutions.ts` change with the units session to stay conflict‑free.
