@@ -168,6 +168,12 @@ export const recipeSearchSchema = z.object({
   // "Only mine" — narrows to the signed-in viewer's own recipes (#91). Only
   // meaningful when a viewer is present; ignored server-side when signed out.
   mine: booleanFromParam,
+  // Ingredient-led filter: a free-text ingredient term (e.g. "cilantro") that
+  // the server resolves to a canonical food node via the food graph, then
+  // constrains results to recipes that actually use that food (by structured
+  // `recipe_ingredients.foodId` / the reverse `food_recipe_links` index) rather
+  // than a fuzzy text match. Composes with the FTS query and every other filter.
+  ingredient: trimmedOptional(60),
   // Left optional here so the *contextual* default (relevance for a text query,
   // newest otherwise) can be applied in `parseRecipeSearch` once `q` is known.
   sort: z.enum(recipeSortValues).optional().catch(undefined),
@@ -195,6 +201,7 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
     safeFor: first(params.safeFor),
     group: first(params.group),
     mine: first(params.mine),
+    ingredient: first(params.ingredient),
     sort: first(params.sort),
   });
   return {
@@ -217,6 +224,7 @@ export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
     search.diets.length > 0 ||
     search.safeFor != null ||
     search.group != null ||
+    search.ingredient != null ||
     search.mine
   );
 }
@@ -247,6 +255,7 @@ export function recipeSearchToParams(
   for (const diet of search.diets ?? []) params.append("diet", diet);
   if (search.safeFor) params.set("safeFor", search.safeFor);
   if (search.group) params.set("group", search.group);
+  if (search.ingredient) params.set("ingredient", search.ingredient);
   if (search.mine) params.set("mine", "1");
   if (search.sort && search.sort !== defaultSortFor(search.q))
     params.set("sort", search.sort);

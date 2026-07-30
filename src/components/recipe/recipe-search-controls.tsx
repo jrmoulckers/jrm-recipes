@@ -74,6 +74,7 @@ type ParamKey =
   | "safeFor"
   | "group"
   | "mine"
+  | "ingredient"
   | "sort";
 
 export function RecipeSearchControls({
@@ -97,6 +98,7 @@ export function RecipeSearchControls({
   const searchId = React.useId();
   const filtersId = React.useId();
   const [query, setQuery] = React.useState(search.q ?? "");
+  const [ingredient, setIngredient] = React.useState(search.ingredient ?? "");
   // On phones the filter row collapses behind a "Filters" disclosure so the
   // recipes stay near the top; desktop keeps the inline row (#90).
   const [filtersOpen, setFiltersOpen] = React.useState(false);
@@ -106,6 +108,11 @@ export function RecipeSearchControls({
   React.useEffect(() => {
     setQuery(search.q ?? "");
   }, [search.q]);
+
+  // Keep the ingredient input in sync with URL-driven changes (chips, Clear).
+  React.useEffect(() => {
+    setIngredient(search.ingredient ?? "");
+  }, [search.ingredient]);
 
   const pushParams = React.useCallback(
     (updates: Partial<Record<ParamKey, string | undefined>>) => {
@@ -192,6 +199,18 @@ export function RecipeSearchControls({
     );
     return () => window.clearTimeout(id);
   }, [query, search.q, pushParams]);
+
+  // Debounce the ingredient filter the same way; the server resolves the term to
+  // a canonical food and constrains results to recipes that use it.
+  React.useEffect(() => {
+    const next = ingredient.trim();
+    if (next === (search.ingredient ?? "")) return;
+    const id = window.setTimeout(
+      () => pushParams({ ingredient: next || undefined }),
+      300,
+    );
+    return () => window.clearTimeout(id);
+  }, [ingredient, search.ingredient, pushParams]);
 
   const filtersActive = hasActiveRecipeFilters(search);
 
@@ -289,6 +308,16 @@ export function RecipeSearchControls({
       key: "group",
       label: name ? `Family: ${name}` : "Family",
       onRemove: () => pushParams({ group: undefined }),
+    });
+  }
+  if (search.ingredient) {
+    activeChips.push({
+      key: "ingredient",
+      label: `Ingredient: ${search.ingredient}`,
+      onRemove: () => {
+        setIngredient("");
+        pushParams({ ingredient: undefined });
+      },
     });
   }
   if (search.mine) {
@@ -479,6 +508,17 @@ export function RecipeSearchControls({
             }
           />
 
+          <FilterField label="Ingredient">
+            <Input
+              type="search"
+              value={ingredient}
+              onChange={(event) => setIngredient(event.target.value)}
+              placeholder="e.g. cilantro"
+              aria-label="Filter by ingredient"
+              className="min-w-[9rem]"
+            />
+          </FilterField>
+
           <FilterField label="Safe for">
             {members.length > 0 ? (
               <Select
@@ -573,6 +613,7 @@ export function RecipeSearchControls({
               variant="ghost"
               onClick={() => {
                 setQuery("");
+                setIngredient("");
                 startTransition(() =>
                   router.push(pathnameWithQuery(pathname), { scroll: false }),
                 );
