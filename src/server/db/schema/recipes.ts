@@ -19,6 +19,7 @@ import { fk, pk, softDelete, timestamps } from "./_shared";
 import { users } from "./users";
 import { groups } from "./groups";
 import { comments, ratings, recipeTags } from "./engagement";
+import { foodItems } from "./ingredients";
 import { reviews } from "./reviews";
 import type { RecipeInput } from "~/server/recipes/validation";
 
@@ -249,6 +250,12 @@ export const recipeIngredients = pgTable(
     unit: varchar({ length: 40 }),
     item: varchar({ length: 300 }).notNull(),
     note: varchar({ length: 300 }),
+    // Write-time link to the canonical food graph node this line resolves to
+    // (nullable, best-effort). Populated by the server-side resolver in
+    // `resolve-food.ts` on every recipe write; NULL when the free-text `item`
+    // doesn't resolve to a known food. `set null` so deleting a food node
+    // detaches the link without touching the ingredient line.
+    foodId: fk().references(() => foodItems.id, { onDelete: "set null" }),
     // Structured prep state — "softened", "finely diced", "room temperature"
     // (#401). Separate from free-text `note` so it can be emphasized, pulled
     // into a mise en place list, and shown distinctly in Cook Mode.
@@ -261,6 +268,10 @@ export const recipeIngredients = pgTable(
   },
   (t) => [
     index("recipe_ingredients_recipe_idx").on(t.recipeId, t.position),
+    // Covering index for the `food_items` FK (issue #153 convention): the
+    // reverse lookup "ingredient lines for a food" and the `set null` cascade
+    // both scan by `foodId`.
+    index("recipe_ingredients_food_idx").on(t.foodId),
     // Non-negative quantities; a range's upper bound can't fall below its lower
     // bound. Mirrors `ingredientInput` (min 0) in src/server/recipes/validation.ts.
     check("recipe_ingredients_quantity_check", sql`${t.quantity} >= 0`),

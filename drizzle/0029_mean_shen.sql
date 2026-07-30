@@ -1,0 +1,3 @@
+ALTER TABLE "recipe_ingredients" ADD COLUMN "food_id" varchar(24);--> statement-breakpoint
+ALTER TABLE "recipe_ingredients" ADD CONSTRAINT "recipe_ingredients_food_id_food_items_id_fk" FOREIGN KEY ("food_id") REFERENCES "public"."food_items"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "recipe_ingredients_food_idx" ON "recipe_ingredients" USING btree ("food_id");
