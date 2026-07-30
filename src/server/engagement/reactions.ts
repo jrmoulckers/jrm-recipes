@@ -5,6 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db, isDbConfigured } from "~/server/db";
 import { DomainError } from "~/server/errors";
 import { canViewRecipe } from "~/server/recipes/queries";
+import { notify } from "~/server/notifications/notify";
 import {
   comments,
   cookLogEntries,
@@ -18,20 +19,41 @@ import { REACTION_EMOJI } from "~/lib/reactions";
 export type ReactionTargetType = "comment" | "review" | "cook_log";
 
 type RecipeAccessRow = {
+  id: string;
+  title: string;
   authorId: string;
   visibility: string;
   groupId: string | null;
 };
 
+/** The reacted-to content plus enough context to gate access and notify. */
+type ReactionTargetInfo = {
+  /** The user who owns the reacted-to comment / review / cook-log post. */
+  ownerId: string;
+  recipe: RecipeAccessRow;
+};
+
+/** Human-readable label for the reacted-to content, used in the inbox copy. */
+const TARGET_LABEL: Record<ReactionTargetType, string> = {
+  comment: "comment",
+  review: "review",
+  cook_log: "cook",
+};
+
 type Exec = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** Resolve the recipe a reaction target belongs to, for access control. */
-async function loadTargetRecipe(
+/**
+ * Resolve the reacted-to content's owner and its recipe (for access control and
+ * the reaction notification's deep link).
+ */
+async function loadReactionTarget(
   exec: Exec,
   targetType: ReactionTargetType,
   targetId: string,
-): Promise<RecipeAccessRow | null> {
+): Promise<ReactionTargetInfo | null> {
   const recipeColumns = {
+    id: true,
+    title: true,
     authorId: true,
     visibility: true,
     groupId: true,
@@ -40,25 +62,25 @@ async function loadTargetRecipe(
   if (targetType === "comment") {
     const row = await exec.query.comments.findFirst({
       where: eq(comments.id, targetId),
-      columns: { id: true },
+      columns: { id: true, userId: true },
       with: { recipe: { columns: recipeColumns } },
     });
-    return row?.recipe ?? null;
+    return row?.recipe ? { ownerId: row.userId, recipe: row.recipe } : null;
   }
   if (targetType === "review") {
     const row = await exec.query.reviews.findFirst({
       where: eq(reviews.id, targetId),
-      columns: { id: true },
+      columns: { id: true, userId: true },
       with: { recipe: { columns: recipeColumns } },
     });
-    return row?.recipe ?? null;
+    return row?.recipe ? { ownerId: row.userId, recipe: row.recipe } : null;
   }
   const row = await exec.query.cookLogEntries.findFirst({
     where: eq(cookLogEntries.id, targetId),
-    columns: { id: true },
+    columns: { id: true, userId: true },
     with: { recipe: { columns: recipeColumns } },
   });
-  return row?.recipe ?? null;
+  return row?.recipe ? { ownerId: row.userId, recipe: row.recipe } : null;
 }
 
 /**
@@ -76,9 +98,13 @@ export async function toggleReaction(
   user: User,
 ): Promise<{ reacted: boolean }> {
   return db.transaction(async (tx) => {
-    const recipe = await loadTargetRecipe(tx, input.targetType, input.targetId);
-    if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user)))
+    const target = await loadReactionTarget(
+      tx,
+      input.targetType,
+      input.targetId,
+    );
+    if (!target) throw new DomainError("NOT_FOUND");
+    if (!(await canViewRecipe(target.recipe, user)))
       throw new DomainError("FORBIDDEN");
 
     const existing = await tx.query.reactions.findFirst({
@@ -96,7 +122,7 @@ export async function toggleReaction(
       return { reacted: false };
     }
 
-    await tx
+    const inserted = await tx
       .insert(reactions)
       .values({
         targetType: input.targetType,
@@ -104,7 +130,23 @@ export async function toggleReaction(
         userId: user.id,
         emoji: input.emoji,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: reactions.id });
+
+    // Notify the content owner only on a genuine add (#348) — not a toggle-off
+    // and not a race-losing conflict. Skip self-reactions before writing so we
+    // don't spend an insert notify() would only no-op (its self-guard still
+    // protects any path that reaches it).
+    if (inserted.length > 0 && target.ownerId !== user.id) {
+      await notify(tx, {
+        recipientId: target.ownerId,
+        actorId: user.id,
+        type: "reaction",
+        recipeId: target.recipe.id,
+        entityId: input.targetId,
+        context: TARGET_LABEL[input.targetType],
+      });
+    }
     return { reacted: true };
   });
 }
