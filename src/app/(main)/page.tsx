@@ -23,6 +23,7 @@ import { listBackInRotation, ROTATION_MIN } from "~/server/collections/queries";
 import { listDinnerCandidates, listLibrary } from "~/server/recipes/queries";
 import { listMyGroups } from "~/server/groups/queries";
 import { getPersonalActivity } from "~/server/activity/queries";
+import { getFollowingActivity } from "~/server/follows/queries";
 import {
   getOnboardingProgress,
   isOnboardingComplete,
@@ -86,7 +87,7 @@ const features = [
  */
 async function loadPersonalizedHome(user: User) {
   const today = todayParam();
-  const [dinner, rotation, quickPlan, library, myGroups, activity] =
+  const [dinner, rotation, quickPlan, library, myGroups, activity, following] =
     await Promise.all([
       listDinnerCandidates(user, { today }),
       listBackInRotation(user.id),
@@ -94,6 +95,7 @@ async function loadPersonalizedHome(user: User) {
       listLibrary(user).then((page) => page.items),
       listMyGroups(user.id),
       getPersonalActivity(user.id),
+      getFollowingActivity(user.id),
     ]);
   return {
     today,
@@ -103,6 +105,7 @@ async function loadPersonalizedHome(user: User) {
     library,
     hasGroups: myGroups.length > 0,
     activity,
+    following,
   };
 }
 
@@ -239,6 +242,28 @@ export default async function HomePage() {
               emptyState={
                 personalized.hasGroups ? undefined : <FamilyFeedEmptyNudge />
               }
+            />
+          </div>
+        </section>
+      )}
+      {personalized && personalized.following.events.length > 0 && (
+        <section className="container py-12">
+          <div className="mb-5 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight">
+                From cooks you follow
+              </h2>
+              <p className="mt-1 text-muted-foreground">
+                Public recipes, cooks, and reviews from cooks you follow —
+                separate from your families.
+              </p>
+            </div>
+          </div>
+          <div className="max-w-2xl">
+            <ActivityFeedLazy
+              source={{ kind: "following" }}
+              initialEvents={personalized.following.events}
+              initialCursor={personalized.following.nextCursor}
             />
           </div>
         </section>

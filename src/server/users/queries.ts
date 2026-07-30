@@ -25,6 +25,7 @@ export async function getPublicProfileByHandle(handle: string) {
       handle: true,
       avatarUrl: true,
       createdAt: true,
+      publicActivityOptIn: true,
     },
   });
   if (!user) return null;

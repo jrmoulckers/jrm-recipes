@@ -137,6 +137,11 @@ export interface EventProperties {
   // --- Weekly digest retention loop (#354) ---
   digest_opt_in_changed: { optedIn: boolean };
 
+  // --- Public follow graph (opt-in social) ---
+  public_activity_opt_in_changed: { optedIn: boolean };
+  followed_cook: { followeeId: string };
+  unfollowed_cook: { followeeId: string };
+
   // --- Experimentation (#335/#336) ---
   $feature_flag_called: {
     $feature_flag: string;

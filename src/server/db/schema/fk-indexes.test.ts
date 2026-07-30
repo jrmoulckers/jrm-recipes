@@ -2,6 +2,7 @@ import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 
 import { comments, ratings } from "./engagement";
+import { follows } from "./follows";
 import { recipeEvents, recipeIngredients, recipeVersions } from "./recipes";
 import { shoppingListItems } from "./shopping";
 
@@ -62,6 +63,18 @@ const expectations: Expectation[] = [
     table: recipeIngredients,
     index: "recipe_ingredients_food_idx",
     columns: ["foodId"],
+  },
+  {
+    label: "follows.followerId",
+    table: follows,
+    index: "follows_follower_idx",
+    columns: ["followerId"],
+  },
+  {
+    label: "follows.followeeId",
+    table: follows,
+    index: "follows_followee_idx",
+    columns: ["followeeId"],
   },
 ];
 

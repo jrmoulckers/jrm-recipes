@@ -30,6 +30,7 @@ export const notificationType = pgEnum("notification_type", [
   "cook_along_invite",
   "cook_along_reminder",
   "report",
+  "follow",
 ]);
 
 /**
