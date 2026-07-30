@@ -49,6 +49,8 @@ export function notificationSentence(
       return on
         ? `New report to review in ${on}`
         : "New content report to review";
+    case "follow":
+      return `${who} started following you`;
     default:
       return on ? `${who}: ${on}` : who;
   }

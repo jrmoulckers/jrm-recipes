@@ -7,6 +7,7 @@ export * from "./groups";
 export * from "./recipes";
 export * from "./engagement";
 export * from "./reviews";
+export * from "./follows";
 export * from "./cooklog";
 export * from "./reactions";
 export * from "./notifications";

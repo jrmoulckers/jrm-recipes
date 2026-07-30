@@ -21,6 +21,7 @@ import {
   Salad,
   ShieldBan,
   Tag,
+  UserPlus,
 } from "lucide-react";
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
@@ -46,6 +47,7 @@ const SETTINGS_LINKS: SettingsLink[] = [
   { href: "/settings/dietary", labelKey: "dietary", icon: Salad },
   { href: "/settings/units", labelKey: "units", icon: Ruler },
   { href: "/settings/notifications", labelKey: "notifications", icon: Bell },
+  { href: "/settings/following", labelKey: "following", icon: UserPlus },
   { href: "/settings/blocked", labelKey: "blocked", icon: ShieldBan },
   { href: "/settings/data", labelKey: "data", icon: Database },
   { href: "/settings/billing", labelKey: "billing", icon: CreditCard },

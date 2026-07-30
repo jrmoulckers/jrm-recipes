@@ -57,6 +57,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     handle: "test-cook",
     avatarUrl: null,
     weeklyDigestOptIn: false,
+    publicActivityOptIn: false,
     deletedAt: null,
     createdAt: EPOCH,
     updatedAt: EPOCH,

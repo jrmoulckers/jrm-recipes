@@ -12,6 +12,7 @@ import { groupMembers } from "./groups";
 import { recipes } from "./recipes";
 import { comments, ratings } from "./engagement";
 import { reviews } from "./reviews";
+import { follows } from "./follows";
 
 /**
  * Application users. Mirrors the identity provider (Clerk) but is the source of
@@ -29,6 +30,11 @@ export const users = pgTable(
     // Opt-in (default off) for the weekly family recipe digest email (#354).
     // Off by default so we never email anyone who hasn't asked for it.
     weeklyDigestOptIn: boolean().notNull().default(false),
+    // Opt-in (default off) for the public follow graph. A user is only
+    // discoverable / followable, only contributes to follower feeds, and only
+    // receives follow notifications when this is true. Off by default so
+    // "family privacy by design" holds until someone explicitly opts in.
+    publicActivityOptIn: boolean().notNull().default(false),
     // Soft-delete tombstone for Clerk-driven account deletion (issue #217). When
     // Clerk fires `user.deleted`, the webhook stamps this and anonymizes PII
     // (email/name/handle/avatar/clerkId nulled) while keeping the row so authored
@@ -46,6 +52,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   ratings: many(ratings),
   comments: many(comments),
   reviews: many(reviews),
+  following: many(follows, { relationName: "follower" }),
+  followers: many(follows, { relationName: "followee" }),
 }));
 
 export type User = typeof users.$inferSelect;

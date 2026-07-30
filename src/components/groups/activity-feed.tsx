@@ -16,6 +16,7 @@ import {
   loadGroupActivityAction,
   loadPersonalActivityAction,
 } from "~/server/activity/actions";
+import { loadFollowingActivityAction } from "~/server/follows/actions";
 import { formatRelativeTime } from "~/lib/dates";
 import { useServerAction } from "~/lib/use-server-action";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -143,7 +144,9 @@ function EventRow({ event }: { event: ActivityEvent }) {
  * viewer's cross-group home feed (their own memberships re-resolved each call).
  */
 export type ActivityFeedSource =
-  { kind: "group"; groupId: string } | { kind: "personal" };
+  | { kind: "group"; groupId: string }
+  | { kind: "personal" }
+  | { kind: "following" };
 
 /**
  * The family activity feed (issue #349): warm, reverse-chronological events with
@@ -181,13 +184,23 @@ export function ActivityFeed({
     errorToast: true,
     onSuccess,
   });
+  const loadFollowing = useServerAction(loadFollowingActivityAction, {
+    errorToast: true,
+    onSuccess,
+  });
 
   const pending =
-    source.kind === "group" ? loadGroup.pending : loadPersonal.pending;
+    source.kind === "group"
+      ? loadGroup.pending
+      : source.kind === "following"
+        ? loadFollowing.pending
+        : loadPersonal.pending;
   const loadMore = () => {
     if (!cursor) return;
     if (source.kind === "group") {
       loadGroup.run({ groupId: source.groupId, before: cursor });
+    } else if (source.kind === "following") {
+      loadFollowing.run({ before: cursor });
     } else {
       loadPersonal.run({ before: cursor });
     }
