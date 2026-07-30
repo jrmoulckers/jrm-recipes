@@ -36,7 +36,7 @@ import { ModePicker } from "~/components/theme/mode-picker";
 import { DinnerSuggestion } from "~/components/recipe/dinner-suggestion";
 import { RotationRail } from "~/components/recipe/rotation-rail";
 import { RecipeCard } from "~/components/recipe/recipe-card";
-import { ActivityFeed } from "~/components/groups/activity-feed";
+import { ActivityFeedLazy } from "~/components/groups/activity-feed-lazy";
 import { OnboardingChecklist } from "~/components/onboarding/onboarding-checklist";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
@@ -232,7 +232,7 @@ export default async function HomePage() {
             </Button>
           </div>
           <div className="max-w-2xl">
-            <ActivityFeed
+            <ActivityFeedLazy
               source={{ kind: "personal" }}
               initialEvents={personalized.activity.events}
               initialCursor={personalized.activity.nextCursor}

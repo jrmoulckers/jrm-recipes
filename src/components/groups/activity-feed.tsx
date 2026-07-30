@@ -143,8 +143,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
  * viewer's cross-group home feed (their own memberships re-resolved each call).
  */
 export type ActivityFeedSource =
-  | { kind: "group"; groupId: string }
-  | { kind: "personal" };
+  { kind: "group"; groupId: string } | { kind: "personal" };
 
 /**
  * The family activity feed (issue #349): warm, reverse-chronological events with
@@ -166,7 +165,10 @@ export function ActivityFeed({
   const [events, setEvents] = React.useState(initialEvents);
   const [cursor, setCursor] = React.useState(initialCursor);
 
-  const onSuccess = (result: { events: ActivityEvent[]; nextCursor: string | null }) => {
+  const onSuccess = (result: {
+    events: ActivityEvent[];
+    nextCursor: string | null;
+  }) => {
     setEvents((prev) => [...prev, ...result.events]);
     setCursor(result.nextCursor);
   };
@@ -180,7 +182,8 @@ export function ActivityFeed({
     onSuccess,
   });
 
-  const pending = source.kind === "group" ? loadGroup.pending : loadPersonal.pending;
+  const pending =
+    source.kind === "group" ? loadGroup.pending : loadPersonal.pending;
   const loadMore = () => {
     if (!cursor) return;
     if (source.kind === "group") {
