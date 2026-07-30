@@ -542,7 +542,6 @@ describe("expandKidUnit (issue #447)", () => {
   });
 });
 
-
 const PINCH: CustomUnitDef = {
   name: "pinch",
   dimension: "volume",
@@ -626,11 +625,7 @@ describe("resolveDisplayMeasure", () => {
   });
 
   it("converts to a per-dimension override unit", () => {
-    const m = resolveDisplayMeasure(
-      1,
-      "cup",
-      prefs({ volumeUnit: "ml" }),
-    );
+    const m = resolveDisplayMeasure(1, "cup", prefs({ volumeUnit: "ml" }));
     expect(m?.unit).toBe("ml");
     expect(m?.quantity).toBeCloseTo(236.588, 1);
   });
@@ -641,9 +636,12 @@ describe("resolveDisplayMeasure", () => {
   });
 
   it("converts into a custom unit, or its true amount when asked", () => {
-    const asCustom = resolveDisplayMeasure(1, "tsp", prefs({ volumeUnit: "pinch" }), [
-      PINCH,
-    ]);
+    const asCustom = resolveDisplayMeasure(
+      1,
+      "tsp",
+      prefs({ volumeUnit: "pinch" }),
+      [PINCH],
+    );
     expect(asCustom).toEqual({ quantity: 16, unit: "pinch" });
 
     const asTrue = resolveDisplayMeasure(
@@ -749,4 +747,3 @@ describe("parseAmount", () => {
     expect(parseAmount("1/0")).toBeNull();
   });
 });
-
