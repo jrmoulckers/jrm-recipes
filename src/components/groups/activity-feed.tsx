@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 
 import type { ActivityEvent, ActivityKind } from "~/server/activity/queries";
-import { loadGroupActivityAction } from "~/server/activity/actions";
+import {
+  loadGroupActivityAction,
+  loadPersonalActivityAction,
+} from "~/server/activity/actions";
 import { formatRelativeTime } from "~/lib/dates";
 import { useServerAction } from "~/lib/use-server-action";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -135,30 +138,60 @@ function EventRow({ event }: { event: ActivityEvent }) {
 }
 
 /**
+ * Where an {@link ActivityFeed} pages from. A `group` feed loads more from a
+ * single group (membership re-checked server-side); a `personal` feed loads the
+ * viewer's cross-group home feed (their own memberships re-resolved each call).
+ */
+export type ActivityFeedSource =
+  | { kind: "group"; groupId: string }
+  | { kind: "personal" };
+
+/**
  * The family activity feed (issue #349): warm, reverse-chronological events with
- * "load older" cursor pagination.
+ * "load older" cursor pagination. Generalized to render either a single group's
+ * feed or the viewer's personal cross-group home feed via {@link source}.
  */
 export function ActivityFeed({
-  groupId,
+  source,
   initialEvents,
   initialCursor,
+  emptyState,
 }: {
-  groupId: string;
+  source: ActivityFeedSource;
   initialEvents: ActivityEvent[];
   initialCursor: string | null;
+  /** Overrides the default "No activity yet" empty state (e.g. personal feed). */
+  emptyState?: React.ReactNode;
 }) {
   const [events, setEvents] = React.useState(initialEvents);
   const [cursor, setCursor] = React.useState(initialCursor);
 
-  const loadMore = useServerAction(loadGroupActivityAction, {
+  const onSuccess = (result: { events: ActivityEvent[]; nextCursor: string | null }) => {
+    setEvents((prev) => [...prev, ...result.events]);
+    setCursor(result.nextCursor);
+  };
+
+  const loadGroup = useServerAction(loadGroupActivityAction, {
     errorToast: true,
-    onSuccess: (result) => {
-      setEvents((prev) => [...prev, ...result.events]);
-      setCursor(result.nextCursor);
-    },
+    onSuccess,
+  });
+  const loadPersonal = useServerAction(loadPersonalActivityAction, {
+    errorToast: true,
+    onSuccess,
   });
 
+  const pending = source.kind === "group" ? loadGroup.pending : loadPersonal.pending;
+  const loadMore = () => {
+    if (!cursor) return;
+    if (source.kind === "group") {
+      loadGroup.run({ groupId: source.groupId, before: cursor });
+    } else {
+      loadPersonal.run({ before: cursor });
+    }
+  };
+
   if (events.length === 0) {
+    if (emptyState !== undefined) return <>{emptyState}</>;
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
         <CookingPot className="mx-auto mb-2 size-6" aria-hidden="true" />
@@ -183,10 +216,10 @@ export function ActivityFeed({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => loadMore.run({ groupId, before: cursor })}
-            disabled={loadMore.pending}
+            onClick={loadMore}
+            disabled={pending}
           >
-            {loadMore.pending ? "Loading…" : "Load older"}
+            {pending ? "Loading…" : "Load older"}
           </Button>
         </div>
       ) : null}
