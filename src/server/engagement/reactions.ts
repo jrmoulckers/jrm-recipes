@@ -98,7 +98,11 @@ export async function toggleReaction(
   user: User,
 ): Promise<{ reacted: boolean }> {
   return db.transaction(async (tx) => {
-    const target = await loadReactionTarget(tx, input.targetType, input.targetId);
+    const target = await loadReactionTarget(
+      tx,
+      input.targetType,
+      input.targetId,
+    );
     if (!target) throw new DomainError("NOT_FOUND");
     if (!(await canViewRecipe(target.recipe, user)))
       throw new DomainError("FORBIDDEN");
