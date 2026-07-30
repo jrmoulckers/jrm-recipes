@@ -1,4 +1,5 @@
 import { brand } from "~/config/brand";
+import { env } from "~/env";
 import { log } from "~/lib/log";
 import { absoluteUrl } from "~/lib/utils";
 import { type WeeklyDigest } from "./builder";
@@ -128,7 +129,65 @@ export const logEmailProvider: EmailProvider = {
   },
 };
 
-/** Resolve the active email provider. No ESP wired yet → log/no-op default. */
+/** A safe default sender when `EMAIL_FROM` is unset (won't deliver, but is valid). */
+const DEFAULT_FROM = `${brand.name} <onboarding@resend.dev>`;
+
+/**
+ * Resend-backed provider. Kept provider-agnostic behind {@link EmailProvider}
+ * and dependency-free — it POSTs to the Resend REST API with `fetch`, so no SDK
+ * or build step is added. Constructed only when `RESEND_API_KEY` is present; a
+ * non-2xx response throws so the caller can count/log the failure per recipient
+ * (the digest route isolates each send), but an *unconfigured* provider never
+ * reaches here — {@link getEmailProvider} returns the log no-op instead.
+ */
+export function createResendProvider(
+  apiKey: string,
+  from: string = DEFAULT_FROM,
+): EmailProvider {
+  return {
+    name: "resend",
+    async send(message) {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          to: message.to,
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(
+          `Resend send failed (${res.status}): ${detail.slice(0, 200)}`,
+        );
+      }
+    },
+  };
+}
+
+/** True when a real email provider (Resend) is configured. */
+export function isEmailConfigured(): boolean {
+  return Boolean(env.RESEND_API_KEY);
+}
+
+/**
+ * Resolve the active email provider. With `RESEND_API_KEY` set we send for real
+ * via Resend; otherwise we degrade to the log/no-op default — exactly how auth,
+ * the DB, storage, and billing degrade when unconfigured, so the digest cron
+ * never fails on a missing provider.
+ */
 export function getEmailProvider(): EmailProvider {
+  if (env.RESEND_API_KEY) {
+    return createResendProvider(
+      env.RESEND_API_KEY,
+      env.EMAIL_FROM ?? undefined,
+    );
+  }
   return logEmailProvider;
 }
