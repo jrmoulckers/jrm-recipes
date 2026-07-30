@@ -232,7 +232,7 @@ export default async function GroupPage({
                 </p>
               </div>
               <ActivityFeed
-                groupId={group.id}
+                source={{ kind: "group", groupId: group.id }}
                 initialEvents={activity.events}
                 initialCursor={activity.nextCursor}
               />
