@@ -20,6 +20,7 @@ import {
   type UnitPreferencesInputRaw,
 } from "~/server/units/validation";
 import {
+  defaultUnitFor,
   formatQuantity,
   unitsForDimension,
   type Dimension,
@@ -49,6 +50,9 @@ import {
 export type UnitPreferencesView = {
   defaultSystem: MeasurementSystemValue;
   volumeUnit: string | null;
+  liquidVolumeUnit: string | null;
+  dryVolumeUnit: string | null;
+  smallVolumeUnit: string | null;
   massUnit: string | null;
   temperatureUnit: string | null;
   autoConvert: boolean;
@@ -67,6 +71,9 @@ export type CustomUnitView = {
 const DEFAULT_PREFS: UnitPreferencesView = {
   defaultSystem: "metric",
   volumeUnit: null,
+  liquidVolumeUnit: null,
+  dryVolumeUnit: null,
+  smallVolumeUnit: null,
   massUnit: null,
   temperatureUnit: null,
   autoConvert: true,
@@ -120,6 +127,32 @@ const EMPTY_CUSTOM: CustomDraft = {
   displayAsTrue: false,
 };
 
+/** Placeholder hints that adapt to the selected measure so the form teaches by
+ *  example — a pinch is a volume, a knob is a weight, a bunch is a count. */
+const CUSTOM_UNIT_EXAMPLES: Record<
+  CustomUnitDimension,
+  { name: string; abbreviation: string; amount: string; equals: string }
+> = {
+  volume: {
+    name: "e.g. pinch",
+    abbreviation: "e.g. pn",
+    amount: "e.g. 0.0625",
+    equals: "a pinch ≈ 1/16 tsp",
+  },
+  mass: {
+    name: "e.g. knob",
+    abbreviation: "e.g. kn",
+    amount: "e.g. 0.5",
+    equals: "a knob ≈ 1/2 oz",
+  },
+  count: {
+    name: "e.g. bunch",
+    abbreviation: "e.g. bn",
+    amount: "",
+    equals: "",
+  },
+};
+
 function toCustomDraft(unit: CustomUnitView): CustomDraft {
   return {
     name: unit.name,
@@ -153,6 +186,9 @@ export function UnitPreferencesManager({
     const input: UnitPreferencesInputRaw = {
       defaultSystem: next.defaultSystem,
       volumeUnit: next.volumeUnit ?? undefined,
+      liquidVolumeUnit: next.liquidVolumeUnit ?? undefined,
+      dryVolumeUnit: next.dryVolumeUnit ?? undefined,
+      smallVolumeUnit: next.smallVolumeUnit ?? undefined,
       massUnit: next.massUnit ?? undefined,
       temperatureUnit: next.temperatureUnit ?? undefined,
       autoConvert: next.autoConvert,
@@ -171,7 +207,13 @@ export function UnitPreferencesManager({
   }
 
   const setOverride = (
-    key: "volumeUnit" | "massUnit" | "temperatureUnit",
+    key:
+      | "volumeUnit"
+      | "liquidVolumeUnit"
+      | "dryVolumeUnit"
+      | "smallVolumeUnit"
+      | "massUnit"
+      | "temperatureUnit",
     value: string,
   ) => savePrefs({ ...prefs, [key]: value === FOLLOW ? null : value });
 
@@ -236,30 +278,52 @@ export function UnitPreferencesManager({
           Preferred units
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Override individual measurements — e.g. keep everything metric but see
-          volumes in cups.
+          Fine-tune each measurement. Volume splits by how you measure an
+          ingredient, so you can keep liquids in mL but scoop dry goods in cups.
         </p>
         <div
           className={cn(
-            "mt-4 grid gap-4 sm:grid-cols-3",
+            "mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
             savingPrefs && "opacity-70",
           )}
         >
           <DimensionPicker
-            label="Volume"
-            value={prefs.volumeUnit ?? FOLLOW}
+            label="Liquid volume"
+            hint="Water, milk, oil, sauces"
+            value={prefs.liquidVolumeUnit ?? FOLLOW}
+            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "liquid")}
             options={dimensionOptions("volume", customUnits)}
-            onChange={(v) => setOverride("volumeUnit", v)}
+            onChange={(v) => setOverride("liquidVolumeUnit", v)}
+          />
+          <DimensionPicker
+            label="Dry volume"
+            hint="Flour, sugar, rice, oats"
+            value={prefs.dryVolumeUnit ?? FOLLOW}
+            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "dry")}
+            options={dimensionOptions("volume", customUnits)}
+            onChange={(v) => setOverride("dryVolumeUnit", v)}
+          />
+          <DimensionPicker
+            label="Small amounts"
+            hint="Spices, herbs, seasonings"
+            value={prefs.smallVolumeUnit ?? FOLLOW}
+            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "small")}
+            options={dimensionOptions("volume", customUnits)}
+            onChange={(v) => setOverride("smallVolumeUnit", v)}
           />
           <DimensionPicker
             label="Weight"
+            hint="Meat, cheese, produce"
             value={prefs.massUnit ?? FOLLOW}
+            defaultUnit={defaultUnitFor("mass", prefs.defaultSystem)}
             options={dimensionOptions("mass", customUnits)}
             onChange={(v) => setOverride("massUnit", v)}
           />
           <DimensionPicker
             label="Temperature"
+            hint="Oven and cooking temps"
             value={prefs.temperatureUnit ?? FOLLOW}
+            defaultUnit={defaultUnitFor("temperature", prefs.defaultSystem)}
             options={dimensionOptions("temperature", customUnits)}
             onChange={(v) => setOverride("temperatureUnit", v)}
           />
@@ -273,12 +337,16 @@ export function UnitPreferencesManager({
 
 function DimensionPicker({
   label,
+  hint,
   value,
+  defaultUnit,
   options,
   onChange,
 }: {
   label: string;
+  hint?: string;
   value: string;
+  defaultUnit: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }) {
@@ -286,12 +354,15 @@ function DimensionPicker({
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
+      {hint ? (
+        <span className="text-xs text-muted-foreground">{hint}</span>
+      ) : null}
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id={id}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={FOLLOW}>Follow system default</SelectItem>
+          <SelectItem value={FOLLOW}>Default: {unitLabel(defaultUnit)}</SelectItem>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               {opt.label}
@@ -392,6 +463,13 @@ function CustomUnitsSection({
     return `1 ${draft.name.trim()} = ${formatQuantity(amount, draft.baseUnit)} ${draft.baseUnit}`;
   }, [draft.name, draft.baseUnit, draft.baseAmount]);
 
+  const example = CUSTOM_UNIT_EXAMPLES[draft.dimension];
+  const unitName = draft.name.trim() || "unit";
+  const displayAsTrueHint =
+    preview != null
+      ? `Recipes show “${formatQuantity(Number(draft.baseAmount), draft.baseUnit)} ${draft.baseUnit}” instead of “${unitName}”.`
+      : `Recipes show the amount it equals instead of the word “${unitName}”.`;
+
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
       <div className="flex items-start justify-between gap-3">
@@ -487,7 +565,7 @@ function CustomUnitsSection({
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, name: e.target.value }))
                   }
-                  placeholder="e.g. pinch"
+                  placeholder={example.name}
                   aria-invalid={Boolean(fieldErrors.name)}
                   autoFocus
                 />
@@ -505,7 +583,7 @@ function CustomUnitsSection({
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, abbreviation: e.target.value }))
                   }
-                  placeholder="e.g. pn"
+                  placeholder={example.abbreviation}
                 />
               </div>
             </div>
@@ -554,7 +632,7 @@ function CustomUnitsSection({
                         setDraft((d) => ({ ...d, baseAmount: e.target.value }))
                       }
                       inputMode="decimal"
-                      placeholder="e.g. 0.0625"
+                      placeholder={example.amount}
                       aria-invalid={Boolean(fieldErrors.baseAmount)}
                     />
                     {fieldErrors.baseAmount?.[0] ? (
@@ -600,16 +678,21 @@ function CustomUnitsSection({
                   </p>
                 ) : null}
 
-                <label className="flex items-center justify-between gap-4">
-                  <span className="text-sm">
-                    Show the converted amount instead of the unit name
+                <label className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
+                  <span className="space-y-0.5">
+                    <span className="block text-sm font-medium">
+                      Show the real amount in recipes
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {displayAsTrueHint}
+                    </span>
                   </span>
                   <Switch
                     checked={draft.displayAsTrue}
                     onCheckedChange={(checked) =>
                       setDraft((d) => ({ ...d, displayAsTrue: checked }))
                     }
-                    aria-label="Show the converted amount instead of the unit name"
+                    aria-label="Show the real amount in recipes instead of the unit name"
                   />
                 </label>
               </>

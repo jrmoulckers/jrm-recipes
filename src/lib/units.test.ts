@@ -7,6 +7,7 @@ import {
   decomposeMeasure,
   DEFAULT_UNIT_PREFS,
   defaultSystemForLocale,
+  defaultUnitFor,
   densityForItem,
   deriveScaleFactor,
   dimensionOf,
@@ -411,6 +412,18 @@ describe("temperature (#249)", () => {
     expect(convertTemperature(425, "fahrenheit", "celsius")).toBe(218);
   });
 
+  it("converts Kelvin through Celsius in every direction", () => {
+    expect(unitDimension("K")).toBe("temperature");
+    expect(unitDimension("kelvin")).toBe("temperature");
+    expect(normalizeUnit("kelvin")).toBe("K");
+    expect(convertTemperature(0, "°C", "K")).toBe(273);
+    expect(convertTemperature(100, "°C", "K")).toBe(373);
+    expect(convertTemperature(273.15, "K", "°C")).toBe(0);
+    expect(convertTemperature(32, "°F", "K")).toBe(273);
+    expect(convertTemperature(373.15, "K", "°F")).toBe(212);
+    expect(convertTemperature(300, "K", "K")).toBe(300);
+  });
+
   it("returns the same value for identical units and null across dimensions", () => {
     expect(convertTemperature(350, "°F", "°F")).toBe(350);
     expect(convertTemperature(1, "°C", "g")).toBeNull();
@@ -641,6 +654,65 @@ describe("resolveDisplayMeasure", () => {
     );
     expect(asTrue?.unit).toBe("tsp");
     expect(asTrue?.quantity).toBeCloseTo(1, 5);
+  });
+
+  it("honors per-volume-class overrides by ingredient kind", () => {
+    // Liquids in mL, dry goods in cups, seasonings in tsp — all at once.
+    const p = prefs({
+      defaultSystem: "us",
+      liquidVolumeUnit: "ml",
+      dryVolumeUnit: "cup",
+      smallVolumeUnit: "tsp",
+    });
+    expect(resolveDisplayMeasure(1, "cup", p, undefined, "liquid")?.unit).toBe(
+      "ml",
+    );
+    expect(resolveDisplayMeasure(1, "cup", p, undefined, "dry")?.unit).toBe(
+      "cup",
+    );
+    expect(resolveDisplayMeasure(3, "tsp", p, undefined, "small")?.unit).toBe(
+      "tsp",
+    );
+  });
+
+  it("falls back to the general volume slot when a class has no override", () => {
+    const m = resolveDisplayMeasure(
+      1,
+      "cup",
+      prefs({ volumeUnit: "ml" }),
+      undefined,
+      "liquid",
+    );
+    expect(m?.unit).toBe("ml");
+  });
+
+  it("caps small-amount volumes at tbsp instead of scaling to cups", () => {
+    // 12 tsp = 4 tbsp = 0.25 cup; the small-amounts ladder stops at tbsp.
+    const m = resolveDisplayMeasure(
+      12,
+      "tsp",
+      prefs({ defaultSystem: "us" }),
+      undefined,
+      "small",
+    );
+    expect(m?.unit).toBe("tbsp");
+  });
+});
+
+describe("defaultUnitFor", () => {
+  it("names the representative default unit per dimension and system", () => {
+    expect(defaultUnitFor("mass", "us")).toBe("oz");
+    expect(defaultUnitFor("mass", "metric")).toBe("g");
+    expect(defaultUnitFor("temperature", "us")).toBe("°F");
+    expect(defaultUnitFor("temperature", "metric")).toBe("°C");
+  });
+
+  it("distinguishes volume classes for US, and uses mL for metric", () => {
+    expect(defaultUnitFor("volume", "us", "small")).toBe("tbsp");
+    expect(defaultUnitFor("volume", "us", "dry")).toBe("cup");
+    expect(defaultUnitFor("volume", "us", "liquid")).toBe("fl oz");
+    expect(defaultUnitFor("volume", "metric", "small")).toBe("ml");
+    expect(defaultUnitFor("volume", "metric", "dry")).toBe("ml");
   });
 });
 

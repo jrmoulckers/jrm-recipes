@@ -210,6 +210,59 @@ export function getSuggestedUnitsForFood(
   return category ? suggestedUnitsForCategory(category) : [];
 }
 
+/**
+ * A viewer's volume preferences split by kind of ingredient (pourable liquids
+ * vs. scoopable dry goods vs. tiny seasoning amounts). This maps a food category
+ * to that split — structurally the same union as `units.ts` `VolumeClass`, kept
+ * local to preserve this module's decoupling from the conversion library.
+ *
+ * Liquids: anything you pour (water, milk, oil, sauces). Small: seasonings you
+ * measure by the pinch/teaspoon (herbs, spices). Everything else scoops as a
+ * dry good. Unknown ingredients fall back to "dry", the most common case.
+ */
+export type FoodVolumeClass = "liquid" | "dry" | "small";
+
+const CATEGORY_VOLUME_CLASS: Record<FoodCategory, FoodVolumeClass> = {
+  liquid: "liquid",
+  dairy: "liquid",
+  "fat-oil": "liquid",
+  condiment: "liquid",
+  herb: "small",
+  spice: "small",
+  baking: "dry",
+  "dry-good": "dry",
+  grain: "dry",
+  legume: "dry",
+  "produce-whole": "dry",
+  "produce-leafy": "dry",
+  "produce-fruit": "dry",
+  sweetener: "dry",
+  "nut-seed": "dry",
+  meat: "dry",
+  seafood: "dry",
+  egg: "dry",
+  other: "dry",
+};
+
+/** The volume class for a category (liquids pour, seasonings pinch, else scoop). */
+export function volumeClassForCategory(
+  category: FoodCategory,
+): FoodVolumeClass {
+  return CATEGORY_VOLUME_CLASS[category];
+}
+
+/**
+ * Classify a free-text ingredient into a volume class so display-time conversion
+ * can honor the viewer's per-class volume preference. Defaults to "dry" for
+ * unmatched ingredients. Pure + synchronous.
+ */
+export function volumeClassForItem(
+  item: string | null | undefined,
+): FoodVolumeClass {
+  const category = foodCategoryForItem(item);
+  return category ? CATEGORY_VOLUME_CLASS[category] : "dry";
+}
+
 // --- Learned-unit merge (live graph enrichment) --------------------------
 
 const VOLUME_TOKENS: ReadonlySet<string> = new Set([

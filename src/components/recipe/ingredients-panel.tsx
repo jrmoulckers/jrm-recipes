@@ -23,6 +23,7 @@ import {
   type UnitPrefs,
 } from "~/lib/units";
 import { computeBakersFormula, computeBatchYield } from "~/lib/bakers-math";
+import { volumeClassForItem } from "~/lib/food-units";
 import { type UnitSystem } from "~/lib/cook-state";
 import { formatList } from "~/lib/i18n-format";
 import {
@@ -143,9 +144,16 @@ function measure(
     return grams != null ? { q: grams, unit: "g" } : { q, unit };
   }
   // us/metric: honor the viewer's per-dimension defaults + custom units when we
-  // have their prefs; otherwise fall back to the friendly-ladder default.
+  // have their prefs; otherwise fall back to the friendly-ladder default. The
+  // ingredient's volume class routes it to the matching per-class preference.
   if (prefs) {
-    const m = resolveDisplayMeasure(q, unit, effectivePrefs(prefs, system), customs);
+    const m = resolveDisplayMeasure(
+      q,
+      unit,
+      effectivePrefs(prefs, system),
+      customs,
+      volumeClassForItem(item),
+    );
     return m ? { q: m.quantity, unit: m.unit } : { q, unit };
   }
   const converted = toSystem(q, unit, system);
@@ -182,7 +190,13 @@ function measureRange(
   // us/metric with the viewer's prefs: resolve the low end to the target unit,
   // then bring the high end onto that same unit so the range stays coherent.
   if (prefs) {
-    const low = resolveDisplayMeasure(q, unit, effectivePrefs(prefs, system), customs);
+    const low = resolveDisplayMeasure(
+      q,
+      unit,
+      effectivePrefs(prefs, system),
+      customs,
+      volumeClassForItem(item),
+    );
     if (!low) return { q, qMax, unit };
     const hi = qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
     return {

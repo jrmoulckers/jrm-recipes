@@ -21,6 +21,7 @@ const UNIT_LABELS: Record<string, string> = {
   kg: "Kilogram (kg)",
   "°F": "Fahrenheit (°F)",
   "°C": "Celsius (°C)",
+  K: "Kelvin (K)",
 };
 
 /** A friendly label for a unit id, or the id itself when unmapped. */
