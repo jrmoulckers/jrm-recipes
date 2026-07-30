@@ -33,7 +33,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/server/db/seed.ts",
     "db:backfill-tags": "tsx scripts/backfill-tag-taxonomy.ts",
-    "db:backfill-dietary": "tsx scripts/backfill-dietary-tags.ts"
+    "db:backfill-dietary": "tsx scripts/backfill-dietary-tags.ts",
+    "db:backfill-food-links": "tsx scripts/backfill-food-links.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.4",

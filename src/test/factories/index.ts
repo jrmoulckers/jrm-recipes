@@ -175,6 +175,7 @@ export function makeRecipeIngredient(
     quantityMax: null,
     unit: "cups",
     item: "Flour",
+    foodId: null,
     note: null,
     prep: null,
     stepPosition: null,

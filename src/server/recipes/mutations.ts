@@ -21,6 +21,7 @@ import { deriveDietaryTags } from "~/lib/dietary-derive";
 import { AuditAction, recordAudit } from "~/server/audit";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { scheduleFoodGraphRefresh } from "~/server/db/food-graph-refresh";
+import { resolveFoodIds } from "~/server/db/resolve-food";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
@@ -251,6 +252,12 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
 
 async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
   if (input.ingredients.length > 0) {
+    // Best-effort write-time link to the canonical food graph (foodId is
+    // nullable). `resolveFoodIds` never throws, so a resolution failure yields
+    // nulls and can never block or roll back the save.
+    const foodIds = await resolveFoodIds(
+      input.ingredients.map((ing) => ing.item),
+    );
     await tx.insert(recipeIngredients).values(
       input.ingredients.map((ing, i) => ({
         recipeId,
@@ -260,6 +267,7 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
         quantityMax: ing.quantityMax ?? null,
         unit: ing.unit ?? null,
         item: ing.item,
+        foodId: foodIds[i] ?? null,
         note: ing.note ?? null,
         prep: ing.prep ?? null,
         stepPosition: ing.stepPosition ?? null,
