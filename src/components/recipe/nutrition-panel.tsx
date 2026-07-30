@@ -5,10 +5,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
 import { Badge } from "~/components/ui/badge";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "~/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import {
   caloriePercentOfGoal,

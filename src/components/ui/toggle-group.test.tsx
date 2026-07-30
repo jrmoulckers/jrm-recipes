@@ -30,19 +30,19 @@ function Harness({
 describe("ToggleGroup", () => {
   it("marks only the selected item as pressed", () => {
     render(<Harness initial="a" />);
-    expect(
-      screen.getByRole("button", { name: "First" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    expect(
-      screen.getByRole("button", { name: "Second" }),
-    ).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   it("exposes the group with its accessible label", () => {
     render(<Harness />);
-    expect(
-      screen.getByRole("group", { name: "Sample" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Sample" })).toBeInTheDocument();
   });
 
   it("selects a value when an item is clicked", () => {
@@ -50,9 +50,10 @@ describe("ToggleGroup", () => {
     render(<Harness onValueChange={onValueChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Second" }));
     expect(onValueChange).toHaveBeenCalledWith("b");
-    expect(
-      screen.getByRole("button", { name: "Second" }),
-    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("does not select when the item's own handler prevents default", () => {
