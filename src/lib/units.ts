@@ -292,6 +292,16 @@ const UNIT_DEFS: UnitDef[] = [
     system: "metric",
     aliases: ["celsius", "centigrade"],
   },
+  // Kelvin: an explicit-choice option (never an auto system default), bridged
+  // through Celsius by convertTemperature. Only "kelvin"/"K" are added as
+  // aliases — no extra ambiguous recipe tokens.
+  {
+    canonical: "K",
+    dimension: "temperature",
+    base: 1,
+    system: "any",
+    aliases: ["kelvin"],
+  },
 ];
 
 const UNIT_INDEX = new Map<string, UnitDef>();
@@ -336,10 +346,11 @@ export function convertUnit(
 }
 
 /**
- * Convert an affine temperature between °F and °C. Unlike mass/volume (a simple
- * base-ratio), temperature carries an offset, so it needs its own path. Results
- * are rounded to whole degrees — the precision recipes and ovens actually use.
- * Returns null unless both units are temperatures.
+ * Convert an affine temperature between °F, °C, and K. Unlike mass/volume (a
+ * simple base-ratio), temperature carries an offset, so it needs its own path:
+ * every unit is bridged through Celsius. Results are rounded to whole degrees —
+ * the precision recipes and ovens actually use. Returns null unless both units
+ * are temperatures.
  */
 export function convertTemperature(
   value: number,
@@ -352,8 +363,18 @@ export function convertTemperature(
   if (a.dimension !== "temperature" || b.dimension !== "temperature")
     return null;
   if (a.canonical === b.canonical) return Math.round(value);
-  const celsius = a.canonical === "°F" ? ((value - 32) * 5) / 9 : value;
-  const result = b.canonical === "°F" ? (celsius * 9) / 5 + 32 : celsius;
+  const celsius =
+    a.canonical === "°F"
+      ? ((value - 32) * 5) / 9
+      : a.canonical === "K"
+        ? value - 273.15
+        : value;
+  const result =
+    b.canonical === "°F"
+      ? (celsius * 9) / 5 + 32
+      : b.canonical === "K"
+        ? celsius + 273.15
+        : celsius;
   return Math.round(result);
 }
 
@@ -417,8 +438,8 @@ export function defaultUnitFor(
   if (dimension === "temperature") return system === "us" ? "°F" : "°C";
   if (dimension === "volume") {
     if (system === "metric") return "ml";
-    if (volumeClass === "small") return "tsp";
-    if (volumeClass === "liquid") return "cup";
+    if (volumeClass === "small") return "tbsp";
+    if (volumeClass === "liquid") return "fl oz";
     return "cup"; // dry / unspecified
   }
   return "";
