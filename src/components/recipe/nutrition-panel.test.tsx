@@ -35,6 +35,26 @@ describe("NutritionPanel", () => {
     expect(within(region).getByText("500")).toBeInTheDocument();
   });
 
+  it("shows the scaled whole-recipe total alongside per-serving figures", () => {
+    render(
+      <NutritionPanel
+        nutrition={PER_SERVING}
+        servings={4}
+        servingsNoun="servings"
+      />,
+    );
+    const region = screen.getByRole("region", { name: /nutrition facts/i });
+    // Still per-serving first…
+    expect(
+      within(region).getByText(/amounts are per serving/i),
+    ).toBeInTheDocument();
+    // …with the whole-recipe total shown alongside: 500 × 4 = 2,000 kcal.
+    expect(
+      within(region).getByText(/whole recipe \(4 servings\):/i),
+    ).toBeInTheDocument();
+    expect(within(region).getByText("2,000")).toBeInTheDocument();
+  });
+
   it("multiplies to whole-recipe totals when toggled, using current servings", () => {
     render(<NutritionPanel nutrition={PER_SERVING} servings={4} />);
     fireEvent.click(screen.getByRole("button", { name: /whole recipe/i }));
