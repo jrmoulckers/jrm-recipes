@@ -74,110 +74,115 @@ const COUNT_EACH: SuggestedUnit[] = [{ dimension: "count", unit: "each" }];
  * appropriate default for that category. Callers may take the whole list (to
  * prioritize the picker) or just the head (as a smart default unit).
  */
-export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> = {
-  // Liquids: measured by volume; weight is a secondary option for bakers.
-  liquid: [...VOLUME_LARGE, { dimension: "mass", unit: "g" }],
-  // Dairy: milk/cream by volume, cheese often by weight — offer both.
-  dairy: [...VOLUME_LARGE, ...MASS_SMALL],
-  // Baking staples: weight first (precision), then volume for cup-based recipes.
-  baking: [
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-    { dimension: "volume", unit: "cup" },
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-  ],
-  // Dry goods (pasta): by weight, sometimes by cup.
-  "dry-good": [...MASS_FULL, { dimension: "volume", unit: "cup" }],
-  grain: [
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-    { dimension: "mass", unit: "kg" },
-  ],
-  legume: [
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-    { dimension: "count", unit: "can" },
-  ],
-  // Whole produce: counted or weighed.
-  "produce-whole": [...COUNT_EACH, ...MASS_LARGE],
-  // Leafy greens: loose-packed by cup or weighed; sold by the bunch.
-  "produce-leafy": [
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-    { dimension: "count", unit: "bunch" },
-  ],
-  // Fruit: often by the cup (berries) or counted.
-  "produce-fruit": [
-    { dimension: "count", unit: "each" },
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-  ],
-  // Fresh herbs: small volumes, weighed, or by the bunch/sprig.
-  herb: [
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "count", unit: "bunch" },
-    { dimension: "count", unit: "sprig" },
-    { dimension: "mass", unit: "g" },
-  ],
-  // Spices: tiny volumes and pinches; grams for scale bakers.
-  spice: [
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "count", unit: "pinch" },
-    { dimension: "mass", unit: "g" },
-  ],
-  // Meat & seafood: by weight; some seafood is counted.
-  meat: [...MASS_LARGE],
-  seafood: [...MASS_LARGE, { dimension: "count", unit: "each" }],
-  // Eggs: counted; whites/yolks sometimes by volume.
-  egg: [...COUNT_EACH, { dimension: "volume", unit: "cup" }, { dimension: "mass", unit: "g" }],
-  // Fats & oils: small-to-medium volumes, weighed for baking.
-  "fat-oil": [
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "volume", unit: "ml" },
-  ],
-  // Syrups & sugars-as-liquid: spoon/cup volumes, weighed for precision.
-  sweetener: [
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "volume", unit: "cup" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "volume", unit: "ml" },
-  ],
-  // Nuts & seeds: by cup or weight; nut butters by spoon.
-  "nut-seed": [
-    { dimension: "volume", unit: "cup" },
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-  ],
-  // Condiments: spoon/cup volumes, weighed occasionally.
-  condiment: [
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "volume", unit: "cup" },
-    { dimension: "volume", unit: "ml" },
-    { dimension: "mass", unit: "g" },
-  ],
-  // Unknown: a broad, sensible default covering common measures.
-  other: [
-    { dimension: "volume", unit: "cup" },
-    { dimension: "volume", unit: "tbsp" },
-    { dimension: "volume", unit: "tsp" },
-    { dimension: "mass", unit: "g" },
-    { dimension: "mass", unit: "oz" },
-    { dimension: "count", unit: "each" },
-  ],
-};
+export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
+  {
+    // Liquids: measured by volume; weight is a secondary option for bakers.
+    liquid: [...VOLUME_LARGE, { dimension: "mass", unit: "g" }],
+    // Dairy: milk/cream by volume, cheese often by weight — offer both.
+    dairy: [...VOLUME_LARGE, ...MASS_SMALL],
+    // Baking staples: weight first (precision), then volume for cup-based recipes.
+    baking: [
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+      { dimension: "volume", unit: "cup" },
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+    ],
+    // Dry goods (pasta): by weight, sometimes by cup.
+    "dry-good": [...MASS_FULL, { dimension: "volume", unit: "cup" }],
+    grain: [
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+      { dimension: "mass", unit: "kg" },
+    ],
+    legume: [
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+      { dimension: "count", unit: "can" },
+    ],
+    // Whole produce: counted or weighed.
+    "produce-whole": [...COUNT_EACH, ...MASS_LARGE],
+    // Leafy greens: loose-packed by cup or weighed; sold by the bunch.
+    "produce-leafy": [
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+      { dimension: "count", unit: "bunch" },
+    ],
+    // Fruit: often by the cup (berries) or counted.
+    "produce-fruit": [
+      { dimension: "count", unit: "each" },
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+    ],
+    // Fresh herbs: small volumes, weighed, or by the bunch/sprig.
+    herb: [
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "count", unit: "bunch" },
+      { dimension: "count", unit: "sprig" },
+      { dimension: "mass", unit: "g" },
+    ],
+    // Spices: tiny volumes and pinches; grams for scale bakers.
+    spice: [
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "count", unit: "pinch" },
+      { dimension: "mass", unit: "g" },
+    ],
+    // Meat & seafood: by weight; some seafood is counted.
+    meat: [...MASS_LARGE],
+    seafood: [...MASS_LARGE, { dimension: "count", unit: "each" }],
+    // Eggs: counted; whites/yolks sometimes by volume.
+    egg: [
+      ...COUNT_EACH,
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+    ],
+    // Fats & oils: small-to-medium volumes, weighed for baking.
+    "fat-oil": [
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "volume", unit: "ml" },
+    ],
+    // Syrups & sugars-as-liquid: spoon/cup volumes, weighed for precision.
+    sweetener: [
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "volume", unit: "cup" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "volume", unit: "ml" },
+    ],
+    // Nuts & seeds: by cup or weight; nut butters by spoon.
+    "nut-seed": [
+      { dimension: "volume", unit: "cup" },
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+    ],
+    // Condiments: spoon/cup volumes, weighed occasionally.
+    condiment: [
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "volume", unit: "cup" },
+      { dimension: "volume", unit: "ml" },
+      { dimension: "mass", unit: "g" },
+    ],
+    // Unknown: a broad, sensible default covering common measures.
+    other: [
+      { dimension: "volume", unit: "cup" },
+      { dimension: "volume", unit: "tbsp" },
+      { dimension: "volume", unit: "tsp" },
+      { dimension: "mass", unit: "g" },
+      { dimension: "mass", unit: "oz" },
+      { dimension: "count", unit: "each" },
+    ],
+  };
 
 // Guard against drift: every category must have at least one suggestion.
 if (

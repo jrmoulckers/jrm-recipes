@@ -213,7 +213,9 @@ describe("floatPreferredToFront", () => {
   });
 
   it("returns a copy unchanged when the preference is absent or blank", () => {
-    expect(floatPreferredToFront(preps, "grated", (p) => p.prep)).toEqual(preps);
+    expect(floatPreferredToFront(preps, "grated", (p) => p.prep)).toEqual(
+      preps,
+    );
     const copy = floatPreferredToFront(preps, undefined, (p) => p.prep);
     expect(copy).toEqual(preps);
     expect(copy).not.toBe(preps);

@@ -88,11 +88,14 @@ const DIMENSION_LABELS: Record<CustomUnitDimension, string> = {
   count: "Count",
 };
 
-const SYSTEMS: { value: MeasurementSystemValue; label: string; hint: string }[] =
-  [
-    { value: "metric", label: "Metric", hint: "grams, milliliters, °C" },
-    { value: "us", label: "US / Imperial", hint: "cups, ounces, °F" },
-  ];
+const SYSTEMS: {
+  value: MeasurementSystemValue;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "metric", label: "Metric", hint: "grams, milliliters, °C" },
+  { value: "us", label: "US / Imperial", hint: "cups, ounces, °F" },
+];
 
 /** Options for a per-dimension default: built-ins + the user's custom units. */
 function dimensionOptions(
@@ -225,7 +228,8 @@ export function UnitPreferencesManager({
           Default measurement system
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Set everything at once. You can still fine-tune each measurement below.
+          Set everything at once. You can still fine-tune each measurement
+          below.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {SYSTEMS.map((sys) => {
@@ -291,7 +295,11 @@ export function UnitPreferencesManager({
             label="Liquid volume"
             hint="Water, milk, oil, sauces"
             value={prefs.liquidVolumeUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "liquid")}
+            defaultUnit={defaultUnitFor(
+              "volume",
+              prefs.defaultSystem,
+              "liquid",
+            )}
             options={dimensionOptions("volume", customUnits)}
             onChange={(v) => setOverride("liquidVolumeUnit", v)}
           />
@@ -362,7 +370,9 @@ function DimensionPicker({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={FOLLOW}>Default: {unitLabel(defaultUnit)}</SelectItem>
+          <SelectItem value={FOLLOW}>
+            Default: {unitLabel(defaultUnit)}
+          </SelectItem>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               {opt.label}
@@ -652,11 +662,15 @@ function CustomUnitsSection({
                         }))
                       }
                     >
-                      <SelectTrigger aria-invalid={Boolean(fieldErrors.baseUnit)}>
+                      <SelectTrigger
+                        aria-invalid={Boolean(fieldErrors.baseUnit)}
+                      >
                         <SelectValue placeholder="Choose a unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={FOLLOW}>None (display only)</SelectItem>
+                        <SelectItem value={FOLLOW}>
+                          None (display only)
+                        </SelectItem>
                         {baseOptions.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {unitLabel(u.id)}

@@ -74,9 +74,7 @@ describe("NutritionPanel", () => {
 
   it("labels cook-entered numbers by default", () => {
     render(<NutritionPanel nutrition={PER_SERVING} servings={4} />);
-    expect(
-      screen.getByText(/as entered by the cook/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/as entered by the cook/i)).toBeInTheDocument();
   });
 
   it("labels an estimate and cites full coverage without a caveat", () => {
@@ -93,7 +91,9 @@ describe("NutritionPanel", () => {
       screen.getByText(/estimated from the ingredient list\./i),
     ).toBeInTheDocument();
     expect(screen.queryByText(/of 3 ingredients/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/as entered by the cook/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/as entered by the cook/i),
+    ).not.toBeInTheDocument();
   });
 
   it("adds a coverage caveat when some ingredients weren't matched", () => {
@@ -107,7 +107,9 @@ describe("NutritionPanel", () => {
       />,
     );
     expect(
-      screen.getByText(/estimated from the ingredient list \(2 of 5 ingredients\)/i),
+      screen.getByText(
+        /estimated from the ingredient list \(2 of 5 ingredients\)/i,
+      ),
     ).toBeInTheDocument();
   });
 });

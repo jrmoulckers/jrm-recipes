@@ -3,11 +3,12 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "~/server/db";
-import { customUnits, userUnitPreferences, type User } from "~/server/db/schema";
 import {
-  type CustomUnitInput,
-  type UnitPreferencesInput,
-} from "./validation";
+  customUnits,
+  userUnitPreferences,
+  type User,
+} from "~/server/db/schema";
+import { type CustomUnitInput, type UnitPreferencesInput } from "./validation";
 
 /** Postgres unique-violation code, raised when a custom-unit name repeats. */
 const PG_UNIQUE_VIOLATION = "23505";

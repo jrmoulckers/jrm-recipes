@@ -143,7 +143,10 @@ export async function ingestFoodGraph(
         })
         .onConflictDoUpdate({
           target: [foodAliases.foodId, foodAliases.alias],
-          set: { useCount: sql`${foodAliases.useCount} + ${alias.useCount}`, updatedAt: new Date() },
+          set: {
+            useCount: sql`${foodAliases.useCount} + ${alias.useCount}`,
+            updatedAt: new Date(),
+          },
         });
     }
   });

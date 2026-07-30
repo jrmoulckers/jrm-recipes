@@ -11,11 +11,7 @@
  * ingestion job feeds `recipe_ingredients` rows in and upserts the result.
  */
 
-import {
-  canonicalFood,
-  normalizeFoodText,
-  type FoodCategory,
-} from "./food-db";
+import { canonicalFood, normalizeFoodText, type FoodCategory } from "./food-db";
 
 /** One recipe-ingredient line, shaped like the `recipe_ingredients` columns. */
 export type MinedIngredient = {
@@ -149,7 +145,10 @@ function topToken(counts: Map<string, number>): string | null {
   let best: string | null = null;
   let bestCount = -1;
   for (const [token, count] of counts) {
-    if (count > bestCount || (count === bestCount && (best === null || token < best))) {
+    if (
+      count > bestCount ||
+      (count === bestCount && (best === null || token < best))
+    ) {
       best = token;
       bestCount = count;
     }
@@ -296,9 +295,13 @@ export function mineFoodGraph(
     userPrefs.push({
       userId,
       foodId,
-      preferredUnit: topToken(userFoodUnits.get(ufKey) ?? new Map<string, number>()),
+      preferredUnit: topToken(
+        userFoodUnits.get(ufKey) ?? new Map<string, number>(),
+      ),
       preferredVariantId: null,
-      preferredPrep: topToken(userFoodPreps.get(ufKey) ?? new Map<string, number>()),
+      preferredPrep: topToken(
+        userFoodPreps.get(ufKey) ?? new Map<string, number>(),
+      ),
       useCount: userFoodUse.get(ufKey) ?? 0,
     });
   }
@@ -309,7 +312,15 @@ export function mineFoodGraph(
     recipeLinks.push({ foodId: foodId!, recipeId: recipeId!, useCount });
   }
 
-  return { nodes, aliases, unitStats, prepStats, pairs, userPrefs, recipeLinks };
+  return {
+    nodes,
+    aliases,
+    unitStats,
+    prepStats,
+    pairs,
+    userPrefs,
+    recipeLinks,
+  };
 }
 
 /** Build undirected co-occurrence edges with precomputed lift. */
@@ -404,7 +415,10 @@ export function rankNeighbours(
   }
 
   const ranked = [...scored.values()].sort(
-    (a, b) => b.lift - a.lift || b.coCount - a.coCount || a.foodId.localeCompare(b.foodId),
+    (a, b) =>
+      b.lift - a.lift ||
+      b.coCount - a.coCount ||
+      a.foodId.localeCompare(b.foodId),
   );
   return options.limit != null ? ranked.slice(0, options.limit) : ranked;
 }

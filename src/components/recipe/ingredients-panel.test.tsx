@@ -271,4 +271,3 @@ describe("IngredientsPanel display-time unit conversion", () => {
     expect(container.textContent).toMatch(/cup/i);
   });
 });
-

@@ -198,7 +198,8 @@ function measureRange(
       volumeClassForItem(item),
     );
     if (!low) return { q, qMax, unit };
-    const hi = qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
+    const hi =
+      qMax != null ? convertAmount(qMax, unit, low.unit, customs) : null;
     return {
       q: low.quantity,
       qMax: qMax != null ? (hi ?? qMax) : null,

@@ -1055,10 +1055,7 @@ export function RecipeEditor({
   // so rows sharing an ingredient reuse the same computed option list. Rows with
   // no food match fall back to the shared catalog datalist.
   const foodUnitOptionsByItem = React.useMemo(() => {
-    const cache = new Map<
-      string,
-      { value: string; label: string }[] | null
-    >();
+    const cache = new Map<string, { value: string; label: string }[] | null>();
     for (const r of ingredients) {
       const key = r.item.trim().toLowerCase();
       if (!key || cache.has(key)) continue;
@@ -1706,8 +1703,9 @@ export function RecipeEditor({
                     const optionsOpen =
                       hasOptionData || openIngOptions.has(row.key);
                     const rowUnitOptions =
-                      foodUnitOptionsByItem.get(row.item.trim().toLowerCase()) ??
-                      null;
+                      foodUnitOptionsByItem.get(
+                        row.item.trim().toLowerCase(),
+                      ) ?? null;
                     const rowUnitListId = rowUnitOptions
                       ? `${unitDatalistId}-${row.key}`
                       : unitDatalistId;
@@ -1772,7 +1770,10 @@ export function RecipeEditor({
                                     onClick={() => applyConvertHint(row.key)}
                                     className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-medium text-primary transition-colors hover:bg-primary/20"
                                   >
-                                    <Repeat className="size-3" aria-hidden="true" />
+                                    <Repeat
+                                      className="size-3"
+                                      aria-hidden="true"
+                                    />
                                     Convert {convertHints[row.key]!.fromLabel}{" "}
                                     {convertHints[row.key]!.fromUnit} →{" "}
                                     {convertHints[row.key]!.toLabel}{" "}
@@ -1784,7 +1785,10 @@ export function RecipeEditor({
                                     aria-label="Dismiss conversion"
                                     className="text-muted-foreground hover:text-foreground"
                                   >
-                                    <X className="size-3.5" aria-hidden="true" />
+                                    <X
+                                      className="size-3.5"
+                                      aria-hidden="true"
+                                    />
                                   </button>
                                 </div>
                               ) : null}
