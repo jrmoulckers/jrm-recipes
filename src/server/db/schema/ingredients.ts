@@ -6,6 +6,7 @@ import {
   pgTable,
   primaryKey,
   real,
+  text,
   unique,
   varchar,
   type AnyPgColumn,
@@ -56,6 +57,18 @@ export const foodItems = pgTable(
     }),
     /** Provenance: `curated` (static seed) or `mined` (crowd corpus). */
     source: varchar({ length: 16 }).notNull().default("curated"),
+    /**
+     * Canonical {@link import("~/lib/allergens").Allergen} tokens this food
+     * inherently carries (e.g. Cheese → `["dairy"]`), curated in
+     * `src/lib/food-allergens.ts` and seeded here. This is the STRUCTURED source
+     * of truth for `getRecipeAllergens`, which only falls back to the free-text
+     * detector (`src/lib/allergens.ts`) for ingredient lines that don't resolve
+     * to a food carrying curated allergen data. NULL means "not curated" (fall
+     * back to text); an empty array would mean "curated, carries none". Additive
+     * and nullable so the graph and old readers are untouched; validation in
+     * `food-allergens.ts` keeps the tokens aligned with the `Allergen` union.
+     */
+    allergens: text().array(),
     /** Denormalized popularity: distinct recipes that reference this node. */
     recipeCount: integer().notNull().default(0),
     ...timestamps(),

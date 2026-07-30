@@ -15,6 +15,7 @@ import {
   normalizeFoodText,
   stableHash,
 } from "~/lib/food-db";
+import { foodAllergensForSlug } from "~/lib/food-allergens";
 import { NUTRITION_BY_SLUG } from "~/lib/food-nutrition";
 import type { NewFoodAlias, NewFoodItem, NewFoodNutrition } from "./schema";
 
@@ -42,6 +43,7 @@ export function buildFoodItemRows(): NewFoodItem[] {
       name: food.name,
       category: food.category,
       densityGPerMl: food.densityGPerMl ?? null,
+      allergens: foodAllergensForSlug(slug),
       source: "curated",
     } satisfies NewFoodItem;
   });

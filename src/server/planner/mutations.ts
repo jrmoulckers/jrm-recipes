@@ -22,6 +22,10 @@ import type {
   MoveEntryInput,
 } from "./validation";
 import { formatLeftoversNote } from "~/lib/planner-batch";
+import {
+  planWarningsForRecipe,
+  type PlanSafetyWarning,
+} from "~/server/dietary/gating";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -97,7 +101,7 @@ async function nextPosition(
 }
 
 export async function addEntry(input: AddEntryInput, user: User) {
-  return db.transaction(async (tx) => {
+  const { entry, recipeId } = await db.transaction(async (tx) => {
     let recipeId: string | null = null;
     if (input.recipeId) {
       const recipe = await tx.query.recipes.findFirst({
@@ -135,13 +139,23 @@ export async function addEntry(input: AddEntryInput, user: User) {
       })
       .returning();
 
-    return created!;
+    return { entry: created!, recipeId };
   });
+
+  // Proactive allergen/diet gating (#: structured allergens on the food graph):
+  // cross-check the added recipe against saved family profiles and return a
+  // warning at add-time. Best-effort — never blocks the entry that just saved.
+  const warnings = recipeId
+    ? await planWarningsForRecipe(user.id, recipeId)
+    : [];
+
+  return { entry, warnings };
 }
 
 export type BatchCookResult = {
   primaryId: string;
   leftoversId: string;
+  warnings: PlanSafetyWarning[];
 };
 
 /**
@@ -154,73 +168,84 @@ export async function addBatchCook(
   input: BatchCookInput,
   user: User,
 ): Promise<BatchCookResult> {
-  return db.transaction(async (tx) => {
-    const recipe = await tx.query.recipes.findFirst({
-      where: eq(recipes.id, input.recipeId),
-      columns: {
-        id: true,
-        title: true,
-        authorId: true,
-        visibility: true,
-        groupId: true,
-      },
-    });
-    if (!recipe) throw new Error("NOT_FOUND");
-    const groupIds =
-      recipe.visibility === "group" ? await viewerGroupIds(tx, user.id) : [];
-    if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
+  const { primaryId, leftoversId, recipeId } = await db.transaction(
+    async (tx) => {
+      const recipe = await tx.query.recipes.findFirst({
+        where: eq(recipes.id, input.recipeId),
+        columns: {
+          id: true,
+          title: true,
+          authorId: true,
+          visibility: true,
+          groupId: true,
+        },
+      });
+      if (!recipe) throw new Error("NOT_FOUND");
+      const groupIds =
+        recipe.visibility === "group" ? await viewerGroupIds(tx, user.id) : [];
+      if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
 
-    // Group-scoped batch cook (issue #363): both nights land on the shared group
-    // board when a group is in scope; membership is enforced first.
-    let entryGroupId: string | null = null;
-    if (input.groupId) {
-      if (!(await isGroupMember(tx, input.groupId, user.id)))
-        throw new Error("FORBIDDEN");
-      entryGroupId = input.groupId;
-    }
+      // Group-scoped batch cook (issue #363): both nights land on the shared group
+      // board when a group is in scope; membership is enforced first.
+      let entryGroupId: string | null = null;
+      if (input.groupId) {
+        if (!(await isGroupMember(tx, input.groupId, user.id)))
+          throw new Error("FORBIDDEN");
+        entryGroupId = input.groupId;
+      }
 
-    const primaryPosition = await nextPosition(
-      tx,
-      user.id,
-      input.date,
-      input.slot,
-      entryGroupId,
-    );
-    const [primary] = await tx
-      .insert(mealPlanEntries)
-      .values({
-        userId: user.id,
-        groupId: entryGroupId,
-        date: input.date,
-        slot: input.slot,
+      const primaryPosition = await nextPosition(
+        tx,
+        user.id,
+        input.date,
+        input.slot,
+        entryGroupId,
+      );
+      const [primary] = await tx
+        .insert(mealPlanEntries)
+        .values({
+          userId: user.id,
+          groupId: entryGroupId,
+          date: input.date,
+          slot: input.slot,
+          recipeId: recipe.id,
+          note: input.note ?? null,
+          position: primaryPosition,
+        })
+        .returning({ id: mealPlanEntries.id });
+
+      const leftoversPosition = await nextPosition(
+        tx,
+        user.id,
+        input.leftoversDate,
+        input.slot,
+        entryGroupId,
+      );
+      const [leftovers] = await tx
+        .insert(mealPlanEntries)
+        .values({
+          userId: user.id,
+          groupId: entryGroupId,
+          date: input.leftoversDate,
+          slot: input.slot,
+          recipeId: recipe.id,
+          note: formatLeftoversNote(recipe.title, input.multiple),
+          position: leftoversPosition,
+        })
+        .returning({ id: mealPlanEntries.id });
+
+      return {
+        primaryId: primary!.id,
+        leftoversId: leftovers!.id,
         recipeId: recipe.id,
-        note: input.note ?? null,
-        position: primaryPosition,
-      })
-      .returning({ id: mealPlanEntries.id });
+      };
+    },
+  );
 
-    const leftoversPosition = await nextPosition(
-      tx,
-      user.id,
-      input.leftoversDate,
-      input.slot,
-      entryGroupId,
-    );
-    const [leftovers] = await tx
-      .insert(mealPlanEntries)
-      .values({
-        userId: user.id,
-        groupId: entryGroupId,
-        date: input.leftoversDate,
-        slot: input.slot,
-        recipeId: recipe.id,
-        note: formatLeftoversNote(recipe.title, input.multiple),
-        position: leftoversPosition,
-      })
-      .returning({ id: mealPlanEntries.id });
-
-    return { primaryId: primary!.id, leftoversId: leftovers!.id };
-  });
+  // Proactive gating: warn if the batch-cooked recipe conflicts with a saved
+  // family profile. Best-effort — never blocks the entries that just saved.
+  const warnings = await planWarningsForRecipe(user.id, recipeId);
+  return { primaryId, leftoversId, warnings };
 }
 
 export async function moveEntry(input: MoveEntryInput, user: User) {
