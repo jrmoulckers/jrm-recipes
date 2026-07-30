@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
+import { formatPlanWarnings } from "~/lib/plan-safety-copy";
 
 import { buildListFromPlanAction } from "~/server/shopping/actions";
 import { Button } from "~/components/ui/button";
@@ -17,6 +19,7 @@ import { Button } from "~/components/ui/button";
  */
 export function BuildShoppingListButton({ week }: { week: string }) {
   const router = useRouter();
+  const locale = useLocale();
   const [isPending, startTransition] = React.useTransition();
 
   function build() {
@@ -29,6 +32,10 @@ export function BuildShoppingListButton({ week }: { week: string }) {
       if (result.empty) {
         toast.info("No recipes planned this week yet — add some meals first.");
         return;
+      }
+      const warning = formatPlanWarnings(result.warnings, locale);
+      if (warning) {
+        toast.warning(warning);
       }
       if (result.added === 0 && result.merged === 0) {
         toast.info(

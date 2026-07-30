@@ -20,6 +20,10 @@ import {
   type ShoppingItemInput,
 } from "~/lib/shopping-list";
 import type { ManualItemInput } from "./validation";
+import {
+  planWarningsForRecipes,
+  type PlanSafetyWarning,
+} from "~/server/dietary/gating";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -142,6 +146,12 @@ export type BuildFromPlanResult = {
   merged: number;
   /** True when the week held no recipe entries at all. */
   empty: boolean;
+  /**
+   * Proactive allergen/diet gating (#: structured allergens on the food graph):
+   * planned recipes that conflict with a saved family profile, keyed by member.
+   * Advisory only — the list is still built; the UI surfaces this as a warning.
+   */
+  warnings: PlanSafetyWarning[];
 };
 
 /**
@@ -191,7 +201,7 @@ export async function buildListFromPlan(
     (e) => e.recipe != null && parseLeftoversNote(e.note) == null,
   );
   if (cooking.length === 0) {
-    return { recipesUsed: 0, added: 0, merged: 0, empty: true };
+    return { recipesUsed: 0, added: 0, merged: 0, empty: true, warnings: [] };
   }
 
   const contributions: ShoppingItemInput[] = [];
@@ -214,8 +224,22 @@ export async function buildListFromPlan(
     contributions.push(...items);
   }
 
+  // Proactive allergen/diet gating for the whole planned week: flag any cooked
+  // recipe that conflicts with a saved family profile. Best-effort; never blocks
+  // building the list.
+  const warningsByRecipe = await planWarningsForRecipes(user.id, [
+    ...recipeIds,
+  ]);
+  const warnings = [...warningsByRecipe.values()].flat();
+
   if (contributions.length === 0) {
-    return { recipesUsed: recipeIds.size, added: 0, merged: 0, empty: false };
+    return {
+      recipesUsed: recipeIds.size,
+      added: 0,
+      merged: 0,
+      empty: false,
+      warnings,
+    };
   }
 
   return db.transaction(async (tx) => {
@@ -274,7 +298,13 @@ export async function buildListFromPlan(
     }
 
     await touchList(tx, listId);
-    return { recipesUsed: recipeIds.size, added, merged, empty: false };
+    return {
+      recipesUsed: recipeIds.size,
+      added,
+      merged,
+      empty: false,
+      warnings,
+    };
   });
 }
 

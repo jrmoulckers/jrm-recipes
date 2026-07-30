@@ -67,9 +67,57 @@ export async function getGroupActivity(
   viewer: { id: string; role: MemberRole | null | undefined },
   opts: { limit?: number; before?: Date | null } = {},
 ): Promise<ActivityPage> {
-  const limit = Math.min(Math.max(opts.limit ?? DEFAULT_LIMIT, 1), 50);
   // Membership gate: only members see the feed.
   if (!isDbConfigured() || !viewer.role) {
+    return { events: [], nextCursor: null };
+  }
+  return collectActivityForGroups([groupId], viewer.id, opts);
+}
+
+/**
+ * The personal home feed (privacy-preserving cross-group activity): the same
+ * union of event kinds as {@link getGroupActivity}, aggregated across *every*
+ * group the viewer belongs to and ordered newest-first. Deliberately
+ * group-scoped — it resolves the viewer's *own* memberships and only surfaces
+ * activity from those groups, so nothing from a group they aren't in can leak.
+ * Users with no groups get an empty page. Cursor pagination is timestamp-based.
+ */
+export async function getPersonalActivity(
+  userId: string,
+  opts: { limit?: number; before?: Date | null } = {},
+): Promise<ActivityPage> {
+  if (!isDbConfigured()) {
+    return { events: [], nextCursor: null };
+  }
+
+  // Resolve the viewer's own memberships. This is the single source of the
+  // group scope — only groups returned here can contribute events, so there is
+  // no way to surface activity from a group the viewer isn't a member of.
+  const memberships = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+    columns: { groupId: true },
+  });
+  const groupIds = [...new Set(memberships.map((m) => m.groupId))];
+  if (groupIds.length === 0) {
+    return { events: [], nextCursor: null };
+  }
+
+  return collectActivityForGroups(groupIds, userId, opts);
+}
+
+/**
+ * Shared building block for the group and personal feeds: unions the activity
+ * kinds across one or more groups for `viewerId`, filtering blocked authors and
+ * paging newest-first. Callers are responsible for the membership gate — this
+ * trusts `groupIds` to already be groups the viewer is allowed to see.
+ */
+async function collectActivityForGroups(
+  groupIds: string[],
+  viewerId: string,
+  opts: { limit?: number; before?: Date | null } = {},
+): Promise<ActivityPage> {
+  const limit = Math.min(Math.max(opts.limit ?? DEFAULT_LIMIT, 1), 50);
+  if (!isDbConfigured() || groupIds.length === 0) {
     return { events: [], nextCursor: null };
   }
 
@@ -77,9 +125,9 @@ export async function getGroupActivity(
   const beforeFilter = (column: Column) =>
     before ? lt(column, before) : undefined;
 
-  // Recipes that belong to this group scope reviews/comments below.
+  // Recipes that belong to these group scopes scope reviews/comments below.
   const groupRecipes = await db.query.recipes.findMany({
-    where: eq(recipes.groupId, groupId),
+    where: inArray(recipes.groupId, groupIds),
     columns: {
       id: true,
       slug: true,
@@ -96,7 +144,7 @@ export async function getGroupActivity(
   const recipeIds = groupRecipes.map((r) => r.id);
   const recipeById = new Map(groupRecipes.map((r) => [r.id, r]));
 
-  const hidden = await getHiddenAuthorIds(viewer.id);
+  const hidden = await getHiddenAuthorIds(viewerId);
 
   const events: ActivityEvent[] = [];
 
@@ -123,7 +171,7 @@ export async function getGroupActivity(
   // 2) Cooks shared to the group.
   const cooks = await db.query.cookLogEntries.findMany({
     where: and(
-      eq(cookLogEntries.sharedToGroupId, groupId),
+      inArray(cookLogEntries.sharedToGroupId, groupIds),
       isNull(cookLogEntries.hiddenAt),
       beforeFilter(cookLogEntries.createdAt),
     ),
@@ -260,7 +308,7 @@ export async function getGroupActivity(
   // 5) New members joining.
   const joins = await db.query.groupMembers.findMany({
     where: and(
-      eq(groupMembers.groupId, groupId),
+      inArray(groupMembers.groupId, groupIds),
       beforeFilter(groupMembers.createdAt),
     ),
     orderBy: [desc(groupMembers.createdAt)],

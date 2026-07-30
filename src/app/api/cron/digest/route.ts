@@ -1,4 +1,4 @@
-import { env } from "~/env";
+import { isCronAuthorized, isCronConfigured } from "~/server/cron/auth";
 import { isDbConfigured } from "~/server/db";
 import { buildWeeklyDigest } from "~/server/digest/builder";
 import { getEmailProvider, renderDigestEmail } from "~/server/digest/email";
@@ -6,6 +6,7 @@ import {
   getUserDigestData,
   listDigestRecipients,
 } from "~/server/digest/queries";
+import { log } from "~/lib/log";
 
 // Reads Postgres + may call an email provider, so keep it on the Node runtime.
 // Always dynamic — it's a scheduled side-effecting trigger, never cached.
@@ -16,34 +17,23 @@ const WINDOW_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Constant-time-ish bearer check against the shared cron secret. Vercel Cron is
- * configured to send `Authorization: Bearer <CRON_SECRET>`.
- */
-function isAuthorized(request: Request): boolean {
-  const secret = env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
-}
-
-/**
- * Protected weekly-digest trigger (issue #354). Guarded by `CRON_SECRET`: when
- * the secret is unset the endpoint is disabled (503) so it can never be run
- * anonymously; a wrong/absent bearer is 401. For each opted-in user it builds a
- * 7-day, group-scoped digest and "sends" it via the pluggable provider (a
- * log/no-op when no ESP is configured). Users with no activity are skipped so
- * we never send an empty email. Returns per-run counts (no PII).
- *
- * Full scheduling/provider wiring is a follow-up; this delivers opt-in + builder
- * + template + a triggerable send.
+ * Weekly-digest cron (issue #354). Scheduled by Vercel Cron (see vercel.json)
+ * and guarded by `CRON_SECRET`: when the secret is unset the endpoint is
+ * disabled (503) so it can never be run anonymously; a wrong/absent bearer is
+ * 401. For each opted-in user it builds a 7-day, group-scoped digest and sends
+ * it via the pluggable provider — Resend when `RESEND_API_KEY` is set, a
+ * log/no-op otherwise. Users with no activity are skipped so we never send an
+ * empty email, and a single failed send is isolated so it can't abort the run.
+ * Returns per-run counts (no PII).
  */
 async function handle(request: Request): Promise<Response> {
-  if (!env.CRON_SECRET) {
+  if (!isCronConfigured()) {
     return Response.json(
       { error: "Digest endpoint is not configured." },
       { status: 503 },
     );
   }
-  if (!isAuthorized(request)) {
+  if (!isCronAuthorized(request)) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
   if (!isDbConfigured()) {
@@ -57,6 +47,7 @@ async function handle(request: Request): Promise<Response> {
 
   let sent = 0;
   let skipped = 0;
+  let failed = 0;
 
   for (const recipient of recipients) {
     if (!recipient.email) {
@@ -78,8 +69,17 @@ async function handle(request: Request): Promise<Response> {
     }
 
     const email = renderDigestEmail(digest);
-    await provider.send({ to: recipient.email, ...email });
-    sent++;
+    try {
+      await provider.send({ to: recipient.email, ...email });
+      sent++;
+    } catch (error) {
+      // Isolate a bad recipient/provider hiccup so the rest of the run proceeds.
+      failed++;
+      log.error("digest: send failed for recipient", {
+        provider: provider.name,
+        error,
+      });
+    }
   }
 
   return Response.json({
@@ -88,6 +88,7 @@ async function handle(request: Request): Promise<Response> {
     recipients: recipients.length,
     sent,
     skipped,
+    failed,
   });
 }
 

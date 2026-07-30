@@ -21,6 +21,8 @@ import { isDbConfigured } from "~/server/db";
 import type { User } from "~/server/db/schema";
 import { listBackInRotation, ROTATION_MIN } from "~/server/collections/queries";
 import { listDinnerCandidates, listLibrary } from "~/server/recipes/queries";
+import { listMyGroups } from "~/server/groups/queries";
+import { getPersonalActivity } from "~/server/activity/queries";
 import {
   getOnboardingProgress,
   isOnboardingComplete,
@@ -34,6 +36,7 @@ import { ModePicker } from "~/components/theme/mode-picker";
 import { DinnerSuggestion } from "~/components/recipe/dinner-suggestion";
 import { RotationRail } from "~/components/recipe/rotation-rail";
 import { RecipeCard } from "~/components/recipe/recipe-card";
+import { ActivityFeedLazy } from "~/components/groups/activity-feed-lazy";
 import { OnboardingChecklist } from "~/components/onboarding/onboarding-checklist";
 import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
@@ -83,13 +86,24 @@ const features = [
  */
 async function loadPersonalizedHome(user: User) {
   const today = todayParam();
-  const [dinner, rotation, quickPlan, library] = await Promise.all([
-    listDinnerCandidates(user, { today }),
-    listBackInRotation(user.id),
-    buildQuickPlanContext(user.id),
-    listLibrary(user).then((page) => page.items),
-  ]);
-  return { today, dinner, rotation, quickPlan, library };
+  const [dinner, rotation, quickPlan, library, myGroups, activity] =
+    await Promise.all([
+      listDinnerCandidates(user, { today }),
+      listBackInRotation(user.id),
+      buildQuickPlanContext(user.id),
+      listLibrary(user).then((page) => page.items),
+      listMyGroups(user.id),
+      getPersonalActivity(user.id),
+    ]);
+  return {
+    today,
+    dinner,
+    rotation,
+    quickPlan,
+    library,
+    hasGroups: myGroups.length > 0,
+    activity,
+  };
 }
 
 export default async function HomePage() {
@@ -198,6 +212,34 @@ export default async function HomePage() {
             {personalized.library.slice(0, 8).map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
+          </div>
+        </section>
+      )}
+      {personalized && (personalized.hasGroups || personalizedHome) && (
+        <section className="container py-12">
+          <div className="mb-5 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight">
+                Recent activity from your families
+              </h2>
+              <p className="mt-1 text-muted-foreground">
+                What everyone&apos;s been cooking, adding, and saying across
+                your groups.
+              </p>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/groups">Your families</Link>
+            </Button>
+          </div>
+          <div className="max-w-2xl">
+            <ActivityFeedLazy
+              source={{ kind: "personal" }}
+              initialEvents={personalized.activity.events}
+              initialCursor={personalized.activity.nextCursor}
+              emptyState={
+                personalized.hasGroups ? undefined : <FamilyFeedEmptyNudge />
+              }
+            />
           </div>
         </section>
       )}
@@ -324,6 +366,29 @@ export default async function HomePage() {
           </section>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Empty state for the personal home feed when the viewer belongs to no group
+ * yet: a warm nudge toward the app's default social surface (family groups)
+ * rather than a dead end.
+ */
+function FamilyFeedEmptyNudge() {
+  return (
+    <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
+      <Users className="mx-auto mb-2 size-6" aria-hidden="true" />
+      <p className="font-medium text-foreground">No family activity yet</p>
+      <p className="mt-1 text-sm">
+        Join or start a family group to see what everyone&apos;s cooking, all in
+        one place.
+      </p>
+      <Button asChild size="sm" className="mt-4">
+        <Link href="/groups">
+          <Users /> Find your family
+        </Link>
+      </Button>
     </div>
   );
 }

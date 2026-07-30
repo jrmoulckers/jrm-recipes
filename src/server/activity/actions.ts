@@ -4,7 +4,11 @@ import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { getMembership } from "~/server/groups/queries";
 import { ok, type ActionResult } from "~/server/action-result";
-import { getGroupActivity, type ActivityPage } from "./queries";
+import {
+  getGroupActivity,
+  getPersonalActivity,
+  type ActivityPage,
+} from "./queries";
 
 const EMPTY: ActivityPage = { events: [], nextCursor: null };
 
@@ -30,5 +34,26 @@ export async function loadGroupActivityAction(input: {
     { id: user.id, role: membership.role },
     { before: before && !Number.isNaN(before.getTime()) ? before : null },
   );
+  return ok(page);
+}
+
+/**
+ * Load-more for the personal home feed. Re-resolves the caller's group
+ * memberships on every call (inside {@link getPersonalActivity}) so the cursor
+ * can only ever page the viewer's own groups — a cursor can't leak activity
+ * from a group they've since left or never belonged to. Empty for signed-out
+ * callers and users with no groups.
+ */
+export async function loadPersonalActivityAction(input: {
+  before?: string | null;
+}): Promise<ActionResult<ActivityPage>> {
+  if (!isDbConfigured()) return ok(EMPTY);
+  const user = await getCurrentUser();
+  if (!user) return ok(EMPTY);
+
+  const before = input.before ? new Date(input.before) : null;
+  const page = await getPersonalActivity(user.id, {
+    before: before && !Number.isNaN(before.getTime()) ? before : null,
+  });
   return ok(page);
 }

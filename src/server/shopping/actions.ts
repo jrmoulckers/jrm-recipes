@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { type PlanSafetyWarning } from "~/server/dietary/gating";
 import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
 import {
   addManualItem,
@@ -92,6 +93,7 @@ export type BuildFromPlanActionResult =
       added: number;
       merged: number;
       empty: boolean;
+      warnings: PlanSafetyWarning[];
     }
   | { ok: false; error: string };
 

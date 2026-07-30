@@ -95,6 +95,15 @@ export const env = createEnv({
     // unset the endpoint is disabled (503) so it can never be triggered
     // anonymously; Vercel Cron sends it as `Authorization: Bearer <secret>`.
     CRON_SECRET: z.string().optional(),
+    // Transactional email (Resend) — optional. With `RESEND_API_KEY` unset the
+    // email layer degrades to a log/no-op provider (see ~/server/digest/email
+    // `getEmailProvider`), so the digest cron builds + "sends" with zero config
+    // and never throws on a missing provider. Set it to actually deliver.
+    RESEND_API_KEY: z.string().optional(),
+    // From-address for outgoing email (e.g. `Heirloom <hello@example.com>`).
+    // Optional — defaults to a safe placeholder; only meaningful once
+    // `RESEND_API_KEY` is set. A real, verified sender is required to deliver.
+    EMAIL_FROM: z.string().optional(),
     // Billing (Stripe) — optional (#299). Like every other external service,
     // billing degrades gracefully: with these unset the app boots, builds, and
     // stays fully clickable, and all billing code paths no-op (see
@@ -145,6 +154,8 @@ export const env = createEnv({
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,

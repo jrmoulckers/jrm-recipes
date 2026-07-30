@@ -1038,6 +1038,7 @@ async function seedFoodItems(tx: Tx): Promise<void> {
           name: row.name,
           category: row.category,
           densityGPerMl: row.densityGPerMl ?? null,
+          allergens: row.allergens ?? null,
           updatedAt: new Date(),
         },
       });

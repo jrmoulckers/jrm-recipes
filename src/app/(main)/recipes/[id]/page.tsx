@@ -32,6 +32,7 @@ import {
   excludeOwnerRatings,
   ratingSummary,
 } from "~/server/recipes/queries";
+import { getRecipeIngredientAllergens } from "~/server/recipes/allergens";
 import {
   getCollectionsForRecipe,
   getFavoriteRecipeIds,
@@ -40,7 +41,7 @@ import {
 import { absoluteUrl, cn, formatMinutes } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { pickNutrition, hasNutrition } from "~/lib/nutrition";
-import { isAllergen } from "~/lib/allergens";
+import { isAllergen, type Allergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { getUnitSettings } from "~/server/units/queries";
@@ -220,6 +221,7 @@ export default async function RecipePage({
     anchoredSuggestions,
     unitSettings,
     nutritionEstimate,
+    ingredientAllergenMap,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
     getRecipeFamilyTree(recipe.id, user),
@@ -233,6 +235,9 @@ export default async function RecipePage({
     needsNutritionEstimate
       ? computeRecipeNutrition(recipe.id)
       : Promise.resolve(null),
+    dbEnabled
+      ? getRecipeIngredientAllergens(recipe.id)
+      : Promise.resolve(new Map<string, Allergen[]>()),
   ]);
   await recordView;
   // Group anchored suggestions (#346) by their target so each ingredient row and
@@ -254,6 +259,14 @@ export default async function RecipePage({
     calorieGoal: m.calorieGoal,
     allergens: (m.allergens ?? []).filter(isAllergen),
     diets: (m.diets ?? []).filter(isDietaryTag),
+  }));
+
+  // Attach the structured food-graph allergens to each ingredient line so the
+  // panel can flag them (#: structured allergens). Falls back to text detection
+  // inside the panel for any line the map doesn't cover.
+  const panelIngredients = recipe.ingredients.map((ing) => ({
+    ...ing,
+    allergens: ingredientAllergenMap.get(ing.id) ?? null,
   }));
 
   // Viewer's unit preferences drive display-time auto-conversion (#…): a signed-in
@@ -583,7 +596,7 @@ export default async function RecipePage({
                 )}
                 {recipe.ingredients.length > 0 ? (
                   <IngredientsPanel
-                    ingredients={recipe.ingredients}
+                    ingredients={panelIngredients}
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
                     nutrition={manualNutrition}

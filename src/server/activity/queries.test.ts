@@ -27,7 +27,7 @@ vi.mock("~/server/moderation/blocks", () => ({
   getHiddenAuthorIds: getHiddenAuthorIdsMock,
 }));
 
-import { getGroupActivity } from "./queries";
+import { getGroupActivity, getPersonalActivity } from "./queries";
 
 const actor = { id: "u1", name: "Grandma", handle: null, avatarUrl: null };
 
@@ -167,5 +167,160 @@ describe("getGroupActivity aggregation (#349)", () => {
       role: "member",
     });
     expect(page.events).toHaveLength(0);
+  });
+});
+
+describe("getPersonalActivity (cross-group home feed)", () => {
+  it("returns an empty page for a user in no groups, without querying activity", async () => {
+    // No memberships resolved for the viewer.
+    findManyMocks.groupMembers.mockResolvedValueOnce([]);
+
+    const page = await getPersonalActivity("u1");
+
+    expect(page).toEqual({ events: [], nextCursor: null });
+    // Isolation: with no memberships we never touch group activity tables, so
+    // there's no path to surface another group's events.
+    expect(findManyMocks.recipes).not.toHaveBeenCalled();
+    expect(findManyMocks.cookLogEntries).not.toHaveBeenCalled();
+  });
+
+  it("aggregates activity across every group the viewer belongs to, newest-first", async () => {
+    // Viewer belongs to two groups.
+    findManyMocks.groupMembers.mockResolvedValueOnce([
+      { groupId: "g1" },
+      { groupId: "g2" },
+    ]);
+    // Recipes live in both groups; unioned by the aggregation.
+    findManyMocks.recipes.mockResolvedValue([
+      {
+        id: "r1",
+        slug: "ragu",
+        title: "Sunday Ragù",
+        coverImageUrl: null,
+        createdAt: at("2026-01-01T10:00:00Z"),
+        author: actor,
+      },
+      {
+        id: "r2",
+        slug: "pie",
+        title: "Apple Pie",
+        coverImageUrl: null,
+        createdAt: at("2026-01-04T10:00:00Z"),
+        author: actor,
+      },
+    ]);
+    findManyMocks.cookLogEntries.mockResolvedValue([
+      {
+        id: "c1",
+        note: "So good",
+        photoUrl: null,
+        recipeId: "r1",
+        userId: "u1",
+        createdAt: at("2026-01-03T10:00:00Z"),
+        user: actor,
+      },
+    ]);
+    // Second groupMembers.findMany call (member_joined events) resolves empty.
+    findManyMocks.groupMembers.mockResolvedValueOnce([]);
+
+    const page = await getPersonalActivity("u1");
+
+    expect(page.events.map((e) => e.id)).toEqual([
+      "recipe:r2", // Jan 4
+      "cook:c1", // Jan 3
+      "recipe:r1", // Jan 1
+    ]);
+    // A single aggregated recipe query — not one per group (no leakage loop).
+    expect(findManyMocks.recipes).toHaveBeenCalledTimes(1);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("filters out events authored by blocked users", async () => {
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: "g1" }]);
+    getHiddenAuthorIdsMock.mockResolvedValue(new Set(["blocked"]));
+    findManyMocks.cookLogEntries.mockResolvedValue([
+      {
+        id: "c1",
+        note: "hidden",
+        photoUrl: null,
+        recipeId: "r1",
+        userId: "blocked",
+        createdAt: at("2026-01-03T10:00:00Z"),
+        user: { id: "blocked", name: "Nope", handle: null, avatarUrl: null },
+      },
+    ]);
+    findManyMocks.groupMembers.mockResolvedValueOnce([]);
+
+    const page = await getPersonalActivity("u1");
+    expect(page.events).toHaveLength(0);
+  });
+
+  it("paginates: caps at the limit and returns a cursor when more remain", async () => {
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: "g1" }]);
+    findManyMocks.recipes.mockResolvedValue([
+      {
+        id: "r1",
+        slug: "a",
+        title: "A",
+        coverImageUrl: null,
+        createdAt: at("2026-01-01T00:00:00Z"),
+        author: actor,
+      },
+    ]);
+    findManyMocks.reviews.mockResolvedValue([
+      {
+        id: "rev1",
+        title: "b",
+        body: null,
+        rating: 4,
+        recipeId: "r1",
+        userId: "u1",
+        createdAt: at("2026-01-02T00:00:00Z"),
+        user: actor,
+      },
+    ]);
+    findManyMocks.comments.mockResolvedValue([
+      {
+        id: "cm1",
+        kind: "comment",
+        body: "c",
+        recipeId: "r1",
+        userId: "u1",
+        createdAt: at("2026-01-03T00:00:00Z"),
+        user: actor,
+      },
+    ]);
+    findManyMocks.groupMembers.mockResolvedValueOnce([]);
+
+    const page = await getPersonalActivity("u1", { limit: 2 });
+
+    expect(page.events).toHaveLength(2);
+    expect(page.events[0]!.kind).toBe("comment"); // Jan 3 newest
+    expect(page.nextCursor).toBe(at("2026-01-02T00:00:00Z").toISOString());
+  });
+
+  it("dedupes group ids resolved from memberships", async () => {
+    // A viewer could have duplicate membership rows across queries; the scope
+    // should collapse to a single group so activity isn't double-counted.
+    findManyMocks.groupMembers.mockResolvedValueOnce([
+      { groupId: "g1" },
+      { groupId: "g1" },
+    ]);
+    findManyMocks.recipes.mockResolvedValue([
+      {
+        id: "r1",
+        slug: "ragu",
+        title: "Sunday Ragù",
+        coverImageUrl: null,
+        createdAt: at("2026-01-01T10:00:00Z"),
+        author: actor,
+      },
+    ]);
+    findManyMocks.groupMembers.mockResolvedValueOnce([]);
+
+    const page = await getPersonalActivity("u1");
+
+    expect(page.events.map((e) => e.id)).toEqual(["recipe:r1"]);
+    expect(findManyMocks.recipes).toHaveBeenCalledTimes(1);
   });
 });

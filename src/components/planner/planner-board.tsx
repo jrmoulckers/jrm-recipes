@@ -40,6 +40,7 @@ import {
 } from "~/lib/dietary-match";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { formatList } from "~/lib/i18n-format";
+import { formatPlanWarnings } from "~/lib/plan-safety-copy";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -475,6 +476,7 @@ function AddEntryDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const locale = useLocale();
   const noteId = React.useId();
   const searchId = React.useId();
   const leftoversId = React.useId();
@@ -567,6 +569,10 @@ function AddEntryDialog({
             ? "Added — leftovers night booked too"
             : "Added to your plan",
         );
+        const warning = formatPlanWarnings(result.warnings ?? [], locale);
+        if (warning) {
+          toast.warning(warning);
+        }
         onClose();
         router.refresh();
       } else {
