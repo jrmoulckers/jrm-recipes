@@ -184,7 +184,10 @@ export function isEmailConfigured(): boolean {
  */
 export function getEmailProvider(): EmailProvider {
   if (env.RESEND_API_KEY) {
-    return createResendProvider(env.RESEND_API_KEY, env.EMAIL_FROM ?? undefined);
+    return createResendProvider(
+      env.RESEND_API_KEY,
+      env.EMAIL_FROM ?? undefined,
+    );
   }
   return logEmailProvider;
 }

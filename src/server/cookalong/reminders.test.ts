@@ -14,7 +14,9 @@ vi.mock("~/server/db", () => ({
     transaction: transactionMock,
   },
 }));
-vi.mock("~/server/notifications/notify", () => ({ notifyMany: notifyManyMock }));
+vi.mock("~/server/notifications/notify", () => ({
+  notifyMany: notifyManyMock,
+}));
 
 import { sendDueCookAlongReminders } from "./mutations";
 

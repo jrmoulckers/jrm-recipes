@@ -163,9 +163,9 @@ describe("createResendProvider", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://api.resend.com/emails");
-    expect(
-      (init.headers as Record<string, string>).Authorization,
-    ).toBe("Bearer re_test");
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer re_test",
+    );
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body).toMatchObject({ to: "c@d.com", from: "From <a@b.com>" });
     fetchMock.mockRestore();

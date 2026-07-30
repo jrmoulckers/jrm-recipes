@@ -19,7 +19,10 @@ const {
     sendThrowsFor: null as string | null,
   };
   type Recipient = { id: string; email: string | null; name: string | null };
-  type DigestData = { groups: Array<{ id: string; name: string }>; recipes: unknown[] };
+  type DigestData = {
+    groups: Array<{ id: string; name: string }>;
+    recipes: unknown[];
+  };
   return {
     state,
     isCronConfigured: vi.fn(() => state.configured),
@@ -102,8 +105,11 @@ describe("GET /api/cron/digest — recipient iteration", () => {
       { id: "u2", email: null, name: "B" }, // no email → skipped
       { id: "u3", email: "c@example.com", name: "C" }, // no digest → skipped
     ]);
-    buildWeeklyDigest.mockImplementation(({ recipes }: { recipes: unknown[] }) =>
-      recipes.length > 0 ? { groups: [], totalNew: 1, totalUpdated: 0 } : null,
+    buildWeeklyDigest.mockImplementation(
+      ({ recipes }: { recipes: unknown[] }) =>
+        recipes.length > 0
+          ? { groups: [], totalNew: 1, totalUpdated: 0 }
+          : null,
     );
     getUserDigestData.mockImplementation(async (userId: string) =>
       userId === "u1"
