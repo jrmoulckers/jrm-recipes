@@ -28,10 +28,7 @@ import { useHousehold } from "~/components/household/household-provider";
 import { useKidsMode } from "~/components/theme/use-kids-mode";
 import { PrivacyToggle } from "~/components/privacy/privacy-toggle";
 import { Button } from "~/components/ui/button";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "~/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Switch } from "~/components/ui/switch";
 import { Separator } from "~/components/ui/separator";
 import {

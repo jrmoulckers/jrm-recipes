@@ -21,8 +21,10 @@ function useToggleGroupContext(component: string) {
   return context;
 }
 
-export interface ToggleGroupProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
+export interface ToggleGroupProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "onChange"
+> {
   /** The currently selected item value. */
   value: string;
   /** Called with the next value when a different item is selected. */
@@ -60,8 +62,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroupProps>(
 );
 ToggleGroup.displayName = "ToggleGroup";
 
-export interface ToggleGroupItemProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ToggleGroupItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** The value this item represents within the group. */
   value: string;
 }
@@ -70,9 +71,8 @@ const ToggleGroupItem = React.forwardRef<
   HTMLButtonElement,
   ToggleGroupItemProps
 >(({ className, value, children, onClick, ...props }, ref) => {
-  const { value: groupValue, setValue } = useToggleGroupContext(
-    "ToggleGroupItem",
-  );
+  const { value: groupValue, setValue } =
+    useToggleGroupContext("ToggleGroupItem");
   const selected = groupValue === value;
   return (
     <button

@@ -3,8 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 
-export interface NativeSelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   /**
    * Class applied to the positioning wrapper (which owns the chevron). Defaults
    * to `w-full` for the common form case; pass `w-auto` (or a fixed width) for
@@ -37,7 +36,7 @@ const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
         <select
           ref={ref}
           className={cn(
-            "flex h-11 w-full appearance-none rounded-lg border border-input bg-background ps-3.5 pe-10 py-2 text-base shadow-token-sm transition-colors focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "flex h-11 w-full appearance-none rounded-lg border border-input bg-background py-2 pe-10 ps-3.5 text-base shadow-token-sm transition-colors focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             // Invalid state (aria-invalid="true") paints a destructive border and
             // focus ring so the error is visible, not just announced.
             "aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:border-destructive aria-[invalid=true]:focus-visible:ring-destructive",

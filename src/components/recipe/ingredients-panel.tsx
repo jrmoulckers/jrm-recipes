@@ -46,10 +46,7 @@ import { ingredientIcon } from "~/lib/ingredient-icons";
 import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "~/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
 import { useUnitPrefsContext } from "~/components/recipe/unit-prefs-context";
 import {
