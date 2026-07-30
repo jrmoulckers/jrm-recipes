@@ -9,9 +9,7 @@ import {
   type JournalRange,
 } from "~/lib/journal-range";
 import type { CookedRecipeOption } from "~/server/cooklog/queries";
-
-const SELECT_CLASSES =
-  "rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+import { NativeSelect } from "~/components/ui/native-select";
 
 /**
  * Journal filter controls (#364): a recipe picker and a time-range picker whose
@@ -45,10 +43,10 @@ export function JournalFilters({
     <div className="flex flex-wrap items-center gap-4">
       <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         Recipe
-        <select
+        <NativeSelect
+          wrapperClassName="w-auto"
           value={selectedRecipeId ?? ""}
           onChange={(event) => setParam("recipe", event.target.value || null)}
-          className={SELECT_CLASSES}
           aria-label="Filter journal by recipe"
         >
           <option value="">All recipes</option>
@@ -57,12 +55,13 @@ export function JournalFilters({
               {recipe.title}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
 
       <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         When
-        <select
+        <NativeSelect
+          wrapperClassName="w-auto"
           value={selectedRange}
           onChange={(event) =>
             setParam(
@@ -70,7 +69,6 @@ export function JournalFilters({
               event.target.value === "all" ? null : event.target.value,
             )
           }
-          className={SELECT_CLASSES}
           aria-label="Filter journal by time range"
         >
           {JOURNAL_RANGES.map((range: JournalRange) => (
@@ -78,7 +76,7 @@ export function JournalFilters({
               {JOURNAL_RANGE_LABELS[range]}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
     </div>
   );

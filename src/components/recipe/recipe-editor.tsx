@@ -64,7 +64,9 @@ import {
   updateRecipeAction,
 } from "~/server/recipes/actions";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
@@ -1814,11 +1816,8 @@ export function RecipeEditor({
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
                             <span className="shrink-0">Group</span>
-                            <select
-                              className={cn(
-                                selectClass,
-                                "w-auto min-w-[8rem] max-w-[13rem]",
-                              )}
+                            <NativeSelect
+                              wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -1834,7 +1833,7 @@ export function RecipeEditor({
                                 </option>
                               ))}
                               <option value="__new__">+ New group…</option>
-                            </select>
+                            </NativeSelect>
                           </label>
                           {!hasOptionData && (
                             <button
@@ -1903,8 +1902,7 @@ export function RecipeEditor({
                               />
                             </RowField>
                             <RowField label="Used in step">
-                              <select
-                                className={selectClass}
+                              <NativeSelect
                                 value={row.stepPosition}
                                 onChange={(e) =>
                                   setIngredients((l) =>
@@ -1922,18 +1920,16 @@ export function RecipeEditor({
                                     Step {si + 1}
                                   </option>
                                 ))}
-                              </select>
+                              </NativeSelect>
                             </RowField>
                             <label className="flex items-center gap-2 self-end pb-2 text-sm text-muted-foreground">
-                              <input
-                                type="checkbox"
-                                className="size-4 accent-primary"
+                              <Checkbox
                                 checked={row.optional}
-                                onChange={(e) =>
+                                onCheckedChange={(value) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
                                       r.key === row.key
-                                        ? { ...r, optional: e.target.checked }
+                                        ? { ...r, optional: value === true }
                                         : r,
                                     ),
                                   )
@@ -2136,11 +2132,8 @@ export function RecipeEditor({
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
                             <span className="shrink-0">Section</span>
-                            <select
-                              className={cn(
-                                selectClass,
-                                "w-auto min-w-[8rem] max-w-[13rem]",
-                              )}
+                            <NativeSelect
+                              wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
@@ -2156,7 +2149,7 @@ export function RecipeEditor({
                                 </option>
                               ))}
                               <option value="__new__">+ New section…</option>
-                            </select>
+                            </NativeSelect>
                           </label>
                           {!hasOptionData && (
                             <button
@@ -2564,8 +2557,7 @@ export function RecipeEditor({
               name="difficulty"
               error={errors.difficulty}
             >
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={form.difficulty}
                 onChange={(e) =>
                   set("difficulty", e.target.value as typeof form.difficulty)
@@ -2575,7 +2567,7 @@ export function RecipeEditor({
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard">Hard</option>
-              </select>
+              </NativeSelect>
             </Field>
 
             <Field label="Cuisine" name="cuisine" error={errors.cuisine}>
@@ -2609,11 +2601,9 @@ export function RecipeEditor({
                           : "border-border text-muted-foreground hover:bg-muted",
                       )}
                     >
-                      <input
-                        type="checkbox"
-                        className="size-4 accent-primary"
+                      <Checkbox
                         checked={checked}
-                        onChange={() => toggleDietaryFlag(tag)}
+                        onCheckedChange={() => toggleDietaryFlag(tag)}
                       />
                       {DIETARY_TAG_LABELS[tag]}
                     </label>
@@ -2756,8 +2746,7 @@ export function RecipeEditor({
                     name="visibility"
                     error={errors.visibility}
                   >
-                    <select
-                      className={selectClass}
+                    <NativeSelect
                       value={form.visibility}
                       onChange={(e) =>
                         set(
@@ -2772,13 +2761,12 @@ export function RecipeEditor({
                       </option>
                       <option value="unlisted">Anyone with the link</option>
                       <option value="public">Everyone (public)</option>
-                    </select>
+                    </NativeSelect>
                   </Field>
 
                   {form.visibility === "group" && groups.length > 0 && (
                     <Field label="Group" name="groupId" error={errors.groupId}>
-                      <select
-                        className={selectClass}
+                      <NativeSelect
                         value={form.groupId}
                         onChange={(e) => set("groupId", e.target.value)}
                       >
@@ -2788,13 +2776,12 @@ export function RecipeEditor({
                             {g.name}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </Field>
                   )}
 
                   <Field label="Status" name="status" error={errors.status}>
-                    <select
-                      className={selectClass}
+                    <NativeSelect
                       value={form.status}
                       onChange={(e) =>
                         set("status", e.target.value as typeof form.status)
@@ -2802,7 +2789,7 @@ export function RecipeEditor({
                     >
                       <option value="published">Published</option>
                       <option value="draft">Draft</option>
-                    </select>
+                    </NativeSelect>
                   </Field>
                 </PopoverContent>
               </Popover>

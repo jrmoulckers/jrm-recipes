@@ -46,6 +46,10 @@ import { ingredientIcon } from "~/lib/ingredient-icons";
 import { useThemeBehavior } from "~/components/theme/theme-provider";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "~/components/ui/toggle-group";
 import { IngredientSubstitutions } from "~/components/recipe/ingredient-substitutions";
 import { useUnitPrefsContext } from "~/components/recipe/unit-prefs-context";
 import {
@@ -624,27 +628,22 @@ export function IngredientsPanel({
           <span className="text-sm text-muted-foreground">Ingredients</span>
         )}
 
-        <div
-          role="group"
+        <ToggleGroup
           aria-label="Measurement system"
-          className="inline-flex rounded-lg border border-border p-0.5 text-sm"
+          className="text-sm"
+          value={system}
+          onValueChange={(next) => updateSystem(next as System)}
         >
           {(["original", "us", "metric", "grams"] as const).map((s) => (
-            <button
+            <ToggleGroupItem
               key={s}
-              type="button"
-              onClick={() => updateSystem(s)}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium capitalize transition-colors",
-                system === s
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              value={s}
+              className="px-2.5 py-1 capitalize"
             >
               {s === "us" ? "US" : s}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       {scaleToOpen && pinIngredient && (

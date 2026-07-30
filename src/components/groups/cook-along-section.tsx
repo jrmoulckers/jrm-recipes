@@ -39,6 +39,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
 
 type GroupRecipeOption = { id: string; title: string };
@@ -372,19 +373,18 @@ function ScheduleCookAlongButton({
 
           <div className="grid gap-2">
             <Label htmlFor="cookalong-recipe">Recipe</Label>
-            <select
+            <NativeSelect
               id="cookalong-recipe"
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
               disabled={pending}
-              className="flex h-[calc(2.5rem*var(--control-scale))] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {recipes.map((recipe) => (
                 <option key={recipe.id} value={recipe.id}>
                   {recipe.title}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           <div className="grid gap-2">

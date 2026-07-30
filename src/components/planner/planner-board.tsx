@@ -42,7 +42,9 @@ import { useActiveMemberStore } from "~/lib/active-member-store";
 import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
 import {
   Dialog,
@@ -666,11 +668,9 @@ function AddEntryDialog({
             {canBatch && (
               <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
                 <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={batchOn}
-                    onChange={(event) => toggleBatch(event.target.checked)}
-                    className="size-4 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onCheckedChange={(value) => toggleBatch(value === true)}
                   />
                   <span className="inline-flex items-center gap-1.5">
                     <Repeat className="size-4 text-primary" aria-hidden />
@@ -704,20 +704,19 @@ function AddEntryDialog({
 
                     <div className="grid gap-1.5">
                       <Label htmlFor={leftoversId}>Leftovers night</Label>
-                      <select
+                      <NativeSelect
                         id={leftoversId}
                         value={leftoversDate}
                         onChange={(event) =>
                           setLeftoversDate(event.target.value)
                         }
-                        className="h-9 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {leftoversOptions.map((day) => (
                           <option key={day.dateParam} value={day.dateParam}>
                             {day.fullLabel}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </div>
                   </div>
                 )}

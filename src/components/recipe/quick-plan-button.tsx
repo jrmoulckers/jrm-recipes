@@ -14,6 +14,7 @@ import {
 } from "~/server/planner/validation";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { NativeSelect } from "~/components/ui/native-select";
 import {
   Popover,
   PopoverContent,
@@ -130,31 +131,29 @@ export function QuickPlanButton({
           <p className="text-sm font-medium">{heading}</p>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             Day
-            <select
+            <NativeSelect
               value={date}
               onChange={(event) => setDate(event.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {days.map((day) => (
                 <option key={day.value} value={day.value}>
                   {day.label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
             Meal
-            <select
+            <NativeSelect
               value={slot}
               onChange={(event) => setSlot(event.target.value as MealSlotValue)}
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {MEAL_SLOTS.map((value) => (
                 <option key={value} value={value}>
                   {MEAL_SLOT_LABELS[value]}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           <Button
             type="submit"

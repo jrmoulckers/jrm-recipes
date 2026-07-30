@@ -7,6 +7,7 @@ import { setRatingAction } from "~/server/engagement/actions";
 import { logCookAction } from "~/server/cooklog/actions";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
@@ -153,12 +154,10 @@ export function CookCompletionFeedback({
       </div>
 
       <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={logCook}
-          onChange={(event) => setLogCook(event.target.checked)}
+          onCheckedChange={(value) => setLogCook(value === true)}
           disabled={pending}
-          className="size-4 rounded border-border text-primary focus-visible:ring-2 focus-visible:ring-ring"
         />
         Log that I made this
       </label>
