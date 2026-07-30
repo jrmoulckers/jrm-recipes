@@ -17,8 +17,20 @@ const basil = foodNodeId("Basil");
 const CORPUS: MinedIngredient[] = [
   { recipeId: "r1", item: "onion", unit: "", quantity: 1 },
   { recipeId: "r1", item: "tomatoes", unit: "cup", quantity: 2 },
-  { recipeId: "r1", item: "garlic", unit: "clove", quantity: 3, prep: "minced" },
-  { recipeId: "r2", item: "yellow onion", unit: "each", quantity: 2, prep: "Diced" },
+  {
+    recipeId: "r1",
+    item: "garlic",
+    unit: "clove",
+    quantity: 3,
+    prep: "minced",
+  },
+  {
+    recipeId: "r2",
+    item: "yellow onion",
+    unit: "each",
+    quantity: 2,
+    prep: "Diced",
+  },
   { recipeId: "r2", item: "tomato", unit: "g", quantity: 200 },
   { recipeId: "r3", item: "onion", unit: "each", quantity: 1 },
   { recipeId: "r3", item: "fresh basil", unit: "tbsp", quantity: 1 },
@@ -138,11 +150,37 @@ describe("rankUnitStats", () => {
 describe("mineFoodGraph — personalization + reverse index", () => {
   // u1 authored r1 + r3, u2 authored r2 (see recipe ids in CORPUS).
   const AUTHORED: MinedIngredient[] = [
-    { recipeId: "r1", item: "onion", unit: "each", quantity: 1, authorId: "u1" },
+    {
+      recipeId: "r1",
+      item: "onion",
+      unit: "each",
+      quantity: 1,
+      authorId: "u1",
+    },
     { recipeId: "r1", item: "onion", unit: "cup", quantity: 1, authorId: "u1" },
-    { recipeId: "r3", item: "onion", unit: "each", quantity: 1, prep: "sliced", authorId: "u1" },
-    { recipeId: "r2", item: "yellow onion", unit: "g", quantity: 200, prep: "diced", authorId: "u2" },
-    { recipeId: "r2", item: "tomato", unit: "g", quantity: 100, authorId: "u2" },
+    {
+      recipeId: "r3",
+      item: "onion",
+      unit: "each",
+      quantity: 1,
+      prep: "sliced",
+      authorId: "u1",
+    },
+    {
+      recipeId: "r2",
+      item: "yellow onion",
+      unit: "g",
+      quantity: 200,
+      prep: "diced",
+      authorId: "u2",
+    },
+    {
+      recipeId: "r2",
+      item: "tomato",
+      unit: "g",
+      quantity: 100,
+      authorId: "u2",
+    },
     { recipeId: "r4", item: "onion", unit: "each", quantity: 1 }, // no author
   ];
   const mined = mineFoodGraph(AUTHORED);

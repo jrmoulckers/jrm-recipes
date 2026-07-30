@@ -66,10 +66,18 @@ describe("customUnitInput", () => {
 
   it("requires both halves of an equivalence, or neither", () => {
     expect(() =>
-      customUnitInput.parse({ name: "pinch", dimension: "volume", baseUnit: "tsp" }),
+      customUnitInput.parse({
+        name: "pinch",
+        dimension: "volume",
+        baseUnit: "tsp",
+      }),
     ).toThrow();
     expect(() =>
-      customUnitInput.parse({ name: "pinch", dimension: "volume", baseAmount: 2 }),
+      customUnitInput.parse({
+        name: "pinch",
+        dimension: "volume",
+        baseAmount: 2,
+      }),
     ).toThrow();
   });
 

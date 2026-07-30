@@ -55,8 +55,8 @@ export default async function UnitsSettingsPage() {
           Units &amp; measurements
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Choose the units you cook in. Heirloom converts every recipe to match —
-          while keeping each author&apos;s original amounts intact.
+          Choose the units you cook in. Heirloom converts every recipe to match
+          — while keeping each author&apos;s original amounts intact.
         </p>
       </header>
 
@@ -84,7 +84,8 @@ function SignInNudge() {
             Your units are personal
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Sign in from the header to save the units you cook in across devices.
+            Sign in from the header to save the units you cook in across
+            devices.
           </p>
         </div>
       </div>

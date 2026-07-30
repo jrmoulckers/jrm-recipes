@@ -121,7 +121,10 @@ describe("taxonomy integrity", () => {
     for (const food of FOOD_ITEMS) {
       for (const alias of food.aliases) {
         const key = normalizeFoodText(alias);
-        expect(seen.has(key), `duplicate alias "${key}" (${food.name} vs ${seen.get(key)})`).toBe(false);
+        expect(
+          seen.has(key),
+          `duplicate alias "${key}" (${food.name} vs ${seen.get(key)})`,
+        ).toBe(false);
         seen.set(key, food.name);
       }
     }

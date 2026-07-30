@@ -16,11 +16,7 @@ import {
   stableHash,
 } from "~/lib/food-db";
 import { NUTRITION_BY_SLUG } from "~/lib/food-nutrition";
-import type {
-  NewFoodAlias,
-  NewFoodItem,
-  NewFoodNutrition,
-} from "./schema";
+import type { NewFoodAlias, NewFoodItem, NewFoodNutrition } from "./schema";
 
 /** Re-exported so the seed's slug helper has one source of truth (`food-db`). */
 export { foodSlug };

@@ -3,10 +3,7 @@ import "server-only";
 import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import { canonicalFood, normalizeFoodText } from "~/lib/food-db";
-import {
-  nutritionForFood,
-  type NutritionFacts,
-} from "~/lib/food-nutrition";
+import { nutritionForFood, type NutritionFacts } from "~/lib/food-nutrition";
 import {
   rankNeighbours,
   rankUnitStats,
@@ -257,7 +254,9 @@ export async function getPairedFoods(
       lift: foodPairs.lift,
     })
     .from(foodPairs)
-    .where(or(inArray(foodPairs.foodAId, ids), inArray(foodPairs.foodBId, ids)));
+    .where(
+      or(inArray(foodPairs.foodAId, ids), inArray(foodPairs.foodBId, ids)),
+    );
 
   const ranked = rankNeighbours(edges, ids, {
     minCoCount: options.minCoCount,
@@ -283,9 +282,7 @@ export async function getPairedFoods(
 
   return ranked.flatMap((r) => {
     const node = byId.get(r.foodId);
-    return node
-      ? [{ ...node, coCount: r.coCount, lift: r.lift }]
-      : [];
+    return node ? [{ ...node, coCount: r.coCount, lift: r.lift }] : [];
   });
 }
 

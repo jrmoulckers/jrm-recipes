@@ -20,7 +20,7 @@ It should power:
 - **Smart ingredient entry** — typing "onion" surfaces the canonical food, its
   **varieties** (yellow/red/white/green), its **common units** (`ct` = 1 whole,
   cups, oz), **common quantities**, and **prep methods** (whole, diced,
-  julienned) — ranked by overall popularity *and* what this user tends to use.
+  julienned) — ranked by overall popularity _and_ what this user tends to use.
 - **Near‑neighbour suggestions** — after adding onion to a pasta dish, tomato
   surfaces quickly because it co‑occurs with onion across many recipes.
 - **Connected features across the site** — the same canonical food powers
@@ -37,6 +37,7 @@ interchangeable‑units session) **before** writing schema or code.
 ## 2. Goals / non‑goals
 
 **Goals**
+
 - One canonical **food identity** per ingredient, with everything else
   (varieties, units, quantities, prep, pairings, nutrition) hanging off it.
 - Learn from the corpus we already have: `recipe_ingredients` already stores
@@ -47,6 +48,7 @@ interchangeable‑units session) **before** writing schema or code.
   contract; add new sibling APIs rather than changing it.
 
 **Non‑goals (for now)**
+
 - A dedicated graph database. At recipe‑site scale a Postgres adjacency (edge)
   table with the right indexes is simpler and sufficient (see ADR‑1).
 - Authoritative branded/packaged nutrition. Nutrition starts from a public,
@@ -65,6 +67,7 @@ interchangeable‑units session) **before** writing schema or code.
 - **`food_items` table** — a DB mirror seeded from the static set.
 
 **These are not throwaway.** In the live design they become:
+
 - the **cold‑start seed** (a brand‑new site / a food with no recipes yet still
   gets sensible variants/units),
 - the **canonical backbone** (identity, category, density),
@@ -110,7 +113,7 @@ Two planes:
 ## 5. The food graph as a connective hub
 
 The graph is **not** a units helper bolted onto the editor. It is a **shared
-food‑identity layer**: `food_nodes` gives the whole app *one stable id* for
+food‑identity layer**: `food_nodes` gives the whole app _one stable id_ for
 "onion" no matter how it was typed, so a signal captured in one feature enriches
 every other, and any feature that touches food can read a consistent set of
 facts (identity, category, density, units, variants, prep, pairings, nutrition,
@@ -142,19 +145,19 @@ graph LR
 
 **Integration surface** (every row is an existing table/lib in this repo):
 
-| Feature / source | Reads from graph | Feeds the graph | Unlocks |
-| --- | --- | --- | --- |
-| **Recipe editor** (`recipe_ingredients`) | variants, units, common qty, prep, near‑neighbours | aliases, unit/qty/prep, co‑occurrence — on save | smart entry + "you might also add tomato" |
-| **Shopping lists** (`shopping_list_items` — already has `item`/`quantity`/`unit`/`category`) | canonical id, `category` (aisle), density for unit math | more unit/qty signal | auto aisle‑categorization, merge the same food across recipes, scale + unit‑convert a combined list |
-| **Meal planner** (`mealPlanEntries`) | per‑node nutrition | — | one‑click shopping list for a week; nutrition roll‑up for a plan |
-| **Dietary profiles** (`memberDietaryProfiles.allergens/diets`) | node → allergen/diet flags | — | flag/hide conflicting suggestions, warn on a recipe, drive swaps |
-| **Substitutions** (`substitutions.ts`) | shared canonical identity; node → swap options | shared normalizer | allergen‑aware substitutions keyed off the *same* food id |
-| **Cook log** (`cookLogEntries`) | — | "actually cooked" weight | personalization ranked by real behaviour, not just saved recipes |
-| **Collections / favorites** (`collections`) | a user's food affinity | affinity signal | better personalization + ingredient‑led discovery |
-| **Search** (`searches`, `savedSearches`) | aliases (synonyms), neighbours | — | synonym‑aware ingredient search, "recipes using X", pantry/near‑neighbour discovery |
-| **Reviews / ratings** (`engagement`) | recipe quality score | — | weight mined pair/unit signal by rating so we don't learn from junk recipes |
-| **Recipe nutrition** (`recipes.calories/proteinGrams/…`, all nullable today) | `food_nutrition` per node | — | auto‑suggest per‑serving nutrition from the ingredient list |
-| **Units session** (`getSuggestedUnitsForFood`) | learned units per food | — | smarter unit picker — **unchanged contract** |
+| Feature / source                                                                             | Reads from graph                                        | Feeds the graph                                 | Unlocks                                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Recipe editor** (`recipe_ingredients`)                                                     | variants, units, common qty, prep, near‑neighbours      | aliases, unit/qty/prep, co‑occurrence — on save | smart entry + "you might also add tomato"                                                           |
+| **Shopping lists** (`shopping_list_items` — already has `item`/`quantity`/`unit`/`category`) | canonical id, `category` (aisle), density for unit math | more unit/qty signal                            | auto aisle‑categorization, merge the same food across recipes, scale + unit‑convert a combined list |
+| **Meal planner** (`mealPlanEntries`)                                                         | per‑node nutrition                                      | —                                               | one‑click shopping list for a week; nutrition roll‑up for a plan                                    |
+| **Dietary profiles** (`memberDietaryProfiles.allergens/diets`)                               | node → allergen/diet flags                              | —                                               | flag/hide conflicting suggestions, warn on a recipe, drive swaps                                    |
+| **Substitutions** (`substitutions.ts`)                                                       | shared canonical identity; node → swap options          | shared normalizer                               | allergen‑aware substitutions keyed off the _same_ food id                                           |
+| **Cook log** (`cookLogEntries`)                                                              | —                                                       | "actually cooked" weight                        | personalization ranked by real behaviour, not just saved recipes                                    |
+| **Collections / favorites** (`collections`)                                                  | a user's food affinity                                  | affinity signal                                 | better personalization + ingredient‑led discovery                                                   |
+| **Search** (`searches`, `savedSearches`)                                                     | aliases (synonyms), neighbours                          | —                                               | synonym‑aware ingredient search, "recipes using X", pantry/near‑neighbour discovery                 |
+| **Reviews / ratings** (`engagement`)                                                         | recipe quality score                                    | —                                               | weight mined pair/unit signal by rating so we don't learn from junk recipes                         |
+| **Recipe nutrition** (`recipes.calories/proteinGrams/…`, all nullable today)                 | `food_nutrition` per node                               | —                                               | auto‑suggest per‑serving nutrition from the ingredient list                                         |
+| **Units session** (`getSuggestedUnitsForFood`)                                               | learned units per food                                  | —                                               | smarter unit picker — **unchanged contract**                                                        |
 
 The through‑line: because everything resolves to the **same canonical node via
 the same normalizer**, signals compound. Units learned in the editor improve the
@@ -171,13 +174,13 @@ Illustrative, not final.
 
 ### 6.1 Identity vs. modifiers (key modelling decision)
 
-- **Canonical node** = a food *identity* (Onion, Tomato). Nutritionally and
+- **Canonical node** = a food _identity_ (Onion, Tomato). Nutritionally and
   semantically distinct things are distinct nodes.
 - **Variety** (yellow/red/white/green onion) = a **child node** with
   `parent_id` → Onion. Varieties can differ in flavour/nutrition and are worth
   first‑classing.
 - **Size** (large/medium/small) and **prep** (diced/julienned) = **orthogonal
-  modifiers**, *not* identity. They're learned as stats/facets, because "large"
+  modifiers**, _not_ identity. They're learned as stats/facets, because "large"
   changes a count→weight conversion and "diced" changes nothing about identity.
 
 This keeps the node graph clean and pushes the messy, high‑cardinality stuff
@@ -228,7 +231,7 @@ node, from an authoritative source — not crowd‑sourced (ADR‑4).
 ## 7. Ranking
 
 - **Popularity**: `useCount` / `recipeCount`.
-- **Near‑neighbours**: order candidate foods by `lift` (surfaces *distinctive*
+- **Near‑neighbours**: order candidate foods by `lift` (surfaces _distinctive_
   pairings — onion→tomato, not onion→salt which co‑occurs with everything),
   gated by a minimum `coCount` so a single quirky recipe can't create an edge.
 - **Personalization**: blend the shared ranking with `user_food_prefs` (a
@@ -297,7 +300,7 @@ default), matching the convention the units session relies on.
   threshold, giving both quality and k‑anonymity.
 - **ADR‑7 — One shared canonicalizer (the graph is the identity layer).** The
   editor, shopping list, substitutions, search and ingestion must all resolve
-  free‑text to the *same* `food_nodes` id, or the "connected datapoints" break.
+  free‑text to the _same_ `food_nodes` id, or the "connected datapoints" break.
   `matchFood` (food‑db) and `normalizeIngredient` (substitutions) overlap today;
   converge them onto one normalizer that the graph owns and others consume.
   Requires a light refactor of `substitutions.ts` to call the shared resolver —
@@ -327,7 +330,7 @@ Each phase is independently shippable and additive.
 
 ## 13. Open questions
 
-1. **Ingestion trigger** — fold on recipe save (server action) *and* nightly
+1. **Ingestion trigger** — fold on recipe save (server action) _and_ nightly
    batch, or nightly‑only to start? (Leaning: nightly batch first, add
    incremental in Phase 2.)
 2. **Quantity distribution storage** — percentile columns vs. a small JSON
