@@ -59,7 +59,7 @@ describe("GET /api/cron/cook-along-reminders", () => {
     state.reminded = 3;
     const res = await GET(get());
     expect(res.status).toBe(200);
-    expect(sendDue).toHaveBeenCalledWith(2 * 60 * 60 * 1000);
+    expect(sendDue).toHaveBeenCalledWith(25 * 60 * 60 * 1000);
     expect(await res.json()).toMatchObject({ ok: true, reminded: 3 });
   });
 });

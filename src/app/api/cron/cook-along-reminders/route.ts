@@ -7,18 +7,22 @@ import { isDbConfigured } from "~/server/db";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Fire reminders for events starting within the next 2 hours. The job runs
-// hourly (see vercel.json), so a 2h window guarantees every event is covered by
-// at least one run before it starts; `reminderSentAt` makes repeats a no-op.
-const WINDOW_MS = 2 * 60 * 60 * 1000;
+// Fire reminders for events starting within the next ~25 hours. Vercel Cron on
+// the Hobby plan runs at most once per day, so this job runs daily (see
+// vercel.json); a 25h window (a 1h overlap past the 24h cadence) guarantees
+// every upcoming event is covered by at least one run before it starts, giving
+// attendees roughly a day's notice. `reminderSentAt` makes the overlap — and any
+// retry — a no-op, so each event is still reminded exactly once.
+const WINDOW_MS = 25 * 60 * 60 * 1000;
 
 /**
- * Cook-along reminder cron (issue #353). Scheduled by Vercel Cron and guarded by
- * `CRON_SECRET` (503 when unset, 401 on a bad/absent bearer). Delegates to
- * {@link sendDueCookAlongReminders}, which finds cook-alongs starting within the
- * reminder window that haven't been reminded, notifies the going/maybe RSVPs,
- * and stamps `reminderSentAt` so each event fires exactly once — the job is
- * idempotent and safe to run every hour. Returns how many events were reminded.
+ * Cook-along reminder cron (issue #353). Scheduled daily by Vercel Cron and
+ * guarded by `CRON_SECRET` (503 when unset, 401 on a bad/absent bearer).
+ * Delegates to {@link sendDueCookAlongReminders}, which finds cook-alongs
+ * starting within the reminder window that haven't been reminded, notifies the
+ * going/maybe RSVPs, and stamps `reminderSentAt` so each event fires exactly
+ * once — the job is idempotent and safe to re-run. Returns how many events were
+ * reminded.
  */
 async function handle(request: Request): Promise<Response> {
   if (!isCronConfigured()) {
