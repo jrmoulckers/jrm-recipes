@@ -52,10 +52,10 @@ export function PublicActivityOptIn({
           Public profile &amp; followers
         </span>
         <span className="block text-xs text-muted-foreground">
-          Let other cooks follow you and see your{" "}
-          <strong>public</strong> recipes, reviews, and cooks in their feed.
-          Your family groups and anything private stay private — only content
-          you&apos;ve made public is ever shared this way.
+          Let other cooks follow you and see your <strong>public</strong>{" "}
+          recipes, reviews, and cooks in their feed. Your family groups and
+          anything private stay private — only content you&apos;ve made public
+          is ever shared this way.
         </span>
       </label>
       <Switch

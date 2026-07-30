@@ -96,9 +96,7 @@ function paginate<T>(
   people: (T | null)[],
   limit: number,
 ): { people: T[]; nextCursor: string | null } {
-  const kept = people
-    .slice(0, limit)
-    .filter((p): p is T => p !== null);
+  const kept = people.slice(0, limit).filter((p): p is T => p !== null);
   const hasMore = rows.length > limit;
   const nextCursor =
     hasMore && rows.length > 0
@@ -221,8 +219,8 @@ function isPublicRecipe(
 ): boolean {
   return Boolean(
     recipe?.visibility === "public" &&
-      recipe.status === "published" &&
-      recipe.deletedAt === null,
+    recipe.status === "published" &&
+    recipe.deletedAt === null,
   );
 }
 

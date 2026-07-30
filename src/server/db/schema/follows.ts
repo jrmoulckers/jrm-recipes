@@ -36,7 +36,10 @@ export const follows = pgTable(
     index("follows_follower_idx").on(t.followerId),
     index("follows_followee_idx").on(t.followeeId),
     // DB backstop: you can never follow yourself, even via a raw/seed write.
-    check("follows_no_self_follow_check", sql`${t.followerId} <> ${t.followeeId}`),
+    check(
+      "follows_no_self_follow_check",
+      sql`${t.followerId} <> ${t.followeeId}`,
+    ),
   ],
 );
 

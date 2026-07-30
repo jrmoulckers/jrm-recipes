@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { findFirstMock, transactionMock, deleteMock, getHiddenAuthorIdsMock, notifyMock } =
-  vi.hoisted(() => ({
-    findFirstMock: vi.fn(),
-    transactionMock: vi.fn(),
-    deleteMock: vi.fn(),
-    getHiddenAuthorIdsMock: vi.fn(),
-    notifyMock: vi.fn(),
-  }));
+const {
+  findFirstMock,
+  transactionMock,
+  deleteMock,
+  getHiddenAuthorIdsMock,
+  notifyMock,
+} = vi.hoisted(() => ({
+  findFirstMock: vi.fn(),
+  transactionMock: vi.fn(),
+  deleteMock: vi.fn(),
+  getHiddenAuthorIdsMock: vi.fn(),
+  notifyMock: vi.fn(),
+}));
 
 vi.mock("~/server/db", () => ({
   db: {

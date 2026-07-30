@@ -3,10 +3,7 @@
 import * as React from "react";
 import { UserCheck, UserPlus } from "lucide-react";
 
-import {
-  followUserAction,
-  unfollowUserAction,
-} from "~/server/follows/actions";
+import { followUserAction, unfollowUserAction } from "~/server/follows/actions";
 import { Button } from "~/components/ui/button";
 import { useServerAction } from "~/lib/use-server-action";
 

@@ -35,7 +35,12 @@ vi.mock("~/server/moderation/blocks", () => ({
 
 import { getFollowingActivity } from "./queries";
 
-const author = { id: "followee", name: "Fran", handle: "fran", avatarUrl: null };
+const author = {
+  id: "followee",
+  name: "Fran",
+  handle: "fran",
+  avatarUrl: null,
+};
 const publicRecipe = {
   id: "r_pub",
   slug: "public-stew",
