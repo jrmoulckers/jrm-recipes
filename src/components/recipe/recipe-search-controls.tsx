@@ -14,6 +14,7 @@ import {
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -697,12 +698,10 @@ function FacetMultiSelect({
               return (
                 <li key={option.value}>
                   <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-primary"
+                    <Checkbox
                       checked={checked}
-                      onChange={(event) =>
-                        onToggle(option.value, event.target.checked)
+                      onCheckedChange={(value) =>
+                        onToggle(option.value, value === true)
                       }
                     />
                     <span className="truncate">{option.label}</span>

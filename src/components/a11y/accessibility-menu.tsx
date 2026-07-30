@@ -28,6 +28,10 @@ import { useHousehold } from "~/components/household/household-provider";
 import { useKidsMode } from "~/components/theme/use-kids-mode";
 import { PrivacyToggle } from "~/components/privacy/privacy-toggle";
 import { Button } from "~/components/ui/button";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "~/components/ui/toggle-group";
 import { Switch } from "~/components/ui/switch";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -137,41 +141,32 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
               <Type className="size-4 text-muted-foreground" />
               Text size
             </div>
-            <div
-              role="group"
+            <ToggleGroup
               aria-label={t("textSizeGroup")}
-              className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1"
+              className="grid w-full grid-cols-3 rounded-xl"
+              value={prefs.textSize}
+              onValueChange={(next) => update({ textSize: next as TextSize })}
             >
-              {TEXT_SIZES.map((size) => {
-                const selected = prefs.textSize === size;
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => update({ textSize: size })}
-                    aria-pressed={selected}
+              {TEXT_SIZES.map((size) => (
+                <ToggleGroupItem
+                  key={size}
+                  value={size}
+                  className="flex-col gap-0.5 rounded-lg px-0 py-2"
+                >
+                  <span
                     className={cn(
-                      "flex flex-col items-center gap-0.5 rounded-lg py-2 transition-colors",
-                      selected
-                        ? "bg-card text-foreground shadow-token"
-                        : "text-muted-foreground hover:text-foreground",
+                      "font-display font-semibold leading-none",
+                      TEXT_SIZE_META[size].sample,
                     )}
                   >
-                    <span
-                      className={cn(
-                        "font-display font-semibold leading-none",
-                        TEXT_SIZE_META[size].sample,
-                      )}
-                    >
-                      A
-                    </span>
-                    <span className="text-[0.7rem]">
-                      {TEXT_SIZE_META[size].label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    A
+                  </span>
+                  <span className="text-[0.7rem]">
+                    {TEXT_SIZE_META[size].label}
+                  </span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </section>
 
           {/* Toggles */}

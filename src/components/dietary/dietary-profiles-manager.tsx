@@ -29,7 +29,9 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { NativeSelect } from "~/components/ui/native-select";
 
 export type MemberProfileView = {
   id: string;
@@ -313,11 +315,9 @@ export function DietaryProfilesManager({
                           : "border-border text-muted-foreground hover:bg-muted",
                       )}
                     >
-                      <input
-                        type="checkbox"
-                        className="size-4 accent-primary"
+                      <Checkbox
                         checked={checked}
-                        onChange={() =>
+                        onCheckedChange={() =>
                           setDraft((d) => ({
                             ...d,
                             allergens: toggle(d.allergens, a),
@@ -348,11 +348,9 @@ export function DietaryProfilesManager({
                           : "border-border text-muted-foreground hover:bg-muted",
                       )}
                     >
-                      <input
-                        type="checkbox"
-                        className="size-4 accent-primary"
+                      <Checkbox
                         checked={checked}
-                        onChange={() =>
+                        onCheckedChange={() =>
                           setDraft((d) => ({
                             ...d,
                             diets: toggle(d.diets, tag),
@@ -388,9 +386,8 @@ export function DietaryProfilesManager({
             {groups.length > 0 ? (
               <div className="grid gap-2">
                 <Label htmlFor={groupSelectId}>Family group (optional)</Label>
-                <select
+                <NativeSelect
                   id={groupSelectId}
-                  className="h-10 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={draft.groupId}
                   onChange={(e) =>
                     setDraft((d) => ({ ...d, groupId: e.target.value }))
@@ -402,7 +399,7 @@ export function DietaryProfilesManager({
                       {g.name}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
                 {fieldErrors.groupId?.[0] ? (
                   <p className="text-sm text-destructive">
                     {fieldErrors.groupId[0]}

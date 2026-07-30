@@ -5,6 +5,10 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
 import { Badge } from "~/components/ui/badge";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "~/components/ui/toggle-group";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import {
   caloriePercentOfGoal,
@@ -122,28 +126,18 @@ export function NutritionPanel({
         <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
           Nutrition
         </h3>
-        <div
-          role="group"
+        <ToggleGroup
           aria-label="Nutrition basis"
-          className="inline-flex rounded-lg border border-border p-0.5 text-xs"
+          className="text-xs"
+          value={basis}
+          onValueChange={(next) => setBasis(next as Basis)}
         >
           {(["serving", "whole"] as const).map((b) => (
-            <button
-              key={b}
-              type="button"
-              onClick={() => setBasis(b)}
-              aria-pressed={basis === b}
-              className={cn(
-                "rounded-md px-2 py-1 font-medium transition-colors",
-                basis === b
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
+            <ToggleGroupItem key={b} value={b} className="px-2 py-1">
               {b === "serving" ? "Per serving" : "Whole recipe"}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       <p className="mt-1 text-xs text-muted-foreground">

@@ -21,6 +21,10 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "~/components/ui/toggle-group";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -858,30 +862,22 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
 
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <div
-                role="group"
+              <ToggleGroup
                 aria-label="Print format"
-                className="flex h-auto flex-wrap justify-start gap-1 rounded-xl bg-muted p-1 text-muted-foreground"
+                className="h-auto flex-wrap justify-start rounded-xl p-1"
+                value={format}
+                onValueChange={(next) => setFormat(next as PrintFormat)}
               >
                 {FORMAT_ORDER.map((formatId) => (
-                  <button
+                  <ToggleGroupItem
                     key={formatId}
-                    type="button"
-                    aria-pressed={format === formatId}
-                    onClick={() => {
-                      setFormat(formatId);
-                    }}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      format === formatId
-                        ? "bg-card text-foreground shadow-token"
-                        : "hover:text-foreground",
-                    )}
+                    value={formatId}
+                    className="flex-none rounded-lg px-3"
                   >
                     {FORMAT_DETAILS[formatId].label}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
               <button
                 type="button"
                 aria-pressed={largePrint}

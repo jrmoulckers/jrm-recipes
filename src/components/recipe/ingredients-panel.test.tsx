@@ -96,10 +96,11 @@ describe("IngredientsPanel check-off animation gating", () => {
       />,
     );
 
-    // The row renders in its checked state...
-    const pressed = container.querySelector('button[aria-pressed="true"]');
-    expect(pressed).not.toBeNull();
-    expect(pressed?.textContent).toContain("flour");
+    // The flour row renders in its checked state...
+    const pressed = Array.from(
+      container.querySelectorAll('button[aria-pressed="true"]'),
+    ).find((button) => button.textContent?.includes("flour"));
+    expect(pressed).toBeDefined();
 
     // ...but none of the one-shot pop/strike animations fire on load.
     expect(hasCheckAnim(container)).toBe(false);
