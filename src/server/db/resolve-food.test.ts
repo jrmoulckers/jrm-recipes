@@ -83,9 +83,9 @@ describe("resolveFoodIds", () => {
   it("nulls out a candidate whose node isn't present (FK safety)", async () => {
     state.aliasRows = [];
     state.itemRows = []; // curated fallback id exists nowhere in this db
-    await expect(
-      resolveFoodIds(["2 cloves garlic, minced"]),
-    ).resolves.toEqual([null]);
+    await expect(resolveFoodIds(["2 cloves garlic, minced"])).resolves.toEqual([
+      null,
+    ]);
   });
 
   it("returns null for an unresolvable line without a second query", async () => {

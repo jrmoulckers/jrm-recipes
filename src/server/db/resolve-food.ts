@@ -59,7 +59,9 @@ export async function resolveFoodIds(
 
     // Verify every candidate node exists so a curated-fallback id that isn't
     // seeded in this database can't produce an FK violation on insert.
-    const distinct = [...new Set(candidates.filter((id): id is string => !!id))];
+    const distinct = [
+      ...new Set(candidates.filter((id): id is string => !!id)),
+    ];
     const existing =
       distinct.length > 0
         ? new Set(
