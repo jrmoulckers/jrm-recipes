@@ -56,9 +56,7 @@ export async function computeRecipeNutrition(
     // keyed by foodId, so the roll-up itself stays a pure in-memory pass.
     const foodIds = [
       ...new Set(
-        lines
-          .map((l) => l.foodId)
-          .filter((id): id is string => id != null),
+        lines.map((l) => l.foodId).filter((id): id is string => id != null),
       ),
     ];
 

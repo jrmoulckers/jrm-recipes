@@ -153,8 +153,7 @@ export function NutritionPanel({
         typeof wholeCalories === "number" &&
         Number.isFinite(wholeCalories) && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Whole recipe (
-            {`${formatQuantity(wholeServings)} ${noun}`}):{" "}
+            Whole recipe ({`${formatQuantity(wholeServings)} ${noun}`}):{" "}
             <span className="font-medium tabular-nums text-foreground">
               {formatNutrient(wholeCalories, 0)}
             </span>{" "}

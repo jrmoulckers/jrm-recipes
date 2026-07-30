@@ -60,7 +60,6 @@ import {
 } from "~/lib/units";
 import { unitLabel } from "~/lib/unit-labels";
 import { getSuggestedUnitsForFood } from "~/lib/food-units";
-import { estimatePerServingNutrition } from "~/lib/food-nutrition";
 import {
   createRecipeAction,
   updateRecipeAction,
@@ -826,8 +825,12 @@ export function RecipeEditor({
   // gets a starting point they can adjust rather than typing every macro. Uses
   // the same pure roll-up the recipe view falls back to; count/unknown units and
   // unrecognized foods are skipped, so the estimate is best-effort.
-  function estimateNutritionFromIngredients() {
+  async function estimateNutritionFromIngredients() {
     const servings = parseAmount(form.servings) ?? 1;
+    // Dynamically import the curated food dataset so it stays out of the
+    // editor's first-load JS bundle — it's only needed on this click.
+    const { estimatePerServingNutrition } =
+      await import("~/lib/food-nutrition");
     const est = estimatePerServingNutrition(
       ingredients.map((r) => ({
         item: r.item,
@@ -850,7 +853,8 @@ export function RecipeEditor({
     setForm((f) => ({
       ...f,
       calories: n.calories != null ? round(n.calories) : f.calories,
-      proteinGrams: n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
+      proteinGrams:
+        n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
       carbsGrams: n.carbsGrams != null ? round(n.carbsGrams, 1) : f.carbsGrams,
       fatGrams: n.fatGrams != null ? round(n.fatGrams, 1) : f.fatGrams,
       sodiumMg: n.sodiumMg != null ? round(n.sodiumMg) : f.sodiumMg,
@@ -2690,7 +2694,10 @@ export function RecipeEditor({
                 onClick={estimateNutritionFromIngredients}
                 className="inline-flex items-center gap-1.5 self-start rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
               >
-                <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
+                <Sparkles
+                  className="size-3.5 text-primary"
+                  aria-hidden="true"
+                />
                 Estimate from ingredients
               </button>
               <div className="grid grid-cols-2 gap-3">

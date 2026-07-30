@@ -369,10 +369,7 @@ export function IngredientsPanel({
     // Prefer the server's food-graph estimate (resolved via foodId → curated
     // facts) when present; fall back to the pure client-side text-match estimate
     // so recipes with no linked foods (or offline surfaces) still show something.
-    if (
-      estimatedNutrition &&
-      hasNutrition(estimatedNutrition.perServing)
-    ) {
+    if (estimatedNutrition && hasNutrition(estimatedNutrition.perServing)) {
       return {
         nutrition: estimatedNutrition.perServing,
         estimated: true as const,
