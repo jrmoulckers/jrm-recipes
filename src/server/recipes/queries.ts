@@ -50,8 +50,11 @@ import {
   tags,
   cookLogEntries,
   favorites,
+  foodItems,
+  foodRecipeLinks,
   type User,
 } from "~/server/db/schema";
+import { resolveFoodId } from "~/server/db/resolve-food";
 import { recipeInput, type RecipeInput } from "./validation";
 import {
   clampPageSize,
@@ -874,14 +877,47 @@ export function recipeSearchRankSql(q: string): SQL {
 }
 
 /**
+ * Predicate: a recipe uses the canonical food `foodId`. Satisfied by *either*
+ * the write-time structured link on an ingredient line
+ * (`recipe_ingredients.foodId`, the primary path) *or* the mined reverse index
+ * (`food_recipe_links`), OR-ed so a recipe surfaces whether its identity was
+ * captured at save time or backfilled by the ingestion job. Both sides are
+ * correlated EXISTS subqueries keyed on `recipes.id`, so this composes with the
+ * FTS + facet WHERE without widening the row set. Exported for unit assertions.
+ */
+export function recipeUsesFoodConditionSql(foodId: string): SQL {
+  return sql`(
+    exists (
+      select 1 from ${recipeIngredients}
+      where ${recipeIngredients.recipeId} = ${recipes.id}
+        and ${recipeIngredients.foodId} = ${foodId}
+    )
+    or exists (
+      select 1 from ${foodRecipeLinks}
+      where ${foodRecipeLinks.recipeId} = ${recipes.id}
+        and ${foodRecipeLinks.foodId} = ${foodId}
+    )
+  )`;
+}
+
+/**
  * The narrowing WHERE conditions for a search — the free-text (synonym-expanded)
  * match plus the cuisine/difficulty/time/tag filters — *excluding* the viewer
  * visibility scope (callers add that). `skip` omits one facet so scoped facet
  * counts can answer "what if I also picked this?" (see {@link listRecipeFacets}).
+ *
+ * `ingredientFoodId` threads the *resolved* ingredient filter through the pure
+ * builder (resolution is async + DB-backed, so the caller does it): a string
+ * adds the "uses this food" predicate; `null` means the term was requested but
+ * resolved to no known food, so it forces an empty result (a `false` guard);
+ * `undefined` (the default) means no ingredient filter was requested at all.
  */
 export function searchFilterConditions(
   search: RecipeSearch,
-  opts: { skip?: "cuisine" | "tag" } = {},
+  opts: {
+    skip?: "cuisine" | "tag";
+    ingredientFoodId?: string | null;
+  } = {},
 ): SQL[] {
   const conditions: (SQL | undefined)[] = [];
 
@@ -944,7 +980,34 @@ export function searchFilterConditions(
     );
   }
 
+  // Ingredient-led filter: constrain to recipes that use the resolved canonical
+  // food. `undefined` = not requested (add nothing); `null` = requested but the
+  // term matched no known food, so force an empty result rather than silently
+  // ignoring the filter.
+  if (opts.ingredientFoodId !== undefined) {
+    conditions.push(
+      opts.ingredientFoodId
+        ? recipeUsesFoodConditionSql(opts.ingredientFoodId)
+        : sql`false`,
+    );
+  }
+
   return conditions.filter((c): c is SQL => c != null);
+}
+
+/**
+ * Resolve a search's free-text `ingredient` term to a canonical `food_items.id`
+ * using the same alias/normalization resolver that populates
+ * `recipe_ingredients.foodId` at write time, so the filter matches on the exact
+ * food identity. Returns `undefined` when no ingredient filter is set, `null`
+ * when it's set but resolves to no known food (caller then forces empty), or the
+ * resolved id string.
+ */
+async function resolveIngredientFilter(
+  search: RecipeSearch,
+): Promise<string | null | undefined> {
+  if (!search.ingredient) return undefined;
+  return resolveFoodId(search.ingredient);
 }
 
 /**
@@ -970,10 +1033,11 @@ export async function searchRecipes(
   if (!isDbConfigured())
     return { items: [], nextOffset: null } as Paginated<never>;
   const groupIds = await viewerGroupIds(viewer);
+  const ingredientFoodId = await resolveIngredientFilter(search);
 
   const conditions: (SQL | undefined)[] = [
     visibleRecipesScope(viewer, groupIds),
-    ...searchFilterConditions(search),
+    ...searchFilterConditions(search, { ingredientFoodId }),
   ];
 
   // "Only mine" (#91): narrow to the signed-in viewer's own recipes. Guarded on a
@@ -1089,6 +1153,67 @@ export async function searchRecipes(
       : null;
     return { ...rest, matchReason };
   });
+  return { items, nextOffset };
+}
+
+/**
+ * Resolve a food identifier that may be a canonical `food_items.id` *or* its
+ * `slug` (the form ingredient-discovery links carry) to the node's id, or `null`
+ * when it matches nothing. A single indexed lookup over both columns.
+ */
+async function foodNodeIdFor(idOrSlug: string): Promise<string | null> {
+  const key = idOrSlug.trim();
+  if (!key) return null;
+  const [row] = await db
+    .select({ id: foodItems.id })
+    .from(foodItems)
+    .where(or(eq(foodItems.id, key), eq(foodItems.slug, key)))
+    .limit(1);
+  return row?.id ?? null;
+}
+
+/**
+ * Ingredient-led discovery: the recipes a viewer may see that use a given
+ * canonical food, identified by `food_items.id` or `slug`. Matches on the
+ * write-time structured link (`recipe_ingredients.foodId`) OR the mined reverse
+ * index (`food_recipe_links`) via {@link recipeUsesFoodConditionSql}, and reuses
+ * the shared visibility + soft-delete scope ({@link visibleRecipesScope}) so it
+ * never widens what recipe reads already expose. Paginated like {@link
+ * searchRecipes} (newest first); returns an empty page when the DB is off or the
+ * food is unknown.
+ */
+export async function getRecipesUsingFood(
+  foodIdOrSlug: string,
+  viewer: User | null,
+  {
+    limit = RECIPE_SEARCH_LIMIT,
+    offset = 0,
+  }: { limit?: number; offset?: number } = {},
+): Promise<Paginated<RecipeSearchResult>> {
+  if (!isDbConfigured()) return { items: [], nextOffset: null };
+  const foodId = await foodNodeIdFor(foodIdOrSlug);
+  if (!foodId) return { items: [], nextOffset: null };
+
+  const groupIds = await viewerGroupIds(viewer);
+  const rows = await db.query.recipes.findMany({
+    where: and(
+      visibleRecipesScope(viewer, groupIds),
+      recipeUsesFoodConditionSql(foodId),
+    ),
+    orderBy: recipeOrderBy("newest"),
+    limit,
+    offset,
+    with: {
+      author: true,
+      tags: { with: { tag: true } },
+      ratings: true,
+    },
+  });
+
+  const nextOffset = nextPageOffset(offset, rows.length, limit);
+  // Shape parity with searchRecipes results so the same cards/feeds render these
+  // (there's no free-text query here, so there's no match reason to derive).
+  const items = rows.map((row) => ({ ...row, matchReason: null }));
   return { items, nextOffset };
 }
 
@@ -1233,11 +1358,18 @@ export async function listRecipeFacets(
   if (!isDbConfigured()) return { cuisines: [], tags: [] };
   const groupIds = await viewerGroupIds(viewer);
   const scope = visibleRecipesScope(viewer, groupIds);
+  // Facet counts must reflect the active ingredient filter too, so resolve it
+  // once and thread it into both facet queries (it's never the skipped facet).
+  const ingredientFoodId = search
+    ? await resolveIngredientFilter(search)
+    : undefined;
 
   // Count each facet against the active filters minus that same facet.
   const cuisineWhere = and(
     scope,
-    ...(search ? searchFilterConditions(search, { skip: "cuisine" }) : []),
+    ...(search
+      ? searchFilterConditions(search, { skip: "cuisine", ingredientFoodId })
+      : []),
     isNotNull(recipes.cuisine),
   );
   const tagRecipeIds = db
@@ -1246,7 +1378,9 @@ export async function listRecipeFacets(
     .where(
       and(
         scope,
-        ...(search ? searchFilterConditions(search, { skip: "tag" }) : []),
+        ...(search
+          ? searchFilterConditions(search, { skip: "tag", ingredientFoodId })
+          : []),
       ),
     );
 
