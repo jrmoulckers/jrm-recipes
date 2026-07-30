@@ -158,6 +158,61 @@ export function isIngredientConflict(conflict: IngredientConflict): boolean {
 }
 
 /**
+ * A proactive meal-plan safety warning (allergen/diet gating): one family member
+ * whose profile conflicts with a planned recipe, naming the specific allergens
+ * the recipe carries and the diets its allergens violate. Surfaced at add-time —
+ * it never blocks the action, it just flags the conflict.
+ */
+export type PlanSafetyWarning = {
+  memberId: string;
+  memberName: string;
+  /** The member's own allergens the recipe carries. */
+  allergens: Allergen[];
+  /** The member's diets the recipe's allergens violate (e.g. vegan vs dairy). */
+  diets: DietaryTag[];
+};
+
+/** A saved member profile, narrowed to what plan gating needs. */
+export type PlanMember = {
+  id: string;
+  name: string;
+  allergens: readonly Allergen[];
+  diets: readonly DietaryTag[];
+};
+
+/**
+ * Cross-check one recipe's (structured) allergens against every saved family
+ * member and return a warning per member that conflicts. Allergen conflicts are
+ * the member's avoided allergens the recipe carries; diet conflicts are the
+ * member's diets whose forbidden allergens the recipe carries (so "vegan" trips
+ * on dairy/egg/fish/shellfish). Members with no conflict are omitted. Pure, so
+ * it runs on the write path and in unit tests.
+ */
+export function memberPlanWarnings(
+  recipeAllergens: readonly Allergen[],
+  members: readonly PlanMember[],
+): PlanSafetyWarning[] {
+  if (recipeAllergens.length === 0) return [];
+  const present = new Set<Allergen>(recipeAllergens);
+  const warnings: PlanSafetyWarning[] = [];
+  for (const member of members) {
+    const allergens = member.allergens.filter((a) => present.has(a));
+    const diets = member.diets.filter((d) =>
+      DIET_FORBIDDEN_ALLERGENS[d].some((a) => present.has(a)),
+    );
+    if (allergens.length > 0 || diets.length > 0) {
+      warnings.push({
+        memberId: member.id,
+        memberName: member.name,
+        allergens,
+        diets,
+      });
+    }
+  }
+  return warnings;
+}
+
+/**
  * Filter a candidate swap list down to those that are actually safe for a
  * member's FULL allergen set (issue #429 safety fix). A swap surfaced under
  * "safe swaps for {name}" must never introduce *another* of the member's

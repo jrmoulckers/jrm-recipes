@@ -23,9 +23,10 @@ import {
   moveEntry,
   removeEntry,
 } from "./mutations";
+import { type PlanSafetyWarning } from "~/server/dietary/gating";
 
 export type ActionResult =
-  | { ok: true }
+  | { ok: true; warnings?: PlanSafetyWarning[] }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export type CopyWeekActionResult =
@@ -63,9 +64,9 @@ export async function addEntryAction(
 
   const user = await requireUser();
   try {
-    await addEntry(parsed.data, user);
+    const { warnings } = await addEntry(parsed.data, user);
     revalidatePath("/plan");
-    return { ok: true };
+    return { ok: true, warnings };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
@@ -135,9 +136,9 @@ export async function addBatchCookAction(
 
   const user = await requireUser();
   try {
-    await addBatchCook(parsed.data, user);
+    const { warnings } = await addBatchCook(parsed.data, user);
     revalidatePath("/plan");
-    return { ok: true };
+    return { ok: true, warnings };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

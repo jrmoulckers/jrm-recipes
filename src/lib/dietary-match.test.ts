@@ -7,10 +7,62 @@ import {
   isIngredientConflict,
   isRecipeSafeFor,
   meetsDiets,
+  memberPlanWarnings,
   safeSubstitutions,
   type MemberNeeds,
+  type PlanMember,
 } from "./dietary-match";
 import { type Substitution } from "./substitutions";
+
+describe("memberPlanWarnings", () => {
+  const mom: PlanMember = {
+    id: "m-mom",
+    name: "Mom",
+    allergens: ["dairy"],
+    diets: [],
+  };
+  const veganKid: PlanMember = {
+    id: "m-kid",
+    name: "Kid",
+    allergens: [],
+    diets: ["vegan"],
+  };
+
+  it("returns [] when the recipe has no allergens", () => {
+    expect(memberPlanWarnings([], [mom, veganKid])).toEqual([]);
+  });
+
+  it("warns a member whose avoided allergen the recipe carries", () => {
+    const warnings = memberPlanWarnings(["dairy", "wheat"], [mom]);
+    expect(warnings).toEqual([
+      { memberId: "m-mom", memberName: "Mom", allergens: ["dairy"], diets: [] },
+    ]);
+  });
+
+  it("warns a member whose diet the recipe's allergens violate", () => {
+    // vegan forbids dairy — a dairy recipe conflicts even with no allergen set.
+    const warnings = memberPlanWarnings(["dairy"], [veganKid]);
+    expect(warnings).toEqual([
+      {
+        memberId: "m-kid",
+        memberName: "Kid",
+        allergens: [],
+        diets: ["vegan"],
+      },
+    ]);
+  });
+
+  it("omits members with no conflict and returns one entry per conflicting member", () => {
+    const safe: PlanMember = {
+      id: "m-safe",
+      name: "Safe",
+      allergens: ["shellfish"],
+      diets: [],
+    };
+    const warnings = memberPlanWarnings(["dairy"], [mom, veganKid, safe]);
+    expect(warnings.map((w) => w.memberId)).toEqual(["m-mom", "m-kid"]);
+  });
+});
 
 describe("hasAllergenConflict", () => {
   it("is false when the member avoids nothing", () => {

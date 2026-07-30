@@ -82,6 +82,13 @@ type PanelIngredient = {
   prep?: string | null;
   stepPosition?: number | null;
   optional: boolean;
+  /**
+   * Structured allergens from the canonical food graph (#: structured
+   * allergens). When present (even `[]`) this is the source of truth for the
+   * ingredient; when `undefined`/`null` the panel falls back to text detection
+   * on {@link item}.
+   */
+  allergens?: Allergen[] | null;
 };
 
 /**
@@ -864,11 +871,10 @@ export function IngredientsPanel({
                 const breakdown = displayed
                   ? decomposeMeasure(displayed.q, displayed.unit, locale)
                   : null;
+                const ingredientAllergens =
+                  ing.allergens ?? detectAllergensForSafety(ing.item);
                 const conflict = memberNeeds
-                  ? detectIngredientConflict(
-                      detectAllergensForSafety(ing.item),
-                      memberNeeds,
-                    )
+                  ? detectIngredientConflict(ingredientAllergens, memberNeeds)
                   : null;
                 const flagged =
                   conflict != null && isIngredientConflict(conflict);
@@ -1013,6 +1019,17 @@ export function IngredientsPanel({
                               )}
                             </Badge>
                           )}
+                          {ingredientAllergens.map((allergen) => (
+                            <Badge
+                              key={allergen}
+                              variant="muted"
+                              className="ms-2 align-middle"
+                              title={`Contains ${ALLERGEN_LABELS[allergen].toLowerCase()}`}
+                            >
+                              <span className="sr-only">Contains </span>
+                              {ALLERGEN_LABELS[allergen]}
+                            </Badge>
+                          ))}
                         </span>
                       </button>
                       <IngredientSubstitutions
