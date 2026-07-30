@@ -96,6 +96,12 @@ export function NutritionPanel({
   const noun = servingsNoun ?? "servings";
   const flags = nutritionFlags(nutrition);
 
+  // The scaled whole-recipe total for the current (possibly reader-scaled)
+  // serving count, shown alongside the per-serving figures so the cook sees both
+  // "per serving" and "makes this much in total" at once — and the total tracks
+  // the servings stepper live.
+  const wholeCalories = scaleNutrition(nutrition, wholeServings).calories;
+
   // Only members with a usable goal can produce a percentage; the active
   // selection falls back to the first such member so an indicator shows without
   // the cook having to pick one.
@@ -142,6 +148,18 @@ export function NutritionPanel({
           ? `Whole recipe · ${formatQuantity(wholeServings)} ${noun}`
           : "Amounts are per serving"}
       </p>
+
+      {basis === "serving" &&
+        typeof wholeCalories === "number" &&
+        Number.isFinite(wholeCalories) && (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Whole recipe ({`${formatQuantity(wholeServings)} ${noun}`}):{" "}
+            <span className="font-medium tabular-nums text-foreground">
+              {formatNutrient(wholeCalories, 0)}
+            </span>{" "}
+            kcal
+          </p>
+        )}
 
       {caloriePercent != null && activeMember && (
         <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">

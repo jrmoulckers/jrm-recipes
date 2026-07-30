@@ -273,6 +273,7 @@ export function IngredientsPanel({
   servingsNoun,
   controls,
   nutrition,
+  estimatedNutrition,
   members,
   ingredientSuggestions,
   unitPrefs,
@@ -284,6 +285,18 @@ export function IngredientsPanel({
   controls?: IngredientsPanelControls;
   /** Optional per-serving nutrition; renders a facts panel that scales with servings. */
   nutrition?: Nutrition;
+  /**
+   * Optional server-computed per-serving estimate from the food graph (resolved
+   * via each ingredient's `foodId` → curated per-100 g facts + density). When the
+   * cook hasn't entered manual nutrition, this authoritative estimate is preferred
+   * over the client-side text-match fallback. `sourced`/`total` drive the coverage
+   * caveat.
+   */
+  estimatedNutrition?: {
+    perServing: Nutrition;
+    sourced: number;
+    total: number;
+  } | null;
   /** Optional saved family members (calorie goals #430 + conflict flags #429). */
   members?: DietaryMember[];
   /** Optional anchored-suggestion data rendered under each ingredient row (#346). */
@@ -360,6 +373,17 @@ export function IngredientsPanel({
     if (nutrition && hasNutrition(nutrition)) {
       return { nutrition, estimated: false as const };
     }
+    // Prefer the server's food-graph estimate (resolved via foodId → curated
+    // facts) when present; fall back to the pure client-side text-match estimate
+    // so recipes with no linked foods (or offline surfaces) still show something.
+    if (estimatedNutrition && hasNutrition(estimatedNutrition.perServing)) {
+      return {
+        nutrition: estimatedNutrition.perServing,
+        estimated: true as const,
+        sourced: estimatedNutrition.sourced,
+        total: estimatedNutrition.total,
+      };
+    }
     const est = estimatePerServingNutrition(
       ingredients.map((i) => ({
         item: i.item,
@@ -375,7 +399,7 @@ export function IngredientsPanel({
       sourced: est.sourced,
       total: est.total,
     };
-  }, [nutrition, ingredients, baseServings]);
+  }, [nutrition, estimatedNutrition, ingredients, baseServings]);
 
   const householdSize = controls?.householdSize ?? null;
   const scaledToHousehold =

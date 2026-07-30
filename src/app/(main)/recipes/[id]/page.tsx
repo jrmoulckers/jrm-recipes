@@ -40,7 +40,7 @@ import {
 } from "~/server/collections/queries";
 import { absoluteUrl, cn, formatMinutes } from "~/lib/utils";
 import { brand } from "~/config/brand";
-import { pickNutrition } from "~/lib/nutrition";
+import { pickNutrition, hasNutrition } from "~/lib/nutrition";
 import { isAllergen, type Allergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
 import { listMemberProfiles } from "~/server/dietary/queries";
@@ -84,6 +84,7 @@ import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-dis
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
 import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { computeRecipeNutrition } from "~/server/recipes/nutrition";
 import { getMembership } from "~/server/groups/queries";
 import { isKid } from "~/server/groups/kid-safe";
 import { buildTwoWeekPlanContext } from "~/server/planner/quick-plan";
@@ -204,6 +205,11 @@ export default async function RecipePage({
   // "you might also like" rail, and member profiles feed the ingredient panel.
   // The heavier below-the-fold tab sections (timeline, cook log, discussion)
   // now stream in via <Suspense> instead of blocking here (#176).
+  // Prefer the cook's stored per-serving nutrition; when they entered none, roll
+  // an estimate up from the ingredient list via the food graph (resolved by each
+  // line's foodId → curated per-100 g facts + density). Compute-on-read only.
+  const manualNutrition = pickNutrition(recipe);
+  const needsNutritionEstimate = dbEnabled && !hasNutrition(manualNutrition);
   const [
     lineage,
     familyTree,
@@ -214,6 +220,7 @@ export default async function RecipePage({
     memberProfiles,
     anchoredSuggestions,
     unitSettings,
+    nutritionEstimate,
     ingredientAllergenMap,
   ] = await Promise.all([
     getRecipeLineage(recipe.id, user),
@@ -225,6 +232,9 @@ export default async function RecipePage({
     user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
     dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
     user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
+    needsNutritionEstimate
+      ? computeRecipeNutrition(recipe.id)
+      : Promise.resolve(null),
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
@@ -589,7 +599,17 @@ export default async function RecipePage({
                     ingredients={panelIngredients}
                     baseServings={recipe.servings}
                     servingsNoun={recipe.servingsNoun}
-                    nutrition={pickNutrition(recipe)}
+                    nutrition={manualNutrition}
+                    estimatedNutrition={
+                      nutritionEstimate &&
+                      hasNutrition(nutritionEstimate.perServing)
+                        ? {
+                            perServing: nutritionEstimate.perServing,
+                            sourced: nutritionEstimate.sourcedLines,
+                            total: nutritionEstimate.totalLines,
+                          }
+                        : null
+                    }
                     members={calorieMembers}
                     unitPrefs={viewerUnitPrefs}
                     customUnits={viewerCustomUnits}

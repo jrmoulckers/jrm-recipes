@@ -27,6 +27,7 @@ import {
   Plus,
   Repeat,
   Save,
+  Sparkles,
   Trash2,
   Users,
   Utensils,
@@ -817,6 +818,55 @@ export function RecipeEditor({
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  // "Estimate from ingredients": fill the manual per-serving nutrition fields
+  // from the current ingredient list via the curated food dataset, so the cook
+  // gets a starting point they can adjust rather than typing every macro. Uses
+  // the same pure roll-up the recipe view falls back to; count/unknown units and
+  // unrecognized foods are skipped, so the estimate is best-effort.
+  async function estimateNutritionFromIngredients() {
+    const servings = parseAmount(form.servings) ?? 1;
+    // Dynamically import the curated food dataset so it stays out of the
+    // editor's first-load JS bundle — it's only needed on this click.
+    const { estimatePerServingNutrition } =
+      await import("~/lib/food-nutrition");
+    const est = estimatePerServingNutrition(
+      ingredients.map((r) => ({
+        item: r.item,
+        quantity: parseAmount(r.quantity),
+        unit: r.unit,
+      })),
+      servings,
+    );
+    if (est.sourced === 0) {
+      toast.error(
+        "Couldn't estimate — add weighable ingredients (with amounts) first.",
+      );
+      return;
+    }
+    const round = (n: number, decimals = 0) => {
+      const f = 10 ** decimals;
+      return String(Math.round(n * f) / f);
+    };
+    const n = est.perServing;
+    setForm((f) => ({
+      ...f,
+      calories: n.calories != null ? round(n.calories) : f.calories,
+      proteinGrams:
+        n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
+      carbsGrams: n.carbsGrams != null ? round(n.carbsGrams, 1) : f.carbsGrams,
+      fatGrams: n.fatGrams != null ? round(n.fatGrams, 1) : f.fatGrams,
+      sodiumMg: n.sodiumMg != null ? round(n.sodiumMg) : f.sodiumMg,
+      sugarGrams: n.sugarGrams != null ? round(n.sugarGrams, 1) : f.sugarGrams,
+      fiberGrams: n.fiberGrams != null ? round(n.fiberGrams, 1) : f.fiberGrams,
+    }));
+    const pct = Math.round(est.coverage * 100);
+    toast.success(
+      est.sourced < est.total
+        ? `Estimated from ${est.sourced} of ${est.total} ingredients (${pct}% covered). Adjust as needed.`
+        : "Estimated from your ingredients. Adjust as needed.",
+    );
   }
 
   // Parsed view of the comma-separated tags field, used by the quick-add chips.
@@ -2639,6 +2689,17 @@ export function RecipeEditor({
               <p className="text-xs text-muted-foreground">
                 Optional. Leave blank if you don&apos;t have the numbers.
               </p>
+              <button
+                type="button"
+                onClick={estimateNutritionFromIngredients}
+                className="inline-flex items-center gap-1.5 self-start rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <Sparkles
+                  className="size-3.5 text-primary"
+                  aria-hidden="true"
+                />
+                Estimate from ingredients
+              </button>
               <div className="grid grid-cols-2 gap-3">
                 {NUTRITION_FIELDS.map((f) => (
                   <Field
