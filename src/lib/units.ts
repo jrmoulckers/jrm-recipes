@@ -399,7 +399,10 @@ const VOLUME_CLASS_LADDERS: Record<
   VolumeClass,
   { us: string[]; metric: string[] }
 > = {
-  liquid: { us: ["fl oz", "cup", "pint", "quart", "gallon"], metric: ["ml", "l"] },
+  liquid: {
+    us: ["fl oz", "cup", "pint", "quart", "gallon"],
+    metric: ["ml", "l"],
+  },
   dry: { us: ["tsp", "tbsp", "cup", "quart"], metric: ["ml", "l"] },
   small: { us: ["tsp", "tbsp"], metric: ["ml"] },
 };
