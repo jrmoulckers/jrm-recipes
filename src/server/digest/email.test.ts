@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { type WeeklyDigest } from "./builder";
-import { logEmailProvider, renderDigestEmail } from "./email";
+import {
+  createResendProvider,
+  getEmailProvider,
+  isEmailConfigured,
+  logEmailProvider,
+  renderDigestEmail,
+} from "./email";
 
 function sampleDigest(overrides: Partial<WeeklyDigest> = {}): WeeklyDigest {
   return {
@@ -130,5 +136,49 @@ describe("logEmailProvider", () => {
     expect(chunks.length).toBeGreaterThanOrEqual(1);
     expect(logged).toContain("g***@example.com");
     expect(logged).not.toContain("grandma@example.com");
+  });
+});
+
+describe("email provider selection", () => {
+  it("degrades to the log/no-op provider when RESEND_API_KEY is unset", () => {
+    // Test env has no RESEND_API_KEY, so the default is the log provider.
+    expect(isEmailConfigured()).toBe(false);
+    expect(getEmailProvider().name).toBe("log");
+  });
+});
+
+describe("createResendProvider", () => {
+  it("POSTs the message to Resend with a bearer key and succeeds on 2xx", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+    const provider = createResendProvider("re_test", "From <a@b.com>");
+    await provider.send({
+      to: "c@d.com",
+      subject: "S",
+      html: "<p>h</p>",
+      text: "t",
+    });
+    expect(provider.name).toBe("resend");
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.resend.com/emails");
+    expect(
+      (init.headers as Record<string, string>).Authorization,
+    ).toBe("Bearer re_test");
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body).toMatchObject({ to: "c@d.com", from: "From <a@b.com>" });
+    fetchMock.mockRestore();
+  });
+
+  it("throws on a non-2xx response so the caller can count the failure", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("nope", { status: 422 }));
+    const provider = createResendProvider("re_test");
+    await expect(
+      provider.send({ to: "c@d.com", subject: "S", html: "h", text: "t" }),
+    ).rejects.toThrow(/Resend send failed \(422\)/);
+    fetchMock.mockRestore();
   });
 });
