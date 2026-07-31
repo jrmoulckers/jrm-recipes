@@ -61,14 +61,16 @@ describe("resolveFoodIds", () => {
     expect(dbMock.select).not.toHaveBeenCalled();
   });
 
-  it("resolves an exact alias match and verifies the node exists", async () => {
+  it("resolves an exact alias match without a verification query", async () => {
     state.aliasRows = [
       { alias: "2 tbsp kosher salt", foodId: "food_salt", useCount: 4 },
     ];
-    state.itemRows = [{ id: "food_salt" }];
+    // Alias foodIds are FK-backed, so no existence check should run for them.
+    state.itemRows = [];
     await expect(resolveFoodIds(["2 Tbsp Kosher Salt"])).resolves.toEqual([
       "food_salt",
     ]);
+    expect(dbMock.select).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to the curated dataset when no alias matches", async () => {
