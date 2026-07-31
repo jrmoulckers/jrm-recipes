@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -21,6 +20,7 @@ import { cn, formatMinutes } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 
 /** Fisher–Yates shuffle of a fresh index array, so consecutive picks differ. */
 function shuffledIndices(length: number): number[] {
@@ -133,7 +133,7 @@ export function DinnerSuggestion({
               className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden sm:w-56"
             >
               {current.coverImageUrl ? (
-                <Image
+                <CloudinaryImage
                   src={current.coverImageUrl}
                   alt=""
                   fill

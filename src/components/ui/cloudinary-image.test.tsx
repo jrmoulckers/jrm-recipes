@@ -27,7 +27,7 @@ describe("CloudinaryImage", () => {
   it("keeps non-Cloudinary sources on the default Next optimizer", () => {
     const { container } = render(
       <CloudinaryImage
-        src="https://img.test/photo.jpg"
+        src="https://img.clerk.com/photo.jpg"
         alt=""
         width={640}
         height={480}
@@ -37,6 +37,26 @@ describe("CloudinaryImage", () => {
     const img = container.querySelector("img");
     const src = img?.getAttribute("src") ?? "";
     expect(src).toContain("/_next/image");
-    expect(src).toContain("img.test");
+    expect(src).toContain("img.clerk.com");
+  });
+
+  it("renders off-allowlist remote hosts unoptimized so they display instead of crashing", () => {
+    // A cover/step image imported straight from a recipe's source website is on
+    // a host that is NOT in `remotePatterns`; next/image would throw at render
+    // and topple the recipe page into its error boundary. `unoptimized` skips
+    // the optimizer + remotePatterns check so the pasted image just displays.
+    const OFF_ALLOWLIST = "https://confessionsofagroceryaddict.com/x.jpg";
+    const { container } = render(
+      <CloudinaryImage src={OFF_ALLOWLIST} alt="" width={640} height={480} />,
+    );
+
+    const img = container.querySelector("img");
+    const src = img?.getAttribute("src") ?? "";
+    const srcset = img?.getAttribute("srcset") ?? "";
+    // Unoptimized renders the original URL directly — no `/_next/image` proxy in
+    // either `src` or `srcset`.
+    expect(src).toBe(OFF_ALLOWLIST);
+    expect(src).not.toContain("/_next/image");
+    expect(srcset).not.toContain("/_next/image");
   });
 });

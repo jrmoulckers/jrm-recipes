@@ -111,6 +111,25 @@ describe("DinnerSuggestion (#375)", () => {
     expect(secondTitle).not.toBe(firstTitle);
   });
 
+  it("renders an off-allowlist imported cover image without crashing", async () => {
+    const user = userEvent.setup();
+    const imported: DinnerCandidate = {
+      ...candidate("braised-short-ribs", "Red wine braised short ribs"),
+      coverImageUrl: "https://confessionsofagroceryaddict.com/cover.jpg",
+    };
+    render(<DinnerSuggestion candidates={[imported]} today="2026-07-06" />);
+
+    await user.click(screen.getByRole("button", { name: /pick my dinner/i }));
+
+    // The imported cover is on a host that is NOT in next/image `remotePatterns`;
+    // routing it through CloudinaryImage renders it `unoptimized` so it displays
+    // (raw URL, no `/_next/image` proxy) instead of throwing at render.
+    const img = document.querySelector("img");
+    const src = img?.getAttribute("src") ?? "";
+    expect(src).toBe("https://confessionsofagroceryaddict.com/cover.jpg");
+    expect(src).not.toContain("/_next/image");
+  });
+
   it("hides 'pick again' when there is only one candidate", async () => {
     const user = userEvent.setup();
     render(
