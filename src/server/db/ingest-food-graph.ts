@@ -32,9 +32,12 @@ import {
  * from scratch each run, so it is idempotent and self-correcting (foods that
  * stop being used drop back to zero). Curated data — the seeded `food_items`
  * nodes and their `source = 'curated'` aliases — is preserved; only mined data
- * is replaced. Phase 2 keeps the graph *live* by triggering this pass on every
- * recipe write through the coalescing scheduler in `food-graph-refresh.ts`
- * (save-bursts collapse into a bounded number of recomputes).
+ * is replaced. It runs on a schedule via the `/api/cron/food-graph` cron
+ * (see `vercel.json`), never in a user's request path: an earlier "Phase 2"
+ * design triggered this full pass on every recipe write, whose large,
+ * table-locking transaction timed saves out (504) on serverless. Write-time
+ * `resolveFoodIds` still links new ingredients to their food node immediately;
+ * only the mined *stats* wait for the next scheduled pass.
  */
 
 /** How many rows to insert per statement (keeps bind-parameter counts sane). */

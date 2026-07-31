@@ -20,7 +20,6 @@ import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import { deriveDietaryTags } from "~/lib/dietary-derive";
 import { AuditAction, recordAudit } from "~/server/audit";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
-import { scheduleFoodGraphRefresh } from "~/server/db/food-graph-refresh";
 import { resolveFoodIds } from "~/server/db/resolve-food";
 import { isReservedRecipeSlug } from "~/lib/recipe-reserved-slugs";
 import { recipeSlug, type RecipeInput } from "./validation";
@@ -480,9 +479,6 @@ export async function createRecipe(input: RecipeInput, author: User) {
       return recipe;
     }),
   );
-  // Fold the new ingredients into the live food graph (Phase 2). Post-commit and
-  // fire-and-forget so graph maintenance never blocks or fails the save.
-  scheduleFoodGraphRefresh();
   return recipe;
 }
 
@@ -530,7 +526,6 @@ export async function updateRecipe(
     }
     return result;
   });
-  scheduleFoodGraphRefresh();
   return result;
 }
 
@@ -613,7 +608,6 @@ export async function forkRecipe(
       return { ...recipe, source: { id: source.id, slug: source.slug } };
     }),
   );
-  scheduleFoodGraphRefresh();
   return result;
 }
 
@@ -657,7 +651,6 @@ export async function revertRecipe(
     });
     return result;
   });
-  scheduleFoodGraphRefresh();
   return result;
 }
 
@@ -710,9 +703,6 @@ export async function deleteRecipe(id: string, author: User) {
     targetType: "recipe",
     targetId: id,
   });
-  // A tombstoned recipe drops out of the mined corpus (ingest filters
-  // `deleted_at IS NULL`), so refresh to retire its now-orphaned signal.
-  scheduleFoodGraphRefresh();
   return row;
 }
 
@@ -734,8 +724,6 @@ export async function restoreRecipe(id: string, author: User) {
     )
     .returning({ id: recipes.id, slug: recipes.slug });
   if (!row) throw new DomainError("NOT_FOUND");
-  // Restoring returns the recipe's ingredients to the live corpus.
-  scheduleFoodGraphRefresh();
   return row;
 }
 
