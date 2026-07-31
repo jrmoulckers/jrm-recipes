@@ -100,17 +100,21 @@ const runCreateRecipe = authedAction({
       });
       // Activation funnel (#328): emit first_recipe_created exactly once, when
       // the author's recipe count first reaches 1. Gated on analytics being
-      // configured so the default path skips the extra count query.
+      // configured so the default path skips the extra count query, and kept off
+      // the response's critical path — the count is only needed for a
+      // fire-and-forget analytics event, so awaiting it would just add a serial
+      // DB round-trip to every save's latency for no user-visible benefit.
       if (isAnalyticsConfigured()) {
-        const authored = await db.$count(
-          recipes,
-          eq(recipes.authorId, user.id),
-        );
-        if (authored === 1) {
-          void captureServer(user.id, "first_recipe_created", {
-            recipeId: recipe.id,
-          });
-        }
+        void db
+          .$count(recipes, eq(recipes.authorId, user.id))
+          .then((authored) => {
+            if (authored === 1) {
+              void captureServer(user.id, "first_recipe_created", {
+                recipeId: recipe.id,
+              });
+            }
+          })
+          .catch(() => {});
       }
       revalidatePath("/recipes");
       revalidatePath("/");

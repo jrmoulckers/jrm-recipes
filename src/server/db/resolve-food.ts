@@ -69,24 +69,37 @@ export async function resolveFoodIds(
     const index = buildAliasIndex(aliasRows);
     const candidates = items.map((item) => pickFoodId(item, index));
 
-    // Verify every candidate node exists so a curated-fallback id that isn't
-    // seeded in this database can't produce an FK violation on insert.
-    const distinct = [
-      ...new Set(candidates.filter((id): id is string => !!id)),
+    // Alias-sourced ids come from `food_aliases.foodId`, which is an FK onto
+    // `food_items` — so they are guaranteed to exist and need no verification.
+    // Only curated static-fallback ids (not necessarily seeded in this database)
+    // must be checked, so the existence query is skipped entirely whenever every
+    // resolved id came from the live alias index — saving a serial round-trip on
+    // the hot save path (the `max: 1` pool serializes every query).
+    const aliasFoodIds = new Set(index.values());
+    const needVerify = [
+      ...new Set(
+        candidates.filter(
+          (id): id is string => !!id && !aliasFoodIds.has(id),
+        ),
+      ),
     ];
-    const existing =
-      distinct.length > 0
+    const verified =
+      needVerify.length > 0
         ? new Set(
             (
               await executor
                 .select({ id: foodItems.id })
                 .from(foodItems)
-                .where(inArray(foodItems.id, distinct))
+                .where(inArray(foodItems.id, needVerify))
             ).map((r) => r.id),
           )
         : new Set<string>();
 
-    return candidates.map((id) => (id && existing.has(id) ? id : null));
+    return candidates.map((id) => {
+      if (!id) return null;
+      if (aliasFoodIds.has(id)) return id;
+      return verified.has(id) ? id : null;
+    });
   } catch {
     // Resolution must never block a save (docs/food-graph.md).
     return nulls();
