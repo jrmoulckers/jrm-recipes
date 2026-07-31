@@ -130,7 +130,8 @@ describe("DinnerSuggestion (#375)", () => {
     expect(src).not.toContain("/_next/image");
   });
 
-  it("hides 'pick again' when there is only one candidate", async () => {    const user = userEvent.setup();
+  it("hides 'pick again' when there is only one candidate", async () => {
+    const user = userEvent.setup();
     render(
       <DinnerSuggestion
         candidates={[candidate("solo", "Solo stew")]}
