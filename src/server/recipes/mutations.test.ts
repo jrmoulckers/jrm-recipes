@@ -16,6 +16,7 @@ vi.mock("~/server/db", () => ({
 }));
 
 import { recipes, recipeVersions, type User } from "~/server/db/schema";
+import { isReservedRecipeSlug } from "~/lib/recipe-reserved-slugs";
 import { recipeInput } from "./validation";
 import {
   createRecipe,
@@ -103,6 +104,20 @@ describe("uniqueSlug", () => {
     const findFirst = vi.fn().mockResolvedValue(undefined);
     const slug = await uniqueSlug(fakeTx(findFirst), "apple-pie", "self_id");
     expect(slug).toBe("apple-pie");
+  });
+
+  it("perturbs a reserved base so it can't shadow a sibling route", async () => {
+    // "new" is free in the DB, but `/recipes/new` is the editor route — a recipe
+    // slugged "new" would be unreachable at its own URL, so uniqueSlug must
+    // never return it (regression: recipes "failing to resolve" after create).
+    const findFirst = vi.fn().mockResolvedValue(undefined);
+    const slug = await uniqueSlug(fakeTx(findFirst), "new");
+    expect(slug).not.toBe("new");
+    expect(slug.startsWith("new-")).toBe(true);
+    expect(isReservedRecipeSlug(slug)).toBe(false);
+    // The reserved base is rejected without a DB round-trip; only the perturbed
+    // candidate is checked for existence.
+    expect(findFirst).toHaveBeenCalledTimes(1);
   });
 });
 

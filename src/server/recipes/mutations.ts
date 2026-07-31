@@ -22,6 +22,7 @@ import { AuditAction, recordAudit } from "~/server/audit";
 import { assertKidAllowed } from "~/server/groups/kid-safe";
 import { scheduleFoodGraphRefresh } from "~/server/db/food-graph-refresh";
 import { resolveFoodIds } from "~/server/db/resolve-food";
+import { isReservedRecipeSlug } from "~/lib/recipe-reserved-slugs";
 import { recipeSlug, type RecipeInput } from "./validation";
 import { generateShareToken } from "./share-token";
 import { parseSnapshot } from "./queries";
@@ -132,6 +133,12 @@ async function recordEvent(
  * narrows the collision window, but is *not* authoritative: the DB unique
  * constraint is, and {@link withSlugConflictRetry} recovers from any race the
  * check-then-insert here can still lose.
+ *
+ * A candidate that {@link isReservedRecipeSlug reserved-slugs.ts} flags is
+ * treated as unavailable, even when no row holds it: those bases (`new`,
+ * `tags`, `cook-with`) collide with static sibling routes under `/recipes/*`,
+ * so a recipe assigned one would be unreachable at its own canonical URL. We
+ * perturb past them exactly like a taken slug, yielding e.g. `new-2ab`.
  */
 export async function uniqueSlug(
   tx: Tx,
@@ -140,13 +147,20 @@ export async function uniqueSlug(
 ): Promise<string> {
   let candidate = base;
   for (let i = 0; i < 50; i++) {
-    const existing = await tx.query.recipes.findFirst({
-      where: ignoreId
-        ? and(eq(recipes.slug, candidate), sql`${recipes.id} <> ${ignoreId}`)
-        : eq(recipes.slug, candidate),
-      columns: { id: true },
-    });
-    if (!existing) return candidate;
+    const taken = isReservedRecipeSlug(candidate)
+      ? true
+      : Boolean(
+          await tx.query.recipes.findFirst({
+            where: ignoreId
+              ? and(
+                  eq(recipes.slug, candidate),
+                  sql`${recipes.id} <> ${ignoreId}`,
+                )
+              : eq(recipes.slug, candidate),
+            columns: { id: true },
+          }),
+        );
+    if (!taken) return candidate;
     candidate = `${base}-${(i + 2).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   }
   return `${base}-${Date.now().toString(36)}`;

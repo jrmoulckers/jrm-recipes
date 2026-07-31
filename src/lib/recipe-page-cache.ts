@@ -12,6 +12,8 @@
  * re-opened offline instead of falling back to the generic `/~offline` page.
  */
 
+import { isReservedRecipeSlug } from "./recipe-reserved-slugs";
+
 /** Dedicated cache for recipe page documents + RSC payloads. */
 export const RECIPE_PAGE_CACHE_NAME = "heirloom-recipes";
 
@@ -29,9 +31,9 @@ export const RECIPE_PAGE_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /**
  * Sibling routes under `/recipes/*` that are NOT recipe detail pages and must
  * stay on Serwist's default handling (they're list/search/form pages, some with
- * their own query params or auth-gated mutations).
+ * their own query params or auth-gated mutations). Sourced from the shared
+ * reserved-slug set so the SW matcher and the write-time slug guard can't drift.
  */
-const RESERVED_RECIPE_SEGMENTS = new Set(["new", "cook-with", "tags"]);
 
 /**
  * The subset of a `Request` the matcher reads. A real `Request` satisfies this,
@@ -56,7 +58,7 @@ function isRecipePagePath(pathname: string): boolean {
   if (segments.length !== 2 && segments.length !== 3) return false;
 
   const id = segments[1];
-  if (!id || RESERVED_RECIPE_SEGMENTS.has(id)) return false;
+  if (!id || isReservedRecipeSlug(id)) return false;
 
   // Only the detail document itself, or its Cook Mode sub-route. Anything else
   // under the id (e.g. `/edit`) is deliberately excluded.
