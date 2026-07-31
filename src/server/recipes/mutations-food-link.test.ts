@@ -139,10 +139,10 @@ describe("insertChildren wires foodId onto ingredient rows", () => {
       author,
     );
 
-    expect(resolveMock).toHaveBeenCalledWith([
-      "2 cloves garlic, minced",
-      "mystery space dust",
-    ]);
+    expect(resolveMock).toHaveBeenCalledWith(
+      ["2 cloves garlic, minced", "mystery space dust"],
+      tx,
+    );
     const rows = inserts.recipeIngredients?.[0] as Array<{
       item: string;
       foodId: string | null;
