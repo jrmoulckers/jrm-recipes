@@ -70,7 +70,10 @@ describe("RecipeCard LCP priority", () => {
   it("eagerly loads and preloads the cover image when priority is set (LCP)", () => {
     const { container } = render(
       <RecipeCard
-        recipe={makeRecipe({ coverImageUrl: "https://img.test/lcp-card.jpg" })}
+        recipe={makeRecipe({
+          coverImageUrl:
+            "https://res.cloudinary.com/demo/image/upload/v1/lcp-card.jpg",
+        })}
         priority
       />,
     );

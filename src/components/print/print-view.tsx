@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,6 +19,7 @@ import { brand } from "~/config/brand";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   DropdownMenu,
@@ -484,7 +484,7 @@ function FullPage({
 
         {recipe.coverImageUrl && (
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted print:mb-4 print:max-h-[2.2in] print:rounded-none print:border-black/30">
-            <Image
+            <CloudinaryImage
               src={recipe.coverImageUrl}
               alt=""
               fill

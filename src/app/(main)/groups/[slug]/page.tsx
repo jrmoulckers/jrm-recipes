@@ -39,6 +39,7 @@ import {
 import { RoleBadge } from "~/components/groups/role-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { Separator } from "~/components/ui/separator";
 import { brand } from "~/config/brand";
@@ -378,7 +379,7 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
     >
       <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
         {recipe.coverImageUrl ? (
-          <Image
+          <CloudinaryImage
             src={recipe.coverImageUrl}
             alt=""
             fill
@@ -439,7 +440,7 @@ function SharedCollectionCard({
     >
       <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
         {collection.coverImageUrl ? (
-          <Image
+          <CloudinaryImage
             src={collection.coverImageUrl}
             alt=""
             fill

@@ -1,9 +1,9 @@
 import { type Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
 
 import { brand } from "~/config/brand";
+import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { getPublicRecipeCard } from "~/server/recipes/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
@@ -67,7 +67,7 @@ export default async function EmbedRecipePage({
       >
         <div className="relative hidden w-2/5 shrink-0 bg-primary/10 sm:block">
           {recipe.coverImageUrl ? (
-            <Image
+            <CloudinaryImage
               src={recipe.coverImageUrl}
               alt=""
               fill
