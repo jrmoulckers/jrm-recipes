@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/cook-along-reminders",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/food-graph",
+      "schedule": "0 8 * * *"
     }
   ]
 }

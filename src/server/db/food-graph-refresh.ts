@@ -1,22 +1,19 @@
 import "server-only";
 
-import { ingestFoodGraph } from "./ingest-food-graph";
-
 /**
- * Live-refresh trigger for the food graph (Phase 2, see `docs/food-graph.md`).
+ * Small run-coalescing utility.
  *
- * Recipe writes call {@link scheduleFoodGraphRefresh} after their transaction
- * commits. Because canonicalization is app-side there is no cheap SQL to scope a
- * per-recipe delta (that would need a `recipe_ingredient → foodId` provenance
- * table — a future optimization), so a save re-runs the idempotent full
- * recompute {@link ingestFoodGraph}. To keep that from thrashing under bursts
- * (bulk import, rapid edits), the runs are **coalesced**: while one recompute is
- * in flight, further triggers set a "dirty" flag that schedules exactly one more
- * pass afterwards. A burst of N saves therefore costs at most two recomputes.
+ * It was introduced to bound how often the food graph recomputed when the full
+ * {@link import("./ingest-food-graph").ingestFoodGraph} pass was triggered on
+ * every recipe write. That per-save trigger opened a large, table-locking
+ * transaction inside the user's request and timed saves out (504) on
+ * serverless, so the recompute now runs on a scheduled cron
+ * (`/api/cron/food-graph`) instead — see that route and `mutations.ts`.
  *
- * The trigger is fire-and-forget and never throws — a graph-maintenance failure
- * must never break the user's save. The nightly full recompute (same job) is the
- * convergence backstop, so a dropped refresh is self-healing.
+ * The coalescer stays here as a reusable, timer-free primitive: overlapping
+ * calls collapse into at most one in-flight run plus one queued pass, so a
+ * burst of triggers costs a bounded number of runs. It is pure and
+ * deterministically testable (see `food-graph-refresh.test.ts`).
  */
 
 type CoalescerOptions = {
@@ -58,28 +55,4 @@ export function createCoalescer(
     }
     void drain();
   };
-}
-
-const trigger = createCoalescer(
-  async () => {
-    await ingestFoodGraph();
-  },
-  {
-    onError: (error) =>
-      console.error("[food-graph] live refresh failed", error),
-  },
-);
-
-/**
- * Ask the food graph to refresh after a recipe write. Safe to call from any
- * server action or mutation once its transaction has committed. Returns
- * synchronously; the recompute runs in the background and swallows its own
- * errors so it can never fail the caller's request.
- */
-export function scheduleFoodGraphRefresh(): void {
-  try {
-    trigger();
-  } catch {
-    // Defensive: scheduling itself must never surface to a save handler.
-  }
 }
