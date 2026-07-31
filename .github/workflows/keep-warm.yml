@@ -1,0 +1,62 @@
+# Keeps the Neon Postgres compute awake during peak usage so recipe saves don't
+# pay a cold-start penalty.
+#
+# Why this exists (and why it's a GitHub Action, not a Vercel cron):
+# Neon's Free plan scales compute to zero after ~5 minutes of inactivity, so the
+# first request after an idle stretch waits ~0.5-1s for the compute to resume.
+# Pinging `/api/health` (which runs a real `select 1`) every few minutes keeps
+# the compute resumed. Vercel's Hobby plan caps cron jobs at once-per-day, so it
+# can't do minute-level warming — an external scheduler is the supported way
+# (https://vercel.com/docs/cron-jobs/usage-and-pricing), and GitHub Actions is
+# free for this repo.
+#
+# Budget safety (important): Neon Free includes only ~100 compute-hours/month per
+# project, and blowing that budget PAUSES the database until the next month. So
+# warming is scoped to a ~6h US-evening window (the recipe app's dinner-prep
+# peak), which costs ~45 CU-hours/month at Neon's 0.25 CU idle floor and leaves
+# comfortable headroom for real traffic. Outside this window the DB is allowed to
+# suspend as normal. Widen the window (or drop it) once the DB is on a paid Neon
+# plan where scale-to-zero can simply be disabled.
+name: Keep Neon warm
+
+on:
+  schedule:
+    # Every 5 minutes from 22:00-03:59 UTC (~3pm-9pm US Pacific). GitHub may delay
+    # or skip scheduled runs under load, so this is best-effort warming, not a
+    # hard guarantee — an occasional cold start outside a run is acceptable.
+    - cron: "*/5 0-3,22,23 * * *"
+  # Allow a manual warm-up / connectivity check from the Actions tab.
+  workflow_dispatch:
+
+# This workflow only makes an outbound HTTP request; it needs no repo access.
+permissions: {}
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    name: Ping health endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Warm the database via /api/health
+        env:
+          # Public, unauthenticated liveness probe that runs a live `select 1`.
+          HEALTH_URL: https://heirloom.jrmoulckers.com/api/health
+        run: |
+          set -euo pipefail
+          # Retry a few times so transient network/cold-start blips don't fail the
+          # run; the health route returns 503 only on a real DB outage, which we
+          # do want surfaced (a failed run notifies the repo owner).
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$HEALTH_URL" || echo "000")
+            echo "Attempt ${attempt}: HTTP ${code}"
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Health check did not return 200 after 3 attempts" >&2
+          exit 1
