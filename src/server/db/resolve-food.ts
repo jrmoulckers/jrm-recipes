@@ -26,9 +26,21 @@ import { foodAliases, foodItems } from "~/server/db/schema";
 
 const ALIAS_MAX = 160;
 
+/**
+ * A Drizzle executor that can run the read queries — either the pooled {@link db}
+ * or an open transaction handle. Callers that are **inside a transaction must
+ * pass their `tx`**: in production the connection pool is `max: 1`, so issuing
+ * these reads through the global `db` while the caller's transaction holds that
+ * one connection deadlocks the request (it waits forever for a second
+ * connection) until the serverless function times out. Running them on the
+ * transaction's own connection avoids that entirely.
+ */
+type FoodResolveExecutor = Pick<typeof db, "select">;
+
 /** Resolve a batch of ingredient `item` strings to `food_items.id`s (or null). */
 export async function resolveFoodIds(
   items: readonly string[],
+  executor: FoodResolveExecutor = db,
 ): Promise<(string | null)[]> {
   if (items.length === 0) return [];
   const nulls = () => items.map(() => null);
@@ -44,7 +56,7 @@ export async function resolveFoodIds(
 
     const aliasRows =
       wanted.size > 0
-        ? await db
+        ? await executor
             .select({
               alias: foodAliases.alias,
               foodId: foodAliases.foodId,
@@ -66,7 +78,7 @@ export async function resolveFoodIds(
       distinct.length > 0
         ? new Set(
             (
-              await db
+              await executor
                 .select({ id: foodItems.id })
                 .from(foodItems)
                 .where(inArray(foodItems.id, distinct))
@@ -82,7 +94,10 @@ export async function resolveFoodIds(
 }
 
 /** Resolve a single ingredient `item` to its `food_items.id`, or `null`. */
-export async function resolveFoodId(item: string): Promise<string | null> {
-  const [id] = await resolveFoodIds([item]);
+export async function resolveFoodId(
+  item: string,
+  executor: FoodResolveExecutor = db,
+): Promise<string | null> {
+  const [id] = await resolveFoodIds([item], executor);
   return id ?? null;
 }
