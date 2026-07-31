@@ -8,10 +8,11 @@ import { log } from "~/lib/log";
 // side-effecting trigger, never cached.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// The full recompute scales with the corpus; give it plenty of headroom (Vercel
-// caps this to the plan's maximum). This is exactly why the pass belongs on a
-// scheduled job and not in a user's save request (see mutations.ts).
-export const maxDuration = 300;
+// The full recompute scales with the corpus, so give it the most headroom the
+// plan allows (Hobby caps serverless functions at 60s). This is exactly why the
+// pass belongs on a scheduled job and not in a user's save request, where it
+// would squat on the request's single DB connection (see mutations.ts).
+export const maxDuration = 60;
 
 /**
  * Food-graph recompute cron. Scheduled by Vercel Cron (see vercel.json) and
