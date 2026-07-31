@@ -105,16 +105,21 @@ const runCreateRecipe = authedAction({
       // fire-and-forget analytics event, so awaiting it would just add a serial
       // DB round-trip to every save's latency for no user-visible benefit.
       if (isAnalyticsConfigured()) {
-        void db
-          .$count(recipes, eq(recipes.authorId, user.id))
-          .then((authored) => {
+        void (async () => {
+          try {
+            const authored = await db.$count(
+              recipes,
+              eq(recipes.authorId, user.id),
+            );
             if (authored === 1) {
               void captureServer(user.id, "first_recipe_created", {
                 recipeId: recipe.id,
               });
             }
-          })
-          .catch(() => {});
+          } catch {
+            // Best-effort analytics; a count failure must never affect the save.
+          }
+        })();
       }
       revalidatePath("/recipes");
       revalidatePath("/");
