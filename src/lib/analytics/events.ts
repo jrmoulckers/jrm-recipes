@@ -97,7 +97,6 @@ export interface EventProperties {
 
   // --- Share & reel virality loop (#316) ---
   recipe_shared: { method: ShareMethod };
-  share_card_downloaded: Record<string, never>;
   share_link_copied: Record<string, never>;
   // Owner-facing share-link revocation / rotation (issue #207).
   share_link_disabled: Record<string, never>;

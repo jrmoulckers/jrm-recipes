@@ -87,7 +87,6 @@ Current call sites are in the paths named in the "When it fires" column.
 | Event                   | Properties                                         | When it fires                                                                                                    |
 | ----------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `recipe_shared`         | `method: ShareMethod`                              | When a recipe is shared by file, native share sheet, or copied link in `src/components/recipe/share-button.tsx`. |
-| `share_card_downloaded` | `Record<string, never>`                            | When the share card image is downloaded in `src/components/recipe/share-button.tsx`.                             |
 | `share_link_copied`     | `Record<string, never>`                            | After the recipe share link text is copied in `src/components/recipe/share-button.tsx`.                          |
 | `share_link_disabled`   | `Record<string, never>`                            | After an owner disables a share link in `src/components/recipe/share-button.tsx`.                                |
 | `share_link_rotated`    | `Record<string, never>`                            | After an owner rotates/resets a share link in `src/components/recipe/share-button.tsx`.                          |

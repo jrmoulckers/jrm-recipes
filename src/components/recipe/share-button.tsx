@@ -1,14 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Download,
-  Link2,
-  Link2Off,
-  RefreshCw,
-  Share,
-  Share2,
-} from "lucide-react";
+import { Link2, Link2Off, RefreshCw, Share, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -168,24 +161,6 @@ export function ShareButton({
     }
   }
 
-  async function downloadCard() {
-    const file = await loadCardFile();
-    if (!file) {
-      toast.error("Couldn't prepare the share card");
-      return;
-    }
-    const href = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(href);
-    track("share_card_downloaded", {});
-    toast.success("Share card downloaded");
-  }
-
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(
@@ -213,11 +188,7 @@ export function ShareButton({
             {canShareFiles ? "Share card…" : "Share…"}
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem onSelect={() => void downloadCard()}>
-          <Download />
-          Download card
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        {nativeShare ? <DropdownMenuSeparator /> : null}
         <DropdownMenuItem onSelect={() => void copyLink()}>
           <Link2 />
           Copy link
