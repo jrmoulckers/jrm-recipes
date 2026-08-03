@@ -24,7 +24,7 @@ export type RecipeSource = "manual" | "import";
 export type CookUnitSystem = "original" | "us" | "metric" | "grams";
 
 /** How a recipe was shared. */
-export type ShareMethod = "native" | "file" | "copy_link";
+export type ShareMethod = "native" | "file" | "copy_link" | "keepsake";
 
 /** Reel export shape + delivery. */
 export type ReelExportKind = "image" | "video";

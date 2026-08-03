@@ -244,6 +244,41 @@
     "remaining": "Noch {count}",
     "over": "{count} zu viel — {message}"
   },
+  "share": {
+    "button": "Teilen",
+    "menu": {
+      "share": "Teilen…",
+      "shareCard": "Karte teilen…",
+      "downloadCard": "Karte herunterladen",
+      "copyLink": "Link kopieren",
+      "personalize": "Link personalisieren…",
+      "disableLink": "Link deaktivieren",
+      "enableLink": "Link aktivieren",
+      "resetLink": "Link zurücksetzen"
+    },
+    "toast": {
+      "linkUpdateError": "Der Teilen-Link konnte nicht aktualisiert werden",
+      "linkReset": "Link zurückgesetzt – der alte Link funktioniert nicht mehr",
+      "linkDisabled": "Teilen-Link deaktiviert",
+      "linkEnabled": "Teilen-Link aktiviert",
+      "cardError": "Die Teilen-Karte konnte nicht vorbereitet werden",
+      "cardDownloaded": "Teilen-Karte heruntergeladen",
+      "linkCopied": "Rezept-Link kopiert",
+      "copyError": "Der Link konnte nicht kopiert werden",
+      "personalizedCopied": "Personalisierter Link kopiert – bereit zum Verschenken"
+    },
+    "personalize": {
+      "title": "Diesen Link personalisieren",
+      "description": "Füge deinen Namen und eine persönliche Nachricht hinzu, um dieses Rezept als herzliches Andenken zu teilen – ein kleines Geschenk, nicht nur ein Link.",
+      "nameLabel": "Dein Name",
+      "namePlaceholder": "Nonna",
+      "messageLabel": "Deine Nachricht",
+      "messagePlaceholder": "Das, das du als Mädchen geliebt hast. Alles Liebe, Nonna.",
+      "copy": "Personalisierten Link kopieren",
+      "preview": "Vorschau",
+      "done": "Fertig"
+    }
+  },
   "recipeDetail": {
     "backToRecipes": "Rezepte",
     "by": "Von",

@@ -1,8 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
+  Copy,
   Download,
+  ExternalLink,
+  Gift,
   Link2,
   Link2Off,
   RefreshCw,
@@ -12,7 +16,24 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import { track } from "~/lib/analytics";
+import {
+  buildKeepsakePath,
+  KEEPSAKE_FROM_MAX,
+  KEEPSAKE_NOTE_MAX,
+} from "~/lib/keepsake";
 import { shareText, shareMessageWithUrl } from "~/lib/share-text";
 import { setShareLinkStateAction } from "~/server/recipes/actions";
 import {
@@ -48,13 +69,18 @@ function cardImageUrl(): string {
 export function ShareButton({
   title,
   author,
+  slug,
   shareUrl,
   recipeId,
   manageable = false,
   shareEnabled = true,
+  defaultFrom,
+  keepsakeToken,
 }: {
   title: string;
   author?: string | null;
+  // Recipe slug, used to build the personalized "keepsake" link.
+  slug: string;
   // Absolute URL to hand out when sharing. For unlisted recipes this is the
   // unguessable `/r/<token>` link (issue #204); when omitted we fall back to the
   // current page URL (public/group recipes, where the address is shareable).
@@ -65,6 +91,11 @@ export function ShareButton({
   recipeId?: string;
   manageable?: boolean;
   shareEnabled?: boolean;
+  // Seeds the "from" field of a personalized keepsake link (issue #407).
+  defaultFrom?: string | null;
+  // Share token threaded into an unlisted recipe's keepsake link so the
+  // recipient can open it without an account, exactly like a normal share link.
+  keepsakeToken?: string | null;
 }) {
   // Pre-fetched card image, kept ready so the native share call fires inside
   // the click gesture (Safari drops file sharing if you await first).
@@ -74,6 +105,13 @@ export function ShareButton({
   const [enabled, setEnabled] = React.useState(shareEnabled);
   const [currentUrl, setCurrentUrl] = React.useState(shareUrl);
   const [pending, setPending] = React.useState(false);
+  // Personalize ("hand down") dialog state (issue #407): a name + note carried
+  // in the keepsake URL, no server round-trip and nothing to store.
+  const [personalizeOpen, setPersonalizeOpen] = React.useState(false);
+  const [from, setFrom] = React.useState(defaultFrom ?? "");
+  const [note, setNote] = React.useState("");
+
+  const t = useTranslations("share");
 
   const nativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -94,19 +132,19 @@ export function ShareButton({
     try {
       const result = await setShareLinkStateAction(recipeId, change);
       if (!result.ok) {
-        toast.error(result.error ?? "Couldn't update the share link");
+        toast.error(result.error ?? t("toast.linkUpdateError"));
         return;
       }
       setEnabled(result.enabled);
       setCurrentUrl(result.url ?? undefined);
       if (change.rotate) {
         track("share_link_rotated", {});
-        toast.success("Share link reset — the old link no longer works");
+        toast.success(t("toast.linkReset"));
       } else if (change.enabled === false) {
         track("share_link_disabled", {});
-        toast.success("Share link disabled");
+        toast.success(t("toast.linkDisabled"));
       } else {
-        toast.success("Share link enabled");
+        toast.success(t("toast.linkEnabled"));
       }
     } catch {
       toast.error("Couldn't update the share link");
@@ -171,7 +209,7 @@ export function ShareButton({
   async function downloadCard() {
     const file = await loadCardFile();
     if (!file) {
-      toast.error("Couldn't prepare the share card");
+      toast.error(t("toast.cardError"));
       return;
     }
     const href = URL.createObjectURL(file);
@@ -183,7 +221,7 @@ export function ShareButton({
     a.remove();
     URL.revokeObjectURL(href);
     track("share_card_downloaded", {});
-    toast.success("Share card downloaded");
+    toast.success(t("toast.cardDownloaded"));
   }
 
   async function copyLink() {
@@ -193,61 +231,147 @@ export function ShareButton({
       );
       track("recipe_shared", { method: "copy_link" });
       track("share_link_copied", {});
-      toast.success("Recipe link copied");
+      toast.success(t("toast.linkCopied"));
     } catch {
-      toast.error("Couldn't copy the link");
+      toast.error(t("toast.copyError"));
     }
   }
 
+  /** Absolute personalized keepsake URL carrying the current name + note. */
+  function keepsakeUrl(): string {
+    const path = buildKeepsakePath(slug, { from, note, token: keepsakeToken });
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}${path}`;
+  }
+
+  async function copyKeepsakeLink() {
+    try {
+      await navigator.clipboard.writeText(keepsakeUrl());
+      track("recipe_shared", { method: "keepsake" });
+      toast.success(t("toast.personalizedCopied"));
+    } catch {
+      toast.error(t("toast.copyError"));
+    }
+  }
+
+  function previewKeepsake() {
+    window.open(keepsakeUrl(), "_blank", "noopener,noreferrer");
+  }
+
   return (
-    <DropdownMenu onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline">
-          <Share2 /> Share
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        {nativeShare ? (
-          <DropdownMenuItem onSelect={() => void shareCard()}>
-            <Share />
-            {canShareFiles ? "Share card…" : "Share…"}
+    <>
+      <DropdownMenu onOpenChange={onOpenChange}>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline">
+            <Share2 /> {t("button")}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          {nativeShare ? (
+            <DropdownMenuItem onSelect={() => void shareCard()}>
+              <Share />
+              {canShareFiles ? t("menu.shareCard") : t("menu.share")}
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem onSelect={() => void downloadCard()}>
+            <Download />
+            {t("menu.downloadCard")}
           </DropdownMenuItem>
-        ) : null}
-        <DropdownMenuItem onSelect={() => void downloadCard()}>
-          <Download />
-          Download card
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void copyLink()}>
-          <Link2 />
-          Copy link
-        </DropdownMenuItem>
-        {manageable ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              disabled={pending}
-              onSelect={(event) => {
-                event.preventDefault();
-                void changeShareLink({ enabled: !enabled });
-              }}
-            >
-              <Link2Off />
-              {enabled ? "Disable link" : "Enable link"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={pending}
-              onSelect={(event) => {
-                event.preventDefault();
-                void changeShareLink({ rotate: true });
-              }}
-            >
-              <RefreshCw />
-              Reset link
-            </DropdownMenuItem>
-          </>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => void copyLink()}>
+            <Link2 />
+            {t("menu.copyLink")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              setPersonalizeOpen(true);
+            }}
+          >
+            <Gift />
+            {t("menu.personalize")}
+          </DropdownMenuItem>
+          {manageable ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={pending}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  void changeShareLink({ enabled: !enabled });
+                }}
+              >
+                <Link2Off />
+                {enabled ? t("menu.disableLink") : t("menu.enableLink")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={pending}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  void changeShareLink({ rotate: true });
+                }}
+              >
+                <RefreshCw />
+                {t("menu.resetLink")}
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={personalizeOpen} onOpenChange={setPersonalizeOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("personalize.title")}</DialogTitle>
+            <DialogDescription>
+              {t("personalize.description")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="keepsake-from">
+                {t("personalize.nameLabel")}
+              </Label>
+              <Input
+                id="keepsake-from"
+                value={from}
+                onChange={(event) => setFrom(event.target.value)}
+                placeholder={t("personalize.namePlaceholder")}
+                maxLength={KEEPSAKE_FROM_MAX}
+                autoComplete="name"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="keepsake-note">
+                {t("personalize.messageLabel")}
+              </Label>
+              <Textarea
+                id="keepsake-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder={t("personalize.messagePlaceholder")}
+                rows={4}
+                maxLength={KEEPSAKE_NOTE_MAX}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-start">
+            <Button type="button" onClick={() => void copyKeepsakeLink()}>
+              <Copy /> {t("personalize.copy")}
+            </Button>
+            <Button type="button" variant="outline" onClick={previewKeepsake}>
+              <ExternalLink /> {t("personalize.preview")}
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t("personalize.done")}
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
