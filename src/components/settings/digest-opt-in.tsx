@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
@@ -13,6 +14,7 @@ import { setWeeklyDigestOptInAction } from "~/server/digest/actions";
  * {@link setWeeklyDigestOptInAction}. Reverts + toasts on failure. Default off.
  */
 export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
+  const t = useTranslations("settings.digest");
   const [optedIn, setOptedIn] = React.useState(defaultOptedIn);
   const [isPending, startTransition] = React.useTransition();
 
@@ -26,11 +28,7 @@ export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
         toast.error(friendlyError(result.error));
         return;
       }
-      toast.success(
-        next
-          ? "You're subscribed to the weekly family digest"
-          : "You've unsubscribed from the weekly family digest",
-      );
+      toast.success(next ? t("toasts.subscribed") : t("toasts.unsubscribed"));
     });
   }
 
@@ -43,10 +41,9 @@ export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
         htmlFor="weekly-digest"
         className="min-w-0 flex-1 cursor-pointer select-none"
       >
-        <span className="block text-sm font-medium">Weekly family digest</span>
+        <span className="block text-sm font-medium">{t("label")}</span>
         <span className="block text-xs text-muted-foreground">
-          A once-a-week email with new and updated recipes across your family
-          groups. No spam, unsubscribe anytime.
+          {t("description")}
         </span>
       </label>
       <Switch

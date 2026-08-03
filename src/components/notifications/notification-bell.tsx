@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -32,6 +33,7 @@ type Props = {
  * optimistically and refreshes the server data behind the popover.
  */
 export function NotificationBell({ initialCount, initialItems }: Props) {
+  const t = useTranslations("notifications");
   const [count, setCount] = React.useState(initialCount);
   const [items, setItems] = React.useState(initialItems);
 
@@ -72,7 +74,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
           size="icon"
           className="relative"
           aria-label={
-            count > 0 ? `Notifications, ${count} unread` : "Notifications"
+            count > 0 ? t("bell.unreadAria", { count }) : t("bell.aria")
           }
         >
           <Bell className="size-5" aria-hidden />
@@ -88,7 +90,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">{t("title")}</span>
           {count > 0 ? (
             <Button
               variant="ghost"
@@ -97,7 +99,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
               onClick={onMarkAll}
               disabled={markAll.pending}
             >
-              Mark all as read
+              {t("markAllRead")}
             </Button>
           ) : null}
         </div>
@@ -105,14 +107,14 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
         <div className="max-h-96 overflow-y-auto py-1">
           {items.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              You&apos;re all caught up.
+              {t("caughtUp")}
             </p>
           ) : (
             <ul className="flex flex-col">
               {items.map((item) => {
                 const sentence = notificationSentence(
                   item.type,
-                  item.actor?.name ?? item.actor?.handle ?? "Someone",
+                  item.actor?.name ?? item.actor?.handle ?? t("someone"),
                   item.context,
                 );
                 const body = (
@@ -128,7 +130,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
                     {!item.readAt ? (
                       <span
                         className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-                        aria-label="Unread"
+                        aria-label={t("unread")}
                       />
                     ) : null}
                   </>
@@ -167,7 +169,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
           href="/notifications"
           className="block px-3 py-2 text-center text-sm font-medium text-primary hover:underline"
         >
-          View all
+          {t("viewAll")}
         </Link>
       </PopoverContent>
     </Popover>

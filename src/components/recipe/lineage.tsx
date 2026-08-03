@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { GitFork } from "lucide-react";
 
@@ -16,12 +17,13 @@ export function RecipeLineage({
     author?: { name: string | null } | null;
   }[];
 }) {
+  const t = useTranslations("recipe");
   if (!parent && adaptations.length === 0) return null;
 
   return (
     <section
       className="rounded-xl border border-border bg-card p-4 shadow-token"
-      aria-label="Recipe lineage"
+      aria-label={t("lineage.aria")}
     >
       <div className="flex flex-col gap-4">
         {parent && (

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ChefHat, GitFork, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,11 +32,12 @@ export function AdaptButton({
   sourceTitle: string;
   canAdapt: boolean;
 }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [note, setNote] = React.useState("");
   const adapt = useServerAction(createAdaptationAction, {
-    successToast: "Adaptation created",
+    successToast: t("adapt.toast.created"),
     errorToast: true,
     onSuccess: (result) => {
       setOpen(false);
@@ -45,7 +47,7 @@ export function AdaptButton({
   const pending = adapt.pending;
 
   function onSignedOutClick() {
-    toast("Sign in to adapt this recipe");
+    toast(t("adapt.toast.signIn"));
   }
 
   function onAdapt() {
@@ -56,7 +58,7 @@ export function AdaptButton({
   if (!canAdapt) {
     return (
       <Button type="button" variant="outline" onClick={onSignedOutClick}>
-        <GitFork /> Adapt
+        <GitFork /> {t("adapt.trigger")}
       </Button>
     );
   }
@@ -65,7 +67,7 @@ export function AdaptButton({
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <GitFork /> Adapt
+          <GitFork /> {t("adapt.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -73,38 +75,34 @@ export function AdaptButton({
           <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ChefHat className="size-5" aria-hidden="true" />
           </div>
-          <DialogTitle>Create your own adaptation</DialogTitle>
-          <DialogDescription>
-            Create your own adaptation of {sourceTitle}. You&apos;ll get an
-            editable copy; the original stays untouched and we&apos;ll remember
-            it came from here.
-          </DialogDescription>
+          <DialogTitle>{t("adapt.title")}</DialogTitle>
+          <DialogDescription>{t("adapt.description", { title: sourceTitle })}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Label htmlFor="fork-note">What are you changing?</Label>
+          <Label htmlFor="fork-note">{t("adapt.noteLabel")}</Label>
           <Textarea
             id="fork-note"
             value={note}
             onChange={(event) => setNote(event.target.value)}
             maxLength={300}
-            placeholder="A little less sugar, gluten-free flour, or the weeknight shortcut…"
+            placeholder={t("adapt.notePlaceholder")}
             disabled={pending}
           />
           <p className="text-xs text-muted-foreground">
-            Optional. This note helps your family see what inspired the fork.
+            {t("adapt.noteHint")}
           </p>
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="ghost" disabled={pending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </DialogClose>
           <Button type="button" onClick={onAdapt} disabled={pending}>
             {pending ? <Loader2 className="animate-spin" /> : <GitFork />}
-            {pending ? "Creating…" : "Create adaptation"}
+            {pending ? t("adapt.creating") : t("adapt.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

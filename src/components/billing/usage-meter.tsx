@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 
@@ -27,6 +28,7 @@ export function UsageMeter({
   state: "ok" | "warn" | "blocked";
   format?: (n: number) => string;
 }) {
+  const t = useTranslations("billing.usageMeter");
   const unlimited = limit === null;
   const pct = unlimited ? 100 : Math.min(100, Math.max(0, ratio * 100));
   const alert = state !== "ok";
@@ -37,14 +39,14 @@ export function UsageMeter({
         <span className="font-medium text-foreground">{label}</span>
         <span className="text-muted-foreground">
           {unlimited
-            ? `${format(used)} used · Unlimited`
-            : `${format(used)} of ${format(limit)} used`}
+            ? t("unlimited", { used: format(used) })
+            : t("limited", { used: format(used), limit: format(limit) })}
         </span>
       </div>
       <div
         className="h-2 overflow-hidden rounded-full bg-muted"
         role="progressbar"
-        aria-label={`${label} usage`}
+        aria-label={t("ariaLabel", { label })}
         aria-valuemin={0}
         aria-valuemax={unlimited ? undefined : limit}
         aria-valuenow={used}

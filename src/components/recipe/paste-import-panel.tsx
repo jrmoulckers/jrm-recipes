@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ export function PasteImportPanel({
 }: {
   onImported: (recipe: ImportedRecipe) => void;
 }) {
+  const t = useTranslations("recipe");
   const [pasteText, setPasteText] = React.useState("");
   const [importing, setImporting] = React.useState(false);
 
@@ -33,15 +35,15 @@ export function PasteImportPanel({
         onImported(res.recipe);
         toast.success(
           res.recipe.title
-            ? `Imported “${res.recipe.title}”. Review the details, then save.`
-            : "Imported the recipe. Review the details, then save.",
+            ? t("import.toast.importedNamed", { title: res.recipe.title })
+            : t("import.toast.imported"),
         );
         setPasteText("");
       } else {
         toast.error(friendlyError(res.error));
       }
     } catch {
-      toast.error("Something went wrong reading that text.");
+      toast.error(t("import.toast.textError"));
     } finally {
       setImporting(false);
     }
@@ -50,8 +52,7 @@ export function PasteImportPanel({
   return (
     <>
       <p className="mt-3 text-sm text-muted-foreground">
-        Paste any recipe as plain text and we&apos;ll structure it for you to
-        review.
+        {t("import.textHelp")}
       </p>
       <div className="mt-3 flex flex-col gap-2">
         <Textarea
@@ -62,7 +63,7 @@ export function PasteImportPanel({
           }
           rows={6}
           disabled={importing}
-          aria-label="Recipe text to import"
+          aria-label={t("import.textAria")}
         />
         <Button
           type="button"
@@ -71,7 +72,7 @@ export function PasteImportPanel({
           className="shrink-0 self-start"
         >
           {importing ? <Loader2 className="animate-spin" /> : <Download />}
-          {importing ? "Reading…" : "Use this text"}
+          {importing ? t("import.reading") : t("import.useText")}
         </Button>
       </div>
     </>

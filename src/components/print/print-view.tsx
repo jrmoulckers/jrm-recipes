@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   ChevronDown,
@@ -677,10 +678,30 @@ function IndexCard({
 }
 
 export function PrintView({ recipe }: { recipe: PrintRecipe }) {
+  const t = useTranslations("print");
   const [format, setFormat] = React.useState<PrintFormat>("full");
   const [largePrint, setLargePrint] = React.useState(false);
   const [canNativeShare, setCanNativeShare] = React.useState(false);
-  const activeFormat = FORMAT_DETAILS[format];
+  const formatCopy: Record<PrintFormat, Pick<FormatDetails, "label" | "hint">> =
+    {
+      full: {
+        label: t("formats.full.label"),
+        hint: t("formats.full.hint"),
+      },
+      compact: {
+        label: t("formats.compact.label"),
+        hint: t("formats.compact.hint"),
+      },
+      "card-4x6": {
+        label: t("formats.card4x6.label"),
+        hint: t("formats.card4x6.hint"),
+      },
+      "card-3x5": {
+        label: t("formats.card3x5.label"),
+        hint: t("formats.card3x5.hint"),
+      },
+    };
+  const activeFormat = { ...FORMAT_DETAILS[format], ...formatCopy[format] };
   const url = recipeUrl(recipe);
   const shareUrl = canShareRecipe(recipe.visibility) ? url : null;
 
@@ -690,7 +711,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
 
   async function copyToClipboard(text: string, successMessage: string) {
     if (!navigator.clipboard) {
-      toast.error("Clipboard is unavailable in this browser");
+      toast.error(t("toasts.clipboardUnavailable"));
       return;
     }
 
@@ -698,13 +719,13 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
       await navigator.clipboard.writeText(text);
       toast.success(successMessage);
     } catch {
-      toast.error("Could not copy to clipboard");
+      toast.error(t("toasts.copyFailed"));
     }
   }
 
   async function handleNativeShare() {
     if (typeof navigator.share !== "function") {
-      await copyToClipboard(url, "Link copied to clipboard");
+      await copyToClipboard(url, t("toasts.linkCopied"));
       return;
     }
 
@@ -730,7 +751,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-    toast.success(`Downloaded ${filename}`);
+    toast.success(t("toasts.downloaded", { filename }));
   }
 
   return (
@@ -749,12 +770,12 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
             <div className="flex min-w-0 items-center gap-3">
               <Button asChild variant="ghost" size="sm" className="-ms-2">
                 <Link href={`/recipes/${recipe.slug}`}>
-                  <ArrowLeft /> Back
+                  <ArrowLeft /> {t("actions.back")}
                 </Link>
               </Button>
               <div className="min-w-0">
                 <h1 className="truncate font-display text-xl font-bold">
-                  Print & share
+                  {t("title")}
                 </h1>
                 <p className="truncate text-sm text-muted-foreground">
                   {recipe.title}
@@ -768,16 +789,16 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                 onClick={() => window.print()}
                 className="shrink-0"
               >
-                <Printer /> Print / Save PDF
+                <Printer /> {t("actions.print")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  void copyToClipboard(url, "Link copied to clipboard");
+                  void copyToClipboard(url, t("toasts.linkCopied"));
                 }}
               >
-                <Link2 /> Copy link
+                <Link2 /> {t("actions.copyLink")}
               </Button>
               {canNativeShare && (
                 <Button
@@ -787,49 +808,49 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                     void handleNativeShare();
                   }}
                 >
-                  <Share2 /> Share
+                  <Share2 /> {t("actions.share")}
                 </Button>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button type="button" variant="outline">
-                    <FileText /> Export <ChevronDown />
+                    <FileText /> {t("actions.export")} <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Copy</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("menus.copy")}</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeRecipePlainText(recipe),
-                        "Plain text copied",
+                        t("toasts.plainTextCopied"),
                       );
                     }}
                   >
-                    <Clipboard /> Copy as plain text
+                    <Clipboard /> {t("actions.copyPlainText")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeRecipeMarkdown(recipe),
-                        "Markdown copied",
+                        t("toasts.markdownCopied"),
                       );
                     }}
                   >
-                    <Clipboard /> Copy as Markdown
+                    <Clipboard /> {t("actions.copyMarkdown")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeShareCaption(recipe),
-                        "Share caption copied",
+                        t("toasts.shareCaptionCopied"),
                       );
                     }}
                   >
-                    <Share2 /> Copy share caption
+                    <Share2 /> {t("actions.copyShareCaption")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Download</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("menus.download")}</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() =>
                       downloadText(
@@ -839,7 +860,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                       )
                     }
                   >
-                    <Download /> Download .md
+                    <Download /> {t("actions.downloadMarkdown")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() =>
@@ -850,7 +871,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                       )
                     }
                   >
-                    <Download /> Download .txt
+                    <Download /> {t("actions.downloadText")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -860,7 +881,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <ToggleGroup
-                aria-label="Print format"
+                aria-label={t("formatAria")}
                 className="h-auto flex-wrap justify-start rounded-xl p-1"
                 value={format}
                 onValueChange={(next) => setFormat(next as PrintFormat)}
@@ -886,12 +907,12 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                     : "border-border text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Type aria-hidden="true" className="size-4" /> Large print
+                <Type aria-hidden="true" className="size-4" /> {t("largePrint.label")}
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
               {largePrint
-                ? "Bigger, easy-to-read type for the printed sheet."
+                ? t("largePrint.hint")
                 : activeFormat.hint}
             </p>
           </div>

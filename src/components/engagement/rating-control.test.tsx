@@ -1,6 +1,6 @@
 import {
   cleanup,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
   within,
@@ -13,6 +13,12 @@ import {
   removeRatingAction,
   setRatingAction,
 } from "~/server/engagement/actions";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 vi.mock("~/server/engagement/actions", () => ({
   setRatingAction: vi.fn(),
@@ -193,12 +199,14 @@ describe("RatingControl", () => {
     }
 
     rerender(
-      <RatingControl
-        {...baseProps}
-        summary={{ average: 4, count: 2 }}
-        viewerRating={null}
-        canRate
-      />,
+      <IntlWrapper>
+        <RatingControl
+          {...baseProps}
+          summary={{ average: 4, count: 2 }}
+          viewerRating={null}
+          canRate
+        />
+      </IntlWrapper>,
     );
 
     const enabledStar = screen.getByRole("button", { name: "Rate 3 stars" });

@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Flag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { reportContentAction } from "~/server/moderation/actions";
+import { useFriendlyError } from "~/lib/error-copy";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -21,20 +23,7 @@ export type ReportTargetType = "comment" | "review" | "cook_log";
 
 type Reason = "spam" | "harassment" | "inappropriate" | "other";
 
-const REASONS: { value: Reason; label: string; hint: string }[] = [
-  {
-    value: "inappropriate",
-    label: "Inappropriate",
-    hint: "Not right for a family space",
-  },
-  {
-    value: "harassment",
-    label: "Harassment",
-    hint: "Targeting or bullying someone",
-  },
-  { value: "spam", label: "Spam", hint: "Off-topic or promotional" },
-  { value: "other", label: "Something else", hint: "Tell us more below" },
-];
+const REASONS: Reason[] = ["inappropriate", "harassment", "spam", "other"];
 
 /**
  * Report dialog (issue #356): a reason picker + optional detail. Files a report
@@ -55,6 +44,8 @@ export function ReportDialog({
   const [reason, setReason] = React.useState<Reason>("inappropriate");
   const [detail, setDetail] = React.useState("");
   const [pending, startTransition] = React.useTransition();
+  const t = useTranslations("moderation.report");
+  const friendlyError = useFriendlyError();
 
   const submit = () => {
     startTransition(async () => {
@@ -65,13 +56,13 @@ export function ReportDialog({
         detail: detail.trim() || undefined,
       });
       if (result.ok) {
-        toast.success("Thanks. This has been sent to the group's admins.");
+        toast.success(t("toasts.sent"));
         onOpenChange(false);
         setDetail("");
         setReason("inappropriate");
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   };
 
@@ -79,31 +70,32 @@ export function ReportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Report this</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Reports are private. Only the group&apos;s owners and admins see
-            them, never the other members.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="sr-only">Reason</legend>
+          <legend className="sr-only">{t("reasonLegend")}</legend>
           {REASONS.map((option) => (
             <button
-              key={option.value}
+              key={option}
               type="button"
-              onClick={() => setReason(option.value)}
-              aria-pressed={reason === option.value}
+              onClick={() => setReason(option)}
+              aria-pressed={reason === option}
               className={cn(
                 "flex flex-col rounded-lg border px-3 py-2 text-start transition-colors",
-                reason === option.value
+                reason === option
                   ? "border-primary bg-primary/10"
                   : "border-border hover:bg-muted",
               )}
             >
-              <span className="text-sm font-medium">{option.label}</span>
+              <span className="text-sm font-medium">
+                {t(`reasons.${option}.label`)}
+              </span>
               <span className="text-xs text-muted-foreground">
-                {option.hint}
+                {t(`reasons.${option}.hint`)}
               </span>
             </button>
           ))}
@@ -114,7 +106,7 @@ export function ReportDialog({
           onChange={(event) => setDetail(event.target.value)}
           rows={3}
           maxLength={1000}
-          placeholder="Add any detail (optional)"
+          placeholder={t("detailPlaceholder")}
           disabled={pending}
         />
 
@@ -125,7 +117,7 @@ export function ReportDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="button" onClick={submit} disabled={pending}>
             {pending ? (
@@ -133,7 +125,7 @@ export function ReportDialog({
             ) : (
               <Flag className="size-4" />
             )}
-            Submit report
+            {t("submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

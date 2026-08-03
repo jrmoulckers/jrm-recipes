@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Pause,
   Play,
@@ -36,6 +37,7 @@ export function ReadAloudButton({
   anchorPrefix: string;
   className?: string;
 }) {
+  const t = useTranslations("recipe");
   const reduced = useReducedMotion();
   const {
     supported,
@@ -87,7 +89,7 @@ export function ReadAloudButton({
         )}
       >
         <Volume2 className="size-4 shrink-0" aria-hidden="true" />
-        <span>Read-aloud isn’t available in this browser.</span>
+        <span>{t("readAloud.unavailable")}</span>
       </div>
     );
   }
@@ -97,17 +99,17 @@ export function ReadAloudButton({
   return (
     <div
       role="group"
-      aria-label="Read this recipe aloud"
+      aria-label={t("readAloud.groupAria")}
       className={cn("flex flex-wrap items-center gap-2", className)}
     >
       {status === "playing" ? (
         <Button type="button" variant="secondary" onClick={pause}>
-          <Pause aria-hidden="true" /> Pause
+          <Pause aria-hidden="true" /> {t("readAloud.pause")}
         </Button>
       ) : (
         <Button type="button" variant="secondary" onClick={play}>
           <Play aria-hidden="true" />
-          {status === "paused" ? "Resume" : "Read this to me"}
+          {status === "paused" ? t("readAloud.resume") : t("readAloud.start")}
         </Button>
       )}
 
@@ -119,7 +121,7 @@ export function ReadAloudButton({
             size="icon"
             onClick={previous}
             disabled={index <= 0}
-            aria-label="Previous step"
+            aria-label={t("readAloud.previousStep")}
           >
             <SkipBack aria-hidden="true" />
           </Button>
@@ -128,7 +130,7 @@ export function ReadAloudButton({
             variant="ghost"
             size="icon"
             onClick={replay}
-            aria-label="Re-read this step"
+            aria-label={t("readAloud.reReadStep")}
           >
             <RotateCcw aria-hidden="true" />
           </Button>
@@ -138,7 +140,7 @@ export function ReadAloudButton({
             size="icon"
             onClick={next}
             disabled={index >= steps.length - 1}
-            aria-label="Next step"
+            aria-label={t("readAloud.nextStep")}
           >
             <SkipForward aria-hidden="true" />
           </Button>
@@ -147,12 +149,12 @@ export function ReadAloudButton({
             variant="ghost"
             size="icon"
             onClick={stop}
-            aria-label="Stop reading"
+            aria-label={t("readAloud.stopReading")}
           >
             <Square aria-hidden="true" />
           </Button>
           <span className="text-sm text-muted-foreground" aria-live="polite">
-            Step {index + 1} of {steps.length}
+            {t("readAloud.progress", { current: index + 1, total: steps.length })}
           </span>
         </>
       )}

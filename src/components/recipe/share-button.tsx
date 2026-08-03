@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Download,
   Link2,
@@ -66,6 +67,7 @@ export function ShareButton({
   manageable?: boolean;
   shareEnabled?: boolean;
 }) {
+  const t = useTranslations("recipe");
   // Pre-fetched card image, kept ready so the native share call fires inside
   // the click gesture (Safari drops file sharing if you await first).
   const fileRef = React.useRef<File | null>(null);
@@ -94,22 +96,22 @@ export function ShareButton({
     try {
       const result = await setShareLinkStateAction(recipeId, change);
       if (!result.ok) {
-        toast.error(result.error ?? "Couldn't update the share link");
+        toast.error(result.error ?? t("share.toast.updateError"));
         return;
       }
       setEnabled(result.enabled);
       setCurrentUrl(result.url ?? undefined);
       if (change.rotate) {
         track("share_link_rotated", {});
-        toast.success("Share link reset. The old link no longer works");
+        toast.success(t("share.toast.linkReset"));
       } else if (change.enabled === false) {
         track("share_link_disabled", {});
-        toast.success("Share link disabled");
+        toast.success(t("share.toast.linkDisabled"));
       } else {
-        toast.success("Share link enabled");
+        toast.success(t("share.toast.linkEnabled"));
       }
     } catch {
-      toast.error("Couldn't update the share link");
+      toast.error(t("share.toast.updateError"));
     } finally {
       setPending(false);
     }
@@ -171,7 +173,7 @@ export function ShareButton({
   async function downloadCard() {
     const file = await loadCardFile();
     if (!file) {
-      toast.error("Couldn't prepare the share card");
+      toast.error(t("share.toast.cardPrepareError"));
       return;
     }
     const href = URL.createObjectURL(file);
@@ -183,7 +185,7 @@ export function ShareButton({
     a.remove();
     URL.revokeObjectURL(href);
     track("share_card_downloaded", {});
-    toast.success("Share card downloaded");
+    toast.success(t("share.toast.cardDownloaded"));
   }
 
   async function copyLink() {
@@ -193,9 +195,9 @@ export function ShareButton({
       );
       track("recipe_shared", { method: "copy_link" });
       track("share_link_copied", {});
-      toast.success("Recipe link copied");
+      toast.success(t("share.toast.linkCopied"));
     } catch {
-      toast.error("Couldn't copy the link");
+      toast.error(t("share.toast.copyError"));
     }
   }
 
@@ -203,24 +205,24 @@ export function ShareButton({
     <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button type="button" variant="outline">
-          <Share2 /> Share
+          <Share2 /> {t("share.trigger")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         {nativeShare ? (
           <DropdownMenuItem onSelect={() => void shareCard()}>
             <Share />
-            {canShareFiles ? "Share card…" : "Share…"}
+            {canShareFiles ? t("share.shareCard") : t("share.shareNative")}
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuItem onSelect={() => void downloadCard()}>
           <Download />
-          Download card
+          {t("share.downloadCard")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void copyLink()}>
           <Link2 />
-          Copy link
+          {t("share.copyLink")}
         </DropdownMenuItem>
         {manageable ? (
           <>
@@ -233,7 +235,7 @@ export function ShareButton({
               }}
             >
               <Link2Off />
-              {enabled ? "Disable link" : "Enable link"}
+              {enabled ? t("share.disableLink") : t("share.enableLink")}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={pending}
@@ -243,7 +245,7 @@ export function ShareButton({
               }}
             >
               <RefreshCw />
-              Reset link
+              {t("share.resetLink")}
             </DropdownMenuItem>
           </>
         ) : null}

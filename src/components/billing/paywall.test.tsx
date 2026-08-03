@@ -1,8 +1,14 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { LockBadge, LockedFeatureCard } from "./lock-badge";
 import { UpgradeDialog } from "./upgrade-dialog";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 afterEach(cleanup);
 

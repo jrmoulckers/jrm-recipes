@@ -14,6 +14,9 @@
  * route its error toasts through it.
  */
 
+import * as React from "react";
+import { useTranslations } from "next-intl";
+
 /** Warm, blameless default shown when we can't map the error to anything better. */
 export const DEFAULT_ERROR_COPY = "That didn't go through. Please try again.";
 
@@ -22,7 +25,7 @@ export const DEFAULT_ERROR_COPY = "That didn't go through. Please try again.";
  * matched case-insensitively against the incoming string, so both a raw
  * `RATE_LIMITED` code and any accidental lowercase variant resolve the same way.
  */
-const ERROR_COPY: Record<string, string> = {
+const ERROR_COPY = {
   NOT_AUTHENTICATED: "Please sign in to do that.",
   UNAUTHENTICATED: "Please sign in to do that.",
   FORBIDDEN: "You don't have permission to do that.",
@@ -36,11 +39,32 @@ const ERROR_COPY: Record<string, string> = {
   INTERNAL: DEFAULT_ERROR_COPY,
   INTERNAL_ERROR: DEFAULT_ERROR_COPY,
   UNKNOWN: DEFAULT_ERROR_COPY,
-};
+} as const;
+
+type ErrorCopyCode = keyof typeof ERROR_COPY;
 
 /** True for a bare, developer-flavored code (e.g. `RATE_LIMITED`, `E_NOENT`). */
 function looksLikeRawCode(value: string): boolean {
   return /^[A-Z][A-Z0-9_]*$/.test(value);
+}
+
+function rawErrorMessage(error: unknown): string {
+  return typeof error === "string"
+    ? error
+    : error instanceof Error
+      ? error.message
+      : "";
+}
+
+function knownErrorCode(value: string): ErrorCopyCode | null {
+  const direct = value as ErrorCopyCode;
+  if (direct in ERROR_COPY) return direct;
+  const upper = value.toUpperCase() as ErrorCopyCode;
+  return upper in ERROR_COPY ? upper : null;
+}
+
+function safeFallback(fallback: string | undefined, defaultCopy: string): string {
+  return fallback && fallback.trim().length > 0 ? fallback : defaultCopy;
 }
 
 /**
@@ -56,24 +80,48 @@ export function friendlyError(
   error: unknown,
   fallback: string = DEFAULT_ERROR_COPY,
 ): string {
-  const safeFallback =
-    fallback.trim().length > 0 ? fallback : DEFAULT_ERROR_COPY;
+  const safeFallbackCopy = safeFallback(fallback, DEFAULT_ERROR_COPY);
 
-  const raw =
-    typeof error === "string"
-      ? error
-      : error instanceof Error
-        ? error.message
-        : "";
+  const trimmed = rawErrorMessage(error).trim();
+  if (trimmed.length === 0) return safeFallbackCopy;
 
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) return safeFallback;
-
-  const mapped = ERROR_COPY[trimmed] ?? ERROR_COPY[trimmed.toUpperCase()];
-  if (mapped) return mapped;
+  const code = knownErrorCode(trimmed);
+  if (code) return ERROR_COPY[code];
 
   // An unmapped, code-shaped string is developer-flavored. Never leak it.
-  if (looksLikeRawCode(trimmed)) return safeFallback;
+  if (looksLikeRawCode(trimmed)) return safeFallbackCopy;
 
   return trimmed;
+}
+
+/**
+ * Client-side localized companion to `friendlyError`.
+ *
+ * The pure function above keeps its existing signature and English behavior for
+ * server actions, utilities, and tests. React callers can use this hook to
+ * resolve the fixed code map through the `errors` catalog while still passing
+ * through server-returned prose unchanged.
+ */
+export function useFriendlyError(): (
+  error: unknown,
+  fallback?: string,
+) => string {
+  const t = useTranslations("errors");
+
+  return React.useCallback(
+    (error: unknown, fallback?: string) => {
+      const localizedDefault = t("default");
+      const safeFallbackCopy = safeFallback(fallback, localizedDefault);
+      const trimmed = rawErrorMessage(error).trim();
+      if (trimmed.length === 0) return safeFallbackCopy;
+
+      const code = knownErrorCode(trimmed);
+      if (code) return t(code);
+
+      if (looksLikeRawCode(trimmed)) return safeFallbackCopy;
+
+      return trimmed;
+    },
+    [t],
+  );
 }

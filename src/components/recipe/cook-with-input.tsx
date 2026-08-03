@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 
@@ -14,6 +15,7 @@ import { MAX_PANTRY_ITEMS } from "~/server/recipes/search";
  * commits on Enter/comma/blur and each chip can be removed.
  */
 export function CookWithInput({ initial }: { initial: string[] }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const pathname = usePathname();
   const [items, setItems] = React.useState<string[]>(initial);
@@ -80,7 +82,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
               type="button"
               onClick={() => remove(item)}
               className="rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Remove ${item}`}
+              aria-label={t("cookWithInput.removeItem", { item })}
             >
               <X className="size-3.5" />
             </button>
@@ -92,10 +94,10 @@ export function CookWithInput({ initial }: { initial: string[] }) {
           onKeyDown={handleKeyDown}
           onBlur={() => addFrom(draft)}
           placeholder={
-            items.length === 0 ? "Add ingredients you have..." : "Add more..."
+            items.length === 0 ? t("cookWithInput.addIngredients") : t("cookWithInput.addMore")
           }
           className="min-w-[10rem] flex-1 bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground"
-          aria-label="Add an ingredient you have"
+          aria-label={t("cookWithInput.addIngredientAria")}
         />
         {items.length > 0 && (
           <Button
@@ -104,13 +106,12 @@ export function CookWithInput({ initial }: { initial: string[] }) {
             size="sm"
             onClick={() => commit([])}
           >
-            Clear
+            {t("common.clear")}
           </Button>
         )}
       </div>
       <p className="text-sm text-muted-foreground">
-        Enter what&apos;s in your pantry. We&apos;ll rank recipes by how much
-        you already have.
+        {t("cookWithInput.help")}
       </p>
     </div>
   );

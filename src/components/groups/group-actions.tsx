@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,14 +24,14 @@ export function GroupActions({
   isSoleOwner?: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.actions");
   const [pending, setPending] = React.useState<"leave" | "delete" | null>(null);
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
 
   if (!viewerRole) return null;
 
-  const soleOwnerNote =
-    "As the group's only owner, you can't leave. Transfer ownership to another member, or delete the group instead.";
+  const soleOwnerNote = t("soleOwnerNote");
 
   function run(
     kind: "leave" | "delete",
@@ -64,20 +65,19 @@ export function GroupActions({
           onClick={async () => {
             if (isSoleOwner) return;
             const ok = await confirm({
-              title: `Leave “${groupName}”?`,
-              description:
-                "You'll lose access to its shared recipes. You can re-join with an invite.",
-              confirmLabel: "Leave group",
+              title: t("confirm.leave.title", { group: groupName }),
+              description: t("confirm.leave.description"),
+              confirmLabel: t("confirm.leave.confirmLabel"),
             });
             if (!ok) return;
-            run("leave", () => leaveGroupAction(slug), "You left the group");
+            run("leave", () => leaveGroupAction(slug), t("toast.left"));
           }}
           disabled={isPending || isSoleOwner}
           title={isSoleOwner ? soleOwnerNote : undefined}
           aria-disabled={isSoleOwner}
         >
           <LogOut />
-          {pending === "leave" ? "Leaving…" : "Leave group"}
+          {pending === "leave" ? t("leaving") : t("leave")}
         </Button>
         {viewerRole === "owner" ? (
           <Button
@@ -85,22 +85,21 @@ export function GroupActions({
             variant="destructive"
             onClick={async () => {
               const ok = await confirm({
-                title: `Delete “${groupName}”?`,
-                description:
-                  "Everyone's recipes stay saved. The shared group space is removed and can't be restored.",
-                confirmLabel: "Delete group",
+                title: t("confirm.delete.title", { group: groupName }),
+                description: t("confirm.delete.description"),
+                confirmLabel: t("confirm.delete.confirmLabel"),
               });
               if (!ok) return;
               run(
                 "delete",
                 () => deleteGroupAction(slug),
-                "The group was deleted",
+                t("toast.deleted"),
               );
             }}
             disabled={isPending}
           >
             <Trash2 />
-            {pending === "delete" ? "Deleting…" : "Delete group"}
+            {pending === "delete" ? t("deleting") : t("delete")}
           </Button>
         ) : null}
       </div>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Clock3, Play, Star, UtensilsCrossed, Users } from "lucide-react";
 
@@ -112,6 +113,7 @@ export function RecipeCard({
    */
   members?: CardDietaryMember[];
 }) {
+  const t = useTranslations("recipe");
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
       ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
@@ -151,7 +153,7 @@ export function RecipeCard({
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
         <Link
           href={`/recipes/${recipe.slug}/cook`}
-          aria-label={`Cook ${recipe.title}`}
+          aria-label={t("recipeCard.cookAria", { title: recipe.title })}
           className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
           <Play className="size-3.5" aria-hidden />
@@ -240,7 +242,7 @@ export function RecipeCard({
               </span>
             )}
             {rating.unrated ? (
-              <span className="text-muted-foreground">Unrated</span>
+              <span className="text-muted-foreground">{t("recipeCard.unrated")}</span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <StarRating filled={rating.filled} label={rating.label} />

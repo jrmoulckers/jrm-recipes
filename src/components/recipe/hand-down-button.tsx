@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Gift, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +38,7 @@ export function HandDownButton({
   defaultFrom?: string | null;
   token?: string | null;
 }) {
+  const t = useTranslations("recipe");
   const [from, setFrom] = React.useState(defaultFrom ?? "");
   const [note, setNote] = React.useState("");
 
@@ -49,9 +51,9 @@ export function HandDownButton({
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(keepsakeUrl());
-      toast.success("Keepsake link copied. Ready to give as a gift");
+      toast.success(t("keepsake.toast.copied"));
     } catch {
-      toast.error("Couldn't copy the link");
+      toast.error(t("share.toast.copyError"));
     }
   }
 
@@ -63,37 +65,36 @@ export function HandDownButton({
     <Dialog>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <Gift /> Hand down
+          <Gift /> {t("keepsake.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Hand this recipe down</DialogTitle>
+          <DialogTitle>{t("keepsake.title")}</DialogTitle>
           <DialogDescription>
-            Add a personal message and share it as a warm keepsake. A little
-            gift, not just a link.
+            {t("keepsake.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="keepsake-from">Your name</Label>
+            <Label htmlFor="keepsake-from">{t("keepsake.fromLabel")}</Label>
             <Input
               id="keepsake-from"
               value={from}
               onChange={(event) => setFrom(event.target.value)}
-              placeholder="Nonna"
+              placeholder={t("keepsake.fromPlaceholder")}
               maxLength={80}
               autoComplete="name"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="keepsake-note">Your message</Label>
+            <Label htmlFor="keepsake-note">{t("keepsake.noteLabel")}</Label>
             <Textarea
               id="keepsake-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="The one you loved as a girl. Love, Nonna."
+              placeholder={t("keepsake.notePlaceholder")}
               rows={4}
               maxLength={KEEPSAKE_NOTE_MAX}
             />
@@ -102,14 +103,14 @@ export function HandDownButton({
 
         <DialogFooter className="gap-2 sm:justify-start">
           <Button type="button" onClick={() => void copyLink()}>
-            <Copy /> Copy keepsake link
+            <Copy /> {t("keepsake.copyLink")}
           </Button>
           <Button type="button" variant="outline" onClick={openPreview}>
-            <ExternalLink /> Preview
+            <ExternalLink /> {t("common.preview")}
           </Button>
           <DialogClose asChild>
             <Button type="button" variant="ghost">
-              Done
+              {t("common.done")}
             </Button>
           </DialogClose>
         </DialogFooter>

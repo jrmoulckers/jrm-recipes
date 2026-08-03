@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { NotebookPen, Star, Trash2 } from "lucide-react";
 
 import {
@@ -40,12 +40,17 @@ function StarRow({
   onChange?: (value: number) => void;
   size?: string;
 }) {
+  const t = useTranslations("engagement.reviews");
   const interactive = Boolean(onChange);
   return (
     <div
       className="flex items-center gap-0.5"
       role={interactive ? "group" : undefined}
-      aria-label={interactive ? "Your star rating" : `${value} out of 5 stars`}
+      aria-label={
+        interactive
+          ? t("a11y.yourStarRating")
+          : t("a11y.outOfStars", { value })
+      }
     >
       {[1, 2, 3, 4, 5].map((n) => {
         const active = value >= n;
@@ -63,7 +68,7 @@ function StarRow({
           <button
             key={n}
             type="button"
-            aria-label={`Rate ${n} ${n === 1 ? "star" : "stars"}`}
+            aria-label={t("a11y.rateStars", { count: n })}
             aria-pressed={value === n}
             onClick={() => onChange?.(n)}
             className="rounded-full p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -108,6 +113,7 @@ export function ReviewsSection({
   isRecipeOwner,
 }: ReviewsSectionProps) {
   const locale = useLocale();
+  const t = useTranslations("engagement.reviews");
   const [sort, setSort] = React.useState<ReviewSort>("recent");
   const [rating, setRating] = React.useState(viewerReview?.rating ?? 0);
   const [title, setTitle] = React.useState(viewerReview?.title ?? "");
@@ -115,12 +121,12 @@ export function ReviewsSection({
   const [photoUrl, setPhotoUrl] = React.useState(viewerReview?.photoUrl ?? "");
 
   const save = useServerAction(upsertReviewAction, {
-    successToast: viewerReview ? "Review updated." : "Review posted.",
+    successToast: viewerReview ? t("toast.updated") : t("toast.posted"),
     errorToast: true,
     refresh: true,
   });
   const remove = useServerAction(deleteReviewAction, {
-    successToast: "Review deleted.",
+    successToast: t("toast.deleted"),
     errorToast: true,
     refresh: true,
     onSuccess: () => {
@@ -155,11 +161,10 @@ export function ReviewsSection({
         </span>
         <div>
           <h2 className="font-display text-xl font-semibold text-foreground">
-            Reviews &amp; tasting notes
+            {t("heading")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            A considered star rating and note. How it turned out, what you
-            changed.
+            {t("description")}
           </p>
         </div>
       </div>
@@ -169,32 +174,32 @@ export function ReviewsSection({
           <div className="flex flex-wrap items-center gap-3">
             <StarRow value={rating} onChange={setRating} />
             <span className="text-xs text-muted-foreground">
-              {viewerReview ? "Editing your review" : "Your star rating"}
+              {viewerReview ? t("editing") : t("yourStarRating")}
             </span>
           </div>
           <div className="mt-3 flex flex-col gap-3">
             <div>
               <Label htmlFor="review-title" className="sr-only">
-                Review title
+                {t("reviewTitleLabel")}
               </Label>
               <Input
                 id="review-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="Title (optional), e.g. “A weeknight winner”"
+                placeholder={t("titlePlaceholder")}
                 maxLength={200}
                 disabled={save.pending}
               />
             </div>
             <div>
               <Label htmlFor="review-body" className="sr-only">
-                Review
+                {t("reviewLabel")}
               </Label>
               <Textarea
                 id="review-body"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="How did it turn out? What would you change next time?"
+                placeholder={t("bodyPlaceholder")}
                 className="min-h-24 resize-y bg-background"
                 maxLength={4000}
                 disabled={save.pending}
@@ -203,14 +208,14 @@ export function ReviewsSection({
             <ImageUploadField
               value={photoUrl}
               onChange={setPhotoUrl}
-              label="Photo (optional)"
+              label={t("photoLabel")}
               size="compact"
               folder="heirloom/reviews"
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              One review per recipe. You can edit or delete yours anytime.
+              {t("helper")}
             </p>
             <div className="flex items-center gap-2">
               {viewerReview ? (
@@ -224,7 +229,7 @@ export function ReviewsSection({
                   }
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <Trash2 /> Delete
+                  <Trash2 /> {t("delete")}
                 </Button>
               ) : null}
               <Button
@@ -233,24 +238,23 @@ export function ReviewsSection({
                 disabled={save.pending || rating < 1}
               >
                 {save.pending
-                  ? "Saving…"
+                  ? t("saving")
                   : viewerReview
-                    ? "Update review"
-                    : "Post review"}
+                    ? t("updateReview")
+                    : t("postReview")}
               </Button>
             </div>
           </div>
         </form>
       ) : (
         <div className="mt-5 rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-          Sign in to leave a star rating and a written review.
+          {t("signIn")}
         </div>
       )}
 
       <div className="mt-5 flex items-center justify-between">
         <p className="text-sm font-medium text-foreground">
-          {initialReviews.length}{" "}
-          {initialReviews.length === 1 ? "review" : "reviews"}
+          {t("count", { count: initialReviews.length })}
         </p>
         {initialReviews.length > 1 ? (
           <div className="flex items-center gap-1">
@@ -260,7 +264,7 @@ export function ReviewsSection({
               size="sm"
               onClick={() => setSort("recent")}
             >
-              Most recent
+              {t("sort.mostRecent")}
             </Button>
             <Button
               type="button"
@@ -268,7 +272,7 @@ export function ReviewsSection({
               size="sm"
               onClick={() => setSort("rating")}
             >
-              Highest rated
+              {t("sort.highestRated")}
             </Button>
           </div>
         ) : null}
@@ -278,13 +282,13 @@ export function ReviewsSection({
 
       {sorted.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
-          No reviews yet. Be the first to share how it turned out.
+          {t("empty")}
         </p>
       ) : (
         <ul className="space-y-4">
           {sorted.map((review) => {
             const name =
-              review.author?.name ?? review.author?.handle ?? "Family cook";
+              review.author?.name ?? review.author?.handle ?? t("familyCook");
             const canDelete =
               isRecipeOwner ||
               (currentUserId != null && currentUserId === review.author?.id);
@@ -315,7 +319,7 @@ export function ReviewsSection({
                       </time>
                       {review.editedAt ? (
                         <span className="text-xs text-muted-foreground">
-                          (edited)
+                          {t("edited")}
                         </span>
                       ) : null}
                     </div>
@@ -337,7 +341,7 @@ export function ReviewsSection({
                         {/* eslint-disable-next-line @next/next/no-img-element -- reviewer-supplied URL can't be pre-allowlisted for next/image */}
                         <img
                           src={review.photoUrl}
-                          alt={`${name}'s photo`}
+                          alt={t("photoAlt", { name })}
                           className="max-h-72 w-full object-cover"
                         />
                       </figure>

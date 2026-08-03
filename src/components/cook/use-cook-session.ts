@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -154,6 +154,7 @@ function defaultState(
  */
 function notifyCustomTimerComplete(input: {
   label: string;
+  title: string;
   recipeTitle: string;
   recipeSlug: string;
   timerId: string;
@@ -172,7 +173,7 @@ function notifyCustomTimerComplete(input: {
   const url = cookTimerNotificationUrl(input.recipeSlug);
   void navigator.serviceWorker.ready
     .then((registration) =>
-      registration.showNotification(`${input.label} is done`, {
+      registration.showNotification(input.title, {
         body: input.recipeTitle,
         tag: `${COOK_NOTIFICATION_TAG_PREFIX}:${input.recipeSlug}:${input.timerId}`,
         icon: "/icons/icon-192.png",
@@ -225,6 +226,7 @@ export function useCookSession(
   // (US → imperial, elsewhere → metric). An explicit, persisted choice always
   // wins during hydration below.
   const locale = useLocale();
+  const tTimer = useTranslations("cook.timer");
 
   const [state, setState] = React.useState<StoredCookState>(() =>
     defaultState(recipe, householdSize, defaultSystemForLocale(locale)),
@@ -377,7 +379,7 @@ export function useCookSession(
       playTimerTone();
       vibrate(HAPTICS.timerComplete);
       track("cook_timer_completed", { recipeId: recipe.id });
-      toast.success(`Step ${index + 1} timer is done`, {
+      toast.success(tTimer("stepDone", { position: index + 1 }), {
         description: step.section ?? recipe.title,
       });
       notifyTimerComplete({
@@ -388,7 +390,7 @@ export function useCookSession(
         stepId: step.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers]);
+  }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers, tTimer]);
 
   // Announce completion once per custom timer (#392), keyed by the timer's own
   // id and titled with its label so several finishing at once each speak for
@@ -402,17 +404,19 @@ export function useCookSession(
       playTimerTone();
       vibrate(HAPTICS.timerComplete);
       track("cook_timer_completed", { recipeId: recipe.id });
-      toast.success(`${timer.label || "Timer"} is done`, {
+      const label = timer.label || tTimer("defaultTimer");
+      toast.success(tTimer("customDone", { label }), {
         description: recipe.title,
       });
       notifyCustomTimerComplete({
-        label: timer.label || "Timer",
+        label,
+        title: tTimer("customDone", { label }),
         recipeTitle: recipe.title,
         recipeSlug: recipe.slug,
         timerId: timer.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.title, state.customTimers]);
+  }, [recipe.id, recipe.slug, recipe.title, state.customTimers, tTimer]);
 
   const goToStep = React.useCallback(
     (index: number) => {
@@ -536,7 +540,7 @@ export function useCookSession(
       announcedTimersRef.current.delete(id);
       const timer = makeCustomTimer({
         id,
-        label: input.label.trim() || "Timer",
+        label: input.label.trim() || tTimer("defaultTimer"),
         durationSeconds: input.durationSeconds,
         stepPosition: input.stepPosition ?? null,
         start: true,
@@ -547,7 +551,7 @@ export function useCookSession(
       }));
       return id;
     },
-    [recipe.id],
+    [recipe.id, tTimer],
   );
 
   const startCustomTimer = React.useCallback((id: string) => {

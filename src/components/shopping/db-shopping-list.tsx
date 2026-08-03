@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import { useFriendlyError } from "~/lib/error-copy";
 
 import {
   addManualItemAction,
@@ -37,6 +38,8 @@ export function DbShoppingList({
   const [, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
   const confirm = useConfirm();
+  const t = useTranslations("shopping");
+  const friendlyError = useFriendlyError();
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const avoidAllergens =
     members.find((m) => m.id === activeMemberId)?.allergens ?? [];
@@ -89,10 +92,9 @@ export function DbShoppingList({
   async function onClearAll() {
     if (optimistic.length === 0) return;
     const ok = await confirm({
-      title: "Clear the whole shopping list?",
-      description:
-        "All synced shopping items are removed. This can't be undone.",
-      confirmLabel: "Clear list",
+      title: t("confirm.clearAllSynced.title"),
+      description: t("confirm.clearAllSynced.description"),
+      confirmLabel: t("confirm.clearAll.confirmLabel"),
     });
     if (!ok) return;
     setOptimistic([]);
@@ -102,7 +104,7 @@ export function DbShoppingList({
   return (
     <ShoppingListView
       items={optimistic}
-      storageNote="synced to your account"
+      storageNote={t("storage.synced")}
       avoidAllergens={avoidAllergens}
       onAddManual={onAddManual}
       onToggle={onToggle}

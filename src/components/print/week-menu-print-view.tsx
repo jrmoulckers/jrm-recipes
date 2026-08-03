@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, CalendarDays, Link2, Printer, Repeat } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,13 +59,15 @@ export function WeekMenuPrintView({
   days: WeekMenuDay[];
   backHref: Route;
 }) {
+  const t = useTranslations("print.week");
+
   function copyLink() {
     const url = typeof window === "undefined" ? "" : window.location.href;
     if (!url) return;
     void navigator.clipboard
       .writeText(url)
-      .then(() => toast.success("Link copied to clipboard"))
-      .catch(() => toast.error("Couldn't copy the link"));
+      .then(() => toast.success(t("toasts.linkCopied")))
+      .catch(() => toast.error(t("toasts.copyLinkFailed")));
   }
 
   return (
@@ -76,12 +79,12 @@ export function WeekMenuPrintView({
           <div className="flex min-w-0 items-center gap-3">
             <Button asChild variant="ghost" size="sm" className="-ml-2">
               <Link href={backHref}>
-                <ArrowLeft /> Back
+                <ArrowLeft /> {t("back")}
               </Link>
             </Button>
             <div className="min-w-0">
               <h1 className="truncate font-display text-xl font-bold">
-                Post on the fridge
+                {t("title")}
               </h1>
               <p className="truncate text-sm text-muted-foreground">
                 {weekLabel}
@@ -95,10 +98,10 @@ export function WeekMenuPrintView({
               onClick={() => window.print()}
               className="shrink-0"
             >
-              <Printer /> Print / Save PDF
+              <Printer /> {t("print")}
             </Button>
             <Button type="button" variant="outline" onClick={copyLink}>
-              <Link2 /> Copy link
+              <Link2 /> {t("copyLink")}
             </Button>
           </div>
         </div>
@@ -111,7 +114,7 @@ export function WeekMenuPrintView({
               <CalendarDays className="size-4" aria-hidden /> {brand.name}
             </span>
             <h2 className="font-display text-3xl font-bold tracking-tight">
-              This week&rsquo;s dinners
+              {t("heading")}
             </h2>
             <p className="text-muted-foreground">{weekLabel}</p>
           </header>

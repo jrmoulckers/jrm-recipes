@@ -18,9 +18,11 @@ export function roleLabel(role: DisplayRole) {
 
 export function RoleBadge({
   role,
+  label,
   className,
 }: {
   role: DisplayRole;
+  label?: string;
   className?: string;
 }) {
   const detail = ROLE_DETAILS[role];
@@ -29,7 +31,7 @@ export function RoleBadge({
   return (
     <Badge variant={detail.variant} className={cn("capitalize", className)}>
       <Icon className="size-3.5" aria-hidden="true" />
-      {detail.label}
+      {label ?? detail.label}
     </Badge>
   );
 }

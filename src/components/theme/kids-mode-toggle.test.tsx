@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   afterEach,
@@ -19,6 +19,12 @@ import {
   THEME_PREVIOUS_COOKIE,
   type UITheme,
 } from "~/config/themes";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
 beforeAll(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,6 +30,7 @@ export function FavoriteButton({
   canFavorite = true,
   className,
 }: FavoriteButtonProps) {
+  const t = useTranslations("collections.favorite");
   const [favorited, setFavorited] = React.useState(initialFavorited);
   // Snapshot of the pre-click state so a failed toggle can roll the icon back.
   const previousRef = React.useRef(initialFavorited);
@@ -40,7 +42,7 @@ export function FavoriteButton({
     onSuccess: (result) => setFavorited(result.favorited),
     onError: () => setFavorited(previousRef.current),
     successToast: (result) =>
-      result.favorited ? "Saved to favorites" : "Removed from favorites",
+      result.favorited ? t("toast.saved") : t("toast.removed"),
     errorToast: true,
     refresh: true,
   });
@@ -56,7 +58,7 @@ export function FavoriteButton({
     if (pending) return;
 
     if (!canFavorite) {
-      toast("Sign in to save recipes to your collections.");
+      toast(t("signInToSave"));
       return;
     }
 
@@ -69,7 +71,7 @@ export function FavoriteButton({
     toggle.run({ recipeId, recipeSlug });
   }
 
-  const label = favorited ? "Saved to favorites" : "Save to favorites";
+  const label = favorited ? t("a11y.saved") : t("a11y.save");
 
   if (variant === "button") {
     return (
@@ -82,7 +84,7 @@ export function FavoriteButton({
         className={className}
       >
         <HeartGlyph favorited={favorited} burstKey={burstKey} />
-        {favorited ? "Saved" : "Save"}
+        {favorited ? t("saved") : t("save")}
       </Button>
     );
   }

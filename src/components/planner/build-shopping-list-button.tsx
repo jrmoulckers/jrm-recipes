@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
@@ -20,6 +20,7 @@ import { Button } from "~/components/ui/button";
 export function BuildShoppingListButton({ week }: { week: string }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("planner.shoppingList");
   const [isPending, startTransition] = React.useTransition();
 
   function build() {
@@ -30,7 +31,7 @@ export function BuildShoppingListButton({ week }: { week: string }) {
         return;
       }
       if (result.empty) {
-        toast.info("No recipes planned this week yet. Add some meals first.");
+        toast.info(t("toast.emptyWeek"));
         return;
       }
       const warning = formatPlanWarnings(result.warnings, locale);
@@ -38,23 +39,19 @@ export function BuildShoppingListButton({ week }: { week: string }) {
         toast.warning(warning);
       }
       if (result.added === 0 && result.merged === 0) {
-        toast.info(
-          "Everything from this week's recipes is already on your list.",
-        );
+        toast.info(t("toast.alreadyReady"));
         return;
       }
       const parts: string[] = [];
       if (result.added > 0) {
-        parts.push(
-          `added ${result.added} ${result.added === 1 ? "item" : "items"}`,
-        );
+        parts.push(t("toast.addedItems", { count: result.added }));
       }
       if (result.merged > 0) {
-        parts.push(`merged ${result.merged}`);
+        parts.push(t("toast.mergedItems", { count: result.merged }));
       }
-      toast.success(`Shopping list ready. ${parts.join(", ")}.`, {
+      toast.success(t("toast.ready", { summary: parts.join(", ") }), {
         action: {
-          label: "View list",
+          label: t("toast.viewList"),
           onClick: () => router.push("/shopping"),
         },
       });
@@ -70,7 +67,7 @@ export function BuildShoppingListButton({ week }: { week: string }) {
       disabled={isPending}
     >
       <ShoppingCart />
-      {isPending ? "Building…" : "Build shopping list"}
+      {isPending ? t("button.building") : t("button.default")}
     </Button>
   );
 }

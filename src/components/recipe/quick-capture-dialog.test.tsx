@@ -1,9 +1,15 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { QuickCaptureDialog } from "./quick-capture-dialog";
 import { createRecipeAction } from "~/server/recipes/actions";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 type CreateResult =
   { ok: true; id: string; slug: string | null } | { ok: false; error: string };
@@ -68,7 +74,7 @@ describe("QuickCaptureDialog (#389)", () => {
 
     await user.type(screen.getByLabelText("Title"), "Grandma's meatballs");
     await user.type(
-      screen.getByLabelText(/ingredients & steps/i),
+      screen.getByLabelText(/ingredients and steps/i),
       "1 lb beef\nMix and bake.",
     );
     await user.click(screen.getByRole("button", { name: /save draft/i }));

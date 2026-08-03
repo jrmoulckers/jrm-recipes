@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,12 @@ import {
   deleteRecipeAction,
   restoreRecipeAction,
 } from "~/server/recipes/actions";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 vi.mock("~/server/recipes/actions", () => ({
   deleteRecipeAction: vi.fn<(id: string) => Promise<void>>(),

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Globe } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ export function PublicActivityOptIn({
 }: {
   defaultOptedIn: boolean;
 }) {
+  const t = useTranslations("settings.publicActivity");
   const [optedIn, setOptedIn] = React.useState(defaultOptedIn);
   const [isPending, startTransition] = React.useTransition();
 
@@ -31,11 +33,7 @@ export function PublicActivityOptIn({
         toast.error(friendlyError(result.error));
         return;
       }
-      toast.success(
-        next
-          ? "Your public activity is now visible to followers"
-          : "Your profile is private again. No one can follow you",
-      );
+      toast.success(next ? t("toasts.visible") : t("toasts.private"));
     });
   }
 
@@ -48,14 +46,11 @@ export function PublicActivityOptIn({
         htmlFor="public-activity"
         className="min-w-0 flex-1 cursor-pointer select-none"
       >
-        <span className="block text-sm font-medium">
-          Public profile &amp; followers
-        </span>
+        <span className="block text-sm font-medium">{t("label")}</span>
         <span className="block text-xs text-muted-foreground">
-          Let other cooks follow you and see your <strong>public</strong>{" "}
-          recipes, reviews, and cooks in their feed. Your family groups and
-          anything private stay private. Only content you&apos;ve made public
-          is ever shared this way.
+          {t.rich("description", {
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </span>
       </label>
       <Switch

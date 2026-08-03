@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { useShoppingStore } from "~/lib/shopping-store";
@@ -22,6 +23,7 @@ export function LocalShoppingList() {
   const clearChecked = useShoppingStore((s) => s.clearChecked);
   const clearAll = useShoppingStore((s) => s.clearAll);
   const confirm = useConfirm();
+  const t = useTranslations("shopping");
 
   // The store hydrates from localStorage on the client only. Wait for mount so
   // the first render matches the server (empty) and avoids a hydration warning.
@@ -58,20 +60,19 @@ export function LocalShoppingList() {
   async function onClearAll() {
     if (items.length === 0) return;
     const ok = await confirm({
-      title: "Clear the whole shopping list?",
-      description:
-        "All items saved on this device are removed. This can't be undone.",
-      confirmLabel: "Clear list",
+      title: t("confirm.clearAllLocal.title"),
+      description: t("confirm.clearAllLocal.description"),
+      confirmLabel: t("confirm.clearAll.confirmLabel"),
     });
     if (!ok) return;
     clearAll();
-    toast.success("Shopping list cleared");
+    toast.success(t("toasts.cleared"));
   }
 
   return (
     <ShoppingListView
       items={viewItems}
-      storageNote="saved on this device"
+      storageNote={t("storage.local")}
       onAddManual={onAddManual}
       onToggle={setChecked}
       onRemove={remove}

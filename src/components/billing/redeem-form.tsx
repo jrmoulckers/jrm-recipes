@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Gift, PartyPopper } from "lucide-react";
 
@@ -18,6 +19,7 @@ import { Label } from "~/components/ui/label";
  * the single-use claim. This is purely the entry + feedback surface.
  */
 export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
+  const t = useTranslations("billing.redeem");
   const router = useRouter();
   const [code, setCode] = React.useState(initialCode);
   const [pending, startTransition] = React.useTransition();
@@ -50,15 +52,14 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
         <PartyPopper className="size-8 text-success" aria-hidden="true" />
         <div className="flex flex-col gap-1">
           <p className="font-display text-xl font-semibold">
-            Your gift is unwrapped!
+            {t("success.title")}
           </p>
           <p className="text-sm text-muted-foreground">
-            You now have {success.months} months of Heirloom Family. Every
-            recipe, every relative. It&apos;s all unlocked.
+            {t("success.description", { months: success.months })}
           </p>
         </div>
         <Button asChild>
-          <Link href="/recipes">Go to your cookbook</Link>
+          <Link href="/recipes">{t("success.cta")}</Link>
         </Button>
       </div>
     );
@@ -67,7 +68,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="gift-code">Gift code</Label>
+        <Label htmlFor="gift-code">{t("giftCode")}</Label>
         <Input
           id="gift-code"
           name="gift-code"
@@ -93,7 +94,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
       </div>
       <Button type="submit" loading={pending} disabled={!code.trim()}>
         <Gift className="size-4" aria-hidden="true" />
-        Redeem gift
+        {t("submit")}
       </Button>
     </form>
   );

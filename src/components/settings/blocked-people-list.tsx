@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { UserX } from "lucide-react";
 
 import { unblockUserAction } from "~/server/moderation/actions";
@@ -9,8 +10,8 @@ import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { useServerAction } from "~/lib/use-server-action";
 
-function personName(person: BlockedPerson) {
-  return person.name ?? person.handle ?? "Family cook";
+function personName(person: BlockedPerson, fallback: string) {
+  return person.name ?? person.handle ?? fallback;
 }
 
 /**
@@ -18,8 +19,9 @@ function personName(person: BlockedPerson) {
  * member with an Unblock button. Unblocking refreshes the server-rendered list.
  */
 export function BlockedPeopleList({ people }: { people: BlockedPerson[] }) {
+  const t = useTranslations("settings.blockedPeople");
   const unblock = useServerAction(unblockUserAction, {
-    successToast: "Unblocked. Their posts will show again.",
+    successToast: t("toasts.unblocked"),
     errorToast: true,
     refresh: true,
   });
@@ -28,11 +30,8 @@ export function BlockedPeopleList({ people }: { people: BlockedPerson[] }) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
         <UserX className="mx-auto mb-2 size-6" aria-hidden="true" />
-        <p>You haven&apos;t blocked anyone.</p>
-        <p className="mt-1 text-sm">
-          Block someone from the menu on their comment or review to hide their
-          posts from you.
-        </p>
+        <p>{t("empty.title")}</p>
+        <p className="mt-1 text-sm">{t("empty.description")}</p>
       </div>
     );
   }
@@ -40,7 +39,7 @@ export function BlockedPeopleList({ people }: { people: BlockedPerson[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {people.map((person) => {
-        const name = personName(person);
+        const name = personName(person, t("fallbackName"));
         return (
           <li
             key={person.id}
@@ -67,7 +66,7 @@ export function BlockedPeopleList({ people }: { people: BlockedPerson[] }) {
               disabled={unblock.pending}
               onClick={() => unblock.run({ blockedId: person.id })}
             >
-              Unblock
+              {t("unblock")}
             </Button>
           </li>
         );

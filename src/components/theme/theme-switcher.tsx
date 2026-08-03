@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 
 import {
@@ -31,13 +32,17 @@ const schemeIcon: Record<ColorScheme, React.ReactNode> = {
 
 /** Quick light/dark toggle for tight spaces. */
 export function SchemeToggle({ className }: { className?: string }) {
+  const t = useTranslations("theme");
   const { resolvedScheme, toggleScheme } = useTheme();
+  const nextScheme = resolvedScheme === "dark" ? "light" : "dark";
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={toggleScheme}
-      aria-label={`Switch to ${resolvedScheme === "dark" ? "light" : "dark"} mode`}
+      aria-label={t("schemeToggle.ariaLabel", {
+        mode: t(`schemes.${nextScheme}`),
+      })}
       className={className}
     >
       <Sun className="size-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
@@ -54,6 +59,7 @@ export function SchemeToggle({ className }: { className?: string }) {
  * header button. The dropdown still anchors to whichever trigger is rendered.
  */
 export function ThemeSwitcher({ label }: { label?: string } = {}) {
+  const t = useTranslations("theme");
   const { theme, scheme, setTheme, setScheme } = useTheme();
 
   return (
@@ -68,39 +74,43 @@ export function ThemeSwitcher({ label }: { label?: string } = {}) {
             {label}
           </Button>
         ) : (
-          <Button variant="outline" size="icon" aria-label="Change appearance">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t("changeAppearance")}
+          >
             <Palette className="size-5" />
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("appearance")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={theme}
           onValueChange={(value) => setTheme(value as UITheme)}
-          aria-label="Appearance"
+          aria-label={t("appearance")}
           className="grid gap-1 p-1"
         >
-          {UI_THEMES.map((t) => {
-            const active = t.id === theme;
+          {UI_THEMES.map((themeOption) => {
+            const active = themeOption.id === theme;
             return (
               <DropdownMenuRadioItem
-                key={t.id}
-                value={t.id}
+                key={themeOption.id}
+                value={themeOption.id}
                 onSelect={(event) => event.preventDefault()}
                 className={cn(
                   "gap-3 border border-transparent hover:bg-muted",
                   active && "border-border bg-muted",
                 )}
               >
-                <ThemeSwatch theme={t.id} size="sm" />
+                <ThemeSwatch theme={themeOption.id} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-sm font-medium">
-                    {t.label}
+                    {t(`themes.${themeOption.id}.label`)}
                     {active && <Check className="size-3.5 text-primary" />}
                   </span>
                   <span className="line-clamp-1 text-xs text-muted-foreground">
-                    {t.description}
+                    {t(`themes.${themeOption.id}.description`)}
                   </span>
                 </span>
               </DropdownMenuRadioItem>
@@ -109,11 +119,11 @@ export function ThemeSwitcher({ label }: { label?: string } = {}) {
         </DropdownMenuRadioGroup>
 
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Lighting</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("lighting")}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={scheme}
           onValueChange={(value) => setScheme(value as ColorScheme)}
-          aria-label="Lighting"
+          aria-label={t("lighting")}
           className="flex gap-1 p-1"
         >
           {COLOR_SCHEMES.map((s) => (
@@ -128,7 +138,7 @@ export function ThemeSwitcher({ label }: { label?: string } = {}) {
               )}
             >
               {schemeIcon[s]}
-              {s}
+              {t(`schemes.${s}`)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

@@ -239,7 +239,7 @@ describe("CommentsSection", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("offers Accept & apply to the recipe owner on an open suggestion", () => {
+  it("offers accept and apply to the recipe owner on an open suggestion", () => {
     render(
       <CommentsSection
         {...baseProps}
@@ -257,11 +257,11 @@ describe("CommentsSection", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /accept & apply/i }),
+      screen.getByRole("button", { name: /accept and apply/i }),
     ).toBeInTheDocument();
   });
 
-  it("hides Accept & apply from non-owners", () => {
+  it("hides accept and apply from non-owners", () => {
     render(
       <CommentsSection
         {...baseProps}
@@ -279,11 +279,11 @@ describe("CommentsSection", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: /accept & apply/i }),
+      screen.queryByRole("button", { name: /accept and apply/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("hides Accept & apply once a suggestion is applied and shows an Applied badge", () => {
+  it("hides accept and apply once a suggestion is applied and shows an Applied badge", () => {
     render(
       <CommentsSection
         {...baseProps}
@@ -303,7 +303,7 @@ describe("CommentsSection", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: /accept & apply/i }),
+      screen.queryByRole("button", { name: /accept and apply/i }),
     ).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("list")).getByText("Applied"),
@@ -328,7 +328,7 @@ describe("CommentsSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /accept & apply/i }));
+    await user.click(screen.getByRole("button", { name: /accept and apply/i }));
 
     await waitFor(() =>
       expect(applySuggestion).toHaveBeenCalledWith({

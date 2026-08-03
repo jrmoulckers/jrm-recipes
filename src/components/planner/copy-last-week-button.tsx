@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CopyPlus } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
@@ -16,6 +17,7 @@ import { Button } from "~/components/ui/button";
  */
 export function CopyLastWeekButton({ week }: { week: string }) {
   const router = useRouter();
+  const t = useTranslations("planner.copyLastWeek");
   const [isPending, startTransition] = React.useTransition();
 
   function copy() {
@@ -26,18 +28,14 @@ export function CopyLastWeekButton({ week }: { week: string }) {
         return;
       }
       if (result.previousEmpty) {
-        toast.info("Last week was empty. Nothing to copy yet.");
+        toast.info(t("toast.previousEmpty"));
         return;
       }
       if (result.copied === 0) {
-        toast.info("This week is already full. Nothing new to copy.");
+        toast.info(t("toast.weekFull"));
         return;
       }
-      toast.success(
-        `Copied ${result.copied} ${
-          result.copied === 1 ? "meal" : "meals"
-        } from last week`,
-      );
+      toast.success(t("toast.copiedMeals", { count: result.copied }));
       router.refresh();
     });
   }
@@ -45,7 +43,7 @@ export function CopyLastWeekButton({ week }: { week: string }) {
   return (
     <Button type="button" variant="outline" onClick={copy} disabled={isPending}>
       <CopyPlus />
-      {isPending ? "Copying…" : "Copy last week"}
+      {isPending ? t("button.copying") : t("button.default")}
     </Button>
   );
 }

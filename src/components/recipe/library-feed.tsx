@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { loadMoreLibraryAction } from "~/server/recipes/library-actions";
 import { Button } from "~/components/ui/button";
@@ -41,6 +42,7 @@ export function LibraryFeed({
   members?: CardDietaryMember[];
   quickPlan?: QuickPlanContext;
 }) {
+  const t = useTranslations("recipe");
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
   const [nextOffset, setNextOffset] = React.useState<number | null>(
     initialNextOffset,
@@ -88,7 +90,7 @@ export function LibraryFeed({
             onClick={onLoadMore}
             disabled={pending}
           >
-            {pending ? "Loading…" : "Load more recipes"}
+            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
           </Button>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Crown, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useConfirm } from "~/components/ui/confirm-dialog";
-import { RoleBadge, roleLabel, type DisplayRole } from "./role-badge";
+import { RoleBadge, type DisplayRole } from "./role-badge";
 
 type ManageableRole = Exclude<DisplayRole, "owner">;
 
@@ -52,8 +53,8 @@ function initials(name: string | null, handle: string | null) {
     .toUpperCase();
 }
 
-function displayName(member: MemberListMember) {
-  return member.user.name ?? member.user.handle ?? "Family cook";
+function displayName(member: MemberListMember, fallback: string) {
+  return member.user.name ?? member.user.handle ?? fallback;
 }
 
 function canRemove(viewerRole: DisplayRole | null, member: MemberListMember) {
@@ -73,6 +74,7 @@ export function MemberList({
   members: MemberListMember[];
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.members");
   const [pendingKey, setPendingKey] = React.useState<string | null>(null);
   const [openMenuUserId, setOpenMenuUserId] = React.useState<string | null>(
     null,
@@ -113,7 +115,8 @@ export function MemberList({
   return (
     <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
       {members.map((member) => {
-        const name = displayName(member);
+        const name = displayName(member, t("fallbackMember"));
+        const roleName = (role: ManageableRole) => t(`roles.${role}`);
         const canChangeRole = viewerRole === "owner" && member.role !== "owner";
         const canTransfer = viewerRole === "owner" && member.role !== "owner";
         const showActions =
@@ -138,13 +141,13 @@ export function MemberList({
                 <p className="truncate text-sm text-muted-foreground">
                   {member.user.handle
                     ? `@${member.user.handle}`
-                    : "No handle yet"}
+                    : t("noHandle")}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 sm:justify-end">
-              <RoleBadge role={member.role} />
+              <RoleBadge role={member.role} label={t(`roles.${member.role}`)} />
               {showActions ? (
                 <DropdownMenu
                   open={openMenuUserId === member.userId}
@@ -157,7 +160,7 @@ export function MemberList({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={`Manage ${name}`}
+                      aria-label={t("a11y.manageMember", { name })}
                       disabled={
                         isPending && pendingKey?.startsWith(member.userId)
                       }
@@ -168,7 +171,7 @@ export function MemberList({
                   <DropdownMenuContent align="end">
                     {canChangeRole ? (
                       <>
-                        <DropdownMenuLabel>Change role</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t("changeRole")}</DropdownMenuLabel>
                         {MANAGEABLE_ROLES.map((role) => (
                           <DropdownMenuItem
                             key={role}
@@ -180,11 +183,14 @@ export function MemberList({
                                   updateMemberRoleAction(slug, member.userId, {
                                     role,
                                   }),
-                                `${name} is now ${roleLabel(role).toLowerCase()}`,
+                                t("toast.roleChanged", {
+                                  name,
+                                  role: roleName(role).toLowerCase(),
+                                }),
                               )
                             }
                           >
-                            {roleLabel(role)}
+                            {roleName(role)}
                           </DropdownMenuItem>
                         ))}
                       </>
@@ -197,10 +203,9 @@ export function MemberList({
                           onSelect={async (event) => {
                             event.preventDefault();
                             const ok = await confirmAfterDropdownCloses({
-                              title: `Transfer ownership to “${name}”?`,
-                              description:
-                                "You'll stay in the group as an admin. The new owner can transfer it back.",
-                              confirmLabel: "Transfer ownership",
+                              title: t("confirm.transfer.title", { name }),
+                              description: t("confirm.transfer.description"),
+                              confirmLabel: t("confirm.transfer.confirmLabel"),
                               destructive: false,
                             });
                             if (!ok) return;
@@ -210,12 +215,12 @@ export function MemberList({
                                 transferOwnershipAction(slug, {
                                   newOwnerUserId: member.userId,
                                 }),
-                              `${name} is now the group owner.`,
+                              t("toast.ownershipTransferred", { name }),
                             );
                           }}
                         >
                           <Crown />
-                          Transfer ownership
+                          {t("transferOwnership")}
                         </DropdownMenuItem>
                       </>
                     ) : null}
@@ -228,21 +233,20 @@ export function MemberList({
                           onSelect={async (event) => {
                             event.preventDefault();
                             const ok = await confirmAfterDropdownCloses({
-                              title: `Remove “${name}” from this group?`,
-                              description:
-                                "They'll lose access to the group's recipes. You can re-invite them anytime.",
-                              confirmLabel: "Remove",
+                              title: t("confirm.remove.title", { name }),
+                              description: t("confirm.remove.description"),
+                              confirmLabel: t("confirm.remove.confirmLabel"),
                             });
                             if (!ok) return;
                             runAction(
                               `${member.userId}:remove`,
                               () => removeMemberAction(slug, member.userId),
-                              `${name} was removed from the group`,
+                              t("toast.removed", { name }),
                             );
                           }}
                         >
                           <Trash2 />
-                          Remove from group
+                          {t("removeFromGroup")}
                         </DropdownMenuItem>
                       </>
                     ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Blocks } from "lucide-react";
 
 import { useKidsMode } from "~/components/theme/use-kids-mode";
@@ -28,6 +29,7 @@ export function KidsModeToggle({
    */
   label?: string;
 }) {
+  const t = useTranslations("theme.kidsMode");
   const { kidsOn, setKidsMode } = useKidsMode();
 
   return (
@@ -37,9 +39,9 @@ export function KidsModeToggle({
       size={label ? "default" : "icon"}
       aria-pressed={kidsOn}
       aria-label={
-        label ? undefined : kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"
+        label ? undefined : kidsOn ? t("turnOffAria") : t("turnOnAria")
       }
-      title={kidsOn ? "Kids mode is on" : "Kids mode"}
+      title={kidsOn ? t("onTitle") : t("title")}
       onClick={() => setKidsMode(!kidsOn)}
       className={cn(
         label && "h-11 w-full justify-start gap-3 px-2 font-medium",

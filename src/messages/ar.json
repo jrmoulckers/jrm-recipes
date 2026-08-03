@@ -92,28 +92,45 @@
     "placeholder": "ابحث في الوصفات والصفحات…",
     "navHeading": "الانتقال إلى",
     "recipesHeading": "الوصفات",
-    "allResults": "ابحث في كل الوصفات عن ”{q}“",
-    "empty": "لا نتائج لـ ”{q}“",
+    "allResults": "ابحث في كل الوصفات عن »{q}«",
+    "empty": "لا نتائج لـ »{q}«",
     "loading": "جارٍ البحث…"
   },
   "cook": {
     "timer": {
       "complete": "انتهى الوقت!",
       "remaining": "بقي {time}",
-      "paused": "متوقّف مؤقّتًا · بقي {time}",
-      "ready": "{time} جاهز"
+      "paused": "متوقف مؤقتًا، بقي {time}",
+      "ready": "{time} جاهز",
+      "stepDone": "انتهى مؤقت الخطوة {position}",
+      "customDone": "اكتمل {label}",
+      "defaultTimer": "المؤقت"
     },
     "a11y": {
-      "exit": "إنهاء وضع الطهي",
-      "progress": "تقدّم الطهي",
-      "stepTimer": "مؤقّت الخطوة، {time} متبقٍّ",
-      "jumpToStep": "الانتقال إلى الخطوة {position}: {title}، {time} متبقٍّ",
+      "exit": "الخروج من وضع الطهي",
+      "progress": "تقدم الطهي",
+      "stepTimer": "مؤقت الخطوة، بقي {time}",
+      "jumpToStep": "الانتقال إلى الخطوة {position}: {title}، بقي {time}",
       "goToStep": "الانتقال إلى الخطوة {position}: {title}"
     },
     "readAloud": {
       "toggle": "القراءة بصوت عالٍ",
       "repeat": "تكرار",
-      "repeatLabel": "قراءة هذه الخطوة بصوت عالٍ"
+      "repeatLabel": "تكرار هذه الخطوة بصوت عالٍ"
+    },
+    "toasts": {
+      "complete": {
+        "title": "أحسنت. اكتملت الوصفة!",
+        "description": "سجّل هذا الطهي لإضافة {title} إلى يومياتك.",
+        "action": "تسجيل هذا الطهي"
+      }
+    },
+    "allergens": {
+      "region": "فحص سلامة مسببات الحساسية",
+      "contains": "تحتوي هذه الوصفة على:",
+      "mayContain": "قد تحتوي أيضًا على (تحقق من الملصقات):",
+      "disclaimer": "تقدير اعتمادًا على نص المكونات. تحقق دائمًا من الملصقات والعلامات التجارية.",
+      "gotIt": "فهمت"
     }
   },
   "metadata": {
@@ -218,7 +235,15 @@
     "list": "مجموعاتك",
     "add": "الإضافة إلى المجموعة {name}",
     "remove": "الإزالة من المجموعة {name}",
-    "newNameField": "اسم المجموعة الجديدة"
+    "newNameField": "اسم المجموعة الجديدة",
+    "signInToSave": "سجّل الدخول لحفظ الوصفات في مجموعاتك.",
+    "toast": {
+      "savedTo": "تم الحفظ في «{name}»"
+    },
+    "trigger": "حفظ في مجموعة",
+    "title": "حفظ في مجموعة",
+    "description": "أضف هذه الوصفة إلى أحد كتب الطبخ لديك أو أنشئ كتابًا جديدًا.",
+    "create": "إنشاء"
   },
   "ingredientsDrawer": {
     "region": "قائمة {label} وتحجيم الوصفة"
@@ -238,7 +263,19 @@
     "moveUpNamed": "تحريك {object} لأعلى",
     "moveDownNamed": "تحريك {object} لأسفل",
     "remove": "إزالة",
-    "removeNamed": "إزالة {object}"
+    "removeNamed": "إزالة {object}",
+    "toast": {
+      "draftRestored": "تمت استعادة وصفتك غير المكتملة",
+      "estimateError": "تعذّر التقدير. أضف أولًا مكونات قابلة للوزن مع الكميات.",
+      "estimatedPartial": "تم التقدير من {sourced} من أصل {total} مكوّنات ({percent}% مغطى). عدّل حسب الحاجة.",
+      "estimated": "تم التقدير من مكوناتك. عدّلها حسب الحاجة.",
+      "updated": "تم تحديث الوصفة",
+      "created": "تم إنشاء الوصفة"
+    },
+    "validation": {
+      "titleToast": "تحتاج وصفتك إلى عنوان.",
+      "groupToast": "اختر مجموعة، أو غيّر ظهور الوصفة."
+    }
   },
   "characterCounter": {
     "remaining": "متبقٍ {count}",
@@ -329,5 +366,1502 @@
     "usedInRecipes": "مستخدم في الوصفات",
     "nutrition": "القيمة الغذائية",
     "perServing": "لكل حصة"
+  },
+  "groups": {
+    "addMember": {
+      "toast": {
+        "added": "تمت إضافتهم إلى مجموعتك"
+      },
+      "identifier": {
+        "label": "اسم المستخدم أو البريد الإلكتروني",
+        "placeholder": "@خالتي-مريم أو mary@example.com"
+      },
+      "role": {
+        "label": "الدور",
+        "member": "عضو",
+        "admin": "مسؤول",
+        "kid": "طفل"
+      },
+      "actions": {
+        "adding": "جارٍ الإضافة…",
+        "add": "إضافة"
+      }
+    },
+    "create": {
+      "toast": {
+        "created": "مجموعتك جاهزة لطاولة العائلة"
+      },
+      "trigger": "مجموعة جديدة",
+      "title": "أنشئ مجموعة عائلية",
+      "description": "اصنع مساحة مشتركة للوصفات التي يتناقلها أحباؤك.",
+      "fields": {
+        "name": {
+          "label": "اسم المجموعة",
+          "placeholder": "نادي عشاء الأحد"
+        },
+        "description": {
+          "label": "الوصف",
+          "placeholder": "للوصفات والملاحظات وأفكار ليالي الأسبوع التي نتشاركها جميعًا."
+        }
+      },
+      "actions": {
+        "cancel": "إلغاء",
+        "creating": "جارٍ الإنشاء…",
+        "create": "إنشاء مجموعة"
+      }
+    },
+    "settings": {
+      "toast": {
+        "saved": "تم حفظ إعدادات مجموعتك"
+      },
+      "fields": {
+        "name": "اسم المجموعة",
+        "description": "الوصف",
+        "avatarUrl": "URL لصورة الصورة الرمزية"
+      },
+      "actions": {
+        "saving": "جارٍ الحفظ…",
+        "save": "حفظ الإعدادات"
+      }
+    },
+    "actions": {
+      "soleOwnerNote": "بصفتك المالك الوحيد للمجموعة، لا يمكنك مغادرتها. انقل الملكية إلى عضو آخر أو احذف المجموعة بدلًا من ذلك.",
+      "leave": "مغادرة المجموعة",
+      "leaving": "جارٍ المغادرة…",
+      "delete": "حذف المجموعة",
+      "deleting": "جارٍ الحذف…",
+      "toast": {
+        "left": "غادرت مجموعتك",
+        "deleted": "تم حذف مجموعتك"
+      },
+      "confirm": {
+        "leave": {
+          "title": "هل تريد مغادرة «{group}»؟",
+          "description": "ستفقد الوصول إلى وصفاتها المشتركة. يمكنك الانضمام مرة أخرى بدعوة.",
+          "confirmLabel": "مغادرة المجموعة"
+        },
+        "delete": {
+          "title": "هل تريد حذف «{group}»؟",
+          "description": "تبقى وصفات الجميع محفوظة. ستتم إزالة مساحة المجموعة المشتركة ولا يمكن استعادتها.",
+          "confirmLabel": "حذف المجموعة"
+        }
+      }
+    },
+    "members": {
+      "fallbackMember": "طاهٍ من العائلة",
+      "noHandle": "لا يوجد اسم مستخدم بعد",
+      "a11y": {
+        "manageMember": "إدارة {name}"
+      },
+      "changeRole": "تغيير الدور",
+      "roles": {
+        "owner": "المالك",
+        "admin": "مسؤول",
+        "member": "عضو",
+        "kid": "طفل"
+      },
+      "toast": {
+        "roleChanged": "أصبح {name} الآن {role}",
+        "ownershipTransferred": "أصبح {name} الآن مالك مجموعتك",
+        "removed": "تمت إزالة {name} من مجموعتك"
+      },
+      "confirm": {
+        "transfer": {
+          "title": "هل تريد نقل الملكية إلى «{name}»؟",
+          "description": "ستبقى في المجموعة كمسؤول. يمكن للمالك الجديد نقلها إليك مرة أخرى.",
+          "confirmLabel": "نقل الملكية"
+        },
+        "remove": {
+          "title": "هل تريد إزالة «{name}» من هذه المجموعة؟",
+          "description": "سيفقد الوصول إلى وصفات المجموعة. يمكنك دعوته مرة أخرى في أي وقت.",
+          "confirmLabel": "إزالة العضو"
+        }
+      },
+      "transferOwnership": "نقل الملكية",
+      "removeFromGroup": "إزالة من المجموعة"
+    },
+    "inviteLink": {
+      "toast": {
+        "ready": "رابط دعوتك جاهز للمشاركة",
+        "revoked": "تم إلغاء رابط دعوتك",
+        "copied": "تم نسخ رابط دعوتك",
+        "copyFailed": "لم نتمكن من نسخ الرابط. جرّب نسخه يدويًا."
+      },
+      "trigger": "رابط الدعوة",
+      "title": "شارك رابط الانضمام",
+      "description": "يمكن لأي شخص لديه الرابط الانضمام. مناسب تمامًا للأقارب الذين لم ينضموا إلى Heirloom بعد.",
+      "role": {
+        "label": "الدور",
+        "member": "عضو",
+        "kid": "طفل"
+      },
+      "expires": "ينتهي",
+      "expiry": {
+        "never": "لا ينتهي أبدًا",
+        "days7": "7 أيام",
+        "days30": "30 يومًا",
+        "days90": "90 يومًا"
+      },
+      "linkLabel": "رابط الدعوة",
+      "a11y": {
+        "copyInviteLink": "نسخ رابط الدعوة"
+      },
+      "actions": {
+        "revoking": "جارٍ الإلغاء…",
+        "revoke": "إلغاء هذا الرابط",
+        "generating": "جارٍ الإنشاء…",
+        "generateNew": "إنشاء رابط جديد",
+        "generate": "إنشاء رابط دعوة"
+      }
+    },
+    "join": {
+      "toast": {
+        "alreadyMember": "أنت موجود بالفعل في {group}",
+        "joined": "أهلًا بك في {group}!"
+      },
+      "joining": "جارٍ الانضمام…",
+      "join": "انضم إلى {group}",
+      "signInRequired": "سجّل الدخول لقبول هذه الدعوة.",
+      "signUpAndJoin": "أنشئ حسابًا وانضم",
+      "alreadyHaveAccount": "لدي حساب بالفعل"
+    },
+    "card": {
+      "defaultDescription": "طاولة مطبخ مشتركة لمن يطبخون ويتذوقون ويتذكرون معًا.",
+      "memberCount": "{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+      "recipeCount": "{count, plural, zero {لا وصفات} one {وصفة واحدة} two {وصفتان} few {# وصفات} many {# وصفة} other {# وصفة}}",
+      "roles": {
+        "owner": "المالك",
+        "admin": "مسؤول",
+        "member": "عضو",
+        "kid": "طفل"
+      }
+    },
+    "activity": {
+      "fallbackActor": "طاهٍ من العائلة",
+      "headline": {
+        "recipeAdded": "أضاف",
+        "cookShared": "طبخ",
+        "reviewed": "راجع",
+        "commented": "علّق على",
+        "suggested": "اقترح تعديلًا على",
+        "memberJoined": "انضم إلى العائلة"
+      },
+      "cookPhotoAlt": "طبخة {name}",
+      "empty": {
+        "title": "لا يوجد نشاط بعد",
+        "description": "أضف وصفة أو اطبخ شيئًا أو اترك مراجعة. سيظهر ذلك هنا للعائلة."
+      },
+      "loading": "جارٍ التحميل…",
+      "loadOlder": "تحميل الأقدم"
+    },
+    "moderation": {
+      "toast": {
+        "hidden": "مخفي عن الأعضاء",
+        "dismissed": "تم تجاهل البلاغات"
+      },
+      "target": {
+        "comment": "تعليق",
+        "review": "مراجعة",
+        "cookLog": "منشور طبخ"
+      },
+      "fallbackAuthor": "عضو",
+      "reportCount": "{count, plural, zero {لا بلاغات} one {بلاغ واحد} two {بلاغان} few {# بلاغات} many {# بلاغًا} other {# بلاغ}}",
+      "hidden": "مخفي",
+      "byAuthor": "بواسطة {name}",
+      "reason": {
+        "spam": "رسائل مزعجة",
+        "harassment": "مضايقة",
+        "inappropriate": "غير مناسب",
+        "other": "سبب آخر"
+      },
+      "actions": {
+        "hide": "إخفاء عن الأعضاء",
+        "dismissReports": "تجاهل البلاغات",
+        "dismissFine": "تجاهله كأمر مقبول"
+      },
+      "empty": {
+        "title": "لا شيء للمراجعة",
+        "description": "عندما يبلّغ عضو عن تعليق أو مراجعة أو منشور طبخ، سيظهر هنا."
+      }
+    },
+    "cookAlong": {
+      "a11y": {
+        "section": "الطبخ معًا"
+      },
+      "title": "الطبخ معًا",
+      "description": "اختاروا ليلة واطبخوا الطبق نفسه معًا، سواء كنتم قريبين أو بعيدين.",
+      "logPrompt": {
+        "prefix": "كيف سار",
+        "suffix": "؟ سجّل طبختك وقيّمها.",
+        "action": "تسجيل طبختي"
+      },
+      "fallbackTitle": "طبخك مع العائلة",
+      "empty": {
+        "title": "لا توجد مواعيد للطبخ معًا في التقويم بعد",
+        "memberAction": "جدول واحدًا واجمع العائلة."
+      },
+      "fallbackHost": "طاهٍ من العائلة",
+      "fallbackTitleShort": "طبخ معًا",
+      "cooking": "نطبخ",
+      "hostedBy": "مع {host} كمضيف",
+      "goingCount": "{count, plural, zero {لا أحد ذاهب} one {# ذاهب} two {# ذاهبان} few {# ذاهبون} many {# ذاهبًا} other {# ذاهب}}",
+      "moreGoing": "+{count} آخرون",
+      "rsvp": {
+        "label": "ردك:",
+        "options": {
+          "going": "سأحضر",
+          "maybe": "ربما",
+          "declined": "لا أستطيع الحضور"
+        }
+      },
+      "schedule": {
+        "toast": {
+          "missingRecipeAndDate": "اختر وصفة وتاريخًا.",
+          "scheduled": "تم جدولة الطبخ معًا. العائلة مدعوة"
+        },
+        "trigger": "جدولة طبخ معًا",
+        "title": "جدولة طبخ معًا",
+        "description": "اختر وصفة ووقتًا، ثم ادع العائلة لطبخها معًا.",
+        "fields": {
+          "recipe": "الوصفة",
+          "when": "الموعد",
+          "title": "العنوان (اختياري)",
+          "note": "ملاحظة (اختياري)"
+        },
+        "placeholders": {
+          "title": "ليلة جنوكي الأحد",
+          "note": "سنبدأ عند 5. أحضروا مآزركم!"
+        },
+        "actions": {
+          "cancel": "إلغاء",
+          "scheduling": "جارٍ الجدولة…",
+          "schedule": "جدولة"
+        }
+      }
+    }
+  },
+  "collections": {
+    "create": {
+      "toast": {
+        "created": "مجموعتك جاهزة"
+      },
+      "trigger": "مجموعة جديدة",
+      "title": "أنشئ مجموعة وصفات",
+      "description": "اجمع الوصفات التي تحبها في كتاب طبخ. عشاء أيام الأسبوع أو مخبوزات الأعياد أو الأطباق التي تعود إليها دائمًا.",
+      "fields": {
+        "name": {
+          "label": "الاسم",
+          "placeholder": "أطباق أيام الأسبوع الرابحة"
+        },
+        "description": {
+          "label": "الوصف",
+          "placeholder": "وجبات عشاء سريعة ومضمونة تأكلها العائلة كلها."
+        }
+      },
+      "actions": {
+        "cancel": "إلغاء",
+        "creating": "جارٍ الإنشاء…",
+        "create": "إنشاء مجموعة وصفات"
+      }
+    },
+    "actions": {
+      "toast": {
+        "updated": "تم تحديث مجموعة وصفاتك",
+        "deleted": "تم حذف مجموعة وصفاتك"
+      },
+      "confirm": {
+        "delete": {
+          "title": "هل تريد حذف «{name}»؟",
+          "description": "تبقى وصفاتك في مكتبتك. ستتم إزالة هذه المجموعة فقط.",
+          "confirmLabel": "حذف مجموعة الوصفات"
+        }
+      },
+      "a11y": {
+        "options": "فتح خيارات مجموعة الوصفات"
+      },
+      "menu": {
+        "rename": "إعادة التسمية",
+        "delete": "حذف"
+      },
+      "edit": {
+        "title": "تعديل مجموعة الوصفات",
+        "description": "غيّر اسم هذه المجموعة أو حدّث وصفها.",
+        "fields": {
+          "name": "الاسم",
+          "description": "الوصف"
+        },
+        "actions": {
+          "cancel": "إلغاء",
+          "saving": "جارٍ الحفظ…",
+          "save": "حفظ التغييرات"
+        }
+      }
+    },
+    "removeFromCollection": {
+      "toast": {
+        "removed": "تمت الإزالة من مجموعة وصفاتك"
+      },
+      "a11y": {
+        "remove": "إزالة الوصفة من المجموعة"
+      }
+    },
+    "favorite": {
+      "toast": {
+        "saved": "تم الحفظ في مفضلاتك",
+        "removed": "تمت الإزالة من مفضلاتك"
+      },
+      "signInToSave": "سجّل الدخول لحفظ الوصفات في مجموعاتك.",
+      "a11y": {
+        "saved": "محفوظة في المفضلات",
+        "save": "حفظ في المفضلات"
+      },
+      "saved": "محفوظة",
+      "save": "حفظ"
+    },
+    "share": {
+      "toast": {
+        "copied": "تم نسخ رابط المشاركة",
+        "copyFailed": "لم نتمكن من نسخ الرابط. جرّب نسخه يدويًا."
+      },
+      "trigger": "مشاركة",
+      "visibility": {
+        "label": "الظهور",
+        "options": {
+          "private": {
+            "label": "خاص",
+            "hint": "أنت فقط تستطيع رؤية كتاب الطبخ هذا."
+          },
+          "unlisted": {
+            "label": "غير مدرج",
+            "hint": "يمكن لأي شخص لديه الرابط مشاهدته."
+          },
+          "public": {
+            "label": "عام",
+            "hint": "يمكن لأي شخص العثور عليه ومشاهدته."
+          }
+        }
+      },
+      "shareLink": "رابط المشاركة",
+      "a11y": {
+        "copyShareLink": "نسخ رابط المشاركة"
+      }
+    },
+    "shareWithGroup": {
+      "toast": {
+        "stoppedSharing": "توقفت عن مشاركة مجموعة وصفاتك",
+        "shared": "تمت المشاركة مع مجموعتك"
+      },
+      "triggerWithCount": "مشتركة مع {count}",
+      "trigger": "مشاركة مع مجموعة",
+      "title": "مشاركة مع مجموعة",
+      "description": "يمكن لأعضاء المجموعات التي تختارها مشاهدة هذه المجموعة.",
+      "empty": "انضم إلى مجموعة عائلية لمشاركة مجموعات الوصفات معها."
+    },
+    "print": {
+      "trigger": "طباعة كتاب الطبخ",
+      "title": "اطبع كتاب الطبخ هذا",
+      "description": "رتّب المجموعة كلها ككتيّب واحد: الغلاف والمحتويات وكل وصفة. جاهز لـ «طباعة → حفظ كملف PDF».",
+      "dedication": {
+        "label": "إهداء (اختياري)",
+        "placeholder": "لأحفادي. كي يبقى مطبخنا معكم دائمًا."
+      },
+      "openPrint": "فتح عرض الطباعة"
+    },
+    "card": {
+      "recipeCount": "{count, plural, zero {لا وصفات} one {وصفة واحدة} two {وصفتان} few {# وصفات} many {# وصفة} other {# وصفة}}",
+      "sharedWith": "مشتركة مع {group}",
+      "sharedMore": " و{count} آخرون"
+    }
+  },
+  "errors": {
+    "default": "لم يكتمل ذلك. يرجى المحاولة مرة أخرى.",
+    "NOT_AUTHENTICATED": "يرجى تسجيل الدخول للقيام بذلك.",
+    "UNAUTHENTICATED": "يرجى تسجيل الدخول للقيام بذلك.",
+    "FORBIDDEN": "ليست لديك صلاحية للقيام بذلك.",
+    "NOT_FOUND": "لم نتمكن من العثور على ذلك.",
+    "RATE_LIMITED": "تتحرك بسرعة قليلًا. حاول مرة أخرى بعد قليل.",
+    "TOO_MANY_REQUESTS": "تتحرك بسرعة قليلًا. حاول مرة أخرى بعد قليل.",
+    "NETWORK": "يبدو أنك غير متصل. تحقق من اتصالك وحاول مرة أخرى.",
+    "NETWORK_ERROR": "يبدو أنك غير متصل. تحقق من اتصالك وحاول مرة أخرى.",
+    "TIMEOUT": "استغرق ذلك وقتًا طويلًا. يرجى المحاولة مرة أخرى.",
+    "CONFLICT": "تعذّر إكمال هذا التغيير. يرجى تحديث الصفحة والمحاولة مرة أخرى.",
+    "INTERNAL": "لم يكتمل ذلك. يرجى المحاولة مرة أخرى.",
+    "INTERNAL_ERROR": "لم يكتمل ذلك. يرجى المحاولة مرة أخرى.",
+    "UNKNOWN": "لم يكتمل ذلك. يرجى المحاولة مرة أخرى."
+  },
+  "shopping": {
+    "toasts": {
+      "nothingToSend": "لا شيء لإرساله. تم تحديد كل شيء.",
+      "listCopied": "تم نسخ القائمة. الصقها في رسالة",
+      "shareFailed": "لم نتمكن من مشاركة القائمة.",
+      "cleared": "تم مسح قائمة التسوق"
+    },
+    "share": {
+      "title": "🛒 قائمة التسوق",
+      "titleText": "قائمة التسوق",
+      "send": "إرسال القائمة"
+    },
+    "allergens": {
+      "disclaimer": "تقدير اعتمادًا على أسماء المكونات. تحقق من الملصقات والعلامات التجارية.",
+      "warning": "تحذير من مسببات الحساسية: يحتوي على {allergens}. {disclaimer}"
+    },
+    "item": {
+      "optional": "اختياري",
+      "aisleFor": "الممر الخاص بـ {item}",
+      "changeAisle": "تغيير الممر",
+      "remove": "إزالة {item}"
+    },
+    "manual": {
+      "itemLabel": "إضافة عنصر",
+      "itemPlaceholder": "مثال: مناشف ورقية",
+      "quantityLabel": "الكمية",
+      "unitLabel": "الوحدة",
+      "add": "إضافة"
+    },
+    "empty": {
+      "title": "قائمتك فارغة",
+      "description": "أضف عناصر أعلاه، أو افتح وصفة واختر «إضافة إلى قائمة التسوق»."
+    },
+    "summary": {
+      "toBuy": "{count, plural, zero {لا شيء للشراء} one {# للشراء} two {# للشراء} few {# للشراء} many {# للشراء} other {# للشراء}}",
+      "inCart": "{count, plural, zero {لا شيء في العربة} one {# في العربة} two {# في العربة} few {# في العربة} many {# في العربة} other {# في العربة}}"
+    },
+    "actions": {
+      "clearChecked": "مسح المحدد",
+      "clearAll": "مسح الكل"
+    },
+    "sections": {
+      "inCart": "في العربة"
+    },
+    "storage": {
+      "synced": "متزامنة مع حسابك",
+      "local": "محفوظة على هذا الجهاز"
+    },
+    "confirm": {
+      "clearAll": {
+        "confirmLabel": "مسح القائمة"
+      },
+      "clearAllSynced": {
+        "title": "مسح قائمة التسوق بالكامل؟",
+        "description": "تتم إزالة كل عناصر التسوق المتزامنة. لا يمكن التراجع عن ذلك."
+      },
+      "clearAllLocal": {
+        "title": "مسح قائمة التسوق بالكامل؟",
+        "description": "تتم إزالة كل العناصر المحفوظة على هذا الجهاز. لا يمكن التراجع عن ذلك."
+      }
+    },
+    "add": {
+      "trigger": "إضافة إلى القائمة",
+      "title": "إضافة إلى قائمة التسوق",
+      "description": "أضف مكونات {title} إلى قائمة البقالة لديك. تُدمج العناصر المتشابهة وتُضبط الكميات حسب الحصص التي تختارها.",
+      "toasts": {
+        "added": "تمت الإضافة إلى قائمة التسوق",
+        "viewList": "عرض القائمة"
+      },
+      "servings": {
+        "label": "الحصص المراد التسوق لها",
+        "recipeMakes": "تكفي هذه الوصفة لـ {count} {noun}. سنضبط الكميات لتطابق ذلك.",
+        "noSize": "لا تحتوي هذه الوصفة على حجم حصة، لذلك تُضاف الكميات كما هي.",
+        "scaledToFamily": "تم الضبط لعائلتك المكونة من {count}."
+      },
+      "staples": {
+        "label": "تضمين أساسيات المخزن",
+        "description": "متوقف افتراضيًا. نتجاوز الملح والزيت والزبدة والتوابل الشائعة حتى تحتوي قائمتك فقط على ما تحتاج إلى شرائه.",
+        "aria": "تضمين أساسيات المخزن مثل الملح والزيت"
+      },
+      "cancel": "إلغاء",
+      "adding": "جارٍ الإضافة…",
+      "confirm": "إضافة إلى القائمة"
+    }
+  },
+  "print": {
+    "title": "الطباعة والمشاركة",
+    "formatAria": "تنسيق الطباعة",
+    "formats": {
+      "full": {
+        "label": "صفحة كاملة",
+        "hint": "ورقة وصفة واسعة مع صورة وملاحظات ومصدر."
+      },
+      "compact": {
+        "label": "عمودان",
+        "hint": "شريط جانبي للمكونات مع طريقة تحضير متدفقة."
+      },
+      "card4x6": {
+        "label": "بطاقة 4×6",
+        "hint": "حجم بطاقة فهرسة مع تنسيق نص مضغوط."
+      },
+      "card3x5": {
+        "label": "بطاقة 3×5",
+        "hint": "أصغر تخطيط بطاقة لصناديق الوصفات."
+      }
+    },
+    "largePrint": {
+      "label": "طباعة كبيرة",
+      "hint": "خط أكبر وسهل القراءة للورقة المطبوعة."
+    },
+    "actions": {
+      "back": "رجوع",
+      "print": "طباعة / حفظ PDF",
+      "copyLink": "نسخ الرابط",
+      "share": "مشاركة",
+      "export": "تصدير",
+      "copyPlainText": "نسخ كنص عادي",
+      "copyMarkdown": "نسخ كـ Markdown",
+      "copyShareCaption": "نسخ نص المشاركة",
+      "downloadMarkdown": "تنزيل .md",
+      "downloadText": "تنزيل .txt"
+    },
+    "menus": {
+      "copy": "نسخ",
+      "download": "تنزيل"
+    },
+    "toasts": {
+      "clipboardUnavailable": "الحافظة غير متاحة في هذا المتصفح.",
+      "copyFailed": "لم نتمكن من النسخ إلى الحافظة.",
+      "linkCopied": "تم نسخ الرابط إلى الحافظة",
+      "plainTextCopied": "تم نسخ النص العادي",
+      "markdownCopied": "تم نسخ Markdown",
+      "shareCaptionCopied": "تم نسخ نص المشاركة",
+      "downloaded": "تم تنزيل {filename}"
+    },
+    "week": {
+      "title": "علّقها على الثلاجة",
+      "heading": "عشاءات هذا الأسبوع",
+      "back": "رجوع",
+      "print": "طباعة / حفظ PDF",
+      "copyLink": "نسخ الرابط",
+      "toasts": {
+        "linkCopied": "تم نسخ الرابط إلى الحافظة",
+        "copyLinkFailed": "لم نتمكن من نسخ الرابط."
+      }
+    }
+  },
+  "dietary": {
+    "toasts": {
+      "added": "تمت إضافة الملف",
+      "updated": "تم تحديث الملف",
+      "removed": "تمت إزالة الملف"
+    },
+    "actions": {
+      "addFamilyMember": "إضافة فرد من العائلة",
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ…",
+      "addMember": "إضافة فرد",
+      "saveChanges": "حفظ التغييرات"
+    },
+    "empty": {
+      "title": "لا توجد ملفات بعد",
+      "description": "سجّل لمن تطهو: حساسياتهم وأنظمتهم الغذائية وأهداف السعرات الحرارية. يمكن أن يساعدك Heirloom على الطهي بأمان للجميع."
+    },
+    "profile": {
+      "edit": "تعديل {name}",
+      "remove": "إزالة {name}",
+      "calorieGoal": "هدف {calories} كيلوكالوري/اليوم",
+      "noRestrictions": "لا توجد قيود مسجلة"
+    },
+    "confirm": {
+      "remove": {
+        "title": "إزالة الملف الغذائي لـ «{name}»؟",
+        "description": "تُحذف تفاصيلهم الغذائية وأهدافهم. لا يمكن التراجع عن ذلك.",
+        "confirmLabel": "إزالة الملف"
+      }
+    },
+    "dialog": {
+      "addTitle": "إضافة فرد من العائلة",
+      "editTitle": "تعديل الملف"
+    },
+    "fields": {
+      "name": "الاسم",
+      "namePlaceholder": "مثال: Theo",
+      "allergies": "الحساسيات",
+      "diets": "الأنظمة الغذائية",
+      "calorieGoal": "هدف السعرات الحرارية اليومي",
+      "caloriePlaceholder": "اختياري، مثال: 2000",
+      "familyGroup": "مجموعة العائلة (اختياري)",
+      "justMe": "أنا فقط"
+    }
+  },
+  "moderation": {
+    "toasts": {
+      "blocked": "تم حظر {name}"
+    },
+    "actions": {
+      "more": "إجراءات إضافية",
+      "report": "إبلاغ",
+      "block": "حظر {name}",
+      "delete": "حذف"
+    },
+    "report": {
+      "title": "الإبلاغ عن هذا",
+      "description": "البلاغات خاصة. يراها مالكو المجموعة والمشرفون فقط، ولا يراها الأعضاء الآخرون أبدًا.",
+      "reasonLegend": "السبب",
+      "detailPlaceholder": "أضف أي تفاصيل (اختياري)",
+      "cancel": "إلغاء",
+      "submit": "إرسال البلاغ",
+      "toasts": {
+        "sent": "تم إرسال البلاغ"
+      },
+      "reasons": {
+        "inappropriate": {
+          "label": "غير ملائم",
+          "hint": "غير مناسب لمساحة عائلية"
+        },
+        "harassment": {
+          "label": "مضايقة",
+          "hint": "استهداف شخص أو التنمر عليه"
+        },
+        "spam": {
+          "label": "رسائل مزعجة",
+          "hint": "خارج الموضوع أو ترويجي"
+        },
+        "other": {
+          "label": "شيء آخر",
+          "hint": "أخبرنا بالمزيد أدناه"
+        }
+      }
+    }
+  },
+  "planner": {
+    "copyLastWeek": {
+      "button": {
+        "copying": "جار النسخ…",
+        "default": "نسخ الأسبوع الماضي"
+      },
+      "toast": {
+        "previousEmpty": "كان الأسبوع الماضي فارغًا. لا يوجد شيء لنسخه بعد.",
+        "weekFull": "هذا الأسبوع ممتلئ بالفعل. لا يوجد شيء جديد لنسخه.",
+        "copiedMeals": "نُسخت {count, plural, zero {لا وجبات} one {وجبة واحدة} two {وجبتان} few {# وجبات} many {# وجبة} other {# وجبة}} من الأسبوع الماضي"
+      }
+    },
+    "shoppingList": {
+      "button": {
+        "building": "جار التحضير…",
+        "default": "إنشاء قائمة التسوق"
+      },
+      "toast": {
+        "emptyWeek": "لا توجد وصفات مخططة لهذا الأسبوع بعد. أضف بعض الوجبات أولًا.",
+        "alreadyReady": "كل ما في وصفات هذا الأسبوع موجود بالفعل في قائمتك.",
+        "addedItems": "أُضيف {count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+        "mergedItems": "دُمج {count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+        "ready": "قائمة التسوق جاهزة: {summary}",
+        "viewList": "عرض القائمة"
+      }
+    },
+    "prepAhead": {
+      "heading": "هذه الليلة من أجل الغد",
+      "forRecipe": "لـ"
+    },
+    "board": {
+      "today": "اليوم",
+      "add": "إضافة",
+      "optional": "(اختياري)",
+      "cancel": "إلغاء",
+      "adding": "جار الإضافة…",
+      "addToPlan": "إضافة إلى الخطة",
+      "untitled": "بلا عنوان",
+      "allergenContains": "يحتوي على {allergens}",
+      "allergenTitle": "تقدير قدر الإمكان من أسماء المكونات. راجع الملصقات والعلامات التجارية.",
+      "leftovers": "بقايا الطعام",
+      "cooked": "طُبخ",
+      "logging": "جار التسجيل…",
+      "cookedIt": "طبخته",
+      "mealSlot": {
+        "breakfast": "الفطور",
+        "lunch": "الغداء",
+        "dinner": "العشاء",
+        "snack": "وجبة خفيفة"
+      },
+      "a11y": {
+        "addToSlot": "إضافة إلى {slot} يوم {day}",
+        "removeFromPlan": "إزالة {title} من الخطة"
+      },
+      "toast": {
+        "removedMealAndLeftovers": "أُزيلت الوجبة وبقاياها",
+        "removedFromPlan": "أُزيلت من خطتك",
+        "loggedToJournal": "حُفظت في يومياتك",
+        "addedWithLeftovers": "أُضيفت إلى خطتك. وحُجزت ليلة للبقايا أيضًا",
+        "addedToPlan": "أُضيفت إلى خطتك"
+      },
+      "batch": {
+        "titleWithDay": "اطبخ {multiple}×. البقايا يوم {day}",
+        "titleWithoutDay": "اطبخ {multiple}×. كمية إضافية للبقايا",
+        "badge": "دفعة ×{multiple}",
+        "toggle": "اطبخ كمية أكبر. كُلها مرة أخرى في ليلة ثانية",
+        "makeLabel": "حضّر",
+        "option": "دفعة {multiple}×",
+        "leftoversNightLabel": "ليلة البقايا"
+      },
+      "removeBatch": {
+        "title": "إزالة هذه الوجبة؟",
+        "descriptionWithDay": "طبخت كمية أكبر مع ليلة للبقايا يوم {day}. هل تريد إزالتها أيضًا أم هذه الوجبة فقط؟",
+        "descriptionWithoutDay": "طبخت كمية أكبر مع ليلة للبقايا. هل تريد إزالتها أيضًا أم هذه الوجبة فقط؟",
+        "justThis": "هذه فقط",
+        "removeBoth": "إزالة الاثنين"
+      },
+      "validation": {
+        "pickRecipeOrNote": "اختر وصفة أو أضف ملاحظة",
+        "pickLeftoversNight": "اختر ليلة للبقايا"
+      },
+      "dialog": {
+        "title": "إضافة إلى {slot}",
+        "recipeLabel": "وصفة",
+        "searchPlaceholder": "ابحث في وصفاتك…",
+        "noteLabel": "ملاحظة",
+        "notePlaceholder": "بقايا، أكل خارج البيت، تحضير مسبق…"
+      },
+      "empty": {
+        "noRecipes": "لا توجد وصفات في مكتبتك بعد. أضف ملاحظة أدناه بدلًا من ذلك.",
+        "noRecipeMatches": "لا توجد وصفات تطابق «{query}».",
+        "groupPrefix": "لا شيء مخططًا لـ",
+        "groupMiddle": "هذا الأسبوع بعد. اضغط",
+        "groupSuffix": "في أي يوم. يمكن لكل من في المجموعة رؤية هذه الخطة وتعديلها.",
+        "soloPrefix": "لا شيء مخطط لهذا الأسبوع بعد. اضغط",
+        "soloSuffix": "في أي يوم لإضافة وصفة أو ملاحظة سريعة."
+      }
+    }
+  },
+  "engagement": {
+    "comments": {
+      "toast": {
+        "writeBeforePosting": "اكتب شيئًا قبل النشر.",
+        "replyPosted": "نُشر الرد",
+        "suggestionShared": "تمت مشاركة الاقتراح",
+        "commentPosted": "نُشر التعليق",
+        "commentDeleted": "حُذف التعليق",
+        "suggestionResolved": "تم حل الاقتراح",
+        "suggestionReopened": "أُعيد فتح الاقتراح",
+        "suggestionApplied": "طُبق الاقتراح"
+      },
+      "heading": "المحادثة",
+      "description": "اطرح أسئلة، شارك كيف نجحت الوصفة، أو اقترح لمسة عائلية.",
+      "comment": "تعليق",
+      "suggestion": "اقتراح",
+      "commentBodyLabel": "نص التعليق",
+      "suggestionPlaceholder": "اقترح تغييرًا يمكن لصاحب الوصفة حله…",
+      "commentPlaceholder": "اترك ملاحظة لطاولة العائلة… استخدم @ لذكر شخص",
+      "suggestionHelper": "اقترح تغييرًا يمكن لصاحب الوصفة حله.",
+      "commentHelper": "شارك كيف نجحت أو لمسة ستجربها.",
+      "posting": "جار النشر…",
+      "post": "نشر",
+      "signIn": "سجّل الدخول لإضافة تعليق أو رد أو اقتراح تغيير في الوصفة.",
+      "empty": {
+        "heading": "ابدأ المحادثة",
+        "body": "كن أول من يطرح سؤالًا، أو يحتفل بخبز ناجح، أو يترك اقتراحًا مفيدًا لصاحب الوصفة."
+      },
+      "anchor": {
+        "title": "مثبت على {label}",
+        "ingredient": "مكوّن",
+        "step": "خطوة"
+      },
+      "applied": "مطبّق",
+      "resolved": "محلول",
+      "reply": "رد",
+      "acceptAndApply": "قبول وتطبيق",
+      "reopen": "إعادة فتح",
+      "resolve": "حل",
+      "replyLabel": "رد",
+      "replyPlaceholder": "اكتب ردًا… استخدم @ لذكر شخص",
+      "cancel": "إلغاء",
+      "replying": "جار الرد…"
+    },
+    "reactions": {
+      "emoji": {
+        "love": "أحببته",
+        "yum": "لذيذ",
+        "clap": "تصفيق",
+        "wow": "رائع",
+        "fire": "ناري",
+        "party": "احتفال"
+      },
+      "titleWithNames": "{label}، {names}",
+      "a11y": {
+        "count": "{label}، {count, plural, zero {لا تفاعلات} one {تفاعل واحد} two {تفاعلان} few {# تفاعلات} many {# تفاعلًا} other {# تفاعل}}{reacted}",
+        "youReacted": "، تفاعلت أنت",
+        "add": "إضافة تفاعل"
+      }
+    },
+    "anchoredSuggestions": {
+      "toast": {
+        "sent": "أُرسل الاقتراح إلى صاحب الوصفة"
+      },
+      "authorSuggests": "{name} يقترح",
+      "applied": "مطبّق",
+      "resolved": "محلول",
+      "placeholder": "اقترح تعديلًا لـ {label}…",
+      "send": "إرسال الاقتراح",
+      "cancel": "إلغاء",
+      "trigger": "اقتراح تعديل"
+    },
+    "reviews": {
+      "toast": {
+        "updated": "حُدثت المراجعة",
+        "posted": "نُشرت المراجعة",
+        "deleted": "حُذفت المراجعة"
+      },
+      "a11y": {
+        "yourStarRating": "تقييمك بالنجوم",
+        "outOfStars": "{value} من 5 نجوم",
+        "rateStars": "قيّم بـ {count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتين} few {# نجوم} many {# نجمة} other {# نجمة}}"
+      },
+      "heading": "المراجعات وملاحظات التذوق",
+      "description": "شارك تقييمًا مدروسًا بالنجوم وملاحظة: كيف نجحت، وما الذي غيّرته.",
+      "editing": "تعدّل مراجعتك",
+      "yourStarRating": "تقييمك بالنجوم",
+      "reviewTitleLabel": "عنوان المراجعة",
+      "titlePlaceholder": "عنوان (اختياري)، مثل «فائزة في ليلة مزدحمة»",
+      "reviewLabel": "مراجعة",
+      "bodyPlaceholder": "كيف نجحت؟ ما الذي ستغيّره في المرة القادمة؟",
+      "photoLabel": "صورة (اختياري)",
+      "helper": "مراجعة واحدة لكل وصفة. يمكنك تعديل مراجعتك أو حذفها في أي وقت.",
+      "delete": "حذف",
+      "saving": "جار الحفظ…",
+      "updateReview": "تحديث المراجعة",
+      "postReview": "نشر المراجعة",
+      "signIn": "سجّل الدخول لترك تقييم بالنجوم ومراجعة مكتوبة.",
+      "count": "{count, plural, zero {لا مراجعات} one {مراجعة واحدة} two {مراجعتان} few {# مراجعات} many {# مراجعة} other {# مراجعة}}",
+      "sort": {
+        "mostRecent": "الأحدث",
+        "highestRated": "الأعلى تقييمًا"
+      },
+      "empty": "لا توجد مراجعات بعد. كن أول من يشارك كيف نجحت.",
+      "familyCook": "طبخة عائلية",
+      "edited": "(معدّلة)",
+      "photoAlt": "صورة {name}"
+    },
+    "ratingControl": {
+      "toast": {
+        "cleared": "مُسح التقييم",
+        "saved": "حُفظ التقييم"
+      },
+      "noRatings": "لا توجد تقييمات بعد",
+      "ratingCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+      "firstToLeaveStars": "كن أول من يترك نجومًا.",
+      "a11y": {
+        "recipeRating": "تقييم الوصفة",
+        "rateStars": "قيّم بـ {count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتين} few {# نجوم} many {# نجمة} other {# نجمة}}"
+      },
+      "yourRating": "تقييمك: {rating}. انقر عليه مرة أخرى لمسحه.",
+      "tapToRate": "اضغط نجمة لتقييم هذه الوصفة.",
+      "signIn": "سجّل الدخول لتقييم هذه الوصفة."
+    },
+    "ratingSummary": {
+      "a11y": {
+        "breakdown": "تفصيل التقييمات",
+        "averageStars": "متوسط {average} من 5 نجوم",
+        "distributionRow": "{star} نجوم: {count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}} ({pct}%)"
+      },
+      "empty": "لا توجد تقييمات بعد. كن أول من يقيّم هذه الوصفة.",
+      "ratingCount": "{count, plural, zero {لا تقييمات} one {تقييم واحد} two {تقييمان} few {# تقييمات} many {# تقييمًا} other {# تقييم}}",
+      "member": "عضو",
+      "more": "+{count} آخرين"
+    }
+  },
+  "cookLog": {
+    "filters": {
+      "recipe": "وصفة",
+      "a11y": {
+        "filterByRecipe": "تصفية اليوميات حسب الوصفة",
+        "filterByTimeRange": "تصفية اليوميات حسب الفترة"
+      },
+      "allRecipes": "كل الوصفات",
+      "when": "متى"
+    },
+    "familyCooks": {
+      "a11y": {
+        "section": "طبخته عائلتك"
+      },
+      "heading": "طبخته عائلتك",
+      "description": "طبخات شاركتها عائلتك مع المجموعة.",
+      "familyCook": "طبخة عائلية",
+      "photoAlt": "طبخة {name}"
+    },
+    "section": {
+      "a11y": {
+        "journal": "يوميات الطبخ",
+        "journalForRecipe": "يوميات الطبخ لـ {title}",
+        "shareWithGroup": "مشاركة هذه الطبخة مع {group}",
+        "deleteEntry": "حذف إدخال اليوميات هذا"
+      },
+      "databaseConnect": {
+        "before": "اربط قاعدة بيانات لتبدأ حفظ يوميات الطبخ. اضبط",
+        "after": "(راجع",
+        "end": ")."
+      },
+      "heading": "طبخته",
+      "summary": {
+        "withCooks": "طبختها {count, plural, zero {ولا مرة بعد} one {مرة واحدة} two {مرتين} few {# مرات} many {# مرة} other {# مرة}}. تاريخ يبقى حيًا.",
+        "empty": "سجّل كل مرة تطبخها. ابنِ تاريخك الخاص."
+      },
+      "cookedTimes": "{count, plural, zero {لم تُطبخ بعد} one {طُبخت مرة واحدة} two {طُبخت مرتين} few {طُبخت # مرات} many {طُبخت # مرة} other {طُبخت # مرة}}",
+      "cookedTimesLower": "{count, plural, zero {لم تُطبخ بعد} one {طُبخت مرة واحدة} two {طُبخت مرتين} few {طُبخت # مرات} many {طُبخت # مرة} other {طُبخت # مرة}}",
+      "empty": {
+        "heading": "لا توجد طبخات مسجلة بعد",
+        "body": "في أول مرة تطبخ هذا، سجّله. الملاحظات واللمسات والصورة تصبح جزءًا من قصة الوصفة."
+      },
+      "toast": {
+        "loggedAgain": "سُجلت مرة أخرى. {count, plural, zero {لم تُطبخ بعد} one {طُبخت مرة واحدة} two {طُبخت مرتين} few {طُبخت # مرات} many {طُبخت # مرة} other {طُبخت # مرة}}",
+        "signInToLog": "سجّل الدخول لتسجيل طبخة",
+        "loggedAndShared": "سُجلت وشوركت مع {group}",
+        "loggedToJournal": "حُفظت في يومياتك",
+        "removedFromJournal": "أُزيلت من يومياتك"
+      },
+      "logAgain": {
+        "question": "طبختها مرة أخرى؟",
+        "lastMade": "آخر مرة طُبخت {time}",
+        "madeBefore": "لقد طبخت هذا من قبل",
+        "button": "سجّل مرة أخرى"
+      },
+      "logging": "جار التسجيل…",
+      "servings": "{count, plural, zero {لا حصص} one {حصة واحدة} two {حصتان} few {# حصص} many {# حصة} other {# حصة}}",
+      "loggedEarlier": "سُجلت في وقت سابق",
+      "photoAlt": "طُبخت في {date}",
+      "earlierDate": "تاريخ سابق",
+      "button": {
+        "iCookedThis": "أنا طبخت هذا"
+      },
+      "dialog": {
+        "title": "تسجيل طبخة",
+        "description": "أضف {title} إلى يوميات طبخك. دوّن كيف كانت، وأضف صورة إن وجدت. كل ذلك يصبح جزءًا من القصة.",
+        "noteLabel": "كيف كانت؟",
+        "notePlaceholder": "ضاعفت الثوم، خبزتها 5 دقائق إضافية، عاد الجميع لطبق ثان…",
+        "noteHelper": "دوّن أي لمسات حتى تكون المرة القادمة أفضل.",
+        "photoLabel": "صورة (اختياري)",
+        "photoHint": "أضف لقطة لما خرج من مطبخك.",
+        "servingsLabel": "الحصص المحضّرة (اختياري)",
+        "servingsPlaceholder": "مثلًا 4",
+        "shareLabel": "مشاركة مع عائلتي",
+        "shareDescription": "انشر هذه الطبخة في موجز نشاط {group} وشريط صور العائلة الخاص بالوصفة.",
+        "addToJournal": "إضافة إلى اليوميات"
+      },
+      "cancel": "إلغاء",
+      "saving": "جار الحفظ…",
+      "confirmDelete": {
+        "title": "حذف هذه الطبخة من يومياتك؟",
+        "description": "ستغادر يوميات طبخك. لا يمكن التراجع عن ذلك.",
+        "confirmLabel": "حذف الطبخة"
+      }
+    }
+  },
+  "recipe": {
+    "actions": {
+      "more": "المزيد",
+      "moreActions": "المزيد من إجراءات الوصفة"
+    },
+    "adapt": {
+      "trigger": "عدّلها",
+      "toast": {
+        "created": "نسختك المعدّلة جاهزة",
+        "signIn": "سجّل الدخول لتعدّل هذه الوصفة"
+      },
+      "title": "اصنع نسختك الخاصة",
+      "description": "اصنع نسختك الخاصة من {title}. ستحصل على نسخة قابلة للتعديل. الأصل يبقى كما هو، وسنتذكّر أنها جاءت من هنا.",
+      "noteLabel": "ما الذي ستغيّره؟",
+      "notePlaceholder": "سكر أقل قليلًا، دقيق بلا غلوتين، أو اختصار لأيام الأسبوع…",
+      "noteHint": "اختياري. تساعد هذه الملاحظة عائلتك على معرفة ما ألهم النسخة الجديدة.",
+      "creating": "جارٍ الإنشاء…",
+      "create": "إنشاء نسخة معدّلة"
+    },
+    "common": {
+      "cancel": "إلغاء",
+      "clear": "مسح",
+      "close": "إغلاق",
+      "done": "تم",
+      "download": "تنزيل",
+      "loading": "جارٍ التحميل…",
+      "saving": "جارٍ الحفظ…",
+      "undo": "تراجع",
+      "preview": "معاينة",
+      "cook": "اطبخ",
+      "createRecipe": "أنشئ وصفة",
+      "browseRecipes": "تصفح الوصفات",
+      "loadMoreRecipes": "حمّل المزيد من الوصفات"
+    },
+    "cookWithInput": {
+      "addIngredients": "أضف المكوّنات الموجودة عندك…",
+      "addMore": "أضف المزيد…",
+      "addIngredientAria": "أضف مكوّنًا موجودًا عندك",
+      "removeItem": "إزالة {item}",
+      "help": "اكتب ما في خزانة مطبخك. سنرتّب الوصفات حسب ما لديك منها بالفعل."
+    },
+    "deleteRecipe": {
+      "thisRecipe": "هذه الوصفة",
+      "confirmTitle": "حذف {label}؟",
+      "confirmDescription": "تبقى الخطوات والصور والسجل محفوظة. يمكنك التراجع مباشرة بعد ذلك.",
+      "confirmLabel": "حذف الوصفة",
+      "toast": {
+        "restored": "تمت استعادة وصفتك",
+        "restoreError": "تعذّرت استعادة الوصفة. حاول مرة أخرى.",
+        "deleted": "تم حذف الوصفة",
+        "changedMind": "غيّرت رأيك؟",
+        "deleteError": "تعذّر حذف الوصفة. حاول مرة أخرى."
+      },
+      "deleting": "جارٍ الحذف…",
+      "delete": "حذف"
+    },
+    "dictation": {
+      "unavailable": "الكتابة بالصوت غير متاحة في هذا المتصفح.",
+      "unavailableFor": "الكتابة بالصوت لحقل {field} غير متاحة في هذا المتصفح",
+      "speak": "تكلّم",
+      "listening": "نستمع…",
+      "stopAria": "إيقاف إملاء {field}",
+      "startAria": "إملاء {field}"
+    },
+    "dinner": {
+      "title": "عشاء الليلة",
+      "description": "لا بحث ولا حيرة. دعنا نختار لك وصفة.",
+      "empty": "أضف بضع وصفات، وسنبدأ باقتراح عشاء لك.",
+      "pick": "اختر عشائي",
+      "addToPlan": "أضف إلى خطة الليلة",
+      "onPlan": "ضمن خطة الليلة",
+      "pickAgain": "ليست هذه. اختر غيرها",
+      "toast": {
+        "planned": "{title} ضمن خطة الليلة"
+      }
+    },
+    "familyTree": {
+      "aria": "شجرة عائلة الوصفة",
+      "title": "شجرة العائلة",
+      "truncated": "نعرض أقرب الأجيال. بعض النسخ المعدّلة غير ظاهرة.",
+      "by": "بقلم {name}",
+      "hiddenMore": "+{count} {count, plural, zero {نسخ معدّلة أخرى} one {نسخة معدّلة أخرى} two {نسختان معدّلتان أخريان} few {نسخ معدّلة أخرى} many {نسخة معدّلة أخرى} other {نسخة معدّلة أخرى}}"
+    },
+    "import": {
+      "title": "استيراد وصفة",
+      "methodAria": "طريقة الاستيراد",
+      "fromLink": "استيراد من رابط",
+      "pasteText": "لصق النص",
+      "urlHelp": "الصق URL الوصفة، وسنملأ التفاصيل لتراجعها.",
+      "textHelp": "الصق أي وصفة كنص عادي، وسنرتّبها لتراجعها.",
+      "importing": "جارٍ الاستيراد…",
+      "import": "استيراد",
+      "reading": "جارٍ القراءة…",
+      "useText": "استخدم هذا النص",
+      "textAria": "نص الوصفة المراد استيراده",
+      "toast": {
+        "importedNamed": "تم استيراد «{title}». راجع التفاصيل، ثم احفظ.",
+        "imported": "تم استيراد الوصفة. راجع التفاصيل، ثم احفظ.",
+        "linkError": "حدث خطأ أثناء استيراد ذلك الرابط.",
+        "textError": "حدث خطأ أثناء قراءة ذلك النص."
+      }
+    },
+    "keepsake": {
+      "trigger": "أهدِها",
+      "title": "أهدِ هذه الوصفة",
+      "description": "أضف رسالة شخصية وشاركها كتذكار دافئ. هدية صغيرة، لا مجرد رابط.",
+      "fromLabel": "اسمك",
+      "fromPlaceholder": "تيتا",
+      "noteLabel": "رسالتك",
+      "notePlaceholder": "تلك التي أحببتها وأنت صغيرة. مع حبي، تيتا.",
+      "copyLink": "نسخ رابط التذكار",
+      "toast": {
+        "copied": "تم نسخ رابط التذكار. جاهز كهدية"
+      }
+    },
+    "lineage": {
+      "aria": "سلالة الوصفة"
+    },
+    "quickCapture": {
+      "trigger": "إضافة سريعة",
+      "title": "إضافة وصفة بسرعة",
+      "description": "يكفي عنوان لتبدأ. ضع المكوّنات والخطوات كنص عادي. يمكنك ترتيبها لاحقًا.",
+      "titleLabel": "العنوان",
+      "titlePlaceholder": "كرات اللحم من جدتي",
+      "photoLabel": "صورة (اختياري)",
+      "notesLabel": "المكوّنات والخطوات (اختياري)",
+      "saveDraft": "حفظ مسودة",
+      "titleError": "أعط وصفتك عنوانًا",
+      "toast": {
+        "saved": "تم حفظ المسودة. أكملها متى أحببت."
+      },
+      "savedTitle": "حُفظت كمسودة",
+      "savedDescription": "تم التقاطها. افتح المحرّر الكامل لإضافة المكوّنات والخطوات والصور، أو عُد إليها لاحقًا من كتاب طبخك.",
+      "finish": "إكمالها في المحرّر الكامل",
+      "addAnother": "إضافة واحدة أخرى"
+    },
+    "quickPlan": {
+      "addThisWeek": "أضف إلى خطة هذا الأسبوع",
+      "addToPlan": "أضف إلى الخطة",
+      "adding": "جارٍ الإضافة…",
+      "day": "اليوم",
+      "meal": "الوجبة",
+      "yourPlan": "خطتك",
+      "toast": {
+        "added": "تمت إضافة {title} إلى {day} {meal}"
+      }
+    },
+    "readAloud": {
+      "unavailable": "القراءة بصوت عالٍ غير متاحة في هذا المتصفح.",
+      "groupAria": "قراءة هذه الوصفة بصوت عالٍ",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "start": "اقرأها لي",
+      "previousStep": "خطوة الوصفة السابقة",
+      "reReadStep": "إعادة قراءة هذه الخطوة",
+      "nextStep": "خطوة الوصفة التالية",
+      "stopReading": "إيقاف قراءة هذه الوصفة",
+      "progress": "الخطوة {current} من {total}"
+    },
+    "recipeCard": {
+      "cookAria": "اطبخ {title}",
+      "unrated": "غير مقيّمة"
+    },
+    "reel": {
+      "trigger": "مقطع قصير",
+      "title": "مشاركة كـ Reel",
+      "loadingStudio": "جارٍ تحميل استوديو Reel…",
+      "justAMoment": "لحظة واحدة…",
+      "preparing": "جارٍ تحضير المعاينة…",
+      "previewError": "تعذّر إنشاء المعاينة.",
+      "image": "صورة",
+      "video": "فيديو",
+      "imageDescription": "صورة 9:16 لـ {title}، جاهزة للمشاركة في Stories.",
+      "videoDescription": "فيديو 9:16 لـ {title}، جاهز لـ Reels أو TikTok أو Stories.",
+      "renderingVideo": "جارٍ إخراج الفيديو… {percent}%",
+      "reducedMotion": "نعرض معاينة ثابتة احترامًا لإعداد تقليل الحركة لديك. سيظل الفيديو المصدّر متحركًا.",
+      "imageFallback": "تصدير الفيديو غير مدعوم في هذا المتصفح. نزّل صورة قابلة للمشاركة بدلًا من ذلك.",
+      "unsupported": "لا يستطيع هذا المتصفح تصدير Reel. جرّب Chrome أو Edge أو Firefox أو Safari.",
+      "downloadImage": "تنزيل الصورة",
+      "shareText": "{title}. وصفة على Heirloom",
+      "toast": {
+        "imageDownloaded": "تم تنزيل الصورة",
+        "reelDownloaded": "تم تنزيل Reel",
+        "imageSaved": "تم حفظ الصورة. شاركها من معرضك",
+        "reelSaved": "تم حفظ Reel. شاركه من معرضك",
+        "createError": "تعذّر إنشاء {type} للـ Reel.",
+        "shareError": "تعذّرت مشاركة {type} للـ Reel."
+      }
+    },
+    "savedSearches": {
+      "saved": "محفوظة ({count})",
+      "listTitle": "عمليات البحث المحفوظة",
+      "deleteAria": "حذف البحث المحفوظ {name}",
+      "disabledTitle": "أضف فلترًا أو كلمة بحث للحفظ",
+      "trigger": "حفظ البحث",
+      "title": "احفظ هذا البحث",
+      "description": "سمّ هذه الفلاتر لتعيد استخدامها في أي وقت من صفحة الوصفات.",
+      "nameLabel": "الاسم",
+      "namePlaceholder": "نباتي في 30 دقيقة",
+      "save": "حفظ البحث",
+      "toast": {
+        "removed": "تمت إزالة البحث المحفوظ",
+        "saved": "تم حفظ البحث"
+      }
+    },
+    "searchResults": {
+      "title": "النتائج",
+      "correction": "لا توجد نتائج مطابقة تمامًا لـ <strong>«{from}»</strong>. نعرض نتائج لـ <strong>«{to}»</strong>.",
+      "count": "{count}{plus} {count, plural, zero {وصفة} one {وصفة} two {وصفتان} few {وصفات} many {وصفة} other {وصفة}}"
+    },
+    "share": {
+      "trigger": "مشاركة",
+      "shareCard": "مشاركة البطاقة…",
+      "shareNative": "مشاركة…",
+      "downloadCard": "تنزيل البطاقة",
+      "copyLink": "نسخ الرابط",
+      "disableLink": "تعطيل الرابط",
+      "enableLink": "تفعيل الرابط",
+      "resetLink": "إعادة ضبط الرابط",
+      "toast": {
+        "updateError": "تعذّر تحديث رابط المشاركة.",
+        "linkReset": "تمت إعادة ضبط رابط المشاركة. الرابط القديم لم يعد يعمل",
+        "linkDisabled": "تم تعطيل رابط المشاركة",
+        "linkEnabled": "تم تفعيل رابط المشاركة",
+        "cardPrepareError": "تعذّر تحضير بطاقة المشاركة.",
+        "cardDownloaded": "تم تنزيل بطاقة المشاركة",
+        "linkCopied": "تم نسخ رابط الوصفة",
+        "copyError": "تعذّر نسخ الرابط."
+      }
+    },
+    "timeline": {
+      "aria": "سجل إصدارات {title}",
+      "emptyTitle": "لا يوجد سجل بعد",
+      "emptyBody": "كلما حفظت تعديلًا، سيظهر هنا لتعود إليه لاحقًا.",
+      "title": "سجل الوصفة",
+      "description": "كل حفظ يبقي أثر العائلة كاملًا.",
+      "familyCook": "طاهٍ من العائلة",
+      "created": "تم الإنشاء",
+      "updated": "تم التحديث",
+      "version": "الإصدار {version}",
+      "savedEarlier": "حُفظ سابقًا",
+      "restore": "استعادة",
+      "restoreTitle": "استعادة هذا الإصدار؟",
+      "restoreDescription": "تصبح وصفتك الحالية إصدارًا جديدًا في السجل، فلا يضيع شيء.",
+      "restoring": "جارٍ الاستعادة…",
+      "restoreVersion": "استعادة الإصدار {version}",
+      "toast": {
+        "restored": "تمت استعادة الإصدار {version}"
+      }
+    },
+    "emptyLibrary": {
+      "control": {
+        "heading": "لا توجد وصفات بعد",
+        "body": "أضف الطبق الذي يطلبه الجميع منك دائمًا. لن يستغرق إلا دقيقة.",
+        "cta": "أنشئ وصفتك الأولى"
+      },
+      "benefit": {
+        "heading": "احفظ أول وصفة لعائلتك",
+        "body": "احتفظ بالأطباق التي يحبها الجميع في مكان واحد. ابدأ بالطبق الذي يطلبونه منك دائمًا.",
+        "cta": "احفظ وصفتك الأولى"
+      }
+    }
+  },
+  "settings": {
+    "units": {
+      "systems": {
+        "metric": {
+          "label": "متري",
+          "hint": "غرامات، مليلترات، °C"
+        },
+        "us": {
+          "label": "أمريكي / إمبراطوري",
+          "hint": "أكواب، أونصات، °F"
+        }
+      },
+      "defaultSystem": {
+        "title": "نظام القياس الافتراضي",
+        "description": "اضبط كل شيء مرة واحدة. لا يزال بإمكانك ضبط كل قياس بدقة أدناه."
+      },
+      "autoConvert": {
+        "label": "تحويل الوصفات تلقائيًا",
+        "description": "أعد عرض كل وصفة بوحداتك. أوقف ذلك لترى دائمًا الكميات كما كتبها صاحب الوصفة بالضبط.",
+        "ariaLabel": "تحويل الوصفات تلقائيًا إلى وحداتي"
+      },
+      "preferred": {
+        "title": "الوحدات المفضلة",
+        "description": "اضبط كل قياس بدقة. ينقسم الحجم حسب طريقة قياس المكوّن، حتى تبقى السوائل بالمليلتر والمواد الجافة بالأكواب.",
+        "liquidVolume": {
+          "label": "حجم السوائل",
+          "hint": "ماء، حليب، زيت، صلصات"
+        },
+        "dryVolume": {
+          "label": "حجم المواد الجافة",
+          "hint": "دقيق، سكر، أرز، شوفان"
+        },
+        "smallAmounts": {
+          "label": "كميات صغيرة",
+          "hint": "توابل، أعشاب، بهارات"
+        },
+        "weight": {
+          "label": "الوزن",
+          "hint": "لحم، جبن، خضار وفاكهة"
+        },
+        "temperature": {
+          "label": "درجة الحرارة",
+          "hint": "الفرن ودرجات حرارة الطهي"
+        },
+        "defaultOption": "الافتراضي: {unit}"
+      },
+      "custom": {
+        "title": "وحدات مخصصة",
+        "description": "أضف الوحدات التي تطهو بها عائلتك. رشة، قطعة، رذاذ. يمكنك ربطها اختياريًا بكمية حقيقية حتى يمكن تحويل الوصفات.",
+        "addButton": "إضافة وحدة",
+        "empty": "لا توجد وحدات مخصصة بعد. أضف واحدة مثل «رشة» مضبوطة على 1/16 ملعقة صغيرة.",
+        "optionCustom": "{name} (مخصصة)",
+        "fallbackUnitName": "وحدة",
+        "preview": "١ {name} = {amount} {unit}",
+        "displayOnly": "عرض فقط. بلا تحويل",
+        "toasts": {
+          "added": "تمت إضافة الوحدة",
+          "updated": "تم تحديث الوحدة",
+          "deleted": "تم حذف الوحدة"
+        },
+        "deleteConfirm": {
+          "title": "حذف وحدة «{name}»؟",
+          "description": "تحتفظ الوصفات بنص الوحدة. تتم إزالة التعريف المحفوظ إلى أن تضيفه مرة أخرى.",
+          "confirmLabel": "حذف الوحدة"
+        },
+        "examples": {
+          "volume": {
+            "name": "مثال: رشة",
+            "abbreviation": "مثال: رش",
+            "amount": "مثال: 0.0625"
+          },
+          "mass": {
+            "name": "مثال: قطعة",
+            "abbreviation": "مثال: قط",
+            "amount": "مثال: 0.5"
+          },
+          "count": {
+            "name": "مثال: حزمة",
+            "abbreviation": "مثال: حز",
+            "amount": ""
+          }
+        },
+        "displayAsTrue": {
+          "label": "إظهار الكمية الحقيقية في الوصفات",
+          "hintWithPreview": "تعرض الوصفات «{amount} {unit}» بدلًا من «{name}».",
+          "hint": "تعرض الوصفات الكمية التي تساويها بدلًا من كلمة «{name}».",
+          "ariaLabel": "إظهار الكمية الحقيقية في الوصفات بدلًا من اسم الوحدة"
+        },
+        "dimensions": {
+          "volume": "الحجم",
+          "mass": "الوزن",
+          "count": "العدد"
+        },
+        "editAria": "تعديل وحدة {name}",
+        "deleteAria": "حذف وحدة {name}",
+        "dialog": {
+          "addTitle": "إضافة وحدة مخصصة",
+          "editTitle": "تعديل الوحدة"
+        },
+        "fields": {
+          "name": "الاسم",
+          "shortLabel": "تسمية قصيرة (اختياري)",
+          "measures": "تقيس",
+          "equalTo": "تساوي (كمية)",
+          "ofUnit": "من وحدة"
+        },
+        "chooseUnit": "اختر وحدة",
+        "noneDisplayOnly": "لا شيء (عرض فقط)",
+        "countNote": "تظهر وحدات العدد مثل «حزمة» أو «فص» كما هي مكتوبة ولا تُحوّل.",
+        "cancel": "إلغاء",
+        "saving": "جارٍ الحفظ…",
+        "saveChanges": "حفظ التغييرات"
+      }
+    },
+    "publicActivity": {
+      "label": "الملف العام والمتابعون",
+      "description": "اسمح للطهاة الآخرين بمتابعتك ورؤية وصفاتك ومراجعاتك ومرات الطهي <strong>العامة</strong> في موجزهم. تبقى مجموعات عائلتك وكل ما هو خاص خاصًا. لا تتم مشاركة إلا المحتويات التي جعلتها عامة بهذه الطريقة.",
+      "toasts": {
+        "visible": "الملف العام مرئي",
+        "private": "الملف خاص"
+      }
+    },
+    "digest": {
+      "label": "ملخص العائلة الأسبوعي",
+      "description": "رسالة أسبوعية تتضمن وصفات جديدة ومحدّثة من مجموعات عائلتك. بلا رسائل مزعجة، ويمكنك إلغاء الاشتراك في أي وقت.",
+      "toasts": {
+        "subscribed": "تم تفعيل الملخص الأسبوعي",
+        "unsubscribed": "تم إيقاف الملخص الأسبوعي"
+      }
+    },
+    "blockedPeople": {
+      "fallbackName": "طاهٍ من العائلة",
+      "toasts": {
+        "unblocked": "تم إلغاء حظر المستخدم"
+      },
+      "empty": {
+        "title": "لم تحظر أي شخص.",
+        "description": "احظر شخصًا من القائمة في تعليقه أو مراجعته لإخفاء منشوراته عنك."
+      },
+      "unblock": "إلغاء الحظر"
+    }
+  },
+  "theme": {
+    "schemeToggle": {
+      "ariaLabel": "التبديل إلى وضع {mode}"
+    },
+    "schemes": {
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام"
+    },
+    "changeAppearance": "تغيير المظهر",
+    "appearance": "المظهر",
+    "lighting": "الإضاءة",
+    "themes": {
+      "kitchen": {
+        "label": "المطبخ",
+        "description": "دافئ ومريح. ألوان كريمية وتيراكوتا ولمسة منزلية."
+      },
+      "whimsy": {
+        "label": "مرح",
+        "description": "مرح ومليء بالألوان. أشكال لطيفة ولمسات مبهجة."
+      },
+      "professional": {
+        "label": "احترافي",
+        "description": "نظيف وتحريري. هادئ، واثق، بطابع المجلات."
+      },
+      "kids": {
+        "label": "الأطفال",
+        "description": "كبير، مشرق، وودود. نقرات سهلة وألوان مبهجة."
+      },
+      "barebones": {
+        "label": "بسيط",
+        "description": "بسيط جدًا وعالي التباين. الأساسيات فقط."
+      }
+    },
+    "kidsMode": {
+      "turnOffAria": "إيقاف وضع الأطفال",
+      "turnOnAria": "تشغيل وضع الأطفال",
+      "onTitle": "وضع الأطفال قيد التشغيل",
+      "title": "وضع الأطفال"
+    }
+  },
+  "billing": {
+    "upgrade": {
+      "features": {
+        "aiGeneration": "إنشاء الوصفات بالذكاء الاصطناعي",
+        "aiTutor": "مدرّب الطهي بالذكاء الاصطناعي",
+        "aiSubstitutions": "بدائل المكونات بالذكاء الاصطناعي",
+        "videoExport": "تصدير الفيديو والريلز",
+        "advancedCollaboration": "تعاون عائلي متقدم"
+      },
+      "thisFeature": "هذه الميزة",
+      "title": "فتح {plan}",
+      "description": "{feature} جزء من {plan}. {tagline}",
+      "notNow": "ليس الآن",
+      "seePlans": "عرض الخطط"
+    },
+    "redeem": {
+      "success": {
+        "title": "تم استرداد الهدية",
+        "description": "{months, plural, zero {تمت إضافة # شهر من Heirloom Family إلى حسابك.} one {تمت إضافة شهر واحد من Heirloom Family إلى حسابك.} two {تمت إضافة شهرين من Heirloom Family إلى حسابك.} few {تمت إضافة # أشهر من Heirloom Family إلى حسابك.} many {تمت إضافة # شهرًا من Heirloom Family إلى حسابك.} other {تمت إضافة # شهر من Heirloom Family إلى حسابك.}}",
+        "cta": "الانتقال إلى كتاب وصفاتك"
+      },
+      "giftCode": "رمز الهدية",
+      "submit": "استرداد الهدية"
+    },
+    "manage": {
+      "label": "إدارة الفوترة"
+    },
+    "usageMeter": {
+      "unlimited": "تم استخدام {used} · غير محدود",
+      "limited": "تم استخدام {used} من {limit}",
+      "ariaLabel": "استخدام {label}"
+    },
+    "usageLimit": {
+      "blocked": "بلغت حد الخطة المجانية وهو {limit} {resource}. لا يزال بإمكانك تعديل كل ما حفظته. قم بالترقية إلى Family لإضافة المزيد.",
+      "warn": "استخدمت {used} من {limit} {resource} في الخطة المجانية.",
+      "seePlans": "عرض الخطط"
+    },
+    "locked": {
+      "badge": "Family",
+      "title": "ميزة من Family",
+      "description": "قم بالترقية إلى Family لفتح هذا. كل ما حفظته بالفعل يبقى مجانيًا. لا تتم إزالة أي شيء أنشأته.",
+      "seePlans": "عرض الخطط"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "وضع علامة مقروء على الكل",
+    "caughtUp": "أنت مطّلع على كل شيء.",
+    "someone": "شخص ما",
+    "unread": "إشعار غير مقروء",
+    "viewAll": "عرض الكل",
+    "loading": "جارٍ التحميل…",
+    "loadOlder": "تحميل الأقدم",
+    "bell": {
+      "aria": "الإشعارات",
+      "unreadAria": "الإشعارات، {count} غير مقروءة"
+    },
+    "empty": {
+      "title": "لا توجد إشعارات بعد",
+      "description": "ستظهر هنا الإشارات والردود والمراجعات ودعوات الطهي معًا."
+    }
+  },
+  "follows": {
+    "button": {
+      "toasts": {
+        "following": "تتم المتابعة"
+      },
+      "following": "تتم المتابعة",
+      "follow": "متابعة"
+    },
+    "list": {
+      "fallbackName": "طاهٍ من العائلة",
+      "loading": "جارٍ التحميل…",
+      "loadMore": "تحميل المزيد"
+    }
   }
 }

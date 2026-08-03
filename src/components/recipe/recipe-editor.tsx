@@ -813,7 +813,7 @@ export function RecipeEditor({
       ),
     );
     draft.acceptDraft();
-    toast.success("Restored your unfinished recipe.");
+    toast.success(t("toast.draftRestored"));
   }
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
@@ -841,7 +841,7 @@ export function RecipeEditor({
     );
     if (est.sourced === 0) {
       toast.error(
-        "Couldn't estimate. Add weighable ingredients (with amounts) first.",
+        t("toast.estimateError"),
       );
       return;
     }
@@ -864,8 +864,12 @@ export function RecipeEditor({
     const pct = Math.round(est.coverage * 100);
     toast.success(
       est.sourced < est.total
-        ? `Estimated from ${est.sourced} of ${est.total} ingredients (${pct}% covered). Adjust as needed.`
-        : "Estimated from your ingredients. Adjust as needed.",
+        ? t("toast.estimatedPartial", {
+            sourced: est.sourced,
+            total: est.total,
+            percent: pct,
+          })
+        : t("toast.estimated"),
     );
   }
 
@@ -1350,13 +1354,13 @@ export function RecipeEditor({
           pickKidCopy(
             kidSafe,
             "validation.title",
-            "Your recipe needs a title.",
+            t("validation.titleToast"),
           ),
         );
         return { title: ["Give your recipe a title"] };
       }
       if (payload.visibility === "group" && !payload.groupId) {
-        toast.error("Pick a group, or change the recipe's visibility.");
+        toast.error(t("validation.groupToast"));
         return { groupId: ["Choose a group for this group recipe"] };
       }
       const res =
@@ -1365,7 +1369,9 @@ export function RecipeEditor({
           : await createRecipeAction(payload);
       if (res.ok) {
         draft.clear();
-        toast.success(mode === "edit" ? "Recipe updated" : "Recipe created");
+        toast.success(
+          mode === "edit" ? t("toast.updated") : t("toast.created"),
+        );
         router.push(recipeDetailPath(res));
         router.refresh();
         return NO_ERRORS;

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ export function RemoveFromCollectionButton({
   className?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.removeFromCollection");
   const [pending, startTransition] = React.useTransition();
 
   function onRemove(event: React.MouseEvent) {
@@ -32,7 +34,7 @@ export function RemoveFromCollectionButton({
         recipeId,
       });
       if (result.ok) {
-        toast.success("Removed from collection");
+        toast.success(t("toast.removed"));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -45,8 +47,8 @@ export function RemoveFromCollectionButton({
       type="button"
       onClick={onRemove}
       disabled={pending}
-      aria-label="Remove from collection"
-      title="Remove from collection"
+      aria-label={t("a11y.remove")}
+      title={t("a11y.remove")}
       className={cn(
         "inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none",
         pending && "cursor-wait",

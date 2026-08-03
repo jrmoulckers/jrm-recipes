@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { SmilePlus } from "lucide-react";
 
 import { toggleReactionAction } from "~/server/engagement/actions";
@@ -8,7 +9,6 @@ import type { ReactionTargetType } from "~/server/engagement/reactions";
 import {
   REACTION_EMOJI,
   reactionGlyph,
-  reactionLabel,
   toggleReactionState,
   type ReactionCount,
   type ReactionEmojiKey,
@@ -44,6 +44,7 @@ export function ReactionBar({
 }) {
   const [counts, setCounts] = React.useState<ReactionCount[]>(initialCounts);
   const [pickerOpen, setPickerOpen] = React.useState(false);
+  const t = useTranslations("engagement.reactions");
 
   React.useEffect(() => {
     setCounts(initialCounts);
@@ -68,10 +69,11 @@ export function ReactionBar({
     <div className="flex flex-wrap items-center gap-1.5">
       {counts.map((entry) => {
         const names = initialReactors[entry.emoji] ?? [];
+        const label = t(`emoji.${entry.emoji}`);
         const title =
           names.length > 0
-            ? `${reactionLabel(entry.emoji)}: ${names.join(", ")}`
-            : reactionLabel(entry.emoji);
+            ? t("titleWithNames", { label, names: names.join(", ") })
+            : label;
         return (
           <button
             key={entry.emoji}
@@ -79,9 +81,11 @@ export function ReactionBar({
             disabled={!canReact || action.pending}
             onClick={() => toggle(entry.emoji)}
             title={title}
-            aria-label={`${reactionLabel(entry.emoji)}, ${entry.count} ${
-              entry.count === 1 ? "reaction" : "reactions"
-            }${entry.reacted ? ", you reacted" : ""}`}
+            aria-label={t("a11y.count", {
+              label,
+              count: entry.count,
+              reacted: entry.reacted ? t("a11y.youReacted") : "",
+            })}
             aria-pressed={entry.reacted}
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
@@ -102,7 +106,7 @@ export function ReactionBar({
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label="Add a reaction"
+              aria-label={t("a11y.add")}
               className="inline-flex items-center rounded-full border border-dashed border-border p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <SmilePlus className="size-4" />
@@ -115,8 +119,8 @@ export function ReactionBar({
                   key={emoji.key}
                   type="button"
                   onClick={() => toggle(emoji.key)}
-                  aria-label={emoji.label}
-                  title={emoji.label}
+                  aria-label={t(`emoji.${emoji.key}`)}
+                  title={t(`emoji.${emoji.key}`)}
                   className="rounded-md p-1 text-lg transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span aria-hidden>{emoji.glyph}</span>

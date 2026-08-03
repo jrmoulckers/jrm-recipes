@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertTriangle } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -26,6 +27,7 @@ export function UsageLimitNotice({
   resource?: string;
   className?: string;
 }) {
+  const t = useTranslations("billing.usageLimit");
   const blocked = state === "blocked";
 
   return (
@@ -46,8 +48,8 @@ export function UsageLimitNotice({
         />
         <span>
           {blocked
-            ? `You've reached the free plan's limit of ${limit} ${resource}. You can still edit everything you've saved. Upgrade to Family to add more.`
-            : `You've used ${used} of ${limit} ${resource} on the free plan.`}
+            ? t("blocked", { limit, resource })
+            : t("warn", { used, limit, resource })}
         </span>
       </span>
       <Button
@@ -56,7 +58,7 @@ export function UsageLimitNotice({
         variant={blocked ? "default" : "outline"}
         className="shrink-0"
       >
-        <Link href="/pricing">See plans</Link>
+        <Link href="/pricing">{t("seePlans")}</Link>
       </Button>
     </div>
   );

@@ -41,8 +41,8 @@ export function CookbookPrintView({
           This cookbook is still empty
         </h1>
         <p className="text-muted-foreground">
-          Add a few recipes to “{collection.name}” and they’ll be bound together
-          here. Cover, contents, and all. Ready to print.
+          Add a few recipes to “{collection.name}” and they&apos;ll be bound
+          together here. Cover, contents, and all. Ready to print.
         </p>
         <Link
           href={`/collections/${collection.id}`}

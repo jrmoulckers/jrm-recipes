@@ -101,7 +101,10 @@
       "complete": "Time's up!",
       "remaining": "{time} left",
       "paused": "Paused · {time} left",
-      "ready": "{time} ready"
+      "ready": "{time} ready",
+      "stepDone": "Step {position} timer is done",
+      "customDone": "{label} is done",
+      "defaultTimer": "Timer"
     },
     "a11y": {
       "exit": "Exit cook mode",
@@ -114,6 +117,20 @@
       "toggle": "Read aloud",
       "repeat": "Repeat",
       "repeatLabel": "Repeat this step aloud"
+    },
+    "toasts": {
+      "complete": {
+        "title": "Nicely done. Recipe complete!",
+        "description": "Log this cook to add {title} to your journal.",
+        "action": "Log this cook"
+      }
+    },
+    "allergens": {
+      "region": "Allergen safety check",
+      "contains": "This recipe contains:",
+      "mayContain": "May also contain (check labels):",
+      "disclaimer": "Best-effort from ingredient text. Always double-check labels and brands.",
+      "gotIt": "Got it"
     }
   },
   "metadata": {
@@ -218,7 +235,15 @@
     "list": "Your collections",
     "add": "Add to collection {name}",
     "remove": "Remove from collection {name}",
-    "newNameField": "New collection name"
+    "newNameField": "New collection name",
+    "signInToSave": "Sign in to save recipes to your collections.",
+    "toast": {
+      "savedTo": "Saved to “{name}”"
+    },
+    "trigger": "Save to collection",
+    "title": "Save to a collection",
+    "description": "Add this recipe to one of your cookbooks, or create a new one.",
+    "create": "Create"
   },
   "ingredientsDrawer": {
     "region": "{label} list and recipe scaling"
@@ -238,7 +263,19 @@
     "moveUpNamed": "Move {object} up",
     "moveDownNamed": "Move {object} down",
     "remove": "Remove",
-    "removeNamed": "Remove {object}"
+    "removeNamed": "Remove {object}",
+    "toast": {
+      "draftRestored": "Restored your unfinished recipe",
+      "estimateError": "Couldn't estimate. Add weighable ingredients (with amounts) first.",
+      "estimatedPartial": "Estimated from {sourced} of {total} ingredients ({percent}% covered). Adjust as needed.",
+      "estimated": "Estimated from your ingredients. Adjust as needed.",
+      "updated": "Recipe updated",
+      "created": "Recipe created"
+    },
+    "validation": {
+      "titleToast": "Your recipe needs a title.",
+      "groupToast": "Pick a group, or change the recipe's visibility."
+    }
   },
   "characterCounter": {
     "remaining": "{count} left",
@@ -329,5 +366,1502 @@
     "usedInRecipes": "Used in recipes",
     "nutrition": "Nutrition",
     "perServing": "Per serving"
+  },
+  "groups": {
+    "addMember": {
+      "toast": {
+        "added": "They've been added to your group"
+      },
+      "identifier": {
+        "label": "Handle or email",
+        "placeholder": "@aunt-mary or mary@example.com"
+      },
+      "role": {
+        "label": "Role",
+        "member": "Member",
+        "admin": "Admin",
+        "kid": "Kid"
+      },
+      "actions": {
+        "adding": "Adding…",
+        "add": "Add"
+      }
+    },
+    "create": {
+      "toast": {
+        "created": "Your group is ready for the family table"
+      },
+      "trigger": "New group",
+      "title": "Create a family group",
+      "description": "Make a shared space for the recipes your people pass around.",
+      "fields": {
+        "name": {
+          "label": "Group name",
+          "placeholder": "Sunday Supper Club"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "For the recipes, notes, and weeknight saves we all share."
+        }
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "creating": "Creating…",
+        "create": "Create group"
+      }
+    },
+    "settings": {
+      "toast": {
+        "saved": "Your group settings are saved"
+      },
+      "fields": {
+        "name": "Group name",
+        "description": "Description",
+        "avatarUrl": "Avatar image URL"
+      },
+      "actions": {
+        "saving": "Saving…",
+        "save": "Save settings"
+      }
+    },
+    "actions": {
+      "soleOwnerNote": "As the group's only owner, you can't leave. Transfer ownership to another member, or delete the group instead.",
+      "leave": "Leave group",
+      "leaving": "Leaving…",
+      "delete": "Delete group",
+      "deleting": "Deleting…",
+      "toast": {
+        "left": "You left your group",
+        "deleted": "Your group was deleted"
+      },
+      "confirm": {
+        "leave": {
+          "title": "Leave “{group}”?",
+          "description": "You'll lose access to its shared recipes. You can re-join with an invite.",
+          "confirmLabel": "Leave group"
+        },
+        "delete": {
+          "title": "Delete “{group}”?",
+          "description": "Everyone's recipes stay saved. The shared group space is removed and can't be restored.",
+          "confirmLabel": "Delete group"
+        }
+      }
+    },
+    "members": {
+      "fallbackMember": "Family cook",
+      "noHandle": "No handle yet",
+      "a11y": {
+        "manageMember": "Manage {name}"
+      },
+      "changeRole": "Change role",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member",
+        "kid": "Kid"
+      },
+      "toast": {
+        "roleChanged": "{name} is now {role}",
+        "ownershipTransferred": "{name} is now your group owner",
+        "removed": "{name} was removed from your group"
+      },
+      "confirm": {
+        "transfer": {
+          "title": "Transfer ownership to “{name}”?",
+          "description": "You'll stay in the group as an admin. The new owner can transfer it back.",
+          "confirmLabel": "Transfer ownership"
+        },
+        "remove": {
+          "title": "Remove “{name}” from this group?",
+          "description": "They'll lose access to the group's recipes. You can re-invite them anytime.",
+          "confirmLabel": "Remove member"
+        }
+      },
+      "transferOwnership": "Transfer ownership",
+      "removeFromGroup": "Remove from group"
+    },
+    "inviteLink": {
+      "toast": {
+        "ready": "Your invite link is ready to share",
+        "revoked": "Your invite link was revoked",
+        "copied": "Your invite link was copied",
+        "copyFailed": "We couldn't copy the link. Try copying it by hand."
+      },
+      "trigger": "Invite link",
+      "title": "Share a join link",
+      "description": "Anyone with the link can join. Perfect for relatives who aren't on Heirloom yet.",
+      "role": {
+        "label": "Role",
+        "member": "Member",
+        "kid": "Kid"
+      },
+      "expires": "Expires",
+      "expiry": {
+        "never": "Never expires",
+        "days7": "7 days",
+        "days30": "30 days",
+        "days90": "90 days"
+      },
+      "linkLabel": "Invite link",
+      "a11y": {
+        "copyInviteLink": "Copy invite link"
+      },
+      "actions": {
+        "revoking": "Revoking…",
+        "revoke": "Revoke this link",
+        "generating": "Generating…",
+        "generateNew": "Generate a new link",
+        "generate": "Generate invite link"
+      }
+    },
+    "join": {
+      "toast": {
+        "alreadyMember": "You're already in {group}",
+        "joined": "Welcome to {group}!"
+      },
+      "joining": "Joining…",
+      "join": "Join {group}",
+      "signInRequired": "Sign in to accept this invitation.",
+      "signUpAndJoin": "Sign up and join",
+      "alreadyHaveAccount": "I already have an account"
+    },
+    "card": {
+      "defaultDescription": "A shared kitchen table for the people who cook, taste, and remember together.",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
+      "recipeCount": "{count, plural, one {# recipe} other {# recipes}}",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member",
+        "kid": "Kid"
+      }
+    },
+    "activity": {
+      "fallbackActor": "A family cook",
+      "headline": {
+        "recipeAdded": "added",
+        "cookShared": "cooked",
+        "reviewed": "reviewed",
+        "commented": "commented on",
+        "suggested": "suggested an edit to",
+        "memberJoined": "joined the family"
+      },
+      "cookPhotoAlt": "{name}'s cook",
+      "empty": {
+        "title": "No activity yet",
+        "description": "Add a recipe, cook something, or leave a review. It'll show up here for the family."
+      },
+      "loading": "Loading…",
+      "loadOlder": "Load older"
+    },
+    "moderation": {
+      "toast": {
+        "hidden": "Hidden from members",
+        "dismissed": "Reports dismissed"
+      },
+      "target": {
+        "comment": "Comment",
+        "review": "Review",
+        "cookLog": "Cook post"
+      },
+      "fallbackAuthor": "A member",
+      "reportCount": "{count, plural, one {# report} other {# reports}}",
+      "hidden": "Hidden",
+      "byAuthor": "by {name}",
+      "reason": {
+        "spam": "Spam",
+        "harassment": "Harassment",
+        "inappropriate": "Inappropriate",
+        "other": "Other"
+      },
+      "actions": {
+        "hide": "Hide from members",
+        "dismissReports": "Dismiss reports",
+        "dismissFine": "Dismiss as fine"
+      },
+      "empty": {
+        "title": "Nothing to review",
+        "description": "When a member reports a comment, review, or cook post, it shows up here."
+      }
+    },
+    "cookAlong": {
+      "a11y": {
+        "section": "Cook-alongs"
+      },
+      "title": "Cook-alongs",
+      "description": "Pick a night and make the same dish together, near or far.",
+      "logPrompt": {
+        "prefix": "How did",
+        "suffix": "go? Log your cook and rate it.",
+        "action": "Log my cook"
+      },
+      "fallbackTitle": "your cook-along",
+      "empty": {
+        "title": "No cook-alongs on the calendar yet",
+        "memberAction": "Schedule one and rally the family."
+      },
+      "fallbackHost": "A family cook",
+      "fallbackTitleShort": "Cook-along",
+      "cooking": "Cooking",
+      "hostedBy": "with {host} hosting",
+      "goingCount": "{count, plural, one {# going} other {# going}}",
+      "moreGoing": "+{count} more",
+      "rsvp": {
+        "label": "Your RSVP:",
+        "options": {
+          "going": "Going",
+          "maybe": "Maybe",
+          "declined": "Can't make it"
+        }
+      },
+      "schedule": {
+        "toast": {
+          "missingRecipeAndDate": "Pick a recipe and a date.",
+          "scheduled": "Your cook-along is scheduled. The family's invited"
+        },
+        "trigger": "Schedule a cook-along",
+        "title": "Schedule a cook-along",
+        "description": "Pick a recipe and a time, then invite the family to cook it together.",
+        "fields": {
+          "recipe": "Recipe",
+          "when": "When",
+          "title": "Title (optional)",
+          "note": "Note (optional)"
+        },
+        "placeholders": {
+          "title": "Sunday gnocchi night",
+          "note": "We'll start at 5. Bring your aprons!"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "scheduling": "Scheduling…",
+          "schedule": "Schedule"
+        }
+      }
+    }
+  },
+  "collections": {
+    "create": {
+      "toast": {
+        "created": "Your collection is ready"
+      },
+      "trigger": "New collection",
+      "title": "Create a collection",
+      "description": "Group the recipes you love into a cookbook. Weeknight dinners, holiday bakes, or the dishes you always come back to.",
+      "fields": {
+        "name": {
+          "label": "Name",
+          "placeholder": "Weeknight winners"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Fast, reliable dinners the whole family eats."
+        }
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "creating": "Creating…",
+        "create": "Create collection"
+      }
+    },
+    "actions": {
+      "toast": {
+        "updated": "Your collection is updated",
+        "deleted": "Your collection was deleted"
+      },
+      "confirm": {
+        "delete": {
+          "title": "Delete “{name}”?",
+          "description": "Your recipes stay in your library. Only this collection is removed.",
+          "confirmLabel": "Delete collection"
+        }
+      },
+      "a11y": {
+        "options": "Open collection options"
+      },
+      "menu": {
+        "rename": "Rename",
+        "delete": "Delete"
+      },
+      "edit": {
+        "title": "Edit collection",
+        "description": "Rename this collection or update its description.",
+        "fields": {
+          "name": "Name",
+          "description": "Description"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "saving": "Saving…",
+          "save": "Save changes"
+        }
+      }
+    },
+    "removeFromCollection": {
+      "toast": {
+        "removed": "Removed from your collection"
+      },
+      "a11y": {
+        "remove": "Remove recipe from collection"
+      }
+    },
+    "favorite": {
+      "toast": {
+        "saved": "Saved to your favorites",
+        "removed": "Removed from your favorites"
+      },
+      "signInToSave": "Sign in to save recipes to your collections.",
+      "a11y": {
+        "saved": "Saved to favorites",
+        "save": "Save to favorites"
+      },
+      "saved": "Saved",
+      "save": "Save"
+    },
+    "share": {
+      "toast": {
+        "copied": "Your share link was copied",
+        "copyFailed": "We couldn't copy the link. Try copying it by hand."
+      },
+      "trigger": "Share",
+      "visibility": {
+        "label": "Visibility",
+        "options": {
+          "private": {
+            "label": "Private",
+            "hint": "Only you can see this cookbook."
+          },
+          "unlisted": {
+            "label": "Unlisted",
+            "hint": "Anyone with the link can view it."
+          },
+          "public": {
+            "label": "Public",
+            "hint": "Anyone can find and view it."
+          }
+        }
+      },
+      "shareLink": "Share link",
+      "a11y": {
+        "copyShareLink": "Copy share link"
+      }
+    },
+    "shareWithGroup": {
+      "toast": {
+        "stoppedSharing": "Stopped sharing your collection",
+        "shared": "Shared with your group"
+      },
+      "triggerWithCount": "Shared with {count}",
+      "trigger": "Share with group",
+      "title": "Share with a group",
+      "description": "Members of the groups you pick can view this collection.",
+      "empty": "Join a family group to share collections with it."
+    },
+    "print": {
+      "trigger": "Print cookbook",
+      "title": "Print this cookbook",
+      "description": "Lay the whole collection out as one booklet: cover, contents, and every recipe. Ready for “Print → Save as PDF.”",
+      "dedication": {
+        "label": "Dedication (optional)",
+        "placeholder": "For my grandchildren. So our kitchen is always with you."
+      },
+      "openPrint": "Open print view"
+    },
+    "card": {
+      "recipeCount": "{count, plural, one {# recipe} other {# recipes}}",
+      "sharedWith": "Shared with {group}",
+      "sharedMore": " +{count}"
+    }
+  },
+  "errors": {
+    "default": "That didn't go through. Please try again.",
+    "NOT_AUTHENTICATED": "Please sign in to do that.",
+    "UNAUTHENTICATED": "Please sign in to do that.",
+    "FORBIDDEN": "You don't have permission to do that.",
+    "NOT_FOUND": "We couldn't find that.",
+    "RATE_LIMITED": "You're going a little fast. Try again in a moment.",
+    "TOO_MANY_REQUESTS": "You're going a little fast. Try again in a moment.",
+    "NETWORK": "You seem to be offline. Check your connection and try again.",
+    "NETWORK_ERROR": "You seem to be offline. Check your connection and try again.",
+    "TIMEOUT": "That took too long. Please try again.",
+    "CONFLICT": "That change couldn't be completed. Please refresh and try again.",
+    "INTERNAL": "That didn't go through. Please try again.",
+    "INTERNAL_ERROR": "That didn't go through. Please try again.",
+    "UNKNOWN": "That didn't go through. Please try again."
+  },
+  "shopping": {
+    "toasts": {
+      "nothingToSend": "Nothing to send. Everything is checked off.",
+      "listCopied": "List copied. Paste it into a message",
+      "shareFailed": "We couldn't share the list.",
+      "cleared": "Shopping list cleared"
+    },
+    "share": {
+      "title": "🛒 Shopping list",
+      "titleText": "Shopping list",
+      "send": "Send list"
+    },
+    "allergens": {
+      "disclaimer": "Best-effort from ingredient names. Double-check labels and brands.",
+      "warning": "Allergen warning: contains {allergens}. {disclaimer}"
+    },
+    "item": {
+      "optional": "Optional",
+      "aisleFor": "Aisle for {item}",
+      "changeAisle": "Change aisle",
+      "remove": "Remove {item}"
+    },
+    "manual": {
+      "itemLabel": "Add an item",
+      "itemPlaceholder": "e.g. Paper towels",
+      "quantityLabel": "Qty",
+      "unitLabel": "Unit",
+      "add": "Add"
+    },
+    "empty": {
+      "title": "Your list is empty",
+      "description": "Add items above, or open a recipe and choose “Add to shopping list”."
+    },
+    "summary": {
+      "toBuy": "{count, plural, one {# to buy} other {# to buy}}",
+      "inCart": "{count, plural, one {# in cart} other {# in cart}}"
+    },
+    "actions": {
+      "clearChecked": "Clear checked",
+      "clearAll": "Clear all"
+    },
+    "sections": {
+      "inCart": "In cart"
+    },
+    "storage": {
+      "synced": "synced to your account",
+      "local": "saved on this device"
+    },
+    "confirm": {
+      "clearAll": {
+        "confirmLabel": "Clear list"
+      },
+      "clearAllSynced": {
+        "title": "Clear the whole shopping list?",
+        "description": "All synced shopping items are removed. This can't be undone."
+      },
+      "clearAllLocal": {
+        "title": "Clear the whole shopping list?",
+        "description": "All items saved on this device are removed. This can't be undone."
+      }
+    },
+    "add": {
+      "trigger": "Add to list",
+      "title": "Add to shopping list",
+      "description": "Add the ingredients for {title} to your grocery list. Like items combine and quantities scale to the servings you choose.",
+      "toasts": {
+        "added": "Added to your shopping list",
+        "viewList": "View list"
+      },
+      "servings": {
+        "label": "Servings to shop for",
+        "recipeMakes": "This recipe makes {count} {noun}. We'll scale the quantities to match.",
+        "noSize": "This recipe has no serving size, so quantities are added as-is.",
+        "scaledToFamily": "Scaled to your family of {count}."
+      },
+      "staples": {
+        "label": "Include pantry staples",
+        "description": "Off by default. We skip salt, oil, butter and common spices so your list is just what you need to buy.",
+        "aria": "Include pantry staples like salt and oil"
+      },
+      "cancel": "Cancel",
+      "adding": "Adding…",
+      "confirm": "Add to list"
+    }
+  },
+  "print": {
+    "title": "Print and share",
+    "formatAria": "Print format",
+    "formats": {
+      "full": {
+        "label": "Full page",
+        "hint": "Generous recipe sheet with image, notes, and source."
+      },
+      "compact": {
+        "label": "Two-column",
+        "hint": "Ingredients sidebar with flowing method."
+      },
+      "card4x6": {
+        "label": "4×6 card",
+        "hint": "Index-card paper size with tight typography."
+      },
+      "card3x5": {
+        "label": "3×5 card",
+        "hint": "Smallest card layout for recipe boxes."
+      }
+    },
+    "largePrint": {
+      "label": "Large print",
+      "hint": "Bigger, easy-to-read type for the printed sheet."
+    },
+    "actions": {
+      "back": "Back",
+      "print": "Print / Save PDF",
+      "copyLink": "Copy link",
+      "share": "Share",
+      "export": "Export",
+      "copyPlainText": "Copy as plain text",
+      "copyMarkdown": "Copy as Markdown",
+      "copyShareCaption": "Copy share caption",
+      "downloadMarkdown": "Download .md",
+      "downloadText": "Download .txt"
+    },
+    "menus": {
+      "copy": "Copy",
+      "download": "Download"
+    },
+    "toasts": {
+      "clipboardUnavailable": "Clipboard is unavailable in this browser.",
+      "copyFailed": "We couldn't copy to the clipboard.",
+      "linkCopied": "Link copied to clipboard",
+      "plainTextCopied": "Plain text copied",
+      "markdownCopied": "Markdown copied",
+      "shareCaptionCopied": "Share caption copied",
+      "downloaded": "Downloaded {filename}"
+    },
+    "week": {
+      "title": "Post on the fridge",
+      "heading": "This week's dinners",
+      "back": "Back",
+      "print": "Print / Save PDF",
+      "copyLink": "Copy link",
+      "toasts": {
+        "linkCopied": "Link copied to clipboard",
+        "copyLinkFailed": "We couldn't copy the link."
+      }
+    }
+  },
+  "dietary": {
+    "toasts": {
+      "added": "Profile added",
+      "updated": "Profile updated",
+      "removed": "Profile removed"
+    },
+    "actions": {
+      "addFamilyMember": "Add family member",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "addMember": "Add member",
+      "saveChanges": "Save changes"
+    },
+    "empty": {
+      "title": "No profiles yet",
+      "description": "Record who you cook for: their allergies, diets, and calorie goals. Heirloom can help you cook safely for everyone."
+    },
+    "profile": {
+      "edit": "Edit {name}",
+      "remove": "Remove {name}",
+      "calorieGoal": "{calories} kcal/day goal",
+      "noRestrictions": "No restrictions recorded"
+    },
+    "confirm": {
+      "remove": {
+        "title": "Remove the dietary profile for “{name}”?",
+        "description": "Their dietary details and goals are deleted. This can't be undone.",
+        "confirmLabel": "Remove profile"
+      }
+    },
+    "dialog": {
+      "addTitle": "Add family member",
+      "editTitle": "Edit profile"
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "e.g. Theo",
+      "allergies": "Allergies",
+      "diets": "Diets",
+      "calorieGoal": "Daily calorie goal",
+      "caloriePlaceholder": "Optional, e.g. 2000",
+      "familyGroup": "Family group (optional)",
+      "justMe": "Just me"
+    }
+  },
+  "moderation": {
+    "toasts": {
+      "blocked": "Blocked {name}"
+    },
+    "actions": {
+      "more": "More actions",
+      "report": "Report",
+      "block": "Block {name}",
+      "delete": "Delete"
+    },
+    "report": {
+      "title": "Report this",
+      "description": "Reports are private. Only the group's owners and admins see them, never the other members.",
+      "reasonLegend": "Reason",
+      "detailPlaceholder": "Add any detail (optional)",
+      "cancel": "Cancel",
+      "submit": "Submit report",
+      "toasts": {
+        "sent": "Report sent"
+      },
+      "reasons": {
+        "inappropriate": {
+          "label": "Inappropriate",
+          "hint": "Not right for a family space"
+        },
+        "harassment": {
+          "label": "Harassment",
+          "hint": "Targeting or bullying someone"
+        },
+        "spam": {
+          "label": "Spam",
+          "hint": "Off-topic or promotional"
+        },
+        "other": {
+          "label": "Something else",
+          "hint": "Tell us more below"
+        }
+      }
+    }
+  },
+  "planner": {
+    "copyLastWeek": {
+      "button": {
+        "copying": "Copying…",
+        "default": "Copy last week"
+      },
+      "toast": {
+        "previousEmpty": "Last week was empty. Nothing to copy yet.",
+        "weekFull": "This week is already full. Nothing new to copy.",
+        "copiedMeals": "Copied {count, plural, one {# meal} other {# meals}} from last week"
+      }
+    },
+    "shoppingList": {
+      "button": {
+        "building": "Building…",
+        "default": "Build shopping list"
+      },
+      "toast": {
+        "emptyWeek": "No recipes planned this week yet. Add some meals first.",
+        "alreadyReady": "Everything from this week's recipes is already on your list.",
+        "addedItems": "added {count, plural, one {# item} other {# items}}",
+        "mergedItems": "merged {count, plural, one {# item} other {# items}}",
+        "ready": "Shopping list ready: {summary}",
+        "viewList": "View list"
+      }
+    },
+    "prepAhead": {
+      "heading": "Tonight for tomorrow",
+      "forRecipe": "for"
+    },
+    "board": {
+      "today": "Today",
+      "add": "Add",
+      "optional": "(optional)",
+      "cancel": "Cancel",
+      "adding": "Adding…",
+      "addToPlan": "Add to plan",
+      "untitled": "Untitled",
+      "allergenContains": "Contains {allergens}",
+      "allergenTitle": "Best effort from ingredient names. Double-check labels and brands.",
+      "leftovers": "Leftovers",
+      "cooked": "Cooked",
+      "logging": "Logging…",
+      "cookedIt": "Cooked it",
+      "mealSlot": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "a11y": {
+        "addToSlot": "Add to {slot} on {day}",
+        "removeFromPlan": "Remove {title} from plan"
+      },
+      "toast": {
+        "removedMealAndLeftovers": "Removed the meal and its leftovers",
+        "removedFromPlan": "Removed from your plan",
+        "loggedToJournal": "Logged to your journal",
+        "addedWithLeftovers": "Added to your plan. Leftovers night booked too",
+        "addedToPlan": "Added to your plan"
+      },
+      "batch": {
+        "titleWithDay": "Cook {multiple}×. Leftovers on {day}",
+        "titleWithoutDay": "Cook {multiple}×. Extra for leftovers",
+        "badge": "Batch ×{multiple}",
+        "toggle": "Batch cook. Eat again another night",
+        "makeLabel": "Make",
+        "option": "{multiple}× batch",
+        "leftoversNightLabel": "Leftovers night"
+      },
+      "removeBatch": {
+        "title": "Remove this meal?",
+        "descriptionWithDay": "You batch-cooked this with a leftovers night on {day}. Remove that too, or just this meal?",
+        "descriptionWithoutDay": "You batch-cooked this with a leftovers night. Remove that too, or just this meal?",
+        "justThis": "Just this one",
+        "removeBoth": "Remove both"
+      },
+      "validation": {
+        "pickRecipeOrNote": "Pick a recipe or add a note",
+        "pickLeftoversNight": "Pick a night for the leftovers"
+      },
+      "dialog": {
+        "title": "Add to {slot}",
+        "recipeLabel": "Recipe",
+        "searchPlaceholder": "Search your recipes…",
+        "noteLabel": "Note",
+        "notePlaceholder": "Leftovers, eat out, prep ahead…"
+      },
+      "empty": {
+        "noRecipes": "No recipes in your library yet. Add a note below instead.",
+        "noRecipeMatches": "No recipes match “{query}”.",
+        "groupPrefix": "Nothing planned for",
+        "groupMiddle": "this week yet. Tap",
+        "groupSuffix": "on any day. Everyone in the group can see and edit this plan.",
+        "soloPrefix": "Nothing planned this week yet. Tap",
+        "soloSuffix": "on any day to drop in a recipe or a quick note."
+      }
+    }
+  },
+  "engagement": {
+    "comments": {
+      "toast": {
+        "writeBeforePosting": "Write something before posting.",
+        "replyPosted": "Reply posted",
+        "suggestionShared": "Suggestion shared",
+        "commentPosted": "Comment posted",
+        "commentDeleted": "Comment deleted",
+        "suggestionResolved": "Suggestion resolved",
+        "suggestionReopened": "Suggestion reopened",
+        "suggestionApplied": "Suggestion applied"
+      },
+      "heading": "Conversation",
+      "description": "Ask questions, share how it turned out, or suggest a family tweak.",
+      "comment": "Comment",
+      "suggestion": "Suggestion",
+      "commentBodyLabel": "Comment body",
+      "suggestionPlaceholder": "Suggest a change the recipe owner can resolve…",
+      "commentPlaceholder": "Leave a note for the family table… use @ to mention someone",
+      "suggestionHelper": "Suggest a change the recipe owner can resolve.",
+      "commentHelper": "Share how it turned out or a tweak you'd make.",
+      "posting": "Posting…",
+      "post": "Post",
+      "signIn": "Sign in to add a comment, reply, or suggest a recipe change.",
+      "empty": {
+        "heading": "Start the conversation",
+        "body": "Be the first to ask a question, celebrate a successful bake, or leave a helpful suggestion for the recipe owner."
+      },
+      "anchor": {
+        "title": "Anchored to {label}",
+        "ingredient": "Ingredient",
+        "step": "Step"
+      },
+      "applied": "Applied",
+      "resolved": "Resolved",
+      "reply": "Reply",
+      "acceptAndApply": "Accept and apply",
+      "reopen": "Reopen",
+      "resolve": "Resolve",
+      "replyLabel": "Reply",
+      "replyPlaceholder": "Write a reply… use @ to mention someone",
+      "cancel": "Cancel",
+      "replying": "Replying…"
+    },
+    "reactions": {
+      "emoji": {
+        "love": "Love",
+        "yum": "Yum",
+        "clap": "Applause",
+        "wow": "Wow",
+        "fire": "Fire",
+        "party": "Celebrate"
+      },
+      "titleWithNames": "{label}: {names}",
+      "a11y": {
+        "count": "{label}, {count, plural, one {# reaction} other {# reactions}}{reacted}",
+        "youReacted": ", you reacted",
+        "add": "Add a reaction"
+      }
+    },
+    "anchoredSuggestions": {
+      "toast": {
+        "sent": "Suggestion sent to the recipe owner"
+      },
+      "authorSuggests": "{name} suggests",
+      "applied": "applied",
+      "resolved": "resolved",
+      "placeholder": "Suggest an edit for {label}…",
+      "send": "Send suggestion",
+      "cancel": "Cancel",
+      "trigger": "Suggest an edit"
+    },
+    "reviews": {
+      "toast": {
+        "updated": "Review updated",
+        "posted": "Review posted",
+        "deleted": "Review deleted"
+      },
+      "a11y": {
+        "yourStarRating": "Your star rating",
+        "outOfStars": "{value} out of 5 stars",
+        "rateStars": "Rate {count, plural, one {# star} other {# stars}}"
+      },
+      "heading": "Reviews and tasting notes",
+      "description": "Share a thoughtful star rating and a note: how it turned out, what you changed.",
+      "editing": "Editing your review",
+      "yourStarRating": "Your star rating",
+      "reviewTitleLabel": "Review title",
+      "titlePlaceholder": "Title (optional), e.g. “A weeknight winner”",
+      "reviewLabel": "Review",
+      "bodyPlaceholder": "How did it turn out? What would you change next time?",
+      "photoLabel": "Photo (optional)",
+      "helper": "One review per recipe. You can edit or delete yours anytime.",
+      "delete": "Delete",
+      "saving": "Saving…",
+      "updateReview": "Update review",
+      "postReview": "Post review",
+      "signIn": "Sign in to leave a star rating and a written review.",
+      "count": "{count, plural, one {# review} other {# reviews}}",
+      "sort": {
+        "mostRecent": "Most recent",
+        "highestRated": "Highest rated"
+      },
+      "empty": "No reviews yet. Be the first to share how it turned out.",
+      "familyCook": "Family cook",
+      "edited": "(edited)",
+      "photoAlt": "{name}'s photo"
+    },
+    "ratingControl": {
+      "toast": {
+        "cleared": "Rating cleared",
+        "saved": "Rating saved"
+      },
+      "noRatings": "No ratings yet",
+      "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
+      "firstToLeaveStars": "Be the first to leave stars.",
+      "a11y": {
+        "recipeRating": "Recipe rating",
+        "rateStars": "Rate {count, plural, one {# star} other {# stars}}"
+      },
+      "yourRating": "Your rating: {rating}. Click it again to clear.",
+      "tapToRate": "Tap a star to rate this recipe.",
+      "signIn": "Sign in to rate this recipe."
+    },
+    "ratingSummary": {
+      "a11y": {
+        "breakdown": "Rating breakdown",
+        "averageStars": "Average {average} out of 5 stars",
+        "distributionRow": "{star} stars: {count, plural, one {# rating} other {# ratings}} ({pct}%)"
+      },
+      "empty": "No ratings yet. Be the first to rate this recipe.",
+      "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
+      "member": "Member",
+      "more": "+{count} more"
+    }
+  },
+  "cookLog": {
+    "filters": {
+      "recipe": "Recipe",
+      "a11y": {
+        "filterByRecipe": "Filter journal by recipe",
+        "filterByTimeRange": "Filter journal by time range"
+      },
+      "allRecipes": "All recipes",
+      "when": "When"
+    },
+    "familyCooks": {
+      "a11y": {
+        "section": "Made by your family"
+      },
+      "heading": "Made by your family",
+      "description": "Cooks your family shared with the group.",
+      "familyCook": "A family cook",
+      "photoAlt": "{name}'s cook"
+    },
+    "section": {
+      "a11y": {
+        "journal": "Cooking journal",
+        "journalForRecipe": "Cooking journal for {title}",
+        "shareWithGroup": "Share this cook with {group}",
+        "deleteEntry": "Delete this journal entry"
+      },
+      "databaseConnect": {
+        "before": "Connect a database to start keeping a cooking journal. Set",
+        "after": "(see",
+        "end": ")."
+      },
+      "heading": "Cooked it",
+      "summary": {
+        "withCooks": "You've {count, plural, one {cooked once} two {cooked twice} other {cooked # times}}. History, kept alive.",
+        "empty": "Log each time you make this. Build your own history."
+      },
+      "cookedTimes": "{count, plural, one {Cooked once} two {Cooked twice} other {Cooked # times}}",
+      "cookedTimesLower": "{count, plural, one {cooked once} two {cooked twice} other {cooked # times}}",
+      "empty": {
+        "heading": "No cooks logged yet",
+        "body": "The first time you make this, log it. Notes, tweaks, and a photo become part of the recipe's story."
+      },
+      "toast": {
+        "loggedAgain": "Logged again. {count, plural, one {Cooked once} two {Cooked twice} other {Cooked # times}}",
+        "signInToLog": "Sign in to log a cook",
+        "loggedAndShared": "Logged and shared with {group}",
+        "loggedToJournal": "Logged to your journal",
+        "removedFromJournal": "Removed from your journal"
+      },
+      "logAgain": {
+        "question": "Made it again?",
+        "lastMade": "Last made {time}",
+        "madeBefore": "You've made this before",
+        "button": "Log again"
+      },
+      "logging": "Logging…",
+      "servings": "{count, plural, one {# serving} other {# servings}}",
+      "loggedEarlier": "Logged earlier",
+      "photoAlt": "Cooked on {date}",
+      "earlierDate": "an earlier date",
+      "button": {
+        "iCookedThis": "I cooked this"
+      },
+      "dialog": {
+        "title": "Log a cook",
+        "description": "Add {title} to your cooking journal. Jot down how it went and add a photo if you have one. It all becomes part of the story.",
+        "noteLabel": "How did it go?",
+        "notePlaceholder": "Doubled the garlic, baked 5 min longer, everyone went back for seconds…",
+        "noteHelper": "Note any tweaks so next time is even better.",
+        "photoLabel": "Photo (optional)",
+        "photoHint": "Add a snapshot of how yours turned out.",
+        "servingsLabel": "Servings made (optional)",
+        "servingsPlaceholder": "e.g. 4",
+        "shareLabel": "Share with my family",
+        "shareDescription": "Post this cook to {group}'s activity feed and the recipe's family photo strip.",
+        "addToJournal": "Add to journal"
+      },
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "confirmDelete": {
+        "title": "Delete this cook from your journal?",
+        "description": "It leaves your cooking journal. This can't be undone.",
+        "confirmLabel": "Delete cook"
+      }
+    }
+  },
+  "recipe": {
+    "actions": {
+      "more": "More",
+      "moreActions": "More recipe actions"
+    },
+    "adapt": {
+      "trigger": "Adapt",
+      "toast": {
+        "created": "Your adaptation is ready",
+        "signIn": "Sign in to adapt this recipe"
+      },
+      "title": "Create your own adaptation",
+      "description": "Create your own adaptation of {title}. You'll get an editable copy. The original stays untouched, and we'll remember it came from here.",
+      "noteLabel": "What are you changing?",
+      "notePlaceholder": "A little less sugar, gluten-free flour, or the weeknight shortcut…",
+      "noteHint": "Optional. This note helps your family see what inspired the fork.",
+      "creating": "Creating…",
+      "create": "Create adaptation"
+    },
+    "common": {
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "close": "Close",
+      "done": "Done",
+      "download": "Download",
+      "loading": "Loading…",
+      "saving": "Saving…",
+      "undo": "Undo",
+      "preview": "Preview",
+      "cook": "Cook",
+      "createRecipe": "Create a recipe",
+      "browseRecipes": "Browse recipes",
+      "loadMoreRecipes": "Load more recipes"
+    },
+    "cookWithInput": {
+      "addIngredients": "Add ingredients you have…",
+      "addMore": "Add more…",
+      "addIngredientAria": "Add an ingredient you have",
+      "removeItem": "Remove {item}",
+      "help": "Enter what's in your pantry. We'll rank recipes by how much you already have."
+    },
+    "deleteRecipe": {
+      "thisRecipe": "this recipe",
+      "confirmTitle": "Delete {label}?",
+      "confirmDescription": "Its steps, photos, and history stay saved. You can undo this right after.",
+      "confirmLabel": "Delete recipe",
+      "toast": {
+        "restored": "Your recipe is restored",
+        "restoreError": "We couldn't restore the recipe. Please try again.",
+        "deleted": "Recipe deleted",
+        "changedMind": "Changed your mind?",
+        "deleteError": "We couldn't delete the recipe. Please try again."
+      },
+      "deleting": "Deleting…",
+      "delete": "Delete"
+    },
+    "dictation": {
+      "unavailable": "Voice typing isn't available in this browser.",
+      "unavailableFor": "Voice typing for {field} isn't available in this browser",
+      "speak": "Speak",
+      "listening": "Listening…",
+      "stopAria": "Stop dictating {field}",
+      "startAria": "Dictate {field}"
+    },
+    "dinner": {
+      "title": "Tonight's dinner",
+      "description": "No browsing, no deciding. Let us pick one for you.",
+      "empty": "Add a few recipes and we'll start suggesting dinners.",
+      "pick": "Pick my dinner",
+      "addToPlan": "Add to tonight's plan",
+      "onPlan": "On tonight's plan",
+      "pickAgain": "Not that. Pick again",
+      "toast": {
+        "planned": "{title} is on tonight's plan"
+      }
+    },
+    "familyTree": {
+      "aria": "Recipe family tree",
+      "title": "Family tree",
+      "truncated": "Showing the closest generations. Some adaptations aren't shown.",
+      "by": "by {name}",
+      "hiddenMore": "+{count} more {count, plural, one {adaptation} other {adaptations}}"
+    },
+    "import": {
+      "title": "Import a recipe",
+      "methodAria": "Import method",
+      "fromLink": "Import from a link",
+      "pasteText": "Paste text",
+      "urlHelp": "Paste a recipe URL and we'll fill in the details for you to review.",
+      "textHelp": "Paste any recipe as plain text and we'll structure it for you to review.",
+      "importing": "Importing…",
+      "import": "Import",
+      "reading": "Reading…",
+      "useText": "Use this text",
+      "textAria": "Recipe text to import",
+      "toast": {
+        "importedNamed": "Imported “{title}”. Review the details, then save.",
+        "imported": "Imported the recipe. Review the details, then save.",
+        "linkError": "Something went wrong importing that link.",
+        "textError": "Something went wrong reading that text."
+      }
+    },
+    "keepsake": {
+      "trigger": "Hand down",
+      "title": "Hand this recipe down",
+      "description": "Add a personal message and share it as a warm keepsake. A little gift, not just a link.",
+      "fromLabel": "Your name",
+      "fromPlaceholder": "Nonna",
+      "noteLabel": "Your message",
+      "notePlaceholder": "The one you loved as a girl. Love, Nonna.",
+      "copyLink": "Copy keepsake link",
+      "toast": {
+        "copied": "Keepsake link copied. Ready to give as a gift"
+      }
+    },
+    "lineage": {
+      "aria": "Recipe lineage"
+    },
+    "quickCapture": {
+      "trigger": "Quick add",
+      "title": "Quick add a recipe",
+      "description": "Just a title to start. Dump the ingredients and steps as plain text. You can tidy it up later.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Grandma's meatballs",
+      "photoLabel": "Photo (optional)",
+      "notesLabel": "Ingredients and steps (optional)",
+      "saveDraft": "Save draft",
+      "titleError": "Give your recipe a title",
+      "toast": {
+        "saved": "Draft saved. Finish it whenever you like."
+      },
+      "savedTitle": "Saved as a draft",
+      "savedDescription": "Captured. Open the full editor to add ingredients, steps and photos, or come back to it later from your cookbook.",
+      "finish": "Finish in full editor",
+      "addAnother": "Add another"
+    },
+    "quickPlan": {
+      "addThisWeek": "Add to this week's plan",
+      "addToPlan": "Add to plan",
+      "adding": "Adding…",
+      "day": "Day",
+      "meal": "Meal",
+      "yourPlan": "your plan",
+      "toast": {
+        "added": "Added {title} to {day} {meal}"
+      }
+    },
+    "readAloud": {
+      "unavailable": "Read-aloud isn't available in this browser.",
+      "groupAria": "Read this recipe aloud",
+      "pause": "Pause",
+      "resume": "Resume",
+      "start": "Read this to me",
+      "previousStep": "Previous recipe step",
+      "reReadStep": "Re-read this recipe step",
+      "nextStep": "Next recipe step",
+      "stopReading": "Stop reading this recipe",
+      "progress": "Step {current} of {total}"
+    },
+    "recipeCard": {
+      "cookAria": "Cook {title}",
+      "unrated": "Unrated"
+    },
+    "reel": {
+      "trigger": "Reel",
+      "title": "Share as a Reel",
+      "loadingStudio": "Loading the reel studio…",
+      "justAMoment": "Just a moment…",
+      "preparing": "Preparing preview…",
+      "previewError": "Couldn't build the preview.",
+      "image": "image",
+      "video": "video",
+      "imageDescription": "A 9:16 image of {title}, ready to share to Stories.",
+      "videoDescription": "A 9:16 video of {title}, ready for Reels, TikTok or Stories.",
+      "renderingVideo": "Rendering video… {percent}%",
+      "reducedMotion": "Showing a still preview to respect your reduced-motion setting. The exported video still animates.",
+      "imageFallback": "Video export isn't supported in this browser. Download a shareable image instead.",
+      "unsupported": "This browser can't export the reel. Try Chrome, Edge, Firefox or Safari.",
+      "downloadImage": "Download image",
+      "shareText": "{title}. A recipe on Heirloom",
+      "toast": {
+        "imageDownloaded": "Image downloaded",
+        "reelDownloaded": "Reel downloaded",
+        "imageSaved": "Image saved. Share it from your gallery",
+        "reelSaved": "Reel saved. Share it from your gallery",
+        "createError": "Couldn't create the reel {type}.",
+        "shareError": "Couldn't share the reel {type}."
+      }
+    },
+    "savedSearches": {
+      "saved": "Saved ({count})",
+      "listTitle": "Saved searches",
+      "deleteAria": "Delete saved search {name}",
+      "disabledTitle": "Add a filter or search term to save",
+      "trigger": "Save search",
+      "title": "Save this search",
+      "description": "Name these filters to reapply them any time from the recipes page.",
+      "nameLabel": "Name",
+      "namePlaceholder": "30-minute vegetarian",
+      "save": "Save search",
+      "toast": {
+        "removed": "Saved search removed",
+        "saved": "Search saved"
+      }
+    },
+    "searchResults": {
+      "title": "Results",
+      "correction": "No exact matches for <strong>“{from}”</strong>. Showing results for <strong>“{to}”</strong>.",
+      "count": "{count}{plus} {count, plural, one {recipe} other {recipes}}"
+    },
+    "share": {
+      "trigger": "Share",
+      "shareCard": "Share card…",
+      "shareNative": "Share…",
+      "downloadCard": "Download card",
+      "copyLink": "Copy link",
+      "disableLink": "Disable link",
+      "enableLink": "Enable link",
+      "resetLink": "Reset link",
+      "toast": {
+        "updateError": "We couldn't update the share link.",
+        "linkReset": "Share link reset. The old link no longer works",
+        "linkDisabled": "Share link disabled",
+        "linkEnabled": "Share link enabled",
+        "cardPrepareError": "We couldn't prepare the share card.",
+        "cardDownloaded": "Share card downloaded",
+        "linkCopied": "Recipe link copied",
+        "copyError": "We couldn't copy the link."
+      }
+    },
+    "timeline": {
+      "aria": "Version history for {title}",
+      "emptyTitle": "No history yet",
+      "emptyBody": "Every time you save an edit, it'll show up here so you can look back.",
+      "title": "Recipe history",
+      "description": "Every save keeps the family trail intact.",
+      "familyCook": "A family cook",
+      "created": "Created",
+      "updated": "Updated",
+      "version": "Version {version}",
+      "savedEarlier": "saved earlier",
+      "restore": "Restore",
+      "restoreTitle": "Restore this version?",
+      "restoreDescription": "Your current recipe becomes a new version in the history, so nothing is lost.",
+      "restoring": "Restoring…",
+      "restoreVersion": "Restore v{version}",
+      "toast": {
+        "restored": "Restored version {version}"
+      }
+    },
+    "emptyLibrary": {
+      "control": {
+        "heading": "No recipes yet",
+        "body": "Add the dish everyone always asks you to make. It only takes a minute.",
+        "cta": "Create your first recipe"
+      },
+      "benefit": {
+        "heading": "Save your family's first recipe",
+        "body": "Keep the dishes everyone loves in one place. Start with the one they always ask you to make.",
+        "cta": "Save your first recipe"
+      }
+    }
+  },
+  "settings": {
+    "units": {
+      "systems": {
+        "metric": {
+          "label": "Metric",
+          "hint": "grams, milliliters, °C"
+        },
+        "us": {
+          "label": "US / Imperial",
+          "hint": "cups, ounces, °F"
+        }
+      },
+      "defaultSystem": {
+        "title": "Default measurement system",
+        "description": "Set everything at once. You can still fine-tune each measurement below."
+      },
+      "autoConvert": {
+        "label": "Auto-convert recipes",
+        "description": "Re-express every recipe in your units. Turn off to always see the amounts exactly as the author wrote them.",
+        "ariaLabel": "Auto-convert recipes to my units"
+      },
+      "preferred": {
+        "title": "Preferred units",
+        "description": "Fine-tune each measurement. Volume splits by how you measure an ingredient, so you can keep liquids in mL but scoop dry goods in cups.",
+        "liquidVolume": {
+          "label": "Liquid volume",
+          "hint": "Water, milk, oil, sauces"
+        },
+        "dryVolume": {
+          "label": "Dry volume",
+          "hint": "Flour, sugar, rice, oats"
+        },
+        "smallAmounts": {
+          "label": "Small amounts",
+          "hint": "Spices, herbs, seasonings"
+        },
+        "weight": {
+          "label": "Weight",
+          "hint": "Meat, cheese, produce"
+        },
+        "temperature": {
+          "label": "Temperature",
+          "hint": "Oven and cooking temps"
+        },
+        "defaultOption": "Default: {unit}"
+      },
+      "custom": {
+        "title": "Custom units",
+        "description": "Add the units your family cooks by. A pinch, a knob, a splash. Optionally tie them to a real amount so recipes can convert.",
+        "addButton": "Add unit",
+        "empty": "No custom units yet. Add one like a “pinch” set to 1/16 teaspoon.",
+        "optionCustom": "{name} (custom)",
+        "fallbackUnitName": "unit",
+        "preview": "1 {name} = {amount} {unit}",
+        "displayOnly": "Display only. No conversion",
+        "toasts": {
+          "added": "Unit added",
+          "updated": "Unit updated",
+          "deleted": "Unit deleted"
+        },
+        "deleteConfirm": {
+          "title": "Delete the “{name}” unit?",
+          "description": "Recipes keep the unit text. The saved definition is removed until you add it again.",
+          "confirmLabel": "Delete unit"
+        },
+        "examples": {
+          "volume": {
+            "name": "e.g. pinch",
+            "abbreviation": "e.g. pn",
+            "amount": "e.g. 0.0625"
+          },
+          "mass": {
+            "name": "e.g. knob",
+            "abbreviation": "e.g. kn",
+            "amount": "e.g. 0.5"
+          },
+          "count": {
+            "name": "e.g. bunch",
+            "abbreviation": "e.g. bn",
+            "amount": ""
+          }
+        },
+        "displayAsTrue": {
+          "label": "Show the real amount in recipes",
+          "hintWithPreview": "Recipes show “{amount} {unit}” instead of “{name}”.",
+          "hint": "Recipes show the amount it equals instead of the word “{name}”.",
+          "ariaLabel": "Show the real amount in recipes instead of the unit name"
+        },
+        "dimensions": {
+          "volume": "Volume",
+          "mass": "Weight",
+          "count": "Count"
+        },
+        "editAria": "Edit {name} unit",
+        "deleteAria": "Delete {name} unit",
+        "dialog": {
+          "addTitle": "Add custom unit",
+          "editTitle": "Edit unit"
+        },
+        "fields": {
+          "name": "Name",
+          "shortLabel": "Short label (optional)",
+          "measures": "Measures",
+          "equalTo": "Equal to (amount)",
+          "ofUnit": "Of unit"
+        },
+        "chooseUnit": "Choose a unit",
+        "noneDisplayOnly": "None (display only)",
+        "countNote": "Count units (like “bunch” or “clove”) are shown as written and aren't converted.",
+        "cancel": "Cancel",
+        "saving": "Saving…",
+        "saveChanges": "Save changes"
+      }
+    },
+    "publicActivity": {
+      "label": "Public profile and followers",
+      "description": "Let other cooks follow you and see your <strong>public</strong> recipes, reviews, and cooks in their feed. Your family groups and anything private stay private. Only content you've made public is ever shared this way.",
+      "toasts": {
+        "visible": "Public profile visible",
+        "private": "Profile private"
+      }
+    },
+    "digest": {
+      "label": "Weekly family digest",
+      "description": "A once-a-week email with new and updated recipes across your family groups. No spam, unsubscribe anytime.",
+      "toasts": {
+        "subscribed": "Weekly digest enabled",
+        "unsubscribed": "Weekly digest disabled"
+      }
+    },
+    "blockedPeople": {
+      "fallbackName": "Family cook",
+      "toasts": {
+        "unblocked": "User unblocked"
+      },
+      "empty": {
+        "title": "You haven't blocked anyone.",
+        "description": "Block someone from the menu on their comment or review to hide their posts from you."
+      },
+      "unblock": "Unblock"
+    }
+  },
+  "theme": {
+    "schemeToggle": {
+      "ariaLabel": "Switch to {mode} mode"
+    },
+    "schemes": {
+      "light": "light",
+      "dark": "dark",
+      "system": "system"
+    },
+    "changeAppearance": "Change appearance",
+    "appearance": "Appearance",
+    "lighting": "Lighting",
+    "themes": {
+      "kitchen": {
+        "label": "Kitchen",
+        "description": "Warm and cozy. Creams, terracotta, and a little home-baked charm."
+      },
+      "whimsy": {
+        "label": "Whimsy",
+        "description": "Playful and colorful. Bubbly shapes and joyful accents."
+      },
+      "professional": {
+        "label": "Professional",
+        "description": "Clean and editorial. Quiet, confident, magazine-grade."
+      },
+      "kids": {
+        "label": "Kids",
+        "description": "Big, bright, and friendly. Easy taps and cheerful colors."
+      },
+      "barebones": {
+        "label": "Simple",
+        "description": "Ultra-simple and high-contrast. Just the essentials."
+      }
+    },
+    "kidsMode": {
+      "turnOffAria": "Turn off Kids mode",
+      "turnOnAria": "Turn on Kids mode",
+      "onTitle": "Kids mode is on",
+      "title": "Kids mode"
+    }
+  },
+  "billing": {
+    "upgrade": {
+      "features": {
+        "aiGeneration": "AI recipe generation",
+        "aiTutor": "the AI cooking tutor",
+        "aiSubstitutions": "AI ingredient substitutions",
+        "videoExport": "video and reel exports",
+        "advancedCollaboration": "advanced family collaboration"
+      },
+      "thisFeature": "This feature",
+      "title": "Unlock {plan}",
+      "description": "{feature} is part of {plan}. {tagline}",
+      "notNow": "Not now",
+      "seePlans": "See plans"
+    },
+    "redeem": {
+      "success": {
+        "title": "Gift redeemed",
+        "description": "{months, plural, one {# month of Heirloom Family has been added to your account.} other {# months of Heirloom Family have been added to your account.}}",
+        "cta": "Go to your cookbook"
+      },
+      "giftCode": "Gift code",
+      "submit": "Redeem gift"
+    },
+    "manage": {
+      "label": "Manage billing"
+    },
+    "usageMeter": {
+      "unlimited": "{used} used · Unlimited",
+      "limited": "{used} of {limit} used",
+      "ariaLabel": "{label} usage"
+    },
+    "usageLimit": {
+      "blocked": "You've reached the free plan's limit of {limit} {resource}. You can still edit everything you've saved. Upgrade to Family to add more.",
+      "warn": "You've used {used} of {limit} {resource} on the free plan.",
+      "seePlans": "See plans"
+    },
+    "locked": {
+      "badge": "Family",
+      "title": "A Family feature",
+      "description": "Upgrade to Family to unlock this. Everything you've already saved stays free. Nothing you made is ever taken away.",
+      "seePlans": "See plans"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "caughtUp": "You're all caught up.",
+    "someone": "Someone",
+    "unread": "Unread notification",
+    "viewAll": "View all",
+    "loading": "Loading…",
+    "loadOlder": "Load older",
+    "bell": {
+      "aria": "Notifications",
+      "unreadAria": "Notifications, {count} unread"
+    },
+    "empty": {
+      "title": "No notifications yet",
+      "description": "Mentions, replies, reviews, and cook-along invites will show up here."
+    }
+  },
+  "follows": {
+    "button": {
+      "toasts": {
+        "following": "Following"
+      },
+      "following": "Following",
+      "follow": "Follow"
+    },
+    "list": {
+      "fallbackName": "A family cook",
+      "loading": "Loading…",
+      "loadMore": "Load more"
+    }
   }
 }

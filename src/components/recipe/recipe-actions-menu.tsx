@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { MoreHorizontal } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -26,17 +27,18 @@ import {
  */
 export function RecipeActionsMenu({
   children,
-  label = "More actions",
+  label,
 }: {
   children: React.ReactNode;
   label?: string;
 }) {
+  const t = useTranslations("recipe");
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="lg" aria-label={label}>
+        <Button type="button" variant="outline" size="lg" aria-label={label ?? t("actions.moreActions")}>
           <MoreHorizontal aria-hidden="true" />
-          More
+          {t("actions.more")}
         </Button>
       </PopoverTrigger>
       <PopoverContent

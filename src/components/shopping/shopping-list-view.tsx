@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   describeQuantity,
   formatShoppingListText,
@@ -65,9 +65,6 @@ function groupUnchecked(items: ShoppingViewItem[]) {
   }));
 }
 
-const ALLERGEN_DISCLAIMER =
-  "Best-effort from ingredient names. Double-check labels and brands.";
-
 /**
  * "Send list". Hand the active list to a partner via the native share sheet,
  * falling back to copy-to-clipboard as tidy grouped text (issue #408). Checked
@@ -81,12 +78,13 @@ function ShareListButton({
   disabled: boolean;
 }) {
   const [busy, setBusy] = React.useState(false);
+  const t = useTranslations("shopping");
   const remaining = items.filter((item) => !item.checked).length;
 
   async function onSend() {
-    const text = formatShoppingListText(items, { title: "🛒 Shopping list" });
+    const text = formatShoppingListText(items, { title: t("share.title") });
     if (!text) {
-      toast.info("Nothing to send. Everything's checked off.");
+      toast.info(t("toasts.nothingToSend"));
       return;
     }
     setBusy(true);
@@ -96,7 +94,7 @@ function ShareListButton({
         typeof navigator.share === "function"
       ) {
         try {
-          await navigator.share({ title: "Shopping list", text });
+          await navigator.share({ title: t("share.titleText"), text });
           return;
         } catch (error) {
           // User dismissed the sheet. Stop. Any other failure falls through
@@ -107,9 +105,9 @@ function ShareListButton({
         }
       }
       await navigator.clipboard.writeText(text);
-      toast.success("List copied. Paste it into a message");
+      toast.success(t("toasts.listCopied"));
     } catch {
-      toast.error("Couldn't share the list.");
+      toast.error(t("toasts.shareFailed"));
     } finally {
       setBusy(false);
     }
@@ -123,7 +121,7 @@ function ShareListButton({
       disabled={disabled || busy || remaining === 0}
       onClick={() => void onSend()}
     >
-      <Share2 /> Send list
+      <Share2 /> {t("share.send")}
     </Button>
   );
 }
@@ -146,6 +144,8 @@ function ItemRow({
   const amount = describeQuantity(item);
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
   const locale = useLocale();
+  const t = useTranslations("shopping");
+  const allergenDisclaimer = t("allergens.disclaimer");
   return (
     <li className="group flex items-center gap-1">
       <button
@@ -181,18 +181,21 @@ function ItemRow({
           )}
           {item.optional && (
             <Badge variant="muted" className="ms-2 align-middle">
-              optional
+              {t("item.optional")}
             </Badge>
           )}
           {alerts.length > 0 && (
             <Badge
               variant="warning"
               className="ms-2 gap-1 align-middle"
-              title={ALLERGEN_DISCLAIMER}
-              aria-label={`Allergen warning: contains ${formatList(
-                alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
-                locale,
-              )}. ${ALLERGEN_DISCLAIMER}`}
+              title={allergenDisclaimer}
+              aria-label={t("allergens.warning", {
+                allergens: formatList(
+                  alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+                  locale,
+                ),
+                disclaimer: allergenDisclaimer,
+              })}
             >
               <AlertTriangle className="size-3" aria-hidden />
               {formatList(
@@ -204,7 +207,7 @@ function ItemRow({
         </span>
       </button>
       <label className="sr-only" htmlFor={`aisle-${item.id}`}>
-        Aisle for {item.item}
+        {t("item.aisleFor", { item: item.item })}
       </label>
       <select
         id={`aisle-${item.id}`}
@@ -213,8 +216,8 @@ function ItemRow({
         onChange={(e) =>
           onSetCategory(item.id, e.target.value as ShoppingCategory)
         }
-        aria-label={`Aisle for ${item.item}`}
-        title="Change aisle"
+        aria-label={t("item.aisleFor", { item: item.item })}
+        title={t("item.changeAisle")}
         className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
       >
         {SHOPPING_CATEGORIES.map((c) => (
@@ -227,7 +230,7 @@ function ItemRow({
         type="button"
         disabled={disabled}
         onClick={() => onRemove(item.id)}
-        aria-label={`Remove ${item.item}`}
+        aria-label={t("item.remove", { item: item.item })}
         className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
       >
         <X className="size-4" />
@@ -267,6 +270,7 @@ export function ShoppingListView({
   const [name, setName] = React.useState("");
   const [qty, setQty] = React.useState("");
   const [unit, setUnit] = React.useState("");
+  const t = useTranslations("shopping");
 
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
@@ -296,20 +300,20 @@ export function ShoppingListView({
       >
         <div className="flex min-w-48 flex-1 flex-col gap-1">
           <label htmlFor="add-item" className="text-xs text-muted-foreground">
-            Add an item
+            {t("manual.itemLabel")}
           </label>
           <Input
             id="add-item"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Paper towels"
+            placeholder={t("manual.itemPlaceholder")}
             maxLength={300}
             disabled={disabled}
           />
         </div>
         <div className="flex w-20 flex-col gap-1">
           <label htmlFor="add-qty" className="text-xs text-muted-foreground">
-            Qty
+            {t("manual.quantityLabel")}
           </label>
           <Input
             id="add-qty"
@@ -322,7 +326,7 @@ export function ShoppingListView({
         </div>
         <div className="flex w-24 flex-col gap-1">
           <label htmlFor="add-unit" className="text-xs text-muted-foreground">
-            Unit
+            {t("manual.unitLabel")}
           </label>
           <Input
             id="add-unit"
@@ -334,7 +338,7 @@ export function ShoppingListView({
           />
         </div>
         <Button type="submit" disabled={disabled || !name.trim()}>
-          <Plus /> Add
+          <Plus /> {t("manual.add")}
         </Button>
       </form>
 
@@ -342,16 +346,22 @@ export function ShoppingListView({
         <EmptyState
           variant="compact"
           icon={<ShoppingCart />}
-          title="Your list is empty"
-          description="Add items above, or open a recipe and choose “Add to shopping list”."
+          title={t("empty.title")}
+          description={t("empty.description")}
         />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
-              {unchecked.length} to buy
-              {checked.length > 0 && ` · ${checked.length} in cart`}
-              {storageNote && ` · ${storageNote}`}
+              {[
+                t("summary.toBuy", { count: unchecked.length }),
+                checked.length > 0
+                  ? t("summary.inCart", { count: checked.length })
+                  : null,
+                storageNote,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
             <div className="flex gap-2">
               <ShareListButton items={items} disabled={disabled} />
@@ -362,7 +372,7 @@ export function ShoppingListView({
                 disabled={disabled || checked.length === 0}
                 onClick={onClearChecked}
               >
-                Clear checked
+                {t("actions.clearChecked")}
               </Button>
               <Button
                 type="button"
@@ -372,7 +382,7 @@ export function ShoppingListView({
                 disabled={disabled || items.length === 0}
                 onClick={onClearAll}
               >
-                <Trash2 /> Clear all
+                <Trash2 /> {t("actions.clearAll")}
               </Button>
             </div>
           </div>
@@ -403,7 +413,7 @@ export function ShoppingListView({
           {checked.length > 0 && (
             <section>
               <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                In cart
+                {t("sections.inCart")}
               </h2>
               <ul className="flex flex-col">
                 {checked.map((item) => (

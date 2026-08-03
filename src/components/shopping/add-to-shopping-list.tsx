@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ListPlus, Loader2, ShoppingCart, Users } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import { useFriendlyError } from "~/lib/error-copy";
 
 import { addRecipeToShoppingListAction } from "~/server/shopping/actions";
 import { isPantryStaple } from "~/lib/shopping-list";
@@ -59,6 +60,8 @@ export function AddToShoppingList({
   const [includeStaples, setIncludeStaples] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
   const addRecipe = useShoppingStore((s) => s.addRecipe);
+  const t = useTranslations("shopping.add");
+  const friendlyError = useFriendlyError();
 
   const noun = recipe.servingsNoun ?? "servings";
 
@@ -75,8 +78,8 @@ export function AddToShoppingList({
     household.size !== recipe.servings;
 
   function added() {
-    toast.success("Added to your shopping list", {
-      action: { label: "View list", onClick: () => router.push("/shopping") },
+    toast.success(t("toasts.added"), {
+      action: { label: t("toasts.viewList"), onClick: () => router.push("/shopping") },
     });
     setOpen(false);
   }
@@ -112,7 +115,7 @@ export function AddToShoppingList({
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
         <Button type="button" size="lg" variant="outline">
-          <ShoppingCart /> Add to list
+          <ShoppingCart /> {t("trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -120,15 +123,14 @@ export function AddToShoppingList({
           <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ShoppingCart className="size-5" aria-hidden="true" />
           </div>
-          <DialogTitle>Add to shopping list</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            Add the ingredients for {recipe.title} to your grocery list. Like
-            items combine and quantities scale to the servings you choose.
+            {t("description", { title: recipe.title })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Label htmlFor="shop-servings">Servings to shop for</Label>
+          <Label htmlFor="shop-servings">{t("servings.label")}</Label>
           <Input
             id="shop-servings"
             value={servings}
@@ -139,18 +141,17 @@ export function AddToShoppingList({
           />
           {recipe.servings ? (
             <p className="text-xs text-muted-foreground">
-              This recipe makes {recipe.servings} {noun}. We&apos;ll scale the
-              quantities to match.
+              {t("servings.recipeMakes", { count: recipe.servings, noun })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              This recipe has no serving size, so quantities are added as-is.
+              {t("servings.noSize")}
             </p>
           )}
           {scaledToHousehold && (
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Users className="size-3.5 text-primary" aria-hidden="true" />
-              Scaled to your family of {household.size}.
+              {t("servings.scaledToFamily", { count: household.size ?? 0 })}
             </p>
           )}
         </div>
@@ -158,11 +159,10 @@ export function AddToShoppingList({
         <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/40 p-3">
           <div className="grid gap-1">
             <Label htmlFor="shop-staples" className="cursor-pointer">
-              Include pantry staples
+              {t("staples.label")}
             </Label>
             <p className="text-xs text-muted-foreground">
-              Off by default. We skip salt, oil, butter and common spices so
-              your list is just what you need to buy.
+              {t("staples.description")}
             </p>
           </div>
           <Switch
@@ -170,19 +170,19 @@ export function AddToShoppingList({
             checked={includeStaples}
             onCheckedChange={setIncludeStaples}
             disabled={pending}
-            aria-label="Include pantry staples like salt and oil"
+            aria-label={t("staples.aria")}
           />
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="ghost" disabled={pending}>
-              Cancel
+              {t("cancel")}
             </Button>
           </DialogClose>
           <Button type="button" onClick={onConfirm} disabled={pending}>
             {pending ? <Loader2 className="animate-spin" /> : <ListPlus />}
-            {pending ? "Adding…" : "Add to list"}
+            {pending ? t("adding") : t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

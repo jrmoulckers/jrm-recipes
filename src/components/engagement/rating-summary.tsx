@@ -1,4 +1,5 @@
 import { Star, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import type { RatingBreakdownResult } from "~/server/engagement/queries";
 import { cn } from "~/lib/utils";
@@ -15,21 +16,22 @@ function initialsOf(name: string | null, handle: string | null): string {
  * The aggregation and visibility gating happen in `getRatingBreakdown`. Shown
  * beside the rating control so a viewer sees not just the number but who loved it.
  */
-export function RatingSummary({
+export async function RatingSummary({
   breakdown,
 }: {
   breakdown: RatingBreakdownResult;
 }) {
+  const t = await getTranslations("engagement.ratingSummary");
   const { average, count, distribution, raters, totalRaters } = breakdown;
 
   if (count === 0) {
     return (
       <section
-        aria-label="Rating breakdown"
+        aria-label={t("a11y.breakdown")}
         className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
       >
         <p className="text-sm text-muted-foreground">
-          No ratings yet. Be the first to rate this recipe.
+          {t("empty")}
         </p>
       </section>
     );
@@ -40,7 +42,7 @@ export function RatingSummary({
 
   return (
     <section
-      aria-label="Rating breakdown"
+      aria-label={t("a11y.breakdown")}
       className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -50,7 +52,9 @@ export function RatingSummary({
           </span>
           <span
             className="flex items-center gap-0.5"
-            aria-label={`Average ${average.toFixed(1)} out of 5 stars`}
+            aria-label={t("a11y.averageStars", {
+              average: average.toFixed(1),
+            })}
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <Star
@@ -66,7 +70,7 @@ export function RatingSummary({
             ))}
           </span>
           <span className="text-xs text-muted-foreground">
-            {count} {count === 1 ? "rating" : "ratings"}
+            {t("ratingCount", { count })}
           </span>
         </div>
 
@@ -86,9 +90,11 @@ export function RatingSummary({
                 <span
                   className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
                   role="img"
-                  aria-label={`${row.star} stars: ${row.count} ${
-                    row.count === 1 ? "rating" : "ratings"
-                  } (${pct}%)`}
+                  aria-label={t("a11y.distributionRow", {
+                    star: row.star,
+                    count: row.count,
+                    pct,
+                  })}
                 >
                   <span
                     className="block h-full rounded-full bg-amber-400"
@@ -109,7 +115,7 @@ export function RatingSummary({
           <Users className="size-4 text-muted-foreground" aria-hidden />
           <div className="flex -space-x-2">
             {raters.map((rater) => {
-              const name = rater.name ?? rater.handle ?? "Member";
+              const name = rater.name ?? rater.handle ?? t("member");
               return (
                 <Avatar
                   key={rater.id}
@@ -128,7 +134,7 @@ export function RatingSummary({
           </div>
           {overflow > 0 ? (
             <span className="text-xs text-muted-foreground">
-              +{overflow} more
+              {t("more", { count: overflow })}
             </span>
           ) : null}
         </div>

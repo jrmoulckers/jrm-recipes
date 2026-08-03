@@ -282,7 +282,7 @@ function EmptyJournal() {
     <EmptyState
       icon={<CookingPot />}
       title="No cooks logged yet"
-      description="Open a recipe and tap “I cooked this” to start your journal. Notes and photos build a history you’ll love looking back on."
+      description="Open a recipe and tap “I cooked this” to start your journal. Notes and photos build a history you'll love looking back on."
       action={
         <Button asChild size="lg">
           <Link href="/recipes">

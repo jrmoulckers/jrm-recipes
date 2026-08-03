@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Mic, Square } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -13,7 +14,7 @@ import { useSpeechInput } from "~/lib/use-speech-input";
  * Transcribed speech is appended to the field (never overwritten) via
  * `onAppend`. On browsers without SpeechRecognition (notably iOS Safari) the
  * button renders disabled with a plain-language tooltip so nothing looks
- * broken. The "Listening…" pulse is suppressed under prefers-reduced-motion.
+ * broken. The listening pulse is suppressed under prefers-reduced-motion.
  */
 export function DictationButton({
   fieldLabel,
@@ -24,6 +25,7 @@ export function DictationButton({
   onAppend: (text: string) => void;
   className?: string;
 }) {
+  const t = useTranslations("recipe");
   const reduced = useReducedMotion();
   const { supported, listening, toggle } = useSpeechInput({
     onResult: onAppend,
@@ -37,15 +39,15 @@ export function DictationButton({
       <button
         type="button"
         disabled
-        title="Voice typing isn't available in this browser."
-        aria-label={`Voice typing for ${fieldLabel} isn't available in this browser`}
+        title={t("dictation.unavailable")}
+        aria-label={t("dictation.unavailableFor", { field: fieldLabel })}
         className={cn(
           base,
           "cursor-not-allowed border-border text-muted-foreground opacity-60",
           className,
         )}
       >
-        <Mic className="size-3.5" aria-hidden="true" /> Speak
+        <Mic className="size-3.5" aria-hidden="true" /> {t("dictation.speak")}
       </button>
     );
   }
@@ -56,7 +58,9 @@ export function DictationButton({
       onClick={toggle}
       aria-pressed={listening}
       aria-label={
-        listening ? `Stop dictating ${fieldLabel}` : `Dictate ${fieldLabel}`
+        listening
+          ? t("dictation.stopAria", { field: fieldLabel })
+          : t("dictation.startAria", { field: fieldLabel })
       }
       className={cn(
         base,
@@ -69,11 +73,13 @@ export function DictationButton({
       {listening ? (
         <>
           <Square className="size-3.5" aria-hidden="true" />
-          <span className={cn(!reduced && "animate-pulse")}>Listening…</span>
+          <span className={cn(!reduced && "animate-pulse")}>
+            {t("dictation.listening")}
+          </span>
         </>
       ) : (
         <>
-          <Mic className="size-3.5" aria-hidden="true" /> Speak
+          <Mic className="size-3.5" aria-hidden="true" /> {t("dictation.speak")}
         </>
       )}
     </button>

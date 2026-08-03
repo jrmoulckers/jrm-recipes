@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export function DeleteRecipeButton({
   slug: string | null;
   title?: string;
 }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const confirm = useConfirm();
@@ -41,29 +43,28 @@ export function DeleteRecipeButton({
       if (ok) {
         router.push(recipeDetailPath({ id, slug }));
         router.refresh();
-        toast.success("Recipe restored.");
+        toast.success(t("deleteRecipe.toast.restored"));
       } else {
-        toast.error("Couldn't restore the recipe. Please try again.");
+        toast.error(t("deleteRecipe.toast.restoreError"));
       }
     })();
   }
 
   async function onDelete() {
-    const label = title ? `“${title}”` : "this recipe";
+    const label = title ? `“${title}”` : t("deleteRecipe.thisRecipe");
     const ok = await confirm({
-      title: `Delete ${label}?`,
-      description:
-        "Its steps, photos, and history stay saved. You can undo this right after.",
-      confirmLabel: "Delete recipe",
+      title: t("deleteRecipe.confirmTitle", { label }),
+      description: t("deleteRecipe.confirmDescription"),
+      confirmLabel: t("deleteRecipe.confirmLabel"),
     });
     if (!ok) return;
 
     // Show the undo affordance optimistically: the soft-delete is immediate and
     // the action redirects us away, so a post-await toast could be lost. On a
     // genuine failure we dismiss it below and surface the error instead.
-    const toastId = toast("Recipe deleted.", {
-      description: "Changed your mind?",
-      action: { label: "Undo", onClick: onUndo },
+    const toastId = toast(t("deleteRecipe.toast.deleted"), {
+      description: t("deleteRecipe.toast.changedMind"),
+      action: { label: t("common.undo"), onClick: onUndo },
       duration: 10_000,
     });
 
@@ -72,7 +73,7 @@ export function DeleteRecipeButton({
         await deleteRecipeAction(id);
       } catch {
         toast.dismiss(toastId);
-        toast.error("Couldn't delete the recipe. Please try again.");
+        toast.error(t("deleteRecipe.toast.deleteError"));
       }
     });
   }
@@ -85,7 +86,7 @@ export function DeleteRecipeButton({
       disabled={pending}
       onClick={onDelete}
     >
-      <Trash2 /> {pending ? "Deleting…" : "Delete"}
+      <Trash2 /> {pending ? t("deleteRecipe.deleting") : t("deleteRecipe.delete")}
     </Button>
   );
 }

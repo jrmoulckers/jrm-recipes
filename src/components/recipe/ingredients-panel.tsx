@@ -752,7 +752,10 @@ export function IngredientsPanel({
                 ) : null}
               </>
             ) : (
-              <>That amount can’t be converted to this ingredient’s unit.</>
+              <>
+                That amount can&apos;t be converted to this ingredient&apos;s
+                unit.
+              </>
             )}
           </p>
         </form>

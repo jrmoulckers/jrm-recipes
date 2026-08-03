@@ -1,7 +1,13 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render as rtlRender } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RecipeCard, type CardRecipe } from "./recipe-card";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // RecipeCard imports FavoriteButton, which pulls in a server action + router;
 // stub the pieces so the card can render in jsdom.

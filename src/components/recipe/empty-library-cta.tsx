@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChefHat, UtensilsCrossed } from "lucide-react";
 
 import { useFeatureFlag } from "~/components/analytics/flags-provider";
@@ -12,6 +13,7 @@ import { pickKidCopy } from "~/config/kid-copy";
 export const EMPTY_LIBRARY_CTA_FLAG = "empty-library-cta";
 
 type EmptyLibraryCopy = { heading: string; body: string; cta: string };
+type EmptyLibraryCopyKey = { heading: string; body: string; cta: string };
 
 /**
  * Copy variants for the empty-library CTA A/B test. `control` reproduces the
@@ -32,6 +34,19 @@ const VARIANTS: Record<string, EmptyLibraryCopy> = {
   },
 };
 
+const VARIANT_KEYS: Record<string, EmptyLibraryCopyKey> = {
+  control: {
+    heading: "emptyLibrary.control.heading",
+    body: "emptyLibrary.control.body",
+    cta: "emptyLibrary.control.cta",
+  },
+  benefit: {
+    heading: "emptyLibrary.benefit.heading",
+    body: "emptyLibrary.benefit.body",
+    cta: "emptyLibrary.benefit.cta",
+  },
+};
+
 /** Resolve a flag value to a copy variant, defaulting to control. */
 export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
   if (typeof variant === "string" && variant in VARIANTS) {
@@ -49,9 +64,18 @@ export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
  * is `first_recipe_created`.
  */
 export function EmptyLibraryCta() {
+  const t = useTranslations("recipe");
   const variant = useFeatureFlag(EMPTY_LIBRARY_CTA_FLAG, "control");
   const { kidSafe } = useThemeBehavior();
-  const base = emptyLibraryCopy(variant);
+  const key =
+    typeof variant === "string" && variant in VARIANT_KEYS
+      ? VARIANT_KEYS[variant]!
+      : VARIANT_KEYS.control!;
+  const base = {
+    heading: t(key.heading),
+    body: t(key.body),
+    cta: t(key.cta),
+  };
   // Kids mode overrides the A/B copy with simpler words, regardless of variant.
   const copy = {
     heading: pickKidCopy(kidSafe, "empty.recipes.title", base.heading),

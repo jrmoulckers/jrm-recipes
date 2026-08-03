@@ -1,10 +1,16 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DinnerSuggestion } from "./dinner-suggestion";
 import { addEntryAction } from "~/server/planner/actions";
 import type { DinnerCandidate } from "~/server/recipes/queries";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 type ActionResult = { ok: boolean; error?: string };
 

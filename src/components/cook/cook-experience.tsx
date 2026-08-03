@@ -99,6 +99,7 @@ export function CookExperience({
   const speech = useSpeech();
   const household = useHousehold();
   const router = useRouter();
+  const tToasts = useTranslations("cook.toasts");
   // Kids mode's large-target flag genuinely upsizes the primary controls (#439),
   // and kidSafe drives the young-cook affordances (safety callout, get-ready
   // gate). Both come from the active theme mode's behavior.
@@ -182,15 +183,15 @@ export function CookExperience({
 
   const finishAndLeave = React.useCallback(() => {
     clearSession();
-    toast.success("Nicely done. Recipe complete!", {
-      description: `Log this cook to add ${recipe.title} to your journal.`,
+    toast.success(tToasts("complete.title"), {
+      description: tToasts("complete.description", { title: recipe.title }),
       action: {
-        label: "Log this cook",
+        label: tToasts("complete.action"),
         onClick: () => router.push(`/recipes/${recipe.slug}`),
       },
     });
     router.push(`/recipes/${recipe.slug}`);
-  }, [clearSession, recipe.slug, recipe.title, router]);
+  }, [clearSession, recipe.slug, recipe.title, router, tToasts]);
 
   // "Let's get ready!" pre-cook gate for Kids mode (#444). The grown-up-help
   // line only shows when the recipe genuinely has hot/sharp steps, so we detect

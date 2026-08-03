@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { loadMorePublicRecipesAction } from "~/server/recipes/discover-actions";
 import { type RatingSort } from "~/lib/ratings";
@@ -35,6 +36,7 @@ export function DiscoverFeed({
    */
   priorityCount?: number;
 }) {
+  const t = useTranslations("recipe");
   const [items, setItems] = React.useState<CardRecipe[]>(initialItems);
   const [nextOffset, setNextOffset] = React.useState<number | null>(
     initialNextOffset,
@@ -80,7 +82,7 @@ export function DiscoverFeed({
             onClick={onLoadMore}
             disabled={pending}
           >
-            {pending ? "Loading…" : "Load more recipes"}
+            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
           </Button>
         </div>
       )}

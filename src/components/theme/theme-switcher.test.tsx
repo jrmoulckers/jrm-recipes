@@ -1,10 +1,16 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ThemeSwitcher } from "./theme-switcher";
 import { ThemeProvider } from "~/components/theme/theme-provider";
 import type { ColorScheme, UITheme } from "~/config/themes";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // Radix DropdownMenu + ThemeProvider lean on browser APIs jsdom lacks.
 beforeAll(() => {

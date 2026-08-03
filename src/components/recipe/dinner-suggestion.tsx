@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -45,6 +46,7 @@ export function DinnerSuggestion({
   candidates: DinnerCandidate[];
   today: string;
 }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const [order, setOrder] = React.useState<number[]>([]);
   const [pos, setPos] = React.useState(0);
@@ -79,7 +81,7 @@ export function DinnerSuggestion({
       });
       if (result.ok) {
         setPlanned(true);
-        toast.success(`${current.title} is on tonight's plan`);
+        toast.success(t("dinner.toast.planned", { title: current.title }));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -93,11 +95,11 @@ export function DinnerSuggestion({
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="size-5 text-primary" />
           <h2 className="font-display text-xl font-bold tracking-tight">
-            Tonight&apos;s dinner
+            {t("dinner.title")}
           </h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          No browsing, no deciding. Let us pick one for you.
+          {t("dinner.description")}
         </p>
       </div>
 
@@ -105,16 +107,16 @@ export function DinnerSuggestion({
         <Card>
           <CardContent className="flex flex-col items-start gap-3 p-6">
             <p className="text-sm text-muted-foreground">
-              Add a few recipes and we&apos;ll start suggesting dinners.
+              {t("dinner.empty")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button asChild>
                 <Link href="/recipes/new">
-                  <ChefHat /> Create a recipe
+                  <ChefHat /> {t("common.createRecipe")}
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/recipes">Browse recipes</Link>
+                <Link href="/recipes">{t("common.browseRecipes")}</Link>
               </Button>
             </div>
           </CardContent>
@@ -122,7 +124,7 @@ export function DinnerSuggestion({
       ) : !current ? (
         <div>
           <Button size="xl" onClick={pick}>
-            <Sparkles /> Pick my dinner
+            <Sparkles /> {t("dinner.pick")}
           </Button>
         </div>
       ) : (
@@ -171,7 +173,7 @@ export function DinnerSuggestion({
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button asChild>
                   <Link href={`/recipes/${current.slug}/cook`}>
-                    <ChefHat /> Cook
+                    <ChefHat /> {t("common.cook")}
                   </Link>
                 </Button>
                 <Button
@@ -182,12 +184,11 @@ export function DinnerSuggestion({
                 >
                   {planned ? (
                     <>
-                      <Check className={cn("text-primary")} /> On tonight&apos;s
-                      plan
+                      <Check className={cn("text-primary")} /> {t("dinner.onPlan")}
                     </>
                   ) : (
                     <>
-                      <UtensilsCrossed /> Add to tonight&apos;s plan
+                      <UtensilsCrossed /> {t("dinner.addToPlan")}
                     </>
                   )}
                 </Button>
@@ -197,7 +198,7 @@ export function DinnerSuggestion({
                     onClick={pickAgain}
                     disabled={pending}
                   >
-                    <Shuffle /> Not that. Pick again
+                    <Shuffle /> {t("dinner.pickAgain")}
                   </Button>
                 )}
               </div>

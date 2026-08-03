@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BookMarked, Users } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -18,11 +19,12 @@ function hashIndex(s: string, mod: number) {
   return h % mod;
 }
 
-export function CollectionCard({
+export async function CollectionCard({
   collection,
 }: {
   collection: CollectionSummary;
 }) {
+  const t = await getTranslations("collections.card");
   const gradient = GRADIENTS[hashIndex(collection.id, GRADIENTS.length)]!;
 
   return (
@@ -62,15 +64,16 @@ export function CollectionCard({
         )}
         <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
           <span>
-            {collection.recipeCount}{" "}
-            {collection.recipeCount === 1 ? "recipe" : "recipes"}
+            {t("recipeCount", { count: collection.recipeCount })}
           </span>
           {collection.sharedGroups.length > 0 ? (
             <span className="inline-flex items-center gap-1 text-primary">
               <Users className="size-3" aria-hidden="true" />
-              Shared with {collection.sharedGroups[0]!.name}
+              {t("sharedWith", { group: collection.sharedGroups[0]!.name })}
               {collection.sharedGroups.length > 1
-                ? ` +${collection.sharedGroups.length - 1}`
+                ? t("sharedMore", {
+                    count: collection.sharedGroups.length - 1,
+                  })
                 : ""}
             </span>
           ) : null}

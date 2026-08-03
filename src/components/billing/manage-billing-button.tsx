@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import { createBillingPortalSessionAction } from "~/server/billing/actions";
@@ -21,6 +22,7 @@ export function ManageBillingButton({
   className,
   ...props
 }: ButtonProps) {
+  const t = useTranslations("billing.manage");
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
 
@@ -47,7 +49,7 @@ export function ManageBillingButton({
         className={cn(className)}
         {...props}
       >
-        {children ?? "Manage billing"}
+        {children ?? t("label")}
       </Button>
       {error ? (
         <p role="alert" className="text-sm text-destructive">

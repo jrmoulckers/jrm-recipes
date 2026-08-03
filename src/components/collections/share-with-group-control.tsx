@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Check, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export function ShareWithGroupControl({
   groups: CollectionShareTarget[];
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.shareWithGroup");
   const [shared, setShared] = React.useState(
     () => new Set(groups.filter((g) => g.shared).map((g) => g.id)),
   );
@@ -65,7 +67,9 @@ export function ShareWithGroupControl({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(wasShared ? "Stopped sharing" : "Shared with group");
+        toast.success(
+          wasShared ? t("toast.stoppedSharing") : t("toast.shared"),
+        );
         router.refresh();
       });
     });
@@ -76,19 +80,21 @@ export function ShareWithGroupControl({
       <PopoverTrigger asChild>
         <Button type="button" variant="outline">
           <Users />
-          {sharedCount > 0 ? `Shared with ${sharedCount}` : "Share with group"}
+          {sharedCount > 0
+            ? t("triggerWithCount", { count: sharedCount })
+            : t("trigger")}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-2">
         <div className="space-y-0.5">
-          <p className="text-sm font-medium">Share with a group</p>
+          <p className="text-sm font-medium">{t("title")}</p>
           <p className="text-xs text-muted-foreground">
-            Members of the groups you pick can view this collection.
+            {t("description")}
           </p>
         </div>
         {groups.length === 0 ? (
           <p className="py-2 text-sm text-muted-foreground">
-            Join a family group to share collections with it.
+            {t("empty")}
           </p>
         ) : (
           <ul className="flex flex-col">
