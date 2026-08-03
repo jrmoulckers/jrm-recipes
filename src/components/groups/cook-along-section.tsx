@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -24,7 +24,7 @@ import type {
   UpcomingCookAlong,
 } from "~/server/cookalong/queries";
 import type { RsvpStatus } from "~/server/db/schema";
-import { formatDate, formatRelativeTime } from "~/lib/dates";
+import { formatEventDateTime, formatRelativeTime } from "~/lib/dates";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -73,9 +73,7 @@ export function CookAlongSection({
           <h2 className="font-display text-2xl font-bold tracking-tight">
             {t("title")}
           </h2>
-          <p className="mt-1 text-muted-foreground">
-            {t("description")}
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         {isMember && recipes.length > 0 ? (
           <ScheduleCookAlongButton
@@ -136,9 +134,7 @@ export function CookAlongSection({
             aria-hidden="true"
           />
           {t("empty.title")}
-          {isMember && recipes.length > 0
-            ? ` ${t("empty.memberAction")}`
-            : ""}
+          {isMember && recipes.length > 0 ? ` ${t("empty.memberAction")}` : ""}
         </div>
       )}
     </section>
@@ -161,6 +157,7 @@ function CookAlongCard({
 }) {
   const going = event.attendees.filter((a) => a.status === "going");
   const t = useTranslations("groups.cookAlong");
+  const locale = useLocale();
   const hostName = event.host?.name ?? event.host?.handle ?? t("fallbackHost");
 
   return (
@@ -169,9 +166,9 @@ function CookAlongCard({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-primary">
             <CalendarClock className="size-4" aria-hidden="true" />
-            {formatDate(event.scheduledFor, "EEE, MMM d · h:mm a")}
+            {formatEventDateTime(event.scheduledFor, locale)}
             <span className="text-muted-foreground">
-              ({formatRelativeTime(event.scheduledFor)})
+              ({formatRelativeTime(event.scheduledFor, locale)})
             </span>
           </div>
           <h3 className="mt-1 font-display text-lg font-semibold">

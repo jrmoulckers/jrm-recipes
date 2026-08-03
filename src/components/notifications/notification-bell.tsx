@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -34,6 +34,7 @@ type Props = {
  */
 export function NotificationBell({ initialCount, initialItems }: Props) {
   const t = useTranslations("notifications");
+  const locale = useLocale();
   const [count, setCount] = React.useState(initialCount);
   const [items, setItems] = React.useState(initialItems);
 
@@ -124,7 +125,7 @@ export function NotificationBell({ initialCount, initialItems }: Props) {
                         {sentence}
                       </span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {formatRelativeTime(item.createdAt)}
+                        {formatRelativeTime(item.createdAt, locale)}
                       </span>
                     </span>
                     {!item.readAt ? (

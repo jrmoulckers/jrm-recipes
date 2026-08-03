@@ -48,7 +48,7 @@ export function SiteFooter() {
               rel="noreferrer"
               className="hover:text-foreground"
             >
-              GitHub
+              {t("github")}
             </a>
           )}
           <InstallAppButton />

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   BookPlus,
   CookingPot,
@@ -42,10 +42,7 @@ function actorName(event: ActivityEvent, t: ActivityT) {
 }
 
 /** The lead sentence for an event, e.g. "Grandma cooked Sunday Ragù". */
-function headline(
-  event: ActivityEvent,
-  t: ActivityT,
-): React.ReactNode {
+function headline(event: ActivityEvent, t: ActivityT): React.ReactNode {
   const who = (
     <span className="font-medium text-foreground">{actorName(event, t)}</span>
   );
@@ -100,6 +97,7 @@ function headline(
 
 function EventRow({ event }: { event: ActivityEvent }) {
   const t = useTranslations("groups.activity");
+  const locale = useLocale();
   const Icon = KIND_ICON[event.kind];
   const name = actorName(event, t);
   return (
@@ -142,7 +140,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
           </figure>
         ) : null}
         <time className="mt-1 block text-xs text-muted-foreground">
-          {formatRelativeTime(new Date(event.at))}
+          {formatRelativeTime(new Date(event.at), locale)}
         </time>
       </div>
     </li>

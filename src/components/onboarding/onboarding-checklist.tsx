@@ -4,10 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Check, ChefHat, CookingPot, Users, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { ONBOARDING_CHECKLIST_COPY } from "~/config/onboarding-copy";
 import type { OnboardingProgress } from "~/server/onboarding/progress";
 
 /** localStorage flag, mirroring the welcome-card dismissal pattern (#78). */
@@ -27,6 +27,8 @@ export function onboardingChecklistDismissed(): boolean {
 
 const STEP_ICONS = [ChefHat, CookingPot, Users] as const;
 const STEP_HREFS: readonly Route[] = ["/recipes/new", "/recipes", "/groups"];
+/** Step order. Keys match `onboarding.checklist.steps` and the flags below. */
+const STEP_KEYS = ["create", "cook", "share"] as const;
 
 /**
  * First-run onboarding checklist for the home dashboard (#78). It guides brand
@@ -34,8 +36,8 @@ const STEP_HREFS: readonly Route[] = ["/recipes/new", "/recipes", "/groups"];
  * each step done from the viewer's *real* data (see `OnboardingProgress`), not a
  * separate bag of flags. It's dismissible (persisted in `localStorage`, like the
  * install prompt) and retires itself automatically once every step is complete,
- * so it never nags an established user. Copy lives in `~/config/onboarding-copy`
- * for later localization / mode-adaptation, and every color is token-driven so
+ * so it never nags an established user. Copy lives in the message catalogs
+ * under `onboarding.checklist`, and every color is token-driven so
  * it reads correctly across all five UI modes in light and dark.
  */
 export function OnboardingChecklist({
@@ -43,6 +45,7 @@ export function OnboardingChecklist({
 }: {
   progress: OnboardingProgress;
 }) {
+  const t = useTranslations("onboarding.checklist");
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
   // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
@@ -101,7 +104,7 @@ export function OnboardingChecklist({
         size="icon"
         variant="ghost"
         onClick={dismiss}
-        aria-label={ONBOARDING_CHECKLIST_COPY.dismiss}
+        aria-label={t("dismiss")}
         className="absolute end-3 top-3 size-9 text-muted-foreground"
       >
         <X className="size-4" />
@@ -112,11 +115,9 @@ export function OnboardingChecklist({
           id="onboarding-checklist-heading"
           className="font-display text-xl font-bold tracking-tight"
         >
-          {ONBOARDING_CHECKLIST_COPY.heading}
+          {t("heading")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {ONBOARDING_CHECKLIST_COPY.subheading}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("subheading")}</p>
       </div>
 
       <div className="mt-5 flex items-center gap-3">
@@ -126,7 +127,7 @@ export function OnboardingChecklist({
           aria-valuenow={doneCount}
           aria-valuemin={0}
           aria-valuemax={total}
-          aria-label={`${doneCount} of ${total} steps complete`}
+          aria-label={t("progress", { done: doneCount, total })}
         >
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard"
@@ -142,14 +143,14 @@ export function OnboardingChecklist({
       </div>
 
       <ol className="mt-6 flex flex-col gap-2">
-        {ONBOARDING_CHECKLIST_COPY.steps.map((step, i) => {
+        {STEP_KEYS.map((stepKey, i) => {
           const done = completion[i] ?? false;
           const Icon = STEP_ICONS[i] ?? ChefHat;
           const href = STEP_HREFS[i] ?? "/recipes/new";
           const isNext = i === nextStep;
           return (
             <li
-              key={step.title}
+              key={stepKey}
               className={cn(
                 "flex flex-col gap-3 rounded-xl p-3 transition-colors sm:flex-row sm:items-center sm:justify-between",
                 // Only the recommended next step is lifted. A subtle tint plus
@@ -181,16 +182,18 @@ export function OnboardingChecklist({
                       done && "text-muted-foreground line-through",
                     )}
                   >
-                    {step.title}
+                    {t(`steps.${stepKey}.title`)}
                   </p>
                   {!done && (
-                    <p className="text-sm text-muted-foreground">{step.body}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t(`steps.${stepKey}.body`)}
+                    </p>
                   )}
                 </div>
               </div>
               {done ? (
                 <span className="ms-11 text-xs font-medium text-primary sm:ms-0">
-                  Done
+                  {t("done")}
                 </span>
               ) : (
                 <Button
@@ -199,7 +202,7 @@ export function OnboardingChecklist({
                   variant={isNext ? "default" : "outline"}
                   className="ms-11 self-start sm:ms-0 sm:self-auto"
                 >
-                  <Link href={href}>{step.cta}</Link>
+                  <Link href={href}>{t(`steps.${stepKey}.cta`)}</Link>
                 </Button>
               )}
             </li>

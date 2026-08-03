@@ -5,7 +5,8 @@
     "family": "Familie",
     "create": "Erstellen",
     "pricing": "Preise",
-    "billing": "Abrechnung"
+    "billing": "Abrechnung",
+    "github": "GitHub"
   },
   "nav": {
     "home": "Start",
@@ -819,7 +820,8 @@
       "itemPlaceholder": "z. B. Küchenpapier",
       "quantityLabel": "Menge",
       "unitLabel": "Einheit",
-      "add": "Hinzufügen"
+      "add": "Hinzufügen",
+      "unitPlaceholder": "Tassen"
     },
     "empty": {
       "title": "Deine Liste ist leer",
@@ -1866,5 +1868,84 @@
       "loading": "Laden…",
       "loadMore": "Mehr laden"
     }
+  },
+  "auth": {
+    "localMode": "Lokaler Modus",
+    "avatarAlt": "Du",
+    "signIn": "Anmelden",
+    "startCookbook": "Starte dein Kochbuch"
+  },
+  "marketing": {
+    "waitlist": {
+      "success": "Du stehst auf der Liste. Wir melden uns mit frühem Zugang und Kochtipps.",
+      "emailLabel": "E-Mail-Adresse",
+      "emailPlaceholder": "you@example.com",
+      "joining": "Wird eingetragen…",
+      "submit": "Frühen Zugang sichern"
+    }
+  },
+  "privacy": {
+    "toggle": {
+      "label": "Anonyme Nutzung teilen",
+      "description": "Hilf mit, {brand} zu verbessern, mit datenschutzfreundlicher Analyse ganz ohne Cookies. Rezepte und persönliche Daten werden nie gesendet.",
+      "signalOn": "Das Do-Not-Track- oder Global-Privacy-Control-Signal deines Browsers ist aktiv, daher bleibt die Analyse aus."
+    },
+    "notice": {
+      "ariaLabel": "Analyse-Einwilligung",
+      "body": "{brand} nutzt datenschutzfreundliche Analyse ganz ohne Cookies, um zu verstehen, was sich verbessern lässt. Rezepte und persönliche Daten werden nie geteilt, und du kannst das jederzeit in den Einstellungen ändern.",
+      "decline": "Ablehnen",
+      "allow": "Erlauben"
+    }
+  },
+  "onboarding": {
+    "done": "Erledigt",
+    "welcome": {
+      "heading": "Willkommen bei {brand} 👋",
+      "subheading": "Drei kleine Schritte, damit die Rezepte deiner Familie weiterleben.",
+      "cta": "Erstelle dein erstes Rezept",
+      "dismiss": "Begrüßung schließen",
+      "steps": {
+        "create": {
+          "title": "Rezept anlegen",
+          "body": "Fang mit dem Gericht an, nach dem alle fragen."
+        },
+        "cook": {
+          "title": "Freihändig kochen",
+          "body": "Öffne den Kochmodus für Timer und Schritt für Schritt."
+        },
+        "share": {
+          "title": "Mit der Familie teilen",
+          "body": "Lade deine Leute zu einem Gruppen-Kochbuch ein."
+        }
+      }
+    },
+    "checklist": {
+      "heading": "Erste Schritte",
+      "subheading": "Ein paar Schritte, um die Küche deiner Familie lebendig zu machen.",
+      "allDone": "Alles erledigt. Viel Freude beim Kochen! 🎉",
+      "dismiss": "Schließen",
+      "steps": {
+        "create": {
+          "title": "Erstes Rezept hinzufügen",
+          "body": "Schreib ein Gericht auf, das du auswendig kochst.",
+          "cta": "Neues Rezept"
+        },
+        "cook": {
+          "title": "Freihändig kochen",
+          "body": "Öffne den Kochmodus für Timer und Schritt für Schritt.",
+          "cta": "Rezepte ansehen"
+        },
+        "share": {
+          "title": "Mit deiner Familie teilen",
+          "body": "Starte ein Gruppen-Kochbuch und lade deine Leute ein.",
+          "cta": "Gruppe erstellen"
+        }
+      },
+      "progress": "{done} von {total} Schritten erledigt"
+    }
+  },
+  "embed": {
+    "byAuthor": "von {name}",
+    "viewFullRecipe": "Ganzes Rezept ansehen"
   }
 }

@@ -5,7 +5,8 @@
     "family": "Family",
     "create": "Create",
     "pricing": "Pricing",
-    "billing": "Billing"
+    "billing": "Billing",
+    "github": "GitHub"
   },
   "nav": {
     "home": "Home",
@@ -819,7 +820,8 @@
       "itemPlaceholder": "e.g. Paper towels",
       "quantityLabel": "Qty",
       "unitLabel": "Unit",
-      "add": "Add"
+      "add": "Add",
+      "unitPlaceholder": "cups"
     },
     "empty": {
       "title": "Your list is empty",
@@ -1866,5 +1868,84 @@
       "loading": "Loading…",
       "loadMore": "Load more"
     }
+  },
+  "auth": {
+    "localMode": "Local mode",
+    "avatarAlt": "You",
+    "signIn": "Sign in",
+    "startCookbook": "Start your cookbook"
+  },
+  "marketing": {
+    "waitlist": {
+      "success": "You're on the list. We'll be in touch with early access and cooking tips.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "joining": "Joining…",
+      "submit": "Get early access"
+    }
+  },
+  "privacy": {
+    "toggle": {
+      "label": "Share anonymous usage",
+      "description": "Help improve {brand} with privacy-first, cookieless analytics. Recipes and personal details are never sent.",
+      "signalOn": "Your browser's Do Not Track / Global Privacy Control signal is on, so analytics stays off."
+    },
+    "notice": {
+      "ariaLabel": "Analytics consent",
+      "body": "{brand} uses privacy-first, cookieless analytics to understand what to improve. No recipes or personal details are ever shared, and you can change this anytime in settings.",
+      "decline": "Decline",
+      "allow": "Allow"
+    }
+  },
+  "onboarding": {
+    "done": "Done",
+    "welcome": {
+      "heading": "Welcome to {brand} 👋",
+      "subheading": "Three little steps to keep your family's recipes alive.",
+      "cta": "Create your first recipe",
+      "dismiss": "Dismiss welcome",
+      "steps": {
+        "create": {
+          "title": "Create a recipe",
+          "body": "Start with the dish everyone asks you to make."
+        },
+        "cook": {
+          "title": "Cook it hands-free",
+          "body": "Open Cook Mode for timers and step-by-step."
+        },
+        "share": {
+          "title": "Share with family",
+          "body": "Invite your people to a group cookbook."
+        }
+      }
+    },
+    "checklist": {
+      "heading": "Getting started",
+      "subheading": "A few steps to bring your family's cooking to life.",
+      "allDone": "You're all set. Happy cooking! 🎉",
+      "dismiss": "Dismiss",
+      "steps": {
+        "create": {
+          "title": "Add your first recipe",
+          "body": "Write down a dish you make from memory.",
+          "cta": "New recipe"
+        },
+        "cook": {
+          "title": "Cook it hands-free",
+          "body": "Open Cook Mode for timers and step-by-step.",
+          "cta": "Browse recipes"
+        },
+        "share": {
+          "title": "Share with your family",
+          "body": "Start a group cookbook and invite your people.",
+          "cta": "Create a group"
+        }
+      },
+      "progress": "{done} of {total} steps complete"
+    }
+  },
+  "embed": {
+    "byAuthor": "by {name}",
+    "viewFullRecipe": "View full recipe"
   }
 }

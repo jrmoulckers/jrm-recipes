@@ -1,7 +1,9 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
+import { brand } from "~/config/brand";
 import { Switch } from "~/components/ui/switch";
 import { useConsent } from "~/components/analytics/consent-provider";
 
@@ -12,6 +14,7 @@ import { useConsent } from "~/components/analytics/consent-provider";
  */
 export function PrivacyToggle() {
   const { captureAllowed, privacySignal, grant, deny } = useConsent();
+  const t = useTranslations("privacy.toggle");
 
   return (
     <section className="flex items-start gap-3 rounded-xl p-2 transition-colors hover:bg-muted/60">
@@ -22,15 +25,13 @@ export function PrivacyToggle() {
         htmlFor="analytics-consent"
         className="min-w-0 flex-1 cursor-pointer select-none"
       >
-        <span className="block text-sm font-medium">Share anonymous usage</span>
+        <span className="block text-sm font-medium">{t("label")}</span>
         <span className="block text-xs text-muted-foreground">
-          Help improve {`Heirloom`} with privacy-first, cookieless analytics.
-          Recipes and personal details are never sent.
+          {t("description", { brand: brand.name })}
         </span>
         {privacySignal && (
           <span className="mt-1 block text-xs font-medium text-muted-foreground">
-            Your browser&apos;s Do Not Track / Global Privacy Control signal is
-            on, so analytics stays off.
+            {t("signalOn")}
           </span>
         )}
       </label>

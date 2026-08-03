@@ -93,6 +93,21 @@ export function formatMonthDay(
 }
 
 /**
+ * Scheduled date + time for an event, localized, e.g. "Sun, Jul 5 · 6:30 PM".
+ *
+ * Note: the clock is 12-hour here because the pattern is fixed. Locales that
+ * conventionally use a 24-hour clock will still read correctly but not
+ * idiomatically. Switching the whole module to `Intl.DateTimeFormat` styles
+ * would fix that globally and is tracked separately.
+ */
+export function formatEventDateTime(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  return formatDate(date, "EEE, MMM d · h:mm a", locale);
+}
+
+/**
  * Human-friendly week range, collapsing shared month/year. E.g.
  * "Jul 5 – 11, 2026" or "Jun 29 – Jul 5, 2026", with localized month names.
  */

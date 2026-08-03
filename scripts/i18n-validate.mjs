@@ -99,7 +99,14 @@ const ALLOWED_IDENTICAL = {
 
 /** Brand and product nouns that stay in English for every locale. */
 const BRAND_TERMS =
-  /^(Heirloom|Heirloom Family|Family|PDF|URL|iOS|Android|Google|Apple)$/;
+  /^(Heirloom|Heirloom Family|Family|PDF|URL|iOS|Android|Google|Apple|GitHub)$/;
+
+/**
+ * Example email addresses, bare domains, and file extensions are identifiers
+ * rather than prose. They are conventionally left in Latin script even in
+ * right-to-left locales, so an identical value carries no signal.
+ */
+const IDENTIFIER_LIKE = /^\S+@\S+\.\S+$|^(?:https?:\/\/)?\S+\.[a-z]{2,}$/;
 
 /**
  * Find keys whose target value is byte-identical to the English source, which
@@ -117,6 +124,7 @@ export function findUntranslated(sourceFlat, targetFlat, locale) {
     if (typeof value !== "string") continue;
     if (!/[a-z]{3}/.test(value)) continue;
     if (BRAND_TERMS.test(value)) continue;
+    if (IDENTIFIER_LIKE.test(value)) continue;
     if (allowed?.has(value)) continue;
     if (targetFlat[key] === value) offenders.push(key);
   }
@@ -229,7 +237,11 @@ function main() {
   }
 
   for (const locale of targets) {
-    const result = diffCatalog(sourceFlat, flatten(loadCatalog(locale)), locale);
+    const result = diffCatalog(
+      sourceFlat,
+      flatten(loadCatalog(locale)),
+      locale,
+    );
     report[locale] = result;
     if (
       result.missing.length ||

@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
 
 import { brand } from "~/config/brand";
@@ -42,6 +43,8 @@ export default async function EmbedRecipePage({
   const recipe = await getPublicRecipeCard(id);
   if (!recipe) notFound();
 
+  const t = await getTranslations("embed");
+  const tRecipe = await getTranslations("recipeDetail");
   const href = absoluteUrl(`/recipes/${recipe.slug}`);
   const authorName = recipe.author?.name?.trim();
   const facts = [
@@ -51,7 +54,7 @@ export default async function EmbedRecipePage({
     recipe.servings != null
       ? {
           icon: Users,
-          label: `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`,
+          label: `${recipe.servings} ${recipe.servingsNoun ?? tRecipe("servingsNoun")}`,
         }
       : null,
     recipe.difficulty ? { icon: Flame, label: recipe.difficulty } : null,
@@ -92,7 +95,7 @@ export default async function EmbedRecipePage({
             </h1>
             {authorName ? (
               <p className="mt-1 truncate text-sm text-muted-foreground">
-                by {authorName}
+                {t("byAuthor", { name: authorName })}
               </p>
             ) : null}
             {recipe.description ? (
@@ -114,7 +117,7 @@ export default async function EmbedRecipePage({
               </ul>
             ) : null}
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
-              View full recipe
+              {t("viewFullRecipe")}
               <ArrowUpRight
                 className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 aria-hidden="true"

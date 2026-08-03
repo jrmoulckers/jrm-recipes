@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import type { FamilyCookItem } from "~/server/cooklog/queries";
 import { formatRelativeTime } from "~/lib/dates";
@@ -13,6 +13,7 @@ import { formatRelativeTime } from "~/lib/dates";
 export async function FamilyCooksStrip({ cooks }: { cooks: FamilyCookItem[] }) {
   if (cooks.length === 0) return null;
   const t = await getTranslations("cookLog.familyCooks");
+  const locale = await getLocale();
 
   return (
     <section
@@ -24,12 +25,8 @@ export async function FamilyCooksStrip({ cooks }: { cooks: FamilyCookItem[] }) {
           <Users className="size-5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-xl font-semibold">
-            {t("heading")}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {t("description")}
-          </p>
+          <h2 className="font-display text-xl font-semibold">{t("heading")}</h2>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
       </div>
 
@@ -55,7 +52,7 @@ export async function FamilyCooksStrip({ cooks }: { cooks: FamilyCookItem[] }) {
               </div>
               <p className="mt-2 truncate text-sm font-medium">{name}</p>
               <p className="text-xs text-muted-foreground">
-                {formatRelativeTime(cook.cookedAt)}
+                {formatRelativeTime(cook.cookedAt, locale)}
               </p>
               {cook.note && (
                 <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">

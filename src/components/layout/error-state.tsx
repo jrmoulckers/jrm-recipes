@@ -4,6 +4,18 @@ import { Home, RotateCcw, TriangleAlert } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button, buttonVariants } from "~/components/ui/button";
 
+/* eslint-disable i18next/no-literal-string --
+ * Deliberately not localized. This panel is the last-resort error boundary: it
+ * renders from `global-error.tsx`, which REPLACES the root layout and therefore
+ * runs with no NextIntlClientProvider above it. Calling `useTranslations` here
+ * would throw inside the boundary that exists to catch throws, turning a handled
+ * error into a blank page.
+ *
+ * The English strings below are the fallback of last resort. Callers that do
+ * have i18n context (the route-level `error.tsx` boundaries) can and should pass
+ * localized `title` / `description` props instead.
+ */
+
 /**
  * Shared, themed "something went wrong" panel used by both the route-level
  * error boundary (`error.tsx`) and the root boundary (`global-error.tsx`).

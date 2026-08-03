@@ -3,10 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { ChefHat, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
+import { brand } from "~/config/brand";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { WELCOME_COPY } from "~/config/onboarding-copy";
+
+/** Step order for the welcome card. Keys match `onboarding.welcome.steps`. */
+const WELCOME_STEPS = ["create", "cook", "share"] as const;
 
 /** localStorage flag, mirroring the install-prompt dismissal pattern. */
 export const WELCOME_DISMISS_KEY = "heirloom:welcome-dismissed";
@@ -25,10 +29,11 @@ export function welcomeDismissed(): boolean {
  * orients a brand-new, empty account to Heirloom's core loop, Create → cook →
  * share, as three friendly steps. It is rendered above the empty-library state, so
  * it only appears when the library has zero recipes. Dismissal persists in
- * `localStorage` so it never nags on later visits. All strings live in
- * `~/config/onboarding-copy` for later localization / mode-adaptation.
+ * `localStorage` so it never nags on later visits. All strings live in the
+ * message catalogs under `onboarding.welcome`.
  */
 export function WelcomeChecklist() {
+  const t = useTranslations("onboarding.welcome");
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
   // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
@@ -73,7 +78,7 @@ export function WelcomeChecklist() {
         size="icon"
         variant="ghost"
         onClick={dismiss}
-        aria-label={WELCOME_COPY.dismiss}
+        aria-label={t("dismiss")}
         className="absolute end-3 top-3 size-9 text-muted-foreground"
       >
         <X className="size-4" />
@@ -84,14 +89,14 @@ export function WelcomeChecklist() {
           id="welcome-checklist-heading"
           className="font-display text-2xl font-bold tracking-tight"
         >
-          {WELCOME_COPY.heading}
+          {t("heading", { brand: brand.name })}
         </h2>
-        <p className="mt-1 text-muted-foreground">{WELCOME_COPY.subheading}</p>
+        <p className="mt-1 text-muted-foreground">{t("subheading")}</p>
       </div>
 
       <ol className="mt-6 grid gap-4 sm:grid-cols-3">
-        {WELCOME_COPY.steps.map((step, i) => (
-          <li key={step.title} className="flex flex-col gap-2">
+        {WELCOME_STEPS.map((step, i) => (
+          <li key={step} className="flex flex-col gap-2">
             <span
               aria-hidden
               className={cn(
@@ -101,12 +106,14 @@ export function WelcomeChecklist() {
             >
               {i + 1}
             </span>
-            <span className="font-semibold">{step.title}</span>
-            <span className="text-sm text-muted-foreground">{step.body}</span>
+            <span className="font-semibold">{t(`steps.${step}.title`)}</span>
+            <span className="text-sm text-muted-foreground">
+              {t(`steps.${step}.body`)}
+            </span>
             {i === 0 && (
               <Button asChild size="sm" className="mt-1 self-start">
                 <Link href="/recipes/new">
-                  <ChefHat /> {WELCOME_COPY.cta}
+                  <ChefHat /> {t("cta")}
                 </Link>
               </Button>
             )}

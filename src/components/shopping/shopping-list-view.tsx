@@ -332,7 +332,7 @@ export function ShoppingListView({
             id="add-unit"
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
-            placeholder="cups"
+            placeholder={t("manual.unitPlaceholder")}
             maxLength={40}
             disabled={disabled}
           />

@@ -5,7 +5,8 @@
     "family": "Familia",
     "create": "Crear",
     "pricing": "Precios",
-    "billing": "Facturación"
+    "billing": "Facturación",
+    "github": "GitHub"
   },
   "nav": {
     "home": "Inicio",
@@ -819,7 +820,8 @@
       "itemPlaceholder": "p. ej., papel de cocina",
       "quantityLabel": "Cant.",
       "unitLabel": "Unidad",
-      "add": "Agregar"
+      "add": "Agregar",
+      "unitPlaceholder": "tazas"
     },
     "empty": {
       "title": "Tu lista está vacía",
@@ -1866,5 +1868,84 @@
       "loading": "Cargando…",
       "loadMore": "Cargar más"
     }
+  },
+  "auth": {
+    "localMode": "Modo local",
+    "avatarAlt": "Tú",
+    "signIn": "Iniciar sesión",
+    "startCookbook": "Empieza tu recetario"
+  },
+  "marketing": {
+    "waitlist": {
+      "success": "Ya estás en la lista. Te escribiremos con acceso anticipado y consejos de cocina.",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "you@example.com",
+      "joining": "Uniéndote…",
+      "submit": "Consigue acceso anticipado"
+    }
+  },
+  "privacy": {
+    "toggle": {
+      "label": "Compartir uso anónimo",
+      "description": "Ayuda a mejorar {brand} con analíticas sin cookies que respetan tu privacidad. Nunca se envían recetas ni datos personales.",
+      "signalOn": "La señal Do Not Track o Global Privacy Control de tu navegador está activada, así que las analíticas siguen desactivadas."
+    },
+    "notice": {
+      "ariaLabel": "Consentimiento de analíticas",
+      "body": "{brand} usa analíticas sin cookies que respetan tu privacidad para saber qué mejorar. Nunca se comparten recetas ni datos personales, y puedes cambiarlo cuando quieras en los ajustes.",
+      "decline": "Rechazar",
+      "allow": "Permitir"
+    }
+  },
+  "onboarding": {
+    "done": "Hecho",
+    "welcome": {
+      "heading": "Te damos la bienvenida a {brand} 👋",
+      "subheading": "Tres pasitos para mantener vivas las recetas de tu familia.",
+      "cta": "Crea tu primera receta",
+      "dismiss": "Descartar la bienvenida",
+      "steps": {
+        "create": {
+          "title": "Crea una receta",
+          "body": "Empieza por el plato que todos te piden."
+        },
+        "cook": {
+          "title": "Cocina sin manos",
+          "body": "Abre el modo cocina para temporizadores y paso a paso."
+        },
+        "share": {
+          "title": "Comparte con la familia",
+          "body": "Invita a los tuyos a un recetario del grupo."
+        }
+      }
+    },
+    "checklist": {
+      "heading": "Primeros pasos",
+      "subheading": "Unos pasos para dar vida a la cocina de tu familia.",
+      "allDone": "Ya está todo listo. ¡Feliz cocina! 🎉",
+      "dismiss": "Descartar",
+      "steps": {
+        "create": {
+          "title": "Añade tu primera receta",
+          "body": "Escribe un plato que te sabes de memoria.",
+          "cta": "Nueva receta"
+        },
+        "cook": {
+          "title": "Cocina sin manos",
+          "body": "Abre el modo cocina para temporizadores y paso a paso.",
+          "cta": "Ver recetas"
+        },
+        "share": {
+          "title": "Comparte con tu familia",
+          "body": "Crea un recetario del grupo e invita a los tuyos.",
+          "cta": "Crear un grupo"
+        }
+      },
+      "progress": "{done} de {total} pasos completados"
+    }
+  },
+  "embed": {
+    "byAuthor": "por {name}",
+    "viewFullRecipe": "Ver la receta completa"
   }
 }
