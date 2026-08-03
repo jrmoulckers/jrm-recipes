@@ -138,18 +138,28 @@ Error toasts are warm-but-calm everywhere, and always say what to do next.
 The most important action in Heirloom, starting a cookbook and adding recipes,
 should read the same way everywhere so it's learnable. Use exactly these labels:
 
-| Intent                             | Label                        | Where                                              |
-| ---------------------------------- | ---------------------------- | -------------------------------------------------- |
-| Sign up (aspirational, signed-out) | **Start your cookbook**      | Landing hero, header sign-up, `StartCookingButton` |
-| Create, first run / empty library  | **Create your first recipe** | `EmptyLibrary`, home closing CTA, onboarding       |
-| Create, recipes already exist      | **Create a recipe**          | Per-page create buttons                            |
-| Browse (secondary)                 | **Browse recipes**           | Anywhere we point at the library                   |
+| Intent                             | Label                            | Where                                              |
+| ---------------------------------- | -------------------------------- | -------------------------------------------------- |
+| Sign up (aspirational, signed-out) | **Start your cookbook**          | Landing hero, header sign-up, `StartCookingButton` |
+| Create, first run / empty library  | **Create your first recipe**     | `EmptyLibrary`, home closing CTA, onboarding       |
+| Create, recipes already exist      | **Create a recipe**              | Per-page create buttons                            |
+| Import from elsewhere              | **Import a recipe**              | `ImportRecipePanel`, paste-a-URL entry points      |
+| Collections, empty state           | **Create your first collection** | `collections/page.tsx` empty state                 |
+| After redeeming a gift             | **Go to your cookbook**          | `RedeemForm` success                               |
+| Browse (secondary)                 | **Browse recipes**               | Anywhere we point at the library                   |
 
 Rules:
 
+- **"Start" is reserved for sign-up.** It is the one aspirational moment. Using
+  it elsewhere ("Start cooking", "Start your first collection") dilutes it, so
+  every other intent takes a concrete verb: create, import, browse, go to.
 - A single view must never show two different primary labels for the **same**
   action. The signed-out hero (sign-up) and a create button are different
   intents and may coexist. Two create buttons must read identically.
+- **Live experiments are exempt while running.** Copy under an active A/B test
+  may deviate from this table. When the experiment concludes, the winning label
+  must be folded back in here as the canonical label, and the losing variant
+  deleted. An experiment is never a permanent excuse to sit outside the standard.
 - Keep the icon (usually `ChefHat` for create/sign-up, `Compass` for browse).
   Only the label is standardized.
 - These are copy-only. Never change the route or behavior to match a label.
@@ -168,6 +178,11 @@ Every confirm dialog for a delete / remove / leave follows one pattern:
   "This can't be undone." If it can, say how: "You can re-invite them anytime."
 - Keep the body to two short sentences. Put the reassurance in its own sentence
   rather than pivoting mid-sentence.
+
+**Never use `window.confirm()`.** The native prompt cannot be styled, cannot be
+translated, and ignores the catalog entirely, so it renders in English no matter
+what locale the reader has chosen. Every destructive confirm uses the styled
+`AlertDialog` with its copy in the message catalog.
 
 ## Kids mode
 
@@ -216,8 +231,17 @@ same voice.
   there by hand is correct.
 - Descriptions follow the same voice as the rest of the site: warm, sentence
   case, one or two plain sentences.
+- **Descriptions are required only where they can be seen.** A description earns
+  its keep on routes that get indexed or shared: marketing, public recipes,
+  public profiles, collections, groups, discover, share-token pages. Private app
+  screens (settings, planner, shopping list, notifications) need a good title and
+  nothing more. Writing filler descriptions nobody reads is worse than omitting
+  them, because it dilutes the ones that matter.
+- Routes that must never be indexed (print, cook, keepsake) set
+  `robots: { index: false }` rather than relying on a description to carry them.
+- No two routes share a title. If they would collide, qualify with a middle dot.
 
-## Accessibility microcopy (screen-reader text & aria-labels)
+## Accessibility microcopy (screen-reader text and aria-labels)
 
 Screen-reader-only text and `aria-label`s are the entire interface for people
 who can't see the screen. Treat them as first-class copy, not afterthoughts.
@@ -235,6 +259,17 @@ who can't see the screen. Treat them as first-class copy, not afterthoughts.
 - Use a comma, not a dash, to separate parts of a label. Screen readers pause on
   a comma: "{title}, step {position}".
 
+### Alt text
+
+- Every image that carries meaning gets real alt text. Recipe photos, avatars
+  and step images always describe what they show.
+- `alt=""` is correct only when an image is genuinely decorative **and** its
+  meaning is already carried by adjacent text. A recipe card's photo sitting
+  directly above the recipe title is the usual valid case.
+- When you use `alt=""`, leave a short comment saying why. The empty string
+  should read as a deliberate decision, not a skipped field. This is the only
+  way a reviewer can tell the two apart.
+
 ## Onboarding & first-run
 
 A first-time, empty account gets a short, encouraging welcome, not a wall of
@@ -249,3 +284,24 @@ instructions. Orient people to the core loop, then get out of the way.
   return visits, and never show once the user has content.
 - Centralize the strings (`src/config/onboarding-copy.ts`) so the moment can be
   localized or mode-adapted later.
+
+## Enforcement
+
+A standard nobody can enforce is a suggestion. Most of the drift this document
+corrects happened because the linter could not see it: `i18next/no-literal-string`
+ran as a warning, in `jsx-only` mode, across four attributes, which made it blind
+to every string in a `.ts` file. That is where the toasts and server-action errors
+live, so the majority of user-facing copy never reached the catalog.
+
+The fix is a ratchet rather than a big-bang migration:
+
+- `i18next/no-literal-string` is set to **error** per directory, one feature area
+  at a time, as that area gains its i18n namespace.
+- An area that has been migrated can never regress, because the rule is an error
+  there from then on.
+- Areas not yet migrated stay at warn. They are a known backlog, not a surprise.
+- Adding a new feature area means adding its namespace and its override together.
+  New code does not get to start out non-compliant.
+
+Migration backlog, currently without a namespace: groups, shopping, planner,
+engagement, billing, dietary, moderation, notifications, timeline, follows, theme.
