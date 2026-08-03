@@ -4,7 +4,6 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Copy,
-  Download,
   ExternalLink,
   Gift,
   Link2,
@@ -206,24 +205,6 @@ export function ShareButton({
     }
   }
 
-  async function downloadCard() {
-    const file = await loadCardFile();
-    if (!file) {
-      toast.error(t("toast.cardError"));
-      return;
-    }
-    const href = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(href);
-    track("share_card_downloaded", {});
-    toast.success(t("toast.cardDownloaded"));
-  }
-
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(
@@ -273,11 +254,7 @@ export function ShareButton({
               {canShareFiles ? t("menu.shareCard") : t("menu.share")}
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem onSelect={() => void downloadCard()}>
-            <Download />
-            {t("menu.downloadCard")}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          {nativeShare ? <DropdownMenuSeparator /> : null}
           <DropdownMenuItem onSelect={() => void copyLink()}>
             <Link2 />
             {t("menu.copyLink")}

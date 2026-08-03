@@ -249,7 +249,6 @@
     "menu": {
       "share": "Share…",
       "shareCard": "Share card…",
-      "downloadCard": "Download card",
       "copyLink": "Copy link",
       "personalize": "Personalize link…",
       "disableLink": "Disable link",
@@ -261,8 +260,6 @@
       "linkReset": "Share link reset — the old link no longer works",
       "linkDisabled": "Share link disabled",
       "linkEnabled": "Share link enabled",
-      "cardError": "Couldn't prepare the share card",
-      "cardDownloaded": "Share card downloaded",
       "linkCopied": "Recipe link copied",
       "copyError": "Couldn't copy the link",
       "personalizedCopied": "Personalized link copied — ready to give as a gift"

@@ -249,7 +249,6 @@
     "menu": {
       "share": "Teilen…",
       "shareCard": "Karte teilen…",
-      "downloadCard": "Karte herunterladen",
       "copyLink": "Link kopieren",
       "personalize": "Link personalisieren…",
       "disableLink": "Link deaktivieren",
@@ -261,8 +260,6 @@
       "linkReset": "Link zurückgesetzt – der alte Link funktioniert nicht mehr",
       "linkDisabled": "Teilen-Link deaktiviert",
       "linkEnabled": "Teilen-Link aktiviert",
-      "cardError": "Die Teilen-Karte konnte nicht vorbereitet werden",
-      "cardDownloaded": "Teilen-Karte heruntergeladen",
       "linkCopied": "Rezept-Link kopiert",
       "copyError": "Der Link konnte nicht kopiert werden",
       "personalizedCopied": "Personalisierter Link kopiert – bereit zum Verschenken"
