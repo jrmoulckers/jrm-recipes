@@ -62,7 +62,7 @@ export const metadata: Metadata = {
 /**
  * Number of leading cards treated as above-the-fold for LCP: the first row of
  * the widest grid layout (`lg:grid-cols-3`). These render their cover image
- * with `priority` so the LCP image is preloaded instead of lazy-loaded; every
+ * with `priority` so the LCP image is preloaded instead of lazy-loaded. Every
  * card after the first row stays lazy.
  */
 const LCP_PRIORITY_COUNT = 3;
@@ -387,7 +387,7 @@ function NoResults({ search }: { search: RecipeSearch }) {
     <EmptyState
       icon={<SearchX />}
       title={query ? `No matches for “${query}”` : "No matches"}
-      description="Try fewer filters or a different search — your next favorite might be hiding under another name."
+      description="Try fewer filters or a different search. Your next favorite might be hiding under another name."
       action={
         <>
           <Button asChild>

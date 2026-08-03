@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * journal ("created" / "published"). They complement the existing
  * mutations.test.ts (slug/version races, group + ownership authz) without
  * overlapping it. Everything is driven through the public `createRecipe` with a
- * fully mocked transaction — no database.
+ * fully mocked transaction. No database.
  */
 
 vi.mock("server-only", () => ({}));

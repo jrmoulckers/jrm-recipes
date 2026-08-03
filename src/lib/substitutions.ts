@@ -67,7 +67,7 @@ export type SubstitutionEntry = {
   name: string;
   /**
    * Normalized match phrases (lowercase, no punctuation/accents). Include both
-   * singular and plural forms; the matcher prefers the longest phrase that
+   * singular and plural forms. The matcher prefers the longest phrase that
    * appears as whole words in the ingredient text.
    */
   aliases: string[];
@@ -87,17 +87,17 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "Milk + acid",
         ratioOrNotes:
-          "1 cup milk + 1 tbsp lemon juice or white vinegar; rest 5 min until curdled.",
+          "1 cup milk + 1 tbsp lemon juice or white vinegar. Rest 5 min until curdled.",
       },
       {
         substitute: "Plain yogurt",
-        ratioOrNotes: "1:1; thin with a splash of milk if needed.",
+        ratioOrNotes: "1:1. Thin with a splash of milk if needed.",
         dietaryTags: ["vegetarian"],
       },
       {
         substitute: "Plant milk + acid",
         ratioOrNotes:
-          "1 cup soy or almond milk + 1 tbsp lemon juice; rest 5 min.",
+          "1 cup soy or almond milk + 1 tbsp lemon juice. Rest 5 min.",
         dietaryTags: ["vegan", "dairy-free"],
       },
     ],
@@ -114,7 +114,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Coconut oil",
-        ratioOrNotes: "1:1 measured solid; great for baking.",
+        ratioOrNotes: "1:1 measured solid. Great for baking.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
@@ -131,7 +131,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "Flax egg",
         ratioOrNotes:
-          "1 tbsp ground flax + 3 tbsp water per egg; rest 5 min to gel.",
+          "1 tbsp ground flax + 3 tbsp water per egg. Rest 5 min to gel.",
         dietaryTags: ["vegan", "egg-free", "dairy-free"],
       },
       {
@@ -141,7 +141,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Mashed banana",
-        ratioOrNotes: "¼ cup (about ½ banana) per egg; adds a little flavor.",
+        ratioOrNotes: "¼ cup (about ½ banana) per egg. Adds a little flavor.",
         dietaryTags: ["vegan", "egg-free", "dairy-free"],
       },
       {
@@ -157,7 +157,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Plain Greek yogurt",
-        ratioOrNotes: "1:1; the closest everyday swap.",
+        ratioOrNotes: "1:1. The closest everyday swap.",
         dietaryTags: ["vegetarian"],
       },
       {
@@ -190,12 +190,12 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Evaporated milk",
-        ratioOrNotes: "1:1 for cooking; it won't whip.",
+        ratioOrNotes: "1:1 for cooking. It won't whip.",
         dietaryTags: ["vegetarian"],
       },
       {
         substitute: "Chilled coconut cream",
-        ratioOrNotes: "1:1; whips when cold.",
+        ratioOrNotes: "1:1. Whips when cold.",
         dietaryTags: ["vegan", "dairy-free"],
       },
     ],
@@ -237,7 +237,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Water or broth",
-        ratioOrNotes: "1:1 in savory cooking; slightly thinner and less rich.",
+        ratioOrNotes: "1:1 in savory cooking. Slightly thinner and less rich.",
         dietaryTags: ["vegan", "dairy-free"],
       },
     ],
@@ -245,7 +245,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
   {
     // Plant milks are already vegan and dairy-free, so they must not inherit the
     // cow-milk swaps from the "Milk" entry (#59). Guidance here helps cooks swap
-    // between plant milks — e.g. away from a nut milk for an allergy.
+    // between plant milks. E.g. Away from a nut milk for an allergy.
     name: "Plant milk",
     aliases: [
       "plant milk",
@@ -267,18 +267,18 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "Any other unsweetened plant milk",
         ratioOrNotes:
-          "1:1 oat, soy, almond, or rice — choose one that suits the eater's allergies.",
+          "1:1 oat, soy, almond, or rice. Choose one that suits the eater's allergies.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
         substitute: "Oat or soy milk (nut-free)",
         ratioOrNotes:
-          "1:1; closest body to dairy milk and safe for nut allergies.",
+          "1:1. Closest body to dairy milk and safe for nut allergies.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
         substitute: "Dairy milk",
-        ratioOrNotes: "1:1 if dairy is fine; richer, but not vegan.",
+        ratioOrNotes: "1:1 if dairy is fine. Richer, but not vegan.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -292,19 +292,19 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "Chilled full-fat coconut milk",
         ratioOrNotes:
-          "Refrigerate a can overnight and scoop the thick top; whips when cold.",
+          "Refrigerate a can overnight and scoop the thick top. Whips when cold.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
         substitute: "Cashew cream",
         ratioOrNotes:
-          "Blend soaked cashews with a little water until thick; 1:1.",
+          "Blend soaked cashews with a little water until thick. 1:1.",
         dietaryTags: ["vegan", "dairy-free"],
       },
       {
         substitute: "Heavy cream",
         ratioOrNotes:
-          "1:1 if dairy is fine; not vegan and without coconut flavor.",
+          "1:1 if dairy is fine. Not vegan and without coconut flavor.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -315,13 +315,13 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Sour cream",
-        ratioOrNotes: "1:1; a touch tangier.",
+        ratioOrNotes: "1:1. A touch tangier.",
         dietaryTags: ["vegetarian"],
       },
       {
         substitute: "Heavy cream + buttermilk",
         ratioOrNotes:
-          "1 cup cream + 2 tbsp buttermilk; rest 12–24h to thicken.",
+          "1 cup cream + 2 tbsp buttermilk. Rest 12–24h to thicken.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -353,7 +353,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Mascarpone",
-        ratioOrNotes: "1:1; richer with less tang.",
+        ratioOrNotes: "1:1. Richer with less tang.",
         dietaryTags: ["vegetarian"],
       },
       {
@@ -379,7 +379,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Mascarpone",
-        ratioOrNotes: "1:1 in sweet dishes; richer.",
+        ratioOrNotes: "1:1 in sweet dishes. Richer.",
         dietaryTags: ["vegetarian"],
       },
     ],
@@ -418,7 +418,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Plain Greek yogurt",
-        ratioOrNotes: "1:1; lighter and tangier.",
+        ratioOrNotes: "1:1. Lighter and tangier.",
         dietaryTags: ["vegetarian"],
       },
       {
@@ -455,7 +455,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Whole wheat flour",
-        ratioOrNotes: "Swap up to half; expect a denser, nuttier result.",
+        ratioOrNotes: "Swap up to half. Expect a denser, nuttier result.",
         dietaryTags: ["vegan", "dairy-free"],
       },
     ],
@@ -491,7 +491,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "All-purpose flour",
         ratioOrNotes:
-          "1:1; slightly less chew. Add 1 tsp vital wheat gluten per cup if you have it.",
+          "1:1. Slightly less chew. Add 1 tsp vital wheat gluten per cup if you have it.",
         dietaryTags: ["vegan", "dairy-free"],
       },
     ],
@@ -530,7 +530,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       {
         substitute: "Baking powder",
         ratioOrNotes:
-          "Use about 3× the baking soda amount; consider reducing added salt.",
+          "Use about 3× the baking soda amount. Consider reducing added salt.",
         dietaryTags: ["vegan", "gluten-free", "dairy-free"],
       },
     ],
@@ -546,7 +546,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "White sugar",
-        ratioOrNotes: "1:1 in a pinch; slightly less moisture.",
+        ratioOrNotes: "1:1 in a pinch. Slightly less moisture.",
         dietaryTags: ["vegan", "gluten-free"],
       },
       {
@@ -562,13 +562,13 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Brown sugar",
-        ratioOrNotes: "1:1; adds moisture and a little color.",
+        ratioOrNotes: "1:1. Adds moisture and a little color.",
         dietaryTags: ["vegan", "gluten-free"],
       },
       {
         substitute: "Honey",
         ratioOrNotes:
-          "¾ cup per cup; reduce other liquid by 2 tbsp and lower oven 25°F.",
+          "¾ cup per cup. Reduce other liquid by 2 tbsp and lower oven 25°F.",
         dietaryTags: ["vegetarian", "gluten-free"],
       },
       {
@@ -606,7 +606,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Agave nectar",
-        ratioOrNotes: "Use about ⅔–¾ cup per cup; it's sweeter.",
+        ratioOrNotes: "Use about ⅔–¾ cup per cup. It's sweeter.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -639,7 +639,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Honey or golden syrup",
-        ratioOrNotes: "1:1; flavor will differ.",
+        ratioOrNotes: "1:1. Flavor will differ.",
         dietaryTags: ["vegetarian", "gluten-free"],
       },
     ],
@@ -650,12 +650,12 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Dark brown sugar",
-        ratioOrNotes: "¾ cup packed per cup; add a splash of liquid.",
+        ratioOrNotes: "¾ cup packed per cup. Add a splash of liquid.",
         dietaryTags: ["vegan", "gluten-free"],
       },
       {
         substitute: "Maple syrup or honey",
-        ratioOrNotes: "1:1; milder flavor.",
+        ratioOrNotes: "1:1. Milder flavor.",
         dietaryTags: ["vegetarian", "gluten-free"],
       },
     ],
@@ -666,7 +666,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Unsweetened baking chocolate",
-        ratioOrNotes: "1 oz per 3 tbsp cocoa; cut fat elsewhere by 1 tbsp.",
+        ratioOrNotes: "1 oz per 3 tbsp cocoa. Cut fat elsewhere by 1 tbsp.",
         dietaryTags: ["vegetarian", "gluten-free"],
       },
     ],
@@ -720,7 +720,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Melted butter",
-        ratioOrNotes: "1:1; adds flavor (not dairy-free).",
+        ratioOrNotes: "1:1. Adds flavor (not dairy-free).",
         dietaryTags: ["vegetarian"],
       },
       {
@@ -778,7 +778,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Shallots or leeks",
-        ratioOrNotes: "1:1 by volume; milder and a touch sweeter.",
+        ratioOrNotes: "1:1 by volume. Milder and a touch sweeter.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -800,12 +800,12 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Reduced tomato sauce",
-        ratioOrNotes: "2–3 tbsp sauce per 1 tbsp paste; simmer to thicken.",
+        ratioOrNotes: "2–3 tbsp sauce per 1 tbsp paste. Simmer to thicken.",
         dietaryTags: ["vegan", "gluten-free"],
       },
       {
         substitute: "Ketchup",
-        ratioOrNotes: "1:1 in a pinch; it's sweeter and tangier.",
+        ratioOrNotes: "1:1 in a pinch. It's sweeter and tangier.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -816,7 +816,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
     substitutions: [
       {
         substitute: "Yellow or stone-ground mustard",
-        ratioOrNotes: "1:1; yellow is milder, stone-ground is grainier.",
+        ratioOrNotes: "1:1. Yellow is milder, stone-ground is grainier.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -832,7 +832,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Coconut aminos",
-        ratioOrNotes: "Use about 1.25×; milder and less salty.",
+        ratioOrNotes: "Use about 1.25×. Milder and less salty.",
         dietaryTags: ["gluten-free", "vegan"],
       },
     ],
@@ -882,7 +882,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Oregano or thyme",
-        ratioOrNotes: "1:1 as a substitute; flavor differs.",
+        ratioOrNotes: "1:1 as a substitute. Flavor differs.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -898,7 +898,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Cilantro or chervil",
-        ratioOrNotes: "1:1 for color; flavor differs.",
+        ratioOrNotes: "1:1 for color. Flavor differs.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -925,7 +925,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Marjoram or basil",
-        ratioOrNotes: "1:1; marjoram is closest.",
+        ratioOrNotes: "1:1. Marjoram is closest.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -941,7 +941,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Oregano or marjoram",
-        ratioOrNotes: "1:1; flavor differs.",
+        ratioOrNotes: "1:1. Flavor differs.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -957,7 +957,7 @@ export const SUBSTITUTIONS: SubstitutionEntry[] = [
       },
       {
         substitute: "Thyme or sage",
-        ratioOrNotes: "1:1; use a little less sage.",
+        ratioOrNotes: "1:1. Use a little less sage.",
         dietaryTags: ["vegan", "gluten-free"],
       },
     ],
@@ -1006,7 +1006,7 @@ function phraseIndex(haystack: string[], phrase: string[]): number {
  * Tokens that, sitting immediately before a bare "milk" or "cream", name a
  * distinct plant-based ingredient rather than the dairy staple. "almond milk"
  * and "coconut cream" are already vegan, so offering cow-milk / heavy-cream
- * swaps is wrong (#59); guarding these lets the dedicated plant entries win.
+ * swaps is wrong (#59). Guarding these lets the dedicated plant entries win.
  */
 const PLANT_DAIRY_QUALIFIERS = new Set([
   "almond",
@@ -1182,11 +1182,11 @@ export function scalingNudge(
 
   if (/\begg\b|\beggs\b/.test(normalized)) {
     const tbsp = formatQuantity(roundNice(value * 3));
-    return `About ${pretty} eggs — whisk and measure ${tbsp} tbsp (1 egg ≈ 3 tbsp).`;
+    return `About ${pretty} eggs. Whisk and measure ${tbsp} tbsp (1 egg ≈ 3 tbsp).`;
   }
 
   if (lower === 0) {
-    return `About ${pretty} — round up to ${upper}.`;
+    return `About ${pretty}. Round up to ${upper}.`;
   }
-  return `About ${pretty} — round to ${lower} or ${upper}.`;
+  return `About ${pretty}. Round to ${lower} or ${upper}.`;
 }

@@ -107,7 +107,7 @@
       "exit": "Kochmodus verlassen",
       "progress": "Kochfortschritt",
       "stepTimer": "Schritt-Timer, noch {time}",
-      "jumpToStep": "Zu Schritt {position} springen: {title} — noch {time}",
+      "jumpToStep": "Zu Schritt {position} springen: {title}, noch {time}",
       "goToStep": "Zu Schritt {position} gehen: {title}"
     },
     "readAloud": {
@@ -242,7 +242,7 @@
   },
   "characterCounter": {
     "remaining": "Noch {count}",
-    "over": "{count} zu viel — {message}"
+    "over": "{count} zu viel. {message}"
   },
   "recipeDetail": {
     "backToRecipes": "Rezepte",
@@ -269,7 +269,7 @@
       "prep": "{time} Vorbereitung",
       "resting": "{time} Ruhezeit"
     },
-    "ratingLabel": "Bewertet mit {average} von 5 — {count, plural, one {# Bewertung} other {# Bewertungen}}",
+    "ratingLabel": "Bewertet mit {average} von 5, {count, plural, one {# Bewertung} other {# Bewertungen}}",
     "actions": {
       "cook": "Kochen",
       "print": "Drucken",
@@ -289,7 +289,7 @@
       "emptyViewer": "Die Schritte wurden diesem Rezept noch nicht hinzugefügt.",
       "editRecipe": "Rezept bearbeiten",
       "stepLabel": "Schritt {position}",
-      "stepImageAlt": "{title} — Schritt {position}"
+      "stepImageAlt": "{title}, Schritt {position}"
     },
     "tabs": {
       "recipe": "Rezept",

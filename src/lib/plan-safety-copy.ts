@@ -2,7 +2,7 @@
  * Human copy for proactive meal-plan safety warnings (allergen/diet gating).
  * Pure and client-safe so both the planner add dialog and the shopping
  * build-from-plan button can render the same "heads up" message. Warnings are
- * advisory — the wording flags the conflict without implying the action failed.
+ * advisory. The wording flags the conflict without implying the action failed.
  */
 import { ALLERGEN_LABELS } from "./allergens";
 import { DIETARY_TAG_LABELS } from "./substitutions";
@@ -32,7 +32,7 @@ function byMember(warnings: readonly PlanSafetyWarning[]): PlanSafetyWarning[] {
 
 /**
  * A one-line, non-blocking summary of who a planned recipe (or week) conflicts
- * with, e.g. "Heads up — contains dairy (unsafe for Mom) and shellfish (unsafe
+ * with, e.g. "Heads up: contains dairy (unsafe for Mom) and shellfish (unsafe
  * for Ben)." Returns `null` when there's nothing to warn about.
  */
 export function formatPlanWarnings(
@@ -47,8 +47,8 @@ export function formatPlanWarnings(
       ...m.allergens.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
       ...m.diets.map((d) => `not ${DIETARY_TAG_LABELS[d].toLowerCase()}`),
     ];
-    return `${formatList(reasons, locale)} — unsafe for ${m.memberName}`;
+    return `${formatList(reasons, locale)} (unsafe for ${m.memberName})`;
   });
 
-  return `Heads up — ${formatList(clauses, locale)}. Added anyway; double-check before serving.`;
+  return `Heads up: ${formatList(clauses, locale)}. Added anyway. Double-check before serving.`;
 }

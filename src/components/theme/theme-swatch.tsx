@@ -10,7 +10,7 @@ import { cn } from "~/lib/utils";
  * Scheme-aware mode preview (issue #97). Rather than hand-picked hex literals
  * that drift from the real theme (and are light-only), the swatch re-scopes the
  * semantic tokens by setting `data-theme` (and, in dark scheme, `.dark`) on its
- * own wrapper — so the dots below are literally `--primary` / `--secondary` /
+ * own wrapper. So the dots below are literally `--primary` / `--secondary` /
  * `--accent` for that mode in the active scheme. One component, zero drift.
  */
 const SWATCH_TOKENS = ["bg-primary", "bg-secondary", "bg-accent"] as const;
@@ -22,7 +22,7 @@ const SIZES = {
 
 export interface ThemeSwatchProps extends React.HTMLAttributes<HTMLSpanElement> {
   theme: UITheme;
-  /** Force a scheme; defaults to the app's active (resolved) scheme. */
+  /** Force a scheme. Defaults to the app's active (resolved) scheme. */
   scheme?: Exclude<ColorScheme, "system">;
   size?: keyof typeof SIZES;
 }

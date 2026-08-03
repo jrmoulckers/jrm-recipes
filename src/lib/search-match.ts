@@ -2,7 +2,7 @@ import { expandQueryTerms, normalizeTerm } from "~/lib/search-synonyms";
 
 /**
  * Explaining *why* a recipe surfaced for a text query. A recipe can match on its
- * title, an ingredient, a tag, its cuisine, or its description — but a result
+ * title, an ingredient, a tag, its cuisine, or its description. But a result
  * card looks identical either way. {@link deriveMatchReason} inspects the fields
  * already loaded for a result and reports the single most useful reason, which
  * the card renders as a subtle hint and/or a highlighted title substring.
@@ -99,7 +99,7 @@ export type HighlightSegment = { text: string; hit: boolean };
 
 /**
  * Split `text` into segments around case-insensitive occurrences of `term`,
- * marking matched runs with `hit: true`. Purely string-slicing — callers render
+ * marking matched runs with `hit: true`. Purely string-slicing. Callers render
  * the segments as React text nodes, so there is no HTML injection surface (XSS
  * safe regardless of the recipe title's contents).
  */

@@ -14,8 +14,8 @@ import { Label } from "~/components/ui/label";
  * Client form for redeeming a gift code (issue #331). Calls `redeemGiftAction`,
  * then shows a warm confirmation on success (and refreshes so the freshly
  * granted Family entitlement lights up around the app) or the action's friendly
- * message on any error. No code validation logic lives here — the server owns
- * the single-use claim; this is purely the entry + feedback surface.
+ * message on any error. No code validation logic lives here. The server owns
+ * the single-use claim. This is purely the entry + feedback surface.
  */
 export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
   const router = useRouter();
@@ -54,7 +54,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
           </p>
           <p className="text-sm text-muted-foreground">
             You now have {success.months} months of Heirloom Family. Every
-            recipe, every relative — it&apos;s all unlocked.
+            recipe, every relative. It&apos;s all unlocked.
           </p>
         </div>
         <Button asChild>

@@ -27,7 +27,7 @@ const DIFFICULTY_LABEL: Record<"easy" | "medium" | "hard", string> = {
   hard: "Hard",
 };
 
-/** Group ingredients under their section, preserving first-appearance order —
+/** Group ingredients under their section, preserving first-appearance order.
  *  mirrors how the live recipe page renders grouped ingredients. */
 function groupBySection(items: IngredientInput[]): {
   section: string | undefined;
@@ -54,7 +54,7 @@ function formatTimer(totalSeconds: number): string {
 
 /**
  * A faithful, read-only render of the recipe the way cooks will see it on the
- * live recipe page — mirroring that page's hero, grouped ingredients, and
+ * live recipe page. Mirroring that page's hero, grouped ingredients, and
  * numbered method. Driven straight off the editor's working payload so the
  * author can proof a recipe without saving and leaving the page (#follow-up).
  *

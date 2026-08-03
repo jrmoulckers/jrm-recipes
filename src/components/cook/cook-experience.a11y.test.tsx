@@ -2,7 +2,7 @@ import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Cook Mode calls useRouter() for the "Done" flow; stub it so the immersive
+// Cook Mode calls useRouter() for the "Done" flow. Stub it so the immersive
 // chrome renders in jsdom without the App Router runtime.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -72,7 +72,7 @@ describe("Cook Mode accessible names (issue #119)", () => {
     );
 
     const timer = screen.getByRole("timer");
-    // Not a bare "timer" — the name says what it times and the remaining time.
+    // Not a bare "timer". The name says what it times and the remaining time.
     expect(timer).toHaveAccessibleName(/^Step timer, \d+:\d{2} remaining$/);
   });
 
@@ -96,7 +96,7 @@ describe("Cook Mode accessible names (issue #119)", () => {
 
     await user.click(screen.getByRole("button", { name: /overview/i }));
 
-    // Names carry the step number AND its section/instruction — never "button, 1".
+    // Names carry the step number AND its section/instruction. Never "button, 1".
     const first = screen.getByRole("button", {
       name: "Go to step 1: Brown the sausage.",
     });

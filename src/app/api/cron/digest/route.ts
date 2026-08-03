@@ -9,7 +9,7 @@ import {
 import { log } from "~/lib/log";
 
 // Reads Postgres + may call an email provider, so keep it on the Node runtime.
-// Always dynamic — it's a scheduled side-effecting trigger, never cached.
+// Always dynamic. It's a scheduled side-effecting trigger, never cached.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /**
  * Weekly-digest cron (issue #354). Scheduled by Vercel Cron (see vercel.json)
  * and guarded by `CRON_SECRET`: when the secret is unset the endpoint is
- * disabled (503) so it can never be run anonymously; a wrong/absent bearer is
+ * disabled (503) so it can never be run anonymously. A wrong/absent bearer is
  * 401. For each opted-in user it builds a 7-day, group-scoped digest and sends
- * it via the pluggable provider — Resend when `RESEND_API_KEY` is set, a
+ * it via the pluggable provider. Resend when `RESEND_API_KEY` is set, a
  * log/no-op otherwise. Users with no activity are skipped so we never send an
  * empty email, and a single failed send is isolated so it can't abort the run.
  * Returns per-run counts (no PII).

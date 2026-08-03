@@ -11,7 +11,7 @@ import type {
  * spine (root → … → current) with the current recipe's descendants fanned out
  * beneath it, the current recipe highlighted and every other node linking to its
  * detail page. Callers only render this when {@link RecipeFamilyTree.multiGeneration}
- * is true; a single-generation recipe uses the simpler `RecipeLineage` view.
+ * is true. A single-generation recipe uses the simpler `RecipeLineage` view.
  */
 export function RecipeFamilyTree({ tree }: { tree: RecipeFamilyTree }) {
   return (
@@ -28,7 +28,7 @@ export function RecipeFamilyTree({ tree }: { tree: RecipeFamilyTree }) {
       </ul>
       {tree.truncated && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Showing the closest generations — some adaptations aren&apos;t shown.
+          Showing the closest generations. Some adaptations aren&apos;t shown.
         </p>
       )}
     </section>

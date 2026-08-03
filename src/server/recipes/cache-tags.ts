@@ -4,7 +4,7 @@
  * Single source of truth for the Next data-cache tag strings shared between the
  * query layer (`unstable_cache`'s `tags`) and the mutation actions
  * (`revalidateTag`). Tagging lets a write invalidate exactly the affected
- * surfaces — the recipe entity plus the public list feed — instead of scattering
+ * surfaces, the recipe entity plus the public list feed, instead of scattering
  * coarse, easy-to-forget `revalidatePath` strings that can't target an entity.
  *
  * Dependency-light and intentionally NOT `server-only`, so both the

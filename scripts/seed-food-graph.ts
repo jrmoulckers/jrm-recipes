@@ -3,10 +3,10 @@
  *
  * `pnpm db:seed` runs the full *demo* dataset (demo users, groups, recipes,
  * engagement) and is therefore unsafe to run against production. The curated
- * food reference data — `food_items` (with `allergens` + `density_g_per_ml`),
- * `food_aliases`, and `food_nutrition` — that powers structured allergens,
- * nutrition auto-compute, and ingredient→food resolution lives inside that demo
- * seed as `seedFoodItems`. This script performs exactly those upserts and
+ * food reference tables: `food_items` (with `allergens` + `density_g_per_ml`),
+ * `food_aliases`, and `food_nutrition`. They power structured allergens,
+ * nutrition auto-compute, and ingredient→food resolution, and live inside that
+ * demo seed as `seedFoodItems`. This script performs exactly those upserts and
  * nothing else, so it can be run against a live database to (re)populate the
  * food graph without touching any member data.
  *

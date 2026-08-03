@@ -89,8 +89,8 @@ export default async function PlanPage({
   if (dbConfigured && user) {
     viewerGroups = await listViewerGroups(user.id);
     // Group scope (#363): a `?scope=<slug>` for a group the viewer belongs to
-    // switches the board to that group's shared plan. Anything else — including
-    // a slug the viewer isn't a member of — falls back to the personal plane, so
+    // switches the board to that group's shared plan. Anything else, including
+    // a slug the viewer isn't a member of, falls back to the personal plane, so
     // membership is enforced here, not just hidden.
     activeGroup =
       scope != null
@@ -198,7 +198,7 @@ export default async function PlanPage({
               {formatWeekRange(start, end, locale)}
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Plan the week&rsquo;s meals — assign recipes or quick notes to
+              Plan the week&rsquo;s meals. Assign recipes or quick notes to
               each day.
             </p>
           </div>

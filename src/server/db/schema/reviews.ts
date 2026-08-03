@@ -42,7 +42,7 @@ export const reviews = pgTable(
     body: text(),
     // Optional "how it turned out" photo attached to the written review (#341).
     photoUrl: varchar({ length: 2048 }),
-    // Set when the author edits their review after first publishing it; NULL on
+    // Set when the author edits their review after first publishing it. NULL on
     // the original write so the UI can show an "edited" marker.
     editedAt: timestamp({ withTimezone: true }),
     // Moderation hide (issue #357): a set timestamp removes this from member
@@ -52,7 +52,7 @@ export const reviews = pgTable(
     ...timestamps(),
   },
   (t) => [
-    // At most one review per user per recipe (issue #174), enforced at the DB —
+    // At most one review per user per recipe (issue #174), enforced at the DB.
     // the upsert helper targets this constraint to edit-in-place on re-review.
     unique("reviews_recipe_user_uq").on(t.recipeId, t.userId),
     index("reviews_recipe_idx").on(t.recipeId),

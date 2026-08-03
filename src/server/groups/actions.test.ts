@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * Pins the analytics wiring of the group actions (#317): the invite funnel
  * (`invite_sent` → `invite_accepted`) and group lifecycle events. Mutations,
  * auth and the analytics client are mocked so we exercise only the action's
- * event emission — never a real backend or database.
+ * event emission. Never a real backend or database.
  */
 
 const {
@@ -76,7 +76,7 @@ describe("addMemberAction invite funnel", () => {
       role: "member",
       sizeBucket: "2-5",
     });
-    // Acceptance is attributed to the invited user's internal id — no PII.
+    // Acceptance is attributed to the invited user's internal id. No PII.
     expect(captureServerMock).toHaveBeenCalledWith(
       "target_1",
       "invite_accepted",

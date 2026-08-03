@@ -58,7 +58,7 @@ function formatMb(mb: number): string {
  * The self-serve home for a family's subscription: current plan + status,
  * renewal/trial dates, live usage meters against each plan limit, and the entry
  * points to Stripe's Customer Portal (manage/cancel) or `/pricing` (upgrade).
- * Every dependency degrades gracefully — an unconfigured DB or Stripe, a
+ * Every dependency degrades gracefully. An unconfigured DB or Stripe, a
  * signed-out visitor, or a Free account each render a calm, explanatory state
  * rather than an error. All plan copy comes from `src/config/plans.ts`.
  */
@@ -98,7 +98,7 @@ export default async function BillingSettingsPage({
           Billing &amp; plan
         </h1>
         <p className="mt-1 text-muted-foreground">
-          See your plan, track how much you&apos;ve used, and manage billing —
+          See your plan, track how much you&apos;ve used, and manage billing.
           all in one place.
         </p>
       </header>
@@ -108,7 +108,7 @@ export default async function BillingSettingsPage({
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success"
         >
-          You&apos;re all set — welcome to {getPlan("family").name}! It may take
+          You&apos;re all set. Welcome to {getPlan("family").name}! It may take
           a moment for your new plan to appear below.
         </p>
       ) : null}

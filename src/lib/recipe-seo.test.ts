@@ -182,7 +182,7 @@ describe("buildRecipeJsonLd", () => {
       makeRecipe({
         authorId: "author_1",
         ratings: [
-          // The author can't rate their own recipe; a stray self-rating here
+          // The author can't rate their own recipe. A stray self-rating here
           // must not drag the published aggregate down.
           { value: 1, userId: "author_1" },
           { value: 5, userId: "fan_1" },

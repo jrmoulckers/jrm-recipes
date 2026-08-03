@@ -161,7 +161,7 @@ export function AddToShoppingList({
               Include pantry staples
             </Label>
             <p className="text-xs text-muted-foreground">
-              Off by default — we skip salt, oil, butter and common spices so
+              Off by default. We skip salt, oil, butter and common spices so
               your list is just what you need to buy.
             </p>
           </div>

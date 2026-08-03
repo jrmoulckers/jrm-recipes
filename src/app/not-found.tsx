@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Page not found" };
 
 /**
  * Themed 404. Rendered for `notFound()` calls and any unmatched route. Kept as
- * a simple Server Component — it renders inside the root layout, so it inherits
+ * a simple Server Component. It renders inside the root layout, so it inherits
  * the active theme without needing any client behaviour.
  */
 export default function NotFound() {

@@ -10,11 +10,11 @@ import { userBlocks, type User } from "~/server/db/schema";
  * Personal blocks (issue #355). A block is a private, reversible record: the
  * blocker never sees the blocked user's comments, reviews, reactions, or cook
  * posts again. Filtering is symmetric ("vice-versa where appropriate") so a
- * blocked user also can't see the blocker's content — this avoids one-sided
+ * blocked user also can't see the blocker's content. This avoids one-sided
  * conversations that would out the block.
  */
 
-/** Block another member. No-ops if already blocked; you can't block yourself. */
+/** Block another member. No-ops if already blocked. You can't block yourself. */
 export async function blockUser(blockerId: string, blockedId: string) {
   if (blockerId === blockedId) throw new DomainError("FORBIDDEN");
   await db

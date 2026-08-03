@@ -21,7 +21,7 @@ export async function generateMetadata({
   const recipe = await getPublicRecipeCard(id);
   return {
     title: recipe ? `${recipe.title} · Embed` : "Recipe",
-    // The canonical recipe page carries the indexable metadata; the embed is a
+    // The canonical recipe page carries the indexable metadata. The embed is a
     // widget, so keep it out of search results.
     robots: { index: false, follow: false },
   };
@@ -30,7 +30,7 @@ export async function generateMetadata({
 /**
  * Compact, iframe-safe recipe card (issue #347). Rendered outside the `(main)`
  * app chrome so it embeds cleanly on foreign sites, and served *only* for
- * `public` + `published` recipes — anything else 404s, never leaking private
+ * `public` + `published` recipes. Anything else 404s, never leaking private
  * data. Every embed carries the brand mark + a "View full recipe" backlink.
  */
 export default async function EmbedRecipePage({

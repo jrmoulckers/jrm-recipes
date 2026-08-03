@@ -31,7 +31,7 @@ describe("parseSnapshot", () => {
   });
 
   it("validates an already-parsed jsonb snapshot object", () => {
-    // `recipe_versions.snapshot` is jsonb, so Drizzle returns a parsed object —
+    // `recipe_versions.snapshot` is jsonb, so Drizzle returns a parsed object.
     // parseSnapshot must accept it directly (no manual JSON.parse).
     expect(parseSnapshot(input)).toEqual(input);
   });

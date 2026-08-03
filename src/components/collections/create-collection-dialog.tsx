@@ -79,7 +79,7 @@ export function CreateCollectionDialog({
           <DialogHeader>
             <DialogTitle>Create a collection</DialogTitle>
             <DialogDescription>
-              Group the recipes you love into a cookbook — weeknight dinners,
+              Group the recipes you love into a cookbook. Weeknight dinners,
               holiday bakes, or the dishes you always come back to.
             </DialogDescription>
           </DialogHeader>

@@ -14,7 +14,7 @@ import { recipes } from "./recipes";
 import { groups } from "./groups";
 
 /**
- * A single "I cooked this" entry — one row each time a user makes a recipe.
+ * A single "I cooked this" entry. One row each time a user makes a recipe.
  * Leans into Heirloom's "history, kept alive" theme: a personal, dated trail
  * of every time a dish actually hit the table, with an optional note + photo.
  */

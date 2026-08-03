@@ -19,8 +19,8 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   decorative?: boolean;
   /**
    * Accessible loading label announced to assistive tech (ignored when
-   * `decorative`). Keeps the "this is loading" state from being purely visual —
-   * important because under reduced motion the shimmer is intentionally still.
+   * `decorative`), keeping the "this is loading" state from being purely visual,
+   * which is important because under reduced motion the shimmer is intentionally still.
    */
   label?: string;
 }
@@ -28,7 +28,7 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Shared loading semantics: a polite status marked `aria-busy` so non-visual
  * users learn the state even when the shimmer is frozen under reduced motion.
- * The region has no changing text, so it never chatters — it only carries a
+ * The region has no changing text, so it never chatters. It only carries a
  * name and the busy flag.
  */
 function loadingSemantics(decorative: boolean, label: string) {

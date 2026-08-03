@@ -76,7 +76,7 @@ describe("composed skeletons", () => {
   it("exposes exactly one loading status per composed skeleton", () => {
     const { container } = render(<RecipeCardSkeleton />);
     const card = container.firstElementChild as HTMLElement;
-    // Root carries the single status; the inner blocks are decorative so a card
+    // Root carries the single status. The inner blocks are decorative so a card
     // announces "loading" once, not seven times.
     expect(card).toHaveAttribute("role", "status");
     expect(card).toHaveAttribute("aria-busy", "true");

@@ -118,7 +118,7 @@ export function formatIngredientLine(
   ingredient: PrintRecipeIngredient,
 ): string {
   const amount = formatIngredientAmount(ingredient);
-  const note = ingredient.note ? ` — ${ingredient.note}` : "";
+  const note = ingredient.note ? `. ${ingredient.note}` : "";
   const optional = ingredient.optional ? " (optional)" : "";
 
   return cleanLine(
@@ -143,7 +143,7 @@ export function formatStepLine(step: PrintRecipeStep): string {
 
 function sourceLine(recipe: PrintRecipe): string | null {
   if (recipe.sourceName && recipe.sourceUrl) {
-    return `Source: ${recipe.sourceName} — ${recipe.sourceUrl}`;
+    return `Source: ${recipe.sourceName}. ${recipe.sourceUrl}`;
   }
   if (recipe.sourceUrl) return `Source: ${recipe.sourceUrl}`;
   if (recipe.sourceName) return `Source: ${recipe.sourceName}`;

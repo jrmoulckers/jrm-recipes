@@ -4,7 +4,7 @@ import { type db } from "~/server/db";
 import { notifications, type NotificationType } from "~/server/db/schema";
 
 /**
- * `notify()` — the single write path for the notification center (issue #348).
+ * `notify()`. The single write path for the notification center (issue #348).
  *
  * Every social feature (mentions, comment replies, suggestions, reviews, cooks,
  * reactions, group joins, cook-along invites/reminders, moderation reports)
@@ -15,7 +15,7 @@ import { notifications, type NotificationType } from "~/server/db/schema";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** A db handle or an in-flight transaction — either can insert a notification. */
+/** A db handle or an in-flight transaction. Either can insert a notification. */
 export type NotifyExecutor = typeof db | Tx;
 
 export type NotifyParams = {

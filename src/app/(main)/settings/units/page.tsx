@@ -55,8 +55,8 @@ export default async function UnitsSettingsPage() {
           Units &amp; measurements
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Choose the units you cook in. Heirloom converts every recipe to match
-          — while keeping each author&apos;s original amounts intact.
+          Choose the units you cook in. Heirloom converts every recipe to match,
+          while keeping each author&apos;s original amounts intact.
         </p>
       </header>
 

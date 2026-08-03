@@ -10,7 +10,7 @@ import { setWeeklyDigestOptInAction } from "~/server/digest/actions";
 
 /**
  * Weekly-digest opt-in toggle (issue #354). Optimistic switch backed by
- * {@link setWeeklyDigestOptInAction}; reverts + toasts on failure. Default off.
+ * {@link setWeeklyDigestOptInAction}. Reverts + toasts on failure. Default off.
  */
 export function DigestOptIn({ defaultOptedIn }: { defaultOptedIn: boolean }) {
   const [optedIn, setOptedIn] = React.useState(defaultOptedIn);

@@ -13,7 +13,7 @@ export const REVIEWS_PAGE_SIZE = 20;
 
 /**
  * Validated input for creating/editing the viewer's own review (issue #174).
- * `rating` mirrors the DB `reviews_rating_range_check` (1–5); empty title/body
+ * `rating` mirrors the DB `reviews_rating_range_check` (1–5). Empty title/body
  * normalise to NULL so a blank field isn't stored as "".
  */
 export const reviewInput = z.object({
@@ -60,7 +60,7 @@ export type ReviewListItem = Review & {
  * List a recipe's reviews (newest first, offset-paginated), gated so a viewer
  * only sees reviews on a recipe they may view (issue #174). Returns an empty
  * page when the DB is off, the recipe is missing/soft-deleted, or the viewer
- * can't see it — never leaking that the recipe exists.
+ * can't see it. Never leaking that the recipe exists.
  */
 export async function listRecipeReviews(
   recipeId: string,

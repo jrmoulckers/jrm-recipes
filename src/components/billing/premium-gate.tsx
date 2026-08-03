@@ -8,7 +8,7 @@ import { LockedFeatureCard } from "./lock-badge";
 /**
  * Server-side premium gate (issue #311).
  *
- * Renders `children` when `user` is entitled to `feature`; otherwise renders a
+ * Renders `children` when `user` is entitled to `feature`. Otherwise renders a
  * calm {@link LockedFeatureCard} (or a caller-supplied `fallback`). Resolution
  * runs through the entitlements resolver, which always degrades to Free, so a
  * signed-out user (or an unconfigured DB) simply sees the locked state.
@@ -30,7 +30,7 @@ export async function PremiumGate({
   title?: string;
   description?: string;
   children: React.ReactNode;
-  /** Custom locked-state UI; defaults to {@link LockedFeatureCard}. */
+  /** Custom locked-state UI. Defaults to {@link LockedFeatureCard}. */
   fallback?: React.ReactNode;
 }) {
   const entitled = user ? await hasEntitlement(user, feature) : false;

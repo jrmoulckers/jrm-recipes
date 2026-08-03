@@ -3,11 +3,11 @@
  *
  * A single, documented, **static** keyword map so a pre-reader can spot "butter"
  * or "carrot" by its emoji and fetch it themselves. Purely client-side and
- * offline-safe — no schema, no uploads, no network.
+ * offline-safe. No schema, no uploads, no network.
  *
  * Matching is case- and plural-tolerant and never throws on odd input:
- *   • the item is lowercased + diacritic-stripped, then split into words;
- *   • each word is checked in singular + plural form (egg/eggs, tomato/tomatoes);
+ *   • the item is lowercased + diacritic-stripped, then split into words.
+ *   • each word is checked in singular + plural form (egg/eggs, tomato/tomatoes).
  *   • multi-word keywords ("olive oil", "peanut butter") match as a phrase.
  * Entries are ordered most-specific first so "buttermilk" beats "butter" and
  * "sweet potato" beats "potato". Anything unmatched gets a friendly bowl 🥣.
@@ -17,7 +17,7 @@ export const FALLBACK_INGREDIENT_ICON = "🥣";
 
 type IconEntry = { emoji: string; patterns: string[] };
 
-/** Ordered most-specific → most-general; the first match wins. */
+/** Ordered most-specific → most-general. The first match wins. */
 const ICON_ENTRIES: IconEntry[] = [
   // Specific compounds first so they aren't shadowed by a broader keyword.
   {
@@ -93,7 +93,7 @@ const ICON_ENTRIES: IconEntry[] = [
   { emoji: "🍯", patterns: ["honey", "syrup", "molasses"] },
   { emoji: "🧂", patterns: ["salt", "baking soda", "baking powder"] },
 
-  // Produce — vegetables.
+  // Produce. Vegetables.
   { emoji: "🥕", patterns: ["carrot", "carrots"] },
   {
     emoji: "🧅",
@@ -129,7 +129,7 @@ const ICON_ENTRIES: IconEntry[] = [
     patterns: ["bean", "beans", "lentil", "lentils", "chickpea", "chickpeas"],
   },
 
-  // Produce — fruit.
+  // Produce. Fruit.
   { emoji: "🍋", patterns: ["lemon", "lemons", "lime", "limes"] },
   { emoji: "🍎", patterns: ["apple", "apples"] },
   { emoji: "🍌", patterns: ["banana", "bananas"] },
@@ -203,7 +203,7 @@ function wordForms(normalized: string): Set<string> {
 }
 
 /**
- * Pick a decorative emoji for an ingredient name. Always returns something —
+ * Pick a decorative emoji for an ingredient name. Always returns something.
  * a matched icon or the friendly {@link FALLBACK_INGREDIENT_ICON}. Safe on
  * empty/undefined input.
  */

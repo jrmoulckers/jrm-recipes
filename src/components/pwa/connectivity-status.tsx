@@ -11,9 +11,9 @@ const CONNECTIVITY_TOAST_ID = "connectivity-status";
 /**
  * Session-wide connectivity status (#141). Mounted once near the app's toaster,
  * this listens for the browser's `online` / `offline` transitions and surfaces
- * calm, consistent status copy — the offline notice persists until the network
+ * calm, consistent status copy. The offline notice persists until the network
  * returns, then is swapped for a brief "back online" reassurance. It renders no
- * markup of its own; the standalone `/~offline` page keeps its own controls.
+ * markup of its own. The standalone `/~offline` page keeps its own controls.
  */
 export function ConnectivityStatus() {
   const t = useTranslations("pwa.connectivity");

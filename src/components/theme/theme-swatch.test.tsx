@@ -57,7 +57,7 @@ describe("ThemeSwatch", () => {
     expect(dots[2]!.className).toContain("bg-accent");
   });
 
-  it("uses zero hex literals — colors come from tokens only", () => {
+  it("uses zero hex literals. Colors come from tokens only", () => {
     const { container } = renderSwatch(<ThemeSwatch theme="professional" />);
     const wrapper = container.querySelector('[data-theme="professional"]')!;
     expect(wrapper.outerHTML).not.toMatch(/#[0-9a-fA-F]{3,6}/);

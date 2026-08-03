@@ -62,7 +62,7 @@ beforeEach(() => {
   dbMock.query.groupMembers.findFirst.mockResolvedValue(undefined);
 });
 
-// Issue #165 — every recipe read path must exclude soft-deleted (tombstoned)
+// Issue #165. Every recipe read path must exclude soft-deleted (tombstoned)
 // rows. We assert each query builds a `where` that filters on recipes.deletedAt.
 describe("recipe read paths exclude soft-deleted rows (issue #165)", () => {
   it("listMyRecipes filters on deleted_at", async () => {
@@ -177,7 +177,7 @@ describe("deleteRecipe / restoreRecipe (issue #165)", () => {
   });
 });
 
-// Issue #367 — a kid-role member of the recipe's group can never delete a
+// Issue #367. A kid-role member of the recipe's group can never delete a
 // recipe, even one they authored. Enforced server-side before the tombstone.
 describe("deleteRecipe kid-safe guard (issue #367)", () => {
   function stubUpdate(rows: unknown[]) {

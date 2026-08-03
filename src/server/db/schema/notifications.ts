@@ -36,7 +36,7 @@ export const notificationType = pgEnum("notification_type", [
 /**
  * An in-app notification for a single recipient (issue #348). `actorId` is who
  * caused it (nullable so a system/reminder notification has no actor).
- * `recipeId` / `groupId` are real FKs (cleaned up on delete); `entityId` is a
+ * `recipeId` / `groupId` are real FKs (cleaned up on delete). `entityId` is a
  * free-form pointer to the specific comment / review / cook-along the event is
  * about, and `context` carries a short pre-rendered label so the inbox never
  * has to re-join every source table to draw a row.
@@ -60,7 +60,7 @@ export const notifications = pgTable(
     ...timestamps(),
   },
   (t) => [
-    // "My recent notifications, newest first" — the inbox + bell dropdown read.
+    // "My recent notifications, newest first". The inbox + bell dropdown read.
     index("notifications_recipient_idx").on(t.recipientId, t.createdAt),
     // Partial index backing the unread-count badge without scanning read rows.
     index("notifications_recipient_unread_idx")

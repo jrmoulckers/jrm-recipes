@@ -48,7 +48,7 @@ import {
 import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { type SavedSearch } from "~/server/searches/queries";
 
-/** Sentinel for "no filter" — Radix Select forbids empty-string item values. */
+/** Sentinel for "no filter". Radix Select forbids empty-string item values. */
 const ANY = "any";
 
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
@@ -100,7 +100,7 @@ export function RecipeSearchControls({
   const [query, setQuery] = React.useState(search.q ?? "");
   const [ingredient, setIngredient] = React.useState(search.ingredient ?? "");
   // On phones the filter row collapses behind a "Filters" disclosure so the
-  // recipes stay near the top; desktop keeps the inline row (#90).
+  // recipes stay near the top. Desktop keeps the inline row (#90).
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [, startTransition] = React.useTransition();
 
@@ -136,7 +136,7 @@ export function RecipeSearchControls({
     [currentParams, pathname, router],
   );
 
-  // Multi-select facets (cuisine, tag) carry several repeated params; replace the
+  // Multi-select facets (cuisine, tag) carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
     (key: "cuisine" | "tag" | "diet", values: string[]) => {
@@ -200,7 +200,7 @@ export function RecipeSearchControls({
     return () => window.clearTimeout(id);
   }, [query, search.q, pushParams]);
 
-  // Debounce the ingredient filter the same way; the server resolves the term to
+  // Debounce the ingredient filter the same way. The server resolves the term to
   // a canonical food and constrains results to recipes that use it.
   React.useEffect(() => {
     const next = ingredient.trim();
@@ -653,7 +653,7 @@ export function RecipeSearchControls({
                 >
                   <X className="size-3" />
                 </span>
-                <span className="sr-only">— remove filter</span>
+                <span className="sr-only">Remove filter</span>
               </button>
             </li>
           ))}

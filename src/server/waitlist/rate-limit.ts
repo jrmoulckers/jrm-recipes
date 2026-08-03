@@ -1,7 +1,7 @@
 /**
  * A tiny, dependency-free sliding-window rate limiter (issue #351).
  *
- * Best-effort, per-process, in-memory — enough to blunt trivial abuse of an
+ * Best-effort, per-process, in-memory. Enough to blunt trivial abuse of an
  * unauthenticated endpoint (bursts of submissions) without reaching for Redis.
  * It intentionally does no keying: a signed-out landing form has no trustworthy
  * per-caller identity, so this caps the *global* submission rate as a safety

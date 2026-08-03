@@ -46,11 +46,11 @@ const NO_DB = "Groups need a database.";
 /** Group-specific copy for the shared domain-error mapper (#168). */
 const GROUP_MESSAGES: DomainMessages = {
   USER_NOT_FOUND:
-    "No cook found with that handle or email — ask them to sign up first.",
+    "No cook found with that handle or email. Ask them to sign up first.",
   ALREADY_MEMBER: "They're already in this group.",
   FORBIDDEN: "You don't have permission to do that.",
   SEAT_LIMIT_REACHED:
-    "Your family plan is full. Upgrade to add more members — no one is removed.",
+    "Your family plan is full. Upgrade to add more members. No one is removed.",
   OWNER_CANT_LEAVE: "Transfer ownership or delete the group first.",
   NOT_FOUND: "We couldn't find that group.",
   REVOKED: "This invite link has been turned off. Ask for a fresh one.",
@@ -131,8 +131,8 @@ export async function addMemberAction(
     );
     revalidateGroup(slug);
     const sizeBucket = groupSizeBucket(member.memberCount);
-    // invite_sent is attributed to the inviter; invite_accepted is attributed
-    // to the invited user (their internal id — never a handle or email). In
+    // invite_sent is attributed to the inviter. Invite_accepted is attributed
+    // to the invited user (their internal id. Never a handle or email). In
     // this model a member can only be added once they already have an account,
     // so their membership activates immediately: the invite is "accepted" the
     // moment it is sent.
@@ -292,7 +292,7 @@ export type AcceptInviteLinkResult = BaseActionResult<{
 
 /**
  * Join a group from an invite-link token (issue #343). Used by the `/join`
- * page's CTA (and its auto-join after auth). Idempotent for existing members;
+ * page's CTA (and its auto-join after auth). Idempotent for existing members.
  * emits `invite_accepted` only for a genuinely new join.
  */
 export async function acceptInviteLinkAction(

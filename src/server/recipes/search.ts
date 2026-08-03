@@ -32,7 +32,7 @@ export type RecipeSort = (typeof recipeSortValues)[number];
 
 /**
  * The default sort for a *pure* browse/filter view (no text query). Text
- * queries default to `relevance` instead — see {@link defaultSortFor}.
+ * queries default to `relevance` instead. See {@link defaultSortFor}.
  */
 export const DEFAULT_RECIPE_SORT: RecipeSort = "newest";
 
@@ -73,7 +73,7 @@ export const MAX_FACET_VALUES = 12;
 
 /**
  * Parse a facet param that may repeat (`?tag=a&tag=b`) or be comma-joined
- * (`?tag=a,b`) — or carry a single value for back-compat — into a trimmed,
+ * (`?tag=a,b`), or carry a single value for back-compat, into a trimmed,
  * de-duped (case-insensitive), length-capped list. Order of first appearance is
  * preserved so the URL round-trips predictably.
  */
@@ -126,7 +126,7 @@ const trimmedOptional = (max: number) =>
 
 /**
  * A tolerant boolean coerced from a querystring flag. Accepts `1`/`true`/`yes`/`on`
- * (case-insensitive) as `true`; anything else — including missing — is `false`, so
+ * (case-insensitive) as `true`. Anything else, including missing, is `false`, so
  * a hand-edited or absent value degrades to "off" rather than throwing.
  */
 const booleanFromParam = z
@@ -159,14 +159,14 @@ export const recipeSearchSchema = z.object({
   q: trimmedOptional(120),
   difficulty: z.enum(recipeDifficultyValues).optional().catch(undefined),
   maxTime: positiveIntFromParam,
-  // A saved family member's id — filters to recipes "safe for" them (#405).
+  // A saved family member's id. Filters to recipes "safe for" them (#405).
   safeFor: trimmedOptional(24),
-  // A group id the viewer belongs to — filters to that family/group's recipes
-  // (#91). Single-value because `recipes.groupId` is single-valued; validated
+  // A group id the viewer belongs to. Filters to that family/group's recipes
+  // (#91). Single-value because `recipes.groupId` is single-valued. Validated
   // against the viewer's own groups in `searchRecipes`.
   group: trimmedOptional(24),
-  // "Only mine" — narrows to the signed-in viewer's own recipes (#91). Only
-  // meaningful when a viewer is present; ignored server-side when signed out.
+  // "Only mine". Narrows to the signed-in viewer's own recipes (#91). Only
+  // meaningful when a viewer is present. Ignored server-side when signed out.
   mine: booleanFromParam,
   // Ingredient-led filter: a free-text ingredient term (e.g. "cilantro") that
   // the server resolves to a canonical food node via the food graph, then
@@ -182,10 +182,10 @@ export const recipeSearchSchema = z.object({
 export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
   /** Selected cuisines (OR-matched). Empty when unfiltered. */
   cuisines: string[];
-  /** Selected tags (AND-matched — a recipe must carry every one). */
+  /** Selected tags (AND-matched. A recipe must carry every one). */
   tags: string[];
   /**
-   * Selected dietary tags (AND-matched — a recipe must satisfy every one,
+   * Selected dietary tags (AND-matched. A recipe must satisfy every one,
    * via its declared ∪ derived dietary tags). Empty when unfiltered (#273).
    */
   diets: DietaryTag[];
@@ -239,7 +239,7 @@ export function isDefaultRecipeView(search: RecipeSearch): boolean {
 }
 
 /**
- * Build a clean `URLSearchParams` from a (partial) search — omitting empty
+ * Build a clean `URLSearchParams` from a (partial) search. Omitting empty
  * values and the default sort so shared URLs stay tidy.
  */
 export function recipeSearchToParams(

@@ -19,8 +19,8 @@ import { Textarea } from "~/components/ui/textarea";
  *
  * Guardrails from the acceptance criteria:
  * - The recipe owner can't rate their own recipe, so the star row is hidden for
- *   them (no self-rating error card) — they can still log the cook.
- * - Everything is optional; leaving it untouched and tapping the outer
+ *   them (no self-rating error card). They can still log the cook.
+ * - Everything is optional, leaving it untouched and tapping the outer
  *   "Skip and finish" never blocks leaving Cook Mode.
  * - `reducedMotion` suppresses the celebratory transition.
  */
@@ -97,7 +97,7 @@ export function CookCompletionFeedback({
       >
         <p className="flex items-center justify-center gap-2 font-medium">
           <CheckCircle2 className="size-5" aria-hidden />
-          Thanks — saved to this recipe.
+          Thanks. Saved to this recipe.
         </p>
       </div>
     );

@@ -42,7 +42,7 @@ function cacheStorage(): CacheStorage | undefined {
  * storage so those caches survive eviction pressure (notably on iOS).
  *
  * The app-shell precache is intentionally left untouched by "clear", so the app
- * still loads offline afterward — cleared recipes simply rebuild as the user
+ * still loads offline afterward. Cleared recipes simply rebuild as the user
  * browses again.
  */
 export function OfflineStorageMenu({ label }: { label?: string } = {}) {

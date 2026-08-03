@@ -158,7 +158,7 @@ export function ReviewsSection({
             Reviews &amp; tasting notes
           </h2>
           <p className="text-sm text-muted-foreground">
-            A considered star rating and note — how it turned out, what you
+            A considered star rating and note. How it turned out, what you
             changed.
           </p>
         </div>
@@ -181,7 +181,7 @@ export function ReviewsSection({
                 id="review-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="Title (optional) — e.g. “A weeknight winner”"
+                placeholder="Title (optional), e.g. “A weeknight winner”"
                 maxLength={200}
                 disabled={save.pending}
               />
@@ -210,7 +210,7 @@ export function ReviewsSection({
           </div>
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              One review per recipe — you can edit or delete yours anytime.
+              One review per recipe. You can edit or delete yours anytime.
             </p>
             <div className="flex items-center gap-2">
               {viewerReview ? (
@@ -278,7 +278,7 @@ export function ReviewsSection({
 
       {sorted.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
-          No reviews yet — be the first to share how it turned out.
+          No reviews yet. Be the first to share how it turned out.
         </p>
       ) : (
         <ul className="space-y-4">

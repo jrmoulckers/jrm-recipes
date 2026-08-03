@@ -58,7 +58,7 @@ describe("adaptationTitle", () => {
     expect(adaptationTitle("Sunday Sauce")).toBe("Sunday Sauce (Adaptation)");
   });
 
-  it("is idempotent — never stacks the marker", () => {
+  it("is idempotent. Never stacks the marker", () => {
     const once = adaptationTitle("Sunday Sauce");
     expect(adaptationTitle(once)).toBe(once);
   });

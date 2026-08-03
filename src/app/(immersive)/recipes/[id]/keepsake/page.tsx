@@ -38,7 +38,7 @@ export async function generateMetadata({
  * Keepsake "hand-down" view (issue #407). Access is delegated entirely to
  * {@link getRecipeForViewer}, so the recipe's normal visibility rules (public /
  * group / owner / unlisted-by-token via `t`) are enforced here exactly as on the
- * recipe page — a private recipe can never leak through a keepsake link. The
+ * recipe page. A private recipe can never leak through a keepsake link. The
  * personal note + sender are read straight from the URL.
  */
 export default async function KeepsakePage({

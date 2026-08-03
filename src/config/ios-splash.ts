@@ -1,5 +1,5 @@
 /**
- * iOS launch-splash wiring (#187). iOS Safari ignores the web manifest for the
+ * iOS launch-splash wiring (#187). IOS Safari ignores the web manifest for the
  * install glyph and launch screen, so we emit `apple-touch-startup-image` links
  * (one per device × orientation) from the root metadata. The device table lives
  * in `ios-splash-devices.json` so this module and `scripts/generate-icons.mjs`
@@ -8,7 +8,7 @@
  *
  * NOTE: the filename + media-query formulas below are mirrored in
  * `scripts/generate-icons.mjs` (Node can't import this TS module). Keep them in
- * sync — a change here must be reflected there or the links will 404.
+ * sync. A change here must be reflected there or the links will 404.
  */
 import devices from "./ios-splash-devices.json";
 

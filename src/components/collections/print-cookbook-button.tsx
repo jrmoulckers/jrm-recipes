@@ -21,7 +21,7 @@ import { KEEPSAKE_NOTE_MAX } from "~/lib/keepsake";
 /**
  * Opens the printable booklet for a collection (issue #397), optionally with a
  * dedication for the cover. The dedication rides in the print URL (no server
- * round-trip); the print page turns "Print → Save as PDF" into a real family
+ * round-trip). The print page turns "Print → Save as PDF" into a real family
  * cookbook.
  */
 export function PrintCookbookButton({
@@ -53,8 +53,8 @@ export function PrintCookbookButton({
         <DialogHeader>
           <DialogTitle>Print this cookbook</DialogTitle>
           <DialogDescription>
-            Lay the whole collection out as one booklet — cover, contents, and
-            every recipe — ready for “Print → Save as PDF.”
+            Lay the whole collection out as one booklet. Cover, contents, and
+            every recipe. Ready for “Print → Save as PDF.”
           </DialogDescription>
         </DialogHeader>
 
@@ -64,7 +64,7 @@ export function PrintCookbookButton({
             id="cookbook-dedication"
             value={dedication}
             onChange={(event) => setDedication(event.target.value)}
-            placeholder="For my grandchildren — so our kitchen is always with you."
+            placeholder="For my grandchildren. So our kitchen is always with you."
             rows={3}
             maxLength={KEEPSAKE_NOTE_MAX}
           />

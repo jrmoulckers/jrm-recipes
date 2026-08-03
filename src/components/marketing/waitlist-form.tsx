@@ -13,7 +13,7 @@ import { Label } from "~/components/ui/label";
 
 /**
  * Landing-page email/waitlist capture (issue #351). A single accessible email
- * field with inline validation and success/error states — the lighter-weight
+ * field with inline validation and success/error states. The lighter-weight
  * conversion step for cold visitors who aren't ready to sign up. On success it
  * emits `waitlist_joined` client-side (browser distinct id, no PII) and shows a
  * friendly confirmation.
@@ -59,7 +59,7 @@ export function WaitlistForm({
         )}
       >
         <Check className="size-4 text-primary" aria-hidden />
-        You&apos;re on the list — we&apos;ll be in touch with early access and
+        You&apos;re on the list. We&apos;ll be in touch with early access and
         cooking tips.
       </div>
     );

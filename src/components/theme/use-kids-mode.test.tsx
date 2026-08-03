@@ -91,7 +91,7 @@ describe("Kids mode a11y coupling (issue #445)", () => {
 
     await user.click(screen.getByRole("button", { name: "Turn on Kids mode" }));
 
-    // Explicit XL is preserved; only the unset easy-reading default is enabled.
+    // Explicit XL is preserved. Only the unset easy-reading default is enabled.
     expect(html()).toHaveAttribute("data-text", "xl");
     expect(html()).toHaveAttribute("data-reading", "readable");
   });

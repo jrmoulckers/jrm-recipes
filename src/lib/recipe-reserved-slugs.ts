@@ -5,7 +5,7 @@
  * `/recipes/[id]` resolves a recipe by id *or* slug, but Next.js resolves a
  * static segment (`/recipes/new`, `/recipes/tags`, `/recipes/cook-with`) ahead
  * of the dynamic `[id]` segment. So a recipe whose slug equals one of these is
- * unreachable at its canonical `/recipes/<slug>` URL — the form/list page wins,
+ * unreachable at its canonical `/recipes/<slug>` URL. The form/list page wins,
  * and the freshly created recipe "fails to resolve" right after it's saved.
  *
  * This is the single source of truth for that set. The write path

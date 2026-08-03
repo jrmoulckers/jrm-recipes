@@ -107,7 +107,7 @@
       "exit": "Exit cook mode",
       "progress": "Cooking progress",
       "stepTimer": "Step timer, {time} remaining",
-      "jumpToStep": "Jump to step {position}: {title} — {time} remaining",
+      "jumpToStep": "Jump to step {position}: {title}, {time} remaining",
       "goToStep": "Go to step {position}: {title}"
     },
     "readAloud": {
@@ -118,7 +118,7 @@
   },
   "metadata": {
     "tagline": "Family recipes, kept alive.",
-    "description": "Create, cook, and pass down the recipes your family loves — beautifully, together.",
+    "description": "Create, cook, and pass down the recipes your family loves. Beautifully, together.",
     "shortcuts": {
       "newRecipe": {
         "name": "New recipe",
@@ -140,9 +140,9 @@
   "pwa": {
     "offline": {
       "metaTitle": "You're offline",
-      "metaDescription": "{brand} works offline — reconnect to sync the latest.",
+      "metaDescription": "{brand} works offline. Reconnect to sync the latest.",
       "heading": "You're offline",
-      "body": "No internet right now — but the kitchen never closes. Reconnect to browse, save and sync your family's recipes again.",
+      "body": "No internet right now, but the kitchen never closes. Reconnect to browse, save and sync your family's recipes again.",
       "stillWorksTitle": "Still works without a connection",
       "cookModeTitle": "Cook mode",
       "cookModeBody": "Any recipe you've opened stays hands-free with timers and scaling.",
@@ -151,7 +151,7 @@
       "home": "Go to {brand} home"
     },
     "reconnect": {
-      "online": "Back online — reloading…",
+      "online": "Back online, reloading…",
       "offline": "No connection",
       "retry": "Try again",
       "retrying": "Reconnecting…"
@@ -178,8 +178,8 @@
       "dismiss": "Dismiss update notification"
     },
     "connectivity": {
-      "offline": "You're offline — recipes you've opened still work. We'll sync changes when you're back.",
-      "online": "Back online — syncing your latest."
+      "offline": "You're offline. Recipes you've opened still work. We'll sync changes when you're back.",
+      "online": "Back online, syncing your latest."
     },
     "storage": {
       "trigger": "Offline storage",
@@ -242,7 +242,7 @@
   },
   "characterCounter": {
     "remaining": "{count} left",
-    "over": "Over by {count} — {message}"
+    "over": "Over by {count}. {message}"
   },
   "recipeDetail": {
     "backToRecipes": "Recipes",
@@ -269,7 +269,7 @@
       "prep": "{time} prep",
       "resting": "{time} resting"
     },
-    "ratingLabel": "Rated {average} out of 5 — {count, plural, one {# review} other {# reviews}}",
+    "ratingLabel": "Rated {average} out of 5, {count, plural, one {# review} other {# reviews}}",
     "actions": {
       "cook": "Cook",
       "print": "Print",
@@ -289,7 +289,7 @@
       "emptyViewer": "The steps haven't been added to this recipe yet.",
       "editRecipe": "Edit recipe",
       "stepLabel": "Step {position}",
-      "stepImageAlt": "{title} — step {position}"
+      "stepImageAlt": "{title}, step {position}"
     },
     "tabs": {
       "recipe": "Recipe",

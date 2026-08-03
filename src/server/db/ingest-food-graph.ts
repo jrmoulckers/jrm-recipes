@@ -30,14 +30,14 @@ import {
  *
  * Designed to run as a nightly/full recompute: the derived tables are rebuilt
  * from scratch each run, so it is idempotent and self-correcting (foods that
- * stop being used drop back to zero). Curated data — the seeded `food_items`
- * nodes and their `source = 'curated'` aliases — is preserved; only mined data
+ * stop being used drop back to zero). Curated data, the seeded `food_items`
+ * nodes and their `source = 'curated'` aliases, is preserved. Only mined data
  * is replaced. It runs on a schedule via the `/api/cron/food-graph` cron
  * (see `vercel.json`), never in a user's request path: an earlier "Phase 2"
  * design triggered this full pass on every recipe write, whose large,
  * table-locking transaction timed saves out (504) on serverless. Write-time
- * `resolveFoodIds` still links new ingredients to their food node immediately;
- * only the mined *stats* wait for the next scheduled pass.
+ * `resolveFoodIds` still links new ingredients to their food node immediately.
+ * Only the mined *stats* wait for the next scheduled pass.
  */
 
 /** How many rows to insert per statement (keeps bind-parameter counts sane). */
@@ -133,7 +133,7 @@ export async function ingestFoodGraph(
     }
 
     // Mined aliases upsert onto their node: a phrasing that matches a curated
-    // alias bumps that row's count; a new phrasing inserts as `source = 'mined'`.
+    // alias bumps that row's count. A new phrasing inserts as `source = 'mined'`.
     for (const alias of mined.aliases) {
       await tx
         .insert(foodAliases)

@@ -20,13 +20,13 @@ const COOK_RECHECK_INTERVAL_MS = 10_000;
  * and then sits in `waiting` instead of swapping precached chunks mid-session.
  * This banner watches the registration for that waiting worker and offers a
  * non-blocking "Reload" affordance. Accepting posts `SKIP_WAITING` to the
- * waiting worker; when it takes control (`controllerchange`) we reload exactly
+ * waiting worker. When it takes control (`controllerchange`) we reload exactly
  * once. The prompt is deferred while a Cook Mode session has running timers so
  * it never interrupts hands-free cooking.
  *
  * Non-modal by design (`role="status"`, `aria-live="polite"`): it announces
  * itself without trapping focus, unlike the install prompt. Mounted in the main
- * app chrome only — never in immersive cook/print views.
+ * app chrome only. Never in immersive cook/print views.
  */
 export function UpdatePrompt() {
   const t = useTranslations("pwa.update");
@@ -50,7 +50,7 @@ export function UpdatePrompt() {
     let reloading = false;
     // Whether this page was already controlled when it loaded. On a first-ever
     // visit there's no controller yet, so the new worker's `clientsClaim`
-    // activation fires `controllerchange` — that's an install, NOT an update, so
+    // activation fires `controllerchange`. That's an install, NOT an update, so
     // we must not reload. Only an update that replaces an existing controller
     // (after the user accepts) should trigger the one-time reload.
     const hadControllerAtLoad = container.controller != null;
@@ -59,7 +59,7 @@ export function UpdatePrompt() {
       // Guard so a single activation triggers a single reload. Reload only when
       // this page was already controlled at load (a genuine update replacing an
       // existing worker, incl. other tabs) or when the user accepted the prompt
-      // here — never on the first-install `clientsClaim` activation.
+      // here. Never on the first-install `clientsClaim` activation.
       if (reloading || (!hadControllerAtLoad && !userAcceptedRef.current)) {
         return;
       }
@@ -104,7 +104,7 @@ export function UpdatePrompt() {
         });
       })
       .catch(() => {
-        // No registration or unsupported — simply never prompt.
+        // No registration or unsupported. Simply never prompt.
       });
 
     return () => {
@@ -114,14 +114,14 @@ export function UpdatePrompt() {
   }, []);
 
   // While a worker waits, keep the prompt out of the way of an active cook
-  // session; re-check on a timer and whenever the tab is refocused.
+  // session. Re-check on a timer and whenever the tab is refocused.
   React.useEffect(() => {
     if (!waitingWorker) return;
     const check = () => {
       try {
         setBlockedByCook(hasRunningCookTimers(window.localStorage, Date.now()));
       } catch {
-        // Storage unavailable (private mode) — assume nothing is cooking.
+        // Storage unavailable (private mode). Assume nothing is cooking.
         setBlockedByCook(false);
       }
     };
@@ -150,7 +150,7 @@ export function UpdatePrompt() {
     if (!waitingWorker) return;
     userAcceptedRef.current = true;
     setEntered(false);
-    // Serwist activates the waiting worker on this message; the
+    // Serwist activates the waiting worker on this message. The
     // `controllerchange` handler above then reloads the page once.
     waitingWorker.postMessage(SKIP_WAITING_MESSAGE);
   }, [waitingWorker]);

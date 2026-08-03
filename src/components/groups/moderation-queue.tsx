@@ -121,7 +121,7 @@ function QueueRow({
             })
           }
         >
-          <ShieldCheck /> Dismiss {item.hidden ? "reports" : "— it's fine"}
+          <ShieldCheck /> Dismiss {item.hidden ? "reports" : "as fine"}
         </Button>
       </div>
     </li>

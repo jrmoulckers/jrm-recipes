@@ -50,7 +50,7 @@ export function SchemeToggle({ className }: { className?: string }) {
  * Full theme picker: five UI modes + light/dark/system.
  *
  * Pass `label` to render a full-width, left-aligned row trigger (icon + text in
- * the same button) for the mobile overflow menu; omit it for the icon-only
+ * the same button) for the mobile overflow menu. Omit it for the icon-only
  * header button. The dropdown still anchors to whichever trigger is rendered.
  */
 export function ThemeSwitcher({ label }: { label?: string } = {}) {

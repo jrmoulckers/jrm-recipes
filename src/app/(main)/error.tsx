@@ -26,7 +26,7 @@ export default function MainSegmentError({
     <ErrorState
       as="div"
       className="min-h-[60vh]"
-      description="A hiccup in the kitchen — we couldn't finish loading this section. You can try again, or head back home."
+      description="A hiccup in the kitchen. We couldn't finish loading this section. You can try again, or head back home."
       digest={error.digest}
       onReset={reset}
     />

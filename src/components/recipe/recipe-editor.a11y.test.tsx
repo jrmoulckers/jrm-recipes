@@ -33,13 +33,13 @@ function render(ui: ReactElement) {
 // mobile Save/Cancel bar that keeps it in the thumb zone (issue #294). In a
 // real browser only one is in the accessibility tree per breakpoint (the other
 // is `display:none` via a responsive `hidden`/`md:hidden` class), but jsdom
-// applies no CSS so both are present here — target the primary top-bar button.
+// applies no CSS so both are present here. Target the primary top-bar button.
 function primarySaveButton() {
   return screen.getAllByRole("button", { name: /save recipe/i })[0]!;
 }
 
 beforeAll(() => {
-  // jsdom doesn't implement scrollIntoView; the summary links call it.
+  // jsdom doesn't implement scrollIntoView. The summary links call it.
   Element.prototype.scrollIntoView = vi.fn();
 });
 

@@ -62,7 +62,7 @@ async function userListIds(userId: string): Promise<string[]> {
  * combine unit-aware. Checked items and manually-noted items are left intact.
  *
  * Pantry staples (salt, oil, …) are skipped by default so the list stays short
- * (#412); pass `includeStaples` to keep them.
+ * (#412). Pass `includeStaples` to keep them.
  */
 export async function addRecipeToList(
   user: User,
@@ -149,7 +149,7 @@ export type BuildFromPlanResult = {
   /**
    * Proactive allergen/diet gating (#: structured allergens on the food graph):
    * planned recipes that conflict with a saved family profile, keyed by member.
-   * Advisory only — the list is still built; the UI surfaces this as a warning.
+   * Advisory only. The list is still built. The UI surfaces this as a warning.
    */
   warnings: PlanSafetyWarning[];
 };
@@ -195,7 +195,7 @@ export async function buildListFromPlan(
   });
 
   // Skip leftovers nights (they reuse a recipe id via a structured note) so a
-  // batch-cooked meal isn't shopped for twice; cooking the same recipe on two
+  // batch-cooked meal isn't shopped for twice. Cooking the same recipe on two
   // separate nights DOES contribute twice (quantities combine below).
   const cooking = entries.filter(
     (e) => e.recipe != null && parseLeftoversNote(e.note) == null,
@@ -225,7 +225,7 @@ export async function buildListFromPlan(
   }
 
   // Proactive allergen/diet gating for the whole planned week: flag any cooked
-  // recipe that conflicts with a saved family profile. Best-effort; never blocks
+  // recipe that conflicts with a saved family profile. Best-effort. Never blocks
   // building the list.
   const warningsByRecipe = await planWarningsForRecipes(user.id, [
     ...recipeIds,

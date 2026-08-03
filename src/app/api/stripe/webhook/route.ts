@@ -5,15 +5,15 @@ import { getStripe, isBillingConfigured } from "~/server/billing/stripe";
 import { handleStripeEvent } from "~/server/billing/webhook";
 
 /**
- * Stripe webhook (issue #304) — the channel that keeps our `subscriptions`
+ * Stripe webhook (issue #304). The channel that keeps our `subscriptions`
  * table in sync with Stripe's source of truth. Sibling to the Cloudinary sign
- * route; kept on the Node runtime because signature verification needs Node
+ * route. Kept on the Node runtime because signature verification needs Node
  * crypto and the raw request body.
  *
  * Security: every event is authenticated by verifying the `Stripe-Signature`
  * against `STRIPE_WEBHOOK_SECRET` over the *raw* body (any pre-parsing would
- * break the HMAC), so this endpoint can't be spoofed. It degrades gracefully —
- * 503 when billing/webhook secrets are absent — and is idempotent, so Stripe's
+ * break the HMAC), so this endpoint can't be spoofed. It degrades gracefully.
+ * 503 when billing/webhook secrets are absent. It is idempotent, so Stripe's
  * at-least-once retries are safe.
  */
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Missing signature." }, { status: 400 });
   }
 
-  // Read the raw body — verification is an HMAC over these exact bytes.
+  // Read the raw body. Verification is an HMAC over these exact bytes.
   const rawBody = await request.text();
 
   let event: Stripe.Event;
@@ -45,7 +45,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     await handleStripeEvent(event);
   } catch {
-    // Return 5xx so Stripe retries; handlers are idempotent, so replay is safe.
+    // Return 5xx so Stripe retries. Handlers are idempotent, so replay is safe.
     return Response.json(
       { error: "Webhook processing failed." },
       { status: 500 },

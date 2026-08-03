@@ -24,7 +24,7 @@ import { buildKeepsakePath, KEEPSAKE_NOTE_MAX } from "~/lib/keepsake";
  * "Hand this down" flow (issue #407). Lets an owner write a personal note and
  * turn a recipe into a warm keepsake link to give as a gift. The note + name
  * are carried in the keepsake URL (no server round-trip, nothing to store), and
- * access is still governed by the recipe's own visibility — for an unlisted
+ * access is still governed by the recipe's own visibility. For an unlisted
  * recipe the existing share `token` is threaded through so the recipient can
  * open it without an account, exactly like a normal share link.
  */
@@ -49,7 +49,7 @@ export function HandDownButton({
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(keepsakeUrl());
-      toast.success("Keepsake link copied — ready to give as a gift");
+      toast.success("Keepsake link copied. Ready to give as a gift");
     } catch {
       toast.error("Couldn't copy the link");
     }
@@ -70,7 +70,7 @@ export function HandDownButton({
         <DialogHeader>
           <DialogTitle>Hand this recipe down</DialogTitle>
           <DialogDescription>
-            Add a personal message and share it as a warm keepsake — a little
+            Add a personal message and share it as a warm keepsake. A little
             gift, not just a link.
           </DialogDescription>
         </DialogHeader>

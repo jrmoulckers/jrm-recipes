@@ -5,7 +5,7 @@ import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
 
 /**
- * A user's saved recipe search — a friendly name plus the normalized recipe
+ * A user's saved recipe search. A friendly name plus the normalized recipe
  * querystring (`q=&cuisine=&tag=&sort=...`). Applying one just restores those
  * params, so no result state is stored. Unique per (user, name) so re-saving a
  * name updates it instead of piling up duplicates.

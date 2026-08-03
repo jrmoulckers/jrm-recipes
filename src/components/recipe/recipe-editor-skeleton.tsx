@@ -4,10 +4,10 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 /**
  * Loading placeholder for the recipe editor (create + edit). Mirrors
- * {@link RecipeEditor}'s real layout — `container flex flex-col gap-8 py-8`, a
+ * {@link RecipeEditor}'s real layout. `container flex flex-col gap-8 py-8`, a
  * header row with title + actions, and the `minmax(0,1fr)_20rem` main/sidebar
- * grid — so the heavy client editor swaps in with no layout shift. Kept in
- * lockstep with the editor's outer shell; shared by both editor routes so the
+ * grid, so the heavy client editor swaps in with no layout shift. It is kept in
+ * lockstep with the editor's outer shell. Shared by both editor routes so the
  * two `loading.tsx` files stay a single source of truth.
  */
 export function RecipeEditorSkeleton() {

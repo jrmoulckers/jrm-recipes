@@ -23,7 +23,7 @@ import {
   type ShoppingViewItem,
 } from "./shopping-list-view";
 
-/** DB-backed shopping list. Check-off / remove are optimistic; adds refresh. */
+/** DB-backed shopping list. Check-off / remove are optimistic, with refresh. */
 export function DbShoppingList({
   items,
   members = [],

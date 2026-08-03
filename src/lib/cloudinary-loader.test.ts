@@ -56,7 +56,7 @@ describe("cloudinaryLoader", () => {
   });
 
   it("only rewrites the first upload segment", () => {
-    // Contrived public id that itself contains the segment text — must not drop
+    // Contrived public id that itself contains the segment text. Must not drop
     // the trailing path.
     const weird =
       "https://res.cloudinary.com/heirloom/image/upload/v1/a-image-upload-b.jpg";

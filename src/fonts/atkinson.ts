@@ -1,11 +1,11 @@
 import localFont from "next/font/local";
 
 /**
- * Atkinson Hyperlegible — a hyperlegible typeface from the Braille Institute,
+ * Atkinson Hyperlegible. A hyperlegible typeface from the Braille Institute,
  * designed so letterforms that normally blur together (I / l / 1, o / c / e)
  * stay distinct. It powers the "Easy-reading text" accessibility preference.
  *
- * Self-hosted (OFL-1.1 — see ./atkinson-hyperlegible/OFL.txt) via next/font so
+ * Self-hosted (OFL-1.1. See ./atkinson-hyperlegible/OFL.txt) via next/font so
  * the typeface actually ships with the app and works offline in the PWA, rather
  * than assuming the reader already has it installed. Exposed as the
  * `--font-atkinson` CSS variable, which the [data-reading="readable"] block in

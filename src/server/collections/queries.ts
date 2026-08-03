@@ -25,7 +25,7 @@ const recipeCardWith = {
   ratings: true,
 } as const;
 
-/** Group ids the viewer belongs to — for per-recipe visibility scoping. */
+/** Group ids the viewer belongs to, for per-recipe visibility scoping. */
 async function viewerGroupIds(viewer: User | null): Promise<string[]> {
   if (!viewer) return [];
   const rows = await db.query.groupMembers.findMany({
@@ -127,8 +127,8 @@ export async function getCollection(id: string, viewer: User | null) {
 /**
  * Fetch a collection by its id *or* share token, enforcing collection-level
  * visibility for the viewer:
- *  - the owner always sees it (any visibility);
- *  - `public` collections are visible to anyone;
+ *  - the owner always sees it (any visibility).
+ *  - `public` collections are visible to anyone.
  *  - `unlisted` collections are visible only when reached via their share token.
  *
  * Recipes inside are additionally filtered by each recipe's own visibility, so a
@@ -165,7 +165,7 @@ export async function getSharedCollection(
   if (!collection) return null;
 
   const groupIds = await viewerGroupIds(viewer);
-  // Groups this collection is shared with that the viewer also belongs to —
+  // Groups this collection is shared with that the viewer also belongs to.
   // read access is granted through any one of them (issue #365).
   const sharedToViewerGroups = (collection.sharedWithGroups ?? [])
     .map((link) => link.group)
@@ -243,13 +243,13 @@ export async function listMyFavorites(userId: string) {
 
 /**
  * "Back in the rotation" tuning + selection logic lives in a pure, testable lib
- * (#426); re-exported here so existing import sites keep working.
+ * (#426). Re-exported here so existing import sites keep working.
  */
 export { ROTATION_WINDOW_DAYS, ROTATION_MIN };
 
 /**
  * "Back in the rotation" (#426): the viewer's favorites they haven't cooked
- * recently — favorites minus recipes cooked within `windowDays`, ordered so the
+ * recently. Favorites minus recipes cooked within `windowDays`, ordered so the
  * longest-neglected surface first (never-cooked, then oldest-cooked). Returns
  * recipe cards ready for the rail. Empty when no database is configured.
  */
@@ -290,8 +290,8 @@ export async function listBackInRotation(
 }
 
 /**
- * The user's collections annotated with whether each already contains `recipeId`
- * — powers the "Save to collection" picker.
+ * The user's collections annotated with whether each already contains `recipeId`.
+ * Powers the "Save to collection" picker.
  */
 export async function getCollectionsForRecipe(
   userId: string,
@@ -329,7 +329,7 @@ function collectionCover(collection: {
 }
 
 /**
- * The groups the owner can share a collection with — every group they belong to,
+ * The groups the owner can share a collection with. Every group they belong to,
  * flagged with whether the collection is already shared there (issue #365).
  * Returns [] unless the caller owns the collection.
  */
@@ -434,7 +434,7 @@ export type SharedGroupCollection = Awaited<
 >[number];
 
 /**
- * Collections other people have shared with any group the viewer belongs to —
+ * Collections other people have shared with any group the viewer belongs to.
  * powers the "Shared with you" shelf in the Saved view (issue #365). Excludes
  * the viewer's own collections and dedupes a collection shared with several of
  * the viewer's groups.

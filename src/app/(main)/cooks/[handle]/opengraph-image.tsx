@@ -22,7 +22,7 @@ export default async function Image({
   const { handle } = await params;
 
   // Unknown handle (or DB off) => neutral brand card, never a data leak. Only
-  // public profile data is embedded; the query never returns private recipes.
+  // public profile data is embedded. The query never returns private recipes.
   let data: ProfileCardData | null = null;
   try {
     const profile = await getPublicProfileByHandle(handle);

@@ -3,8 +3,8 @@
 //
 // Chromium shows a richer, taller install dialog when the manifest advertises
 // screenshots (≥1 `wide` for desktop, ≥1 `narrow` for mobile). We render
-// lightweight, on-brand mockups from inline SVG with sharp — no external design
-// assets and no need to pull real runtime data — so the pitch is representative
+// lightweight, on-brand mockups from inline SVG with sharp, requiring no external
+// design assets or real runtime data, so the pitch is representative
 // without shipping heavy captures. Sizes/labels here must match app/manifest.ts.
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 
-// sharp may be pnpm-nested; try the normal resolve then the store path.
+// sharp may be pnpm-nested, try the normal resolve then the store path.
 let sharp;
 try {
   sharp = require("sharp");

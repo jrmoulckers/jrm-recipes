@@ -52,7 +52,7 @@ export function IngredientsDrawer({
   controls,
 }: IngredientsDrawerProps) {
   const t = useTranslations("ingredientsDrawer");
-  // Kids mode promises "big buttons" — honor behavior.largeTargets so the
+  // Kids mode promises "big buttons". Honor behavior.largeTargets so the
   // Ingredients trigger grows with the rest of Cook Mode's primary controls
   // (#439). Sizing is centralized here so callers only pass layout/visibility.
   const { largeTargets } = useThemeBehavior();

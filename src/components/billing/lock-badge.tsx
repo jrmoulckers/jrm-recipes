@@ -21,7 +21,7 @@ import {
  * left", no interstitials. A {@link LockBadge} merely *labels* a premium
  * surface, and {@link LockedFeatureCard} offers one calm, dismissible route to
  * the pricing page. Neither ever hides or removes content a user already
- * created — gating applies only to premium features that were never free.
+ * created. Gating applies only to premium features that were never free.
  *
  * Both are pure (no hooks, no client-only APIs) so they render on the server and
  * compose into either server or client trees.
@@ -49,7 +49,7 @@ export function LockBadge({
  */
 export function LockedFeatureCard({
   title = "A Family feature",
-  description = "Upgrade to Family to unlock this. Everything you've already saved stays free — nothing you made is ever taken away.",
+  description = "Upgrade to Family to unlock this. Everything you've already saved stays free. Nothing you made is ever taken away.",
   cta = "See plans",
   href = "/pricing",
   className,

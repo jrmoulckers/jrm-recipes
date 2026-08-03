@@ -12,7 +12,7 @@ import { buildListFromPlanAction } from "~/server/shopping/actions";
 import { Button } from "~/components/ui/button";
 
 /**
- * "Build shopping list" — gathers every recipe planned in the visible week and
+ * "Build shopping list" gathers every recipe planned in the visible week and
  * consolidates their ingredients onto the user's shopping list (#361). Re-runs
  * merge into the existing list rather than duplicating, and reports what was
  * added vs. merged so the shopper knows the list grew.
@@ -30,7 +30,7 @@ export function BuildShoppingListButton({ week }: { week: string }) {
         return;
       }
       if (result.empty) {
-        toast.info("No recipes planned this week yet — add some meals first.");
+        toast.info("No recipes planned this week yet. Add some meals first.");
         return;
       }
       const warning = formatPlanWarnings(result.warnings, locale);
@@ -52,7 +52,7 @@ export function BuildShoppingListButton({ week }: { week: string }) {
       if (result.merged > 0) {
         parts.push(`merged ${result.merged}`);
       }
-      toast.success(`Shopping list ready — ${parts.join(", ")}.`, {
+      toast.success(`Shopping list ready. ${parts.join(", ")}.`, {
         action: {
           label: "View list",
           onClick: () => router.push("/shopping"),

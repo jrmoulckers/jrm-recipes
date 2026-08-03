@@ -8,7 +8,7 @@ import { useConsent } from "~/components/analytics/consent-provider";
 /**
  * A lightweight, non-blocking first-run consent notice (issue #324). It only
  * appears in opt-in mode (`NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT=1`) while the
- * user hasn't chosen and no DNT/GPC signal is present; until they choose "Allow",
+ * user hasn't chosen and no DNT/GPC signal is present. Until they choose "Allow",
  * the runtime gate keeps every event from being sent.
  */
 export function ConsentNotice() {

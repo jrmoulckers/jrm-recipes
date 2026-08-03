@@ -12,7 +12,7 @@ export const revalidate = 0;
 
 /**
  * Commit the running build was produced from. Vercel and GitHub Actions expose
- * it under different names; falls back to `dev` for a local `next start`.
+ * it under different names. Falls back to `dev` for a local `next start`.
  */
 const BUILD_SHA =
   process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? "dev";
@@ -20,7 +20,7 @@ const BUILD_SHA =
 /** Human-readable release version, kept in lockstep by release-please (#265). */
 const VERSION = packageJson.version;
 
-/** Give up on the connectivity probe quickly — health must stay cheap. */
+/** Give up on the connectivity probe quickly. Health must stay cheap. */
 const DB_PROBE_TIMEOUT_MS = 2_000;
 
 async function probeDatabase(): Promise<"ok" | "degraded" | "not_configured"> {
@@ -49,12 +49,12 @@ async function probeDatabase(): Promise<"ok" | "degraded" | "not_configured"> {
  * fast, and leaks no internals: the DB result is a coarse enum
  * (`ok`/`degraded`/`not_configured`), never a driver error or connection
  * string. In zero-config mode it reports `db: "not_configured"` and still
- * returns 200 (the app is up; it just has no database), so a monitor only
+ * returns 200 (the app is up, it just has no database), so a monitor only
  * alarms on a real outage.
  *
  * Status codes:
- * - **200** — app is up and the DB is reachable (or intentionally absent).
- * - **503** — a database *is* configured but unreachable (degraded), so a
+ * - **200**. App is up and the DB is reachable (or intentionally absent).
+ * - **503**. A database *is* configured but unreachable (degraded), so a
  *   monitor can alert.
  */
 export async function GET() {

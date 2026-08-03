@@ -104,7 +104,7 @@ async function requireOwner(tx: Tx, groupId: string, actor: User) {
 
 /**
  * Enforce Family seats before adding a member (#325). Kids ride free (per
- * `SEAT_RULES`), so adding one is always allowed; otherwise we count the group's
+ * `SEAT_RULES`), so adding one is always allowed. Otherwise we count the group's
  * current seat-consuming members and reject with a `SEAT_LIMIT_REACHED`
  * {@link DomainError} once
  * they're at the seat limit. Fail-open by design: any error resolving the limit
@@ -454,7 +454,7 @@ export async function transferOwnership(
 /**
  * Invite someone to a group (issue #181). Only owner/admin may invite, and only
  * an owner may invite as an admin. Creates a `pending` invitation carrying an
- * opaque accept token and an expiry; if the invitee's email/handle already maps
+ * opaque accept token and an expiry. If the invitee's email/handle already maps
  * to an account it's pre-linked (and rejected if they're already a member). A
  * duplicate *pending* invite for the same contact is refused (also enforced at
  * the DB for email via the partial unique index).
@@ -557,7 +557,7 @@ export async function acceptInvitation(token: string, user: User) {
 
     if (invitation.status === "accepted") {
       // Already consumed. Idempotent only if this user is still the member it
-      // produced; otherwise the (single-use) token can't mint a new membership.
+      // produced. Otherwise the (single-use) token can't mint a new membership.
       if (existing) {
         return {
           groupId: invitation.groupId,
@@ -582,7 +582,7 @@ export async function acceptInvitation(token: string, user: User) {
     }
 
     // Seat enforcement (#325): invite-accept is a primary join path, so the cap
-    // must hold here too — not just in addMember. Runs after the duplicate guard
+    // must hold here too, not just in addMember, and runs after the duplicate guard
     // above so an existing member is still idempotent, and inside this tx so a
     // rejection leaves the invitation pending.
     await assertSeatAvailable(tx, invitation.groupId, invitation.role);
@@ -607,7 +607,7 @@ export async function acceptInvitation(token: string, user: User) {
 
 /**
  * Revoke a pending invitation (issue #181). Owner/admin only. Idempotent for an
- * already-revoked invite; refuses to revoke one that's been accepted/expired.
+ * already-revoked invite. Refuses to revoke one that's been accepted/expired.
  */
 export async function revokeInvitation(
   groupSlugOrId: string,
@@ -641,10 +641,10 @@ export async function revokeInvitation(
 
 /**
  * Create a shareable, multi-use invite link for a group (issue #343). Owner/
- * admin only. Unlike {@link createInvitation} the link carries no invitee — it's
+ * admin only. Unlike {@link createInvitation} the link carries no invitee. It's
  * a URL anyone can open to join at `role`. Role is capped to member/kid by the
  * validator so a forwarded link can never mint managers. Optional `expiresAt`
- * and `maxUses` bound its lifetime; both null = evergreen + unlimited.
+ * and `maxUses` bound its lifetime. Both null = evergreen + unlimited.
  */
 export async function createInviteLink(
   groupSlugOrId: string,
@@ -712,7 +712,7 @@ export async function acceptInviteLink(token: string, user: User) {
 
     const existing = await membershipFor(tx, link.groupId, user.id);
     if (existing) {
-      // Already in — idempotent, and crucially we don't spend a use.
+      // Already in. Idempotent, and crucially we don't spend a use.
       return {
         groupId: link.groupId,
         slug: group.slug,
@@ -725,7 +725,7 @@ export async function acceptInviteLink(token: string, user: User) {
     // (plus revocation/expiry) against the *current* row under its write lock,
     // so two users redeeming a maxUses=1 link concurrently serialize here: the
     // loser matches 0 rows (useCount has already reached maxUses) and is
-    // rejected. The read-time guards above only produce friendlier errors; this
+    // rejected. The read-time guards above only produce friendlier errors. This
     // atomic UPDATE is what actually enforces the cap, closing the
     // check-then-insert race. Seat the member only after the bump succeeds, in
     // the same tx so any later failure rolls the increment back.

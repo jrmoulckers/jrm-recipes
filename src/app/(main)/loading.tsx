@@ -6,8 +6,8 @@ import { Skeleton } from "~/components/ui/skeleton";
  * Group-level fallback for the `(main)` segment. In the App Router a
  * `loading.tsx` here wraps every descendant route's `{children}` in Suspense, so
  * this is the placeholder for the home page *and* any nested route without its
- * own closer `loading.tsx`. It is deliberately layout-neutral — a header band
- * plus a few content blocks inside the shared `container` — so it reads
+ * own closer `loading.tsx`. It is deliberately layout-neutral, with a header band
+ * plus a few content blocks inside the shared `container`, so it reads
  * acceptably for any page while route-specific skeletons (recipes, discover,
  * editor, settings, …) override it with a closer-matching shape.
  */

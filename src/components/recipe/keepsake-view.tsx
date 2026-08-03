@@ -16,7 +16,7 @@ import { KeepsakePrintButton } from "~/components/recipe/keepsake-print-button";
 /**
  * A recipe presented as a warm keepsake (issue #407): a personal note "from"
  * someone, shown prominently above the recipe, so handing a recipe down feels
- * like a gift rather than a copied link. Presentational only — the calling
+ * like a gift rather than a copied link. Presentational only. The calling
  * route resolves the recipe through the normal visibility-checked loader, so
  * this never sees a recipe the viewer isn't allowed to read.
  */

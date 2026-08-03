@@ -16,7 +16,7 @@ import { Button } from "~/components/ui/button";
  *
  * Signed in: a "Join" CTA that calls {@link acceptInviteLinkAction} and routes
  * into the group. If the visitor arrived with `?auto=1` (set on the post-auth
- * redirect) it fires that join automatically — so opening a link while signed
+ * redirect) it fires that join automatically. So opening a link while signed
  * out flows through sign-up/in and then lands straight in the group. Signed
  * out: Clerk sign-up / sign-in buttons whose redirect returns here with the
  * auto-join flag.

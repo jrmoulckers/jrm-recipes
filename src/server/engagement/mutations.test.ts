@@ -78,7 +78,7 @@ function fakeTx(overrides: {
     update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
     // journal() (recipes/mutations) allocates the version number in a SAVEPOINT
-    // (tx.transaction) after reading max+1 via select(); model both here so the
+    // (tx.transaction) after reading max+1 via select(). Model both here so the
     // #63 snapshot path can run against the fake tx.
     select: vi.fn(() => ({
       from: vi.fn(() => ({ where: vi.fn(async () => [{ next: 1 }]) })),
@@ -244,13 +244,13 @@ describe("createComment emits social notifications (#340/#348)", () => {
         recipeId: "recipe_1",
         recipeSlug: "sunday-sauce",
         kind: "comment",
-        body: "Hey @gran and @me — thoughts? (@me is myself)",
+        body: "Hey @gran and @me. Thoughts? (@me is myself)",
       },
       user,
     );
 
     const notes = notifiedTypes(tx);
-    // @gran resolves and is notified; @me is the actor -> notify() no-ops.
+    // @gran resolves and is notified. @me is the actor -> notify() no-ops.
     expect(notes).toHaveLength(1);
     expect(notes[0]).toMatchObject({
       recipientId: "u_gran",
@@ -401,7 +401,7 @@ const applyArgs = { recipeId: "recipe_1", suggestionId: "sugg_1" };
 
 /**
  * The recipe's full current state (ingredients/steps/tags + meta) as the #63
- * snapshot query loads it — structurally an AdaptationSource, so `recipeToInput`
+ * snapshot query loads it. Structurally an AdaptationSource, so `recipeToInput`
  * can clone it into the version snapshot.
  */
 const fullRecipeRow = {
@@ -482,10 +482,10 @@ describe("applySuggestion folds a suggestion into the recipe (owner-only)", () =
       }
     ).chain;
 
-    // (b) the change is applied INTO the recipe — merged into notes, credited.
+    // (b) the change is applied INTO the recipe. Merged into notes, credited.
     const recipeUpdate = payloadWith(chain.set.mock.calls, "notes");
     expect(recipeUpdate?.notes).toBe(
-      "Simmer low.\n\nAdd a bay leaf — suggested by Cousin Rae",
+      "Simmer low.\n\nAdd a bay leaf. Suggested by Cousin Rae",
     );
 
     // (d) the suggestion is marked applied (and resolved) so it isn't reoffered.
@@ -521,10 +521,10 @@ describe("applySuggestion folds a suggestion into the recipe (owner-only)", () =
       label: "Suggestion applied",
     });
 
-    // The snapshot carries the merged note — the whole point: reverting to the
+    // The snapshot carries the merged note. The whole point: reverting to the
     // latest version now restores (not drops) the applied suggestion.
     expect((version!.snapshot as { notes?: string }).notes).toBe(
-      "Simmer low.\n\nAdd a bay leaf — suggested by Cousin Rae",
+      "Simmer low.\n\nAdd a bay leaf. Suggested by Cousin Rae",
     );
   });
 
@@ -645,7 +645,7 @@ describe("rating mutations keep the denormalized aggregates in step (issue #154)
     const chain = (tx as { chain: { set: ReturnType<typeof vi.fn> } }).chain;
     const agg = payloadWith(chain.set.mock.calls, "ratingCount");
     expect(agg).toBeDefined();
-    // No new voter: count delta is 0; sum moves by (5 - 2) = 3.
+    // No new voter: count delta is 0. Sum moves by (5 - 2) = 3.
     expect(paramsOf(agg!.ratingCount)).toContain(0);
     expect(paramsOf(agg!.ratingSum)).toContain(3);
   });

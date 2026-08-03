@@ -110,7 +110,7 @@ export function CookLogSection({
             <p className="text-sm text-muted-foreground">
               {cookCount > 0
                 ? `You've ${cookedTimesLabel(cookCount).toLowerCase()}. History, kept alive.`
-                : "Log each time you make this — build your own history."}
+                : "Log each time you make this. Build your own history."}
             </p>
           </div>
         </div>
@@ -164,7 +164,7 @@ function EmptyCookLog() {
       </span>
       <p className="font-medium">No cooks logged yet</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        The first time you make this, log it — notes, tweaks, and a photo become
+        The first time you make this, log it. Notes, tweaks, and a photo become
         part of the recipe&apos;s story.
       </p>
     </div>
@@ -207,7 +207,7 @@ function LogAgainNudge({
       });
       if (result.ok) {
         toast.success(
-          `Logged again — ${cookedTimesLabel(cookCount + 1).toLowerCase()}`,
+          `Logged again. ${cookedTimesLabel(cookCount + 1).toLowerCase()}`,
         );
         router.refresh();
         return;
@@ -413,7 +413,7 @@ function LogCookButton({
             <DialogTitle>Log a cook</DialogTitle>
             <DialogDescription>
               Add {recipeTitle} to your cooking journal. Jot down how it went
-              and add a photo if you have one — it all becomes part of the
+              and add a photo if you have one. It all becomes part of the
               story.
             </DialogDescription>
           </DialogHeader>

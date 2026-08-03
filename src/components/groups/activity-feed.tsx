@@ -140,7 +140,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
 
 /**
  * Where an {@link ActivityFeed} pages from. A `group` feed loads more from a
- * single group (membership re-checked server-side); a `personal` feed loads the
+ * single group (membership re-checked server-side). A `personal` feed loads the
  * viewer's cross-group home feed (their own memberships re-resolved each call).
  */
 export type ActivityFeedSource =
@@ -213,7 +213,7 @@ export function ActivityFeed({
         <CookingPot className="mx-auto mb-2 size-6" aria-hidden="true" />
         <p className="font-medium text-foreground">No activity yet</p>
         <p className="mt-1 text-sm">
-          Add a recipe, cook something, or leave a review — it&apos;ll show up
+          Add a recipe, cook something, or leave a review. It&apos;ll show up
           here for the family.
         </p>
       </div>

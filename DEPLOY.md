@@ -6,23 +6,23 @@ This is the **one-time setup** to take Heirloom live. After this, every merge to
 You'll provision three services (all have generous free tiers), paste their keys
 into Vercel, and connect the repo. Budget ~20 minutes.
 
-- [Neon](https://neon.tech) — serverless Postgres database
-- [Clerk](https://clerk.com) — authentication
-- [Cloudinary](https://cloudinary.com) — image/video storage & delivery
-- [Vercel](https://vercel.com) — hosting + CI/CD
+- [Neon](https://neon.tech): serverless Postgres database
+- [Clerk](https://clerk.com): authentication
+- [Cloudinary](https://cloudinary.com): image/video storage & delivery
+- [Vercel](https://vercel.com): hosting + CI/CD
 
 > **Clerk is required for any deployed environment (preview or production).** The
-> app fails closed: a deploy that would fall back to dev-bypass auth — no Clerk
-> keys, or `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` — refuses to build/boot (production) or
+> app fails closed: a deploy that would fall back to dev-bypass auth, no Clerk
+> keys, or `NEXT_PUBLIC_DEV_AUTH_BYPASS=1`, refuses to build/boot (production) or
 > to serve requests (preview), so set the Clerk keys before you deploy. Dev-bypass
 > (a single shared local user) is strictly a **local/test** affordance. Neon
-> (Postgres) backs your real data. Cloudinary stays optional — without it, photo
+> (Postgres) backs your real data. Cloudinary stays optional. Without it, photo
 > fields fall back to pasting an image URL, so add it whenever you want native
 > drag-and-drop / camera uploads, with no code changes.
 
 ---
 
-## 1. Database — Neon
+## 1. Database: Neon
 
 1. Create a Neon account and a new **Project** (pick a region near your users).
 2. In the project dashboard, open **Connection Details**.
@@ -31,7 +31,7 @@ into Vercel, and connect the repo. Budget ~20 minutes.
    ```
    postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/DB?sslmode=require
    ```
-4. Save it — this is your **`DATABASE_URL`**.
+4. Save it. This is your **`DATABASE_URL`**.
 
 > Heirloom's Postgres client uses `prepare: false` and a small pool, which is
 > exactly what Neon's pooled endpoint wants. Migrations run automatically on
@@ -39,7 +39,7 @@ into Vercel, and connect the repo. Budget ~20 minutes.
 
 ---
 
-## 2. Authentication — Clerk
+## 2. Authentication: Clerk
 
 1. Create a Clerk account and a new **Application**. Enable whichever sign-in
    methods you want (email, Google, etc.).
@@ -48,33 +48,33 @@ into Vercel, and connect the repo. Budget ~20 minutes.
    - **Secret key** → `CLERK_SECRET_KEY`
 3. (Optional) If you host at a custom domain, add it to Clerk's allowed origins.
 
-Heirloom uses Clerk's **modal** sign-in and sign-up (a popup — there is no
+Heirloom uses Clerk's **modal** sign-in and sign-up (a popup. There is no
 dedicated `/sign-in` page), so you can leave `NEXT_PUBLIC_CLERK_SIGN_IN_URL` /
 `..._SIGN_UP_URL` unset. The two keys above are all you need.
 
 ---
 
-## 3. File storage — Cloudinary
+## 3. File storage: Cloudinary
 
 1. Create a [Cloudinary](https://cloudinary.com) account. Your **Cloud name** is
    shown on the dashboard.
 2. Open **Settings → API Keys** and copy the **API Key** and **API Secret**.
 3. You'll set three env vars in step 4:
-   - **`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`** — your cloud name
-   - **`NEXT_PUBLIC_CLOUDINARY_API_KEY`** — the API key (public, client-safe)
-   - **`CLOUDINARY_API_SECRET`** — the API secret (server-only; used to sign
+   - **`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`**: your cloud name
+   - **`NEXT_PUBLIC_CLOUDINARY_API_KEY`**: the API key (public, client-safe)
+   - **`CLOUDINARY_API_SECRET`**: the API secret (server-only, used to sign
      uploads so the browser never sees it)
 
 > Optional for launch. When these are unset, every photo field (recipe cover +
 > each step) shows a plain "paste an image URL" input. Set all three and the same
-> fields upgrade to drag-and-drop, camera, and direct-URL uploads — no code
+> fields upgrade to drag-and-drop, camera, and direct-URL uploads. No code
 > changes, no redeploy of the app needed beyond adding the vars.
 
 ---
 
-## 3b. Billing — Stripe (optional)
+## 3b. Billing: Stripe (optional)
 
-Heirloom is fully usable on the **Free** tier with no billing configured — the
+Heirloom is fully usable on the **Free** tier with no billing configured. The
 pricing page renders read-only and upgrade buttons are disabled. Add Stripe to
 sell the Family/Premium plan.
 
@@ -87,26 +87,26 @@ sell the Family/Premium plan.
    `checkout.session.completed`, `customer.subscription.*`,
    `invoice.payment_failed`) and copy its **Signing secret** (`whsec_…`).
 4. Set the env vars in step 4:
-   - **`STRIPE_SECRET_KEY`** — server-only secret key
-   - **`STRIPE_WEBHOOK_SECRET`** — the webhook signing secret
-   - **`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`** — the publishable key (client-safe)
+   - **`STRIPE_SECRET_KEY`**: server-only secret key
+   - **`STRIPE_WEBHOOK_SECRET`**: the webhook signing secret
+   - **`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`**: the publishable key (client-safe)
 
 > Optional. When unset, the whole billing layer degrades to a no-op: nobody can
 > be charged, and every feature that isn't limit-gated stays available.
 
 ---
 
-## 4. Deploy — Vercel
+## 4. Deploy: Vercel
 
 1. Push this repo to GitHub (if it isn't already).
 2. In Vercel, **Add New… → Project** and **import** the repo. Vercel auto-detects
-   Next.js; leave the framework preset as **Next.js**.
+   Next.js. Leave the framework preset as **Next.js**.
    - Do **not** override the Build Command. The repo ships a `vercel-build`
-     script that runs database migrations and then `next build` — Vercel uses it
+     script that runs database migrations and then `next build`. Vercel uses it
      automatically.
 3. Under **Environment Variables**, add the values you collected (see the table
    below). Add them to **Production**. For **Preview**, do **not** reuse the
-   production `DATABASE_URL` — see [Isolating preview
+   production `DATABASE_URL`. See [Isolating preview
    databases](#isolating-preview-databases) below.
 4. Click **Deploy**.
 
@@ -115,21 +115,21 @@ against Neon and build the app.
 
 ### Environment variables
 
-| Variable                             | Required?       | Value                                                                                                                                                                                                              |
-| ------------------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`                       | **Yes**         | Neon **pooled** connection string (step 1)                                                                                                                                                                         |
-| `NEXT_PUBLIC_APP_URL`                | **Yes**         | Your public site URL, e.g. `https://heirloom.yourdomain.com`                                                                                                                                                       |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`  | For auth        | Clerk publishable key                                                                                                                                                                                              |
-| `CLERK_SECRET_KEY`                   | For auth        | Clerk secret key                                                                                                                                                                                                   |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`  | For uploads     | Cloudinary cloud name                                                                                                                                                                                              |
-| `NEXT_PUBLIC_CLOUDINARY_API_KEY`     | For uploads     | Cloudinary API key (public)                                                                                                                                                                                        |
-| `CLOUDINARY_API_SECRET`              | For uploads     | Cloudinary API secret (server-only)                                                                                                                                                                                |
-| `STRIPE_SECRET_KEY`                  | For billing     | Stripe secret key (server-only)                                                                                                                                                                                    |
-| `STRIPE_WEBHOOK_SECRET`              | For billing     | Stripe webhook signing secret for `/api/stripe/webhook`                                                                                                                                                            |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | For billing     | Stripe publishable key (public, client-safe)                                                                                                                                                                       |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`      | Optional        | Defaults to `/sign-in`                                                                                                                                                                                             |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`      | Optional        | Defaults to `/sign-up`                                                                                                                                                                                             |
-| `NEXT_PUBLIC_DEV_AUTH_BYPASS`        | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy — preview or production — with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request) — leave it unset. |
+| Variable                             | Required?       | Value                                                                                                                                                                                                           |
+| ------------------------------------ | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                       | **Yes**         | Neon **pooled** connection string (step 1)                                                                                                                                                                      |
+| `NEXT_PUBLIC_APP_URL`                | **Yes**         | Your public site URL, e.g. `https://heirloom.yourdomain.com`                                                                                                                                                    |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`  | For auth        | Clerk publishable key                                                                                                                                                                                           |
+| `CLERK_SECRET_KEY`                   | For auth        | Clerk secret key                                                                                                                                                                                                |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`  | For uploads     | Cloudinary cloud name                                                                                                                                                                                           |
+| `NEXT_PUBLIC_CLOUDINARY_API_KEY`     | For uploads     | Cloudinary API key (public)                                                                                                                                                                                     |
+| `CLOUDINARY_API_SECRET`              | For uploads     | Cloudinary API secret (server-only)                                                                                                                                                                             |
+| `STRIPE_SECRET_KEY`                  | For billing     | Stripe secret key (server-only)                                                                                                                                                                                 |
+| `STRIPE_WEBHOOK_SECRET`              | For billing     | Stripe webhook signing secret for `/api/stripe/webhook`                                                                                                                                                         |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | For billing     | Stripe publishable key (public, client-safe)                                                                                                                                                                    |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`      | Optional        | Defaults to `/sign-in`                                                                                                                                                                                          |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL`      | Optional        | Defaults to `/sign-up`                                                                                                                                                                                          |
+| `NEXT_PUBLIC_DEV_AUTH_BYPASS`        | Never (deploys) | Local/test-only. Forces dev-bypass auth. **Any deploy, preview or production, with this set to `1` (or with Clerk keys missing) fails closed** (production at build/boot, preview per request), leave it unset. |
 
 > Set `NEXT_PUBLIC_APP_URL` to your real domain so share links and PWA metadata
 > are correct.
@@ -140,8 +140,8 @@ against Neon and build the app.
 > build. When `VERCEL_ENV=production`, it fails the deploy fast with an
 > actionable message unless all of these are present and well-formed:
 >
-> - `DATABASE_URL` — a `postgres://` / `postgresql://` URL
-> - `NEXT_PUBLIC_APP_URL` — an absolute `http(s)` URL
+> - `DATABASE_URL`: a `postgres://` / `postgresql://` URL
+> - `NEXT_PUBLIC_APP_URL`: an absolute `http(s)` URL
 > - `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 > - `NEXT_PUBLIC_DEV_AUTH_BYPASS` **must not** be `1`
 >
@@ -153,11 +153,11 @@ against Neon and build the app.
 Vercel runs `vercel-build` for **preview** deployments too, and a preview shares
 the project's environment variables. If you add the production `DATABASE_URL` to
 the Preview environment, a PR's build would run schema **migrations against the
-production database** — at best noisy, at worst destructive. Never do this.
+production database**. At best noisy, at worst destructive. Never do this.
 
 Instead, give previews their own throwaway database:
 
-- **Recommended — Neon branching.** Install the [Neon–Vercel
+- **Recommended. Neon branching.** Install the [Neon–Vercel
   integration](https://neon.tech/docs/guides/vercel) and enable "Create a
   database branch for each preview". Neon injects a per-PR branch `DATABASE_URL`
   into the Preview environment automatically and deletes the branch when the PR
@@ -168,7 +168,7 @@ Instead, give previews their own throwaway database:
 
 As a defense-in-depth guardrail, `scripts/migrate.mjs` **refuses to migrate from
 a preview deploy** (`VERCEL_ENV=preview`) unless you explicitly opt in with
-`ALLOW_PREVIEW_MIGRATIONS=1` — so even a misconfigured Preview `DATABASE_URL`
+`ALLOW_PREVIEW_MIGRATIONS=1`, so even a misconfigured Preview `DATABASE_URL`
 cannot mutate production schema by accident. Set that flag only once you've
 confirmed the Preview `DATABASE_URL` points at an isolated per-branch database.
 
@@ -196,21 +196,21 @@ Nice-to-haves you can do any time after you're live. None are required.
 ### Point a custom domain at the site
 
 1. Vercel → your project → **Settings → Domains** → add your domain
-   (a subdomain like `heirloom.yourdomain.com` is simplest; the apex
+   (a subdomain like `heirloom.yourdomain.com` is simplest. The apex
    `yourdomain.com` also works).
 2. Vercel shows the **exact** DNS records to create. Because this domain's DNS is
-   at your registrar (not Vercel), add them there — always use the values Vercel
+   at your registrar (not Vercel), add them there. Always use the values Vercel
    displays, but they're typically:
    - **Subdomain** → a **CNAME** to `cname.vercel-dns.com`.
    - **Apex/root** → an **A** record to the IP Vercel lists (e.g. `76.76.21.21`).
-3. Wait for Vercel to verify (minutes; DNS propagation can take longer).
+3. Wait for Vercel to verify. DNS propagation can take longer).
 4. Update **`NEXT_PUBLIC_APP_URL`** to the new URL and redeploy so share links,
    Open Graph tags, and PWA metadata are correct.
 5. If Clerk is enabled, also add the domain under Clerk → **Domains**.
 
 ### Promote Clerk from development to production
 
-Clerk's `pk_test_…` / `sk_test_…` keys are a **development** instance — fine for
+Clerk's `pk_test_…` / `sk_test_…` keys are a **development** instance, fine for
 family testing, but they show a dev banner and have lower limits.
 
 1. In Clerk, create a **Production** instance for the app (Clerk walks you
@@ -232,7 +232,7 @@ pnpm db:seed
 ```
 
 It creates a demo cook, a "family" group, and three sample recipes (all
-idempotent — safe to run twice; delete them from the UI any time).
+idempotent and safe to run twice. Delete them from the UI any time).
 
 ### Run a staging environment (optional)
 
@@ -243,8 +243,8 @@ environment:
 1. In Vercel → **Settings → Git**, keep Production tracking `main` and add a
    long-lived **`staging`** branch as a deployment branch (or use a dedicated
    Vercel "Preview" branch). Pushes to `staging` build a stable staging URL.
-2. Give staging its **own** `DATABASE_URL` — a Neon branch of production is
-   ideal — and its own Clerk keys, exactly like production (never point staging
+2. Give staging its **own** `DATABASE_URL`. A Neon branch of production is
+   ideal, and its own Clerk keys, exactly like production (never point staging
    at the production database).
 3. `staging` runs the **same CI gate** as `main` (the CI workflow triggers on
    pushes to both), so nothing lands on staging without passing lint, tests, and
@@ -281,10 +281,10 @@ Heirloom exposes a lightweight, unauthenticated health probe at **`GET
 /api/health`** so an outage is caught by tooling, not by family members. It
 returns JSON and an HTTP status:
 
-- **200** — `{"status":"ok","version":…,"sha":…,"db":"ok"|"not_configured", …}`.
+- **200**: `{"status":"ok","version":…,"sha":…,"db":"ok"|"not_configured", …}`.
   `db: "not_configured"` is still healthy (zero-config mode: the app is up, it
   just has no database).
-- **503** — a database _is_ configured but unreachable (`db: "degraded"`), so a
+- **503**: a database _is_ configured but unreachable (`db: "degraded"`), so a
   monitor can alert.
 
 The probe runs a cheap `SELECT 1` with a short timeout, is never cached
@@ -309,7 +309,7 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 - **Merge to `main` → Vercel deploys automatically.** The `vercel-build` script
   applies any new migrations first, then builds.
 - **CI** (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, a build,
-  and a Playwright **e2e** smoke test on every PR and push to `main` — no secrets
+  and a Playwright **e2e** smoke test on every PR and push to `main`. No secrets
   needed (it builds with `SKIP_ENV_VALIDATION` + dev-bypass auth).
 - **Dependabot** (`.github/dependabot.yml`) opens weekly dependency + Actions
   update PRs, each gated by CI.
@@ -322,17 +322,17 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 > **Gate the site on green CI (optional but recommended).** Vercel deploys `main`
 > independently of GitHub Actions, so a build that passes Vercel but fails CI can
 > still ship. To require checks first, add a branch-protection rule on `main`
-> (Settings → Branches) requiring the **CI** status checks — then nothing reaches
+> (Settings → Branches) requiring the **CI** status checks. Then nothing reaches
 > the site until lint, tests, and the build pass.
 
 ## Troubleshooting
 
-- **Build fails in migrations** — double-check `DATABASE_URL` is the Neon
+- **Build fails in migrations**: double-check `DATABASE_URL` is the Neon
   **pooled** string and includes `?sslmode=require`.
-- **Auth errors** — confirm both Clerk keys are set and that your domain is
+- **Auth errors**: confirm both Clerk keys are set and that your domain is
   allowed in the Clerk dashboard.
-- **Uploads fail** — confirm all three Cloudinary vars
+- **Uploads fail**: confirm all three Cloudinary vars
   (`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_API_KEY`,
   `CLOUDINARY_API_SECRET`) are set for the environment you're testing.
-- **Wrong share URLs / PWA name** — set `NEXT_PUBLIC_APP_URL` to your real domain
+- **Wrong share URLs / PWA name**: set `NEXT_PUBLIC_APP_URL` to your real domain
   and redeploy.

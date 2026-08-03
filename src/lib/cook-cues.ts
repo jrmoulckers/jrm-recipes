@@ -1,7 +1,7 @@
 import { type UnitSystem } from "~/lib/cook-state";
 
 /**
- * Precision-cooking cues derived from a recipe's steps — pure and framework-free
+ * Precision-cooking cues derived from a recipe's steps. Pure and framework-free
  * so both Cook Mode and tests can share the exact same logic.
  *
  * Two concerns live here:
@@ -25,7 +25,7 @@ export function celsiusToFahrenheit(celsius: number): number {
 
 /**
  * Format a target temperature for display, honouring the cook's unit system.
- * US cooks see °F; everyone else sees °C. Non-finite input yields null so the
+ * US cooks see °F. Everyone else sees °C. Non-finite input yields null so the
  * caller can hide the badge cleanly.
  */
 export function formatStepTemperature(
@@ -56,7 +56,7 @@ export type PreheatCue = {
 
 /**
  * Find the earliest preheat step that a cook would benefit from starting ahead
- * of time — i.e. one that isn't already the very first step. Returns null when
+ * of time. I.e. One that isn't already the very first step. Returns null when
  * there's nothing to pull forward (no preheat step, or it's already step 1).
  *
  * Step positions arrive 0-based (mutations.ts writes `position: i` and it flows

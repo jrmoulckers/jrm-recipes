@@ -45,7 +45,7 @@ function isMacPlatform(): boolean {
 /**
  * Global search + ⌘K command palette (issue #74). Renders the header search
  * affordances (a desktop input-styled button and a mobile search icon) plus the
- * palette overlay itself. ⌘K / Ctrl-K toggles it from anywhere; Escape and the
+ * palette overlay itself. ⌘K / Ctrl-K toggles it from anywhere. Escape and the
  * backdrop close it (Radix Dialog owns the focus trap + modal semantics). The
  * option list is a keyboard-navigable combobox/listbox: it lists primary
  * destinations and live recipe matches, and Enter on the "Search all recipes"
@@ -140,7 +140,7 @@ export function CommandMenu() {
     [navItems, query],
   );
 
-  // Flat, ordered command list — the source of truth for arrow-key navigation.
+  // Flat, ordered command list. The source of truth for arrow-key navigation.
   // Render order (Navigate, then Recipes) mirrors these indexes exactly.
   const commands = React.useMemo<Command[]>(() => {
     const out: Command[] = [];

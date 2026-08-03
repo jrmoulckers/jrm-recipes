@@ -13,7 +13,7 @@ useDefault = true
 
 [allowlist]
 description = "Non-secret fixtures used only by the test suite"
-# Test files never hold real credentials in this repo — secrets live in the
+# Test files never hold real credentials in this repo, since secrets live in the
 # environment (see src/env.js). Scanning them only yields false positives from
 # obviously-fake fixtures, so scope them out to keep the scan non-flaky.
 paths = [

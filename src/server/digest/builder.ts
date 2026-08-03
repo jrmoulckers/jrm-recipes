@@ -3,10 +3,10 @@
  *
  * Pure + deterministic: it takes a user's groups and the candidate recipes from
  * those groups and folds them into a per-group summary of the last N days. All
- * the retention-loop logic lives here — windowing (new vs. updated), tenant
+ * the retention-loop logic lives here. It owns windowing (new vs. updated), tenant
  * scoping (only the user's own groups, never private recipes), and the
- * skip-when-empty rule — so it unit-tests without a database or an email
- * provider. The DB read lives in `./queries`; rendering lives in `./email`.
+ * skip-when-empty rule, so it unit-tests without a database or an email
+ * provider. The DB read lives in `./queries`. Rendering lives in `./email`.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -57,9 +57,9 @@ export interface WeeklyDigest {
  *
  * Scoping (no cross-tenant leakage): only recipes whose `groupId` is one of the
  * recipient's `groups` and whose visibility is group-visible (`group`/`public`)
- * are ever considered — a private recipe, or one in a group the recipient isn't
+ * are ever considered. A private recipe, or one in a group the recipient isn't
  * in, can never surface. Windowing: a recipe created within the window counts as
- * *new*; one only updated within the window counts as *updated* (never both).
+ * *new*. One only updated within the window counts as *updated* (never both).
  */
 export function buildWeeklyDigest(input: {
   groups: DigestGroup[];
@@ -77,7 +77,7 @@ export function buildWeeklyDigest(input: {
   const summaries = new Map<string, DigestGroupSummary>();
 
   for (const recipe of input.recipes) {
-    // Tenant + visibility scoping — the core no-leakage guard.
+    // Tenant + visibility scoping. The core no-leakage guard.
     if (recipe.groupId == null || !groupIds.has(recipe.groupId)) continue;
     if (recipe.visibility !== "group" && recipe.visibility !== "public") {
       continue;

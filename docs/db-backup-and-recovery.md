@@ -12,9 +12,9 @@ Recipes use `deletedAt`/`deletedBy` tombstones instead of immediate hard deletio
 
 Use soft-delete recovery first when:
 
-- a user accidentally deleted a recipe;
-- recipe versions, events, ratings, or comments still exist;
-- the issue affects one or a small number of rows;
+- a user accidentally deleted a recipe.
+- recipe versions, events, ratings, or comments still exist.
+- the issue affects one or a small number of rows.
 - no schema or broad data corruption occurred.
 
 Use backup/PITR only when soft-delete restore is insufficient, data was hard-deleted, many rows were corrupted, or a migration/application bug changed data broadly.
@@ -57,9 +57,9 @@ These are recommended targets to confirm with product and operations owners.
 
 Point-in-time recovery restores a database to a chosen timestamp by combining a base backup with Write-Ahead Log records. It is useful when the desired recovery point is after the last daily snapshot but before a bad event, such as:
 
-- a destructive migration;
-- an accidental bulk update/delete;
-- a compromised credential modifying data;
+- a destructive migration.
+- an accidental bulk update/delete.
+- a compromised credential modifying data.
 - application logic writing corrupt values.
 
 PITR should usually restore to a **new database instance or branch first**, not overwrite production in place.
@@ -71,9 +71,9 @@ PITR should usually restore to a **new database instance or branch first**, not 
 1. Name an incident lead.
 2. Record the symptom, first-known-bad time, suspected cause, and affected users/data.
 3. Stop the source of corruption:
-   - disable the bad scheduled job;
-   - roll back or pause the faulty deploy;
-   - revoke exposed credentials if applicable;
+   - disable the bad scheduled job.
+   - roll back or pause the faulty deploy.
+   - revoke exposed credentials if applicable.
    - pause destructive admin scripts.
 4. Decide whether soft-delete restore is enough. If yes, use that path and avoid full database restore.
 
@@ -91,7 +91,7 @@ PITR should usually restore to a **new database instance or branch first**, not 
 3. Create a temporary `DATABASE_URL` for the restored instance.
 4. Restrict access to the incident team.
 
-Provider specifics are deployment-dependent; use the host's documented restore flow for Neon, Supabase, RDS, or the selected managed Postgres service.
+Provider specifics are deployment-dependent. Use the host's documented restore flow for Neon, Supabase, RDS, or the selected managed Postgres service.
 
 ### 4. Verify the restored database
 
@@ -99,7 +99,7 @@ Run checks against the restored instance before promotion:
 
 1. Confirm the app can connect with the restored `DATABASE_URL`.
 2. Check Drizzle migration state:
-   - inspect the Drizzle migrations table used by `drizzle-orm` migrator;
+   - inspect the Drizzle migrations table used by `drizzle-orm` migrator.
    - compare applied migrations with committed `drizzle/*.sql`.
 3. Run schema sanity checks for critical tables:
    - `users`
@@ -112,9 +112,9 @@ Run checks against the restored instance before promotion:
    - billing tables if Stripe state is affected
 4. Run row-count comparisons against the current production database when safe.
 5. Spot-check representative records:
-   - affected recipe(s);
-   - recipe visibility and group membership;
-   - soft-delete tombstones;
+   - affected recipe(s).
+   - recipe visibility and group membership.
+   - soft-delete tombstones.
    - billing subscription/customer rows if the incident touched billing.
 6. Verify no unexpected secrets, local test data, or preview data are present.
 
@@ -143,7 +143,7 @@ If the restore point predates migrations that are still present on `main`:
 1. Review `docs/migrations.md` before applying anything.
 2. Confirm the restored schema state and committed `drizzle/*.sql` are compatible.
 3. Run the normal migration path against the restored database.
-4. Prefer forward-fix migrations for partial or bad migrations; do not edit already-committed migration files.
+4. Prefer forward-fix migrations for partial or bad migrations. Do not edit already-committed migration files.
 5. If a pending migration is destructive, take another provider snapshot first.
 
 ### 7. Smoke test
@@ -173,9 +173,9 @@ Before merging any migration that drops, renames, narrows, or rewrites data:
 2. Confirm the PR's destructive-change checklist is complete.
 3. Take a managed-Postgres snapshot immediately before applying the destructive step.
 4. Record:
-   - snapshot identifier;
-   - migration file(s);
-   - deploy SHA;
+   - snapshot identifier.
+   - migration file(s).
+   - deploy SHA.
    - expected rollback/repair plan.
 5. Keep the snapshot until the migration has been healthy through one normal business cycle.
 

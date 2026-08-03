@@ -3,7 +3,7 @@
 import * as React from "react";
 
 /**
- * "Read this to me" — step-by-step recipe narration (issue #387).
+ * "Read this to me". Step-by-step recipe narration (issue #387).
  *
  * A device-side reader (browser SpeechSynthesis) distinct from an author's own
  * recorded audio (#382): it reads any recipe's steps aloud, one at a time, so a
@@ -14,7 +14,7 @@ import * as React from "react";
  * Robustness notes:
  *  - A monotonic token invalidates a superseded utterance's `onend`, so
  *    stopping / jumping never triggers a stale auto-advance.
- *  - Pause/resume use the native API when available; if a browser drops resume
+ *  - Pause/resume use the native API when available. If a browser drops resume
  *    (a known Chrome quirk on long utterances) the user can still Stop + replay.
  *  - Everything is a no-op when the API is missing (`supported: false`) so the
  *    control can hide itself instead of erroring on unsupported browsers.
@@ -78,7 +78,7 @@ export function useReadAloud(steps: string[]): ReadAloudController {
     setIndex(start);
     setStatus("playing");
 
-    // A blank step shouldn't stall the queue — skip straight to the next.
+    // A blank step shouldn't stall the queue. Skip straight to the next.
     if (!text) {
       if (start + 1 < list.length) speakFrom(start + 1);
       else {

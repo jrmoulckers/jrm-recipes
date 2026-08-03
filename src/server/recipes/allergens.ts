@@ -16,7 +16,7 @@ import { type Allergen } from "~/lib/allergens";
  * allergen data to the food graph). For each ingredient line it reads the
  * canonical allergen tokens off the resolved `food_items` node (via
  * `recipe_ingredients.foodId`), falling back to the free-text detector only for
- * lines that don't resolve to a food carrying curated allergen data — then
+ * lines that don't resolve to a food carrying curated allergen data. Then
  * unions per recipe.
  *
  * Best-effort and resilient: when the DB is off (or there are no ids) it returns
@@ -66,7 +66,7 @@ export async function getRecipeAllergens(
  * Per-ingredient structured allergens for one recipe, keyed by
  * `recipe_ingredients.id`. Powers the ingredient-level flags on the recipe
  * detail panel: each line resolves via `foodId → food_items.allergens`, falling
- * back to text detection when the line carries no curated food. Best-effort —
+ * back to text detection when the line carries no curated food. Best-effort.
  * returns an empty map when the DB is off.
  */
 export async function getRecipeIngredientAllergens(

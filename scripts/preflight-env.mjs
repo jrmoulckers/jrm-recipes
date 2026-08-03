@@ -13,8 +13,8 @@
  * the production-only requirements up front instead.
  *
  * Scope: only acts when `VERCEL_ENV=production`. Local, CI, and preview
- * (zero-config) runs are untouched and always pass. It complements — never
- * duplicates — the fail-closed auth guard in `src/env.js`; that guard rejects
+ * (zero-config) runs are untouched and always pass. It complements, never
+ * duplicates, the fail-closed auth guard in `src/env.js`. That guard rejects
  * dev-bypass in production, this checks config *completeness*.
  */
 
@@ -22,7 +22,7 @@ const isProduction = process.env.VERCEL_ENV === "production";
 
 if (!isProduction) {
   console.log(
-    "[preflight] Non-production environment — skipping production env checks.",
+    "[preflight] Non-production environment, skipping production env checks.",
   );
   process.exit(0);
 }
@@ -89,14 +89,14 @@ requirePresent(
 
 if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === "1") {
   problems.push(
-    'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production — dev-bypass ' +
+    'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production: dev-bypass ' +
       "auth is a local/test-only affordance.",
   );
 }
 
 if (problems.length > 0) {
   console.error(
-    "\n❌ Production deploy preflight failed — fix the following before deploying:\n" +
+    "\n❌ Production deploy preflight failed: fix the following before deploying:\n" +
       problems.map((p) => `   • ${p}`).join("\n") +
       "\n\nSee DEPLOY.md → “Environment variables” for the required-for-production list.\n",
   );

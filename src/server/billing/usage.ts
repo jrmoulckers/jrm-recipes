@@ -22,7 +22,7 @@ import {
  * Two flavours of metric:
  *   - Count metrics (`recipes`, `storage_mb`) accumulate for the life of the
  *     account, so they share a fixed sentinel period. `recipes` is authoritative
- *     from the `recipes` table (see {@link recomputeRecipeCount}); `storage_mb`
+ *     from the `recipes` table (see {@link recomputeRecipeCount}). `storage_mb`
  *     is summed at upload via {@link incrementUsage}.
  *   - Metered metrics (`ai_credits`) reset monthly: their period is the first of
  *     the current UTC month, so a new month reads zero automatically.
@@ -41,7 +41,7 @@ function ownerOf(user: User): { ownerId: string; ownerType: "user" } {
 
 /**
  * The period a metric is bucketed into. Monthly metrics roll to a new bucket on
- * the 1st (UTC) so reads reset without any cron; count metrics share a single
+ * the 1st (UTC) so reads reset without any cron. Count metrics share a single
  * lifetime bucket.
  */
 export function currentPeriodStart(
@@ -69,7 +69,7 @@ export async function recomputeRecipeCount(user: User): Promise<number> {
 
 /**
  * Current usage for `metric` in the active period. `recipes` reads live from the
- * recipes table; other metrics read their counter row (0 when absent). Returns 0
+ * recipes table. Other metrics read their counter row (0 when absent). Returns 0
  * when the DB is unconfigured so callers can treat "no DB" as "no usage".
  */
 export async function getUsage(

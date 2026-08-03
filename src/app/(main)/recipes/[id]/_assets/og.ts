@@ -44,7 +44,7 @@ export function loadFonts(): OgFont[] {
   return fonts;
 }
 
-/** Ask Cloudinary for a right-sized, optimized cover; no-op for other hosts. */
+/** Ask Cloudinary for a right-sized, optimized cover. No-op for other hosts. */
 function optimizeCoverUrl(url: string): string {
   if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
     return url;

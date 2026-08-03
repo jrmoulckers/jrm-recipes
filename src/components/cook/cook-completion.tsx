@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
  *
  * The photo is captured with a plain file input (`capture="environment"` opens
  * the camera on mobile, with a gallery fallback) and previewed locally via an
- * object URL — no upload required, so it works offline and never blocks. If the
+ * object URL. No upload required, so it works offline and never blocks. If the
  * camera is denied or unavailable the input simply yields nothing and the moment
  * still works. `celebratory` (Kids mode) turns up the styling and copy.
  *

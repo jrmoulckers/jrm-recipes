@@ -15,7 +15,7 @@ import { RedeemForm } from "~/components/billing/redeem-form";
 export const metadata: Metadata = {
   title: "Redeem a gift",
   description:
-    "Have a Heirloom gift code? Redeem it here to unlock Family — unlimited recipes, AI help, and space for the whole family.",
+    "Have a Heirloom gift code? Redeem it here to unlock Family. Unlimited recipes, AI help, and space for the whole family.",
 };
 
 /**
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
  *
  * The recipient's landing spot: enter a code to unlock Family. Redemption is
  * DB-only (no Stripe), so this page works wherever the database is reachable,
- * and every dependency degrades gracefully — a signed-out visitor or an
+ * and every dependency degrades gracefully. A signed-out visitor or an
  * unconfigured DB each render a calm, explanatory state rather than an error.
- * A `?gift=purchased` return from the gift Checkout shows a warm buyer thank-you;
+ * A `?gift=purchased` return from the gift Checkout shows a warm buyer thank-you.
  * a `?code=` param pre-fills the field for share links.
  */
 export default async function RedeemPage({
@@ -60,7 +60,7 @@ export default async function RedeemPage({
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-center text-sm text-success"
         >
-          Thank you for gifting Heirloom! Your code is on its way — share it
+          Thank you for gifting Heirloom! Your code is on its way. Share it
           with someone you love, or redeem it below.
         </p>
       ) : null}
@@ -101,7 +101,7 @@ function SignInNudge() {
             Sign in to redeem your gift
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Your gift unlocks Family for your account — sign in from the header,
+            Your gift unlocks Family for your account. Sign in from the header,
             then come back to redeem your code.
           </p>
         </div>

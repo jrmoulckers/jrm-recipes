@@ -147,7 +147,7 @@ describe("rankUnitStats", () => {
   });
 });
 
-describe("mineFoodGraph — personalization + reverse index", () => {
+describe("mineFoodGraph. Personalization + reverse index", () => {
   // u1 authored r1 + r3, u2 authored r2 (see recipe ids in CORPUS).
   const AUTHORED: MinedIngredient[] = [
     {
@@ -189,7 +189,7 @@ describe("mineFoodGraph — personalization + reverse index", () => {
     const u1Onion = mined.userPrefs.find(
       (p) => p.userId === "u1" && p.foodId === onion,
     );
-    // u1 used onion 3 times (each, each, cup) → preferredUnit "each"; prep only
+    // u1 used onion 3 times (each, each, cup) → preferredUnit "each". Prep only
     // recorded once ("sliced").
     expect(u1Onion?.useCount).toBe(3);
     expect(u1Onion?.preferredUnit).toBe("each");

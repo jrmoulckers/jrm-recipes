@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * Verifies the write-time food-graph link (foodId) is populated on every
  * ingredient row for both the create and update paths, using the shared
  * `recordingTx` harness style from mutations-logic.test.ts (no database). The
- * resolver itself is mocked here — its behavior is covered by
- * `src/lib/food-resolve.test.ts` and `src/server/db/resolve-food.test.ts`; this
+ * resolver itself is mocked here. Its behavior is covered by
+ * `src/lib/food-resolve.test.ts` and `src/server/db/resolve-food.test.ts`. This
  * asserts only the wiring in `insertChildren`.
  */
 

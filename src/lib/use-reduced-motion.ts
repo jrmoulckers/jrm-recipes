@@ -30,8 +30,8 @@ function computeReduced(osReduced: boolean): boolean {
  * The single source of truth for JavaScript-driven motion (issue #110).
  *
  * Unlike a bare `matchMedia("(prefers-reduced-motion: reduce)")` check, this
- * also honors the app's own reduced-motion controls — the a11y "Reduced motion"
- * toggle (`data-motion="reduced"`) and Simple mode (`data-theme="barebones"`) —
+ * also honors the app's own reduced-motion controls. The a11y "Reduced motion"
+ * toggle (`data-motion="reduced"`) and Simple mode (`data-theme="barebones"`).
  * so canvas previews, swipe drags, haptics, count-rolls and celebrations all
  * stay in lockstep with the CSS that globals.css / a11y.css already gate.
  *
@@ -49,7 +49,7 @@ export function useReducedMotion(): boolean {
     sync();
 
     mql.addEventListener("change", sync);
-    // The in-app toggle and Simple mode flip <html> data-attributes; observe
+    // The in-app toggle and Simple mode flip <html> data-attributes. Observe
     // them so the hook updates the instant a user changes a setting.
     const observer = new MutationObserver(sync);
     observer.observe(document.documentElement, {

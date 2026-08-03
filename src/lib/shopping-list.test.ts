@@ -89,7 +89,7 @@ describe("categorize", () => {
   });
 });
 
-describe("categorize — specificity & word boundaries (sp04)", () => {
+describe("categorize. Specificity & word boundaries (sp04)", () => {
   it.each([
     // Broad, earlier rules used to win over more specific, later ones.
     ["coconut milk", "Pantry"], // was Dairy & Eggs via "milk"
@@ -107,7 +107,7 @@ describe("categorize — specificity & word boundaries (sp04)", () => {
     // "broth"/"stock" (Beverages) keep winning over "chicken" (Meat).
     expect(categorize("chicken broth")).toBe("Beverages");
     expect(categorize("chicken stock")).toBe("Beverages");
-    // Black pepper is a seasoning; only the more specific "bell pepper" is produce.
+    // Black pepper is a seasoning. Only the more specific "bell pepper" is produce.
     expect(categorize("black pepper")).toBe("Spices & Seasonings");
   });
 
@@ -289,7 +289,7 @@ describe("toShoppingItems", () => {
       quantityMax: 4,
       recipeId: "r1",
     });
-    // No quantity to scale — passes through untouched.
+    // No quantity to scale. Passes through untouched.
     expect(items[1]).toMatchObject({ item: "Salt", quantity: null });
   });
 });
@@ -408,7 +408,7 @@ describe("describeQuantity", () => {
   });
 });
 
-// Type export smoke test — keeps the public input type wired up.
+// Type export smoke test, keeping the public input type wired up.
 describe("aggregated allergens (#432)", () => {
   it("tags a consolidated line with allergens detected in its name", () => {
     const result = aggregateShoppingList([
@@ -511,7 +511,7 @@ describe("isPantryStaple", () => {
   });
 });
 
-describe("isPantryStaple — compound ingredients keep their head noun (#412)", () => {
+describe("isPantryStaple. Compound ingredients keep their head noun (#412)", () => {
   // Regression: staple EXCLUSION used to use whole-word containment, so a staple
   // word ("pepper", "butter", "water", "oil") appearing inside a distinct
   // ingredient silently dropped a real must-buy from the default shopping list.
@@ -612,7 +612,7 @@ describe("formatShoppingListText", () => {
     const text = formatShoppingListText([
       item({ item: "Bread", category: "Bakery", note: "the seeded one" }),
     ]);
-    expect(text).toContain("- [ ] Bread — the seeded one");
+    expect(text).toContain("- [ ] Bread, the seeded one");
   });
 
   it("returns an empty string when there is nothing to send", () => {

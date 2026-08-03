@@ -12,11 +12,11 @@ import {
 } from "../recipes/[id]/_assets/card";
 
 /**
- * Shared, satori-safe Open Graph cards for public *social* surfaces — creator
+ * Shared, satori-safe Open Graph cards for public *social* surfaces. Creator
  * profiles (issue #337) and group cookbooks (issue #339). Reuses the recipe
  * card's brand palette, `Wordmark`, and neutral `BrandCard` fallback plus the
  * font/cover helpers in `_assets/og.ts`, so there's a single satori setup. Only
- * public-safe fields are ever passed in; unknown handles/slugs render the
+ * public-safe fields are ever passed in. Unknown handles/slugs render the
  * neutral brand card via `data === null`.
  */
 

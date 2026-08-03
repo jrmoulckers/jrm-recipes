@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { reviews } from "./reviews";
 
 /**
- * Issue #174 — first-class recipe reviews. The table is the source of truth, so
+ * Issue #174. First-class recipe reviews. The table is the source of truth, so
  * we assert its shape (columns, one-per-user uniqueness, FK cover indexes and
  * the star-range CHECK) against the compiled Drizzle config rather than the
  * generated SQL.
@@ -59,7 +59,7 @@ describe("reviews table (issue #174)", () => {
   });
 
   it("cascades when the parent recipe or user is deleted", () => {
-    // The recipe + author FKs cascade; the moderation hidden_by FK nulls out so
+    // The recipe + author FKs cascade. The moderation hidden_by FK nulls out so
     // hiding history survives the moderator being removed (issue #357).
     const cascadeFks = foreignKeys.filter((fk) => fk.onDelete === "cascade");
     const setNullFks = foreignKeys.filter((fk) => fk.onDelete === "set null");

@@ -1,4 +1,4 @@
-# Vercel deploys from main; this workflow is the lightweight quality gate before
+# Vercel deploys from main, and this workflow is the lightweight quality gate before
 # code lands. The single sequential `quality` job was split into independent,
 # parallel jobs (#244) so a lint failure no longer blocks typecheck/unit/build
 # feedback, and the production build is produced ONCE (the `build` job) and
@@ -33,8 +33,8 @@ jobs:
     permissions:
       contents: read
       # gitleaks-action lists the PR's commits via the API to scope its scan to
-      # the diff; without this it 403s ("Resource not accessible by
-      # integration"). Read-only — it never needs to write comments here.
+      # the diff. Without this it 403s ("Resource not accessible by
+      # integration"). Read-only, so it never needs to write comments here.
       pull-requests: read
     steps:
       - name: Checkout
@@ -58,7 +58,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Fail on known high/critical advisories in the (transitive) dependency
-      # tree. Dependabot opens update PRs; this makes a vulnerable dep block CI.
+      # tree. Dependabot opens update PRs, and this makes a vulnerable dep block CI.
       - name: Dependency audit
         run: pnpm run audit:ci
 
@@ -89,7 +89,7 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-  # Prettier formatting gate — previously not run in CI (#244).
+  # Prettier formatting gate, previously not run in CI (#244).
   format:
     name: Format
     runs-on: ubuntu-latest
@@ -190,9 +190,9 @@ jobs:
           fi
 
   # Validate that the full migration chain applies cleanly to a virgin database
-  # (#245). Drift (#242) proves the migrations match the schema; this proves they
+  # (#245). Drift (#242) proves the migrations match the schema, and this proves they
   # actually run. Uses a throwaway Postgres service (hard-coded local credentials
-  # — NOT a repo secret, mirroring the e2e/lighthouse jobs) and runs the migrator
+  # NOT a repo secret, mirroring the e2e/lighthouse jobs) and runs the migrator
   # twice to confirm it is idempotent (the second run must be a clean no-op).
   migrations:
     name: Migrations
@@ -264,7 +264,7 @@ jobs:
 
       # Cache Next.js's compiler cache so builds reuse work across runs (#243).
       # Keyed on the lockfile + source so it invalidates when deps or code
-      # change; restore-keys allow a partial (still-useful) hit.
+      # change, and restore-keys allow a partial (still-useful) hit.
       - name: Cache Next.js build
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
@@ -283,10 +283,10 @@ jobs:
         run: node scripts/check-bundle-budget.mjs bundle-build.log
 
       # Publish the production build so E2E can start it directly instead of
-      # rebuilding (#244). Exclude the local build cache — E2E only needs the
+      # rebuilding (#244). Exclude the local build cache because E2E only needs the
       # compiled output to `next start`. The Serwist service worker is emitted
       # to `public/sw.js` at build time (gitignored), so it must ride along in
-      # the artifact — otherwise `pnpm start` in the E2E job serves no `/sw.js`
+      # the artifact because otherwise `pnpm start` in the E2E job serves no `/sw.js`
       # and the offline specs hang waiting for the worker to activate.
       - name: Upload build output
         uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
@@ -308,12 +308,12 @@ jobs:
 
   # End-to-end tests, including offline PWA coverage (issue #171). Playwright
   # starts the app in production mode (see playwright.config.ts) so the Serwist
-  # service worker is ACTIVE during the run — `next dev` disables it, so offline
+  # service worker is ACTIVE during the run, since `next dev` disables it, so offline
   # behavior can only be verified against a production build. It reuses the
   # `build` job's artifact and runs `pnpm start` (no second compile, #244). A
-  # throwaway Postgres (a local service container with hard-coded credentials —
+  # throwaway Postgres (a local service container with hard-coded credentials,
   # NOT a repo secret, mirroring the lighthouse job) is migrated + seeded so the
-  # offline spec can open a real recipe and enter Cook Mode; the smoke spec is
+  # offline spec can open a real recipe and enter Cook Mode. The smoke spec is
   # database-agnostic.
   e2e:
     name: E2E
@@ -362,7 +362,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Reuse the production build from the `build` job instead of compiling
-      # again — playwright.config.ts runs `pnpm start` (not build) under CI.
+      # again, since playwright.config.ts runs `pnpm start` (not build) under CI.
       # The artifact is rooted at the repo (it carries both `.next` and the
       # generated `public/sw.js`), so extract it at the repo root to restore
       # each file to its original path.
@@ -396,11 +396,11 @@ jobs:
 
   # Runtime performance gate (issue #205). Unlike the other jobs, this one needs
   # real content on the recipe detail route, so it seeds an ephemeral, throwaway
-  # Postgres whose credentials are hard-coded here (a local service container —
+  # Postgres whose credentials are hard-coded here (a local service container,
   # NOT a repo secret), keeping the "no secrets" property of the rest of CI. It
   # builds, migrates + seeds, starts the app in dev-bypass mode, and runs
   # Lighthouse against the key routes with the Core Web Vitals budgets in
-  # lighthouserc.cjs. Assertions fail the job on regression; reports upload as
+  # lighthouserc.cjs. Assertions fail the job on regression. Reports upload as
   # artifacts for inspection.
   lighthouse:
     name: Lighthouse

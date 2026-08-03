@@ -3,10 +3,10 @@ import { expect, test, type Page } from "@playwright/test";
 /**
  * Cook Mode step-through journey (issue #240). Cook Mode is a client component,
  * so once the recipe document is served its Previous/Next navigation and
- * keyboard shortcuts work without further network I/O — which is exactly what we
+ * keyboard shortcuts work without further network I/O, which is exactly what we
  * assert here.
  *
- * The e2e CI job seeds Postgres so this public recipe exists; without a seeded
+ * The e2e CI job seeds Postgres so this public recipe exists. Without a seeded
  * database the immersive route 404s (no step heading), so the spec skips rather
  * than fail. Mirrors tests/e2e/offline.spec.ts.
  */
@@ -18,7 +18,7 @@ const STEP_TITLE = "#current-step-title";
 async function openCookMode(page: Page): Promise<boolean> {
   await page.goto(COOK_PATH);
   // A seeded recipe lists ingredients, so Cook Mode opens on the mise en place
-  // pre-cook screen (#402); step through it to reach step 1.
+  // pre-cook screen (#402), step through it to reach step 1.
   const startCooking = page.getByRole("button", { name: /start cooking/i });
   if (await startCooking.count()) {
     await startCooking.first().click();
@@ -41,7 +41,7 @@ test("steps forward and back through Cook Mode", async ({ page }) => {
   const previous = page.getByRole("button", { name: /^previous$/i });
   await expect(previous).toBeDisabled();
 
-  // Advance one step; the visible step heading must change.
+  // Advance one step, and the visible step heading must change.
   await page
     .getByRole("button", { name: /^next$/i })
     .first()

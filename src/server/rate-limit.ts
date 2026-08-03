@@ -4,7 +4,7 @@ import "server-only";
  * Shared rate-limiting utility (issue #199).
  *
  * The app had no throttling anywhere, so every Server Action and route handler
- * could be hit as fast as an attacker liked — enabling outbound SSRF
+ * could be hit as fast as an attacker liked, enabling outbound SSRF
  * amplification via URL import, Cloudinary quota/cost abuse via upload signing,
  * write/storage spam via recipe and engagement mutations, and token/slug
  * enumeration. This module provides a small, dependency-free fixed-window
@@ -24,7 +24,7 @@ export interface RateLimitRule {
   windowMs: number;
 }
 
-/** Outcome of a rate-limit check. Never throws; callers branch on `ok`. */
+/** Outcome of a rate-limit check. Never throws. Callers branch on `ok`. */
 export interface RateLimitResult {
   ok: boolean;
   limit: number;
@@ -32,7 +32,7 @@ export interface RateLimitResult {
   remaining: number;
   /** Epoch ms at which the current window resets. */
   resetAt: number;
-  /** Seconds until the window resets — suitable for a `Retry-After` header. */
+  /** Seconds until the window resets. Suitable for a `Retry-After` header. */
   retryAfterSeconds: number;
 }
 
@@ -52,7 +52,7 @@ interface WindowState {
 
 /**
  * Process-local fixed-window store. Adequate for a single instance and for
- * blunting bursts even across a small fleet; documented as best-effort so a
+ * blunting bursts even across a small fleet. Documented as best-effort so a
  * horizontally-scaled deploy can swap in a shared store via {@link setRateLimitStore}.
  */
 export class MemoryRateLimitStore implements RateLimitStore {
@@ -131,7 +131,7 @@ export const RATE_LIMITS = {
   recipeWrite: { limit: 40, windowMs: 60_000 },
   engagementWrite: { limit: 60, windowMs: 60_000 },
   // Full-cookbook backup export (issue #420): builds the whole archive in
-  // memory, so keep it modest — a handful of downloads a minute is plenty.
+  // memory, so keep it modest. A handful of downloads a minute is plenty.
   backup: { limit: 5, windowMs: 60_000 },
 } as const;
 
@@ -159,7 +159,7 @@ function scaledRule(rule: RateLimitRule): RateLimitRule {
 
 /**
  * Record one request against a named budget for `identifier` (a user id, or an
- * IP for anonymous callers). Returns the resulting {@link RateLimitResult};
+ * IP for anonymous callers). Returns the resulting {@link RateLimitResult}.
  * `ok: false` means the caller is over budget and should be refused. When rate
  * limiting is disabled via env, always resolves to `ok`.
  */

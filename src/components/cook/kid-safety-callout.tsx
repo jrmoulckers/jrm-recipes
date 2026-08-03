@@ -20,7 +20,7 @@ const HAZARD_STYLES: Record<KidHazard, string> = {
  * "Ask a grown-up" safety callout shown on the cook-mode step card (#423).
  *
  * Detects heat/sharp hazards from the step's instruction + technique tags and
- * renders a friendly, high-contrast banner — but only in Kids mode (gated on
+ * renders a friendly, high-contrast banner, but only in Kids mode (gated on
  * `behavior.kidSafe`). Heat and sharp are visually and verbally distinct (emoji
  * + wording + color token), each carries an accessible label, and plain steps
  * render nothing so there are no false alarms.

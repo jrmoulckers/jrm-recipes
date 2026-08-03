@@ -21,7 +21,7 @@ export default async function NotificationsPage() {
           Notifications
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Choose what Heirloom emails you. We keep it to a minimum — your
+          Choose what Heirloom emails you. We keep it to a minimum. Your
           recipes and family details are never shared.
         </p>
       </header>

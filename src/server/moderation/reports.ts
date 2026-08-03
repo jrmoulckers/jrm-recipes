@@ -15,7 +15,7 @@ import { resolveTarget } from "./targets";
  * File a report against a comment / review / cook-log post (issue #356).
  *
  * - The reporter must be able to view the underlying recipe (same gate as
- *   commenting), and — if it's a group recipe — the kid role can't report
+ *   commenting), and, if it's a group recipe, the kid role can't report
  *   (`moderate_content` is an adult-facing safety tool, #345).
  * - De-duped by the `(targetType, targetId, reporterId)` unique constraint, so a
  *   repeat report by the same person is a no-op rather than an inflated count.
@@ -35,7 +35,7 @@ export async function reportContent(
     if (!(await canViewRecipe(target.recipe, user))) {
       throw new DomainError("FORBIDDEN");
     }
-    // You can't report your own content — that's a delete, not a report.
+    // You can't report your own content. That's a delete, not a report.
     if (target.authorId === user.id) throw new DomainError("FORBIDDEN");
 
     const groupId = target.recipe.groupId;

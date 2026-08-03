@@ -182,7 +182,7 @@ export function CookExperience({
 
   const finishAndLeave = React.useCallback(() => {
     clearSession();
-    toast.success("Nicely done — recipe complete!", {
+    toast.success("Nicely done. Recipe complete!", {
       description: `Log this cook to add ${recipe.title} to your journal.`,
       action: {
         label: "Log this cook",
@@ -217,7 +217,7 @@ export function CookExperience({
       if (sessionStorage.getItem(readyStorageKey) === "1")
         setPrecookReady(true);
     } catch {
-      /* storage unavailable — the gate simply shows once this session */
+      /* storage unavailable. The gate simply shows once this session */
     }
   }, [readyStorageKey]);
   const confirmPrecookReady = React.useCallback(() => {
@@ -225,7 +225,7 @@ export function CookExperience({
     try {
       sessionStorage.setItem(readyStorageKey, "1");
     } catch {
-      /* storage unavailable — proceeding still works for this session */
+      /* storage unavailable. Proceeding still works for this session */
     }
   }, [readyStorageKey]);
 
@@ -239,7 +239,7 @@ export function CookExperience({
     try {
       if (sessionStorage.getItem(miseStorageKey) === "1") setMiseReady(true);
     } catch {
-      /* storage unavailable — the screen simply shows once this session */
+      /* storage unavailable. The screen simply shows once this session */
     }
   }, [miseStorageKey]);
   const confirmMiseReady = React.useCallback(() => {
@@ -247,7 +247,7 @@ export function CookExperience({
     try {
       sessionStorage.setItem(miseStorageKey, "1");
     } catch {
-      /* storage unavailable — proceeding still works for this session */
+      /* storage unavailable. Proceeding still works for this session */
     }
   }, [miseStorageKey]);
 
@@ -257,14 +257,14 @@ export function CookExperience({
   const [finished, setFinished] = React.useState(false);
   const [earnedBadges, setEarnedBadges] = React.useState<KidBadge[]>([]);
   const openCompletion = React.useCallback(() => {
-    // Kids collect an on-device badge each finish (#413); grown-up cooks don't.
+    // Kids collect an on-device badge each finish (#413). Grown-up cooks don't.
     if (kidSafe) {
       try {
         setEarnedBadges(
           awardForCompletion(recipe.title, recipe.slug).newlyEarned,
         );
       } catch {
-        /* storage unavailable — celebrate without badges */
+        /* storage unavailable. Celebrate without badges */
       }
     }
     setFinished(true);
@@ -272,8 +272,8 @@ export function CookExperience({
 
   // Completion celebration (#121): finishing plays a short success beat (progress
   // flourish + a checkmark burst layered above the completion screen) as the
-  // "You did it!" screen (#437) opens. Under reduced motion — OS,
-  // data-motion="reduced", or Simple mode — skip the beat and open the screen
+  // "You did it!" screen (#437) opens. When reduced motion from the OS,
+  // data-motion="reduced", or Simple mode is active, skip the beat and open the screen
   // straight away so nothing is delayed.
   const handleFinish = React.useCallback(() => {
     if (!reducedMotion) {
@@ -320,7 +320,7 @@ export function CookExperience({
   // to the new step's heading and announce the new position politely. Without
   // this a screen-reader user hears nothing change and a keyboard user's focus
   // is stranded on a control that just scrolled out of view. The heading text
-  // carries the instruction; the live region reinforces the position. Skips the
+  // carries the instruction. The live region reinforces the position. Skips the
   // first mount (and any resumed-session restore) so focus isn't yanked on load.
   React.useEffect(() => {
     if (totalSteps === 0) return;
@@ -451,7 +451,7 @@ export function CookExperience({
           <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
             <Bell className="size-4 shrink-0 text-primary" />
             <p>
-              <span className="font-semibold">Preheat now</span> — step{" "}
+              <span className="font-semibold">Preheat now</span>. Step{" "}
               {preheatCue.stepNumber} needs the oven
               {preheatTemp ? ` at ${preheatTemp}` : ""}.
             </p>
@@ -649,7 +649,7 @@ export function CookExperience({
           </Button>
 
           {/* Phone-only Ingredients trigger. On sm+ the Ingredients control
-              sits inline in the middle column (below); under sm that column is
+              sits inline in the middle column (below). Under sm that column is
               dropped so Prev/Next stay full-width, so surface Ingredients here
               spanning the row in the thumb zone (issue #297). */}
           <IngredientsDrawer
@@ -912,11 +912,11 @@ function ReadAloudControls({
 
 /**
  * Kid-facing "Read it to me" button (#411). Reads the current step aloud via the
- * Web Speech API and flips to "Stop reading" while speaking; a second tap stops.
+ * Web Speech API and flips to "Stop reading" while speaking. A second tap stops.
  * Oversized in Kids mode (`prominent`) and unobtrusive otherwise. Hidden entirely
  * when speech synthesis is unavailable so nothing breaks offline. The parent step
  * `<section>` remounts per step (keyed on step id), which cancels narration on
- * navigation; the `stepKey` effect makes that explicit and future-proof.
+ * navigation. The `stepKey` effect makes that explicit and future-proof.
  */
 function StepNarrationButton({
   instruction,
@@ -1003,7 +1003,7 @@ function StepMedia({
 /**
  * Kids-mode countdown ring (#442): a large SVG circle that depletes as the timer
  * runs and shifts colour as it nears zero, with the digital readout kept in the
- * centre. Reuses the existing timer state (duration/remaining/status) — no new
+ * centre. Reuses the existing timer state (duration/remaining/status). No new
  * timing logic. Ring animation is gated behind `motion-safe`, so reduced-motion /
  * Simple mode shows a static proportion instead of a sweeping animation.
  */
@@ -1024,7 +1024,7 @@ function TimerRing({ timer }: { timer: TimerRecord }) {
     : almostDone
       ? "text-warning"
       : "text-primary";
-  // Full ring when complete (celebratory); otherwise deplete with time left.
+  // Full ring when complete (celebratory). Otherwise deplete with time left.
   const offset = isComplete ? 0 : circumference * (1 - fraction);
 
   return (
@@ -1190,8 +1190,8 @@ function StepTimerCard({
 
 /**
  * Screen-reader-only live region for the step timer. The visible countdown is
- * NOT announced continuously (it uses role="timer" + aria-live="off"); this only
- * speaks at meaningful transitions — start, pause, and completion.
+ * NOT announced continuously (it uses role="timer" + aria-live="off"). This only
+ * speaks at meaningful transitions: start, pause, and completion.
  */
 function TimerAnnouncer({ timer }: { timer: TimerRecord }) {
   const [message, setMessage] = React.useState("");
@@ -1265,7 +1265,7 @@ function StepIngredients({
               )}
               <span>{ing.item}</span>
               {ing.prep && (
-                <span className="text-muted-foreground">— {ing.prep}</span>
+                <span className="text-muted-foreground">, {ing.prep}</span>
               )}
             </li>
           );
@@ -1278,7 +1278,7 @@ function StepIngredients({
 /**
  * "Gather your tools" pass (#410): the equipment a recipe needs, with a local
  * check-off so a cook can lay everything out before starting. The checklist is
- * ephemeral (per mount) — it's a staging aid, not persisted state.
+ * ephemeral (per mount). It's a staging aid, not persisted state.
  */
 function EquipmentPanel({ equipment }: { equipment: string[] }) {
   const [checked, setChecked] = React.useState<Set<string>>(new Set());
@@ -1347,7 +1347,7 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
     try {
       setNote(window.localStorage.getItem(storageKey) ?? "");
     } catch {
-      // Private mode / storage disabled — notes just won't persist.
+      // Private mode / storage disabled. Notes just won't persist.
     }
     setLoaded(true);
   }, [storageKey]);
@@ -1358,7 +1358,7 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
       if (note.trim()) window.localStorage.setItem(storageKey, note);
       else window.localStorage.removeItem(storageKey);
     } catch {
-      // Ignore write failures; the field still works in-session.
+      // Ignore write failures. The field still works in-session.
     }
   }, [note, loaded, storageKey]);
 
@@ -1375,7 +1375,7 @@ function CookNotepad({ recipeId }: { recipeId: string }) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={4}
-        placeholder="Needed 5 more minutes; used honey instead of sugar…"
+        placeholder="Needed 5 more minutes. Used honey instead of sugar…"
         aria-label="Private per-cook notes"
         className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm"
       />
@@ -1533,8 +1533,8 @@ function ActiveTimersPanel({
 
 /**
  * Multiple labeled + ad-hoc timers (#392). Cooks can run several countdowns at
- * once — an extra timer for the current step, or a free-standing one they name
- * themselves — each pausable, resettable, and dismissable. Timer state lives in
+ * once: an extra timer for the current step, or a free-standing one they name
+ * themselves, each pausable, resettable, and dismissable. Timer state lives in
  * the cook session (localStorage), so timers keep running across step
  * navigation and a reload. Controls upsize with the large-target flag.
  */

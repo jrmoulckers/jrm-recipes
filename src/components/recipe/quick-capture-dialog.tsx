@@ -28,7 +28,7 @@ type SavedDraft = { id: string; slug: string | null };
  * Quick-capture flow (#389): title + optional photo + one freeform box, saved
  * as a `draft` recipe so a busy parent can jot a recipe in under a minute and
  * finish it later. Reuses the existing `createRecipeAction` / `recipeInput`
- * contract (which rejects an empty title); the freeform text is preserved in
+ * contract (which rejects an empty title). The freeform text is preserved in
  * the recipe's notes so nothing is lost before the full editor is opened.
  */
 export function QuickCaptureDialog() {
@@ -103,7 +103,7 @@ export function QuickCaptureDialog() {
               <DialogTitle>Saved as a draft</DialogTitle>
               <DialogDescription>
                 Captured. Open the full editor to add ingredients, steps and
-                photos — or come back to it later from your cookbook.
+                photos, or come back to it later from your cookbook.
               </DialogDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -123,7 +123,7 @@ export function QuickCaptureDialog() {
               <DialogTitle>Quick add a recipe</DialogTitle>
               <DialogDescription>
                 Just a title to start. Dump the ingredients and steps as plain
-                text — you can tidy it up later.
+                text. You can tidy it up later.
               </DialogDescription>
             </div>
 
@@ -157,7 +157,7 @@ export function QuickCaptureDialog() {
                 value={freeform}
                 onChange={(event) => setFreeform(event.target.value)}
                 placeholder={
-                  "Paste or type anything — e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."
+                  "Paste or type anything, e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."
                 }
                 rows={6}
                 maxLength={4000}

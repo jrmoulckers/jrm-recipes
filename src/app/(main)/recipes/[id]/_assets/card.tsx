@@ -6,7 +6,7 @@ import * as React from "react";
  *
  * Kept out of the route file so it can be reused by the OG route and by any
  * future social surfaces. Everything here is satori-safe (flexbox only, no
- * grid/filter/text-wrap) and fully self-contained — fonts are bundled and the
+ * grid/filter/text-wrap) and fully self-contained. Fonts are bundled and the
  * cover photo is embedded as bytes by the caller, so rendering never depends
  * on a live network fetch.
  */
@@ -25,7 +25,7 @@ export type CardDifficulty = "easy" | "medium" | "hard";
 export type CardData = {
   title: string;
   description?: string | null;
-  /** Data URI (embedded bytes) — never a remote URL, so satori can't fail. */
+  /** Data URI (embedded bytes). Never a remote URL, so satori can't fail. */
   cover?: string | null;
   author?: string | null;
   group?: string | null;

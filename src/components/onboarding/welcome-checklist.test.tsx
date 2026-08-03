@@ -38,7 +38,7 @@ describe("WelcomeChecklist (issue #147)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss welcome" }));
 
-    // Dismissal is persisted immediately; the card then eases out and unmounts.
+    // Dismissal is persisted immediately. The card then eases out and unmounts.
     expect(window.localStorage.getItem(WELCOME_DISMISS_KEY)).toBe("1");
     expect(welcomeDismissed()).toBe(true);
     await waitFor(() =>

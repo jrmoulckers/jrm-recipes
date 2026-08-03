@@ -14,8 +14,8 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Resolve the group a profile should be scoped to. A profile may only be
- * attached to a group the owner actually belongs to; anything else (including
- * an omitted group) resolves to `null` — a personal, unscoped profile.
+ * attached to a group the owner actually belongs to. Anything else, including
+ * an omitted group, resolves to `null` for a personal, unscoped profile.
  */
 async function resolveGroupId(
   tx: Tx,

@@ -181,8 +181,8 @@ export function DietaryProfilesManager({
               No profiles yet
             </h2>
             <p className="mt-1 max-w-md text-muted-foreground">
-              Record who you cook for — their allergies, diets, and calorie
-              goals — so Heirloom can help you cook safely for everyone.
+              Record who you cook for. Their allergies, diets, and calorie
+              goals. So Heirloom can help you cook safely for everyone.
             </p>
           </div>
           <Button onClick={openAdd}>
@@ -373,7 +373,7 @@ export function DietaryProfilesManager({
                   setDraft((d) => ({ ...d, calorieGoal: e.target.value }))
                 }
                 inputMode="numeric"
-                placeholder="Optional — e.g. 2000"
+                placeholder="Optional, e.g. 2000"
                 aria-invalid={Boolean(fieldErrors.calorieGoal)}
               />
               {fieldErrors.calorieGoal?.[0] ? (

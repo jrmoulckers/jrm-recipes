@@ -4,7 +4,7 @@ import plugin from "tailwindcss/plugin";
 /**
  * Every color is driven by a CSS variable (see src/styles/themes.css) so the
  * five UI modes (Kitchen / Whimsy / Professional / Kids / Barebones) and
- * light/dark can be swapped purely by re-defining tokens — no per-component
+ * light/dark can be swapped purely by re-defining tokens, with no per-component
  * theming. Components must only ever reference these semantic names.
  */
 const config = {
@@ -73,7 +73,7 @@ const config = {
        * Safe-area inset spacing tokens (issue #284). Map the CSS
        * `env(safe-area-inset-*)` values onto the spacing scale so any sticky or
        * fixed chrome can reserve room for the notch / status bar / home
-       * indicator with a plain utility — e.g. `pt-safe-t` on a top-docked
+       * indicator with a plain utility, e.g. `pt-safe-t` on a top-docked
        * header, `pb-safe-b` on a bottom bar, `px-safe-l`/`px-safe-r` in
        * landscape. `env()` resolves to 0 wherever there is no inset (desktop,
        * non-notched devices, in-browser), so these never cause layout shift.
@@ -100,7 +100,7 @@ const config = {
       },
       /**
        * Tokenized type scale (issue #98). Sizes are in `rem` so they inherit the
-       * root `font-size: calc(100% * --text-scale * --a11y-text-mult)` — i.e. the
+       * root `font-size: calc(100% * --text-scale * --a11y-text-mult)`, i.e. the
        * per-mode `--text-scale` and the a11y text-size axis both scale every step
        * automatically. Each step ships a paired line-height (and tracking on the
        * larger display steps) so hierarchy stays coherent across all five modes'
@@ -284,7 +284,7 @@ const config = {
   plugins: [
     require("tailwindcss-animate"),
     /**
-     * `short-landscape:` — phones (and small tablets) held sideways, where
+     * `short-landscape:`, for phones (and small tablets) held sideways, where
      * vertical space is scarce. Cook Mode uses it to drop into a side-by-side
      * layout and cap step-media height so the instruction and controls stay on
      * screen without scrolling (issue #292). The 640px height ceiling keeps

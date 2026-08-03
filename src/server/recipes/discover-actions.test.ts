@@ -8,7 +8,7 @@ import type { RatingSort } from "~/lib/ratings";
  * sanitizes the sort, re-derives the viewer server-side, and hides recipes
  * already in the viewer's library. When a page is *entirely* the viewer's own
  * recipes it keeps paging so the button never adds zero cards yet persists
- * (#67). Auth + queries are mocked; the real `parseRatingSort` runs.
+ * (#67). Auth + queries are mocked. The real `parseRatingSort` runs.
  */
 
 vi.mock("~/server/auth", async () =>

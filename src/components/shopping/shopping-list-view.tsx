@@ -65,10 +65,10 @@ function groupUnchecked(items: ShoppingViewItem[]) {
 }
 
 const ALLERGEN_DISCLAIMER =
-  "Best-effort from ingredient names — double-check labels and brands.";
+  "Best-effort from ingredient names. Double-check labels and brands.";
 
 /**
- * "Send list" — hand the active list to a partner via the native share sheet,
+ * "Send list". Hand the active list to a partner via the native share sheet,
  * falling back to copy-to-clipboard as tidy grouped text (issue #408). Checked
  * items are excluded so the recipient only sees what's left to buy.
  */
@@ -85,7 +85,7 @@ function ShareListButton({
   async function onSend() {
     const text = formatShoppingListText(items, { title: "🛒 Shopping list" });
     if (!text) {
-      toast.info("Nothing to send — everything's checked off.");
+      toast.info("Nothing to send. Everything's checked off.");
       return;
     }
     setBusy(true);
@@ -98,7 +98,7 @@ function ShareListButton({
           await navigator.share({ title: "Shopping list", text });
           return;
         } catch (error) {
-          // User dismissed the sheet — stop. Any other failure falls through
+          // User dismissed the sheet. Stop. Any other failure falls through
           // to the clipboard so the list still gets out.
           if (error instanceof DOMException && error.name === "AbortError") {
             return;
@@ -106,7 +106,7 @@ function ShareListButton({
         }
       }
       await navigator.clipboard.writeText(text);
-      toast.success("List copied — paste it into a message");
+      toast.success("List copied. Paste it into a message");
     } catch {
       toast.error("Couldn't share the list.");
     } finally {
@@ -176,7 +176,7 @@ function ItemRow({
           )}
           {item.item}
           {item.note && (
-            <span className="text-muted-foreground"> — {item.note}</span>
+            <span className="text-muted-foreground">, {item.note}</span>
           )}
           {item.optional && (
             <Badge variant="muted" className="ms-2 align-middle">

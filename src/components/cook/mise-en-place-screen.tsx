@@ -17,7 +17,7 @@ import type { CookRecipe } from "./types";
  * one". Shown before step 1 when the recipe has ingredients. Reuses the shared
  * IngredientsPanel (scaling, units, and the same checklist state Cook Mode uses)
  * for the gather list, and derives a read-only "prep ahead" list from the
- * recipe's structured ingredient prep notes. Purely additive — nothing here
+ * recipe's structured ingredient prep notes. It is purely additive. Nothing here
  * writes to the recipe or the database.
  */
 export function MiseEnPlaceScreen({

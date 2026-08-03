@@ -37,7 +37,7 @@ export const recipeTags = pgTable(
   (t) => [primaryKey({ columns: [t.recipeId, t.tagId] })],
 );
 
-/** A 1–5 star rating; one per user per recipe. */
+/** A 1–5 star rating. One per user per recipe. */
 export const ratings = pgTable(
   "ratings",
   {
@@ -56,7 +56,7 @@ export const ratings = pgTable(
     index("ratings_recipe_idx").on(t.recipeId),
     // Covering index for the userId foreign key (issue #153). The composite
     // unique above is recipeId-first, so it can't serve a userId-first lookup or
-    // the `ON DELETE cascade` when a user is removed; this keeps both index-fast.
+    // the `ON DELETE cascade` when a user is removed. This keeps both index-fast.
     index("ratings_user_idx").on(t.userId),
     // DB backstop for the 1–5 star range enforced in Zod (`ratingInput.value`
     // in src/server/engagement/validation.ts). Guards writes that bypass the
@@ -66,14 +66,14 @@ export const ratings = pgTable(
 );
 
 /**
- * The kind of a thread entry: a plain `comment`, or a `suggestion` — a proposed
+ * The kind of a thread entry: a plain `comment`, or a `suggestion`. A proposed
  * change the recipe owner can mark resolved (Phase 2 suggestions/reviews).
  */
 export const commentKind = pgEnum("comment_kind", ["comment", "suggestion"]);
 
 /**
  * What a suggestion is anchored to (issue #346). NULL for a whole-recipe comment
- * or suggestion; set to `ingredient`/`step` when a member suggests an edit tied
+ * or suggestion. Set to `ingredient`/`step` when a member suggests an edit tied
  * to a specific ingredient row or method step.
  */
 export const commentAnchorType = pgEnum("comment_anchor_type", [
@@ -93,7 +93,7 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     // Self-referential thread link. `cascade` so deleting a parent comment also
-    // removes its replies (thread hygiene) — prevents orphaned threads rooted at
+    // removes its replies (thread hygiene). Prevents orphaned threads rooted at
     // a missing parent. Uses the `AnyPgColumn` self-reference pattern from
     // recipes.forkedFromId / recipeEvents.relatedRecipeId.
     parentId: fk().references((): AnyPgColumn => comments.id, {
@@ -103,7 +103,7 @@ export const comments = pgTable(
     body: text().notNull(),
     // Anchored suggestions (issue #346): the ingredient/step the suggestion
     // refers to, plus a snapshot label so it still reads sensibly if the target
-    // is later edited or removed. No FK — the id is a soft pointer.
+    // is later edited or removed. No FK. The id is a soft pointer.
     anchorType: commentAnchorType(),
     anchorId: fk(),
     anchorLabel: varchar({ length: 200 }),

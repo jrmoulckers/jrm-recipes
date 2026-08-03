@@ -12,7 +12,7 @@ import { createPostHogBackend } from "~/lib/analytics/posthog-client";
  * Mounts the analytics backend once for the whole app (issue #306) and keeps the
  * browser identity in sync with the signed-in user (issue #321).
  *
- * When no key is configured this renders its children and does nothing else —
+ * When no key is configured this renders its children and does nothing else.
  * the app boots, builds, and runs with zero analytics config. When a key is
  * present it lazily loads the PostHog adapter and registers it as the client
  * backend so the typed `track`/`identify` API (`~/lib/analytics`) starts

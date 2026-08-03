@@ -8,7 +8,7 @@ import { users } from "./users";
  * An opt-in, public follow edge (issue: public follow graph). `followerId`
  * follows `followeeId` so the follower sees the followee's *public* activity in
  * their following feed. Deliberately layered on top of the group-centric model:
- * a follow never grants access to family/group-private content — only content
+ * a follow never grants access to family/group-private content. Only content
  * the followee has made public counts, and only when the followee has turned on
  * {@link users.publicActivityOptIn}.
  *
@@ -29,7 +29,7 @@ export const follows = pgTable(
     ...timestamps(),
   },
   (t) => [
-    // At most one edge per (follower, followee) — makes follow/unfollow idempotent.
+    // At most one edge per (follower, followee). Makes follow/unfollow idempotent.
     unique("follows_pair_uq").on(t.followerId, t.followeeId),
     // Reverse-lookup + cascade-covering indexes (issue #153 convention): "who do
     // I follow" reads followerId, "who follows me" / counts read followeeId.

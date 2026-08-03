@@ -36,7 +36,7 @@ export type CustomUnitRow = {
 };
 
 /**
- * Resolve the effective {@link UnitPrefs} for a viewer. A saved row wins; with
+ * Resolve the effective {@link UnitPrefs} for a viewer. A saved row wins. With
  * no row we default to auto-converting into the locale's likely system so a
  * brand-new user still sees friendly units, then they can refine per dimension.
  */

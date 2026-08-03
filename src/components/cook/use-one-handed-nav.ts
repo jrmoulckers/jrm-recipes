@@ -21,8 +21,8 @@ function rubberBand(distance: number): number {
  * returns handlers + a live `dragStyle` to spread onto the step container.
  *
  * While dragging, the card follows the pointer and rubber-bands (resists) at
- * the first/last step; releasing past the swipe threshold navigates (gated by
- * `canNext` / `canPrevious`). Vertical drags keep native scrolling — the axis
+ * the first/last step. Releasing past the swipe threshold navigates (gated by
+ * `canNext` / `canPrevious`). Vertical drags keep native scrolling. The axis
  * locks after a small slop and only horizontal gestures are captured, so the
  * step video/controls and page scroll are never hijacked. Gestures starting on
  * an interactive control are ignored via the same guard the keyboard shortcuts
@@ -30,7 +30,7 @@ function rubberBand(distance: number): number {
  * never both swipes *and* taps.
  *
  * Under reduced motion the drag still navigates on release, but the
- * follow-the-finger transform is disabled (`dragStyle` is undefined) — the step
+ * follow-the-finger transform is disabled (`dragStyle` is undefined). The step
  * just swaps, consistent with the reduced-motion step transition.
  */
 export function useOneHandedNav({
@@ -78,7 +78,7 @@ export function useOneHandedNav({
       const dy = event.clientY - start.y;
 
       // Lock the gesture axis once the finger clears the slop. A mostly vertical
-      // drag stays a native scroll; a horizontal one becomes step navigation.
+      // drag stays a native scroll. A horizontal one becomes step navigation.
       if (axisRef.current === null) {
         if (Math.abs(dx) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return;
         axisRef.current =

@@ -44,7 +44,7 @@ function toSelection(value: string): CompareSelection {
 /**
  * Timeline "Compare" affordance (#358): pick two points in a recipe's history
  * (a saved version or the live recipe) and see an inline diff of scalar fields,
- * ingredient lines, and steps. Read-only — Restore lives in the version list.
+ * ingredient lines, and steps. Read-only. Restore lives in the version list.
  */
 export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
   // Need at least one saved version to have anything to compare against.

@@ -15,7 +15,7 @@ function personName(person: BlockedPerson) {
 
 /**
  * The "Blocked people" settings list (issue #355). Each row shows a blocked
- * member with an Unblock button; unblocking refreshes the server-rendered list.
+ * member with an Unblock button. Unblocking refreshes the server-rendered list.
  */
 export function BlockedPeopleList({ people }: { people: BlockedPerson[] }) {
   const unblock = useServerAction(unblockUserAction, {

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Your data" };
 
 /**
  * "Your data" settings (issue #420). Long-time users worry their family's
- * recipes are locked inside an app; this page reassures them they aren't, and
+ * recipes are locked inside an app. This page reassures them they aren't, and
  * hands over a complete, self-contained backup on demand. The download is a
  * plain authenticated GET to `/api/backup`, so it works even with JavaScript
  * disabled.
@@ -28,8 +28,8 @@ export default async function DataSettingsPage() {
           Your data
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Your recipes are yours. Download your whole cookbook whenever you like
-          — no account, app, or internet needed to read it later.
+          Your recipes are yours. Download your whole cookbook whenever you
+          like. No account, app, or internet needed to read it later.
         </p>
       </header>
 
@@ -63,7 +63,7 @@ export default async function DataSettingsPage() {
 
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-            Prepared on our own servers — your recipes are never sent anywhere
+            Prepared on our own servers. Your recipes are never sent anywhere
             else.
           </p>
         </div>

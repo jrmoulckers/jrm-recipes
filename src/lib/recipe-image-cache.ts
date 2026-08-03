@@ -2,9 +2,9 @@
  * Runtime-cache matcher shared by the service worker for Cloudinary-backed
  * recipe / cook-mode images.
  *
- * Kept in its own DOM-typed module — rather than inline in `src/app/sw.ts`,
- * which is compiled against the WebWorker lib and excluded from the app
- * tsconfig — so the URL-matching logic stays unit-testable.
+ * Kept in its own DOM-typed module rather than inline in `src/app/sw.ts`, which
+ * is compiled against the WebWorker lib and excluded from the app tsconfig, so
+ * the URL-matching logic stays unit-testable.
  */
 
 /** Cloudinary host that serves every recipe + step image (see next.config.js). */
@@ -16,7 +16,7 @@ export const RECIPE_IMAGE_CACHE_NAME = "heirloom-recipe-images";
 /**
  * Bound the cache so it can't grow without limit. A single `next/image` render
  * emits several `srcset` widths, so this comfortably holds a handful of fully
- * viewed recipes while capping disk use; least-recently-used entries are
+ * viewed recipes while capping disk use. Least-recently-used entries are
  * evicted past the limit.
  */
 export const RECIPE_IMAGE_CACHE_MAX_ENTRIES = 128;
@@ -35,13 +35,13 @@ export const RECIPE_IMAGE_PLACEHOLDER_URL = "/img/recipe-image-placeholder.svg";
 /**
  * The subset of a `Request` the matcher reads. A real `Request` satisfies this,
  * and it keeps the function trivially constructable in tests (a constructed
- * `Request` can't carry an `"image"` destination, since the browser — not the
- * constructor — assigns it).
+ * `Request` can't carry an `"image"` destination, since the browser, not the
+ * constructor, assigns it).
  */
 export interface RecipeImageRequest {
   /** Absolute request URL (`url.href` from the Serwist route matcher). */
   url: string;
-  /** `RequestDestination`; `"image"` for `<img>` / `next/image` requests. */
+  /** `RequestDestination`. `"image"` for `<img>` / `next/image` requests. */
   destination: Request["destination"];
 }
 
@@ -54,7 +54,7 @@ function isCloudinaryHost(hostname: string): boolean {
  * Whether a request should be served from the durable recipe-image cache.
  *
  * Cook Mode renders step/hero photos with `next/image`, so the browser doesn't
- * request Cloudinary directly — it hits the Next.js optimizer at
+ * request Cloudinary directly. It hits the Next.js optimizer at
  * `/_next/image?url=<encoded cloudinary url>&w=…&q=…` (same-origin). Both shapes
  * therefore need to match:
  *
@@ -63,8 +63,8 @@ function isCloudinaryHost(hostname: string): boolean {
  *   default `next-image` route.
  * - **Direct Cloudinary requests**, for any image rendered without the optimizer.
  *
- * Restricted to `destination === "image"` so Cloudinary *videos* — which are
- * large and stream via range requests — never land in this bounded cache.
+ * Restricted to `destination === "image"` so Cloudinary *videos*, which are
+ * large and stream via range requests, never land in this bounded cache.
  */
 export function isRecipeImageRequest(request: RecipeImageRequest): boolean {
   if (request.destination !== "image") {

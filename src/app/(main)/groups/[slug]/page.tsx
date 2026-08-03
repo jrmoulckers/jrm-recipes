@@ -350,7 +350,7 @@ export default async function GroupPage({
             <h2 className="font-display text-xl font-semibold">Family tools</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {group.viewerRole
-                ? "Manage your place at this table. Owners can delete the group; recipes stay in each cook's collection."
+                ? "Manage your place at this table. Owners can delete the group. Recipes stay in each cook's collection."
                 : "Only invited members can add recipes or manage this family table."}
             </p>
             <div className="mt-4">

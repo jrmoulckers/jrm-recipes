@@ -25,7 +25,7 @@ type ThemeContextValue = {
   behavior: (typeof THEME_BEHAVIOR)[UITheme];
   setTheme: (theme: UITheme) => void;
   /**
-   * Toggle Kids mode. Enabling it remembers the current UI mode; disabling it
+   * Toggle Kids mode. Enabling it remembers the current UI mode. Disabling it
    * restores that remembered mode (or the default when there isn't one).
    */
   setKidsMode: (on: boolean) => void;
@@ -42,7 +42,7 @@ function persist(name: string, value: string) {
     localStorage.setItem(name, value);
     document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
-    /* storage may be unavailable (private mode) — theme still applies live */
+    /* storage may be unavailable (private mode). Theme still applies live */
   }
 }
 
@@ -52,7 +52,7 @@ function readPersisted(name: string): string | null {
     const stored = localStorage.getItem(name);
     if (stored) return stored;
   } catch {
-    /* ignore — fall through to cookie */
+    /* ignore. Fall through to cookie */
   }
   try {
     const prefix = `${name}=`;
@@ -140,7 +140,7 @@ export function ThemeProvider({
         return;
       }
       // Restore the remembered mode. Fall back to the default when there isn't
-      // a valid one — e.g. Kids was picked straight from the mode picker.
+      // a valid one, e.g. Kids was picked straight from the mode picker.
       const remembered = readPersisted(THEME_PREVIOUS_COOKIE);
       const restored =
         isUITheme(remembered) && remembered !== "kids"
@@ -197,7 +197,7 @@ export function useTheme() {
 /**
  * Read just the active UI mode's behavior flags (`largeTargets`, `kidSafe`,
  * `simplifiedChrome`, `reduceMotion`). Unlike {@link useTheme} this never throws
- * outside a provider — it falls back to the default (non-kids) behavior — so
+ * outside a provider. It falls back to the default (non-kids) behavior. So
  * leaf components can gate Kids-mode affordances without every consumer (or its
  * unit tests) needing to mount the full theme provider. In the app the provider
  * is always present and seeded from the cookie, so this returns the real flags

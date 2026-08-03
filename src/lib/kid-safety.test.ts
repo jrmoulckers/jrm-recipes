@@ -41,7 +41,7 @@ describe("detectStepHazards (issue #423)", () => {
   });
 
   it("does not false-match hazard words hidden inside safe words", () => {
-    // "cut" must not match inside "cute"; "peel" (banana) is not a hazard —
+    // "cut" must not match inside "cute". "peel" (banana) is not a hazard. 
     // only the peeler *tool* is.
     expect(detectStepHazards({ text: "This cute biscuit is done." })).toEqual(
       [],
@@ -51,7 +51,7 @@ describe("detectStepHazards (issue #423)", () => {
     );
   });
 
-  it("exposes visually + verbally distinct heat vs. sharp copy", () => {
+  it("exposes visually + verbally distinct heat vs. Sharp copy", () => {
     expect(KID_HAZARD_INFO.heat.emoji).not.toEqual(KID_HAZARD_INFO.sharp.emoji);
     expect(KID_HAZARD_INFO.heat.label).not.toEqual(KID_HAZARD_INFO.sharp.label);
   });

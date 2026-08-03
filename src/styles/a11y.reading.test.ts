@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Regression guard for issue #129 — the "Easy-reading text" preference must
+ * Regression guard for issue #129. The "Easy-reading text" preference must
  * actually LOAD a dyslexia-friendly typeface, not merely name one and hope the
  * reader has it installed.
  *
@@ -60,7 +60,7 @@ describe("easy-reading dyslexia font (issue #129)", () => {
 
   it("does not depend on a locally-installed 'Atkinson Hyperlegible' family", () => {
     const body = ruleBody(A11Y_CSS, '[data-reading="readable"]') ?? "";
-    // The bare family name assumes the reader already has the font — the fix
+    // The bare family name assumes the reader already has the font. The fix
     // loads it via the CSS variable instead.
     expect(body).not.toMatch(/"Atkinson Hyperlegible"/);
   });

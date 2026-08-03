@@ -6,7 +6,7 @@ const idInput = z.string().trim().min(1);
 
 /** Max length for a comment/suggestion body. Imported by the UI counter (#144). */
 export const COMMENT_MAX_LENGTH = 4000;
-/** Over-limit message — kept in sync with the field counter. */
+/** Over-limit message. Kept in sync with the field counter. */
 export const COMMENT_TOO_LONG_MESSAGE = "Keep comments under 4,000 characters";
 
 export const commentInput = z.object({

@@ -24,7 +24,7 @@ import { captureServer, identifyServer } from "~/lib/analytics/server";
  * calls `assertDevBypassAllowed` before ever returning the shared `DEV_USER`,
  * so production fails closed instead of silently serving every request as one
  * shared, fully-authenticated account. This backs up the boot/build guard in
- * `~/env`; `SKIP_ENV_VALIDATION` is the single escape hatch, used only by the
+ * `~/env`. `SKIP_ENV_VALIDATION` is the single escape hatch, used only by the
  * CI build + e2e run (which never serve real users).
  */
 
@@ -34,7 +34,7 @@ export { DEV_USER };
  * Fail closed: the shared dev-bypass user must never be served in production.
  * Reaching the dev fallback in prod always means auth is misconfigured (either
  * NEXT_PUBLIC_DEV_AUTH_BYPASS=1 or missing Clerk keys), so throw rather than
- * degrade. Parameterized for tests; defaults read the live environment.
+ * degrade. Parameterized for tests. Defaults read the live environment.
  */
 export function assertDevBypassAllowed(
   nodeEnv: string = env.NODE_ENV,
@@ -92,7 +92,7 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
   });
   if (existing) return existing;
 
-  // First time we've seen this Clerk user — pull their profile and store it.
+  // First time we've seen this Clerk user. Pull their profile and store it.
   const { clerkClient } = await import("@clerk/nextjs/server");
   const client = await clerkClient();
   const profile = await client.users.getUser(clerkId);
@@ -119,9 +119,9 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
     .onConflictDoNothing({ target: users.clerkId })
     .returning();
 
-  // First time the app has seen this Clerk account — the sign-up funnel's
+  // First time the app has seen this Clerk account. The sign-up funnel's
   // terminal step (#328). Guarded by the insert actually creating a row so a
-  // race that hits onConflictDoNothing doesn't double-count; attributed to the
+  // race that hits onConflictDoNothing doesn't double-count. Attributed to the
   // internal user id (never PII) so it stitches to identify.
   if (created) {
     void captureServer(created.id, "signup_completed", {});
@@ -137,8 +137,8 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
 /**
  * Fire-and-forget server-side identify with non-PII person properties (#321).
  *
- * The distinct id is the internal `users.id` — never the Clerk id, email, or
- * name — and the attached traits are counts/flags only. It short-circuits with
+ * The distinct id is the internal `users.id`. Never the Clerk id, email, or
+ * name. The attached traits are counts/flags only. It short-circuits with
  * zero DB work when analytics is unconfigured (the default), so it adds no
  * latency to the common path, and it swallows its own errors so identity is
  * always best-effort and never breaks auth.
@@ -160,7 +160,7 @@ async function identifyUser(user: User): Promise<void> {
       }),
     );
   } catch {
-    // Identity is best-effort; never let it break an auth-gated request.
+    // Identity is best-effort. Never let it break an auth-gated request.
   }
 }
 
@@ -179,9 +179,9 @@ async function resolveCurrentUser(): Promise<User | null> {
 /**
  * The current app user, or null if not signed in (never null in dev-bypass).
  *
- * Wrapped in React `cache()` so the many callers within a single server render
- * — the root layout's `getAuthState`, each page's `load = cache(...)`,
- * `SiteHeader`, and the per-domain `queries.ts` that resolve the viewer — all
+ * Wrapped in React `cache()` so the many callers within a single server render:
+ * the root layout's `getAuthState`, each page's `load = cache(...)`,
+ * `SiteHeader`, and the per-domain `queries.ts` that resolve the viewer. They all
  * collapse to one `auth()` resolution + one `users` lookup per request. Because
  * `getAuthState` and `requireUser` delegate here, they inherit the dedupe. The
  * memoization is request-scoped (module is `server-only`), so it never leaks a
@@ -263,8 +263,8 @@ export async function applyClerkUserUpdate(
 /**
  * Apply a Clerk `user.deleted` event (issue #217): soft-delete and anonymize the
  * local row. The row is *kept* so authored recipes and group history stay
- * referentially intact (their FKs point here), but every piece of PII — email,
- * name, handle, avatar, and the `clerkId` link itself — is scrubbed, and
+ * referentially intact (their FKs point here), but every piece of PII, email,
+ * name, handle, avatar, and the `clerkId` link itself, is scrubbed, and
  * `deletedAt` is stamped so the account can no longer authenticate (the
  * clerkId+deletedAt-filtered lookup in `syncClerkUser` will never resurrect it).
  * Idempotent: a repeat delete simply re-scrubs an already-anonymized row.

@@ -73,7 +73,7 @@ export function IngredientSubstitutions({
   /**
    * The active member's FULL allergen set (issue #429 safety fix). When
    * provided, any swap whose own name/notes carry one of these allergens is
-   * dropped — so a swap can never be presented as "safe" while introducing a
+   * dropped. So a swap can never be presented as "safe" while introducing a
    * *different* one of the member's allergens (e.g. a cashew-based dairy swap
    * for a member who is also allergic to tree nuts).
    */
@@ -123,7 +123,7 @@ export function IngredientSubstitutions({
           type="button"
           aria-label={
             flagged
-              ? `Safe swaps for ${entry.name.toLowerCase()} — conflicts with the selected dietary needs`
+              ? `Safe swaps for ${entry.name.toLowerCase()}. Conflicts with the selected dietary needs`
               : `Substitutions for ${entry.name.toLowerCase()}`
           }
           title={flagged ? "See safe swaps" : "See substitutions"}

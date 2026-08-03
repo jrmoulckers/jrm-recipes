@@ -14,12 +14,12 @@ import { Button } from "~/components/ui/button";
 import { type CookRecipe } from "./types";
 
 const DISCLAIMER =
-  "Best-effort from ingredient text — always double-check labels and brands.";
+  "Best-effort from ingredient text. Always double-check labels and brands.";
 
 /**
  * A last, glanceable allergen safety check shown as Cook Mode starts (issue
- * #395). Reuses {@link summarizeAllergens} and {@link summarizeHiddenAllergens}
- * — no duplicate detection — and sits persistently below the header until the
+ * #395). Reuses {@link summarizeAllergens} and {@link summarizeHiddenAllergens}.
+ * No duplicate detection, and sits persistently below the header until the
  * cook acknowledges it. Surfaces both directly-carried allergens and hidden or
  * derived ones (e.g. wheat brewed into soy sauce) so it never gives a false
  * all-clear, and carries the same best-effort disclaimer as every other

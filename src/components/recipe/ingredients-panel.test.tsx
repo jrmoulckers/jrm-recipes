@@ -10,7 +10,7 @@ import {
 } from "./ingredients-panel";
 
 // Stub the lazy anchored-suggestions client bundle so we can assert the panel
-// renders it itself from serializable data — the fix for the production RSC
+// renders it itself from serializable data. The fix for the production RSC
 // crash where a `renderSuggestions` function prop was passed across the
 // Server -> Client boundary ("Functions cannot be passed directly to Client
 // Components", digest 2500096145).

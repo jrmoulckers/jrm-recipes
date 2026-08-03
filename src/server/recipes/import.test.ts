@@ -493,7 +493,7 @@ describe("importRecipeFromUrl response size limits (i222)", () => {
     const fetchMock = vi.fn(async () => new Response(stream, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    // No structured recipe in the garbage body, so it reports "not found" —
+    // No structured recipe in the garbage body, so it reports "not found".
     // the point is that it returns promptly without buffering the whole stream.
     const result = await importRecipeFromUrl("https://example.com/stream");
     expect(result.ok).toBe(false);

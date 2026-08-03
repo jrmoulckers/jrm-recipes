@@ -95,11 +95,11 @@ describe("resolveFoodIds", () => {
     await expect(resolveFoodIds(["qwerty zxcvb nonsense"])).resolves.toEqual([
       null,
     ]);
-    // Only the alias lookup runs; no existence check when there are no candidates.
+    // Only the alias lookup runs. No existence check when there are no candidates.
     expect(dbMock.select).toHaveBeenCalledTimes(1);
   });
 
-  it("never throws — a db error resolves everything to null", async () => {
+  it("never throws. A db error resolves everything to null", async () => {
     state.throwOn = "select";
     await expect(
       resolveFoodIds(["2 tbsp kosher salt", "garlic"]),

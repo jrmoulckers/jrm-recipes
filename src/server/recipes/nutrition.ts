@@ -18,15 +18,15 @@ import {
  * resolved against the live food graph (Phase 4, `docs/food-graph.md` §8).
  *
  * Unlike the client-side text-match estimate in `food-nutrition.ts`, this reads
- * each ingredient line's `foodId` — the write-time link to a canonical
- * {@link foodItems} node — and looks up that node's authoritative per-100 g
+ * each ingredient line's `foodId`. The write-time link to a canonical
+ * {@link foodItems} node and looks up that node's authoritative per-100 g
  * {@link foodNutrition} facts and `densityGPerMl`, then rolls the lines up with
  * the pure {@link rollUpNutrition}. Grams come from the unit: weight units
  * directly, volume units via density, count/unknown units skipped. The result
  * carries coverage numbers so a partial estimate is shown honestly.
  *
  * Compute-on-read by design: no nutrition is cached or persisted here. Never
- * throws — a missing recipe, an unconfigured/erroring database, or a recipe with
+ * throws. A missing recipe, an unconfigured/erroring database, or a recipe with
  * no resolvable ingredients all yield an empty estimate the UI renders as
  * nothing.
  */
@@ -115,7 +115,7 @@ export async function computeRecipeNutrition(
 
     return rollUpNutrition(resolved, servings);
   } catch {
-    // Nutrition is a nice-to-have overlay; never let an estimate failure break
+    // Nutrition is a nice-to-have overlay. Never let an estimate failure break
     // the recipe page. Fall back to the honest "nothing to show" shape.
     return emptyRecipeNutrition();
   }

@@ -135,7 +135,7 @@ describe("forkRecipeAction revalidation", () => {
       source: { id: "rec_1", slug: "apple-pie" },
     });
 
-    // Adapt buttons pass the source *id*; the action must still bust the slug.
+    // Adapt buttons pass the source *id*. The action must still bust the slug.
     const res = await forkRecipeAction("rec_1");
 
     expect(res).toEqual({
@@ -159,8 +159,8 @@ describe("createRecipeAction revalidation", () => {
   });
 });
 
-// #318 — the free plan caps saved recipes. Creating is refused (with an upgrade
-// flag) only once at/over the cap; edits and under-cap creates are untouched.
+// #318. The free plan caps saved recipes. Creating is refused (with an upgrade
+// flag) only once at/over the cap. Edits and under-cap creates are untouched.
 describe("createRecipeAction soft limit (#318)", () => {
   it("allows the create when under the recipe cap", async () => {
     getLimitStatusMock.mockResolvedValue({
@@ -216,7 +216,7 @@ describe("createRecipeAction soft limit (#318)", () => {
   });
 });
 
-// #215 — recipe writes must bust the cached public discover feed by tag so a
+// #215. Recipe writes must bust the cached public discover feed by tag so a
 // create / edit / fork / revert / delete can't outlive the change.
 describe("public recipe cache invalidation (#215)", () => {
   it("createRecipeAction revalidates the public recipes tag", async () => {

@@ -21,7 +21,7 @@ type TechniqueChipsProps = {
 
 /**
  * Renders a step's technique tags as chips. Known techniques become tappable
- * and open a popover with a tip from the bundled knowledge base; unknown or
+ * and open a popover with a tip from the bundled knowledge base. Unknown or
  * empty labels fall back to a plain, non-interactive badge. All data is static
  * so cook mode stays fully offline-capable.
  */

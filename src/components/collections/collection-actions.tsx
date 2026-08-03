@@ -79,7 +79,7 @@ export function CollectionActions({
 
   function onDelete() {
     const ok = window.confirm(
-      `Delete “${collection.name}”? Your recipes stay in your library — only this collection is removed.`,
+      `Delete “${collection.name}”? Your recipes stay in your library. Only this collection is removed.`,
     );
     if (!ok) return;
     startTransition(() => {

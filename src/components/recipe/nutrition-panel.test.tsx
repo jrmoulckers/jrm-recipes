@@ -141,7 +141,7 @@ describe("NutritionPanel calorie goal (issue #430)", () => {
   ];
 
   beforeEach(() => {
-    // The active-member selection is a persisted singleton; reset between tests.
+    // The active-member selection is a persisted singleton. Reset between tests.
     useActiveMemberStore.setState({ activeMemberId: null });
   });
 

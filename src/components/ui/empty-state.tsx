@@ -7,7 +7,7 @@ import { Heading, Text } from "./typography";
 /**
  * Shared zero-data surface (issue #84). Centres an optional icon, a
  * `font-display` title, a muted description on a constrained measure, and an
- * optional action row — all on tokenized spacing so every empty surface
+ * optional action row. All on tokenized spacing so every empty surface
  * (recipes, collections, meal plan, shopping list, groups) shares one rhythm.
  */
 const emptyStateVariants = cva(

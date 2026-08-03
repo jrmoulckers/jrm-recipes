@@ -7,8 +7,8 @@
  * The client posts a {@link WarmCookBundleMessage} to the active service
  * worker, which precaches the listed URLs into the EXISTING named caches
  * (`heirloom-recipes` for the Cook document, `heirloom-recipe-images` for step
- * images) — so a cook can open a recipe, drop offline, and still enter Cook
- * Mode fully.
+ * images), so a cook can open a recipe, drop offline, and still enter Cook Mode
+ * fully.
  */
 
 /** postMessage discriminator for a Cook-bundle warm request. */
@@ -29,17 +29,17 @@ export function cookPagePath(slug: string): string {
 
 /**
  * The app's real device-size ladder (kept in sync with
- * `src/config/next-image.js`). next/image builds an image's `srcset` from these
- * widths — even with the Cloudinary loader — so the browser always requests one
- * of these exact rungs.
+ * `src/config/next-image.js`). Next/image builds an image's `srcset` from these
+ * widths, even with the Cloudinary loader, so the browser always requests one of
+ * these exact rungs.
  */
 const DEVICE_SIZES: readonly number[] = [640, 750, 828, 1080, 1200, 1920];
 const LARGEST_DEVICE_SIZE = 1920;
 
 /**
  * The device-size rung(s) Cook Mode will actually request for a full-bleed
- * (`100vw`) image on THIS device. next/image picks the smallest rung
- * `>= cssWidth * DPR`; we warm that rung plus the next one up, so the warmed URL
+ * (`100vw`) image on THIS device. Next/image picks the smallest rung
+ * `>= cssWidth * DPR`. We warm that rung plus the next one up, so the warmed URL
  * still matches after a rotation or minor DPR rounding. Clamped so a hostile /
  * absurd viewport can't explode the list.
  */
@@ -60,8 +60,8 @@ export function cookImageWidths(viewportWidth: number, dpr: number): number[] {
 
 /**
  * Build the exact image delivery URLs to warm for Cook Mode. `transform` is the
- * same width→URL mapping the UI uses (the Cloudinary loader) — injected so this
- * module stays free of `next/*` imports. Blank sources are skipped; results are
+ * same width→URL mapping the UI uses (the Cloudinary loader). Injected so this
+ * module stays free of `next/*` imports. Blank sources are skipped. Results are
  * de-duplicated.
  */
 export function cookImageUrlsToWarm(

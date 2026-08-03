@@ -2,7 +2,7 @@
  * Food / ingredient knowledge base: a curated, fully-static dataset that maps a
  * recipe ingredient's free-text `item` string onto a **food category** (liquid,
  * spice, produce-whole, …) and, where known, an approximate density. This is the
- * foundation the interchangeable-units picker builds on — see `food-units.ts`
+ * foundation the interchangeable-units picker builds on. See `food-units.ts`
  * for the category → suggested-units mapping and `getSuggestedUnitsForFood`.
  *
  * Everything here is pure and dependency-free (it deliberately does **not**
@@ -24,7 +24,7 @@
  * not botanical accuracy: `produce-whole` (measured by count/weight) is distinct
  * from `produce-leafy` (loose-packed by volume/weight) and `produce-fruit`
  * (often by the cup). `baking` covers dry baking staples weighed most precisely
- * (flour, sugar, cocoa, leaveners); `dry-good` covers pantry dry goods
+ * (flour, sugar, cocoa, leaveners). `dry-good` covers pantry dry goods
  * (rice/pasta/dry beans). `other` is the safe fallback.
  */
 export type FoodCategory =
@@ -48,7 +48,7 @@ export type FoodCategory =
   | "condiment"
   | "other";
 
-/** Canonical display order — also a stable order for any category listing. */
+/** Canonical display order. Also a stable order for any category listing. */
 export const FOOD_CATEGORIES = [
   "liquid",
   "dairy",
@@ -73,7 +73,7 @@ export const FOOD_CATEGORIES = [
 
 /**
  * English fallback labels. User-facing surfaces should prefer the `next-intl`
- * `foodCategories` namespace; these keep the module usable without a translator
+ * `foodCategories` namespace. These keep the module usable without a translator
  * (tests, server logs, non-localized contexts) and document each category.
  */
 export const FOOD_CATEGORY_LABELS: Record<FoodCategory, string> = {
@@ -109,7 +109,7 @@ export function isFoodCategory(value: string): value is FoodCategory {
 export type FoodItem = {
   /** Human-friendly display name, e.g. "Brown sugar". */
   name: string;
-  /** How the food is measured — drives unit suggestions. */
+  /** How the food is measured. Drives unit suggestions. */
   category: FoodCategory;
   /**
    * Approximate density in grams per millilitre, where a cook would weigh it.
@@ -119,14 +119,14 @@ export type FoodItem = {
   densityGPerMl?: number;
   /**
    * Normalized match phrases (lowercase, no punctuation/accents). Include
-   * singular *and* plural forms; the matcher prefers the longest phrase that
+   * singular *and* plural forms. The matcher prefers the longest phrase that
    * appears as whole words in the ingredient text.
    */
   aliases: string[];
 };
 
 /**
- * The curated knowledge base. Ordered loosely by category for readability; the
+ * The curated knowledge base. Ordered loosely by category for readability. The
  * matcher is order-independent (longest alias wins), so ordering here is purely
  * cosmetic. Densities for liquids/baking staples/oils mirror the `units.ts`
  * density set and extend it. Keep aliases realistic and include obvious
@@ -1053,7 +1053,7 @@ export function stableHash(input: string): string {
  * Slugify a food name into a stable, unique, URL-safe key: normalize (lowercase,
  * strip accents/punctuation/parentheticals), then hyphenate. Bounded to the
  * `food_items.slug` column width (80). This is the single source of truth for a
- * food's slug — the seed and the corpus miner both derive ids from it so mined
+ * food's slug. The seed and the corpus miner both derive ids from it so mined
  * stats attach to the same node the seed created.
  */
 export function foodSlug(name: string): string {
@@ -1061,7 +1061,7 @@ export function foodSlug(name: string): string {
 }
 
 /**
- * The canonical `food_items.id` for a food name — a compact, deterministic hash
+ * The canonical `food_items.id` for a food name. A compact, deterministic hash
  * of its slug (`food_<hash>`) that always fits the `varchar(24)` id column. The
  * seed and the miner both call this, so mined stats key onto the seeded node.
  */

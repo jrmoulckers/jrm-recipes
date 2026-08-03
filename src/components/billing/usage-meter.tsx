@@ -9,7 +9,7 @@ import { cn } from "~/lib/utils";
  * entitlements resolver into a labelled bar plus honest "X of Y used" copy.
  * Unlimited plans (`limit === null`) render a calm, full bar with an
  * "Unlimited" note rather than an empty gauge, and the fill switches to the
- * warning token once usage is at/over the warn threshold — the same restrained,
+ * warning token once usage is at/over the warn threshold. The same restrained,
  * non-alarming language used elsewhere. Reads correctly across all UI modes.
  */
 export function UsageMeter({

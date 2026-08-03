@@ -65,7 +65,7 @@ export function ReportDialog({
         detail: detail.trim() || undefined,
       });
       if (result.ok) {
-        toast.success("Thanks — this has been sent to the group's admins.");
+        toast.success("Thanks. This has been sent to the group's admins.");
         onOpenChange(false);
         setDetail("");
         setReason("inappropriate");
@@ -81,7 +81,7 @@ export function ReportDialog({
         <DialogHeader>
           <DialogTitle>Report this</DialogTitle>
           <DialogDescription>
-            Reports are private — only the group&apos;s owners and admins see
+            Reports are private. Only the group&apos;s owners and admins see
             them, never the other members.
           </DialogDescription>
         </DialogHeader>

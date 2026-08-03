@@ -68,7 +68,7 @@ beforeEach(() => {
   requireUserMock.mockReset();
   apiSignRequestMock.mockReset();
   apiSignRequestMock.mockReturnValue("test-signature");
-  // Default to a signed-in user; individual tests override as needed.
+  // Default to a signed-in user. Individual tests override as needed.
   requireUserMock.mockResolvedValue({ id: "user_1" });
   // Fresh rate-limit store per test so budgets don't bleed across cases (#199).
   setRateLimitStore(new MemoryRateLimitStore());

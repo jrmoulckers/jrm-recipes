@@ -30,7 +30,7 @@ const STEP_HREFS: readonly Route[] = ["/recipes/new", "/recipes", "/groups"];
 
 /**
  * First-run onboarding checklist for the home dashboard (#78). It guides brand
- * new users through Heirloom's core loop — create → cook → share — and marks
+ * new users through Heirloom's core loop, Create → cook → share, and marks
  * each step done from the viewer's *real* data (see `OnboardingProgress`), not a
  * separate bag of flags. It's dismissible (persisted in `localStorage`, like the
  * install prompt) and retires itself automatically once every step is complete,
@@ -47,7 +47,7 @@ export function OnboardingChecklist({
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
   // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
   // arrival and a fade-out on dismiss, so it eases in and out instead of a hard
-  // pop-in / snap-out — matching the install-prompt's transition pattern.
+  // pop-in / snap-out, matching the install-prompt's transition pattern.
   const [mounted, setMounted] = React.useState(false);
   const [entered, setEntered] = React.useState(false);
 
@@ -63,7 +63,7 @@ export function OnboardingChecklist({
     try {
       window.localStorage.setItem(ONBOARDING_CHECKLIST_DISMISS_KEY, "1");
     } catch {
-      // Storage unavailable (private mode) — just hide for this session.
+      // Storage unavailable (private mode). Just hide for this session.
     }
     // Play the exit transition first, then unmount once it has settled.
     setEntered(false);
@@ -78,7 +78,7 @@ export function OnboardingChecklist({
   const doneCount = completion.filter(Boolean).length;
   const total = completion.length;
 
-  // Retire once the user has finished the whole loop — nothing left to guide.
+  // Retire once the user has finished the whole loop. Nothing left to guide.
   if (doneCount === total) return null;
   if (!mounted) return null;
 
@@ -152,8 +152,8 @@ export function OnboardingChecklist({
               key={step.title}
               className={cn(
                 "flex flex-col gap-3 rounded-xl p-3 transition-colors sm:flex-row sm:items-center sm:justify-between",
-                // Only the recommended next step is lifted — a subtle tint plus
-                // an inset ring — so the card reads as one surface, not a stack
+                // Only the recommended next step is lifted. A subtle tint plus
+                // an inset ring. So the card reads as one surface, not a stack
                 // of nested cards.
                 isNext && "bg-primary/5 ring-1 ring-inset ring-primary/15",
               )}

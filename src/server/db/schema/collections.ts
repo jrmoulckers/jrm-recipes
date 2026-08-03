@@ -39,7 +39,7 @@ export const favorites = pgTable(
 
 /**
  * How widely a collection can be seen. `unlisted` collections are reachable only
- * via their unguessable `shareToken`; `public` ones are visible to anyone.
+ * via their unguessable `shareToken`. `public` ones are visible to anyone.
  * (Collections aren't group-scoped, so there's no `group` value here.)
  */
 export const collectionVisibility = pgEnum("collection_visibility", [
@@ -113,8 +113,8 @@ export const collectionsRelations = relations(collections, ({ one, many }) => ({
 
 /**
  * View-sharing link between a collection and a family group (issue #365).
- * A collection *owner* can share their cookbook with a group they belong to;
- * every member of that group can then view it (read-only in this slice — only
+ * A collection *owner* can share their cookbook with a group they belong to.
+ * Every member of that group can then view it (read-only in this slice, only
  * the owner adds/removes recipes). Unsharing deletes the row and immediately
  * revokes access. One row per collection+group pair.
  */
@@ -128,7 +128,7 @@ export const collectionGroups = pgTable(
     groupId: fk()
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
-    // Who shared it (for provenance); nulls out if that user is removed.
+    // Who shared it (for provenance). Nulls out if that user is removed.
     sharedById: fk().references(() => users.id, { onDelete: "set null" }),
     ...timestamps(),
   },

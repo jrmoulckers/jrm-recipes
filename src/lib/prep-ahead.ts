@@ -2,8 +2,8 @@
  * Prep-ahead heuristic (issue #388). A planned dinner falls apart at 6pm for
  * the same reason every time: the chicken is still a brick, or the meat needed
  * to marinate hours ago. This scans tomorrow's planned recipes' step and
- * ingredient text for language that means "start this the night before" —
- * defrost/thaw, marinate, soak, overnight, chill, bring to room temp — so the
+ * ingredient text for language that means "start this the night before":
+ * defrost/thaw, marinate, soak, overnight, chill, bring to room temp, so the
  * planner can nudge you *tonight*.
  *
  * Deliberately a pure, dependency-free heuristic: no scheduler, no cron, no DB.
@@ -15,7 +15,7 @@ export type PrepAheadCueKind =
 
 export type PrepAheadCue = {
   kind: PrepAheadCueKind;
-  /** Short imperative label, e.g. "defrost" — safe to join into a sentence. */
+  /** Short imperative label, e.g. "defrost". Safe to join into a sentence. */
   label: string;
 };
 
@@ -75,18 +75,18 @@ export function detectPrepAheadCues(texts: readonly string[]): PrepAheadCue[] {
 }
 
 /**
- * Join cue labels into a human phrase: ["defrost"] → "defrost";
- * ["defrost","marinate"] → "defrost & marinate";
- * ["defrost","marinate","chill"] → "defrost, marinate & chill".
+ * Join cue labels into a human phrase: ["defrost"] → "defrost".
+ * ["defrost","marinate"] → "defrost and marinate".
+ * ["defrost","marinate","chill"] → "defrost, marinate and chill".
  */
 export function summarizePrepCues(cues: readonly PrepAheadCue[]): string {
   const labels = cues.map((c) => c.label);
   if (labels.length === 0) return "";
   if (labels.length === 1) return labels[0]!;
-  return `${labels.slice(0, -1).join(", ")} & ${labels[labels.length - 1]!}`;
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]!}`;
 }
 
-/** A planned recipe to inspect — the text blocks are its steps + ingredients. */
+/** A planned recipe to inspect. The text blocks are its steps + ingredients. */
 export type PlannedPrepRecipe = {
   slug: string;
   title: string;
@@ -101,7 +101,7 @@ export type PrepAheadReminder = {
   title: string;
   dayLabel: string;
   cues: PrepAheadCue[];
-  /** Ready-to-render phrase, e.g. "defrost & marinate". */
+  /** Ready-to-render phrase, e.g. "defrost and marinate". */
   summary: string;
 };
 

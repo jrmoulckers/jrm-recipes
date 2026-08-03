@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ErrorBoundary from "./error";
 
 beforeEach(() => {
-  // The boundary logs to console.error via useEffect; silence it in tests.
+  // The boundary logs to console.error via useEffect. Silence it in tests.
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 

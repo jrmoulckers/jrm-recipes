@@ -6,7 +6,7 @@ vi.mock("server-only", () => ({}));
 
 // Building the free-text (FTS + synonym fallback) predicate calls `db.select`
 // for its EXISTS subqueries, so a bare `{}` stub isn't enough here. A real
-// (query-only) Drizzle instance renders the SQL without ever connecting — the
+// (query-only) Drizzle instance renders the SQL without ever connecting. The
 // postgres client dials lazily on first query, which these tests never trigger.
 const { fakeDb } = await vi.hoisted(async () => {
   const { drizzle } = await import("drizzle-orm/postgres-js");
@@ -30,7 +30,7 @@ const renderAll = (conditions: SQL[]): string => {
   return combined ? render(combined).sql : "";
 };
 
-describe("recipeUsesFoodConditionSql — ingredient → recipe join", () => {
+describe("recipeUsesFoodConditionSql. Ingredient → recipe join", () => {
   it("matches on the write-time link AND the mined reverse index", () => {
     const { sql, params } = render(recipeUsesFoodConditionSql("food_tomato"));
     // Primary path: the structured ingredient-line FK.
@@ -46,7 +46,7 @@ describe("recipeUsesFoodConditionSql — ingredient → recipe join", () => {
   });
 });
 
-describe("searchFilterConditions — ingredient filter (#food-graph)", () => {
+describe("searchFilterConditions. Ingredient filter (#food-graph)", () => {
   it("adds no ingredient predicate when the filter is absent (undefined)", () => {
     const search = parseRecipeSearch({ cuisine: "Thai" });
     const sql = renderAll(searchFilterConditions(search));
@@ -65,7 +65,7 @@ describe("searchFilterConditions — ingredient filter (#food-graph)", () => {
   });
 
   it("forces an empty result when the term resolves to no known food (null)", () => {
-    // A requested-but-unresolvable ingredient must not silently no-op — it
+    // A requested-but-unresolvable ingredient must not silently no-op. It
     // should yield nothing rather than every recipe.
     const search = parseRecipeSearch({ ingredient: "asdfqwer" });
     const sql = renderAll(
@@ -84,7 +84,7 @@ describe("searchFilterConditions — ingredient filter (#food-graph)", () => {
     const conditions = searchFilterConditions(search, {
       ingredientFoodId: "food_tofu",
     });
-    // One condition each: free-text, cuisine, ingredient — combined with AND.
+    // One condition each: free-text, cuisine, ingredient. Combined with AND.
     expect(conditions).toHaveLength(3);
     const sql = renderAll(conditions);
     // FTS predicate is present…

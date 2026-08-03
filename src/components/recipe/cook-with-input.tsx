@@ -10,7 +10,7 @@ import { MAX_PANTRY_ITEMS } from "~/server/recipes/search";
 
 /**
  * Chips input for "cook with what you have". Pantry items live in the URL
- * (`?have=chicken,rice`) so results are shareable and SSR-rendered; typing
+ * (`?have=chicken,rice`) so results are shareable and SSR-rendered. Typing
  * commits on Enter/comma/blur and each chip can be removed.
  */
 export function CookWithInput({ initial }: { initial: string[] }) {
@@ -109,7 +109,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
         )}
       </div>
       <p className="text-sm text-muted-foreground">
-        Enter what&apos;s in your pantry — we&apos;ll rank recipes by how much
+        Enter what&apos;s in your pantry. We&apos;ll rank recipes by how much
         you already have.
       </p>
     </div>

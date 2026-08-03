@@ -43,7 +43,7 @@ describe("kid-safe capabilities (issue #345)", () => {
   });
 
   it("leaves a missing role (non-member) to surrounding access control", () => {
-    // Only the kid role is constrained here; non-members are gated elsewhere.
+    // Only the kid role is constrained here. Non-members are gated elsewhere.
     for (const capability of ALL_CAPABILITIES) {
       expect(roleCan(null, capability)).toBe(true);
       expect(roleCan(undefined, capability)).toBe(true);

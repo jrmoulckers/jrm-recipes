@@ -11,8 +11,8 @@ function initialsOf(name: string | null, handle: string | null): string {
 
 /**
  * Per-family rating breakdown (issue #334): average + count, a 5→1 star
- * distribution, and a capped stack of the members who rated. Purely presentational
- * — the aggregation and visibility gating happen in `getRatingBreakdown`. Shown
+ * distribution, and a capped stack of the members who rated. It is purely presentational.
+ * The aggregation and visibility gating happen in `getRatingBreakdown`. Shown
  * beside the rating control so a viewer sees not just the number but who loved it.
  */
 export function RatingSummary({
@@ -29,7 +29,7 @@ export function RatingSummary({
         className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
       >
         <p className="text-sm text-muted-foreground">
-          No ratings yet — be the first to rate this recipe.
+          No ratings yet. Be the first to rate this recipe.
         </p>
       </section>
     );

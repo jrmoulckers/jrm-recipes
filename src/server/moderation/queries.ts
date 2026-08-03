@@ -41,7 +41,7 @@ export type ModerationQueue = {
 
 /**
  * The moderation queue for a group (issue #357): open reports aggregated by
- * target, newest first. Owner/admin only — members and kids get a FORBIDDEN so
+ * target, newest first. Owner/admin only. Members and kids get a FORBIDDEN so
  * the page can 404/redirect. Each item carries the reported content preview, the
  * distinct reasons, a report count, and whether it's already hidden.
  */
@@ -110,7 +110,7 @@ export async function getModerationQueue(
   }
 
   // Resolve each target's content preview + author. Drop targets that no longer
-  // exist (deleted content) — nothing left to moderate.
+  // exist (deleted content), leaving nothing to moderate.
   const items: ModerationQueueItem[] = [];
   const authorIds = new Set<string>();
   const resolved = await Promise.all(
@@ -150,7 +150,7 @@ export async function getModerationQueue(
   return { groupId: group.id, groupSlug: group.slug, items };
 }
 
-/** Count of open reports for a group — for a moderation badge on the group nav. */
+/** Count of open reports for a group, for a moderation badge on the group nav. */
 export async function getOpenReportCount(
   groupId: string,
   viewerRole: MemberRole | null | undefined,

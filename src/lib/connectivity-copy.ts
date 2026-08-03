@@ -10,13 +10,13 @@
 export const CONNECTIVITY_COPY = {
   /** Shown when the network drops mid-session. */
   offline:
-    "You're offline — recipes you've opened still work. We'll sync changes when you're back.",
-  /** Shown when the connection returns; auto-dismissed. */
-  online: "Back online — syncing your latest.",
+    "You're offline. Recipes you've opened still work. We'll sync changes when you're back.",
+  /** Shown when the connection returns. Auto-dismissed. */
+  online: "Back online, syncing your latest.",
   /** Cook Mode "offline-ready" affordance near the wake-lock badge. */
   cachedBadge: "Saved for offline",
   cachedTooltip:
-    "This recipe is cached — you can finish cooking even without a connection.",
+    "This recipe is cached. You can finish cooking even without a connection.",
   /** Friendlier copy than a raw failure when a network-only action is attempted offline. */
   actionBlocked:
     "Can't save while offline. We'll keep your changes and try again when you reconnect.",

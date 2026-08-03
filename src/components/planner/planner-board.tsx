@@ -69,7 +69,7 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
-  /** Who planned this entry — shown on the shared group board (#363). */
+  /** Who planned this entry. It is shown on the shared group board (#363). */
   author?: { id: string; name: string } | null;
   recipe: {
     id: string;
@@ -369,7 +369,7 @@ function EntryChip({
             {alertText && (
               <span
                 className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
-                title="Best-effort from ingredient names — double-check labels and brands."
+                title="Best-effort from ingredient names. Double-check labels and brands."
               >
                 <AlertTriangle className="size-3 shrink-0" aria-hidden />
                 {alertText}
@@ -394,8 +394,8 @@ function EntryChip({
                 className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
                 title={
                   batch.dayLabel
-                    ? `Cook ${batch.multiple}× — leftovers on ${batch.dayLabel}`
-                    : `Cook ${batch.multiple}× — extra for leftovers`
+                    ? `Cook ${batch.multiple}×. Leftovers on ${batch.dayLabel}`
+                    : `Cook ${batch.multiple}×. Extra for leftovers`
                 }
               >
                 <Repeat className="size-3.5" aria-hidden />
@@ -566,7 +566,7 @@ function AddEntryDialog({
       if (result.ok) {
         toast.success(
           batching
-            ? "Added — leftovers night booked too"
+            ? "Added. Leftovers night booked too"
             : "Added to your plan",
         );
         const warning = formatPlanWarnings(result.warnings ?? [], locale);
@@ -680,7 +680,7 @@ function AddEntryDialog({
                   />
                   <span className="inline-flex items-center gap-1.5">
                     <Repeat className="size-4 text-primary" aria-hidden />
-                    Batch cook — eat again another night
+                    Batch cook. Eat again another night
                   </span>
                 </label>
 
@@ -768,7 +768,7 @@ export function PlannerEmptyState({
             <span className="font-medium text-foreground">{groupName}</span>{" "}
             this week yet. Tap{" "}
             <span className="font-medium text-foreground">Add</span> on any day
-            — everyone in the group can see and edit this plan.
+. Everyone in the group can see and edit this plan.
           </>
         ) : (
           <>

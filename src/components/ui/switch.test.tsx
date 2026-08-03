@@ -23,7 +23,7 @@ describe("Switch large-target sizing", () => {
 
   it("renders as a <button> so the global button min-height (--tap-min) governs its hit height", () => {
     render(<Switch aria-label="notify" />);
-    // globals.css: `button { min-height: var(--tap-min) }` — Kids 3rem / Simple 2.75rem.
+    // globals.css: `button { min-height: var(--tap-min) }`. Kids 3rem / Simple 2.75rem.
     expect(screen.getByRole("switch").tagName).toBe("BUTTON");
   });
 

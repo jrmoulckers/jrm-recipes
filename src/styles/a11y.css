@@ -2,10 +2,10 @@
  * Accessibility preferences (the third axis).
  *
  * Driven by <html> data-attributes set by A11yScript / A11yProvider:
- *   [data-text="large|xl"]   — larger base font (multiplies theme --text-scale)
- *   [data-contrast="high"]   — maximum ink/border contrast, keeps brand hues
- *   [data-motion="reduced"]  — force-stop animation + transition
- *   [data-reading="readable"]— dyslexia-friendly spacing + legible type
+ *   [data-text="large|xl"]  . Larger base font (multiplies theme --text-scale)
+ *   [data-contrast="high"]  . Maximum ink/border contrast, keeps brand hues
+ *   [data-motion="reduced"]. Force-stop animation + transition
+ *   [data-reading="readable"]. Dyslexia-friendly spacing + legible type
  *
  * Imported AFTER themes.css so contrast overrides win ties against theme tokens.
  * ========================================================================== */
@@ -23,7 +23,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * High contrast — push neutrals to the extremes, strengthen borders + rings.
+ * High contrast. Push neutrals to the extremes, strengthen borders + rings.
  * Brand primary/accent are preserved on purpose (identity stays intact).
  * ------------------------------------------------------------------------- */
 [data-contrast="high"] {
@@ -58,7 +58,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Reduced motion — user-forced, on top of the OS-level media query.
+ * Reduced motion. User-forced, on top of the OS-level media query.
  * ------------------------------------------------------------------------- */
 [data-motion="reduced"] *,
 [data-motion="reduced"] *::before,
@@ -70,7 +70,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Readable / dyslexia-friendly — roomier rhythm and the most legible type
+ * Readable / dyslexia-friendly. Roomier rhythm and the most legible type
  * available. Atkinson Hyperlegible is self-hosted via next/font and exposed as
  * --font-atkinson (see src/fonts/atkinson.ts + src/app/layout.tsx), so it ships
  * with the app and works offline instead of relying on the reader having it
@@ -98,13 +98,13 @@
  * OS-level contrast signals (issue #96). Unlike the axes above, these respond
  * to the operating system with no in-app toggle:
  *
- *   @media (prefers-contrast: more) — adopt the SAME neutral token overrides as
+ *   @media (prefers-contrast: more). Adopt the SAME neutral token overrides as
  *     [data-contrast="high"], so users who ask the OS for more contrast get it
  *     automatically. Brand primary/accent are preserved (identity stays intact).
  *     Gated on :not([data-contrast="off"]) so an explicit in-app opt-out (#130)
  *     overrides the OS preference.
  *
- *   @media (forced-colors: active) — Windows High Contrast Mode replaces our
+ *   @media (forced-colors: active). Windows High Contrast Mode replaces our
  *     token-painted backgrounds/borders with the system palette. Token-only
  *     boundaries (ghost/outline buttons, switch + slider tracks) and box-shadow
  *     focus rings can vanish, so we restore visible borders and a real focus
@@ -158,7 +158,7 @@
   }
 
   /* Switch: keep on/off legible when the token track flattens. The thumb is the
-     Radix Thumb child; the checked track leans on the selection color. */
+     Radix Thumb child. the checked track leans on the selection color. */
   [role="switch"] {
     background-color: Canvas;
   }
@@ -175,7 +175,7 @@
     background-color: Highlight;
   }
 
-  /* Focus outline must survive forced colors — do not rely on box-shadow rings.
+  /* Focus outline must survive forced colors. Do not rely on box-shadow rings.
      !important defeats the utility `outline-none` that ring-based primitives set. */
   a:focus-visible,
   button:focus-visible,
@@ -194,7 +194,7 @@
      colors, so an active tab, a pressed toggle/segment, or the current nav item
      becomes indistinguishable from its siblings. Paint them with the system
      SELECTION pair so the state survives. Text + icons use currentColor, so
-     setting `color` carries them along; forced-color-adjust lets it apply. */
+     setting `color` carries them along. forced-color-adjust lets it apply. */
   [aria-pressed="true"],
   [aria-selected="true"],
   [aria-current]:not([aria-current="false"]),

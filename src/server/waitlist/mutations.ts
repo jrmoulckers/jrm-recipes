@@ -6,9 +6,9 @@ import { type WaitlistData } from "./validation";
 
 /**
  * Outcome of a waitlist submission:
- * - `created`     — a new signup was stored.
- * - `duplicate`   — the email was already on the list (deduped, no-op).
- * - `unavailable` — no database configured; nothing persisted (degrade safely).
+ * - `created`    . A new signup was stored.
+ * - `duplicate`  . The email was already on the list (deduped, no-op).
+ * - `unavailable`. No database configured, nothing persisted (degrade safely).
  */
 export type WaitlistResult = "created" | "duplicate" | "unavailable";
 

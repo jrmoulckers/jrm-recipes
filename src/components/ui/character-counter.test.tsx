@@ -30,7 +30,7 @@ describe("<CharacterCounter />", () => {
     renderCounter(
       <CharacterCounter value={4015} max={4000} overMessage={OVER} />,
     );
-    expect(screen.getByText(`Over by 15 — ${OVER}`)).toBeTruthy();
+    expect(screen.getByText(`Over by 15. ${OVER}`)).toBeTruthy();
   });
 
   it("announces politely to assistive tech", () => {

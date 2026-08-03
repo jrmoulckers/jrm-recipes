@@ -17,7 +17,7 @@ import { ReportDialog, type ReportTargetType } from "./report-dialog";
 
 /**
  * The overflow menu shared by comments, reviews, and cook posts (#355/#356).
- * Bundles the safety actions — Report content and Block author — with an
+ * Bundles the safety actions: Report content and Block author, with an
  * optional Delete slot. Report/Block only appear for a signed-in viewer acting
  * on someone else's content.
  */

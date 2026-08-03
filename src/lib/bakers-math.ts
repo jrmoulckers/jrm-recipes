@@ -76,7 +76,7 @@ export type BakersFormula = {
   lines: BakersLine[];
   totalFlour: number;
   totalWeight: number;
-  /** Liquid weight ÷ flour weight, as a percentage; `null` when no liquid. */
+  /** Liquid weight ÷ flour weight, as a percentage. `null` when no liquid. */
   hydration: number | null;
 };
 

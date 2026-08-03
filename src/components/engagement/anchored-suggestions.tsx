@@ -20,7 +20,7 @@ function authorName(author: AnchoredSuggestion["author"]) {
  * row or method step (issue #346). Filing a suggestion here persists an anchor
  * (type + id + a snapshot label) so the recipe owner can tell exactly what the
  * suggestion refers to. Existing anchored suggestions render inline at the
- * target; the owner resolves/applies them from the discussion suggestions list.
+ * target. The owner resolves/applies them from the discussion suggestions list.
  */
 export type AnchoredSuggestionsProps = {
   recipeId: string;

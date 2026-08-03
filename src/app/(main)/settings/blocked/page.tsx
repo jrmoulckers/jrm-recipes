@@ -25,7 +25,7 @@ export default async function BlockedPeoplePage() {
         </h1>
         <p className="mt-1 text-muted-foreground">
           People you&apos;ve blocked won&apos;t see your comments and reviews,
-          and you won&apos;t see theirs. Blocking is private — they&apos;re
+          and you won&apos;t see theirs. Blocking is private. They&apos;re
           never told.
         </p>
       </header>

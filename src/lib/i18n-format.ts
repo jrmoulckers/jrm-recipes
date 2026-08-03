@@ -4,10 +4,10 @@ import { DEFAULT_LOCALE } from "~/config/i18n";
 export type ListType = "conjunction" | "disjunction";
 
 /**
- * Join a list of human-readable strings the way a given locale would — e.g.
+ * Join a list of human-readable strings the way a given locale would. E.g.
  * English `["a","b","c"]` → `"a, b, and c"`, Spanish → `"a, b y c"`, Arabic →
  * `"a وb وc"`. Hand-rolled `" and "` / `.join(", ")` bakes English grammar (and
- * the Oxford comma) into every locale; {@link Intl.ListFormat} defers to CLDR
+ * the Oxford comma) into every locale. {@link Intl.ListFormat} defers to CLDR
  * instead.
  *
  * Use only for user-facing prose. Machine-facing joins (URL params, JSON-LD,

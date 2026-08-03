@@ -100,7 +100,7 @@ function playTimerTone() {
 
 /**
  * Fire a system notification for a completed timer when the tab is backgrounded
- * (#186). Foreground completion keeps its tone + toast; this surfaces the alert
+ * (#186). Foreground completion keeps its tone + toast. This surfaces the alert
  * on the lock screen / tray via the SW registration when the cook has stepped
  * away. Best-effort: degrades silently where the SW or notifications are
  * unavailable (dev, unsupported, denied).
@@ -127,7 +127,7 @@ function notifyTimerComplete(input: {
   void navigator.serviceWorker.ready
     .then((registration) => registration.showNotification(title, options))
     .catch(() => {
-      // SW not ready or notifications unavailable — tone + toast already fired.
+      // SW not ready or notifications unavailable. Tone + toast already fired.
     });
 }
 
@@ -150,7 +150,7 @@ function defaultState(
  * Background system notification for a completed custom timer (#392). Mirrors
  * `notifyTimerComplete` but titles the alert with the timer's own label instead
  * of a step number. Best-effort and silent where the SW/notifications aren't
- * available; foreground completion still gets its tone + toast.
+ * available. Foreground completion still gets its tone + toast.
  */
 function notifyCustomTimerComplete(input: {
   label: string;
@@ -181,7 +181,7 @@ function notifyCustomTimerComplete(input: {
       }),
     )
     .catch(() => {
-      // SW not ready or notifications unavailable — tone + toast already fired.
+      // SW not ready or notifications unavailable. Tone + toast already fired.
     });
 }
 
@@ -222,7 +222,7 @@ export function useCookSession(
   const totalSteps = recipe.steps.length;
   const baseServings = recipe.servings ?? null;
   // No stored preference yet? Start from the system the reader's locale implies
-  // (US → imperial, elsewhere → metric); an explicit, persisted choice always
+  // (US → imperial, elsewhere → metric). An explicit, persisted choice always
   // wins during hydration below.
   const locale = useLocale();
 
@@ -266,7 +266,7 @@ export function useCookSession(
     setLoaded(true);
   }, [storageKey, totalSteps, baseServings, householdSize]);
 
-  // Persist after hydration; skipping the pre-load render avoids clobbering
+  // Persist after hydration. Skipping the pre-load render avoids clobbering
   // stored data with the initial defaults.
   React.useEffect(() => {
     if (!loaded || typeof window === "undefined") return;
@@ -452,7 +452,7 @@ export function useCookSession(
       announcedTimersRef.current.delete(step.id);
       // Contextual permission ask (#186): the user just chose to run a timer, so
       // prompt now (a user gesture) rather than on cold load. No-op unless the
-      // permission is still "default"; denial degrades to tone + toast only.
+      // permission is still "default". Denial degrades to tone + toast only.
       void requestTimerNotificationPermission(
         typeof Notification !== "undefined" ? Notification : undefined,
       );

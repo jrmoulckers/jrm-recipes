@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formatList } from "./i18n-format";
 
 describe("formatList", () => {
-  it("uses the locale's conjunction grammar (Oxford comma vs. connective word)", () => {
+  it("uses the locale's conjunction grammar (Oxford comma vs. Connective word)", () => {
     expect(formatList(["a", "b", "c"], "en")).toBe("a, b, and c");
     expect(formatList(["a", "b", "c"], "es")).toBe("a, b y c");
     expect(formatList(["a", "b", "c"], "de")).toBe("a, b und c");

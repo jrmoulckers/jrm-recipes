@@ -14,12 +14,12 @@ const TOLERANCE_SECONDS = 5 * 60;
 
 /**
  * Verify a Svix-signed webhook (as used by Clerk) without pulling in the `svix`
- * SDK — a dependency-free HMAC check, mirroring the self-contained approach used
+ * SDK. A dependency-free HMAC check, mirroring the self-contained approach used
  * elsewhere in this codebase (issue #217).
  *
  * The signed content is `${id}.${timestamp}.${payload}`, HMAC-SHA256'd with the
  * base64-decoded secret (the part after the `whsec_` prefix) and base64-encoded.
- * The `svix-signature` header is a space-separated list of `v1,<sig>` entries;
+ * The `svix-signature` header is a space-separated list of `v1,<sig>` entries.
  * any timing-safe match passes. The timestamp is bounded to a ±5-minute window
  * so a captured request can't be replayed indefinitely.
  */

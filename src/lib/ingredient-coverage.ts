@@ -2,7 +2,7 @@
  * Pure "cook with what you have" coverage scoring (#277).
  *
  * The database narrows candidates to recipes that mention at least one pantry
- * item; this module computes how well each recipe is covered by the pantry and
+ * item. This module computes how well each recipe is covered by the pantry and
  * ranks by most-matched, then fewest-missing. Matching is normalized (case,
  * punctuation, simple plurals) by reusing `normalizeIngredient`, so it stays in
  * sync with the substitutions matcher.
@@ -10,7 +10,7 @@
 
 import { normalizeIngredient } from "./substitutions";
 
-/** Naive English singularization — enough to unify egg/eggs, tomato/tomatoes. */
+/** Naive English singularization. Enough to unify egg/eggs, tomato/tomatoes. */
 function singularize(token: string): string {
   if (token.length <= 3) return token;
   if (token.endsWith("ies")) return `${token.slice(0, -3)}y`;

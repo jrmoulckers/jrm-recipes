@@ -1,7 +1,7 @@
 /**
  * Pure helpers for Cook Mode background notifications (#186). The DOM-touching
  * bits (requesting permission, calling `registration.showNotification`) live in
- * `use-cook-session.ts`; the decision logic and payload/URL shaping live here so
+ * `use-cook-session.ts`. The decision logic and payload/URL shaping live here so
  * they're unit-testable and can be shared with the service worker's
  * `notificationclick` handler (which imports `matchesCookClient`).
  */
@@ -56,7 +56,7 @@ export function buildCookTimerNotification(input: {
 
 /**
  * Whether to fire a *system* notification for a completed timer. We only do so
- * when notifications are supported and granted AND the tab is hidden — in the
+ * when notifications are supported and granted AND the tab is hidden. In the
  * foreground the existing tone + toast already alert the cook, so a tray
  * notification would be redundant.
  */

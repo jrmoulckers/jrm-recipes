@@ -73,7 +73,7 @@ export default async function CookProfilePage({
   const count = recipes.length;
 
   // Follow affordance only exists when the profile owner has opted in to a
-  // public profile. Otherwise there is no follow button and no counts — the
+  // public profile. Otherwise there is no follow button and no counts. The
   // follow graph stays invisible for cooks who haven't opted in.
   const viewer = user.publicActivityOptIn ? await getCurrentUser() : null;
   const showFollow = user.publicActivityOptIn;

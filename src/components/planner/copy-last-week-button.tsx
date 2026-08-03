@@ -10,7 +10,7 @@ import { copyPreviousWeekAction } from "~/server/planner/actions";
 import { Button } from "~/components/ui/button";
 
 /**
- * "Copy last week" — re-creates the previous week's entries on the matching
+ * "Copy last week" re-creates the previous week's entries on the matching
  * days/slots of the week being viewed, filling only empty cells (#434). Most
  * weeks are ~80% the same, so this turns Sunday's re-planning into one tap.
  */
@@ -26,11 +26,11 @@ export function CopyLastWeekButton({ week }: { week: string }) {
         return;
       }
       if (result.previousEmpty) {
-        toast.info("Last week was empty — nothing to copy yet.");
+        toast.info("Last week was empty. Nothing to copy yet.");
         return;
       }
       if (result.copied === 0) {
-        toast.info("This week is already full — nothing new to copy.");
+        toast.info("This week is already full. Nothing new to copy.");
         return;
       }
       toast.success(

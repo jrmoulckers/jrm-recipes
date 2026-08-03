@@ -4,7 +4,7 @@
  * this attaches canonical {@link Allergen} tokens to the canonical food graph
  * nodes (`food_items`, keyed by their stable {@link foodSlug}). `food_items` is
  * seeded from these (see `seed-ingredients.ts`), and `getRecipeAllergens` reads
- * them as the source of truth — falling back to the text detector only for
+ * them as the source of truth. Falling back to the text detector only for
  * ingredient lines that don't resolve to a food carrying curated allergens.
  *
  * Design: only foods that carry an *unambiguous* allergen are listed. Nodes
@@ -14,7 +14,7 @@
  * per-item text detector rather than being mislabelled by a coarse node token.
  *
  * The `Record<string, Allergen[]>` type makes any drift from the `Allergen`
- * union a compile error; `assertFoodAllergensValid` (exercised by the unit test
+ * union a compile error. `assertFoodAllergensValid` (exercised by the unit test
  * and the seed) additionally guarantees every key is a real food slug.
  */
 import { ALLERGENS, isAllergen, type Allergen } from "./allergens";
@@ -22,7 +22,7 @@ import { FOOD_ITEMS, foodSlug } from "./food-db";
 
 /**
  * Curated map from a food's stable slug to the allergens it inherently carries.
- * Keys must match `foodSlug(name)` for a food in {@link FOOD_ITEMS}; values must
+ * Keys must match `foodSlug(name)` for a food in {@link FOOD_ITEMS}. Values must
  * be canonical {@link Allergen} tokens (enforced by the type + the validator).
  */
 export const FOOD_ALLERGENS: Record<string, Allergen[]> = {

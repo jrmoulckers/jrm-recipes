@@ -59,9 +59,9 @@ function initials(name: string | null, handle: string | null): string {
 
 /**
  * The "family history" timeline: a warm vertical trail of a recipe's
- * milestones — when it was started, edited, shared, and every adaptation it
- * inspired — each with who did it and when. Purely presentational (server
- * component); no motion, so nothing to gate behind prefers-reduced-motion.
+ * milestones: when it was started, edited, shared, and every adaptation it
+ * inspired, each with who did it and when. It is purely presentational (server
+ * component). No motion, so nothing to gate behind prefers-reduced-motion.
  */
 export function RecipeStory({
   entries,
@@ -84,7 +84,7 @@ export function RecipeStory({
         </h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
           As this recipe is edited, shared, and adapted, its family history will
-          gather here — a trail of every hand that shaped it.
+          gather here. A trail of every hand that shaped it.
         </p>
       </section>
     );

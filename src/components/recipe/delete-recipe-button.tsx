@@ -18,7 +18,7 @@ import {
  * Deletes are soft (issue #165) and {@link restoreRecipeAction} already brings a
  * recipe and its history back, so long-time users no longer risk losing decades
  * of family history to a mis-tap. We surface an "Undo" toast the moment the
- * delete is confirmed — the toast lives in the root-layout `Toaster`, so it
+ * delete is confirmed. The toast lives in the root-layout `Toaster`, so it
  * survives the server action's redirect to `/recipes` and stays actionable.
  */
 export function DeleteRecipeButton({

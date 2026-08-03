@@ -14,7 +14,7 @@ import { Button } from "~/components/ui/button";
 import { brand } from "~/config/brand";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 
-// Invite links are private, single-purpose URLs — never index them.
+// Invite links are private, single-purpose URLs. Never index them.
 export const metadata: Metadata = {
   title: "Join a family cookbook",
   robots: { index: false, follow: false },

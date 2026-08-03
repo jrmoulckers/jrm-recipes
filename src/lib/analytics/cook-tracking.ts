@@ -27,7 +27,7 @@ export function cookTrackKey(recipeId: string): string {
  * was their first ever (issue #328's `first_cook_started` activation step).
  *
  * The marker is device-local (localStorage), so it's a privacy-friendly
- * *approximation* of a person-level first cook — good enough to drive the
+ * *approximation* of a person-level first cook. Good enough to drive the
  * activation funnel without a server round-trip or storing anything per-user.
  * Returns `isFirstEver: false` when storage is unavailable or a read/write
  * fails, so a private-mode session never falsely claims a first cook.
@@ -50,7 +50,7 @@ export function markFirstCookStarted(
 
 /**
  * Begin (or resume) a cook tracking session. Returns `isNew: true` only the
- * first time for a given recipe — subsequent calls (a reload rehydrating the
+ * first time for a given recipe. Subsequent calls (a reload rehydrating the
  * same session) return the original `startedAt` and `isNew: false`, so callers
  * emit `cook_started` exactly once.
  */
@@ -69,7 +69,7 @@ export function beginCookSession(
   try {
     storage.setItem(key, String(now));
   } catch {
-    // Ignore private-mode / quota write failures — still a new session.
+    // Ignore private-mode / quota write failures. Still a new session.
   }
   return { isNew: true, startedAt: now };
 }

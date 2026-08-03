@@ -29,8 +29,8 @@ export function firstSearchParam(
 }
 
 /**
- * Dynamic segment for a recipe route. The value may be a recipe **id or slug** —
- * the loader resolves either — so it is deliberately not narrowed further here.
+ * Dynamic segment for a recipe route. The value may be a recipe **id or slug**,
+ * and the loader resolves either, so it is deliberately not narrowed further here.
  */
 export type RecipeRouteParams = { id: string };
 /** Dynamic segment for a saved collection, keyed by id. */

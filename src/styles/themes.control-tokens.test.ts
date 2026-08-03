@@ -55,7 +55,7 @@ describe("themes.css interactive-control tokens (#94)", () => {
   });
 
   it("keeps THEME_BEHAVIOR.largeTargets aligned with the modes that scale controls", () => {
-    // Kids + barebones are the large-target modes; both must raise the tokens.
+    // Kids + barebones are the large-target modes. both must raise the tokens.
     expect(THEME_BEHAVIOR.kids.largeTargets).toBe(true);
     expect(THEME_BEHAVIOR.barebones.largeTargets).toBe(true);
     for (const theme of ["kitchen", "whimsy", "professional"] as const) {

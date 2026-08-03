@@ -9,9 +9,9 @@ import type { PrintRecipe } from "~/components/print/types";
  * Cook Mode and Print each hand-mapped the server `FullRecipe` onto their own
  * client-safe DTO inside the page file, so the two maps drifted and a new
  * recipe field had to be added in several places. These mappers are now the
- * single place that mapping happens; each surface's DTO type stays co-located
+ * single place that mapping happens. Each surface's DTO type stays co-located
  * with its component. Only serializable, client-needed fields cross the
- * boundary — no server-only fields leak.
+ * boundary. No server-only fields leak.
  *
  * `FullRecipe` is imported as a type only, so this stays a client-safe pure
  * module (mirroring `src/lib/reel/scenes.ts`).

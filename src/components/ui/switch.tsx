@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils";
 /**
  * Toggle switch. Its dimensions are driven by `--control-scale` (see
  * themes.css) so the pill, thumb, and checked travel all grow together in the
- * large-target modes (Kids/Simple); at the default scale of 1 the classes
+ * large-target modes (Kids/Simple). At the default scale of 1 the classes
  * resolve to the original h-6 / w-11 / size-5 / translate-x-5. Height also
  * meets `--tap-min` via the global `button` rule in globals.css. The 2px
  * (0.25rem across both borders) offset is preserved, which is why the checked

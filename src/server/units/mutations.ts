@@ -38,7 +38,7 @@ function prefFields(input: UnitPreferencesInput) {
 /**
  * Upsert a user's unit preferences. There's at most one row per user (the
  * unique `user_id`), so an insert that collides updates the existing row in
- * place — the settings form always sends the full desired state.
+ * place. The settings form always sends the full desired state.
  */
 export async function saveUnitPreferences(
   input: UnitPreferencesInput,

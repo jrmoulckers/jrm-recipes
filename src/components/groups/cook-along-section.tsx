@@ -72,7 +72,7 @@ export function CookAlongSection({
             Cook-alongs
           </h2>
           <p className="mt-1 text-muted-foreground">
-            Pick a night, make the same dish together — near or far.
+            Pick a night, make the same dish together. Near or far.
           </p>
         </div>
         {isMember && recipes.length > 0 ? (
@@ -343,7 +343,7 @@ function ScheduleCookAlongButton({
         scheduledFor: new Date(scheduledFor).toISOString(),
       });
       if (result.ok) {
-        toast.success("Cook-along scheduled — the family's invited");
+        toast.success("Cook-along scheduled. The family's invited");
         reset();
         setOpen(false);
         router.refresh();

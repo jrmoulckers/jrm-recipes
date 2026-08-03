@@ -9,7 +9,7 @@ import { recipeIngredients, recipeSteps, recipes } from "./recipes";
 import { shoppingListItems } from "./shopping";
 
 /**
- * Issue #150 — the schema must declare DB-level CHECK constraints (the rating
+ * Issue #150. The schema must declare DB-level CHECK constraints (the rating
  * range and non-negative numeric fields) that mirror the Zod bounds, so a write
  * bypassing the recipe editor (seed, import, admin/raw SQL) cannot persist an
  * out-of-range value.
@@ -114,7 +114,7 @@ describe("schema declares CHECK constraints (issue #150)", () => {
   });
 });
 
-// Vitest runs with the repo root as cwd; the migrations live in ./drizzle.
+// Vitest runs with the repo root as cwd. The migrations live in ./drizzle.
 const drizzleDir = join(process.cwd(), "drizzle");
 const migration = readdirSync(drizzleDir)
   .filter((f) => f.endsWith(".sql"))

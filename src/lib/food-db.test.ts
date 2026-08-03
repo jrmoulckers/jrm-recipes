@@ -34,7 +34,7 @@ describe("normalizeFoodText", () => {
   });
 });
 
-describe("matchFood — basic resolution", () => {
+describe("matchFood. Basic resolution", () => {
   it("matches common ingredients to their food record", () => {
     expect(matchFood("water")?.name).toBe("Water");
     expect(matchFood("2 large eggs")?.category).toBe("egg");
@@ -56,7 +56,7 @@ describe("matchFood — basic resolution", () => {
   });
 });
 
-describe("matchFood — longest-match-wins", () => {
+describe("matchFood. Longest-match-wins", () => {
   it("prefers the more specific multi-word phrase", () => {
     expect(matchFood("1 cup brown sugar")?.name).toBe("Brown sugar");
     expect(matchFood("1 cup sugar")?.name).toBe("Sugar");

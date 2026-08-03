@@ -11,7 +11,7 @@
  *      plurals, gerunds).
  *   2. The step's instruction text (and any free-form technique labels) is
  *      scanned for hazard keywords with whole-word matching, after stripping
- *      diacritics — so "Sauté" and "sauteing" both hit, while "stir", "cute",
+ *      diacritics, so "Sauté" and "sauteing" both hit, while "stir", "cute",
  *      and "biscuit" never do (no false alarms).
  *
  * Presentation + Kids-mode gating live in `kid-safety-callout.tsx`.
@@ -30,7 +30,7 @@ export const KID_HAZARD_ORDER: readonly KidHazard[] = ["heat", "sharp"];
  * isn't obvious from a single keyword (e.g. `reduce`, `temper`, `deglaze`).
  */
 export const TECHNIQUE_HAZARDS: Readonly<Record<string, KidHazard>> = {
-  // Heat — hot pan / oven / liquid.
+  // Heat. Hot pan / oven / liquid.
   saute: "heat",
   sear: "heat",
   caramelize: "heat",
@@ -45,7 +45,7 @@ export const TECHNIQUE_HAZARDS: Readonly<Record<string, KidHazard>> = {
   grill: "heat",
   reduce: "heat",
   temper: "heat",
-  // Sharp — knife / blade / grater.
+  // Sharp. Knife / blade / grater.
   dice: "sharp",
   mince: "sharp",
   chop: "sharp",
@@ -257,7 +257,7 @@ export const KID_HAZARD_INFO: Readonly<
 > = {
   heat: {
     emoji: "🔥",
-    message: "Careful — this step is hot! Ask a grown-up to help.",
+    message: "Careful. This step is hot! Ask a grown-up to help.",
     label: "Safety warning: this step is hot. Ask a grown-up to help.",
   },
   sharp: {

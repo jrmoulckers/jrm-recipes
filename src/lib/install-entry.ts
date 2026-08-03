@@ -1,6 +1,6 @@
 /**
  * Pure decision logic for the manual "Install app" entry point (#188). Kept
- * DOM-free so it's unit-testable; the component in
+ * DOM-free so it's unit-testable. The component in
  * `src/components/pwa/install-app-button.tsx` feeds it live browser state.
  */
 
@@ -9,8 +9,8 @@ export type InstallEntryMode = "native" | "ios" | "hidden";
 /**
  * How (or whether) to surface the manual install control:
  * - `hidden` when already installed / running standalone, or when there's no
- *   way to install (no captured `beforeinstallprompt` and not iOS Safari);
- * - `native` when a deferred `beforeinstallprompt` is available to replay;
+ *   way to install (no captured `beforeinstallprompt` and not iOS Safari).
+ * - `native` when a deferred `beforeinstallprompt` is available to replay.
  * - `ios` when running iOS Safari, which has no programmatic prompt and instead
  *   needs the "Add to Home Screen" tip.
  *

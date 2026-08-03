@@ -26,7 +26,7 @@ export { foodSlug };
  * Build the `food_items` rows from the static dataset. Ids are derived from the
  * slug so upserts are idempotent. Throws if two foods slugify to the same key
  * (a data error the seed should surface loudly rather than silently drop a row).
- * Seeded rows are `source = 'curated'`; the graph miner later adds `'mined'`
+ * Seeded rows are `source = 'curated'`. The graph miner later adds `'mined'`
  * rows/stats onto the same nodes.
  */
 export function buildFoodItemRows(): NewFoodItem[] {
@@ -53,7 +53,7 @@ export function buildFoodItemRows(): NewFoodItem[] {
  * Build the curated `food_aliases` rows from the static dataset: every food's
  * name plus its match phrases, normalized and de-duplicated per node. These seed
  * the alias table (`source = 'curated'`) so free-text resolution works before
- * any corpus mining has run; the miner later layers `'mined'` phrasings on top.
+ * any corpus mining has run. The miner later layers `'mined'` phrasings on top.
  * Ids are a deterministic hash of (nodeId, alias) so re-seeding upserts in place.
  */
 export function buildFoodAliasRows(): NewFoodAlias[] {

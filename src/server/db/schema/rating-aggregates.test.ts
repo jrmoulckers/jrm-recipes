@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 import { recipes } from "./recipes";
 
 /**
- * Issue #154 — recipes carries denormalized, owner-excluded rating aggregates
+ * Issue #154. Recipes carries denormalized, owner-excluded rating aggregates
  * (`ratingCount` + `ratingSum`) so list/feed cards and the top-rated ordering
  * read a count + average straight off the row instead of scanning `ratings`.
  *
  * No Postgres in unit tests, so we assert the invariants where they become real:
  * the Drizzle table config that `db:generate` compiles into DDL. Column names
- * come back as the camelCase JS keys here; snake_case is applied at generate time.
+ * come back as the camelCase JS keys here. Snake_case is applied at generate time.
  */
 describe("recipes rating aggregate columns (issue #154)", () => {
   const { columns, checks } = getTableConfig(recipes);

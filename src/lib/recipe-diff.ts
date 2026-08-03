@@ -2,10 +2,10 @@
  * Pure, dependency-free diff of two recipe version snapshots (#358).
  *
  * `recipe_versions.snapshot` is validated into a {@link RecipeInput} by
- * `parseSnapshot`; this module compares two such payloads (or `null` for a
+ * `parseSnapshot`. This module compares two such payloads (or `null` for a
  * missing/legacy snapshot) and produces a structured, render-ready diff of the
  * scalar fields, ingredient lines, and steps. It never throws on malformed or
- * differently-shaped input — a `null` side is treated as an empty recipe so a
+ * differently-shaped input. A `null` side is treated as an empty recipe so a
  * brand-new or legacy version still diffs cleanly.
  *
  * Kept free of React / DB imports so it can be unit-tested in isolation and
@@ -127,7 +127,7 @@ function lcsPairs(a: string[], b: string[]): Array<[number, number]> {
 
 /**
  * Diff two ordered lists of items into added/removed/changed/unchanged lines.
- * Alignment is by `key` (stable identity such as the ingredient item text);
+ * Alignment is by `key` (stable identity such as the ingredient item text).
  * aligned rows whose `display` differs are reported as `changed`.
  */
 function diffLines<T>(
@@ -167,7 +167,7 @@ function diffLines<T>(
 
   // Emit the unmatched rows sitting between two anchors. When `pairGaps` is set
   // (steps, which are positional), leftover before/after rows are paired into
-  // `changed` edits; otherwise they stay as discrete removed/added rows.
+  // `changed` edits. Otherwise they stay as discrete removed/added rows.
   const flushGap = (bItems: T[], aItems: T[]) => {
     if (pairGaps) {
       const shared = Math.min(bItems.length, aItems.length);

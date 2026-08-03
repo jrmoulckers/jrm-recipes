@@ -8,13 +8,13 @@ import { Button, buttonVariants } from "~/components/ui/button";
  * Shared, themed "something went wrong" panel used by both the route-level
  * error boundary (`error.tsx`) and the root boundary (`global-error.tsx`).
  *
- * Purely presentational: it never renders the raw error message or stack —
- * only a friendly message plus an optional opaque `digest` reference — so we
+ * Purely presentational: it never renders the raw error message or stack.
+ * only a friendly message plus an optional opaque `digest` reference. So we
  * don't leak internals to the UI.
  */
 export function ErrorState({
   title = "Something went wrong",
-  description = "A hiccup in the kitchen — we couldn't finish loading this page. You can try again, or head back home.",
+  description = "A hiccup in the kitchen. We couldn't finish loading this page. You can try again, or head back home.",
   digest,
   onReset,
   className,

@@ -27,9 +27,9 @@ export type SeoStep = {
 
 /**
  * Optional per-serving nutrition (issue #414 stores these on `recipes`). All
- * fields are nullable/absent — a recipe may carry none, some, or all — and are
- * emitted as a schema.org `NutritionInformation` object only when at least one
- * is present (issue #307). Energy is kcal and sodium is mg (whole numbers);
+ * fields are nullable/absent. A recipe may carry none, some, or all, and they
+ * are emitted as a schema.org `NutritionInformation` object only when at least
+ * one is present (issue #307). Energy is kcal, sodium is mg (whole numbers), and
  * macronutrients are grams and may be fractional.
  */
 export type SeoNutrition = {
@@ -221,7 +221,7 @@ function buildNutrition(
  * Known meal-course categories mapped from lowercased tag names (and a few
  * common synonyms) to the canonical schema.org-friendly label. Used to resolve
  * `recipeCategory` from free-form tags (issue #314): the first recipe tag whose
- * name matches this vocabulary wins; when none match the field is omitted.
+ * name matches this vocabulary wins. When none match the field is omitted.
  */
 const CATEGORY_VOCAB = new Map<string, string>([
   ["appetizer", "Appetizer"],
@@ -279,7 +279,7 @@ function resolveCategory(tagNames: string[]): string | undefined {
 
 /**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
- * called for `public` recipes; optional fields are omitted when absent so the
+ * called for `public` recipes. Optional fields are omitted when absent so the
  * structured data stays clean.
  */
 export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {

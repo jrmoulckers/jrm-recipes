@@ -7,7 +7,7 @@ import { useConsent } from "~/components/analytics/consent-provider";
 
 /**
  * Analytics opt-out control (issue #324) for the preferences panel. Flipping it
- * off calls the backend's opt-out + reset via the consent provider; a browser
+ * off calls the backend's opt-out + reset via the consent provider. A browser
  * DNT/GPC signal forces it off and disabled.
  */
 export function PrivacyToggle() {

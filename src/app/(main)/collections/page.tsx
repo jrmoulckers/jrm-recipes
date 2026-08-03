@@ -19,7 +19,7 @@ import { CreateCollectionDialog } from "~/components/collections/create-collecti
 
 export const metadata: Metadata = {
   title: "Saved",
-  description: "Your recipe collections — shelves for the dishes you love.",
+  description: "Your recipe collections. Shelves for the dishes you love.",
 };
 
 export default async function CollectionsPage() {
@@ -44,7 +44,7 @@ export default async function CollectionsPage() {
             Saved recipes
           </h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            Your favorites and the collections you&apos;ve gathered — the dishes
+            Your favorites and the collections you&apos;ve gathered. The dishes
             worth coming back to.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default async function CollectionsPage() {
               <EmptyState
                 icon={<BookMarked className="size-7" />}
                 title="Start your first collection"
-                description="Group recipes into cookbooks — weeknight dinners, holiday bakes, or family classics."
+                description="Group recipes into cookbooks. Weeknight dinners, holiday bakes, or family classics."
                 action={<CreateCollectionDialog />}
               />
             )}

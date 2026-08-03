@@ -42,9 +42,9 @@ describe("buildAliasIndex", () => {
 });
 
 describe("pickFoodId", () => {
-  it("resolves an exact alias match (incl. quantity-bearing mined phrasings)", () => {
+  it("resolves an exact alias match (incl. Quantity-bearing mined phrasings)", () => {
     // Mined aliases are the full normalized item string, so a repeat phrasing
-    // hits directly — even one the curated matcher wouldn't score the same way.
+    // hits directly. Even one the curated matcher wouldn't score the same way.
     const index = buildAliasIndex([
       { alias: "2 tbsp kosher salt", foodId: "food_salt", useCount: 4 },
     ]);

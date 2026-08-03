@@ -12,7 +12,7 @@ import { Button } from "~/components/ui/button";
 /**
  * "Back in the rotation" rail (#426): family favorites the cook hasn't made in a
  * while, each with quick Cook and Add-to-plan actions to break the same-five-
- * dinners rut. Renders nothing when there aren't enough qualifying favorites —
+ * dinners rut. Renders nothing when there aren't enough qualifying favorites.
  * the caller decides that threshold and passes the already-filtered list.
  */
 export function RotationRail({

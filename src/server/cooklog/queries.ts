@@ -163,8 +163,8 @@ export type JournalInsights = {
 };
 
 /**
- * Aggregate insights for the journal — total cooks, the most-recent cook, and
- * the top-3 most-cooked recipes — computed with the same filters as the list so
+ * Aggregate insights for the journal. Total cooks, the most-recent cook, and
+ * the top-3 most-cooked recipes. Computed with the same filters as the list so
  * the numbers always reconcile with what's shown (#364). No new tables.
  */
 export async function getJournalInsights(

@@ -5,7 +5,7 @@ const UPLOAD_SEGMENT = "/image/upload/";
 
 /**
  * True when `src` is a Cloudinary image-delivery URL we can rewrite. We only
- * touch the `/image/upload/` delivery type; anything else (other hosts, other
+ * touch the `/image/upload/` delivery type. Anything else (other hosts, other
  * delivery types, relative/pasted URLs) is left for the default optimizer.
  */
 export function isCloudinaryUrl(src: string): boolean {
@@ -22,12 +22,12 @@ export function isCloudinaryUrl(src: string): boolean {
 
 /**
  * A `next/image` loader that offloads format/quality/width negotiation to
- * Cloudinary's edge — `f_auto,q_auto,c_limit,w_<width>` — instead of proxying
+ * Cloudinary's edge. `f_auto,q_auto,c_limit,w_<width>`. Instead of proxying
  * the (already-optimizable) asset through Vercel's `/_next/image` optimizer.
  * This removes a proxy hop in front of the LCP image and stops burning image
  * optimization quota on assets Cloudinary can serve more cheaply.
  *
- * `c_limit` never upscales past the source; `w_<width>` threads next/image's
+ * `c_limit` never upscales past the source. `w_<width>` threads next/image's
  * responsive width in so the `srcset` stays correct. Non-Cloudinary URLs are
  * returned untouched so Clerk avatars and pasted image URLs are unaffected.
  */

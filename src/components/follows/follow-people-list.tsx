@@ -56,7 +56,7 @@ function PersonRow({ person }: { person: FollowPerson }) {
 
 /**
  * A followers / following list with cursor "load more". `direction` picks which
- * server action pages the next batch; both re-check the target's opt-in server
+ * server action pages the next batch. Both re-check the target's opt-in server
  * side so a non-opted-in cook's graph is never enumerable.
  */
 export function FollowPeopleList({

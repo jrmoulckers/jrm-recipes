@@ -2,9 +2,9 @@ import qrcode from "qrcode-generator";
 
 /**
  * Dependency-light QR generation for print (issue #350). Wraps the tiny,
- * zero-runtime-dep `qrcode-generator` to produce a *vector* description — a
- * single SVG path over a unit grid — so the printed code stays crisp at any
- * size. Pure + deterministic, so it unit tests without a DOM.
+ * zero-runtime-dep `qrcode-generator` to produce a *vector* description, a
+ * single SVG path over a unit grid, so the printed code stays crisp at any size.
+ * Pure + deterministic, so it unit tests without a DOM.
  */
 
 export type QrErrorCorrection = "L" | "M" | "Q" | "H";

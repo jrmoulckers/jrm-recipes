@@ -6,8 +6,8 @@ import { users } from "./users";
 
 /**
  * The kind of thing a reaction is attached to (issue #342). Reactions are
- * polymorphic — the same lightweight bar renders on comments, reviews, and
- * cook-log posts — so `targetType` + `targetId` identify the target rather than
+ * polymorphic. The same lightweight bar renders on comments, reviews, and
+ * cook-log posts, so `targetType` + `targetId` identify the target rather than
  * a per-kind foreign key.
  */
 export const reactionTarget = pgEnum("reaction_target", [
@@ -37,7 +37,7 @@ export const reactions = pgTable(
     id: pk(),
     targetType: reactionTarget().notNull(),
     // Polymorphic target id (matches pk width). No FK because the target table
-    // varies; deletes are handled in application code alongside the target.
+    // varies. Deletes are handled in application code alongside the target.
     targetId: fk().notNull(),
     userId: fk()
       .notNull()
@@ -46,7 +46,7 @@ export const reactions = pgTable(
     ...timestamps(),
   },
   (t) => [
-    // At most one of a given emoji per user per target — the toggle upserts
+    // At most one of a given emoji per user per target. The toggle upserts
     // against this constraint.
     unique("reactions_target_user_emoji_uq").on(
       t.targetType,

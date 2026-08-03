@@ -78,7 +78,7 @@ describe("QuickPlanButton (#379)", () => {
     await user.click(
       screen.getByRole("button", { name: /add to this week's plan/i }),
     );
-    // Default day is the passed-in next empty dinner; slot defaults to dinner.
+    // Default day is the passed-in next empty dinner. Slot defaults to dinner.
     await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
 
     await waitFor(() => expect(mockedAddEntry).toHaveBeenCalledTimes(1));

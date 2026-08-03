@@ -96,11 +96,11 @@ function Prompt() {
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <UtensilsCrossed className="size-10 text-muted-foreground" />
       <p className="max-w-md text-muted-foreground">
-        Add a few ingredients above — like{" "}
+        Add a few ingredients above, like{" "}
         <span className="font-medium text-foreground">
           chicken, rice, spinach
-        </span>{" "}
-        — and we&apos;ll rank recipes by how much of each you already have.
+        </span>
+        {", and we'll rank recipes by how much of each you already have."}
       </p>
     </div>
   );

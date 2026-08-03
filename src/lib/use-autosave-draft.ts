@@ -5,14 +5,14 @@ import * as React from "react";
 /**
  * Draft auto-save + recovery for the recipe editor (issue #421).
  *
- * Long-time cooks often type slowly; a locked phone or a stray "back" tap used
+ * Long-time cooks often type slowly. A locked phone or a stray "back" tap used
  * to wipe a half-entered recipe. This hook quietly mirrors the in-progress
  * editor value to `localStorage` (debounced) so nothing is lost, offers to
  * restore an unfinished draft on return, and warns before an unsaved exit.
  *
  * The hook is deliberately storage-shape agnostic: callers pass whatever
  * snapshot object represents their form and get the same object back on
- * restore. Drafts are namespaced per key ("new" vs. a recipe id) so a new
+ * restore. Drafts are namespaced per key ("new" vs. A recipe id) so a new
  * recipe never contaminates an edit-in-progress and vice-versa.
  */
 
@@ -21,7 +21,7 @@ const PREFIX = "heirloom:recipe-draft:";
 export type AutosaveDraft<T> = {
   /** A previously-saved draft found on mount, or null once resolved/absent. */
   availableDraft: T | null;
-  /** Acknowledge the offered draft was applied; resumes autosaving. */
+  /** Acknowledge the offered draft was applied. Resumes autosaving. */
   acceptDraft: () => void;
   /** Throw the offered draft away and resume autosaving a fresh one. */
   discardDraft: () => void;
@@ -72,7 +72,7 @@ export function useAutosaveDraft<T>({
     try {
       window.localStorage.removeItem(storageKey);
     } catch {
-      // Storage may be full or blocked (private mode); nothing to recover.
+      // Storage may be full or blocked (private mode). Nothing to recover.
     }
   }, [storageKey]);
 
@@ -83,7 +83,7 @@ export function useAutosaveDraft<T>({
   }, [clear]);
 
   // Debounced persist: skip while an unresolved draft offer is on screen so we
-  // never overwrite it before the user chooses restore vs. discard.
+  // never overwrite it before the user chooses restore vs. Discard.
   React.useEffect(() => {
     if (offered || !dirty || typeof window === "undefined") return;
     const handle = window.setTimeout(() => {

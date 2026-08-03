@@ -35,7 +35,7 @@ export default async function NotificationsPage() {
           Notifications
         </h1>
         <p className="mt-1 max-w-2xl text-muted-foreground">
-          Everything happening around your recipes and family — mentions,
+          Everything happening around your recipes and family. Mentions,
           replies, reviews, reactions, and cook-alongs.
         </p>
       </header>

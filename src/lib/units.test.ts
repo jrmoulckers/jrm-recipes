@@ -49,7 +49,7 @@ describe("formatQuantity", () => {
 
   it("formats metric quantities as measurable decimals, not vulgar fractions (ck06)", () => {
     // Awkward imperial→metric conversions must round to sensible precision and
-    // render as decimals — never as a vulgar fraction of a gram/millilitre.
+    // render as decimals. Never as a vulgar fraction of a gram/millilitre.
     // Small metric masses keep a decimal of measurable precision (#403), so
     // an oz→g conversion of a small dose is no longer rounded to a whole gram.
     expect(formatQuantity(28.35, "g")).toBe("28.4");
@@ -86,7 +86,7 @@ describe("formatQuantity", () => {
 
   it("uses the locale's numbering system for non-Latin-digit locales", () => {
     const out = formatQuantity(1.2, undefined, "ar");
-    // Arabic-Indic digits, not Western — and different from the en rendering.
+    // Arabic-Indic digits, not Western, and different from the en rendering.
     expect(out).not.toBe("1.2");
     expect(out).toMatch(/[\u0660-\u0669]/);
     expect(formatQuantity(3, undefined, "ar")).toMatch(/[\u0660-\u0669]/);
@@ -183,7 +183,7 @@ describe("deriveScaleFactor (#390 scale to target)", () => {
   });
 
   it("converts the target through a compatible unit", () => {
-    // Recipe base 2 cups; cook has 1 quart (= 4 cups) → ×2.
+    // Recipe base 2 cups. Cook has 1 quart (= 4 cups) → ×2.
     expect(deriveScaleFactor(2, 1, "cup", "quart")).toBe(2);
     // 500 g target against a 1 lb (453.592 g) base ≈ ×1.1.
     expect(deriveScaleFactor(1, 500, "lb", "g")).toBeCloseTo(1.1023, 3);
@@ -278,7 +278,7 @@ describe("displayUnit", () => {
   });
 
   it("selects the plural category by locale, not a count !== 1 check (#247)", () => {
-    // English: only 1 is the "one" category; 0 and 2 are "other" → plural.
+    // English: only 1 is the "one" category. 0 and 2 are "other" → plural.
     expect(displayUnit("cup", 0, "en")).toBe("cups");
     expect(displayUnit("cup", 1, "en")).toBe("cup");
     expect(displayUnit("cup", 2, "en")).toBe("cups");
@@ -286,7 +286,7 @@ describe("displayUnit", () => {
     expect(displayUnit("cup", 0, "fr")).toBe("cup");
     expect(displayUnit("cup", 1, "fr")).toBe("cup");
     expect(displayUnit("cup", 2, "fr")).toBe("cups");
-    // Arabic has more than two categories (zero/one/two/few/many/other); every
+    // Arabic has more than two categories (zero/one/two/few/many/other). Every
     // non-"one" count resolves to the plural label.
     expect(displayUnit("cup", 1, "ar")).toBe("cup"); // one
     expect(displayUnit("cup", 2, "ar")).toBe("cups"); // two
@@ -325,7 +325,7 @@ describe("toSystemRange", () => {
   });
 
   it("keeps the max on the min's chosen unit across a unit threshold (ck01)", () => {
-    // 5 cups alone rounds up to litres; converting the range independently
+    // 5 cups alone rounds up to litres. Converting the range independently
     // would show the litre value beside the ml label. Both must stay ml.
     expect(toSystemRange(3, 5, "cup", "metric")).toEqual({
       quantity: 709.764,
@@ -448,7 +448,7 @@ describe("temperature (#249)", () => {
   it("formats temperatures as plain locale-aware decimals, never fractions", () => {
     expect(formatQuantity(350, "°F")).toBe("350");
     expect(formatQuantity(177, "°C")).toBe("177");
-    // Large temperatures round to whole degrees; small ones keep one decimal
+    // Large temperatures round to whole degrees. Small ones keep one decimal
     // and honor the locale separator.
     expect(formatQuantity(212.5, "°C")).toBe("213");
     expect(formatQuantity(4.5, "°C", "de-DE")).toBe("4,5");
@@ -655,7 +655,7 @@ describe("resolveDisplayMeasure", () => {
   });
 
   it("honors per-volume-class overrides by ingredient kind", () => {
-    // Liquids in mL, dry goods in cups, seasonings in tsp — all at once.
+    // Liquids in mL, dry goods in cups, seasonings in tsp. All at once.
     const p = prefs({
       defaultSystem: "us",
       liquidVolumeUnit: "ml",
@@ -685,7 +685,7 @@ describe("resolveDisplayMeasure", () => {
   });
 
   it("caps small-amount volumes at tbsp instead of scaling to cups", () => {
-    // 12 tsp = 4 tbsp = 0.25 cup; the small-amounts ladder stops at tbsp.
+    // 12 tsp = 4 tbsp = 0.25 cup. The small-amounts ladder stops at tbsp.
     const m = resolveDisplayMeasure(
       12,
       "tsp",

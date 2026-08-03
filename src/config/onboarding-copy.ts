@@ -2,7 +2,7 @@
  * First-run onboarding copy (issue #147). Centralized so the welcome moment can
  * be localized or mode-adapted later without hunting through JSX. Voice follows
  * `docs/voice-and-tone.md`: warm, familial, encouraging, and oriented around the
- * core loop — create → cook → share.
+ * core loop. Create → cook → share.
  */
 
 export interface OnboardingStep {
@@ -67,7 +67,7 @@ export interface ChecklistCopy {
 export const ONBOARDING_CHECKLIST_COPY: ChecklistCopy = {
   heading: "Getting started",
   subheading: "A few steps to bring your family's cooking to life.",
-  allDone: "You're all set — happy cooking! 🎉",
+  allDone: "You're all set. Happy cooking! 🎉",
   steps: [
     {
       title: "Add your first recipe",

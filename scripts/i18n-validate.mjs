@@ -18,7 +18,7 @@
  *   pnpm i18n:validate
  *
  * The pure helpers (flatten, extractPlaceholders, diffCatalog) are exported for
- * reuse/testing; the CLI only runs when the file is executed directly.
+ * reuse/testing. The CLI only runs when the file is executed directly.
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -52,9 +52,9 @@ export function flatten(value, prefix = "", out = {}) {
  * Extract the top-level ICU argument names referenced by a message (`{count}`,
  * `{name, plural, ...}`) so a translation that drops or renames a placeholder is
  * flagged. Brace depth is tracked so plural/select *branch* bodies (e.g. the
- * `{person}` inside `one {person}`) are treated as literal text, not arguments —
- * only the identifier opening a depth-0 `{...}` block counts. Returns a sorted,
- * de-duplicated list; non-string values yield [].
+ * `{person}` inside `one {person}`) are treated as literal text, not arguments.
+ * Only the identifier opening a depth-0 `{...}` block counts. Returns a sorted,
+ * de-duplicated list. Non-string values yield [].
  */
 export function extractPlaceholders(message) {
   if (typeof message !== "string") return [];

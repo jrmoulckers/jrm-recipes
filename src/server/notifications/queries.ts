@@ -50,7 +50,7 @@ export async function getUnreadCount(userId: string | null): Promise<number> {
 
 /**
  * Resolve a deep link for a notification from whichever target it carries. A
- * recipe target wins over a group target; system events with neither resolve to
+ * recipe target wins over a group target. System events with neither resolve to
  * null and render as a non-clickable row.
  */
 function hrefFor(row: {
@@ -67,7 +67,7 @@ function hrefFor(row: {
  * `createdAt` (encoded as an ISO string). Joins the actor + recipe/group targets
  * so the row can render an avatar and deep-link without extra round-trips.
  * Notifications whose actor the viewer has blocked (or who has blocked them) are
- * dropped from the page — the single read-side chokepoint (#355), so every
+ * dropped from the page. The single read-side chokepoint (#355), so every
  * notification type (mentions, replies, reviews, cook-along invites, reports)
  * respects blocks regardless of which write path created it, and retroactively.
  * Pagination keys off the raw fetched rows so filtering never skips a page.

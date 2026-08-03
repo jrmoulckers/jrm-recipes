@@ -45,7 +45,7 @@ describe("IngredientSubstitutions dietary filters", () => {
 
     await user.click(screen.getByRole("button", { name: "Egg-free" }));
 
-    // Only the egg-free swap survives; the egg-based ones drop out.
+    // Only the egg-free swap survives. The egg-based ones drop out.
     expect(screen.getByText("Vegan mayo")).toBeInTheDocument();
     expect(screen.queryByText("Plain Greek yogurt")).not.toBeInTheDocument();
     expect(screen.queryByText("Sour cream")).not.toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("IngredientSubstitutions allergen safety (#429)", () => {
       screen.getByRole("button", { name: /substitutions for/i }),
     );
 
-    // The dairy-free swap survives; the dairy-carrying ones are filtered out.
+    // The dairy-free swap survives. The dairy-carrying ones are filtered out.
     expect(await screen.findByText("Vegan mayo")).toBeInTheDocument();
     expect(screen.queryByText("Plain Greek yogurt")).not.toBeInTheDocument();
     expect(screen.queryByText("Sour cream")).not.toBeInTheDocument();

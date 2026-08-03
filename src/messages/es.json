@@ -107,7 +107,7 @@
       "exit": "Salir del modo cocina",
       "progress": "Progreso de cocción",
       "stepTimer": "Temporizador del paso, {time} restante",
-      "jumpToStep": "Ir al paso {position}: {title} — {time} restante",
+      "jumpToStep": "Ir al paso {position}: {title}, {time} restante",
       "goToStep": "Ir al paso {position}: {title}"
     },
     "readAloud": {
@@ -242,7 +242,7 @@
   },
   "characterCounter": {
     "remaining": "Quedan {count}",
-    "over": "Te pasaste por {count} — {message}"
+    "over": "Te pasaste por {count}. {message}"
   },
   "recipeDetail": {
     "backToRecipes": "Recetas",
@@ -269,7 +269,7 @@
       "prep": "{time} de preparación",
       "resting": "{time} de reposo"
     },
-    "ratingLabel": "Valorada con {average} sobre 5 — {count, plural, one {# reseña} other {# reseñas}}",
+    "ratingLabel": "Valorada con {average} sobre 5, {count, plural, one {# reseña} other {# reseñas}}",
     "actions": {
       "cook": "Cocinar",
       "print": "Imprimir",
@@ -289,7 +289,7 @@
       "emptyViewer": "Todavía no se han añadido los pasos a esta receta.",
       "editRecipe": "Editar receta",
       "stepLabel": "Paso {position}",
-      "stepImageAlt": "{title} — paso {position}"
+      "stepImageAlt": "{title}, paso {position}"
     },
     "tabs": {
       "recipe": "Receta",

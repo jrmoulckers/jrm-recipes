@@ -4,10 +4,10 @@ import "server-only";
  * Server-side analytics entry (issue #305) for server actions and RSC.
  *
  * The browser client (`./index`) can't run here, so we emit directly to the
- * PostHog capture API over `fetch` — no vendor SDK, no shared singleton. Every
+ * PostHog capture API over `fetch`. No vendor SDK, no shared singleton. Every
  * function is a safe no-op when analytics is unconfigured and swallows its own
  * errors, so instrumentation never blocks or breaks a server action. Callers
- * pass an explicit, non-PII distinct id (the internal user id — see #321).
+ * pass an explicit, non-PII distinct id (the internal user id. See #321).
  */
 import { analyticsHost, analyticsKey, isAnalyticsConfigured } from "./config";
 import { type AnalyticsEventName, type EventProperties } from "./events";
@@ -16,7 +16,7 @@ import { serverCaptureAllowed } from "./server-consent";
 
 /**
  * Hard ceiling on how long a call may wait on the analytics provider. Every
- * server post — capture *and* feature-flag `/decide` — aborts after this, so a
+ * server post. Capture *and* feature-flag `/decide`. Aborts after this, so a
  * slow or hung backend can never delay SSR or a server action. On abort the
  * fetch rejects, is swallowed below, and callers fall back to control/no-op.
  */
@@ -95,11 +95,11 @@ export async function aliasServer(
 /**
  * Evaluate all feature flags for a distinct id (issue #335). Returns an empty
  * map when analytics is unconfigured, when the request fails, or when it exceeds
- * {@link REQUEST_TIMEOUT_MS} (a slow provider must never stall SSR) — so callers
+ * {@link REQUEST_TIMEOUT_MS} (a slow provider must never stall SSR), so callers
  * always fall back to control and never block render.
  *
  * Note: flag evaluation is *read-only* (no event, no PII leaves the app), so it
- * is intentionally not consent-gated; only capture/identify/alias are.
+ * is intentionally not consent-gated. Only capture/identify/alias are.
  */
 export async function getAllFlags(
   distinctId: string,

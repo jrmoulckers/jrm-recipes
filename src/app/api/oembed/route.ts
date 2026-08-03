@@ -15,9 +15,9 @@ function numberParam(value: string | null): number | null {
 /**
  * oEmbed provider endpoint (issue #347): `/api/oembed?url=<recipe url>&format=json`.
  * Returns a `rich` payload (iframe `html`, thumbnail, brand attribution) for a
- * *public* recipe, or 404 for anything non-public / unknown — so the endpoint
+ * *public* recipe, or 404 for anything non-public / unknown. So the endpoint
  * never leaks private data and can't be pointed at arbitrary URLs. Only the
- * `json` format is supported; `xml` yields 501 per the spec.
+ * `json` format is supported. `xml` yields 501 per the spec.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

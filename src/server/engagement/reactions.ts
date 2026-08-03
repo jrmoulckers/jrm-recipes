@@ -133,7 +133,7 @@ export async function toggleReaction(
       .onConflictDoNothing()
       .returning({ id: reactions.id });
 
-    // Notify the content owner only on a genuine add (#348) — not a toggle-off
+    // Notify the content owner only on a genuine add (#348), not a toggle-off
     // and not a race-losing conflict. Skip self-reactions before writing so we
     // don't spend an insert notify() would only no-op (its self-guard still
     // protects any path that reaches it).

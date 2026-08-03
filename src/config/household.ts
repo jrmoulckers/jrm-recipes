@@ -1,11 +1,11 @@
 /**
- * Household size — a tiny, server-readable preference (like theme + a11y) that
+ * Household size. A tiny, server-readable preference (like theme + a11y) that
  * remembers how many people you cook for. When set, it seeds the two places a
  * busy parent otherwise re-scales by hand every time: Cook Mode's initial
  * servings and the shopping-list "add recipe" servings. Stored URL-encoded in a
  * single cookie so the server can apply it with no flash and no DB migration.
  *
- * `null` means "no preference" — behavior is unchanged (each recipe keeps its
+ * `null` means "no preference". Behavior is unchanged (each recipe keeps its
  * own `servings`).
  */
 

@@ -20,7 +20,7 @@ vi.mock("sonner", () => ({
 afterEach(() => {
   cleanup();
   // A `priority` next/image injects a preload <link> into <head> via React's
-  // resource system; drop them between tests so each asserts a clean head.
+  // resource system. Drop them between tests so each asserts a clean head.
   document.head
     .querySelectorAll('link[rel="preload"][as="image"]')
     .forEach((el) => el.remove());

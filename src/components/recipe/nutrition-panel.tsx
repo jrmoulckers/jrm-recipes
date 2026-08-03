@@ -40,8 +40,8 @@ const LEVEL_STYLE: Record<
 /**
  * A compact Nutrition Facts panel driven by a recipe's stored *per-serving*
  * numbers (issue #414/#415). Per-serving values are invariant as the cook
- * scales the recipe — that's the whole point, since a calorie goal is
- * per-serving — while the "Whole recipe" toggle multiplies them by the current
+ * scales the recipe. That's the whole point, since a calorie goal is
+ * per-serving, while the "Whole recipe" toggle multiplies them by the current
  * serving count. Because it reads the same `servings` the ingredients panel
  * scales with, the two never disagree and nothing is double-counted.
  *
@@ -98,11 +98,11 @@ export function NutritionPanel({
 
   // The scaled whole-recipe total for the current (possibly reader-scaled)
   // serving count, shown alongside the per-serving figures so the cook sees both
-  // "per serving" and "makes this much in total" at once — and the total tracks
+  // "per serving" and "makes this much in total" at once, and the total tracks
   // the servings stepper live.
   const wholeCalories = scaleNutrition(nutrition, wholeServings).calories;
 
-  // Only members with a usable goal can produce a percentage; the active
+  // Only members with a usable goal can produce a percentage. The active
   // selection falls back to the first such member so an indicator shows without
   // the cook having to pick one.
   const calorieCandidates = (members ?? []).filter(

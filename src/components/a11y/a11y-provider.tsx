@@ -30,7 +30,7 @@ type A11yContextValue = {
   /**
    * Couple the a11y axis to the Kids-mode toggle (#445). Turning Kids mode ON
    * snapshots the current prefs and bumps unset comfort defaults (large text +
-   * easy-reading type); turning it OFF restores that snapshot. Explicit grown-up
+   * easy-reading type). Turning it OFF restores that snapshot. Explicit grown-up
    * choices are preserved. Idempotent: only the first ON snapshots.
    */
   setKidsDefaults: (on: boolean) => void;
@@ -59,7 +59,7 @@ function persist(prefs: A11yPrefs) {
     localStorage.setItem(A11Y_COOKIE, value);
     document.cookie = `${A11Y_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
-    /* storage unavailable (private mode) — settings still apply this session */
+    /* storage unavailable (private mode). Settings still apply this session */
   }
 }
 
@@ -79,7 +79,7 @@ function persistPrevious(prefs: A11yPrefs) {
     localStorage.setItem(A11Y_PREVIOUS_COOKIE, value);
     document.cookie = `${A11Y_PREVIOUS_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
-    /* storage unavailable — snapshot lives only in React state this session */
+    /* storage unavailable. Snapshot lives only in React state this session */
   }
 }
 

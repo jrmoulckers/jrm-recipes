@@ -13,7 +13,7 @@
   html {
     font-size: calc(100% * var(--text-scale, 1) * var(--a11y-text-mult, 1));
     -webkit-text-size-adjust: 100%;
-    /* Suppress the default grey/blue tap flash on iOS/Android; press feedback is
+    /* Suppress the default grey/blue tap flash on iOS/Android. press feedback is
      * provided by token-driven `:active` states instead, so it stays on-theme
      * across all five UI modes (issue #289). */
     -webkit-tap-highlight-color: transparent;
@@ -48,7 +48,7 @@
    *   2. Primitives that need an offset ring against a filled surface (Button,
    *      inputs, Switch, Slider, Tabs, Dialog close…) use
    *      `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`
-   *      — `ring-2` resolves to `--ring-width` via Tailwind, and `outline-none`
+   *     . `ring-2` resolves to `--ring-width` via Tailwind, and `outline-none`
    *      suppresses this fallback so a control never shows a double ring.
    * Both tiers are driven by `--ring` + `--ring-width`, so focus scales 2→3px
    * consistently in Kids, Simple, and high-contrast. */
@@ -60,9 +60,9 @@
 
   /* Comfortable minimum tap targets (grows in Kids / Simple modes). The floor
    * is 44x44px (WCAG 2.5.5 / Apple HIG) applied on both axes so icon-only and
-   * compact controls stay easy to hit. Scoped to real controls — inline text
+   * compact controls stay easy to hit. Scoped to real controls. Inline text
    * links (`a` without `.btn`) are intentionally excluded so prose isn't
-   * stretched; only link-styled buttons (`a.btn`, `label.btn`) opt in. */
+   * stretched. only link-styled buttons (`a.btn`, `label.btn`) opt in. */
   button,
   [role="button"],
   a.btn,
@@ -72,9 +72,9 @@
   }
 
   /* Remove the legacy double-tap-zoom gesture (and its ~300ms tap delay) from
-   * interactive controls so rapid taps — e.g. Cook Mode Next/Previous with wet
-   * hands — register instantly. `manipulation` still allows panning/scrolling
-   * from these elements; pinch-to-zoom on page content and images is untouched,
+   * interactive controls so rapid taps. E.g. Cook Mode Next/Previous with wet
+   * hands. Register instantly. `manipulation` still allows panning/scrolling
+   * from these elements. pinch-to-zoom on page content and images is untouched,
    * preserving accessibility (issue #288). */
   button,
   a,
@@ -104,7 +104,7 @@
 
 /* Global reduced-motion: honor OS setting AND modes that opt out of motion.
  * Scoped to :not([data-motion="off"]) so an explicit in-app "off" (issue #130)
- * overrides the OS preference; unset/"reduced" still reduce. */
+ * overrides the OS preference. unset/"reduced" still reduce. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion="off"]) *,
   :root:not([data-motion="off"]) *::before,
@@ -125,7 +125,7 @@
 
 /*
  * Skeleton shimmer collapses to a static block wherever motion is undesired.
- * The band relies on animation to read as a sweep; without it, hide the band so
+ * The band relies on animation to read as a sweep. without it, hide the band so
  * only the calm `bg-muted` base remains (see components/ui/skeleton.tsx).
  */
 @media (prefers-reduced-motion: reduce) {
@@ -149,7 +149,7 @@
 /*
  * "Read this to me" (issue #387): outline the recipe step currently being read
  * aloud so a listener can follow along. Driven by a `data-reading-step`
- * attribute the ReadAloudButton toggles on the active step; uses the theme ring
+ * attribute the ReadAloudButton toggles on the active step. uses the theme ring
  * token so it tracks light/dark and high-contrast modes.
  */
 [data-reading-step] {

@@ -219,7 +219,7 @@ export function ReelStudio({
         await navigator.share({
           files: [file],
           title: reel.title,
-          text: `${reel.title} — a recipe on Heirloom`,
+          text: `${reel.title}. A recipe on Heirloom`,
         });
       } else {
         // Fall back to a download when file-sharing isn't available.
@@ -230,8 +230,8 @@ export function ReelStudio({
         });
         toast.success(
           exportMode === "image"
-            ? "Image saved — share it from your gallery"
-            : "Reel saved — share it from your gallery",
+            ? "Image saved. Share it from your gallery"
+            : "Reel saved. Share it from your gallery",
         );
       }
     } catch (error) {
@@ -302,7 +302,7 @@ export function ReelStudio({
         )}
         {exportMode === "image" && state === "ready" && (
           <p className="text-center text-xs text-muted-foreground">
-            Video export isn&apos;t supported in this browser — download a
+            Video export isn&apos;t supported in this browser. Download a
             shareable image instead.
           </p>
         )}

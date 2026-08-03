@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
  *
  * Surfaces the warning threshold *before* the hard cap and, once at the cap,
  * explains that existing content is untouched and offers one route to `/pricing`.
- * No countdowns, no scarcity — just an honest heads-up. Purely presentational so
+ * No countdowns, no scarcity. Just an honest heads-up, purely presentational so
  * it renders on the server and reads across all five UI modes + dark.
  */
 export function UsageLimitNotice({
@@ -46,7 +46,7 @@ export function UsageLimitNotice({
         />
         <span>
           {blocked
-            ? `You've reached the free plan's limit of ${limit} ${resource}. You can still edit everything you've saved — upgrade to Family to add more.`
+            ? `You've reached the free plan's limit of ${limit} ${resource}. You can still edit everything you've saved. Upgrade to Family to add more.`
             : `You've used ${used} of ${limit} ${resource} on the free plan.`}
         </span>
       </span>

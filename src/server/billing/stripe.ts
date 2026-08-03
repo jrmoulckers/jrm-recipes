@@ -14,7 +14,7 @@ import { env } from "~/env";
  * lazily so importing this module never constructs a client (or throws) until a
  * billing code path is actually exercised with keys present.
  *
- * No secret values live here — the key is read only from the environment.
+ * No secret values live here. The key is read only from the environment.
  */
 
 /**
@@ -37,7 +37,7 @@ export function isWebhookConfigured(): boolean {
 
 /**
  * The lazily-instantiated Stripe client. Throws a clear, actionable error only
- * when called while billing is unconfigured — callers should guard with
+ * when called while billing is unconfigured. Callers should guard with
  * {@link isBillingConfigured} and no-op gracefully instead of relying on this
  * throw (which exists as a safety net, not a control-flow path).
  */

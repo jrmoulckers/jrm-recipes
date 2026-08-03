@@ -97,7 +97,7 @@ export function DinnerSuggestion({
           </h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          No browsing, no deciding — let us pick one for you.
+          No browsing, no deciding. Let us pick one for you.
         </p>
       </div>
 
@@ -197,7 +197,7 @@ export function DinnerSuggestion({
                     onClick={pickAgain}
                     disabled={pending}
                   >
-                    <Shuffle /> Not that — pick again
+                    <Shuffle /> Not that. Pick again
                   </Button>
                 )}
               </div>

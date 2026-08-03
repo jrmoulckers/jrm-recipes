@@ -11,15 +11,15 @@ import { giftCodes } from "~/server/db/schema";
 /**
  * Gift purchases + redemption (issue #331).
  *
- * A gift is a one-time Stripe payment that mints a single-use `gift_codes` row;
+ * A gift is a one-time Stripe payment that mints a single-use `gift_codes` row.
  * redeeming that code grants the redeemer a fixed span of Family. Grants flow
  * back through the normal entitlements resolver ({@link getActiveGiftPlanId} is
  * called from `getEffectivePlanId`), so no feature call site ever special-cases
- * a gift — a gifted family looks exactly like a paid one to every gate.
+ * a gift. A gifted family looks exactly like a paid one to every gate.
  *
  * Everything here is deliberately idempotent and single-use:
  *   - minting is keyed to the Stripe Checkout session (unique), so a retried
- *     webhook never creates a second code;
+ *     webhook never creates a second code.
  *   - redemption is an atomic conditional update that only ever flips an
  *     `issued` row, so a double-redeem claims nothing and is rejected.
  */
@@ -31,12 +31,12 @@ export const GIFT_ALREADY_REDEEMED = "GIFT_ALREADY_REDEEMED";
 
 /** Ambiguous characters are dropped so codes are easy to read + retype. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-/** Grouped for legibility (e.g. `GIFT-AB3D-7F9K-2QX4`); 12 random symbols. */
+/** Grouped for legibility (e.g. `GIFT-AB3D-7F9K-2QX4`). 12 random symbols. */
 const CODE_SYMBOLS = 12;
 
 /**
  * Generate an unguessable, human-friendly gift code. 12 symbols over a 32-char
- * alphabet is ~60 bits of entropy — impossible to guess, and the DB's unique
+ * alphabet is ~60 bits of entropy. Impossible to guess, and the DB's unique
  * constraint is the ultimate backstop against the astronomically unlikely clash.
  */
 export function generateGiftCode(): string {
@@ -64,7 +64,7 @@ function addMonths(date: Date, months: number): Date {
 /**
  * Mint a gift code for a completed one-time Checkout (called from the webhook).
  * Idempotent: the unique `stripeSessionId` means a retried event never creates a
- * duplicate. Returns the freshly generated code (callers may ignore it — the
+ * duplicate. Returns the freshly generated code (callers may ignore it because the
  * code is surfaced to the purchaser out of band).
  */
 export async function mintGiftCode(input: {
@@ -97,7 +97,7 @@ export interface RedeemedGift {
 
 /**
  * Redeem a gift code for a user. The conditional `UPDATE … WHERE status =
- * 'issued'` is the single-use claim — atomic, so concurrent or repeat attempts
+ * 'issued'` is the single-use claim. Atomic, so concurrent or repeat attempts
  * can only ever succeed once. A claim that touches no row is disambiguated into
  * {@link GIFT_NOT_FOUND} vs {@link GIFT_ALREADY_REDEEMED} for a precise message.
  */
@@ -139,10 +139,10 @@ export async function redeemGiftCode(input: {
 }
 
 /**
- * The plan a user's redeemed, still-valid gifts grant right now — or `null` when
+ * The plan a user's redeemed, still-valid gifts grant right now, or `null` when
  * none apply. Called from the entitlements resolver so gifts light up premium
  * features through the same path as a subscription. A gift is valid until
- * `redeemedAt + durationMonths`; the furthest-reaching active gift wins.
+ * `redeemedAt + durationMonths`. The furthest-reaching active gift wins.
  */
 export async function getActiveGiftPlanId(
   userId: string,

@@ -12,7 +12,7 @@ import { Textarea } from "~/components/ui/textarea";
 
 /**
  * "Paste text" import tab (#370). Split into its own module so the recipe
- * editor can `next/dynamic` it — keeping the parser-adjacent UI out of the
+ * editor can `next/dynamic` it. Keeping the parser-adjacent UI out of the
  * /recipes/[id]/edit first-load JS budget.
  */
 export function PasteImportPanel({

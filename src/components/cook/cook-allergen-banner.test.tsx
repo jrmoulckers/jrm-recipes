@@ -75,7 +75,7 @@ describe("CookAllergenBanner", () => {
 
   it("surfaces a hidden/derived allergen so it never gives a false all-clear", () => {
     // Worcestershire's fish (anchovy) is a hidden source with no direct allergen
-    // in the name — the banner must still warn, under "may also contain".
+    // in the name. The banner must still warn, under "may also contain".
     render(
       <CookAllergenBanner
         recipe={makeRecipe(["1 lb ground beef", "2 tsp worcestershire sauce"])}

@@ -40,7 +40,7 @@ describe("foodAllergensForSlug", () => {
   });
 
   it("de-duplicates and sorts multi-allergen foods canonically", () => {
-    // soy sauce is brewed with wheat; canonical order is soy before wheat.
+    // soy sauce is brewed with wheat. Canonical order is soy before wheat.
     expect(foodAllergensForSlug("soy-sauce")).toEqual(["soy", "wheat"]);
   });
 });

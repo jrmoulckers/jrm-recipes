@@ -2,7 +2,7 @@
  * Pure, framework-agnostic helpers for aggregating, presenting, and ordering
  * recipe ratings.
  *
- * `ratingSummary` aggregates raw star values; the rest turn an already-computed
+ * `ratingSummary` aggregates raw star values. The rest turn an already-computed
  * `{ average, count }` summary into display-ready data and provide the "top
  * rated" ordering rule. Keeping it all pure makes these concerns trivially
  * unit-testable and reusable on the server and the client.
@@ -92,7 +92,7 @@ export const TOP_RATED_PRIOR_COUNT = 5;
 
 /**
  * Bayesian/weighted rating: blends a recipe's own average with the prior mean,
- * weighted by how many ratings it has. Few ratings sit near the prior; many
+ * weighted by how many ratings it has. Few ratings sit near the prior. Many
  * converge on the true average. Kept in sync with the SQL ordering in the
  * recipes query layer so in-memory and database ranking agree.
  */

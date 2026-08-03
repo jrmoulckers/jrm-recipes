@@ -5,7 +5,7 @@ import { getRecipeByShareToken } from "~/server/recipes/queries";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 import RecipePage from "../../recipes/[id]/page";
 
-// A share link is a private, unguessable URL (issue #204) — it must never be
+// A share link is a private, unguessable URL (issue #204). It must never be
 // indexed or followed by crawlers.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

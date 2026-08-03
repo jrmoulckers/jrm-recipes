@@ -23,26 +23,26 @@ import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
 /**
  * Plain-language capability hints for each group role, surfaced right where a
- * manager assigns them (issue #344). Copy only — the roles and rules themselves
+ * manager assigns them (issue #344). Copy only. The roles and rules themselves
  * live in the server (`src/server/groups/mutations.ts`) and are documented in
  * `docs/group-roles.md`.
  */
 const ROLE_HINTS = [
   {
     role: "Owner",
-    hint: "Full control — manage settings and members, assign admins, transfer ownership, or delete the group.",
+    hint: "Full control. Manage settings and members, assign admins, transfer ownership, or delete the group.",
   },
   {
     role: "Admin",
-    hint: "Helps you run the group — edit settings, invite people, and manage members and kids (but can't add other admins).",
+    hint: "Helps you run the group. Edit settings, invite people, and manage members and kids (but can't add other admins).",
   },
   {
     role: "Member",
-    hint: "A family member — reads the shared cookbook and adds recipes.",
+    hint: "A family member. Reads the shared cookbook and adds recipes.",
   },
   {
     role: "Kid",
-    hint: "A child account with the kid-safe experience. Always free — never uses a paid seat.",
+    hint: "A child account with the kid-safe experience. Always free. Never uses a paid seat.",
   },
 ] as const;
 

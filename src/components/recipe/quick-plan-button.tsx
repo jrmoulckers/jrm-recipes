@@ -34,14 +34,14 @@ type QuickPlanButtonProps = {
   recipeTitle: string;
   /** The seven days of the current planner week, in order. */
   days: QuickPlanDay[];
-  /** Which day to pre-select — the next empty dinner of the week. */
+  /** Which day to pre-select. The next empty dinner of the week. */
   defaultDate: string;
   /**
    * `overlay` is the compact round pill floated over a card cover (browse grid);
    * `button` is a labelled action for the "Back in the rotation" rail.
    */
   variant?: "overlay" | "button";
-  /** Popover heading; defaults to the this-week copy used by browse cards. */
+  /** Popover heading. Defaults to the this-week copy used by browse cards. */
   heading?: string;
   className?: string;
 };
@@ -54,7 +54,7 @@ const OVERLAY_CLASSES =
  * popover to pick a day + meal slot (defaulting to the next empty dinner) and
  * reuses the existing `addEntryAction`, so a busy parent can build the week
  * without leaving the browse grid. Rendered only for signed-in users when a
- * database is configured — the caller gates it and supplies the week's days.
+ * database is configured. The caller gates it and supplies the week's days.
  */
 export function QuickPlanButton({
   recipeId,

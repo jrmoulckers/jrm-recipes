@@ -85,7 +85,7 @@ type PanelIngredient = {
   /**
    * Structured allergens from the canonical food graph (#: structured
    * allergens). When present (even `[]`) this is the source of truth for the
-   * ingredient; when `undefined`/`null` the panel falls back to text detection
+   * ingredient. When `undefined`/`null` the panel falls back to text detection
    * on {@link item}.
    */
   allergens?: Allergen[] | null;
@@ -107,7 +107,7 @@ type System = UnitSystem;
 /**
  * Optional controlled-state hook-up. When provided (e.g. by cook mode) the panel
  * becomes controlled so scaling, units, and the checklist can be lifted and
- * persisted; when omitted it manages its own state exactly as before.
+ * persisted. When omitted it manages its own state exactly as before.
  */
 export type IngredientsPanelControls = {
   servings: number;
@@ -152,7 +152,7 @@ function measure(
     return grams != null ? { q: grams, unit: "g" } : { q, unit };
   }
   // us/metric: honor the viewer's per-dimension defaults + custom units when we
-  // have their prefs; otherwise fall back to the friendly-ladder default. The
+  // have their prefs. Otherwise fall back to the friendly-ladder default. The
   // ingredient's volume class routes it to the matching per-class preference.
   if (prefs) {
     const m = resolveDisplayMeasure(
@@ -174,7 +174,7 @@ function measure(
  * Convert a *ranged* amount (min…max) as a coherent whole so both ends land on
  * one shared unit and round together (#51). Converting the max independently via
  * {@link measure} could pick a different friendly unit or rounding for the high
- * end (e.g. "1 cup–1 quart"); routing us/metric through {@link toSystemRange}
+ * end (e.g. "1 cup–1 quart"). Routing us/metric through {@link toSystemRange}
  * keeps the range on the low end's unit. Original/grams pass-throughs stay
  * coherent because both ends share one unit already.
  */
@@ -283,7 +283,7 @@ export function IngredientsPanel({
   baseServings: number | null;
   servingsNoun: string | null;
   controls?: IngredientsPanelControls;
-  /** Optional per-serving nutrition; renders a facts panel that scales with servings. */
+  /** Optional per-serving nutrition. Renders a facts panel that scales with servings. */
   nutrition?: Nutrition;
   /**
    * Optional server-computed per-serving estimate from the food graph (resolved
@@ -349,7 +349,7 @@ export function IngredientsPanel({
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
-  // chosen a member — so the list stays clean by default (issue #429).
+  // chosen a member. So the list stays clean by default (issue #429).
   const activeMember = memberList.find((m) => m.id === activeMemberId) ?? null;
   const memberNeeds: MemberNeeds | null =
     activeMember &&
@@ -364,17 +364,17 @@ export function IngredientsPanel({
 
   const factor = canScale ? servings / baseServings : 1;
 
-  // Nutrition Facts: prefer the cook's stored per-serving numbers; when a recipe
+  // Nutrition Facts: prefer the cook's stored per-serving numbers. When a recipe
   // carries none, auto-estimate them from the ingredient list via the food graph
   // (Phase 4 hub-wiring) so the panel still appears, clearly labelled as an
-  // estimate. Computed from the base (unscaled) quantities per base serving — the
+  // estimate. Computed from the base (unscaled) quantities per base serving. The
   // same per-serving basis the panel scales with.
   const nutritionView = React.useMemo(() => {
     if (nutrition && hasNutrition(nutrition)) {
       return { nutrition, estimated: false as const };
     }
     // Prefer the server's food-graph estimate (resolved via foodId → curated
-    // facts) when present; fall back to the pure client-side text-match estimate
+    // facts) when present. Fall back to the pure client-side text-match estimate
     // so recipes with no linked foods (or offline surfaces) still show something.
     if (estimatedNutrition && hasNutrition(estimatedNutrition.perServing)) {
       return {
@@ -745,8 +745,8 @@ export function IngredientsPanel({
                 ≈ {formatQuantity(pinFactor, undefined, locale)}× the recipe
                 {servingsNoun ? (
                   <>
-                    {" "}
-                    — {formatQuantity(pinServings, undefined, locale)}{" "}
+                    {", "}
+                    {formatQuantity(pinServings, undefined, locale)}{" "}
                     {servingsNoun}
                   </>
                 ) : null}
@@ -1013,8 +1013,8 @@ export function IngredientsPanel({
                           )}
                           {ing.note && (
                             <span className="text-muted-foreground">
-                              {" "}
-                              — {ing.note}
+                              {", "}
+                              {ing.note}
                             </span>
                           )}
                           {ing.stepPosition != null && (
@@ -1067,7 +1067,7 @@ export function IngredientsPanel({
                       <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
-                          <span className="sr-only">Dietary warning — </span>
+                          <span className="sr-only">Dietary warning. </span>
                           {activeMember?.name}: {reason}.
                         </span>
                       </p>

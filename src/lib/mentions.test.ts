@@ -43,7 +43,7 @@ describe("extractMentionHandles", () => {
   });
 
   it("does not treat an email as a mention start", () => {
-    // No whitespace/start boundary before @, but the local part is still a run;
+    // No whitespace/start boundary before @, but the local part is still a run. 
     // extraction is greedy on @handle so we assert the resolved behavior instead.
     expect(extractMentionHandles("ping @dad")).toEqual(["dad"]);
   });

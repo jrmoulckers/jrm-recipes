@@ -12,7 +12,7 @@ import {
 } from "./billing";
 
 /**
- * Issue #300 — the billing schema is the source of truth for who pays and for
+ * Issue #300. The billing schema is the source of truth for who pays and for
  * what. We assert its shape against the compiled Drizzle config (no Postgres in
  * unit tests) and, crucially, pin the `plan_id` enum to `src/config/plans.ts`
  * so the DB constraint and the app's plan catalog can never silently drift.

@@ -21,10 +21,10 @@ export const imageConfig = {
   // Tuned to the app's real layout `sizes`: full-bleed heroes (100vw) and the
   // 2-3 column grids (50vw/33vw) top out at the max container width. The default
   // 2048/3840 rungs are never requested, so dropping them avoids generating
-  // oversized variants (esp. on high-DPR phones, which cap around 1290px).
+  // oversized variants (esp. On high-DPR phones, which cap around 1290px).
   deviceSizes: [640, 750, 828, 1080, 1200, 1920],
   // Fixed-width images (step photos ~28rem, card thumbnails, avatars) live at
-  // the small end of the ladder — all below the smallest deviceSize.
+  // the small end of the ladder. All below the smallest deviceSize.
   imageSizes: [48, 64, 96, 128, 256, 384],
   // Derived from the single media-host allowlist (issue #216) so the optimizer
   // only ever fetches hosts we also permit recipes to store.

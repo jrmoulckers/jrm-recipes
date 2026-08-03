@@ -82,7 +82,7 @@ export default async function JournalPage({
             Cooking journal
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Every time you&apos;ve made something — history, kept alive.
+            Every time you&apos;ve made something. History, kept alive.
           </p>
         </div>
         {insights.totalCooks > 0 && (

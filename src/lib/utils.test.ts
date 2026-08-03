@@ -30,10 +30,10 @@ describe("formatMinutes", () => {
     expect(formatMinutes(15)).toBe("15 min");
   });
 
-  it("uses an em dash for empty or non-positive durations", () => {
-    expect(formatMinutes()).toBe("—");
-    expect(formatMinutes(null)).toBe("—");
-    expect(formatMinutes(0)).toBe("—");
+  it("uses a plain fallback for empty or non-positive durations", () => {
+    expect(formatMinutes()).toBe("Not set");
+    expect(formatMinutes(null)).toBe("Not set");
+    expect(formatMinutes(0)).toBe("Not set");
   });
 });
 

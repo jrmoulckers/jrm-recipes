@@ -4,7 +4,7 @@
  * This is the one choke point instrumentation imports. It validates events
  * against the taxonomy (`./events`) at compile time, scrubs properties for PII
  * (`./scrub`) at runtime, and dispatches to whatever backend `<AnalyticsProvider>`
- * registered — or the no-op when analytics is unconfigured. Every function is a
+ * registered, or the no-op when analytics is unconfigured. Every function is a
  * safe no-op that never throws, so a tracking call can never break the UI.
  *
  * Server actions must use `./server` instead (this module targets the browser

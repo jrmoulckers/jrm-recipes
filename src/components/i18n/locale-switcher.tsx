@@ -27,9 +27,9 @@ import {
  * Language menu listing every {@link SUPPORTED_LOCALES} by its native endonym.
  *
  * Selection persists the {@link writeLocaleCookie NEXT_LOCALE cookie} and calls
- * `router.refresh()` so the server re-renders in the chosen language — including
+ * `router.refresh()` so the server re-renders in the chosen language, including
  * the `<html lang/dir>` set from the cookie in `layout.tsx`, giving a no-flash
- * switch. (URL-prefixed locale routing is deferred to #230; this cookie-based
+ * switch. (URL-prefixed locale routing is deferred to #230. This cookie-based
  * switch is the lightweight equivalent.) The active locale comes from
  * `useLocale()`, which is correct during SSR too, so the current language is
  * checked on first paint.

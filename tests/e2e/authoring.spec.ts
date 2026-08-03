@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
  * Recipe authoring journey (issue #234). The editor runs with the dev auth
  * bypass in e2e (NEXT_PUBLIC_DEV_AUTH_BYPASS=1), so /recipes/new renders the
  * form. Client-side validation is deterministic and needs no database, so it is
- * asserted unconditionally; the create → redirect step needs a seeded Postgres
+ * asserted unconditionally. The create → redirect step needs a seeded Postgres
  * to persist, so it degrades gracefully when the DB isn't wired (matching
  * tests/e2e/offline.spec.ts).
  */
@@ -26,7 +26,7 @@ test("blocks saving a recipe with no title and surfaces an error", async ({
   test.skip(!ready, "Editor unavailable (auth bypass disabled).");
 
   // Submit the empty form: client validation must stop it and announce the
-  // problem via the accessible error summary — no navigation, no database.
+  // problem via the accessible error summary, with no navigation or database.
   await page.getByRole("button", { name: /save recipe/i }).click();
 
   // Scope to the editor's error summary by its accessible name. A bare
@@ -49,8 +49,8 @@ test("creates a recipe and lands on its detail page", async ({ page }) => {
 
   await page.getByRole("button", { name: /save recipe/i }).click();
 
-  // Success redirects to /recipes/<slug>; without a seeded database the action
-  // returns a DB error and stays on /recipes/new — skip rather than fail.
+  // Success redirects to /recipes/<slug>. Without a seeded database the action
+  // returns a DB error and stays on /recipes/new, so skip rather than fail.
   const landed = await page
     .waitForURL(/\/recipes\/(?!new$)[\w-]+$/, { timeout: 15_000 })
     .then(() => true)

@@ -1,8 +1,8 @@
 /**
  * Structured recipe-allergen computation (pure core). Given a recipe's
- * ingredient lines — each optionally carrying the canonical allergen tokens
- * from its resolved `food_items` node — this rolls them up into the allergens
- * to weigh for a personalized safety check.
+ * ingredient lines, each optionally carrying the canonical allergen tokens from
+ * its resolved `food_items` node, this rolls them up into the allergens to weigh
+ * for a personalized safety check.
  *
  * The food graph is the source of truth: when an ingredient line resolves to a
  * food with curated allergens, those are used verbatim. Only lines that DON'T

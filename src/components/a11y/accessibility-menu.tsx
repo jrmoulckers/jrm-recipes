@@ -78,7 +78,7 @@ function ToggleRow({
 }
 
 /**
- * Accessibility & comfort controls — a third axis on top of theme + scheme.
+ * Accessibility & comfort controls. A third axis on top of theme + scheme.
  * Text size, contrast, motion and easy-reading type for everyone, plus a
  * one-tap Kids mode that switches to the big, bright, simplified theme.
  */
@@ -204,7 +204,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
 
           <Separator />
 
-          {/* Household size — auto-scale recipes for a busy family (#399) */}
+          {/* Household size. Auto-scale recipes for a busy family (#399) */}
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Users className="size-4 text-muted-foreground" />

@@ -5,7 +5,7 @@ import { type SQL } from "drizzle-orm";
 import { recipeSearchMatchSql, recipeSearchRankSql } from "./queries";
 
 /**
- * Issue #158 — recipe free-text search must run through a Postgres full-text
+ * Issue #158. Recipe free-text search must run through a Postgres full-text
  * index (a generated, GIN-indexed `search_vector`) with relevance ranking,
  * rather than a `ILIKE '%q%'` sequential scan. No Postgres in unit tests, so we
  * assert the *shape* of the SQL the query layer emits: it matches against the
@@ -33,7 +33,7 @@ describe("recipe full-text search SQL (issue #158)", () => {
   });
 
   it("uses websearch_to_tsquery so free-form input can't be a syntax error", () => {
-    // A bare `to_tsquery` would throw on this input; websearch_ tolerates it.
+    // A bare `to_tsquery` would throw on this input. Websearch_ tolerates it.
     const { params } = render(recipeSearchMatchSql('"slow" cooked -beef'));
     expect(params).toEqual(['"slow" cooked -beef']);
   });

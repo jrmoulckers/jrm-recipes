@@ -1,5 +1,5 @@
 /**
- * Subscription plans & entitlements — the single source of truth for what
+ * Subscription plans and entitlements. The single source of truth for what
  * Heirloom sells and exactly what each tier unlocks (issue #298).
  *
  * This module is intentionally **pure**: it imports nothing from the database,
@@ -10,11 +10,11 @@
  * - Each plan below has marketing copy (`name`, `tagline`, `highlights`) plus an
  *   `entitlements` object.
  * - `entitlements` has two kinds of keys:
- *     • feature flags (true/false) — is this premium feature switched on?
- *     • numeric limits — how many recipes / MB of storage / family members /
+ *     • feature flags (true/false). Is this premium feature switched on?
+ *     • numeric limits. How many recipes / MB of storage / family members /
  *       monthly AI credits the plan allows. `null` means "unlimited".
  * - Real prices live in Stripe (looked up by the env var named in
- *   `stripePriceEnvKey`); the numbers here are for display only.
+ *   `stripePriceEnvKey`). The numbers here are for display only.
  */
 
 /** Every plan id we sell. `free` is the default, unpaid tier. */
@@ -35,7 +35,7 @@ export type FeatureFlagKey =
 
 /**
  * Numeric caps. A value of `null` means "unlimited" (see {@link isUnlimited} /
- * {@link limitToNumber}); `0` means the feature is fully off for that plan.
+ * {@link limitToNumber}). `0` means the feature is fully off for that plan.
  */
 export type LimitKey =
   | "maxRecipes"
@@ -82,7 +82,7 @@ export type Plan = {
   highlights: readonly string[];
   /**
    * Display price in whole USD per month (0 for Free). This is for the pricing
-   * UI only — the amount actually charged is controlled by the Stripe Price
+   * UI only. The amount actually charged is controlled by the Stripe Price
    * referenced via {@link stripePriceEnvKey}.
    */
   monthlyPriceUsd: number;
@@ -98,7 +98,7 @@ export type Plan = {
 };
 
 /**
- * Free — the generous, always-available tier. No feature flags, comfortable but
+ * Free. The generous, always-available tier. No feature flags, comfortable but
  * finite limits so families can fully use Heirloom before deciding to upgrade.
  */
 const free: Plan = {
@@ -109,7 +109,7 @@ const free: Plan = {
     "Up to 50 saved recipes",
     "One family group, up to 5 members",
     "200 MB of photo storage",
-    "Cook Mode, meal planning & shopping lists",
+    "Cook Mode, meal planning and shopping lists",
   ],
   monthlyPriceUsd: 0,
   stripePriceEnvKey: null,
@@ -129,7 +129,7 @@ const free: Plan = {
 };
 
 /**
- * Family / Premium — unlocks the AI features, video/reels export, and lifts the
+ * Family / Premium. Unlocks the AI features, video/reels export, and lifts the
  * limits so a whole extended family can keep every recipe forever.
  */
 const family: Plan = {
@@ -139,9 +139,9 @@ const family: Plan = {
   highlights: [
     "Unlimited recipes",
     "Up to 20 family members across unlimited groups",
-    "10 GB of photo & video storage",
-    "AI recipe generation, cooking tutor & substitutions",
-    "Video & reel exports to share your dishes",
+    "10 GB of photo and video storage",
+    "AI recipe generation, cooking tutor and substitutions",
+    "Video and reel exports to share your dishes",
     "500 AI credits every month",
   ],
   monthlyPriceUsd: 5,

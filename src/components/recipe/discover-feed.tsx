@@ -30,7 +30,7 @@ export function DiscoverFeed({
   favoritedIds?: string[];
   /**
    * Number of leading (initial) cards to render with LCP `priority`. Set > 0
-   * only when this feed is the above-the-fold grid; later paged-in items always
+   * only when this feed is the above-the-fold grid. Later paged-in items always
    * stay lazy since they are appended after these indices.
    */
   priorityCount?: number;

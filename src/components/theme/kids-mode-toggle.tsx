@@ -10,8 +10,8 @@ import { cn } from "~/lib/utils";
 /**
  * Always-visible, one-tap Kids mode toggle for the site header (#435).
  *
- * Reuses the shared {@link useKidsMode} bridge — the exact same logic the
- * Accessibility dialog toggle calls — so the two stay in perfect sync. It flips
+ * Reuses the shared {@link useKidsMode} bridge. The exact same logic the
+ * Accessibility dialog toggle calls. So the two stay in perfect sync. It flips
  * the UI theme (restoring the previous mode when switched off) and couples the
  * a11y comfort defaults (#445). The filled/active state makes the current mode
  * obvious at a glance without opening any dialog.

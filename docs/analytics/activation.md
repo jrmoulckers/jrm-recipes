@@ -7,18 +7,18 @@ funnel is reproducible from data.
 ## Definition of an "activated" family
 
 > A new user is **activated** when, **within 7 days of signing up**, they both
-> **create at least one recipe** _and_ **start at least one cook** — _or_ they
+> **create at least one recipe** _and_ **start at least one cook**: _or_ they
 > join a group that already has recipes.
 
 ### Rationale
 
 - Heirloom's core loop is _write a recipe → cook it → keep it in the family_.
-  Creating a recipe alone is a shallow signal (people try the editor and leave);
+  Creating a recipe alone is a shallow signal. People try the editor and leave,
   cooking alone can't happen without content. Requiring **both** captures a user
   who has felt the product's central value, not just poked at it.
 - The **group** branch recognises that a family member invited into an existing
   cookbook is already activated the moment they can cook from shared
-  recipes — they don't need to author one first.
+  recipes. They don't need to author one first.
 - **7 days** balances signal and speed: long enough for a family to cook on a
   weekend, short enough to react to activation regressions and to evaluate
   onboarding experiments (see `experiments/`).
@@ -38,7 +38,7 @@ retention (see `retention.md`).
 | 5   | First cook       | `first_cook_started`   | Cook Mode start (`use-cook-session` / `cook-tracking`). |
 
 `landing → signup_started → signup_completed → first_recipe_created →
-first_cook_started` is the ordered funnel; the **activation rate** is the share
+first_cook_started` is the ordered funnel. The **activation rate** is the share
 of `signup_completed` users who reach both `first_recipe_created` **and**
 `first_cook_started` within 7 days.
 
@@ -53,10 +53,10 @@ actions:
   `recipe_created` event still fires on every create for volume metrics.
 - **`first_cook_started`** is derived from a device-local marker
   (`markFirstCookStarted`, key `heirloom.cook.first`) set the first time any cook
-  session begins. Subsequent cooks — of the same or a different recipe, or after
-  a reload — report `isFirstEver: false` and emit nothing. Being device-local it
+  session begins. Subsequent cooks, of the same or a different recipe or after
+  a reload, report `isFirstEver: false` and emit nothing. Being device-local it
   is a privacy-friendly _approximation_ of a person-level first cook (no
-  server round-trip, nothing stored per user); cross-device first cooks are
+  server round-trip, nothing stored per user). Cross-device first cooks are
   reconciled analytically via the identified distinct id.
 
 `signup_completed` is likewise guarded to fire once, on the insert that first
@@ -66,7 +66,7 @@ re-emit).
 ## Privacy
 
 Every event above is attributed to the internal user id or a device-local
-marker — never an email, name, or Clerk id. All properties are ids/counts/flags
+marker, never an email, name, or Clerk id. All properties are ids/counts/flags
 only, and capture is gated by consent (see `../../src/lib/analytics/consent.ts`
 and the consent management work in #324).
 

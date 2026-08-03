@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { recipes } from "./recipes";
 
 /**
- * Issue #165 — a hard delete cascades away a recipe's whole history. `recipes`
+ * Issue #165. A hard delete cascades away a recipe's whole history. `recipes`
  * gains soft-delete + audit columns and keeps its hot lookup indexes partial on
  * the active rows so tombstones never bloat an active-recipe scan. Asserted at
  * the schema source of truth that `db:generate` compiles into DDL.

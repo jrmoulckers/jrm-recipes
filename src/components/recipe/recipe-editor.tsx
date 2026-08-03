@@ -94,8 +94,8 @@ const ImportRecipePanel = dynamic(
   { ssr: false },
 );
 
-// Preview mode is opt-in (toggled on demand), so the preview renderer — which
-// mirrors the full recipe detail view — is code-split out of the editor's
+// Preview mode is opt-in (toggled on demand), so the preview renderer, which
+// mirrors the full recipe detail view, is code-split out of the editor's
 // first-load JS and fetched only when the user first opens Preview.
 const RecipePreview = dynamic(
   () =>
@@ -106,7 +106,7 @@ const RecipePreview = dynamic(
 type IngRow = {
   key: string;
   /** Stable editor-only id that groups rows into a named section container
-   *  (#425). Not persisted — the saved `section` string is re-derived into
+   *  (#425). It is not persisted. The saved `section` string is re-derived into
    *  group ids on load, so two rows sharing a section name share a container. */
   groupId: string;
   section: string;
@@ -198,7 +198,7 @@ const EMPTY_STEP: Omit<StepRow, "key"> = {
   techniques: "",
 };
 
-/** Stable empty field-error map — the initial/cleared useActionState value. */
+/** Stable empty field-error map. The initial/cleared useActionState value. */
 const NO_ERRORS: Record<string, string[]> = {};
 
 type LoadedIngRow = Omit<IngRow, "groupId"> & { groupId?: string };
@@ -348,8 +348,8 @@ const DIFFICULTY_LABELS = {
 } as const;
 
 /**
- * Dietary tags surfaced in the editor's primary (collapsed) view. The rest —
- * egg-free plus the allergen-free declarations — live behind the "more options"
+ * Dietary tags surfaced in the editor's primary (collapsed) view. The rest.
+ * egg-free plus the allergen-free declarations. Live behind the "more options"
  * disclosure. Kept as an explicit ordered list (not a filter over DIETARY_TAGS)
  * so the primary chips read Vegan · Vegetarian · Gluten-free · Dairy-free
  * regardless of the canonical badge order.
@@ -512,7 +512,7 @@ function EditorSectionNav({
       )}
     >
       {collapsed ? (
-        /* Collapsed: an ~12px progress sliver; the whole strip re-opens the
+        /* Collapsed: an ~12px progress sliver. The whole strip re-opens the
            section list. */
         <button
           type="button"
@@ -568,7 +568,7 @@ function EditorSectionNav({
         </div>
       )}
 
-      {/* Collapsible section links. Height animates via grid-rows; the inner
+      {/* Collapsible section links. Height animates via grid-rows. The inner
           region is inert when hidden so keyboard/AT skip the off-screen links. */}
       <div
         id={panelId}
@@ -734,7 +734,7 @@ export function RecipeEditor({
 
   // The sticky app header wraps to two or three rows at some widths, so its
   // height is dynamic (64–245px observed). Track it live and offset the section
-  // navigator + anchor jumps from it; a hard-coded top-16 buried the nav behind
+  // navigator + anchor jumps from it. A hard-coded top-16 buried the nav behind
   // the header and made section jumps overshoot (user report).
   const [appHeaderH, setAppHeaderH] = React.useState(64);
   React.useEffect(() => {
@@ -823,12 +823,12 @@ export function RecipeEditor({
   // "Estimate from ingredients": fill the manual per-serving nutrition fields
   // from the current ingredient list via the curated food dataset, so the cook
   // gets a starting point they can adjust rather than typing every macro. Uses
-  // the same pure roll-up the recipe view falls back to; count/unknown units and
+  // the same pure roll-up the recipe view falls back to. Count/unknown units and
   // unrecognized foods are skipped, so the estimate is best-effort.
   async function estimateNutritionFromIngredients() {
     const servings = parseAmount(form.servings) ?? 1;
     // Dynamically import the curated food dataset so it stays out of the
-    // editor's first-load JS bundle — it's only needed on this click.
+    // editor's first-load JS bundle. It's only needed on this click.
     const { estimatePerServingNutrition } =
       await import("~/lib/food-nutrition");
     const est = estimatePerServingNutrition(
@@ -841,7 +841,7 @@ export function RecipeEditor({
     );
     if (est.sourced === 0) {
       toast.error(
-        "Couldn't estimate — add weighable ingredients (with amounts) first.",
+        "Couldn't estimate. Add weighable ingredients (with amounts) first.",
       );
       return;
     }
@@ -893,7 +893,7 @@ export function RecipeEditor({
   }
 
   // Dietary: the main view shows the common declarations (Vegan, Vegetarian,
-  // Gluten-free, Dairy-free); egg-free and the allergen-free tags sit behind a
+  // Gluten-free, Dairy-free). Egg-free and the allergen-free tags sit behind a
   // disclosure so the section stays uncluttered (round 10). Expanding appends
   // the rest after the primary four (no reflow). Auto-open when editing a recipe
   // that already declares a non-primary flag so nothing hides.
@@ -1035,7 +1035,7 @@ export function RecipeEditor({
   }
 
   // Move an ingredient up/down only *within* its own group block. Reordering no
-  // longer changes a row's group (that was confusing) — grouping is done solely
+  // longer changes a row's group (that was confusing). Grouping is done solely
   // with the explicit per-row group picker below (#425). The swap is a no-op at a
   // block edge (the arrows are also disabled there via block-relative first/last).
   function moveIngredient(key: string, dir: -1 | 1) {
@@ -1132,8 +1132,8 @@ export function RecipeEditor({
 
   // "Convert old amount?" affordance, per ingredient row. When a cook swaps a
   // unit for a compatible one and there's an amount to carry over, we stash the
-  // converted value; the chip clears the moment the amount is edited or the unit
-  // changes again — matching the requested "disappears when the amount changes".
+  // converted value. The chip clears the moment the amount is edited or the unit
+  // changes again, matching the requested "disappears when the amount changes".
   const [convertHints, setConvertHints] = React.useState<
     Record<
       string,
@@ -1163,7 +1163,7 @@ export function RecipeEditor({
     }
     const converted = convertAmount(amount, fromUnit, toUnit, customUnits);
     // Only offer the swap when the dimensions actually line up (null) and the
-    // number would genuinely change; a no-op conversion isn't worth a prompt.
+    // number would genuinely change. A no-op conversion isn't worth a prompt.
     if (converted == null || dimensionOf(fromUnit, customUnits) == null) {
       clearConvertHint(row.key);
       return;
@@ -1331,7 +1331,7 @@ export function RecipeEditor({
   }
 
   // Keep the payload builder fresh for the action closure without recreating
-  // the action each render — buildPayload closes over the latest form /
+  // the action each render. BuildPayload closes over the latest form /
   // ingredient / step state on every render.
   const buildPayloadRef = React.useRef(buildPayload);
   buildPayloadRef.current = buildPayload;
@@ -1389,7 +1389,7 @@ export function RecipeEditor({
 
   // Live section-completion cues for the in-editor navigator (#112). Derived
   // straight from the working form state so they stay in sync as the user types
-  // — no extra state, no interaction with autosave/dictation/paste-import.
+  //. No extra state, no interaction with autosave/dictation/paste-import.
   const editorSections: EditorSection[] = [
     {
       id: "editor-basics",
@@ -1425,7 +1425,7 @@ export function RecipeEditor({
   // Live recipe vitals for the floating action bar (rendered at the end of the
   // form). The bar populates as the writer fills the form in and stays visible
   // while scrolling, giving an at-a-glance summary of the recipe's shape.
-  // Derived straight from working state — no new sources of truth.
+  // Derived straight from working state. No new sources of truth.
   const filledIngredientCount = ingredients.filter(
     (row) => row.item.trim() !== "",
   ).length;
@@ -1503,7 +1503,7 @@ export function RecipeEditor({
     }
   }, [errors]);
 
-  // Distinct ingredient groups in first-appearance order — drives the per-row
+  // Distinct ingredient groups in first-appearance order. Drives the per-row
   // "assign to group" picker and whether the ungrouped rows get a labelled band.
   const ingredientGroupChoices = React.useMemo(() => {
     const seen = new Set<string>();
@@ -2865,8 +2865,7 @@ export function RecipeEditor({
           scrolling back to the top. It's the last flow child with
           `sticky bottom-0`, so it rides the viewport bottom while scrolling and
           settles beneath the content at the end. The transparent gutter is
-          click-through (pointer-events-none) with an interactive inner bar;
-          bottom padding respects the home-indicator safe area. The BottomNav is
+          click-through (pointer-events-none) with an interactive inner bar. Bottom padding respects the home-indicator safe area. The BottomNav is
           suppressed on editor routes so this bar owns the bottom edge (#294). */}
       <div className="pointer-events-none sticky bottom-0 z-30 -mx-4 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
         <div className="pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/85 px-4 py-2 shadow-token-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:flex-row sm:items-center sm:justify-between sm:gap-4">

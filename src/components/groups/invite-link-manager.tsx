@@ -36,8 +36,8 @@ const EXPIRY_OPTIONS = [
 
 /**
  * Manager-only "share an invite link" affordance (issue #343). Generates a
- * tokenized `/join/<token>` URL — role-scoped (member/kid) and optionally
- * expiring — that a non-user can open, sign up, and land straight into the
+ * tokenized `/join/<token>` URL, role-scoped (member/kid) and optionally
+ * expiring, that a non-user can open, sign up, and land straight into the
  * group. This is the acquisition loop `AddMemberForm` can't cover (that form
  * needs the invitee to already have an account).
  */
@@ -107,7 +107,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
         <div className="space-y-1">
           <p className="text-sm font-medium">Share a join link</p>
           <p className="text-xs text-muted-foreground">
-            Anyone with the link can join — perfect for relatives who
+            Anyone with the link can join. Perfect for relatives who
             aren&apos;t on Heirloom yet.
           </p>
         </div>

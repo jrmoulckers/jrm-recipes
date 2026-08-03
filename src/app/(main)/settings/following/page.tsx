@@ -21,7 +21,7 @@ export default async function FollowingSettingsPage() {
           Following &amp; followers
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Following is opt-in and public. It never touches your family groups —
+          Following is opt-in and public. It never touches your family groups.
           only recipes, reviews, and cooks you&apos;ve explicitly made public
           are shared to the people who follow you.
         </p>

@@ -10,13 +10,13 @@ type ChecklistItemData = {
   emoji: string;
   title: string;
   detail: string;
-  /** Emphasized (grown-up help) item — rendered in the caution token. */
+  /** Emphasized (grown-up help) item. It is rendered in the caution token. */
   highlight?: boolean;
 };
 
 /**
- * A friendly, tappable "getting ready" item. Ticking is optional delight — the
- * child can proceed without checking anything (the gate is skippable) — but the
+ * A friendly, tappable "getting ready" item. Ticking is optional delight. The
+ * child can proceed without checking anything (the gate is skippable), but the
  * satisfying check gives young cooks a sense of preparation.
  */
 function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
@@ -64,7 +64,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
  * Shown as the first screen of Cook Mode (before step 1) only when Kids mode is
  * active. Reassures the young cook to wash hands, cook with a grown-up (only
  * when the recipe actually has hot/sharp steps, reusing the hazard detection),
- * and grab their tools. A big primary button proceeds; a subtle skip does too.
+ * and grab their tools. A big primary button proceeds. A subtle skip does too.
  * Whether the gate should show at all + the per-session "don't nag" memory live
  * in the parent so this stays a pure, testable view.
  */
@@ -98,7 +98,7 @@ export function PreCookChecklist({
           <ChecklistItem
             emoji="🧼"
             title="Wash your hands"
-            detail="Soap and warm water for 20 seconds — sing your favorite song!"
+            detail="Soap and warm water for 20 seconds. Sing your favorite song!"
           />
           {hasHazards && (
             <ChecklistItem
@@ -126,7 +126,7 @@ export function PreCookChecklist({
             )}
           >
             <ChefHat aria-hidden="true" />
-            I&apos;m ready — let&apos;s cook!
+            I&apos;m ready. Let&apos;s cook!
           </Button>
           <button
             type="button"

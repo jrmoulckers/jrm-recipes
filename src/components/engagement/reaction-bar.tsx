@@ -22,10 +22,10 @@ import {
 } from "~/components/ui/popover";
 
 /**
- * The lightweight emoji reaction bar (#342) — reusable across comments, reviews,
+ * The lightweight emoji reaction bar (#342). Reusable across comments, reviews,
  * and cook-log posts. Toggling is optimistic: the tally updates immediately and
  * rolls back if the server action fails. A picker popover offers the fixed emoji
- * set; each active pill reveals who reacted on hover/focus.
+ * set. Each active pill reveals who reacted on hover/focus.
  */
 export function ReactionBar({
   targetType,

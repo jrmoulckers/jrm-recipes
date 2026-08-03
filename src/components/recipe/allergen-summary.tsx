@@ -13,7 +13,7 @@ import {
  * A compact, server-rendered "Contains" allergen summary for a recipe. Rolls
  * the ingredient list up with {@link summarizeAllergens} and renders the result
  * as high-contrast caution badges so a cook can see the allergen picture before
- * committing to a recipe — without scanning every line.
+ * committing to a recipe, without scanning every line.
  *
  * Detection is best-effort (it can't see brand formulations or unusual
  * phrasings), so the copy always pairs the badges with a "double-check"
@@ -47,7 +47,7 @@ export function AllergenSummary({
           aria-hidden
         />
         <p>
-          No common allergens detected — always double-check the ingredients.
+          No common allergens detected. Always double-check the ingredients.
         </p>
       </div>
     );
@@ -119,7 +119,7 @@ export function AllergenSummary({
       )}
 
       <p className="mt-1.5 text-xs text-muted-foreground">
-        Best-effort detection — always double-check the ingredients for
+        Best-effort detection. Always double-check the ingredients for
         allergies.
       </p>
     </section>

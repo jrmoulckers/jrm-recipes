@@ -8,7 +8,7 @@ describe("friendlyError", () => {
       "Please sign in to do that.",
     );
     expect(friendlyError("RATE_LIMITED")).toBe(
-      "You're going a little fast — try again in a moment.",
+      "You're going a little fast. Try again in a moment.",
     );
     expect(friendlyError("FORBIDDEN")).toBe(
       "You don't have permission to do that.",
@@ -17,7 +17,7 @@ describe("friendlyError", () => {
 
   it("matches known codes case-insensitively", () => {
     expect(friendlyError("rate_limited")).toBe(
-      "You're going a little fast — try again in a moment.",
+      "You're going a little fast. Try again in a moment.",
     );
   });
 

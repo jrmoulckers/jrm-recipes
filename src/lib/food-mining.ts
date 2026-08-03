@@ -20,7 +20,7 @@ export type MinedIngredient = {
   unit?: string | null;
   quantity?: number | null;
   prep?: string | null;
-  /** The recipe's author, when known — drives per-user personalization. */
+  /** The recipe's author, when known. Drives per-user personalization. */
   authorId?: string | null;
 };
 
@@ -116,7 +116,7 @@ function normalizeUnit(unit: string | null | undefined): string {
   return (u === "" ? COUNT_UNIT_TOKEN : u).slice(0, 40);
 }
 
-/** Normalize a prep token: trim + lowercase; empty → null (no prep recorded). */
+/** Normalize a prep token: trim + lowercase. Empty → null (no prep recorded). */
 function normalizePrep(prep: string | null | undefined): string | null {
   const p = (prep ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return p === "" ? null : p.slice(0, 200);
@@ -159,7 +159,7 @@ function topToken(counts: Map<string, number>): string | null {
 /**
  * Mine a batch of recipe-ingredient lines into the food graph's rows. Lines
  * whose `item` doesn't resolve to a known food are skipped (they don't yet join
- * the graph). Deterministic and order-independent; safe to run over the whole
+ * the graph). Deterministic and order-independent. Safe to run over the whole
  * corpus and upsert the result.
  */
 export function mineFoodGraph(
@@ -381,7 +381,7 @@ export type NeighbourOptions = {
 
 /**
  * Rank near-neighbours for one or more query foods from stored edges. Edges
- * touching a query node contribute their partner as a candidate; candidates are
+ * touching a query node contribute their partner as a candidate. Candidates are
  * scored by summed `lift` across the query set (tie-broken by `coCount`), with
  * the query nodes and any `exclude` ids removed. Distinctive pairings surface
  * above ubiquitous ones. Pure + deterministic.
@@ -436,7 +436,7 @@ export type UnitStatRankOptions = { minUseCount?: number; limit?: number };
 
 /**
  * Order a food's unit stats by popularity (most-used first), dropping units
- * below `minUseCount`. Pure; the DB layer just fetches rows and calls this.
+ * below `minUseCount`. Pure. The DB layer just fetches rows and calls this.
  */
 export function rankUnitStats(
   rows: readonly UnitStatRow[],

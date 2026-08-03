@@ -13,7 +13,7 @@ import { Button, type ButtonProps } from "~/components/ui/button";
  * success, sends the browser to the returned Stripe-hosted URL. On failure it
  * shows the action's own friendly message inline (e.g. "billing isn't set up
  * yet") instead of throwing, so an unconfigured environment degrades to a
- * readable note rather than a dead end. No prices are hard-coded here — amounts
+ * readable note rather than a dead end. No prices are hard-coded here. Amounts
  * live in Stripe, plan copy in `src/config/plans.ts`.
  */
 export function CheckoutButton({

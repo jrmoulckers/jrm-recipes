@@ -92,7 +92,7 @@ describe("splitHighlight", () => {
       { text: "<b>x</b>", hit: true },
       { text: " soup", hit: false },
     ]);
-    // Every segment is plain text sliced from the input — no markup is produced.
+    // Every segment is plain text sliced from the input. No markup is produced.
     expect(segments.map((s) => s.text).join("")).toBe("<b>x</b> soup");
   });
 });

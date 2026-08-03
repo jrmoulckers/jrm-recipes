@@ -30,7 +30,7 @@ const UNIT_FOOD: NutritionFacts = {
   sodiumMg: 100,
   sourceRef: "TEST:unit",
 };
-// Missing the optional breakdowns — they must be treated as 0, not NaN.
+// Missing the optional breakdowns. They must be treated as 0, not NaN.
 const MACROS_ONLY: NutritionFacts = {
   kcal: 200,
   proteinG: 5,
@@ -47,7 +47,7 @@ describe("resolveLineGrams", () => {
   });
 
   it("converts volume units through density (g/mL)", () => {
-    // 1 cup = 236.588 mL; water-ish density 1.0 → ~236.588 g.
+    // 1 cup = 236.588 mL. Water-ish density 1.0 → ~236.588 g.
     expect(resolveLineGrams(1, "cup", 1)).toBeCloseTo(236.588, 2);
     // Oil at 0.92 g/mL: 1 tbsp = 14.7868 mL → ~13.6 g.
     expect(resolveLineGrams(1, "tbsp", 0.92)).toBeCloseTo(13.604, 2);
@@ -77,7 +77,7 @@ describe("resolveLineGrams", () => {
 
 describe("rollUpNutrition", () => {
   it("sums per-100g facts scaled by grams, then divides by servings", () => {
-    // 200 g flour → factor 2 → 728 kcal whole; ÷ 4 servings = 182 kcal each.
+    // 200 g flour → factor 2 → 728 kcal whole. ÷ 4 servings = 182 kcal each.
     const est = rollUpNutrition(
       [{ quantity: 200, unit: "g", facts: FLOUR, densityGPerMl: null }],
       4,
@@ -128,7 +128,7 @@ describe("rollUpNutrition", () => {
     expect(est.sourcedLines).toBe(1);
     expect(est.totalLines).toBe(3);
     expect(est.lineCoverage).toBeCloseTo(1 / 3, 5);
-    // weighable = 100 (unit food) + 300 (no facts) = 400; accounted = 100.
+    // weighable = 100 (unit food) + 300 (no facts) = 400. Accounted = 100.
     expect(est.weighableGrams).toBe(400);
     expect(est.accountedGrams).toBe(100);
     expect(est.massCoverage).toBeCloseTo(0.25, 5);
@@ -155,7 +155,7 @@ describe("rollUpNutrition", () => {
     const line = { quantity: 400, unit: "g", facts: UNIT_FOOD } as const;
     const two = rollUpNutrition([line], 2);
     const eight = rollUpNutrition([line], 8);
-    // Whole recipe is servings-invariant; per-serving halves as servings x4.
+    // Whole recipe is servings-invariant. Per-serving halves as servings x4.
     expect(two.whole.calories).toBe(eight.whole.calories);
     expect(two.perServing.calories).toBe(200);
     expect(eight.perServing.calories).toBe(50);

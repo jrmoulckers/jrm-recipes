@@ -58,7 +58,7 @@ export function clampPageSize(
  * Turn an over-fetched batch (query for `limit + 1` rows) into a page of at
  * most `limit` items, deriving the next cursor from the last kept row. Fetching
  * one extra row is how we learn whether another page exists without a second
- * COUNT query; when the batch overflows, the last item on this page becomes the
+ * COUNT query. When the batch overflows, the last item on this page becomes the
  * cursor the next page seeks past.
  */
 export function toCursorPage<T, C>(

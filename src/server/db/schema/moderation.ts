@@ -62,7 +62,7 @@ export const reportStatus = pgEnum("report_status", [
 /**
  * A member's report of a comment / review / cook-log post (issue #356), routed
  * to the owning group's moderation queue (issue #357). De-duped per
- * (target, reporter) so repeat reports by the same person don't inflate counts;
+ * (target, reporter) so repeat reports by the same person don't inflate counts.
  * the queue aggregates by target. Reporter identity is never shown to other
  * members.
  */
@@ -76,7 +76,7 @@ export const contentReports = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     // The group whose owners/admins can action this report. Nullable because a
-    // reported item may not belong to a group (public recipe); such reports are
+    // reported item may not belong to a group (public recipe). Such reports are
     // still recorded for auditing.
     groupId: fk().references(() => groups.id, { onDelete: "cascade" }),
     reason: reportReason().notNull(),

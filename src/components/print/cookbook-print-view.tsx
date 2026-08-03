@@ -18,8 +18,8 @@ export type CookbookPrintData = {
 /**
  * Lays a whole collection out as one printable booklet (issue #397): a cover
  * page, an optional dedication, a generated table of contents, then every
- * recipe — each starting on a fresh page via `break-before-page` so a browser
- * "Print → Save as PDF" produces a real family cookbook. Presentational only;
+ * recipe, each starting on a fresh page via `break-before-page` so a browser
+ * "Print → Save as PDF" produces a real family cookbook. Presentational only.
  * the route resolves recipes through the visibility-checked loaders.
  */
 export function CookbookPrintView({
@@ -42,7 +42,7 @@ export function CookbookPrintView({
         </h1>
         <p className="text-muted-foreground">
           Add a few recipes to “{collection.name}” and they’ll be bound together
-          here — cover, contents, and all — ready to print.
+          here. Cover, contents, and all. Ready to print.
         </p>
         <Link
           href={`/collections/${collection.id}`}

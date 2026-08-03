@@ -37,8 +37,8 @@ export async function generateMetadata({
  *
  * Access is delegated to {@link getSharedCollection} (which enforces
  * collection-level visibility and drops any recipe the viewer can't see), and
- * each recipe's full detail is loaded through {@link getRecipe} — the same
- * visibility-checked path the recipe page uses — so a private recipe can never
+ * each recipe's full detail is loaded through {@link getRecipe}, the same
+ * visibility-checked path the recipe page uses, so a private recipe can never
  * leak into a shared cookbook. Rendering + page breaks are pure CSS, so the
  * browser's "Print → Save as PDF" is the only tool needed.
  */
@@ -55,9 +55,9 @@ export default async function CollectionPrintPage({
   if (!collection) notFound();
 
   // Load each recipe's full detail in collection order. `getSharedCollection`
-  // already filtered to viewable recipes; re-fetching through `getRecipe`
+  // already filtered to viewable recipes. Re-fetching through `getRecipe`
   // (which re-checks visibility) is belt-and-braces and yields the ingredients
-  // and steps the card view omits. Runs in parallel — this is a rare, on-demand
+  // and steps the card view omits. Runs in parallel. This is a rare, on-demand
   // action, never a hot path.
   const full = await Promise.all(
     collection.recipes.map((card) => getRecipe(card.id, user)),

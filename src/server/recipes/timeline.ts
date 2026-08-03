@@ -54,14 +54,14 @@ const ADAPTATION_MARKER = "(Adaptation)";
 
 /**
  * Title for a freshly-forked recipe: the source title plus a gentle marker so
- * the family can tell a variant from its original at a glance. Idempotent — we
+ * the family can tell a variant from its original at a glance. Idempotent. We
  * never stack the marker if the source is already tagged.
  */
 export function adaptationTitle(sourceTitle: string): string {
   const base = sourceTitle.trim();
   if (base.endsWith(ADAPTATION_MARKER)) return base;
   const withMarker = `${base} ${ADAPTATION_MARKER}`;
-  // Respect the recipes.title varchar(200) limit; trim the base if needed.
+  // Respect the recipes.title varchar(200) limit. Trim the base if needed.
   if (withMarker.length <= 200) return withMarker;
   const room = 200 - ADAPTATION_MARKER.length - 1;
   return `${base.slice(0, room).trimEnd()} ${ADAPTATION_MARKER}`;

@@ -3,7 +3,7 @@ import { getTableConfig } from "drizzle-orm/pg-core";
 
 vi.mock("server-only", () => ({}));
 
-// Only the transaction entrypoint is exercised here — the retry wrapper lives
+// Only the transaction entrypoint is exercised here. The retry wrapper lives
 // *outside* the transaction callback, so a mocked `transaction` lets us drive
 // the collision/retry paths without a real database.
 const { dbMock } = vi.hoisted(() => ({
@@ -107,7 +107,7 @@ describe("uniqueSlug", () => {
   });
 
   it("perturbs a reserved base so it can't shadow a sibling route", async () => {
-    // "new" is free in the DB, but `/recipes/new` is the editor route — a recipe
+    // "new" is free in the DB, but `/recipes/new` is the editor route. A recipe
     // slugged "new" would be unreachable at its own URL, so uniqueSlug must
     // never return it (regression: recipes "failing to resolve" after create).
     const findFirst = vi.fn().mockResolvedValue(undefined);
@@ -115,7 +115,7 @@ describe("uniqueSlug", () => {
     expect(slug).not.toBe("new");
     expect(slug.startsWith("new-")).toBe(true);
     expect(isReservedRecipeSlug(slug)).toBe(false);
-    // The reserved base is rejected without a DB round-trip; only the perturbed
+    // The reserved base is rejected without a DB round-trip. Only the perturbed
     // candidate is checked for existence.
     expect(findFirst).toHaveBeenCalledTimes(1);
   });
@@ -197,7 +197,7 @@ describe("forkRecipe slug-conflict resilience", () => {
   });
 });
 
-// --- Group-membership enforcement (issue #180 — IDOR on groupId) -------------
+// --- Group-membership enforcement (issue #180. IDOR on groupId) -------------
 
 /** A tx stand-in exposing just the `group_members` lookup `resolveGroupId` does. */
 function membershipTx(member: { id: string } | undefined) {
@@ -268,7 +268,7 @@ describe("resolveGroupId (group-membership guard)", () => {
 /**
  * A resolved-then-chainable stand-in: `await tx.insert(t).values(v)` resolves,
  * while `tx.insert(t).values(v).returning(...)` / `.onConflictDoNothing()` also
- * work — matching the fluent drizzle surface the mutation code walks.
+ * work. Matching the fluent drizzle surface the mutation code walks.
  */
 function chainable(result: unknown) {
   return {
@@ -281,7 +281,7 @@ function chainable(result: unknown) {
   };
 }
 
-/** Like {@link chainable} but the awaited insert rejects — models a DB error. */
+/** Like {@link chainable} but the awaited insert rejects. Models a DB error. */
 function rejecting(err: Error) {
   return {
     returning: vi.fn(() => Promise.reject(err)),
@@ -321,7 +321,7 @@ function createTx(opts: { member: boolean }) {
       })),
     })),
   };
-  // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
+  // journal() allocates the version number inside a SAVEPOINT (tx.transaction).
   // run the callback against the same fake surface so a create writes one version.
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
   return { tx, insert, recipeValues };
@@ -415,7 +415,7 @@ function updateTx(opts: { member: boolean }) {
       })),
     })),
   };
-  // journal() allocates the version number inside a SAVEPOINT (tx.transaction);
+  // journal() allocates the version number inside a SAVEPOINT (tx.transaction).
   // run the callback against the same fake surface so an update writes one version.
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
   return { tx, update, setValues };
@@ -526,7 +526,7 @@ describe("journal version-number allocation (issue #151)", () => {
 
     await updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), author);
 
-    // First attempt took v2 and lost the race; the retry recomputed max+1 → v3.
+    // First attempt took v2 and lost the race. The retry recomputed max+1 → v3.
     expect(versionRows.map((r) => r.versionNumber)).toEqual([2, 3]);
   });
 });
@@ -584,7 +584,7 @@ describe("recipe ownership authz guards (i220)", () => {
   it("deleteRecipe on another user's recipe throws NOT_FOUND (no row matched)", async () => {
     // deleteRecipe first runs an owner-scoped lookup for the kid-safe guard
     // (issue #367): a non-owner sees no row, so the guard is skipped. It then
-    // issues db.update(...).where(id AND authorId AND deleted IS NULL); a
+    // issues db.update(...).where(id AND authorId AND deleted IS NULL). A
     // non-owner matches no row, so `.returning()` is empty → NOT_FOUND.
     (dbMock as Record<string, unknown>).query = {
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },

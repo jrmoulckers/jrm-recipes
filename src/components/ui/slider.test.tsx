@@ -34,7 +34,7 @@ function renderSlider() {
 describe("Slider large-target sizing", () => {
   it("floors the interactive strip to --control-min so the whole strip meets --tap-min in Kids/Simple", () => {
     const { root } = renderSlider();
-    // Default `--control-min: 0px` adds no height; Kids/Simple raise it to --tap-min.
+    // Default `--control-min: 0px` adds no height. Kids/Simple raise it to --tap-min.
     expect(root.className).toContain("min-h-[var(--control-min)]");
     expect(root.className).toContain("items-center");
   });

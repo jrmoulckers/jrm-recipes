@@ -25,7 +25,7 @@ import {
  * dark patterns: it is fully dismissible (a "Not now" button, the ✕, Escape, and
  * an overlay click all close it), never blocks content the user already made,
  * and carries no countdowns, scarcity, or guilt copy. Plan name, tagline, and
- * benefits all come from `src/config/plans.ts` — nothing here hard-codes a price.
+ * benefits all come from `src/config/plans.ts`. Nothing here hard-codes a price.
  */
 
 const FAMILY = getPlan("family");
@@ -107,7 +107,7 @@ export function UpgradeDialog({
 
 /**
  * Imperative helper for locked actions (issue #311). Returns a ready-to-render
- * `dialog` node plus `promptUpgrade()` to open it — e.g. call it from a locked
+ * `dialog` node plus `promptUpgrade()` to open it. For example, call it from a locked
  * button's `onClick`. The prompt is always dismissible and never auto-opens.
  *
  * ```tsx

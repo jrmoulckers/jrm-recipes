@@ -83,7 +83,7 @@ export function GroupActions({
             onClick={() => {
               if (
                 !window.confirm(
-                  `Delete “${groupName}”? Everyone's recipes stay saved — only the shared group space is removed.`,
+                  `Delete “${groupName}”? Everyone's recipes stay saved. Only the shared group space is removed.`,
                 )
               ) {
                 return;

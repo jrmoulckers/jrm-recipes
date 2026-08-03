@@ -46,7 +46,7 @@ export function absoluteUrl(path = "") {
 
 /** Pretty, human-friendly time from minutes (e.g. 90 -> "1 hr 30 min"). */
 export function formatMinutes(total?: number | null): string {
-  if (!total || total <= 0) return "—";
+  if (!total || total <= 0) return "Not set";
   const hours = Math.floor(total / 60);
   const mins = total % 60;
   const parts: string[] = [];
@@ -67,7 +67,7 @@ export function slugify(input: string): string {
 }
 
 /**
- * First non-empty, trimmed value — the display-name fallback rule (a real name,
+ * First non-empty, trimmed value. The display-name fallback rule (a real name,
  * else a handle, else a placeholder). Centralizes the empty-string-as-absent
  * behavior so call sites don't reach for `||` (which our lint config forbids in
  * favor of `??`, and `??` would wrongly keep a whitespace-only name).

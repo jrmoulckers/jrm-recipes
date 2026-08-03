@@ -16,7 +16,7 @@ import { CONNECTIVITY_COPY } from "~/lib/connectivity-copy";
  * Cook Mode "offline-ready" affordance (#141). A recipe open in Cook Mode is
  * already loaded for the session, so it can be finished hands-free even if Wi‑Fi
  * drops. This subtle badge (near the "Screen awake" indicator) reassures the cook
- * of that, with an explanatory tooltip. Copy-only — it reflects the promise the
+ * of that, with an explanatory tooltip. It is copy-only and reflects the promise the
  * PWA already keeps, not a live cache probe.
  */
 export function OfflineReadyBadge({ className }: { className?: string }) {

@@ -67,7 +67,7 @@ describe("listLibrary pagination (#57)", () => {
   });
 
   it("keeps the DB order (top-rated is sorted in SQL, not re-sorted in JS)", async () => {
-    // Rows arrive already ordered by SQL; a JS re-sort would reorder these by
+    // Rows arrive already ordered by SQL. A JS re-sort would reorder these by
     // their aggregates. We assert the order is preserved.
     dbMock.query.recipes.findMany.mockResolvedValue([
       { id: "low", ratingCount: 1, ratingSum: 1 },

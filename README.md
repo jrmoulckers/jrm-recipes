@@ -4,7 +4,7 @@
 
 **Family recipes, kept alive.**
 
-Create, cook, and pass down the recipes your family loves — beautifully, together.
+Create, cook, and pass down the recipes your family loves, beautifully and together.
 A production-ready, PWA-first recipe platform built for a family of a few and
 ready to scale to millions.
 
@@ -15,33 +15,33 @@ ready to scale to millions.
 ## What is Heirloom?
 
 Heirloom is a warm, dead-simple, and infinitely-scalable place for a family to
-write down the dishes everyone asks for — and actually cook from them. It ships
+write down the dishes everyone asks for and actually cook from them. It ships
 today with the full **core loop**, and is architected in phases toward history,
 collaboration, import, and social.
 
 ### Shipping now (Phase 1)
 
-- **Ridiculously easy recipes** — a structured editor for ingredients, steps,
+- **Ridiculously easy recipes**: a structured editor for ingredients, steps,
   photos, timers, tags, sources, and visibility. Create, edit, delete, share.
-- **Cook mode** — hands-free, step-by-step, with built-in timers, serving
+- **Cook mode**: hands-free, step-by-step, with built-in timers, serving
   **scaling**, and **unit conversion**. Works **offline** in the kitchen.
-- **Print & share** — export a recipe card, full page, or compact format;
-  shareable links.
-- **Family groups** — recipes can belong to a family/group (foundation in place).
-- **Five UI modes × light/dark** — Kitchen, Whimsy, Professional, Kids, and
+- **Print & share**: export a recipe card, full page, or compact format.
+  Shareable links.
+- **Family groups**: recipes can belong to a family/group (foundation in place).
+- **Five UI modes × light/dark**: Kitchen, Whimsy, Professional, Kids, and
   Simple, each a full design-token personality. Switch instantly.
-- **Accessibility for everyone** — a dedicated preferences panel: larger text,
+- **Accessibility for everyone**: a dedicated preferences panel: larger text,
   high contrast, reduced motion, and easy-reading (dyslexia-friendly) text, plus
   a one-tap **Kids mode**. All settings persist with no flash of the wrong UI.
-- **Installable PWA** — add to home screen, with a friendly offline fallback.
+- **Installable PWA**: add to home screen, with a friendly offline fallback.
 
 ### On the roadmap
 
-- **Phase 2 — History & collaboration:** recipe **timelines**, **adaptations/
+- **Phase 2. History & collaboration:** recipe **timelines**, **adaptations/
   forks**, group collaboration, ratings, suggestions, reviews.
-- **Phase 3 — Import & AI:** import from URLs/social, AI content generation,
+- **Phase 3. Import & AI:** import from URLs/social, AI content generation,
   a technique tutor, and smart substitutions/conversions.
-- **Phase 4 — Social & video:** reels/TikTok export and posting to social.
+- **Phase 4. Social & video:** reels/TikTok export and posting to social.
 
 ---
 
@@ -62,12 +62,12 @@ collaboration, import, and social.
 
 **Design principle:** the app **boots, builds, and is fully clickable with zero
 configuration.** Every external service (DB, auth, uploads) degrades gracefully
-to a local dev-bypass when its env vars are absent — so you can run it in one
+to a local dev-bypass when its env vars are absent, so you can run it in one
 command, and wire in real services when you're ready.
 
 > **Security note:** the auth **dev-bypass** (a single shared local user) is
-> strictly a **local/test** affordance. Any **deployed** environment — preview or
-> production — requires real Clerk keys: with `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or
+> strictly a **local/test** affordance. Any **deployed** environment, preview or
+> production, requires real Clerk keys: with `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or
 > missing Clerk keys it fails closed (throws) instead of silently serving everyone
 > as one shared account. Production is caught at build/boot (Vercel
 > `VERCEL_ENV=production`) and every deploy is caught per request
@@ -98,7 +98,7 @@ pnpm db:seed              # add a few sample recipes
 pnpm dev                  # http://localhost:3000
 ```
 
-Skip step 3 entirely and the app still runs — you'll get the landing page, all
+Skip step 3 entirely and the app still runs. You'll get the landing page, all
 five themes, cook-mode UI, and the accessibility panel without any database or
 accounts. Pages that need data will tell you clearly when `DATABASE_URL` is unset.
 
@@ -139,13 +139,13 @@ src/
 ## Design system: theming & accessibility
 
 Theming has **three orthogonal axes**, and every component styles itself using
-**semantic tokens only** (`bg-primary`, `text-muted-foreground`, …) — never
+**semantic tokens only** (`bg-primary`, `text-muted-foreground`, …), never
 hard-coded colors:
 
-1. **UI mode** (`data-theme`) — Kitchen · Whimsy · Professional · Kids · Simple.
-2. **Color scheme** (`.dark`) — light · dark · system.
+1. **UI mode** (`data-theme`): Kitchen · Whimsy · Professional · Kids · Simple.
+2. **Color scheme** (`.dark`): light · dark · system.
 3. **Accessibility** (`data-text` / `data-contrast` / `data-motion` /
-   `data-reading`) — text size, high contrast, reduced motion, easy-reading type.
+   `data-reading`): text size, high contrast, reduced motion, easy-reading type.
 
 Adding a new UI mode is one token block in `src/styles/themes.css` plus one entry
 in `src/config/themes.ts`. Nothing else in the app changes. All three axes are
@@ -161,43 +161,43 @@ Arabic**. The active locale is resolved from the `NEXT_LOCALE` cookie (no URL
 prefix) and applied server-side, so the right language and writing direction
 render on first paint. Switch languages from the header's language menu.
 
-**Convention: all user-facing copy comes from the message catalogs — never
+**Convention: all user-facing copy comes from the message catalogs. Never
 hardcode it in JSX.**
 
 - **Catalogs** live in `src/messages/<locale>.json` (`en`, `es`, `de`, `ar`) and
   are read through [next-intl](https://next-intl.dev): `useTranslations()` in
   client components, `getTranslations()` on the server. Add every new string to
   **all** catalogs, keyed under a namespace.
-- **Formatting** is locale-aware via helpers — `~/lib/i18n-format` (numbers,
+- **Formatting** is locale-aware via helpers. `~/lib/i18n-format` (numbers,
   quantities, lists), `~/lib/dates` (dates, weekdays, relative time), and the
-  measurement/temperature utilities — rather than hand-built English strings.
+  measurement/temperature utilities rather than hand-built English strings.
 - **RTL:** components use Tailwind **logical** utilities (`ps-`/`pe-`,
   `ms-`/`me-`, `text-start`/`text-end`, `start-`/`end-`) so layouts mirror
   automatically under `dir="rtl"`.
 - **Guardrail:** ESLint's `i18next/no-literal-string` (warning) flags hardcoded
   JSX text and the user-facing `alt` / `aria-label` / `placeholder` / `title`
   attributes so new copy can't silently skip translation. It's scoped to UI
-  code — non-UI strings (`className`, `data-*`, routes, config) and tests/seed
+  code. Non-UI strings (`className`, `data-*`, routes, config) and tests/seed
   are ignored. Existing English strings are being migrated surface-by-surface,
   so the rule stays at **warn** (it doesn't fail `pnpm lint`) until extraction
-  completes; treat new warnings in your diff as a prompt to use a catalog.
+  completes. Treat new warnings in your diff as a prompt to use a catalog.
 
 ---
 
 ## Scripts
 
-| Command                        | What it does                                      |
-| ------------------------------ | ------------------------------------------------- |
-| `pnpm dev`                     | Start the dev server                              |
-| `pnpm build`                   | Production build                                  |
-| `pnpm preview`                 | Build **and** start — the way to test PWA/offline |
-| `pnpm start`                   | Start a production server (after `build`)         |
-| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript checks                        |
-| `pnpm test` / `pnpm test:e2e`  | Vitest unit tests / Playwright e2e                |
-| `pnpm db:generate`             | Generate a migration from schema changes          |
-| `pnpm db:migrate`              | Apply migrations                                  |
-| `pnpm db:seed`                 | Seed sample data                                  |
-| `pnpm db:studio`               | Open Drizzle Studio                               |
+| Command                        | What it does                                     |
+| ------------------------------ | ------------------------------------------------ |
+| `pnpm dev`                     | Start the dev server                             |
+| `pnpm build`                   | Production build                                 |
+| `pnpm preview`                 | Build **and** start, the way to test PWA/offline |
+| `pnpm start`                   | Start a production server (after `build`)        |
+| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript checks                       |
+| `pnpm test` / `pnpm test:e2e`  | Vitest unit tests / Playwright e2e               |
+| `pnpm db:generate`             | Generate a migration from schema changes         |
+| `pnpm db:migrate`              | Apply migrations                                 |
+| `pnpm db:seed`                 | Seed sample data                                 |
+| `pnpm db:studio`               | Open Drizzle Studio                              |
 
 ---
 
@@ -210,8 +210,8 @@ never have to touch the database by hand.
 
 👉 **Follow the step-by-step checklist in [`DEPLOY.md`](./DEPLOY.md).**
 
-At a glance, you'll provision three free-tier services — **Neon** (Postgres),
-**Clerk** (auth), **Cloudinary** (file storage) — paste their keys into Vercel,
+At a glance, you'll provision three free-tier services. **Neon** (Postgres),
+**Clerk** (auth), **Cloudinary** (file storage), paste their keys into Vercel,
 connect the repo, and deploy.
 
 ---
@@ -222,17 +222,17 @@ Before pushing, run the same gate CI runs:
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
-pnpm test:e2e   # Playwright smoke test — runs in CI; optional locally
+pnpm test:e2e   # Playwright smoke test, runs in CI, optional locally
 ```
 
 On every PR and push to `main`, GitHub Actions runs:
 
-- **CI** (`.github/workflows/ci.yml`) — lint, typecheck, unit tests, a production
+- **CI** (`.github/workflows/ci.yml`): lint, typecheck, unit tests, a production
   build, and a Playwright **e2e** smoke test. No secrets: it builds with
   `SKIP_ENV_VALIDATION` and dev-bypass auth, exactly like a zero-config local run.
 
 **Dependabot** (`.github/dependabot.yml`) opens weekly PRs to keep npm packages
-and GitHub Actions current — each one gated by CI.
+and GitHub Actions current, each one gated by CI.
 
 ---
 

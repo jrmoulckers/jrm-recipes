@@ -101,7 +101,7 @@ describe("sendDueCookAlongReminders (#353)", () => {
         rsvps: [{ userId: "going_2", status: "going" }],
       },
     ]);
-    // First event claims successfully; second was already reminded (empty claim).
+    // First event claims successfully. Second was already reminded (empty claim).
     claimQueue.push([{ id: "ca1" }], []);
 
     const reminded = await sendDueCookAlongReminders();

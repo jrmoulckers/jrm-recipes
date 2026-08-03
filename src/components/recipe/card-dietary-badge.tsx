@@ -18,7 +18,7 @@ export type CardDietaryMember = {
 };
 
 const DISCLAIMER =
-  "Best-effort from ingredient text — always double-check labels and brands.";
+  "Best-effort from ingredient text. Always double-check labels and brands.";
 
 /**
  * At-a-glance "safe for my family" signal on a recipe card (issue #431). When a
@@ -37,7 +37,7 @@ export function CardDietaryBadge({
   /**
    * The recipe's detected allergens (conservative direct+hidden union, rolled
    * up server-side). `null` means there was no structured ingredient data to
-   * analyze — distinct from `[]` ("analyzed, none found") — so the reassuring
+   * analyze. Distinct from `[]` ("analyzed, none found"). So the reassuring
    * "safe" badge is withheld rather than claimed off missing data.
    */
   recipeAllergens: Allergen[] | null;
@@ -46,12 +46,12 @@ export function CardDietaryBadge({
   const member = members.find((m) => m.id === activeMemberId);
   const locale = useLocale();
 
-  // Only meaningful when the active member actually has allergies to check —
+  // Only meaningful when the active member actually has allergies to check.
   // otherwise every card would wear a trivial "safe" chip.
   if (!member || member.allergens.length === 0) return null;
 
   // No ingredient data to analyze: never imply "safe" from an absence of
-  // detections. Stay silent (the grid stays clean; no false reassurance).
+  // detections. Stay silent (the grid stays clean. No false reassurance).
   if (recipeAllergens === null) return null;
 
   const conflicts = allergenConflicts(member.allergens, recipeAllergens);

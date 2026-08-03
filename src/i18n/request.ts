@@ -9,7 +9,7 @@ import ar from "../messages/ar.json";
 
 /**
  * Message catalogs keyed by locale. Imported statically so the active catalog is
- * selected without an untyped dynamic import; they only ever load on the server
+ * selected without an untyped dynamic import. they only ever load on the server
  * (this config runs per request in RSC), so no catalog ships to the client.
  */
 const CATALOGS = { en, es, de, ar };
@@ -22,7 +22,7 @@ const CATALOGS = { en, es, de, ar };
  * keeps the App Router + RSC setup lightweight and lets the server render the
  * right language on first paint. The resolved locale is passed to
  * `NextIntlClientProvider` in `layout.tsx`, so the client hydrates with the
- * same value the server rendered — no cookie re-read, no hydration mismatch.
+ * same value the server rendered. No cookie re-read, no hydration mismatch.
  */
 export default getRequestConfig(async () => {
   const [store, headerList] = await Promise.all([cookies(), headers()]);

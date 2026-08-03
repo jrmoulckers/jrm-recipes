@@ -26,7 +26,7 @@ export default async function GroupModerationPage({
   try {
     queue = await getModerationQueue(slug, viewer);
   } catch (error) {
-    // Members / kids get a FORBIDDEN — hide the page entirely rather than leak
+    // Members / kids get a FORBIDDEN. Hide the page entirely rather than leak
     // that a moderation queue exists.
     if (error instanceof DomainError && error.code === "FORBIDDEN") notFound();
     throw error;
@@ -41,7 +41,7 @@ export default async function GroupModerationPage({
             Moderation
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Reports from members of this family — hide anything that crosses a
+            Reports from members of this family. Hide anything that crosses a
             line, or dismiss reports that don&apos;t.
           </p>
         </div>

@@ -41,8 +41,8 @@ function computeStandalone(): boolean {
  * user who dismissed the auto-banner still has an in-app path to install. It
  * captures the browser's `beforeinstallprompt` independently of the auto-banner
  * (both receive the same event), so replaying it here never disturbs the
- * banner's two-week dismissal logic. On iOS Safari — which has no programmatic
- * prompt — it opens the same "Add to Home Screen" tip. Hidden once the app is
+ * banner's two-week dismissal logic. On iOS Safari, which has no programmatic
+ * prompt, it opens the same "Add to Home Screen" tip. It is hidden once the app is
  * installed / running standalone.
  */
 export function InstallAppButton() {
@@ -62,7 +62,7 @@ export function InstallAppButton() {
     sync();
 
     const onPrompt = (event: Event) => {
-      // Keep the event so we can replay it on demand; the browser only fires it
+      // Keep the event so we can replay it on demand. The browser only fires it
       // once. `preventDefault` here is harmless to the auto-banner (idempotent).
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);

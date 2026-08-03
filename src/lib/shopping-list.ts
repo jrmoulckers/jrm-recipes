@@ -39,7 +39,7 @@ export type ShoppingRecipeInput = {
   recipeId?: string | null;
   /** The recipe's own base serving count (what its quantities are written for). */
   servings?: number | null;
-  /** How many servings the shopper wants; defaults to `servings`. */
+  /** How many servings the shopper wants. Defaults to `servings`. */
   desiredServings?: number | null;
   ingredients: ShoppingItemInput[];
 };
@@ -100,15 +100,31 @@ export const SHOPPING_CATEGORIES = [
 
 export type ShoppingCategory = (typeof SHOPPING_CATEGORIES)[number];
 
+/**
+ * Stored shopping categories stay Title Case for persisted and validated data.
+ * Use these labels when rendering category names in sentence case.
+ */
+export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategory, string> = {
+  Produce: "Produce",
+  "Meat & Seafood": "Meat & seafood",
+  "Dairy & Eggs": "Dairy & eggs",
+  Bakery: "Bakery",
+  Pantry: "Pantry",
+  "Spices & Seasonings": "Spices & seasonings",
+  Frozen: "Frozen",
+  Beverages: "Beverages",
+  Other: "Other",
+};
+
 const CATEGORY_INDEX = new Map<ShoppingCategory, number>(
   SHOPPING_CATEGORIES.map((c, i) => [c, i]),
 );
 
 /**
  * Keyword rules grouped by aisle. Every keyword is compiled into a whole-word
- * matcher (see `COMPILED_RULES`); when several keywords match an item the most
+ * matcher (see `COMPILED_RULES`). When several keywords match an item the most
  * specific one (longest phrase) wins, with rule order breaking ties. Keeping
- * the rules ordered broad-aisle-first therefore only affects genuine ties —
+ * the rules ordered broad-aisle-first therefore only affects genuine ties.
  * "coconut milk" (Pantry) still beats "milk" (Dairy) even though Dairy is
  * listed first, because its keyword is more specific.
  */
@@ -342,9 +358,9 @@ function keywordMatcher(keyword: string): RegExp {
 
 type CompiledRule = {
   category: ShoppingCategory;
-  /** Owning rule's position; lower wins on ties (broad aisles listed first). */
+  /** Owning rule's position. Lower wins on ties (broad aisles listed first). */
   order: number;
-  /** Word count of the keyword; higher = more specific and wins outright. */
+  /** Word count of the keyword. Higher = more specific and wins outright. */
   specificity: number;
   matcher: RegExp;
 };
@@ -390,10 +406,10 @@ export function categorize(item: string): ShoppingCategory {
  * The things a busy parent has never once needed to buy on a weeknight run
  * (issue #412): salt, pepper, water, cooking oils, butter, and a few common
  * dried spices. When a recipe is added to the list these are omitted by default
- * so the list you actually shop from is short; an "include staples" override
+ * so the list you actually shop from is short. An "include staples" override
  * keeps them for the week you really are out of oil.
  *
- * Deliberately conservative — fresh herbs/aromatics (basil, cilantro, ginger,
+ * Deliberately conservative. Fresh herbs/aromatics (basil, cilantro, ginger,
  * garlic, onion) are excluded so a real produce purchase is never auto-hidden.
  */
 export const PANTRY_STAPLES = [
@@ -432,7 +448,7 @@ export const PANTRY_STAPLES = [
 
 /**
  * Descriptors that may precede a staple's head noun without changing that the
- * item is still that staple — "ground black pepper", "extra virgin olive oil",
+ * item is still that staple. "ground black pepper", "extra virgin olive oil",
  * "fine sea salt", "unsalted butter". Deliberately does NOT include
  * ingredient-defining words like "bell", "peanut", "coconut" or "sesame": when
  * one of those precedes a staple word the item is a distinct must-buy ("bell
@@ -530,12 +546,12 @@ function matchesStaplePhrase(cleaned: string): boolean {
 }
 
 /**
- * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}) —
+ * True when an ingredient name is a pantry staple (see {@link PANTRY_STAPLES}).
  * i.e. a staple is its HEAD NOUN, optionally preceded by neutral qualifiers.
  * Matching on the head noun (not mere whole-word containment) is what keeps
  * "bell pepper", "peanut butter", "coconut water" and "sesame oil" on the list
  * while still dropping "salt", "ground black pepper" and "olive oil". Used only
- * when auto-building a list from a recipe — manually added items are never run
+ * when auto-building a list from a recipe. Manually added items are never run
  * through this.
  */
 export function isPantryStaple(item: string): boolean {
@@ -547,7 +563,7 @@ export function isPantryStaple(item: string): boolean {
   const cleaned = name.replace(/^(?:\d+(?:[.,/]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s+/, "");
   if (STAPLE_EXCEPTIONS.has(cleaned)) return false;
   if (matchesStaplePhrase(cleaned)) return true;
-  // Tolerate a plural head noun ("peppercorns" → "peppercorn"); the prefix guard
+  // Tolerate a plural head noun ("peppercorns" → "peppercorn"). The prefix guard
   // still protects compounds ("bell peppers" keeps "bell" as an unknown word).
   const singular = cleaned.replace(/s$/, "");
   return singular !== cleaned && matchesStaplePhrase(singular);
@@ -562,7 +578,7 @@ function baseUnitFor(dimension: Dimension): string {
   return dimension === "mass" ? "g" : "ml";
 }
 
-/** Serving scale factor; 1 when we lack the numbers to scale meaningfully. */
+/** Serving scale factor. 1 when we lack the numbers to scale meaningfully. */
 export function scaleFactor(
   baseServings: number | null | undefined,
   desiredServings: number | null | undefined,
@@ -617,7 +633,7 @@ type Accumulator = {
 
 /**
  * Merge raw ingredient contributions into consolidated, categorized line items.
- * Like items (same normalized name + compatible unit) are summed; convertible
+ * Like items (same normalized name + compatible unit) are summed. Convertible
  * units are combined via the unit ladder and re-expressed in a friendly unit.
  */
 export function mergeShoppingItems(
@@ -809,14 +825,14 @@ export type FormatShoppingListOptions = {
 function shareLine(item: ShoppingTextItem): string {
   const amount = describeQuantity(item);
   const base = amount ? `${amount} ${item.item}` : item.item;
-  return item.note ? `${base} — ${item.note}` : base;
+  return item.note ? `${base}, ${item.note}` : base;
 }
 
 /**
  * Serialize a shopping list to tidy, human-readable plain text grouped by aisle
  * with Markdown-style checkboxes ("- [ ] 2 lb chicken") so it pastes cleanly
  * into Messages/WhatsApp/Notes (issue #408). Already-checked items are excluded
- * by default. Pure — no DOM — so it is unit-testable and safe on the server.
+ * by default. Pure and DOM-free, so it is unit-testable and safe on the server.
  */
 export function formatShoppingListText(
   items: ShoppingTextItem[],

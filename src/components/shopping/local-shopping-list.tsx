@@ -21,7 +21,7 @@ export function LocalShoppingList() {
   const clearChecked = useShoppingStore((s) => s.clearChecked);
   const clearAll = useShoppingStore((s) => s.clearAll);
 
-  // The store hydrates from localStorage on the client only; wait for mount so
+  // The store hydrates from localStorage on the client only. Wait for mount so
   // the first render matches the server (empty) and avoids a hydration warning.
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);

@@ -56,7 +56,7 @@ export function ShareButton({
   title: string;
   author?: string | null;
   // Absolute URL to hand out when sharing. For unlisted recipes this is the
-  // unguessable `/r/<token>` link (issue #204); when omitted we fall back to the
+  // unguessable `/r/<token>` link (issue #204). When omitted we fall back to the
   // current page URL (public/group recipes, where the address is shareable).
   shareUrl?: string;
   // Owner-only revoke/rotate controls (issue #207) are shown when this recipe is
@@ -101,7 +101,7 @@ export function ShareButton({
       setCurrentUrl(result.url ?? undefined);
       if (change.rotate) {
         track("share_link_rotated", {});
-        toast.success("Share link reset — the old link no longer works");
+        toast.success("Share link reset. The old link no longer works");
       } else if (change.enabled === false) {
         track("share_link_disabled", {});
         toast.success("Share link disabled");
@@ -152,7 +152,7 @@ export function ShareButton({
         typeof navigator.canShare === "function" &&
         navigator.canShare({ files: [file] })
       ) {
-        // Track inside the gesture — never await before navigator.share (Safari).
+        // Track inside the gesture. Never await before navigator.share (Safari).
         track("recipe_shared", { method: "file" });
         await navigator.share({ files: [file], title, text, url });
         return;
@@ -164,7 +164,7 @@ export function ShareButton({
       }
       await copyLink();
     } catch {
-      // Share sheet dismissed — nothing to do.
+      // Share sheet dismissed. Nothing to do.
     }
   }
 

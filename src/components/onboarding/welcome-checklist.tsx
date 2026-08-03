@@ -22,9 +22,9 @@ export function welcomeDismissed(): boolean {
 
 /**
  * First-run welcome moment (issue #147). A dismissible, copy-led card that
- * orients a brand-new, empty account to Heirloom's core loop — create → cook →
- * share — as three friendly steps. Rendered above the empty-library state, so
- * it only appears when the library has zero recipes; dismissal persists in
+ * orients a brand-new, empty account to Heirloom's core loop, Create → cook →
+ * share, as three friendly steps. It is rendered above the empty-library state, so
+ * it only appears when the library has zero recipes. Dismissal persists in
  * `localStorage` so it never nags on later visits. All strings live in
  * `~/config/onboarding-copy` for later localization / mode-adaptation.
  */
@@ -49,7 +49,7 @@ export function WelcomeChecklist() {
     try {
       window.localStorage.setItem(WELCOME_DISMISS_KEY, "1");
     } catch {
-      // Storage unavailable (private mode) — just hide for this session.
+      // Storage unavailable (private mode). Just hide for this session.
     }
     // Play the exit transition first, then unmount once it has settled.
     setEntered(false);

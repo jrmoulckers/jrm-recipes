@@ -46,8 +46,8 @@ export interface ButtonProps
   /**
    * Show a spinner, mark the button `aria-busy`, and block interaction without
    * the "unavailable" dim of `disabled`. The label stays mounted and in the
-   * accessibility tree — hidden with `opacity-0`, never `visibility:hidden`,
-   * which would drop it from the accessible-name computation — so the button
+   * accessibility tree, hidden with `opacity-0`, never `visibility:hidden`,
+   * which would drop it from the accessible-name computation, so the button
    * keeps both its accessible name and the exact same width between idle and
    * loading.
    */

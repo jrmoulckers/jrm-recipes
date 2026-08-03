@@ -39,7 +39,7 @@ describe("parseA11y", () => {
   });
 
   it("treats a legacy boolean true as explicit on and false as unset", () => {
-    // Old cookies persisted booleans; false was just the default, so it should
+    // Old cookies persisted booleans. `false` was just the default, so it should
     // NOT become a hard opt-out (that would regress OS-follow for existing users).
     const prefs = parseA11y(JSON.stringify({ contrast: true, motion: false }));
     expect(prefs.contrast).toBe("on");

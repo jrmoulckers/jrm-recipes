@@ -21,7 +21,7 @@ export const timestamps = () => ({
 
 /**
  * Soft-delete + audit pair (issue #165). `deletedAt IS NULL` means the row is
- * live; a timestamp tombstones it while preserving child history (versions,
+ * live. A timestamp tombstones it while preserving child history (versions,
  * events, ratings, comments). `deletedBy` records the actor and nulls out if
  * that user is later removed. `userIdColumn` is passed in so this helper stays
  * in `_shared` without importing the users table (which would be circular).

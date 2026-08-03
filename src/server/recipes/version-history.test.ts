@@ -93,7 +93,7 @@ describe("getRecipeVersions pagination (#159)", () => {
     await getRecipeVersions("r1", { beforeVersion: 4, limit: 2 });
 
     // The where clause ANDs the recipe filter with the versionNumber < cursor
-    // keyset seek; we can only assert it is present without a live dialect.
+    // keyset seek. We can only assert it is present without a live dialect.
     const cursorArg = dbMock.query.recipeVersions.findMany.mock
       .calls[0]![0] as FindManyArg;
     expect(cursorArg.where).toBeDefined();

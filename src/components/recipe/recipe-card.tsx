@@ -28,7 +28,7 @@ import {
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
- * by browse pages for signed-in users with a database; omit it and no quick-plan
+ * by browse pages for signed-in users with a database. Omit it and no quick-plan
  * affordance renders.
  */
 export type QuickPlanContext = {
@@ -107,7 +107,7 @@ export function RecipeCard({
   matchReason?: RecipeMatchReason | null;
   /**
    * Family members to power the "safe for [name]" badge (#431). When supplied
-   * and one is active, the card shows an allergen safety signal; omit it (the
+   * and one is active, the card shows an allergen safety signal. Omit it (the
    * default) and no badge renders.
    */
   members?: CardDietaryMember[];
@@ -147,7 +147,7 @@ export function RecipeCard({
       {/* One-tap Cook (#118): a real, focusable link that jumps straight to the
           immersive cook route. Kept a sibling of the card link (never nested) to
           avoid anchor-in-anchor. Overlays the image region via a pointer-events
-          gate; always visible on touch, hover/focus-revealed on desktop. */}
+          gate. Always visible on touch, hover/focus-revealed on desktop. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
         <Link
           href={`/recipes/${recipe.slug}/cook`}

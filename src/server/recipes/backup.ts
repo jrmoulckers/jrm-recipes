@@ -37,15 +37,15 @@ function readme(recipes: PrintRecipe[], date: Date): string {
   return [
     "# Your Heirloom cookbook",
     "",
-    `Exported ${isoDate(date)} — ${recipes.length} ${
+    `Exported ${isoDate(date)}. ${recipes.length} ${
       recipes.length === 1 ? "recipe" : "recipes"
     }.`,
     "",
     "This is your complete family cookbook, yours to keep. It needs no",
     "account, app, or internet to read:",
     "",
-    "- `recipes/` — one Markdown file per recipe (open in any text editor).",
-    "- `recipes.json` — the same recipes as structured data, so a future tool",
+    "- `recipes/`. One Markdown file per recipe (open in any text editor).",
+    "- `recipes.json`. The same recipes as structured data, so a future tool",
     "  (or a future Heirloom) can read everything back in without loss.",
     "",
     "Stories, who a recipe was handed down from, and where it came from are all",
@@ -60,7 +60,7 @@ function readme(recipes: PrintRecipe[], date: Date): string {
  * Every recipe becomes a human-readable Markdown file plus a lossless entry in
  * `recipes.json`, wrapped in a plain ZIP (see {@link createZip}) that any OS can
  * open. Pure and deterministic given `recipes` + `now`, so it is unit-testable
- * and safe to run on the server with no third-party service involved — the whole
+ * and safe to run on the server with no third-party service involved. The whole
  * point of letting a long-time user take their data home.
  */
 export function buildCookbookArchive(

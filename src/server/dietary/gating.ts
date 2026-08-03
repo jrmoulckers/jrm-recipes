@@ -19,7 +19,7 @@ export type { PlanSafetyWarning } from "~/lib/dietary-match";
  * Proactive allergen/diet gating for planned meals. Cross-checks the given
  * recipes' STRUCTURED allergens (food graph, with text fallback) against every
  * dietary profile the cook manages and returns the per-recipe conflicts (member
- * + allergen/diet). This is advisory only — callers surface it as an add-time
+ * + allergen/diet). This is advisory only. Callers surface it as an add-time
  * warning and never block the plan or shopping action on it.
  *
  * Best-effort by contract: it never throws. Any failure (DB off, query error)

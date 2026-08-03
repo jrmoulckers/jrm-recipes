@@ -72,8 +72,8 @@ import { Heading, Text } from "~/components/ui/typography";
 import { cn } from "~/lib/utils";
 
 /**
- * Design-system gallery (issue #83). A dev/reference route — deliberately NOT
- * linked in the production nav — that renders every `ui` primitive in its key
+ * Design-system gallery (issue #83). A dev/reference route. Deliberately NOT
+ * linked in the production nav. That renders every `ui` primitive in its key
  * states plus the live token palette. Pair it with the header's ThemeSwitcher
  * (also embedded below) to flip mode + scheme and QA every combination in
  * place. Everything is token-driven, so it doubles as a cross-mode contrast /
@@ -276,7 +276,7 @@ export default function DesignGalleryPage() {
             <Heading level={1}>Design system</Heading>
             <Text variant="muted" className="max-w-2xl">
               Every primitive and token in one place. Flip the mode and lighting
-              with the switcher to QA all five modes in light and dark — nothing
+              with the switcher to QA all five modes in light and dark. Nothing
               here needs data, auth, or a database.
             </Text>
           </div>
@@ -395,9 +395,9 @@ export default function DesignGalleryPage() {
           <Heading level={2}>Heading 2</Heading>
           <Heading level={3}>Heading 3</Heading>
           <Heading level={4}>Heading 4</Heading>
-          <Text>Body — the quick brown fox jumps over the lazy dog.</Text>
-          <Text variant="muted">Muted body — secondary supporting copy.</Text>
-          <Text variant="small">Small — captions and helper text.</Text>
+          <Text>Body. The quick brown fox jumps over the lazy dog.</Text>
+          <Text variant="muted">Muted body. Secondary supporting copy.</Text>
+          <Text variant="small">Small. Captions and helper text.</Text>
         </div>
       </Section>
 
@@ -641,7 +641,7 @@ export default function DesignGalleryPage() {
                 Quick note
               </Heading>
               <Text variant="small">
-                Popovers share the overlay surface — radius, padding, elevation.
+                Popovers share the overlay surface. Radius, padding, elevation.
               </Text>
             </PopoverContent>
           </Popover>

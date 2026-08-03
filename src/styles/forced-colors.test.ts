@@ -69,7 +69,7 @@ describe("forced-colors + prefers-contrast (issue #96)", () => {
     expect(css).not.toMatch(/box-shadow\s*:/);
   });
 
-  it("scopes everything inside media queries — no default-render regression", () => {
+  it("scopes everything inside media queries. No default-render regression", () => {
     // Both features are only ever expressed through their media queries.
     expect(A11Y_CSS).toContain("@media (forced-colors: active)");
     expect(A11Y_CSS).toContain("@media (prefers-contrast: more)");

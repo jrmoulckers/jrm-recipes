@@ -3,9 +3,9 @@
  *
  * Rendered once on the landing page. The `WebSite` node carries a
  * `SearchAction` so Google can show a sitelinks search box wired to our real
- * recipe search (`/recipes?q=…`); the `Organization` node establishes a
+ * recipe search (`/recipes?q=…`). The `Organization` node establishes a
  * consistent brand/knowledge presence. All values come from `brand` config and
- * are absolute URLs — nothing is hardcoded here.
+ * are absolute URLs. Nothing is hardcoded here.
  *
  * Framework-light and free of `server-only` so it can be unit-tested in
  * isolation. Serialize with `serializeJsonLd` before embedding in a script.

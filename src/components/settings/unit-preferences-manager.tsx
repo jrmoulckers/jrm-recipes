@@ -131,7 +131,7 @@ const EMPTY_CUSTOM: CustomDraft = {
 };
 
 /** Placeholder hints that adapt to the selected measure so the form teaches by
- *  example — a pinch is a volume, a knob is a weight, a bunch is a count. */
+ *  example. A pinch is a volume, a knob is a weight, a bunch is a count. */
 const CUSTOM_UNIT_EXAMPLES: Record<
   CustomUnitDimension,
   { name: string; abbreviation: string; amount: string; equals: string }
@@ -488,7 +488,7 @@ function CustomUnitsSection({
             Custom units
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Add the units your family cooks by — a pinch, a knob, a splash — and
+            Add the units your family cooks by. A pinch, a knob, a splash. And
             optionally tie them to a real amount so recipes can convert.
           </p>
         </div>
@@ -526,7 +526,7 @@ function CustomUnitsSection({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {unit.baseUnit && unit.baseAmount != null
                     ? `1 ${unit.name} = ${formatQuantity(unit.baseAmount, unit.baseUnit)} ${unit.baseUnit}`
-                    : "Display only — no conversion"}
+                    : "Display only. No conversion"}
                 </p>
               </div>
               <div className="flex gap-1">
@@ -612,7 +612,7 @@ function CustomUnitsSection({
                         setDraft((d) => ({
                           ...d,
                           dimension: dim,
-                          // Reset the base unit — it must match the new dimension.
+                          // Reset the base unit. It must match the new dimension.
                           baseUnit: "",
                         }))
                       }

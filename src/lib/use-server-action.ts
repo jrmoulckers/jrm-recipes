@@ -22,12 +22,12 @@ type ErrorToast<Args extends unknown[]> =
 export type UseServerActionOptions<T, Args extends unknown[]> = {
   /** Runs after a successful result, before the optional `router.refresh()`. */
   onSuccess?: (result: ActionSuccess<T>, ...args: Args) => void;
-  /** Runs after a failed result — e.g. to roll back an optimistic update. */
+  /** Runs after a failed result. E.g. To roll back an optimistic update. */
   onError?: (failure: ActionFailure, ...args: Args) => void;
   /** Success toast: a fixed string, or one derived from the result and args. */
   successToast?: SuccessToast<T, Args>;
   /**
-   * Error toast. `true` toasts `failure.error`; a string or function overrides
+   * Error toast. `true` toasts `failure.error`. A string or function overrides
    * the message. Omit to stay silent (handle it via `onError` / the returned
    * `error`).
    */
@@ -54,7 +54,7 @@ export type UseServerActionReturn<Args extends unknown[]> = {
  *
  * Client components used to re-implement the same steps for every action: open a
  * `useTransition`, `await` the action, branch on `res.ok`, toast success/error,
- * and sometimes `router.refresh()` — each copy slightly different. This hook owns
+ * and sometimes `router.refresh()`, each copy slightly different. This hook owns
  * that plumbing against the shared {@link ActionResult} contract and exposes
  * `error` / `fieldErrors` so form callers get server validation without a bespoke
  * `setErrors` map.

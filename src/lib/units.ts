@@ -1,8 +1,8 @@
 /**
  * Ingredient quantity math: pretty fraction formatting, serving scaling, and
  * unit conversion. Pure and side-effect-free so it's shared by the editor, the
- * recipe view, and offline cook mode — and easy to unit-test. Decimal output is
- * locale-aware (separators + numbering system); an optional `locale` argument
+ * recipe view, and offline cook mode, and easy to unit-test. Decimal output is
+ * locale-aware (separators + numbering system). An optional `locale` argument
  * defaults to {@link DEFAULT_LOCALE} so existing callers are unaffected.
  */
 
@@ -64,7 +64,7 @@ export function parseAmount(input: string | null | undefined): number | null {
     return roundNice(whole + numerator / denominator);
   }
 
-  // Plain decimal; tolerate a comma decimal separator (de/es keyboards).
+  // Plain decimal. Tolerate a comma decimal separator (de/es keyboards).
   const n = Number(s.replace(",", "."));
   return Number.isFinite(n) ? roundNice(n) : null;
 }
@@ -99,11 +99,11 @@ function formatDecimal(value: number, locale: string): string {
  *
  * Pass the ingredient's `unit` so metric weights/volumes (g, ml, kg, l) are
  * rendered as plain decimals at a measurable precision instead of vulgar
- * fractions — a cook can't measure "⅓ g" or "½ ml". Omitting `unit` keeps the
+ * fractions. A cook can't measure "⅓ g" or "½ ml". Omitting `unit` keeps the
  * imperial/fraction behavior, so existing callers are unaffected.
  *
  * Decimal and whole-number output is rendered through the active `locale`'s
- * number formatter; the vulgar-fraction glyphs themselves stay locale-invariant.
+ * number formatter. The vulgar-fraction glyphs themselves stay locale-invariant.
  */
 export function formatQuantity(
   value: number | null | undefined,
@@ -136,8 +136,8 @@ export function formatQuantity(
 
 /**
  * The magnitude at or above which a metric amount is rendered as a whole
- * number. Below it — the small doses where a tenth of a gram is a real
- * measurement (yeast, salt, baking soda, spices, #403) — a single decimal
+ * number. Below it. The small doses where a tenth of a gram is a real
+ * measurement (yeast, salt, baking soda, spices, #403). A single decimal
  * place is kept so scaling "12.5 g" shows "12.5", not a rounded "13".
  */
 const METRIC_WHOLE_THRESHOLD = 50;
@@ -145,7 +145,7 @@ const METRIC_WHOLE_THRESHOLD = 50;
 /**
  * Round a metric quantity to a precision a cook can actually measure and render
  * it as a locale-aware decimal (never a vulgar fraction). Large amounts (≥
- * {@link METRIC_WHOLE_THRESHOLD}, e.g. 500 g flour) stay clean whole numbers;
+ * {@link METRIC_WHOLE_THRESHOLD}, e.g. 500 g flour) stay clean whole numbers.
  * small doses keep one decimal place so measurable precision isn't rounded away
  * (#403). A value that lands on a whole number renders without a trailing `.0`.
  */
@@ -274,7 +274,7 @@ const UNIT_DEFS: UnitDef[] = [
     system: "metric",
     aliases: ["kilogram", "kilograms", "kilo", "kilos"],
   },
-  // Temperature is affine (offset + scale), so `base` is unused — conversion
+  // Temperature is affine (offset + scale), so `base` is unused. Conversion
   // goes through convertTemperature. The bare "c" alias is intentionally
   // omitted: it already means "cup", and a recipe's "2 c" is far more likely
   // cups than Celsius. Callers wanting Celsius should use "°C"/"celsius".
@@ -294,7 +294,7 @@ const UNIT_DEFS: UnitDef[] = [
   },
   // Kelvin: an explicit-choice option (never an auto system default), bridged
   // through Celsius by convertTemperature. Only "kelvin"/"K" are added as
-  // aliases — no extra ambiguous recipe tokens.
+  // aliases. No extra ambiguous recipe tokens.
   {
     canonical: "K",
     dimension: "temperature",
@@ -330,7 +330,7 @@ function isMetricUnit(raw: string | null | undefined): boolean {
   return UNIT_INDEX.get(raw.trim().toLowerCase())?.system === "metric";
 }
 
-/** Convert a quantity between two compatible units; null if not convertible. */
+/** Convert a quantity between two compatible units. Null if not convertible. */
 export function convertUnit(
   quantity: number,
   from: string,
@@ -348,7 +348,7 @@ export function convertUnit(
 /**
  * Convert an affine temperature between °F, °C, and K. Unlike mass/volume (a
  * simple base-ratio), temperature carries an offset, so it needs its own path:
- * every unit is bridged through Celsius. Results are rounded to whole degrees —
+ * every unit is bridged through Celsius. Results are rounded to whole degrees.
  * the precision recipes and ovens actually use. Returns null unless both units
  * are temperatures.
  */
@@ -388,7 +388,7 @@ const MASS_LADDER_METRIC = ["g", "kg"];
  * different kinds of ingredient (issue: interchangeable units): pourable liquids,
  * scoopable dry goods, and tiny seasoning amounts. Each class has its own
  * friendly ladder so "follow the system default" still lands on the unit a cook
- * expects — fluids in fl oz/cups, dry goods in cups, seasonings capped at
+ * expects. Fluids in fl oz/cups, dry goods in cups, seasonings capped at
  * teaspoons/tablespoons rather than scaling up to cups.
  */
 export type VolumeClass = "liquid" | "dry" | "small";
@@ -429,7 +429,7 @@ function ladderForContext(
 /**
  * The single representative unit a picker should name as its default for a given
  * dimension/system (and volume class), e.g. "Default: Teaspoon (tsp)". This is
- * the unit typical amounts land on — not the only unit the friendly ladder can
+ * the unit typical amounts land on, not the only unit the friendly ladder can
  * produce, but the honest headline for what "follow the system default" means.
  */
 export function defaultUnitFor(
@@ -452,7 +452,7 @@ export type Measure = { quantity: number; unit: string };
 
 /**
  * Re-express a measure in the target system, choosing the friendliest unit on
- * the ladder (e.g. 500 ml → "500 ml"; 2000 ml → "2 l"; 3 tsp → "1 tbsp").
+ * the ladder (e.g. 500 ml → "500 ml". 2000 ml → "2 l". 3 tsp → "1 tbsp").
  * Returns the input unchanged when it can't be converted (e.g. "pinch").
  */
 export function toSystem(
@@ -494,9 +494,9 @@ export type MeasureRange = {
 
 /**
  * Re-express a *ranged* measure (min…max) in the target system. Both ends are
- * converted onto a single shared unit — the friendly unit chosen for the low
- * end — so a range can never mix units (e.g. showing a litre-scaled max value
- * next to a millilitre label). Returns null when there is no convertible unit;
+ * converted onto a single shared unit, the friendly unit chosen for the low end,
+ * so a range can never mix units (e.g. showing a litre-scaled max value next to
+ * a millilitre label). Returns null when there is no convertible unit.
  * `quantityMax` is null when there is no real range (missing or ≤ min).
  */
 export function toSystemRange(
@@ -526,7 +526,7 @@ export function scaleQuantity(
 
 /**
  * Derive the scale factor that turns a recipe's base amount of one ingredient
- * into a target amount the cook actually has or needs (#390) — e.g. "500 g of
+ * into a target amount the cook actually has or needs (#390). E.g. "500 g of
  * bananas" from a recipe that calls for 250 g gives ×2. The target may be given
  * in the ingredient's own unit or any convertible one (grams → the base's cups,
  * etc.). Returns `null` when either amount is missing / non-positive or the
@@ -564,9 +564,9 @@ export function deriveScaleFactor(
 
 /**
  * Approximate densities (grams per millilitre) for the staples a home baker
- * weighs most. Values are typical kitchen references — coverage matters more
+ * weighs most. Values are typical kitchen references. Coverage matters more
  * than a perfect number, and any density beats guessing at a scooped cup. Each
- * entry lists normalized match phrases; the longest matching phrase wins so
+ * entry lists normalized match phrases. The longest matching phrase wins so
  * "brown sugar" beats "sugar" and "bread flour" beats "flour".
  */
 type DensityEntry = { gPerMl: number; phrases: string[] };
@@ -657,9 +657,9 @@ export function densityForItem(item: string | null | undefined): number | null {
 
 /**
  * Convert a measured ingredient amount to grams so a cook can weigh straight
- * onto a scale (#385). Mass units convert directly; volume units resolve a
- * density from the `item` text and multiply. Returns `null` — meaning "render
- * unchanged" — for count/unitless amounts ("1 egg", "pinch"), temperatures, or
+ * onto a scale (#385). Mass units convert directly. Volume units resolve a
+ * density from the `item` text and multiply. Returns `null`. Meaning "render
+ * unchanged". For count/unitless amounts ("1 egg", "pinch"), temperatures, or
  * a volume whose ingredient has no known density (so callers never show "NaN g").
  */
 export function toWeight(
@@ -700,7 +700,7 @@ function pluralCategory(count: number, locale: string): Intl.LDMLPluralRule {
 /**
  * Pluralize a spelled-out unit label for display, choosing the form by the
  * active locale's plural rules. Unit *symbols* (g, ml, kg, tsp) have no spelled
- * plural and are returned invariant; only labels with a configured `plural`
+ * plural and are returned invariant. Only labels with a configured `plural`
  * (cups, pints, quarts, gallons) inflect. With just singular/plural English
  * forms available we treat the `one` category as singular and every other
  * category as plural.
@@ -726,7 +726,7 @@ export function displayUnit(
 
 /**
  * Break an awkward US-volume amount into a minimal set of measures a cook
- * actually owns — whole cups, whole tablespoons, and a rounded teaspoon — e.g.
+ * actually owns. Whole cups, whole tablespoons, and a rounded teaspoon. E.g.
  * "1 tbsp + 1 tsp" for 1.37 tbsp or "6 tbsp + 2 tsp" for 0.42 cup. Returns
  * `null` for non-US-volume units (metric/weight stay clean decimals) and for
  * amounts that already land on a single clean measure (½ cup, 2 tbsp), so the
@@ -937,7 +937,7 @@ const US_CUSTOMARY_REGIONS = new Set(["US", "LR", "MM"]);
 /**
  * The measurement system a locale most likely expects, used as cook mode's
  * initial default before the cook makes (and stores) an explicit choice. The US
- * and the few US-adjacent imperial regions map to `"us"`; everyone else maps to
+ * and the few US-adjacent imperial regions map to `"us"`. Everyone else maps to
  * `"metric"`. The locale is maximized first, so a region-less id like `en`
  * resolves to its likely region (`en` → US → `"us"`, `de` → DE → `"metric"`).
  */
@@ -956,11 +956,11 @@ export function defaultSystemForLocale(locale: string): "us" | "metric" {
 /**
  * Public, `base`-free view of a canonical unit, for enumerating the units a
  * picker can offer (editor unit combobox, settings per-dimension defaults). The
- * internal {@link UnitDef} keeps its conversion `base` private; this is the
+ * internal {@link UnitDef} keeps its conversion `base` private. This is the
  * shape UI code should consume.
  */
 export type UnitInfo = {
-  /** Canonical id — what's stored and passed to {@link convertUnit}. */
+  /** Canonical id. What's stored and passed to {@link convertUnit}. */
   id: string;
   dimension: Dimension;
   system: "us" | "metric" | "any";
@@ -988,7 +988,7 @@ export function unitsForDimension(dimension: Dimension): UnitInfo[] {
   return UNIT_DEFS.filter((d) => d.dimension === dimension).map(toUnitInfo);
 }
 
-/** Look up a built-in unit by canonical id or any alias; null if unknown. */
+/** Look up a built-in unit by canonical id or any alias. Null if unknown. */
 export function getUnitInfo(unit: string | null | undefined): UnitInfo | null {
   if (!unit) return null;
   const def = UNIT_INDEX.get(unit.trim().toLowerCase());
@@ -1002,7 +1002,7 @@ export function isKnownUnit(unit: string | null | undefined): boolean {
 
 /**
  * A user-defined unit (see the `custom_units` table). `baseUnit`/`baseAmount`
- * express its equivalence — one custom unit equals `baseAmount` of the canonical
+ * express its equivalence. One custom unit equals `baseAmount` of the canonical
  * `baseUnit` (a "pinch" → baseUnit "tsp", baseAmount 0.0625). Both null means a
  * display-only unit with no conversion. `displayAsTrue` asks the UI to render
  * the converted true amount ("1/16 tsp") instead of the custom label.
@@ -1045,7 +1045,7 @@ export function dimensionOf(
 /**
  * Reduce a (possibly custom) measure to a built-in canonical measure so the
  * core `convertUnit` math can run. A custom unit with an equivalence multiplies
- * through to its base unit; a bare built-in passes through; anything with no
+ * through to its base unit. A bare built-in passes through. Anything with no
  * conversion path returns null.
  */
 function reduceToCanonical(
@@ -1064,9 +1064,9 @@ function reduceToCanonical(
 }
 
 /**
- * Convert a quantity between any two units — built-in or custom — returning null
+ * Convert a quantity between any two units. Built-in or custom. Returning null
  * when the units share no dimension or a custom unit has no equivalence. Built-in
- * → built-in delegates to {@link convertUnit}; custom units are resolved through
+ * → built-in delegates to {@link convertUnit}. Custom units are resolved through
  * their canonical equivalence first (and, for a custom target, divided back out).
  */
 export function convertAmount(
@@ -1096,7 +1096,7 @@ export function convertAmount(
 /**
  * A user's unit preferences, mirroring the `user_unit_preferences` row. The
  * per-dimension fields are a canonical unit id (or custom unit name) the user
- * always wants that dimension shown in; null falls back to `defaultSystem`'s
+ * always wants that dimension shown in. Null falls back to `defaultSystem`'s
  * friendly ladder. `autoConvert` off means "always show the author's original".
  */
 export type UnitPrefs = {
@@ -1154,7 +1154,7 @@ function overrideFor(
 /**
  * Resolve how an ingredient amount should be displayed for a viewer, honoring
  * their preferences (issue: interchangeable units). The recipe keeps the
- * author's original amount+unit as the source of truth; this converts a copy for
+ * author's original amount+unit as the source of truth. This converts a copy for
  * display only.
  *
  * Order of resolution:
@@ -1163,7 +1163,7 @@ function overrideFor(
  *      unit that asks to display as its true amount resolves to the true amount).
  *   3. Otherwise → the friendly {@link toSystem} unit for `defaultSystem`.
  *
- * Returns null only when there's no unit at all; callers then show the bare
+ * Returns null only when there's no unit at all. Callers then show the bare
  * number. Falls back to the friendly ladder if an override conversion fails.
  */
 export function resolveDisplayMeasure(

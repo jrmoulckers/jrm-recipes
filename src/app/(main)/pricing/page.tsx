@@ -22,17 +22,17 @@ import { GiftButton } from "~/components/billing/gift-button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple, honest pricing for Heirloom. Start free, upgrade to Family for unlimited recipes and AI help — cancel anytime.",
+    "Simple, honest pricing for Heirloom. Start free, upgrade to Family for unlimited recipes and AI help. Cancel anytime.",
 };
 
 /**
  * Public pricing page (issue #312).
  *
  * Renders every plan straight from `src/config/plans.ts` (the single source of
- * truth — no duplicated marketing copy), highlights the signed-in user's current
+ * truth. No duplicated marketing copy), highlights the signed-in user's current
  * plan via the entitlements resolver, and routes each paid CTA through the
  * checkout action. When billing is unconfigured the page stays fully viewable:
- * the paid CTA is disabled with a friendly note. Warm, honest tone — no fake
+ * the paid CTA is disabled with a friendly note. Warm, honest tone. No fake
  * scarcity or countdowns.
  */
 export default async function PricingPage() {
@@ -48,7 +48,7 @@ export default async function PricingPage() {
         </h1>
         <p className="mt-3 text-muted-foreground">
           Start free and keep everything you cook. Upgrade to Family when
-          you&apos;re ready for unlimited recipes and AI help — no fine print,
+          you&apos;re ready for unlimited recipes and AI help. No fine print,
           no countdowns, cancel anytime.
         </p>
       </header>
@@ -79,7 +79,7 @@ export default async function PricingPage() {
 /**
  * "Gift Heirloom" entry (issue #331). Gifting a year of Family is deeply
  * on-brand for a family recipe app, so it gets its own warm card rather than
- * hiding in a plan CTA. Buying routes through the one-time gift Checkout; a
+ * hiding in a plan CTA. Buying routes through the one-time gift Checkout. A
  * quiet link points recipients at `/redeem`. Degrades to a disabled note when
  * billing is unconfigured, exactly like the paid CTAs above.
  */
@@ -94,7 +94,7 @@ function GiftSection({ billingReady }: { billingReady: boolean }) {
           <CardTitle>Gift Heirloom</CardTitle>
         </div>
         <CardDescription>
-          Give someone {GIFT_CONFIG.durationMonths} months of {family.name} — a
+          Give someone {GIFT_CONFIG.durationMonths} months of {family.name}. A
           warm way to help a loved one keep every family recipe safe. One
           payment, no subscription, delivered as a code they redeem.
         </CardDescription>

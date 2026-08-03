@@ -12,7 +12,7 @@ export const HAPTICS = {
   select: 12,
   /** Slightly firmer tap for step navigation. */
   stepNav: 18,
-  /** Distinct triple buzz when a timer finishes — noticeable over a fan/tone. */
+  /** Distinct triple buzz when a timer finishes. Noticeable over a fan/tone. */
   timerComplete: [70, 40, 120],
 } as const;
 

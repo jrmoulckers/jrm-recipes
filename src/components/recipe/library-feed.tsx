@@ -14,7 +14,7 @@ import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
 /**
  * The viewer's personal cookbook with a "Load more" button (#57).
  *
- * The library used to render every card at once; it now starts with one page
+ * The library used to render every card at once. It now starts with one page
  * and appends further pages via the load-more server action, mirroring
  * {@link DiscoverFeed}. Newly fetched items are de-duped by id in case the feed
  * shifts between requests. Cards keep the "safe for" member badges and the
@@ -35,7 +35,7 @@ export function LibraryFeed({
   favoritedIds?: string[];
   /**
    * Number of leading (initial) cards to render with LCP `priority`. Set > 0
-   * only when this grid is above the fold; paged-in items always stay lazy.
+   * only when this grid is above the fold. Paged-in items always stay lazy.
    */
   priorityCount?: number;
   members?: CardDietaryMember[];

@@ -10,9 +10,9 @@ import { ALLOWED_MEDIA_HOSTS } from "~/config/media-hosts";
  *
  * These numeric bounds are mirrored by DB-level CHECK constraints (migration
  * 0010) so the same invariants hold for writes that bypass this path (seed,
- * imports, admin/raw SQL): servings >= 1; prep/cook/total minutes >= 0;
- * timerSeconds >= 0; ingredient quantity/quantityMax >= 0 with quantityMax >=
- * quantity. Keep the two in sync — loosening a bound here without updating the
+ * imports, admin/raw SQL): servings >= 1. Prep/cook/total minutes >= 0.
+ * timerSeconds >= 0. Ingredient quantity/quantityMax >= 0 with quantityMax >=
+ * quantity. Keep the two in sync. Loosening a bound here without updating the
  * constraint (or vice versa) will surface as a DB write error. The 1–5 rating
  * bound lives in src/server/engagement/validation.ts (`ratingInput`).
  */
@@ -50,7 +50,7 @@ const cloudinaryConfigured = Boolean(
 );
 
 const MEDIA_HOST_MESSAGE =
-  "Upload photos and videos to Heirloom — links to other sites aren't allowed.";
+  "Upload photos and videos to Heirloom. Links to other sites aren't allowed.";
 
 function mediaHostAllowed(url: string): boolean {
   if (!cloudinaryConfigured) return true;
@@ -114,7 +114,7 @@ export const stepInput = z.object({
     z.number().int().min(0).max(86400).optional(),
   ),
   // Target internal/doneness temperature in °C + a short doneness cue (#417).
-  // Bounds cover freezer (-50) through a very hot oven (400 °C); NULL passes.
+  // Bounds cover freezer (-50) through a very hot oven (400 °C). NULL passes.
   targetTempC: optionalNumber.pipe(
     z.number().int().min(-50).max(400).optional(),
   ),
@@ -174,7 +174,7 @@ export const recipeInput = z
     handedDownFrom: optionalString(200),
     originYear: optionalString(40),
     originPlace: optionalString(200),
-    // Optional per-serving nutrition (issue #414). Non-negative; energy (kcal)
+    // Optional per-serving nutrition (issue #414). Non-negative. Energy (kcal)
     // and sodium (mg) are whole numbers, macronutrients are grams and may be
     // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
     calories: optionalNumber.pipe(
@@ -197,14 +197,14 @@ export const recipeInput = z
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
     tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
-    // Required tools/equipment (#410); deduped, trimmed, order-preserving.
+    // Required tools/equipment (#410). Deduped, trimmed, order-preserving.
     equipment: z
       .array(z.string().trim().min(1).max(120))
       .max(50)
       .default([])
       .transform((items) => [...new Set(items)]),
     // Structured dietary self-declaration (issue #404), aligned to the
-    // canonical DietaryTag set. Deduped; order-insensitive.
+    // canonical DietaryTag set. Deduped. Order-insensitive.
     dietaryFlags: z
       .array(dietaryTag)
       .max(DIETARY_TAGS.length)
@@ -212,7 +212,7 @@ export const recipeInput = z
       .transform((tags) => [...new Set(tags)]),
   })
   .superRefine((val, ctx) => {
-    // "Group" visibility only makes sense with a group; without one the recipe
+    // "Group" visibility only makes sense with a group. Without one the recipe
     // is hidden from everyone but its author. Require a group so the form
     // surfaces a clear error instead of silently orphaning the recipe.
     if (val.visibility === "group" && !val.groupId) {

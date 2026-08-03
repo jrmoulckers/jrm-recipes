@@ -24,7 +24,7 @@ export const recipeViews = pgTable(
     viewedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
-    // One view row per user+recipe; re-viewing bumps `viewedAt` via upsert.
+    // One view row per user+recipe. Re-viewing bumps `viewedAt` via upsert.
     unique("recipe_views_user_recipe_uq").on(t.userId, t.recipeId),
     // Fast "my recently viewed" feed (newest first per user).
     index("recipe_views_user_viewed_idx").on(t.userId, t.viewedAt),

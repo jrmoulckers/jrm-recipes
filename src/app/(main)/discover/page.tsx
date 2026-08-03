@@ -12,7 +12,7 @@ import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { Button } from "~/components/ui/button";
 
 const title = "Discover recipes";
-const description = `Browse public family recipes shared by the ${brand.name} community — no account needed.`;
+const description = `Browse public family recipes shared by the ${brand.name} community. No account needed.`;
 
 export const metadata: Metadata = {
   title,

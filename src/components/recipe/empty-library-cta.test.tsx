@@ -11,7 +11,7 @@ import {
 
 const track = vi.hoisted(() => vi.fn());
 
-// The CTA and the flags provider both dispatch through the typed client; stub it
+// The CTA and the flags provider both dispatch through the typed client. Stub it
 // so we can assert the exposure event without a real backend.
 vi.mock("~/lib/analytics", () => ({ track }));
 

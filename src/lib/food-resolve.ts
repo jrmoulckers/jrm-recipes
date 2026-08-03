@@ -10,7 +10,7 @@
  * `seed-ingredients.ts`) so the resolution logic is unit-testable without a
  * database and can be reused by the standalone backfill script. The server
  * wrapper in `src/server/db/resolve-food.ts` supplies the live alias index from
- * `food_aliases`; the curated static dataset (`food-db.ts`) is the fallback.
+ * `food_aliases`. The curated static dataset (`food-db.ts`) is the fallback.
  */
 
 import { canonicalFood, normalizeFoodText } from "./food-db";
@@ -30,7 +30,7 @@ export type AliasIndex = Map<string, string>;
 
 /**
  * Build the resolution index from `food_aliases` rows. When several nodes share
- * a normalized alias (rare — the table's uniqueness is per `(foodId, alias)`),
+ * a normalized alias (rare. The table's uniqueness is per `(foodId, alias)`),
  * the more-used node wins, tie-broken lexicographically on `foodId` so the same
  * rows always yield the same index. Aliases are re-normalized defensively.
  */
@@ -56,11 +56,11 @@ export function buildAliasIndex(rows: readonly AliasRow[]): AliasIndex {
 
 /**
  * Resolve one free-text ingredient `item` to a canonical `food_items.id`, or
- * `null` when nothing matches. Exact match against the (live) alias index first
- * — which also resolves variety phrasings ("yellow onion") onto their own node
- * when such an alias exists — then the curated static fallback
- * ({@link canonicalFood}), which does whole-word phrase matching over the seeded
- * dataset. Pure + deterministic.
+ * `null` when nothing matches. Exact match against the (live) alias index first,
+ * which also resolves variety phrasings ("yellow onion") onto their own node
+ * when such an alias exists, then the curated static fallback ({@link
+ * canonicalFood}), which does whole-word phrase matching over the seeded dataset.
+ * Pure + deterministic.
  */
 export function pickFoodId(
   item: string | null | undefined,

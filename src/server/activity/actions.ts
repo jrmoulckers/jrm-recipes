@@ -40,7 +40,7 @@ export async function loadGroupActivityAction(input: {
 /**
  * Load-more for the personal home feed. Re-resolves the caller's group
  * memberships on every call (inside {@link getPersonalActivity}) so the cursor
- * can only ever page the viewer's own groups — a cursor can't leak activity
+ * can only ever page the viewer's own groups. A cursor can't leak activity
  * from a group they've since left or never belonged to. Empty for signed-out
  * callers and users with no groups.
  */

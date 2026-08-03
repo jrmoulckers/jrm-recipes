@@ -51,7 +51,7 @@ beforeEach(() => {
   );
 });
 
-describe("getRecipesUsingFood — food resolution", () => {
+describe("getRecipesUsingFood. Food resolution", () => {
   it("resolves a slug (or id) to the node before querying recipes", async () => {
     stubFoodLookup([{ id: "food_tomato" }]);
     await getRecipesUsingFood("tomato", null);
@@ -68,7 +68,7 @@ describe("getRecipesUsingFood — food resolution", () => {
   });
 });
 
-describe("getRecipesUsingFood — visibility + soft-delete", () => {
+describe("getRecipesUsingFood. Visibility + soft-delete", () => {
   it("scopes an anonymous viewer to public, published, live recipes", async () => {
     stubFoodLookup([{ id: "food_tomato" }]);
     await getRecipesUsingFood("food_tomato", null);
@@ -111,7 +111,7 @@ describe("getRecipesUsingFood — visibility + soft-delete", () => {
   });
 });
 
-describe("getRecipesUsingFood — pagination", () => {
+describe("getRecipesUsingFood. Pagination", () => {
   it("advances nextOffset when a full page comes back", async () => {
     stubFoodLookup([{ id: "food_tomato" }]);
     const rows = Array.from({ length: 2 }, (_, i) => ({

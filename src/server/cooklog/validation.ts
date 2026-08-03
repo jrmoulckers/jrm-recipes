@@ -9,7 +9,7 @@ const idInput = z.string().trim().min(1);
 
 /** Max length for a cook-journal note. Imported by the UI counter (#144). */
 export const COOK_NOTE_MAX_LENGTH = 2000;
-/** Over-limit message — kept in sync with the field counter. */
+/** Over-limit message. Kept in sync with the field counter. */
 export const COOK_NOTE_TOO_LONG_MESSAGE =
   "Keep your note under 2,000 characters";
 
@@ -21,7 +21,7 @@ const optionalNote = z
   .optional()
   .transform((v) => (v == null || v.length === 0 ? undefined : v));
 
-/** Optional photo URL — empty string becomes `undefined` (photo is optional). */
+/** Optional photo URL. Empty string becomes `undefined` (photo is optional). */
 const optionalPhotoUrl = z
   .string()
   .trim()
@@ -42,16 +42,16 @@ const optionalServings = z
   .pipe(z.number().int().min(1).max(100000).optional());
 
 /**
- * Earliest cook date we accept — guards against epoch/typo dates (e.g. a
+ * Earliest cook date we accept. Guards against epoch/typo dates (e.g. a
  * mis-keyed year) that would otherwise sort a cook to the very bottom.
  */
 const COOK_DATE_MIN_MS = Date.UTC(2000, 0, 1);
-/** Out-of-range message — kept friendly for the log dialog. */
+/** Out-of-range message. Kept friendly for the log dialog. */
 export const COOK_DATE_OUT_OF_RANGE_MESSAGE =
   "Enter a cook date between 2000 and today";
 
 /**
- * Optional cook date — accepts a Date or parseable string, else `undefined`.
+ * Optional cook date. Accepts a Date or parseable string, else `undefined`.
  * Clamped to `[2000-01-01, now]` so a client can't store a cook dated in the
  * future (which would jump to the top of the journal) or absurdly far in the
  * past. `now` is read per-parse via `Date.now()`, not frozen at module load.

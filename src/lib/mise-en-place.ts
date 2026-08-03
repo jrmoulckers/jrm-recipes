@@ -1,8 +1,8 @@
 /**
  * Mise en place derivation (#402): turn a recipe's EXISTING ingredients into a
- * pre-cook "gather & prep" view — grouped by ingredient section, with prep
+ * pre-cook "gather & prep" view. Grouped by ingredient section, with prep
  * tasks pulled from the structured `prep` field (#401). Pure and framework-free
- * so Cook Mode and tests share the same logic; strictly read-only (no schema,
+ * so Cook Mode and tests share the same logic. Strictly read-only (no schema,
  * no persistence).
  */
 

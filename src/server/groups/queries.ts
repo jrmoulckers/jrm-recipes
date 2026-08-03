@@ -38,7 +38,7 @@ export function isOwner(role: MemberRole | null | undefined): boolean {
  * - Tombstoned (soft-deleted) recipes are never listed.
  * - The author always sees their own recipe in their group's cookbook.
  * - Non-members (the public cookbook view) only ever see recipes that are both
- *   `public` and `published` — never drafts, `group`, `unlisted`, or `private`.
+ *   `public` and `published`. Never drafts, `group`, `unlisted`, or `private`.
  * - Members see recipes explicitly shared to the group (`group`) plus `public`
  *   ones, but NOT a fellow member's `private` (author-only) or `unlisted`
  *   (share-token-only) recipes.
@@ -211,7 +211,7 @@ export type InviteLinkStatus = "active" | "expired" | "revoked" | "exhausted";
  * Public-safe preview for the `/join/[token]` page (issue #343). Resolves a link
  * token to just enough of its group to render an invitation card (name, blurb,
  * avatar, member count) plus a `status` the page turns into a friendly state.
- * Deliberately leaks nothing private — no member identities, no recipes.
+ * Deliberately leaks nothing private. No member identities, no recipes.
  */
 export async function getInviteLinkPreview(token: string) {
   if (!isDbConfigured()) return null;

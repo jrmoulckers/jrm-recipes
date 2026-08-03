@@ -10,8 +10,8 @@ import { setPublicActivityOptInAction } from "~/server/follows/actions";
 
 /**
  * Public-activity opt-in toggle. Optimistic switch backed by
- * {@link setPublicActivityOptInAction}; reverts + toasts on failure. Default
- * off — a user is only discoverable / followable once they turn this on.
+ * {@link setPublicActivityOptInAction}. Reverts + toasts on failure. Default
+ * off. A user is only discoverable / followable once they turn this on.
  */
 export function PublicActivityOptIn({
   defaultOptedIn,
@@ -34,7 +34,7 @@ export function PublicActivityOptIn({
       toast.success(
         next
           ? "Your public activity is now visible to followers"
-          : "Your profile is private again — no one can follow you",
+          : "Your profile is private again. No one can follow you",
       );
     });
   }
@@ -54,7 +54,7 @@ export function PublicActivityOptIn({
         <span className="block text-xs text-muted-foreground">
           Let other cooks follow you and see your <strong>public</strong>{" "}
           recipes, reviews, and cooks in their feed. Your family groups and
-          anything private stay private — only content you&apos;ve made public
+          anything private stay private. Only content you&apos;ve made public
           is ever shared this way.
         </span>
       </label>

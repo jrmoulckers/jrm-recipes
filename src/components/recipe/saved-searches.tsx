@@ -31,7 +31,7 @@ import {
 
 /**
  * "Save this search" + a menu of saved searches. Saving stores the current
- * (already normalized) querystring under a name; applying just navigates back
+ * (already normalized) querystring under a name. Applying just navigates back
  * to those params. State lives on the server, so we `router.refresh()` after
  * mutations to pull the fresh list.
  */

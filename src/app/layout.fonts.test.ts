@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * Guards the #182 font-loading optimization at the source level. next/font calls
+ * Guards the #182 font-loading optimization at the source level. Next/font calls
  * are compiled by an SWC transform and can't be imported into vitest, so instead
  * of executing them we assert the invariants on the layout source:
  *   - exactly one shared body family (Nunito) is preloaded,

@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
   /**
    * Accessible label. When provided the spinner is announced as a live status;
-   * when omitted it is treated as decorative (`aria-hidden`) — e.g. inside a
+   * when omitted it is treated as decorative (`aria-hidden`), e.g. inside a
    * Button that already sets `aria-busy`.
    */
   label?: string;
@@ -14,7 +14,7 @@ export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
 /**
  * Token-driven loading indicator (issue #82). Sized in `em` so it inherits the
  * surrounding text size, painted with `currentColor` so it adopts the parent's
- * semantic colour, and animated with `animate-spin` — which the global
+ * semantic colour, and animated with `animate-spin`, which the global
  * reduced-motion + Simple-mode rules (globals.css / a11y.css) stop, so it never
  * spins infinitely when motion is off.
  */

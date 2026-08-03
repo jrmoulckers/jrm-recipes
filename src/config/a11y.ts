@@ -1,5 +1,5 @@
 /**
- * Accessibility preferences — a THIRD axis, orthogonal to UI mode + color
+ * Accessibility preferences. A THIRD axis, orthogonal to UI mode + color
  * scheme. These are per-user comfort/safety settings ("accessibility modes and
  * features for all") that any of the five themes inherit:
  *
@@ -9,21 +9,21 @@
  *   • reading   -> [data-reading="readable"]  dyslexia-friendly spacing/type
  *
  * `contrast` and `motion` are TRI-STATE. Unlike a plain on/off, a value can be:
- *   • "on"      — user explicitly enabled it (wins over the OS)
- *   • "off"     — user explicitly disabled it (wins over the OS)
- *   • undefined — unset: FOLLOW the OS (`prefers-contrast`/`prefers-reduced-motion`)
- * Unset is the default, so a fresh visitor inherits their system settings; the
+ *   • "on". User explicitly enabled it (wins over the OS)
+ *   • "off". User explicitly disabled it (wins over the OS)
+ *   • undefined. Unset: FOLLOW the OS (`prefers-contrast`/`prefers-reduced-motion`)
+ * Unset is the default, so a fresh visitor inherits their system settings. The
  * CSS media queries in a11y.css/globals.css apply automatically, and an explicit
  * "off" gates those media queries via the `[data-*="off"]` attribute.
  *
- * Applied as data-attributes on <html>; the CSS in src/styles/a11y.css reacts.
+ * Applied as data-attributes on <html>. The CSS in src/styles/a11y.css reacts.
  * Persisted in one cookie so the server can render them with no flash.
  */
 
 export const TEXT_SIZES = ["default", "large", "xl"] as const;
 export type TextSize = (typeof TEXT_SIZES)[number];
 
-/** Explicit user choice for an OS-backed preference; undefined = follow the OS. */
+/** Explicit user choice for an OS-backed preference. undefined = follow the OS. */
 export type A11yTriState = "on" | "off";
 
 export type A11yPrefs = {
@@ -49,7 +49,7 @@ export const A11Y_COOKIE = "heirloom-a11y";
 /**
  * Snapshot of the a11y prefs that were active *before* Kids mode was switched
  * on (#445). Kids mode bumps text size + easy-reading type to kid-friendly
- * defaults; this remembers the prior values so turning Kids mode off restores
+ * defaults. This remembers the prior values so turning Kids mode off restores
  * them (mirroring the theme-provider's "previous theme" cookie). Never holds a
  * snapshot while Kids mode is off.
  */
@@ -121,7 +121,7 @@ export function serializeA11y(prefs: A11yPrefs): string {
 export function a11yAttributes(prefs: A11yPrefs): Record<string, string> {
   const attrs: Record<string, string> = {};
   if (prefs.textSize !== "default") attrs["data-text"] = prefs.textSize;
-  // "on"/"off" are explicit; undefined omits the attr so the OS media query wins.
+  // "on"/"off" are explicit. undefined omits the attr so the OS media query wins.
   if (prefs.contrast === "on") attrs["data-contrast"] = "high";
   else if (prefs.contrast === "off") attrs["data-contrast"] = "off";
   if (prefs.motion === "on") attrs["data-motion"] = "reduced";
@@ -142,10 +142,10 @@ export function isA11yActive(prefs: A11yPrefs): boolean {
 
 /**
  * Kid-friendly comfort defaults applied when Kids mode turns on (#445): larger
- * text and easy-reading type. Only *unset* values are bumped — a grown-up who
- * already picked a text size keeps it — so this never clobbers an explicit
+ * text and easy-reading type. Only *unset* values are bumped. A grown-up who
+ * already picked a text size keeps it. So this never clobbers an explicit
  * choice. `reading` has no tri-state, so its default (false) is treated as
- * "unset" and enabled; the pre-Kids snapshot restores it on the way out.
+ * "unset" and enabled. The pre-Kids snapshot restores it on the way out.
  */
 export function kidModeDefaults(prefs: A11yPrefs): A11yPrefs {
   return {

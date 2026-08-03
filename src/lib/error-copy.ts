@@ -6,7 +6,7 @@
  * But a few paths can still surface developer-flavored text to a warm consumer
  * app: a bare error code that skipped the server mapper, an unexpected internal
  * message, or an empty string. `friendlyError` is the last line of defense the
- * client renders — it maps a small set of known codes to human copy, passes
+ * client renders. It maps a small set of known codes to human copy, passes
  * through strings that already read like a sentence, and falls back to a calm,
  * blameless default for anything unmapped. It never returns an empty string.
  *
@@ -27,8 +27,8 @@ const ERROR_COPY: Record<string, string> = {
   UNAUTHENTICATED: "Please sign in to do that.",
   FORBIDDEN: "You don't have permission to do that.",
   NOT_FOUND: "We couldn't find that.",
-  RATE_LIMITED: "You're going a little fast — try again in a moment.",
-  TOO_MANY_REQUESTS: "You're going a little fast — try again in a moment.",
+  RATE_LIMITED: "You're going a little fast. Try again in a moment.",
+  TOO_MANY_REQUESTS: "You're going a little fast. Try again in a moment.",
   NETWORK: "You seem to be offline. Check your connection and try again.",
   NETWORK_ERROR: "You seem to be offline. Check your connection and try again.",
   TIMEOUT: "That took too long. Please try again.",
@@ -72,7 +72,7 @@ export function friendlyError(
   const mapped = ERROR_COPY[trimmed] ?? ERROR_COPY[trimmed.toUpperCase()];
   if (mapped) return mapped;
 
-  // An unmapped, code-shaped string is developer-flavored — never leak it.
+  // An unmapped, code-shaped string is developer-flavored. Never leak it.
   if (looksLikeRawCode(trimmed)) return safeFallback;
 
   return trimmed;

@@ -88,7 +88,7 @@ export async function getUpcomingCookAlongs(
   });
 
   // Block filtering (#355): keep the roster and "going" count consistent with
-  // the viewer's blocks — a blocked member's RSVP is hidden from both. The
+  // the viewer's blocks. A blocked member's RSVP is hidden from both. The
   // viewer is never in their own hidden set (self-block is rejected), so their
   // own RSVP always survives.
   const hiddenAuthorIds = await getHiddenAuthorIds(viewerId);

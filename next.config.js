@@ -57,7 +57,7 @@ const config = {
     // First-party reverse proxy for product analytics: browser capture hits
     // `/ingest/*` (same-origin, adblock-resilient) and Next forwards it to the
     // real PostHog host. No third-party origin appears in the network tab, and
-    // no analytics config is required for the app to run — these rewrites just
+    // no analytics config is required for the app to run, and these rewrites just
     // resolve to the default host when the env var is unset.
     const host =
       process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";

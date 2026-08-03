@@ -79,7 +79,7 @@ import { todayParam } from "~/server/planner/week";
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
  * read path ANDs this in so tombstoned rows never surface in a list, detail,
- * search, lineage, timeline, or facet — while their child history (versions,
+ * search, lineage, timeline, or facet, while their child history (versions,
  * events, ratings, comments) is preserved and returns intact on restore.
  */
 const notDeleted = isNull(recipes.deletedAt);
@@ -331,7 +331,7 @@ const fetchPublicRecipes = unstable_cache(
  * The public "discover" feed. Non-personalized, so it's served from a tagged
  * `unstable_cache` entry instead of hitting the DB on every request (#215).
  * `limit`/`offset`/`sort` are part of the cache key, so each page and sort is
- * cached independently; {@link fetchPublicRecipes} is invalidated by tag on any
+ * cached independently. {@link fetchPublicRecipes} is invalidated by tag on any
  * recipe mutation.
  */
 export async function listPublicRecipes({
@@ -346,7 +346,7 @@ export async function listPublicRecipes({
 /**
  * Public, embed-safe projection of a single recipe (issue #347). Returns only
  * the handful of fields the oEmbed card + `/embed/recipes/[id]` iframe need, and
- * *only* when the recipe is `public` + `published` — private/group/unlisted
+ * *only* when the recipe is `public` + `published`. Private/group/unlisted
  * recipes (and anything soft-deleted, or when the DB is off) resolve to `null`
  * so an embed can never leak non-public data.
  */
@@ -405,7 +405,7 @@ export async function listPublicRecipeSlugs(): Promise<
 /**
  * Pull just the ingredient `item` text for a set of recipes in one batched
  * query, grouped by recipe id. Recipes with no ingredient rows (or when the DB
- * is off) simply don't appear as keys — callers use that absence to tell
+ * is off) simply don't appear as keys. Callers use that absence to tell
  * "analyzed, none found" apart from "nothing to analyze". Shared by the card
  * badge, planner roll-up, and the "safe for" filter so there's one query and
  * one detector path.
@@ -433,11 +433,11 @@ async function recipeIngredientItems(
 
 /**
  * Map recipe ids to the allergens to weigh for a *personalized* safety warning
- * (issues #431/#432). Rolls each recipe up with `summarizeAllergensForSafety` —
- * the conservative union of direct AND hidden/derived allergens — so a member's
+ * (issues #431/#432). Rolls each recipe up with `summarizeAllergensForSafety`.
+ * the conservative union of direct AND hidden/derived allergens, so a member's
  * allergen is never missed just because its only source is hidden (e.g. wheat
  * inside soy sauce). Recipes with no ingredients (or when the DB is off) map to
- * an empty list; callers that warn (planner) simply show no warning, and never
+ * an empty list. Callers that warn (planner) simply show no warning, and never
  * assert safety off an empty list.
  */
 export async function recipeAllergenMap(
@@ -493,7 +493,7 @@ export function canView(
 ) {
   // NOTE: `unlisted` is intentionally NOT public here (issue #204). An unlisted
   // recipe is reachable by a non-owner only through its unguessable share token
-  // (see {@link getRecipeByShareToken}), never by its guessable slug/id — so
+  // (see {@link getRecipeByShareToken}), never by its guessable slug/id, so
   // this slug/id-scoped predicate must not grant anonymous access to it.
   if (recipe.visibility === "public") return true;
   if (recipe.authorId === viewer?.id) return true;
@@ -523,7 +523,7 @@ export async function canViewRecipe(
  * Fetch a full recipe by id or slug, enforcing visibility for the viewer.
  *
  * Viewer-scoped (access depends on the caller's group memberships), so it is
- * intentionally left dynamic rather than wrapped in `unstable_cache`; only the
+ * intentionally left dynamic rather than wrapped in `unstable_cache`. Only the
  * non-personalized public feed ({@link listPublicRecipes}) is cached (#160).
  */
 export async function getRecipe(
@@ -580,9 +580,9 @@ function viewerHoldsShareLink(
 
 /**
  * Resolve an `unlisted` recipe by its unguessable share token (issue #204).
- * Only ever matches an unlisted recipe whose share link is enabled; a disabled
+ * Only ever matches an unlisted recipe whose share link is enabled. A disabled
  * or rotated token (issue #207) resolves to nothing → the route 404s. This is
- * the *only* anonymous path to an unlisted recipe; slug/id lookups never are.
+ * the *only* anonymous path to an unlisted recipe. Slug/id lookups never are.
  */
 export async function getRecipeByShareToken(token: string) {
   if (!isDbConfigured() || !token) return null;
@@ -631,7 +631,7 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
  * groups' (issue #57). Paginated in SQL with `limit`/`offset` so the cookbook no
  * longer loads (and eager-hydrates tags/ratings for) every recipe at once. For
  * `"top-rated"` the ranking is applied in SQL via {@link topRatedOrderBy} so the
- * offset walks the true global order rather than re-sorting a single window;
+ * offset walks the true global order rather than re-sorting a single window.
  * `"recent"` keeps the base `updatedAt desc` ordering.
  */
 export async function listLibrary(
@@ -665,7 +665,7 @@ export async function listLibrary(
 /**
  * Just the ids of the recipes in a viewer's library (their own + their groups'),
  * with no eager relations (#57). The discover feed subtracts this set so a
- * viewer never sees their own recipes under "Discover"; keeping it id-only means
+ * viewer never sees their own recipes under "Discover". Keeping it id-only means
  * each "Load more" no longer re-hydrates every library recipe's tags and ratings
  * just to build an exclusion set. Empty without a database or user.
  */
@@ -702,7 +702,7 @@ const QUICK_DINNER_MINUTES = 45;
  * Candidate recipes for the home dinner picker (#375): the viewer's library
  * (their own + their groups', published only), minus whatever is already on
  * tonight's dinner plan, biased toward quick + easy/medium dishes. Returns a
- * bounded pool the client shuffles from; empty without a database or user.
+ * bounded pool the client shuffles from. Empty without a database or user.
  */
 export async function listDinnerCandidates(
   viewer: User | null,
@@ -822,7 +822,7 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
     case "az":
       return [asc(sql`lower(${recipes.title})`)];
     // "top-rated" orders by the SQL weighted score (topRatedOrderBy) in the
-    // caller; fall through to the newest base ordering for every other sort.
+    // caller. Fall through to the newest base ordering for every other sort.
     case "top-rated":
     case "newest":
     default:
@@ -835,7 +835,7 @@ function recipeOrderBy(sort: RecipeSort): SQL[] {
 
 /**
  * Recipes returned per search page (issue #58). Search now pages with
- * `limit`/`offset` and a "Load more" instead of silently capping at this many;
+ * `limit`/`offset` and a "Load more" instead of silently capping at this many.
  * this is the window fetched per request, not a hard ceiling on total results.
  */
 const RECIPE_SEARCH_LIMIT = 60;
@@ -853,7 +853,7 @@ const RECIPE_FTS_CONFIG = "english";
  * `websearch_to_tsquery`, which accepts free-form input (quotes, `or`, `-term`)
  * and never throws on syntax, unlike `to_tsquery`. `search_vector` is a
  * generated, GIN-indexed `tsvector` maintained by Postgres (issue #158, added in
- * the FTS migration), so this predicate is index-backed — no per-row seq scan.
+ * the FTS migration), so this predicate is index-backed. No per-row seq scan.
  * Referenced by raw column name because the vector is deliberately not mapped in
  * the Drizzle schema (nothing selects it, and keeping it untracked avoids
  * generated-column migration drift).
@@ -901,15 +901,15 @@ export function recipeUsesFoodConditionSql(foodId: string): SQL {
 }
 
 /**
- * The narrowing WHERE conditions for a search — the free-text (synonym-expanded)
- * match plus the cuisine/difficulty/time/tag filters — *excluding* the viewer
+ * The narrowing WHERE conditions for a search. The free-text (synonym-expanded)
+ * match plus the cuisine/difficulty/time/tag filters. *excluding* the viewer
  * visibility scope (callers add that). `skip` omits one facet so scoped facet
  * counts can answer "what if I also picked this?" (see {@link listRecipeFacets}).
  *
  * `ingredientFoodId` threads the *resolved* ingredient filter through the pure
  * builder (resolution is async + DB-backed, so the caller does it): a string
- * adds the "uses this food" predicate; `null` means the term was requested but
- * resolved to no known food, so it forces an empty result (a `false` guard);
+ * adds the "uses this food" predicate. `null` means the term was requested but
+ * resolved to no known food, so it forces an empty result (a `false` guard).
  * `undefined` (the default) means no ingredient filter was requested at all.
  */
 export function searchFilterConditions(
@@ -923,7 +923,7 @@ export function searchFilterConditions(
 
   if (search.q) {
     // Broaden recall two ways and OR them: Postgres FTS (`search_vector`, with
-    // stemming — "tomatoes" finds "tomato") plus a synonym-expanded substring
+    // stemming. "Tomatoes" finds "tomato") plus a synonym-expanded substring
     // match ("coriander" also finds "cilantro"). Relevance ordering still ranks
     // the literal query first (see relevanceOrderBy).
     const likes = expandQueryTerms(search.q).map(
@@ -967,8 +967,8 @@ export function searchFilterConditions(
 
   // Dietary tags (#273) narrow conjunctively, but each is satisfied by the UNION
   // of the derived `dietaryTags` (auto "-free" from ingredients) and the
-  // author-declared `dietaryFlags` (#404). So a recipe must, for *every*
-  // selected diet, carry it in *either* column — hence an AND over per-diet ORs.
+  // author-declared `dietaryFlags` (#404), so a recipe must, for *every*
+  // selected diet, carry it in *either* column. Hence an AND over per-diet ORs.
   // (A single `or(arrayContains(tags, diets), arrayContains(flags, diets))`
   // would be wrong for mixed sources, e.g. dairy-free derived + vegan declared.)
   for (const diet of search.diets) {
@@ -981,7 +981,7 @@ export function searchFilterConditions(
   }
 
   // Ingredient-led filter: constrain to recipes that use the resolved canonical
-  // food. `undefined` = not requested (add nothing); `null` = requested but the
+  // food. `undefined` = not requested (add nothing). `null` = requested but the
   // term matched no known food, so force an empty result rather than silently
   // ignoring the filter.
   if (opts.ingredientFoodId !== undefined) {
@@ -1012,14 +1012,14 @@ async function resolveIngredientFilter(
 
 /**
  * Search, filter, and sort recipes a viewer may see. All narrowing runs in SQL
- * against existing indexes; returns [] when the DB is off. Free text is matched
+ * against existing indexes. Returns [] when the DB is off. Free text is matched
  * with Postgres full-text search over a weighted, GIN-indexed `search_vector`
  * (title > description > cuisine, with stemming) plus trigram-accelerated
  * substring matches on ingredient item text and tag names (issue #158). Text
- * queries are ordered by relevance (`ts_rank`); everything else keeps the
+ * queries are ordered by relevance (`ts_rank`). Everything else keeps the
  * requested sort.
  *
- * Viewer-scoped, so left dynamic (uncached); the cached public surface is
+ * Viewer-scoped, so left dynamic (uncached). The cached public surface is
  * {@link listPublicRecipes} (#160).
  */
 export async function searchRecipes(
@@ -1049,7 +1049,7 @@ export async function searchRecipes(
 
   // Family/group filter (#91): narrow to one group the viewer belongs to. Validate
   // membership first (mirrors the `safeFor` ownership check below) so a stale or
-  // hand-edited id cleanly no-ops rather than silently emptying the list —
+  // hand-edited id cleanly no-ops rather than silently emptying the list.
   // `visibleRecipesScope` already bounds rows to the viewer's own ∪ their groups,
   // so this only ever narrows within what they may already see.
   if (search.group && groupIds.includes(search.group)) {
@@ -1058,7 +1058,7 @@ export async function searchRecipes(
 
   // "Safe for <member>" (#405): resolve the chosen profile (owner-scoped) into
   // the allergens they must avoid and the diets they follow. Diets are declared
-  // structurally on the recipe, so they filter in SQL; allergens are detected
+  // structurally on the recipe, so they filter in SQL. Allergens are detected
   // from ingredient text, so they filter in JS after the rows load.
   let avoidAllergens: Allergen[] = [];
   if (search.safeFor && viewer) {
@@ -1081,7 +1081,7 @@ export async function searchRecipes(
   const like = search.q ? `%${escapeLike(search.q)}%` : null;
 
   // "Best match" ranks by the weighted field-match score, but only makes sense
-  // with a text query; without one it falls through to the newest ordering.
+  // with a text query. Without one it falls through to the newest ordering.
   const orderBy =
     search.sort === "relevance" && like != null
       ? relevanceOrderBy(like)
@@ -1106,7 +1106,7 @@ export async function searchRecipes(
     },
   });
 
-  // Whether another page exists is decided by the *raw* SQL page length — a full
+  // Whether another page exists is decided by the *raw* SQL page length. A full
   // page implies more rows to fetch. The allergen pass below only drops rows
   // within a page (like the discover feed's library filter), so it must not
   // shorten a full page into a false "end of results".
@@ -1116,7 +1116,7 @@ export async function searchRecipes(
   // candidate rows' ingredients in one query and drop any recipe that carries
   // an allergen the member must avoid. Uses the conservative direct+hidden
   // union (so a hidden source like wheat-in-soy-sauce still excludes the
-  // recipe), and drops recipes with no ingredient data outright — a "safe for"
+  // recipe), and drops recipes with no ingredient data outright. A "safe for"
   // result must never include a recipe we couldn't actually analyze.
   let safeRows = rows;
   if (avoidAllergens.length > 0 && rows.length > 0) {
@@ -1134,7 +1134,7 @@ export async function searchRecipes(
   // Weighted "best match"/"top-rated" ordering is applied in SQL over the full
   // candidate set above, so the returned rows are already globally ranked. Attach
   // a lightweight match reason per row (and drop the ingredient text from the
-  // payload — it was only needed to derive that reason).
+  // payload. It was only needed to derive that reason).
   const items = safeRows.map((row) => {
     const { ingredients, ...rest } = row as typeof row & {
       ingredients?: { item: string }[];
@@ -1179,7 +1179,7 @@ async function foodNodeIdFor(idOrSlug: string): Promise<string | null> {
  * index (`food_recipe_links`) via {@link recipeUsesFoodConditionSql}, and reuses
  * the shared visibility + soft-delete scope ({@link visibleRecipesScope}) so it
  * never widens what recipe reads already expose. Paginated like {@link
- * searchRecipes} (newest first); returns an empty page when the DB is off or the
+ * searchRecipes} (newest first). Returns an empty page when the DB is off or the
  * food is unknown.
  */
 export async function getRecipesUsingFood(
@@ -1222,7 +1222,7 @@ const COOK_WITH_CANDIDATE_LIMIT = 200;
 
 /**
  * "Cook with what you have" (#277). Ranks visible recipes by how well the
- * viewer's pantry `items` cover their ingredient list — most matched first, then
+ * viewer's pantry `items` cover their ingredient list. Most matched first, then
  * fewest missing. Candidates are prefiltered in SQL to recipes mentioning at
  * least one pantry item (normalized substring), then scored precisely in JS via
  * `rankByCoverage` (case/plural-normalized, reusing the substitutions matcher).
@@ -1331,7 +1331,7 @@ export async function suggestSearchTerm(
     if (!best || best.toLowerCase() === q.toLowerCase()) return null;
     return best;
   } catch {
-    // pg_trgm not available (or any DB error) — silently skip the suggestion.
+    // pg_trgm not available (or any DB error). Silently skip the suggestion.
     return null;
   }
 }
@@ -1342,10 +1342,10 @@ export async function suggestSearchTerm(
  * excluded, so a count answers "how many if I also pick this?"). When `search`
  * is omitted the counts are global. Empty when the DB is off.
  *
- * Any currently-selected facet value is always included — even at count 0 — so
+ * Any currently-selected facet value is always included, even at count 0, so
  * the UI can still display and clear it.
  *
- * Viewer-scoped, so left dynamic (uncached); see {@link listPublicRecipes} for
+ * Viewer-scoped, so left dynamic (uncached). See {@link listPublicRecipes} for
  * the cached public feed (#160).
  */
 export async function listRecipeFacets(
@@ -1439,7 +1439,7 @@ export async function listRecipeFacets(
 
 /**
  * All visible tags with their visible-recipe counts, for the tag directory.
- * Empty tags (no recipes the viewer can see) are omitted. Ordered by name (A-Z);
+ * Empty tags (no recipes the viewer can see) are omitted. Ordered by name (A-Z).
  * callers that want a "popular" view can re-sort by count.
  */
 export async function listTagsWithCounts(
@@ -1469,7 +1469,7 @@ export async function listTagsWithCounts(
 const SIMILAR_CANDIDATE_LIMIT = 60;
 
 /**
- * "You might also like" — visible recipes related to `recipeId`, ranked by shared
+ * "You might also like". Visible recipes related to `recipeId`, ranked by shared
  * tags, matching cuisine, and ingredient overlap (scoring in `~/lib/related-recipes`).
  * The current recipe is excluded and the result is bounded by `limit`. Candidates
  * are pre-filtered to those sharing a tag or the cuisine so the scan stays cheap.
@@ -1550,7 +1550,7 @@ export async function listSimilarRecipes(
     limit,
   );
 
-  // Ingredient text was only needed for scoring; drop it from the card payload.
+  // Ingredient text was only needed for scoring. Drop it from the card payload.
   return ranked.map(({ recipe }) => {
     const { ingredients: _ingredients, ...card } = recipe;
     return card;
@@ -1559,7 +1559,7 @@ export async function listSimilarRecipes(
 
 /**
  * Record that `userId` opened `recipeId`, upserting the single (user, recipe) row
- * so re-viewing just bumps `viewedAt`. Safe to call on every detail-page render;
+ * so re-viewing just bumps `viewedAt`. Safe to call on every detail-page render.
  * a no-op when the database isn't configured.
  */
 export async function recordRecipeView(
@@ -1617,7 +1617,7 @@ export async function listRecentlyViewed(viewer: User | null, limit = 6) {
  * Validate a persisted version snapshot before using it.
  *
  * `recipe_versions.snapshot` is `jsonb`, so Drizzle hands back an already-parsed
- * value — `jsonb` guarantees valid JSON but not a valid *shape*, so we still run
+ * value. `Jsonb` guarantees valid JSON but not a valid *shape*, so we still run
  * it through the Zod `recipeInput` schema. A string is JSON-parsed defensively
  * so any legacy/text snapshot that slips through never crashes a caller.
  */
@@ -1636,7 +1636,7 @@ export function parseSnapshot(snapshot: unknown): RecipeInput | null {
 
 /**
  * A page of a recipe's saved versions, newest first (#159). Keyset-paginated on
- * the monotonic `versionNumber` and — crucially — excludes the heavy `snapshot`
+ * the monotonic `versionNumber` and, crucially, excludes the heavy `snapshot`
  * jsonb blob, which the history list never renders (only a version *preview*
  * needs it, via {@link getRecipeVersion}). Pass the previous page's
  * `nextCursor` as `beforeVersion` to walk further back into the history.
@@ -1655,7 +1655,7 @@ export async function getRecipeVersions(
             : undefined,
         ),
         orderBy: [desc(recipeVersions.versionNumber)],
-        // Omit the snapshot jsonb from list rows — it can be large and the
+        // Omit the snapshot jsonb from list rows. It can be large and the
         // history list only needs metadata (label, author, timestamp).
         columns: { snapshot: false },
         with: {
@@ -1742,7 +1742,7 @@ const TREE_MAX_UP = 3;
 const TREE_MAX_DOWN = 3;
 /** Hard cap on total nodes so a wildly-forked recipe can't blow up one read (#359). */
 const TREE_MAX_NODES = 40;
-/** Per-node child fan-out cap; extra siblings collapse into a "+N more" hint (#359). */
+/** Per-node child fan-out cap. Extra siblings collapse into a "+N more" hint (#359). */
 const TREE_CHILD_CAP = 8;
 
 /** The display columns + visibility fields needed to shape and gate a tree node. */
@@ -1762,7 +1762,7 @@ export type FamilyTreeNode = {
   slug: string;
   title: string;
   author: { name: string | null } | null;
-  /** The recipe the tree was built for; rendered highlighted, not linked. */
+  /** The recipe the tree was built for. Rendered highlighted, not linked. */
   isCurrent: boolean;
   /** Direct adaptations of this node the viewer may see. */
   children: FamilyTreeNode[];
@@ -1820,7 +1820,7 @@ function toTreeNode(row: TreeRow, isCurrent: boolean): FamilyTreeNode {
  * an ancestor spine with the current recipe's descendants fanned out beneath it.
  *
  * Every node is gated with {@link canView} for `viewer`, so a public recipe's
- * tree never leaks a private adaptation; the walk stops at the first non-visible
+ * tree never leaks a private adaptation. The walk stops at the first non-visible
  * ancestor rather than exposing its existence. Total work is bounded by
  * {@link TREE_MAX_NODES} DB reads and guarded against cyclic/self-referential
  * `forkedFromId` data with a visited set.
@@ -1931,7 +1931,7 @@ export type TimelineCursor = { createdAt: Date; id: string };
 /**
  * Assemble a recipe's family-history timeline: its own milestones (created,
  * edited, published) plus each fork it originates and, if it is itself an
- * adaptation, a link back to the recipe it came from — all in chronological
+ * adaptation, a link back to the recipe it came from. All in chronological
  * order with authors and dates. Falls back to synthesising milestones from the
  * recipe + lineage rows so recipes predating the events log still read well.
  *
@@ -1939,9 +1939,9 @@ export type TimelineCursor = { createdAt: Date; id: string };
  * for `viewer`, so a public recipe's timeline never leaks a private adaptation.
  *
  * Events are keyset-paginated oldest-first (#159): the first page begins the
- * story and folds in the (bounded) descendant forks plus any synthetic origin;
+ * story and folds in the (bounded) descendant forks plus any synthetic origin.
  * pass the returned `nextCursor` as `afterEvent` to read newer events. Later
- * pages carry events only — the origin back-fill and fork side-list belong to
+ * pages carry events only. The origin back-fill and fork side-list belong to
  * the story's opening page, never a continuation.
  */
 export async function getRecipeTimeline(
@@ -2043,7 +2043,7 @@ export async function getRecipeTimeline(
       ? { createdAt: lastEvent.createdAt, id: lastEvent.id }
       : null;
 
-  // Only surface descendant forks the viewer may see; a private adaptation (and
+  // Only surface descendant forks the viewer may see. A private adaptation (and
   // its fork note) must stay hidden on a public recipe's timeline.
   const visibleChildren = children.filter((child) =>
     canView(child, viewer, groupIds),

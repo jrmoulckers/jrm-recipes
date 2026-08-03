@@ -2,7 +2,7 @@
  * Keepsake "hand-down" links (issue #407).
  *
  * A keepsake is just the recipe presented warmly with a personal note, so the
- * note + sender ride in the URL rather than a new table — nothing to migrate,
+ * note + sender ride in the URL rather than a new table, nothing to migrate,
  * and the link is entirely self-describing. Access is still governed by the
  * recipe's own visibility (the keepsake route defers to `getRecipeForViewer`),
  * so an unlisted recipe carries its share token along exactly like a normal
@@ -22,7 +22,7 @@ export type KeepsakeMessage = {
 function tidy(value: string | null | undefined, max: number): string | null {
   if (!value) return null;
   // Collapse runs of blank lines/spaces but keep single newlines so a note can
-  // have simple line breaks; trim the ends and cap the length.
+  // have simple line breaks. Trim the ends and cap the length.
   const cleaned = value
     .replace(/\r\n?/g, "\n")
     .replace(/[ \t]+/g, " ")
@@ -51,7 +51,7 @@ export function parseKeepsakeMessage(input: {
 
 /**
  * Build the relative keepsake path for a recipe. Empty note/name/token are
- * omitted so the link stays as short as possible; values are length-bounded
+ * omitted so the link stays as short as possible. Values are length-bounded
  * before encoding.
  */
 export function buildKeepsakePath(

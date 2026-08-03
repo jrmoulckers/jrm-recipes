@@ -4,7 +4,7 @@ import { ingestFoodGraph } from "~/server/db/ingest-food-graph";
 import { log } from "~/lib/log";
 
 // Reads the whole recipe-ingredient corpus and rewrites the derived food-graph
-// tables, so keep it on the Node runtime. Always dynamic — it's a scheduled
+// tables, so keep it on the Node runtime. Always dynamic. It's a scheduled
 // side-effecting trigger, never cached.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export const maxDuration = 60;
 /**
  * Food-graph recompute cron. Scheduled by Vercel Cron (see vercel.json) and
  * guarded by `CRON_SECRET`: when the secret is unset the endpoint is disabled
- * (503) so it can never run anonymously; a wrong/absent bearer is 401.
+ * (503) so it can never run anonymously. A wrong/absent bearer is 401.
  *
  * Runs the idempotent full {@link ingestFoodGraph} pass that rebuilds the mined
  * food-graph tables (unit/prep stats, pairs, mined aliases, denormalized

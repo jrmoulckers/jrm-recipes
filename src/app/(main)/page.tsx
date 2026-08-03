@@ -48,7 +48,7 @@ const features = [
   {
     icon: ChefHat,
     title: "Ridiculously easy to write",
-    body: "A structured editor that turns a scribbled idea into a beautiful recipe in minutes — ingredients, steps, photos and all.",
+    body: "A structured editor that turns a scribbled idea into a beautiful recipe in minutes. Ingredients, steps, photos and all.",
   },
   {
     icon: Timer,
@@ -69,7 +69,7 @@ const features = [
   {
     icon: Printer,
     title: "Print any way you like",
-    body: "Recipe card, full page, or compact — export and print in the format that suits the moment.",
+    body: "Recipe card, full page, or compact. Export and print in the format that suits the moment.",
   },
   {
     icon: Import,
@@ -254,8 +254,8 @@ export default async function HomePage() {
                 From cooks you follow
               </h2>
               <p className="mt-1 text-muted-foreground">
-                Public recipes, cooks, and reviews from cooks you follow —
-                separate from your families.
+                Public recipes, cooks, and reviews from cooks you follow.
+                Separate from your families.
               </p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export default async function HomePage() {
               </h1>
               <p className="max-w-xl text-pretty text-lg text-muted-foreground">
                 {brand.name} is the cutest, easiest way to write, cook, share
-                and pass down recipes — from your kitchen to the whole family.
+                and pass down recipes. From your kitchen to the whole family.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="xl">
@@ -316,7 +316,7 @@ export default async function HomePage() {
             </div>
           </section>
 
-          {/* Make it yours — live theme showcase */}
+          {/* Make it yours. Live theme showcase */}
           <section className="border-y border-border bg-surface">
             <div className="container py-14">
               <div className="mb-8 flex flex-col items-center gap-3 text-center">
@@ -328,8 +328,8 @@ export default async function HomePage() {
                 </h2>
                 <p className="max-w-xl text-muted-foreground">
                   Kitchen warmth, playful whimsy, clean professional,
-                  big-and-bright kids, or dead-simple — each with light and
-                  dark. Pick one and watch the whole app transform.
+                  big-and-bright kids, or dead-simple. Each has light and dark.
+                  Pick one and watch the whole app transform.
                 </p>
               </div>
               <ModePicker />
@@ -370,7 +370,7 @@ export default async function HomePage() {
                   Start with one recipe. Build a legacy.
                 </h2>
                 <p className="max-w-lg text-muted-foreground">
-                  Write down the dish you make from memory — the one everyone
+                  Write down the dish you make from memory. The one everyone
                   asks for. {brand.name} makes it beautiful and keeps it
                   forever.
                 </p>
@@ -382,7 +382,7 @@ export default async function HomePage() {
                 <div className="mt-2 w-full max-w-md">
                   <p className="mb-3 text-sm text-muted-foreground">
                     Not ready yet? Get early access and cooking tips in your
-                    inbox — no account needed.
+                    inbox. No account needed.
                   </p>
                   <WaitlistForm source="closing" />
                 </div>

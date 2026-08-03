@@ -204,7 +204,7 @@ function previewClass(format: PrintFormat): string {
 
 /**
  * A recipe only gets a scannable share QR on print when its URL resolves for
- * anyone — i.e. public or unlisted. Private recipes print without a QR so we
+ * anyone, i.e. public or unlisted. Private recipes print without a QR so we
  * never advertise a link that 404s for the reader (issue #350).
  */
 function canShareRecipe(visibility: string): boolean {
@@ -351,7 +351,7 @@ function IngredientsList({
                   {ingredient.note && (
                     <span className="text-muted-foreground print:text-black">
                       {" "}
-                      — {ingredient.note}
+. {ingredient.note}
                     </span>
                   )}
                   {ingredient.optional && (

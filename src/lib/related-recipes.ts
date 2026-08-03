@@ -1,7 +1,7 @@
 /**
  * Pure scoring for "You might also like" related recipes (#275).
  *
- * The database narrows the candidate set to recipes that share a tag or cuisine;
+ * The database narrows the candidate set to recipes that share a tag or cuisine.
  * this module turns the loaded signals into a comparable score so the ranking
  * logic stays testable without a live database.
  */
@@ -13,7 +13,7 @@ export type RecipeSignals = {
 };
 
 /**
- * Relative weights. Tags are the strongest signal of "similar dish"; a single
+ * Relative weights. Tags are the strongest signal of "similar dish". A single
  * shared tag (5) always outranks the capped ingredient-overlap contribution (3),
  * so common pantry words like "salt" can never dominate topical relatedness.
  */

@@ -20,7 +20,7 @@ import {
   todayParam,
 } from "./week";
 
-// July 6, 2026 is a Monday; the Sunday-start week runs Jul 5 – Jul 11.
+// July 6, 2026 is a Monday. The Sunday-start week runs Jul 5 – Jul 11.
 const MON_JUL_6 = new Date(2026, 6, 6);
 const THU_JUL_9 = new Date(2026, 6, 9);
 

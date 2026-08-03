@@ -23,7 +23,7 @@ import {
 /**
  * The measurement dimension of a suggested unit. Mirrors `units.ts` `Dimension`
  * exactly (kept as a local declaration to avoid coupling this module to the
- * conversion library); the two are structurally interchangeable.
+ * conversion library). The two are structurally interchangeable.
  */
 export type FoodDimension = "volume" | "mass" | "count" | "temperature";
 
@@ -32,7 +32,7 @@ export type SuggestedUnit = {
   dimension: FoodDimension;
   /**
    * Canonical `units.ts` token where one exists (`cup`, `tbsp`, `tsp`,
-   * `fl oz`, `ml`, `l`, `g`, `kg`, `oz`, `lb`); otherwise an informal
+   * `fl oz`, `ml`, `l`, `g`, `kg`, `oz`, `lb`). Otherwise an informal
    * count/portion token (`each`, `pinch`, `bunch`, `sprig`, `clove`) for the
    * units layer to resolve against the user's units / custom units.
    */
@@ -76,9 +76,9 @@ const COUNT_EACH: SuggestedUnit[] = [{ dimension: "count", unit: "each" }];
  */
 export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
   {
-    // Liquids: measured by volume; weight is a secondary option for bakers.
+    // Liquids: measured by volume. Weight is a secondary option for bakers.
     liquid: [...VOLUME_LARGE, { dimension: "mass", unit: "g" }],
-    // Dairy: milk/cream by volume, cheese often by weight — offer both.
+    // Dairy: milk/cream by volume, cheese often by weight. Offer both.
     dairy: [...VOLUME_LARGE, ...MASS_SMALL],
     // Baking staples: weight first (precision), then volume for cup-based recipes.
     baking: [
@@ -104,7 +104,7 @@ export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
     ],
     // Whole produce: counted or weighed.
     "produce-whole": [...COUNT_EACH, ...MASS_LARGE],
-    // Leafy greens: loose-packed by cup or weighed; sold by the bunch.
+    // Leafy greens: loose-packed by cup or weighed. Sold by the bunch.
     "produce-leafy": [
       { dimension: "volume", unit: "cup" },
       { dimension: "mass", unit: "g" },
@@ -126,17 +126,17 @@ export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
       { dimension: "count", unit: "sprig" },
       { dimension: "mass", unit: "g" },
     ],
-    // Spices: tiny volumes and pinches; grams for scale bakers.
+    // Spices: tiny volumes and pinches. Grams for scale bakers.
     spice: [
       { dimension: "volume", unit: "tsp" },
       { dimension: "volume", unit: "tbsp" },
       { dimension: "count", unit: "pinch" },
       { dimension: "mass", unit: "g" },
     ],
-    // Meat & seafood: by weight; some seafood is counted.
+    // Meat & seafood: by weight. Some seafood is counted.
     meat: [...MASS_LARGE],
     seafood: [...MASS_LARGE, { dimension: "count", unit: "each" }],
-    // Eggs: counted; whites/yolks sometimes by volume.
+    // Eggs: counted. Whites/yolks sometimes by volume.
     egg: [
       ...COUNT_EACH,
       { dimension: "volume", unit: "cup" },
@@ -158,7 +158,7 @@ export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
       { dimension: "mass", unit: "g" },
       { dimension: "volume", unit: "ml" },
     ],
-    // Nuts & seeds: by cup or weight; nut butters by spoon.
+    // Nuts & seeds: by cup or weight. Nut butters by spoon.
     "nut-seed": [
       { dimension: "volume", unit: "cup" },
       { dimension: "volume", unit: "tbsp" },
@@ -217,8 +217,8 @@ export function getSuggestedUnitsForFood(
 
 /**
  * A viewer's volume preferences split by kind of ingredient (pourable liquids
- * vs. scoopable dry goods vs. tiny seasoning amounts). This maps a food category
- * to that split — structurally the same union as `units.ts` `VolumeClass`, kept
+ * vs. Scoopable dry goods vs. Tiny seasoning amounts). This maps a food category
+ * to that split. Structurally the same union as `units.ts` `VolumeClass`, kept
  * local to preserve this module's decoupling from the conversion library.
  *
  * Liquids: anything you pour (water, milk, oil, sauces). Small: seasonings you
@@ -291,7 +291,7 @@ const COUNT_TOKENS: ReadonlySet<string> = new Set([
 /**
  * The measurement dimension for a unit token. Recognizes the canonical
  * `units.ts` volume/mass tokens and the food-graph's informal count/portion
- * tokens; anything unrecognized is treated as `count` (a literal portion token
+ * tokens. Anything unrecognized is treated as `count` (a literal portion token
  * the units layer resolves), never dropped. Pure.
  */
 export function dimensionForUnit(unit: string): FoodDimension {
@@ -311,7 +311,7 @@ export type LearnedUnit = { unit: string; useCount: number };
  * list for the picker: learned units lead (by usage), then any static
  * suggestions not already present, de-duplicated by unit token. This keeps the
  * `getSuggestedUnitsForFood` shape (flat, ordered, index 0 = default) while
- * letting live data reprioritize it. Pure; when `learned` is empty it returns a
+ * letting live data reprioritize it. Pure. When `learned` is empty it returns a
  * copy of `fallback`.
  */
 export function mergeLearnedUnits(
@@ -336,7 +336,7 @@ export function mergeLearnedUnits(
 /**
  * Float a user's preferred unit to index 0 of an ordered {@link SuggestedUnit}
  * list (Phase 3 personalization). If the preference already appears it is moved
- * to the front (rest order preserved); if it's new it is prepended with its
+ * to the front (rest order preserved). If it's new it is prepended with its
  * derived dimension. A nullish/empty preference returns a copy unchanged. Same
  * flat, ordered shape (index 0 = default), so it drops into the picker path.
  * Pure.
@@ -360,7 +360,7 @@ export function applyUnitPreference(
 /**
  * Float a user's preferred value to the front of a ranked token list (prep
  * methods, variety names, …), preserving the order of the rest. Case-insensitive
- * match; a nullish preference or one absent from the list returns a copy
+ * match. A nullish preference or one absent from the list returns a copy
  * unchanged (we never invent a prep/variety that has no crowd signal). Pure.
  */
 export function floatPreferredToFront<T>(

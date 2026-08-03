@@ -39,7 +39,7 @@ function persist(status: ConsentStatus) {
     localStorage.setItem(ANALYTICS_CONSENT_COOKIE, value);
     document.cookie = `${ANALYTICS_CONSENT_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
-    /* storage unavailable (private mode) — choice still applies this session */
+    /* storage unavailable (private mode). Choice still applies this session */
   }
 }
 
