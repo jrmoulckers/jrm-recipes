@@ -63,7 +63,10 @@ export interface CloseButtonProps
  * different icon (e.g. a spinner while a remove is pending).
  */
 const CloseButton = React.forwardRef<HTMLButtonElement, CloseButtonProps>(
-  ({ className, variant, tone, size, label, type, children, ...props }, ref) => (
+  (
+    { className, variant, tone, size, label, type, children, ...props },
+    ref,
+  ) => (
     <button
       ref={ref}
       type={type ?? "button"}
