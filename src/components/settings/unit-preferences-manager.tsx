@@ -46,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export type UnitPreferencesView = {
   defaultSystem: MeasurementSystemValue;
@@ -396,6 +397,7 @@ function CustomUnitsSection({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   const nameId = React.useId();
   const abbrId = React.useId();
@@ -443,8 +445,13 @@ function CustomUnitsSection({
     });
   }
 
-  function onDelete(unit: CustomUnitView) {
-    const ok = window.confirm(`Delete the "${unit.name}" unit?`);
+  async function onDelete(unit: CustomUnitView) {
+    const ok = await confirm({
+      title: `Delete the “${unit.name}” unit?`,
+      description:
+        "Recipes keep the unit text. The saved definition is removed until you add it again.",
+      confirmLabel: "Delete unit",
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteCustomUnitAction(unit.id).then((result) => {

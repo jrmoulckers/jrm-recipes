@@ -25,7 +25,7 @@ describe("WelcomeChecklist (issue #147)", () => {
     expect(
       screen.getByRole("heading", { name: /welcome to heirloom/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Add a recipe")).toBeInTheDocument();
+    expect(screen.getByText("Create a recipe")).toBeInTheDocument();
     expect(screen.getByText("Cook it hands-free")).toBeInTheDocument();
     expect(screen.getByText("Share with family")).toBeInTheDocument();
 

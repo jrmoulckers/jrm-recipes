@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { useShoppingStore } from "~/lib/shopping-store";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   ShoppingListView,
@@ -20,6 +21,7 @@ export function LocalShoppingList() {
   const remove = useShoppingStore((s) => s.remove);
   const clearChecked = useShoppingStore((s) => s.clearChecked);
   const clearAll = useShoppingStore((s) => s.clearAll);
+  const confirm = useConfirm();
 
   // The store hydrates from localStorage on the client only. Wait for mount so
   // the first render matches the server (empty) and avoids a hydration warning.
@@ -53,12 +55,17 @@ export function LocalShoppingList() {
     addManual(entry);
   }
 
-  function onClearAll() {
+  async function onClearAll() {
     if (items.length === 0) return;
-    if (window.confirm("Clear the whole shopping list?")) {
-      clearAll();
-      toast.success("Shopping list cleared");
-    }
+    const ok = await confirm({
+      title: "Clear the whole shopping list?",
+      description:
+        "All items saved on this device are removed. This can't be undone.",
+      confirmLabel: "Clear list",
+    });
+    if (!ok) return;
+    clearAll();
+    toast.success("Shopping list cleared");
   }
 
   return (

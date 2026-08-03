@@ -104,7 +104,7 @@ export default async function CollectionsPage() {
             ) : (
               <EmptyState
                 icon={<BookMarked className="size-7" />}
-                title="Start your first collection"
+                title="Create your first collection"
                 description="Group recipes into cookbooks. Weeknight dinners, holiday bakes, or family classics."
                 action={<CreateCollectionDialog />}
               />

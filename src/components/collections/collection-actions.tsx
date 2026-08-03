@@ -30,6 +30,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export function CollectionActions({
   collection,
@@ -53,6 +54,7 @@ export function CollectionActions({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   function onRename(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,10 +79,15 @@ export function CollectionActions({
     });
   }
 
-  function onDelete() {
-    const ok = window.confirm(
-      `Delete “${collection.name}”? Your recipes stay in your library. Only this collection is removed.`,
-    );
+  async function onDelete() {
+    // Yield a tick so the dropdown has finished closing and returned focus.
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    const ok = await confirm({
+      title: `Delete “${collection.name}”?`,
+      description:
+        "Your recipes stay in your library. Only this collection is removed.",
+      confirmLabel: "Delete collection",
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteCollectionAction(collection.id).then((result) => {
@@ -120,9 +127,11 @@ export function CollectionActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              onDelete();
+            onSelect={() => {
+              // Let the menu close and hand focus back before the dialog traps
+              // it. The old window.confirm blocked synchronously, so this
+              // ordering did not matter.
+              void onDelete();
             }}
             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
           >

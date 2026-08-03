@@ -17,6 +17,7 @@ import {
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
 import { type ShoppingCategory } from "~/lib/shopping-list";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import {
   ShoppingListView,
   type ManualEntryDraft,
@@ -35,6 +36,7 @@ export function DbShoppingList({
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
+  const confirm = useConfirm();
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const avoidAllergens =
     members.find((m) => m.id === activeMemberId)?.allergens ?? [];
@@ -84,9 +86,15 @@ export function DbShoppingList({
     run(clearCheckedItemsAction);
   }
 
-  function onClearAll() {
+  async function onClearAll() {
     if (optimistic.length === 0) return;
-    if (!window.confirm("Clear the whole shopping list?")) return;
+    const ok = await confirm({
+      title: "Clear the whole shopping list?",
+      description:
+        "All synced shopping items are removed. This can't be undone.",
+      confirmLabel: "Clear list",
+    });
+    if (!ok) return;
     setOptimistic([]);
     run(clearShoppingListAction);
   }

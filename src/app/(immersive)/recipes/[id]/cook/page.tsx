@@ -19,7 +19,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
-  return { title: recipe ? `Cook · ${recipe.title}` : "Cook mode" };
+  return {
+    title: recipe ? `Cook · ${recipe.title}` : "Cook mode",
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function CookPage({

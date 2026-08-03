@@ -19,7 +19,10 @@ import {
 } from "~/lib/week-menu";
 import { WeekMenuPrintView } from "~/components/print/week-menu-print-view";
 
-export const metadata: Metadata = { title: "Print · Weekly menu" };
+export const metadata: Metadata = {
+  title: "Print · Weekly menu",
+  robots: { index: false, follow: false },
+};
 
 export default async function WeekMenuPrintPage({
   searchParams,

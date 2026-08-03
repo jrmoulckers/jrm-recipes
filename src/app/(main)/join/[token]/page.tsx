@@ -17,6 +17,7 @@ import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 // Invite links are private, single-purpose URLs. Never index them.
 export const metadata: Metadata = {
   title: "Join a family cookbook",
+  description: "Accept an invitation to a shared family cookbook on Heirloom.",
   robots: { index: false, follow: false },
 };
 

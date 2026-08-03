@@ -35,6 +35,7 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { CharacterCounter } from "~/components/ui/character-counter";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import {
   COOK_NOTE_MAX_LENGTH,
   COOK_NOTE_TOO_LONG_MESSAGE,
@@ -413,8 +414,7 @@ function LogCookButton({
             <DialogTitle>Log a cook</DialogTitle>
             <DialogDescription>
               Add {recipeTitle} to your cooking journal. Jot down how it went
-              and add a photo if you have one. It all becomes part of the
-              story.
+              and add a photo if you have one. It all becomes part of the story.
             </DialogDescription>
           </DialogHeader>
 
@@ -511,15 +511,15 @@ function DeleteCookButton({
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
-  function onDelete() {
-    if (
-      !window.confirm(
-        "Delete this cook from your journal? This can't be undone.",
-      )
-    ) {
-      return;
-    }
+  async function onDelete() {
+    const ok = await confirm({
+      title: "Delete this cook from your journal?",
+      description: "It leaves your cooking journal. This can't be undone.",
+      confirmLabel: "Delete cook",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const result = await deleteCookLogAction({ entryId, recipeSlug });
       if (result.ok) {

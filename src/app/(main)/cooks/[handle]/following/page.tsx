@@ -15,7 +15,15 @@ export async function generateMetadata({
   params: Promise<HandleRouteParams>;
 }): Promise<Metadata> {
   const { handle } = await parseHandleParams(params);
-  return { title: `Following · @${handle}`, robots: { index: false } };
+  const profile = await getPublicProfileByHandle(handle);
+  const displayName = profile
+    ? displayNameFrom(profile.user.name, `@${profile.user.handle}`)
+    : `@${handle}`;
+  return {
+    title: `Following · @${handle}`,
+    description: `People ${displayName} follows on Heirloom.`,
+    robots: { index: false },
+  };
 }
 
 export default async function FollowingPage({

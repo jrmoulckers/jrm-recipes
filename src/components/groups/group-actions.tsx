@@ -8,6 +8,7 @@ import { friendlyError } from "~/lib/error-copy";
 
 import { deleteGroupAction, leaveGroupAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import { type DisplayRole } from "./role-badge";
 
 export function GroupActions({
@@ -24,6 +25,7 @@ export function GroupActions({
   const router = useRouter();
   const [pending, setPending] = React.useState<"leave" | "delete" | null>(null);
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   if (!viewerRole) return null;
 
@@ -59,14 +61,15 @@ export function GroupActions({
         <Button
           type="button"
           variant="outline"
-          onClick={() => {
+          onClick={async () => {
             if (isSoleOwner) return;
-            if (
-              !window.confirm(
-                `Leave ${groupName}? You'll lose access to its shared recipes. You can re-join with an invite.`,
-              )
-            )
-              return;
+            const ok = await confirm({
+              title: `Leave “${groupName}”?`,
+              description:
+                "You'll lose access to its shared recipes. You can re-join with an invite.",
+              confirmLabel: "Leave group",
+            });
+            if (!ok) return;
             run("leave", () => leaveGroupAction(slug), "You left the group");
           }}
           disabled={isPending || isSoleOwner}
@@ -80,14 +83,14 @@ export function GroupActions({
           <Button
             type="button"
             variant="destructive"
-            onClick={() => {
-              if (
-                !window.confirm(
-                  `Delete “${groupName}”? Everyone's recipes stay saved. Only the shared group space is removed.`,
-                )
-              ) {
-                return;
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: `Delete “${groupName}”?`,
+                description:
+                  "Everyone's recipes stay saved. The shared group space is removed and can't be restored.",
+                confirmLabel: "Delete group",
+              });
+              if (!ok) return;
               run(
                 "delete",
                 () => deleteGroupAction(slug),

@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import { RoleBadge, roleLabel, type DisplayRole } from "./role-badge";
 
 type ManageableRole = Exclude<DisplayRole, "owner">;
@@ -73,7 +74,11 @@ export function MemberList({
 }) {
   const router = useRouter();
   const [pendingKey, setPendingKey] = React.useState<string | null>(null);
+  const [openMenuUserId, setOpenMenuUserId] = React.useState<string | null>(
+    null,
+  );
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   function runAction(
     key: string,
@@ -95,6 +100,14 @@ export function MemberList({
         })
         .finally(() => setPendingKey(null));
     });
+  }
+
+  async function confirmAfterDropdownCloses(
+    options: Parameters<typeof confirm>[0],
+  ) {
+    setOpenMenuUserId(null);
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    return confirm(options);
   }
 
   return (
@@ -133,7 +146,12 @@ export function MemberList({
             <div className="flex items-center gap-2 sm:justify-end">
               <RoleBadge role={member.role} />
               {showActions ? (
-                <DropdownMenu>
+                <DropdownMenu
+                  open={openMenuUserId === member.userId}
+                  onOpenChange={(open) =>
+                    setOpenMenuUserId(open ? member.userId : null)
+                  }
+                >
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
@@ -176,14 +194,16 @@ export function MemberList({
                       <>
                         {canChangeRole ? <DropdownMenuSeparator /> : null}
                         <DropdownMenuItem
-                          onSelect={() => {
-                            if (
-                              !window.confirm(
-                                `Transfer ownership to ${name}? You will become an admin.`,
-                              )
-                            ) {
-                              return;
-                            }
+                          onSelect={async (event) => {
+                            event.preventDefault();
+                            const ok = await confirmAfterDropdownCloses({
+                              title: `Transfer ownership to “${name}”?`,
+                              description:
+                                "You'll stay in the group as an admin. The new owner can transfer it back.",
+                              confirmLabel: "Transfer ownership",
+                              destructive: false,
+                            });
+                            if (!ok) return;
                             runAction(
                               `${member.userId}:owner`,
                               () =>
@@ -205,14 +225,15 @@ export function MemberList({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onSelect={() => {
-                            if (
-                              !window.confirm(
-                                `Remove ${name} from this group? They'll lose access to the group's recipes. You can re-invite them anytime.`,
-                              )
-                            ) {
-                              return;
-                            }
+                          onSelect={async (event) => {
+                            event.preventDefault();
+                            const ok = await confirmAfterDropdownCloses({
+                              title: `Remove “${name}” from this group?`,
+                              description:
+                                "They'll lose access to the group's recipes. You can re-invite them anytime.",
+                              confirmLabel: "Remove",
+                            });
+                            if (!ok) return;
                             runAction(
                               `${member.userId}:remove`,
                               () => removeMemberAction(slug, member.userId),

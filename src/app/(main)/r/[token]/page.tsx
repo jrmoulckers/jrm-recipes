@@ -1,15 +1,38 @@
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { brand } from "~/config/brand";
 import { getRecipeByShareToken } from "~/server/recipes/queries";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 import RecipePage from "../../recipes/[id]/page";
 
+const sharedRecipeRobots = { index: false, follow: false };
+
 // A share link is a private, unguessable URL (issue #204). It must never be
 // indexed or followed by crawlers.
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<TokenRouteParams>;
+}): Promise<Metadata> {
+  const { token } = await parseTokenParams(params);
+  const recipe = await getRecipeByShareToken(token);
+  if (!recipe) {
+    return {
+      title: "Shared recipe not found",
+      description: `This shared recipe link is not available on ${brand.name}.`,
+      robots: sharedRecipeRobots,
+    };
+  }
+
+  return {
+    title: `Shared · ${recipe.title}`,
+    description:
+      recipe.description ??
+      `Open a private family recipe shared with you on ${brand.name}.`,
+    robots: sharedRecipeRobots,
+  };
+}
 
 /**
  * Share-token entry point for an `unlisted` recipe (issues #204/#207).

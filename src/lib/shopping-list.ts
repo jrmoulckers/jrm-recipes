@@ -858,7 +858,7 @@ export function formatShoppingListText(
   for (const category of SHOPPING_CATEGORIES) {
     const group = byCategory.get(category);
     if (!group || group.length === 0) continue;
-    lines.push(`${category}:`);
+    lines.push(`${SHOPPING_CATEGORY_LABELS[category]}:`);
     for (const item of group
       .slice()
       .sort((a, b) => a.item.localeCompare(b.item))) {

@@ -28,7 +28,6 @@ import { JournalFilters } from "~/components/cooklog/journal-filters";
 
 export const metadata: Metadata = {
   title: "Cook journal",
-  description: "A log of every dish you've cooked, with your notes and photos.",
 };
 
 export default async function JournalPage({

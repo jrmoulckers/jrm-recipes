@@ -32,6 +32,7 @@ import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { NativeSelect } from "~/components/ui/native-select";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export type MemberProfileView = {
   id: string;
@@ -98,6 +99,7 @@ export function DietaryProfilesManager({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   const groupName = React.useMemo(
     () => new Map(groups.map((g) => [g.id, g.name])),
@@ -146,10 +148,13 @@ export function DietaryProfilesManager({
     });
   }
 
-  function onDelete(profile: MemberProfileView) {
-    const ok = window.confirm(
-      `Remove ${profile.name}'s dietary profile? This can't be undone.`,
-    );
+  async function onDelete(profile: MemberProfileView) {
+    const ok = await confirm({
+      title: `Remove the dietary profile for “${profile.name}”?`,
+      description:
+        "Their dietary details and goals are deleted. This can't be undone.",
+      confirmLabel: "Remove profile",
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteMemberProfileAction(profile.id).then((result) => {

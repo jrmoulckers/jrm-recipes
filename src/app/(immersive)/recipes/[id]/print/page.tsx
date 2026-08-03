@@ -13,7 +13,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await parseRecipeParams(params);
   const { recipe } = await getRecipeForViewer(id);
-  return { title: recipe ? `Print · ${recipe.title}` : "Print recipe" };
+  return {
+    title: recipe ? `Print · ${recipe.title}` : "Print recipe",
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function PrintPage({

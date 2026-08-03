@@ -583,17 +583,17 @@ describe("formatShoppingListText", () => {
     expect(text).toContain("Produce:");
     expect(text).toContain("- [ ] 6 Apples");
     expect(text).toContain("- [ ] 1 bunch Spinach");
-    expect(text).toContain("Meat & Seafood:");
+    expect(text).toContain("Meat & seafood:");
     expect(text).toContain("- [ ] 2 lb Chicken thighs");
     // checked "Milk" is excluded by default, so its aisle never appears
     expect(text).not.toContain("Milk");
-    expect(text).not.toContain("Dairy & Eggs:");
+    expect(text).not.toContain("Dairy & eggs:");
   });
 
   it("orders categories by aisle and items alphabetically within one", () => {
     const text = formatShoppingListText(sample);
     expect(text.indexOf("Produce:")).toBeLessThan(
-      text.indexOf("Meat & Seafood:"),
+      text.indexOf("Meat & seafood:"),
     );
     expect(text.indexOf("Apples")).toBeLessThan(text.indexOf("Spinach"));
   });

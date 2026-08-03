@@ -56,7 +56,7 @@ describe("DinnerSuggestion (#375)", () => {
     expect(
       screen.queryByRole("button", { name: /pick my dinner/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /add a recipe/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /create a recipe/i })).toHaveAttribute(
       "href",
       "/recipes/new",
     );

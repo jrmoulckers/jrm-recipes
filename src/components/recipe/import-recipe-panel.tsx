@@ -12,7 +12,7 @@ import { Input } from "~/components/ui/input";
 import { PasteImportPanel } from "~/components/recipe/paste-import-panel";
 
 /**
- * "Start from an existing recipe" import affordance. Create mode only (#294,
+ * "Import a recipe" import affordance. Create mode only (#294,
  * #370). Extracted into its own module so the editor can `next/dynamic` it,
  * keeping the URL + paste import UI out of the recipe editor's first-load JS
  * (it never renders on the budget-tracked /recipes/[id]/edit route).
@@ -78,7 +78,7 @@ export function ImportRecipePanel({
       <div className="flex items-center gap-2">
         <Link2 className="size-4 text-primary" />
         <h2 className="font-display text-base font-semibold">
-          Start from an existing recipe
+          Import a recipe
         </h2>
       </div>
       <div

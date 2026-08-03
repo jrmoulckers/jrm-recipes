@@ -8,6 +8,7 @@ import {
   describeQuantity,
   formatShoppingListText,
   SHOPPING_CATEGORIES,
+  SHOPPING_CATEGORY_LABELS,
   type ShoppingCategory,
 } from "~/lib/shopping-list";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
@@ -218,7 +219,7 @@ function ItemRow({
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
-            {c}
+            {SHOPPING_CATEGORY_LABELS[c]}
           </option>
         ))}
       </select>
@@ -380,7 +381,7 @@ export function ShoppingListView({
             {groups.map((group) => (
               <section key={group.category}>
                 <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  {group.category}
+                  {SHOPPING_CATEGORY_LABELS[group.category]}
                 </h2>
                 <ul className="flex flex-col">
                   {group.items.map((item) => (

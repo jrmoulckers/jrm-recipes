@@ -58,7 +58,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
           </p>
         </div>
         <Button asChild>
-          <Link href="/recipes">Start cooking</Link>
+          <Link href="/recipes">Go to your cookbook</Link>
         </Button>
       </div>
     );

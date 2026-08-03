@@ -27,7 +27,7 @@ export const WELCOME_COPY: WelcomeCopy = {
   subheading: "Three little steps to keep your family's recipes alive.",
   steps: [
     {
-      title: "Add a recipe",
+      title: "Create a recipe",
       body: "Start with the dish everyone asks you to make.",
     },
     {

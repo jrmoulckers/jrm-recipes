@@ -5,7 +5,7 @@ import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { DigestOptIn } from "~/components/settings/digest-opt-in";
 
-export const metadata: Metadata = { title: "Notifications" };
+export const metadata: Metadata = { title: "Notification settings" };
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();

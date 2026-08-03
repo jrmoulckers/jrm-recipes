@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import {
   deleteRecipeAction,
   restoreRecipeAction,
@@ -32,6 +33,7 @@ export function DeleteRecipeButton({
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   function onUndo() {
     void (async () => {
@@ -46,11 +48,14 @@ export function DeleteRecipeButton({
     })();
   }
 
-  function onDelete() {
+  async function onDelete() {
     const label = title ? `“${title}”` : "this recipe";
-    const ok = window.confirm(
-      `Delete ${label}? Its steps, photos, and history are kept so you can undo this right after.`,
-    );
+    const ok = await confirm({
+      title: `Delete ${label}?`,
+      description:
+        "Its steps, photos, and history stay saved. You can undo this right after.",
+      confirmLabel: "Delete recipe",
+    });
     if (!ok) return;
 
     // Show the undo affordance optimistically: the soft-delete is immediate and

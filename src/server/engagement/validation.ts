@@ -61,7 +61,7 @@ export const reviewInput = z.object({
   body: z
     .string()
     .trim()
-    .max(4000, "Keep reviews under 4,000 characters.")
+    .max(4000, "Keep reviews under 4,000 characters")
     .optional(),
   // A review photo must be an uploaded Cloudinary delivery URL (#341/#355):
   // require a real https URL on our image host so an arbitrary/off-host URL
@@ -71,7 +71,7 @@ export const reviewInput = z.object({
     .trim()
     .url()
     .max(2048)
-    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link.")
+    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link")
     .optional()
     .or(z.literal("").transform(() => undefined)),
 });

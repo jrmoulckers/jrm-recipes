@@ -110,7 +110,7 @@ export function DinnerSuggestion({
             <div className="flex flex-wrap gap-2">
               <Button asChild>
                 <Link href="/recipes/new">
-                  <ChefHat /> Add a recipe
+                  <ChefHat /> Create a recipe
                 </Link>
               </Button>
               <Button asChild variant="outline">
