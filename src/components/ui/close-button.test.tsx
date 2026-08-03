@@ -8,9 +8,7 @@ afterEach(cleanup);
 describe("CloseButton", () => {
   it("exposes the required label as its accessible name", () => {
     render(<CloseButton label="Dismiss" />);
-    expect(
-      screen.getByRole("button", { name: "Dismiss" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dismiss" })).toBeInTheDocument();
   });
 
   it("defaults to type=button so it never submits a form", () => {
