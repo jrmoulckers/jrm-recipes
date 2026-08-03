@@ -245,6 +245,38 @@
     "remaining": "{count} left",
     "over": "Over by {count} — {message}"
   },
+  "share": {
+    "button": "Share",
+    "menu": {
+      "share": "Share…",
+      "shareCard": "Share card…",
+      "copyLink": "Copy link",
+      "personalize": "Personalize link…",
+      "disableLink": "Disable link",
+      "enableLink": "Enable link",
+      "resetLink": "Reset link"
+    },
+    "toast": {
+      "linkUpdateError": "Couldn't update the share link",
+      "linkReset": "Share link reset — the old link no longer works",
+      "linkDisabled": "Share link disabled",
+      "linkEnabled": "Share link enabled",
+      "linkCopied": "Recipe link copied",
+      "copyError": "Couldn't copy the link",
+      "personalizedCopied": "Personalized link copied — ready to give as a gift"
+    },
+    "personalize": {
+      "title": "Personalize this link",
+      "description": "Add your name and a personal message to share this recipe as a warm keepsake — a little gift, not just a link.",
+      "nameLabel": "Your name",
+      "namePlaceholder": "Nonna",
+      "messageLabel": "Your message",
+      "messagePlaceholder": "The one you loved as a girl. Love, Nonna.",
+      "copy": "Copy personalized link",
+      "preview": "Preview",
+      "done": "Done"
+    }
+  },
   "recipeDetail": {
     "backToRecipes": "Recipes",
     "by": "By",
