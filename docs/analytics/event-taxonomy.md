@@ -84,14 +84,14 @@ Current call sites are in the paths named in the "When it fires" column.
 
 ### Share and reel virality loop
 
-| Event                   | Properties                                         | When it fires                                                                                                    |
-| ----------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Event                   | Properties                                         | When it fires                                                                                                                                |
+| ----------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `recipe_shared`         | `method: ShareMethod`                              | When a recipe is shared by file, native share sheet, copied link, or personalized keepsake link in `src/components/recipe/share-button.tsx`. |
-| `share_card_downloaded` | `Record<string, never>`                            | When the share card image is downloaded in `src/components/recipe/share-button.tsx`.                             |
-| `share_link_copied`     | `Record<string, never>`                            | After the recipe share link text is copied in `src/components/recipe/share-button.tsx`.                          |
-| `share_link_disabled`   | `Record<string, never>`                            | After an owner disables a share link in `src/components/recipe/share-button.tsx`.                                |
-| `share_link_rotated`    | `Record<string, never>`                            | After an owner rotates/resets a share link in `src/components/recipe/share-button.tsx`.                          |
-| `reel_exported`         | `kind: ReelExportKind`; `method: ReelExportMethod` | After a reel/image export is downloaded or shared in `src/components/recipe/reel-studio.tsx`.                    |
+| `share_card_downloaded` | `Record<string, never>`                            | When the share card image is downloaded in `src/components/recipe/share-button.tsx`.                                                         |
+| `share_link_copied`     | `Record<string, never>`                            | After the recipe share link text is copied in `src/components/recipe/share-button.tsx`.                                                      |
+| `share_link_disabled`   | `Record<string, never>`                            | After an owner disables a share link in `src/components/recipe/share-button.tsx`.                                                            |
+| `share_link_rotated`    | `Record<string, never>`                            | After an owner rotates/resets a share link in `src/components/recipe/share-button.tsx`.                                                      |
+| `reel_exported`         | `kind: ReelExportKind`; `method: ReelExportMethod` | After a reel/image export is downloaded or shared in `src/components/recipe/reel-studio.tsx`.                                                |
 
 ### Group collaboration and invite funnel
 
@@ -137,17 +137,17 @@ Current call sites are in the paths named in the "When it fires" column.
 
 ## Type aliases used by event properties
 
-| Type               | Values                                           |
-| ------------------ | ------------------------------------------------ |
-| `RecipeVisibility` | `"private"`, `"group"`, `"unlisted"`, `"public"` |
-| `RecipeSource`     | `"manual"`, `"import"`                           |
-| `CookUnitSystem`   | `"original"`, `"us"`, `"metric"`, `"grams"`      |
+| Type               | Values                                            |
+| ------------------ | ------------------------------------------------- |
+| `RecipeVisibility` | `"private"`, `"group"`, `"unlisted"`, `"public"`  |
+| `RecipeSource`     | `"manual"`, `"import"`                            |
+| `CookUnitSystem`   | `"original"`, `"us"`, `"metric"`, `"grams"`       |
 | `ShareMethod`      | `"native"`, `"file"`, `"copy_link"`, `"keepsake"` |
-| `ReelExportKind`   | `"image"`, `"video"`                             |
-| `ReelExportMethod` | `"download"`, `"share"`                          |
-| `InviteRole`       | `"admin"`, `"member"`, `"kid"`                   |
-| `WaitlistSource`   | `"landing"`, `"hero"`, `"closing"`               |
-| `GroupSizeBucket`  | `"1"`, `"2-5"`, `"6-10"`, `"11+"`                |
+| `ReelExportKind`   | `"image"`, `"video"`                              |
+| `ReelExportMethod` | `"download"`, `"share"`                           |
+| `InviteRole`       | `"admin"`, `"member"`, `"kid"`                    |
+| `WaitlistSource`   | `"landing"`, `"hero"`, `"closing"`                |
+| `GroupSizeBucket`  | `"1"`, `"2-5"`, `"6-10"`, `"11+"`                 |
 
 ## Adding a new event
 
