@@ -3,10 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { Check, ChefHat, CookingPot, Users, X } from "lucide-react";
+import { Check, ChefHat, CookingPot, Users } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { ONBOARDING_CHECKLIST_COPY } from "~/config/onboarding-copy";
 import type { OnboardingProgress } from "~/server/onboarding/progress";
 
@@ -97,15 +98,11 @@ export function OnboardingChecklist({
           : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
       )}
     >
-      <Button
-        size="icon"
-        variant="ghost"
+      <CloseButton
         onClick={dismiss}
-        aria-label={ONBOARDING_CHECKLIST_COPY.dismiss}
-        className="absolute end-3 top-3 size-9 text-muted-foreground"
-      >
-        <X className="size-4" />
-      </Button>
+        label={ONBOARDING_CHECKLIST_COPY.dismiss}
+        className="absolute end-3 top-3"
+      />
 
       <div className="max-w-xl pe-8">
         <h2
