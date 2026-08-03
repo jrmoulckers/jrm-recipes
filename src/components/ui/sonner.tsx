@@ -27,8 +27,10 @@ export function Toaster(props: ToasterProps) {
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          // Match the app-wide CloseButton: a calm, circular affordance with the
+          // shared hover and focus ring, instead of Sonner's stock bordered nub.
           closeButton:
-            "group-[.toast]:bg-popover group-[.toast]:text-muted-foreground group-[.toast]:border-border group-[.toast]:hover:text-foreground",
+            "group-[.toast]:size-6 group-[.toast]:rounded-full group-[.toast]:border-0 group-[.toast]:bg-transparent group-[.toast]:text-muted-foreground group-[.toast]:shadow-none group-[.toast]:transition-colors group-[.toast]:hover:bg-muted group-[.toast]:hover:text-foreground group-[.toast]:focus-visible:outline-none group-[.toast]:focus-visible:ring-2 group-[.toast]:focus-visible:ring-ring group-[.toast]:focus-visible:ring-offset-2 group-[.toast]:focus-visible:ring-offset-popover",
         },
       }}
       {...props}

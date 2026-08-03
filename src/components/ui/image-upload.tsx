@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { ImageOff, ImagePlus, X } from "lucide-react";
+import { ImageOff, ImagePlus } from "lucide-react";
 import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 import { env } from "~/env";
 import { cn } from "~/lib/utils";
 import { recordStorageUsageAction } from "~/server/billing/usage-actions";
+import { CloseButton } from "~/components/ui/close-button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 
@@ -93,19 +94,12 @@ export function ImageUploadField({
               )}
             </div>
           ) : null}
-          <button
-            type="button"
+          <CloseButton
+            variant="overlay"
             onClick={() => onChange("")}
-            aria-label="Remove photo"
-            className="group absolute end-2 top-2 inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span
-              aria-hidden="true"
-              className="inline-flex size-8 items-center justify-center rounded-full bg-background/85 text-foreground shadow-token-sm backdrop-blur transition group-hover:bg-background"
-            >
-              <X className="size-4" />
-            </span>
-          </button>
+            label="Remove photo"
+            className="absolute end-2 top-2"
+          />
         </figure>
       ) : cloudinaryConfigured ? (
         <div className={cn(compact ? "aspect-[3/2] max-w-56" : "aspect-video")}>

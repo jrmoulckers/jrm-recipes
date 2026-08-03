@@ -21,9 +21,11 @@ describe("Switch large-target sizing", () => {
     expect(root.className).toContain("w-[calc(2.75rem*var(--control-scale))]");
   });
 
-  it("renders as a <button> so the global button min-height (--tap-min) governs its hit height", () => {
+  it("renders as a real <button> with the switch role (compact-control sizing)", () => {
     render(<Switch aria-label="notify" />);
-    // globals.css: `button { min-height: var(--tap-min) }` — Kids 3rem / Simple 2.75rem.
+    // globals.css floors [role="switch"] to --control-min (0 default / --tap-min
+    // in Kids/Simple), not the blanket 44px button floor, so the pill keeps its
+    // designed 24px height in the default theme instead of stretching.
     expect(screen.getByRole("switch").tagName).toBe("BUTTON");
   });
 
