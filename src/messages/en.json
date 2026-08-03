@@ -196,7 +196,10 @@
     },
     "connectivity": {
       "offline": "You're offline. Recipes you've opened still work. We'll sync changes when you're back.",
-      "online": "Back online, syncing your latest."
+      "online": "Back online, syncing your latest.",
+      "actionBlocked": "Can't save while offline. We'll keep your changes and try again when you reconnect.",
+      "cachedBadge": "Saved for offline",
+      "cachedTooltip": "This recipe is cached. You can finish cooking even without a connection."
     },
     "storage": {
       "trigger": "Offline storage",

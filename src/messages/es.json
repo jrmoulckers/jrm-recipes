@@ -196,7 +196,10 @@
     },
     "connectivity": {
       "offline": "Estás sin conexión: las recetas que has abierto siguen funcionando. Sincronizaremos los cambios cuando vuelvas.",
-      "online": "De nuevo en línea: sincronizando lo último."
+      "online": "De nuevo en línea: sincronizando lo último.",
+      "actionBlocked": "No se puede guardar sin conexión. Guardaremos tus cambios y lo intentaremos de nuevo cuando vuelvas a conectarte.",
+      "cachedBadge": "Guardada sin conexión",
+      "cachedTooltip": "Esta receta está en caché. Puedes terminar de cocinar aunque no tengas conexión."
     },
     "storage": {
       "trigger": "Almacenamiento sin conexión",

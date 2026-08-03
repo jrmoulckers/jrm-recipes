@@ -1,8 +1,22 @@
 import { act, renderHook } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useServerAction } from "./use-server-action";
+import { IntlWrapper } from "~/test/intl";
+import esMessages from "~/messages/es.json";
 import type { ActionResult } from "~/server/action-result";
+
+/**
+ * Render under the Spanish catalog. Asserting against Spanish proves the copy is
+ * actually resolved through the catalog: an English assertion would still pass
+ * if the hook fell back to hardcoded strings.
+ */
+const spanishWrapper = ({ children }: { children: ReactNode }) => (
+  <IntlWrapper locale="es" messages={esMessages}>
+    {children}
+  </IntlWrapper>
+);
 
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -41,13 +55,15 @@ describe("useServerAction (#198)", () => {
     );
     const onSuccess = vi.fn();
 
-    const { result } = renderHook(() =>
-      useServerAction(action, {
-        successToast: "Saved",
-        onSuccess,
-        refresh: true,
-        errorToast: true,
-      }),
+    const { result } = renderHook(
+      () =>
+        useServerAction(action, {
+          successToast: "Saved",
+          onSuccess,
+          refresh: true,
+          errorToast: true,
+        }),
+      { wrapper: IntlWrapper },
     );
 
     await act(async () => {
@@ -74,10 +90,12 @@ describe("useServerAction (#198)", () => {
       }),
     );
 
-    const { result } = renderHook(() =>
-      useServerAction(action, {
-        successToast: (res) => (res.favorited ? "Saved." : "Removed."),
-      }),
+    const { result } = renderHook(
+      () =>
+        useServerAction(action, {
+          successToast: (res) => (res.favorited ? "Saved." : "Removed."),
+        }),
+      { wrapper: IntlWrapper },
     );
 
     await act(async () => {
@@ -95,8 +113,9 @@ describe("useServerAction (#198)", () => {
     }));
     const onError = vi.fn();
 
-    const { result } = renderHook(() =>
-      useServerAction(action, { errorToast: true, onError, refresh: true }),
+    const { result } = renderHook(
+      () => useServerAction(action, { errorToast: true, onError, refresh: true }),
+      { wrapper: IntlWrapper },
     );
 
     await act(async () => {
@@ -122,7 +141,9 @@ describe("useServerAction (#198)", () => {
       error: "Nope",
     }));
 
-    const { result } = renderHook(() => useServerAction(action));
+    const { result } = renderHook(() => useServerAction(action), {
+      wrapper: IntlWrapper,
+    });
 
     await act(async () => {
       result.current.run();
@@ -134,5 +155,49 @@ describe("useServerAction (#198)", () => {
     act(() => result.current.reset());
     expect(result.current.error).toBeNull();
     expect(result.current.fieldErrors).toBeNull();
+  });
+
+  it("resolves a known error code through the active locale's catalog", async () => {
+    const action = vi.fn(async (): Promise<ActionResult> => ({
+      ok: false,
+      error: "RATE_LIMITED",
+    }));
+
+    const { result } = renderHook(
+      () => useServerAction(action, { errorToast: true }),
+      { wrapper: spanishWrapper },
+    );
+
+    await act(async () => {
+      result.current.run();
+    });
+
+    expect(toastError).toHaveBeenCalledWith(esMessages.errors.RATE_LIMITED);
+    // The raw code is never shown, and the English copy is not used.
+    expect(toastError).not.toHaveBeenCalledWith("RATE_LIMITED");
+  });
+
+  it("uses the localized offline copy when the browser is offline", async () => {
+    const onLine = vi
+      .spyOn(navigator, "onLine", "get")
+      .mockReturnValue(false);
+    const action = vi.fn(async (): Promise<ActionResult> => ({
+      ok: false,
+      error: "NETWORK",
+    }));
+
+    const { result } = renderHook(
+      () => useServerAction(action, { errorToast: true }),
+      { wrapper: spanishWrapper },
+    );
+
+    await act(async () => {
+      result.current.run();
+    });
+
+    expect(toastError).toHaveBeenCalledWith(
+      esMessages.pwa.connectivity.actionBlocked,
+    );
+    onLine.mockRestore();
   });
 });

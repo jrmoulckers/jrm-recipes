@@ -135,7 +135,7 @@
   },
   "metadata": {
     "tagline": "Familienrezepte, lebendig bewahrt.",
-    "description": "Erstelle, koche und gib die Lieblingsrezepte deiner Familie weiter – schön, gemeinsam.",
+    "description": "Erstelle, koche und gib die Lieblingsrezepte deiner Familie weiter. Schön, gemeinsam.",
     "shortcuts": {
       "newRecipe": {
         "name": "Neues Rezept",
@@ -157,18 +157,18 @@
   "pwa": {
     "offline": {
       "metaTitle": "Du bist offline",
-      "metaDescription": "{brand} funktioniert offline – verbinde dich neu, um das Neueste zu synchronisieren.",
+      "metaDescription": "{brand} funktioniert offline. Verbinde dich neu, um das Neueste zu synchronisieren.",
       "heading": "Du bist offline",
-      "body": "Gerade kein Internet – aber die Küche schließt nie. Verbinde dich neu, um die Rezepte deiner Familie zu durchstöbern, zu speichern und zu synchronisieren.",
+      "body": "Gerade kein Internet, aber die Küche schließt nie. Verbinde dich neu, um die Rezepte deiner Familie zu durchstöbern, zu speichern und zu synchronisieren.",
       "stillWorksTitle": "Funktioniert auch ohne Verbindung",
       "cookModeTitle": "Kochmodus",
-      "cookModeBody": "Jedes bereits geöffnete Rezept bleibt freihändig nutzbar – mit Timern und Skalierung.",
+      "cookModeBody": "Jedes bereits geöffnete Rezept bleibt freihändig nutzbar, mit Timern und Skalierung.",
       "viewedTitle": "Zuletzt angesehene Rezepte",
       "viewedBody": "Kürzlich geöffnete Rezepte sind zwischengespeichert und lesebereit.",
       "home": "Zur {brand}-Startseite"
     },
     "reconnect": {
-      "online": "Wieder online – wird neu geladen…",
+      "online": "Wieder online, wird neu geladen…",
       "offline": "Keine Verbindung",
       "retry": "Erneut versuchen",
       "retrying": "Verbinde neu…"
@@ -195,8 +195,11 @@
       "dismiss": "Update-Hinweis schließen"
     },
     "connectivity": {
-      "offline": "Du bist offline – bereits geöffnete Rezepte funktionieren weiter. Änderungen synchronisieren wir, sobald du zurück bist.",
-      "online": "Wieder online – dein Neuestes wird synchronisiert."
+      "offline": "Du bist offline. Bereits geöffnete Rezepte funktionieren weiter. Änderungen synchronisieren wir, sobald du zurück bist.",
+      "online": "Wieder online, dein Neuestes wird synchronisiert.",
+      "actionBlocked": "Speichern ist offline nicht möglich. Wir behalten deine Änderungen und versuchen es erneut, sobald du wieder verbunden bist.",
+      "cachedBadge": "Offline gespeichert",
+      "cachedTooltip": "Dieses Rezept ist zwischengespeichert. Du kannst auch ohne Verbindung zu Ende kochen."
     },
     "storage": {
       "trigger": "Offline-Speicher",

@@ -49,6 +49,35 @@ Still allowed:
 - **Trailing period** on error toasts and banners. They are advisory sentences.
   "We couldn't find that.", "You don't have permission to do that."
 
+### Apostrophes and quotation marks
+
+Use the **straight ASCII apostrophe `'`**, never the curly `’`. Both render
+almost identically, so a mixed codebase is impossible to keep consistent by eye
+and impossible to grep reliably. One character, everywhere.
+
+The one wrinkle is JSX. A straight `'` sitting in a **JSX text node** trips the
+`react/no-unescaped-entities` ESLint rule, which is an error. Write `&apos;`
+there: it renders as a straight apostrophe and satisfies the rule. This applies
+only to JSX text. Apostrophes inside string props, and inside catalog values
+passed through `t()`, need no escaping and should be typed straight.
+
+```jsx
+<p>You haven&apos;t saved a recipe yet</p>   {/* JSX text: escape it */}
+<Input placeholder="What's cooking?" />      {/* prop: straight, as typed */}
+```
+
+Quotation marks are **per locale**, and each catalog is internally consistent:
+
+| Locale | Marks   | Example       |
+| ------ | ------- | ------------- |
+| `en`   | `“…”`   | `Saved to “Weeknights”`  |
+| `es`   | `«…»`   | `Guardado en «Weeknights»` |
+| `de`   | `„…“`   | `In „Weeknights“ gespeichert` |
+| `ar`   | `«…»`   | `«Weeknights»` |
+
+Never carry the English `“…”` into a translated catalog. It is the most common
+tell that a string was copied rather than translated.
+
 ### Ampersands
 
 Use **"and"** in prose and in anything that reads as a sentence. Reserve **"&"**
