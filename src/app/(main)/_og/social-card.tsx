@@ -5,6 +5,7 @@ import {
   BrandCard,
   CREAM,
   MUTED,
+  OG_SITE_HOST,
   TERRACOTTA,
   TERRACOTTA_DEEP,
   Wordmark,
@@ -164,7 +165,7 @@ function Frame({
           color: MUTED,
         }}
       >
-        heirloom.jrmoulckers.com
+        {OG_SITE_HOST}
       </div>
     </div>
   );

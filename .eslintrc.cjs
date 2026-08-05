@@ -71,15 +71,17 @@ const config = {
     ],
     "@typescript-eslint/no-explicit-any": "warn",
     // Guard against new hardcoded user-facing copy leaking into JSX (#238).
-    // Copy should be read from `~/messages/*` via next-intl. Areas that have
-    // finished migrating are raised to `error` in the overrides below, so they
-    // cannot regress; the rest stay at `warn` and are capped by `--max-warnings`
-    // in the lint script, which lets the backlog shrink but never grow.
+    // Copy should be read from `~/messages/*` via next-intl.
     //
-    // The exclusions below are for strings that are structurally not copy. They
-    // keep the warning count honest: a count padded with class names and route
-    // paths cannot be used as a ratchet.
-    "i18next/no-literal-string": ["warn", literalStringOptions],
+    // This is `error` globally. It spent the migration at `warn` behind an
+    // allowlist of finished directories, but the backlog is now empty, so an
+    // allowlist would only mean a NEW directory starts out unguarded. The one
+    // override below turns it off for non-shipping code.
+    //
+    // The exclusions in `literalStringOptions` are for strings that are
+    // structurally not copy, such as class names and route paths. Without them
+    // the rule reports things no reader ever sees.
+    "i18next/no-literal-string": ["error", literalStringOptions],
     "drizzle/enforce-delete-with-where": [
       "error",
       { drizzleObjectName: ["db"] },
@@ -91,65 +93,15 @@ const config = {
   },
   overrides: [
     {
-      // The ratchet (#238). Every area listed here has finished migrating its
-      // copy into `src/messages/*`, so the guard is raised from `warn` to
-      // `error`: new hardcoded UI copy fails the build instead of joining a
-      // backlog nobody reads.
-      //
-      // Areas NOT listed are the remaining backlog. They stay at `warn` and
-      // are capped by `--max-warnings` in the lint script, so the count can
-      // fall but never rise. Move an area here once it reaches zero.
-      files: [
-        "src/app/embed/**",
-        "src/app/not-found.tsx",
-        "src/components/a11y/**",
-        "src/components/cook/**",
-        "src/components/print/**",
-        "src/components/recipe/**",
-        "src/components/ui/**",
-        "src/app/~offline/**",
-        "src/app/layout.tsx",
-        "src/components/analytics/**",
-        "src/components/auth/**",
-        "src/components/billing/**",
-        "src/components/collections/**",
-        "src/components/cooklog/**",
-        "src/components/dietary/**",
-        "src/components/engagement/**",
-        "src/components/follows/**",
-        "src/components/groups/**",
-        "src/components/household/**",
-        "src/components/i18n/**",
-        "src/components/layout/**",
-        "src/components/marketing/**",
-        "src/components/moderation/**",
-        "src/components/notifications/**",
-        "src/components/onboarding/**",
-        "src/components/planner/**",
-        "src/components/privacy/**",
-        "src/components/profile/**",
-        "src/components/pwa/**",
-        "src/components/settings/**",
-        "src/components/shopping/**",
-        "src/components/theme/**",
-        "src/lib/**",
-        "src/server/**",
-      ],
-      rules: {
-        "i18next/no-literal-string": ["error", literalStringOptions],
-      },
-    },
-    {
       // Non-shipping code: tests, fixtures, DB seed data, and the internal
       // design-system reference page are not user-facing product UI, so the
       // literal-string guard would only add noise. `/design` is robots-
-      // disallowed, absent from nav, and labels itself "Dev / reference"; its
+      // disallowed, absent from nav, and labels itself "Dev / reference". Its
       // strings are component demo labels, so translating them would pad the
       // catalogs with keys no reader ever sees.
       //
-      // This override is LAST on purpose: later overrides win in ESLint, so
-      // keeping it here means the ratchet above never re-enables the rule for
-      // a test file that happens to live inside a locked area.
+      // This is an exemption, not a backlog. Nothing here is waiting to be
+      // migrated, so there is no count to draw down.
       files: [
         "**/*.test.ts",
         "**/*.test.tsx",

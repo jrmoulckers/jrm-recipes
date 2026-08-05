@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, SearchX, UtensilsCrossed } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -15,10 +16,13 @@ import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CookWithInput } from "~/components/recipe/cook-with-input";
 
-export const metadata: Metadata = {
-  title: "Cook with what you have",
-  description: "Enter your pantry and see what you can make right now.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("cookWith.title"),
+    description: t("cookWith.description"),
+  };
+}
 
 export default async function CookWithPage({
   searchParams,
@@ -27,6 +31,7 @@ export default async function CookWithPage({
 }) {
   const user = await getCurrentUser();
   const have = parseHaveParam((await searchParams).have);
+  const t = await getTranslations("recipe.cookWith");
 
   const [results, favoriteIds] = await Promise.all([
     isDbConfigured() && have.length > 0
@@ -46,13 +51,13 @@ export default async function CookWithPage({
           className="-ms-2 w-fit text-muted-foreground"
         >
           <Link href="/recipes">
-            <ArrowLeft /> Back to recipes
+            <ArrowLeft /> {t("backToRecipes")}
           </Link>
         </Button>
         <div className="flex items-center gap-3">
           <UtensilsCrossed className="size-7 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Cook with what you have
+            {t("title")}
           </h1>
         </div>
         <CookWithInput initial={have} />
@@ -70,11 +75,14 @@ export default async function CookWithPage({
                 <Badge
                   variant={recipe.coverage.missing === 0 ? "default" : "muted"}
                 >
-                  You have {recipe.coverage.matched} of {recipe.coverage.total}
+                  {t("coverage", {
+                    matched: recipe.coverage.matched,
+                    total: recipe.coverage.total,
+                  })}
                 </Badge>
                 {recipe.coverage.missing === 0 && (
                   <span className="text-xs font-medium text-primary">
-                    Ready to cook
+                    {t("readyToCook")}
                   </span>
                 )}
               </div>
@@ -91,28 +99,28 @@ export default async function CookWithPage({
   );
 }
 
-function Prompt() {
+async function Prompt() {
+  const t = await getTranslations("recipe.cookWith");
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <UtensilsCrossed className="size-10 text-muted-foreground" />
       <p className="max-w-md text-muted-foreground">
-        Add a few ingredients above, like{" "}
-        <span className="font-medium text-foreground">
-          chicken, rice, spinach
-        </span>
-        {", and we'll rank recipes by how much of each you already have."}
+        {t.rich("prompt", {
+          example: (chunks) => (
+            <span className="font-medium text-foreground">{chunks}</span>
+          ),
+        })}
       </p>
     </div>
   );
 }
 
-function NoMatches() {
+async function NoMatches() {
+  const t = await getTranslations("recipe.cookWith");
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <SearchX className="size-10 text-muted-foreground" />
-      <p className="text-muted-foreground">
-        No recipes use those ingredients yet. Try fewer or more common items.
-      </p>
+      <p className="text-muted-foreground">{t("noMatches")}</p>
     </div>
   );
 }

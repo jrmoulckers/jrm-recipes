@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import { Bell } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -7,18 +8,22 @@ import { listNotifications } from "~/server/notifications/queries";
 import { NotificationInbox } from "~/components/notifications/notification-inbox";
 import { EmptyState } from "~/components/ui/empty-state";
 
-export const metadata: Metadata = { title: "Notifications" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("notifications.title") };
+}
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();
+  const t = await getTranslations("notifications.page");
 
   if (isAuthConfigured() && isDbConfigured() && !user) {
     return (
       <div className="container py-10">
         <EmptyState
           icon={<Bell />}
-          title="Sign in to see notifications"
-          description="Mentions, replies, reviews, and cook-along invites live here once you're signed in."
+          title={t("signIn.title")}
+          description={t("signIn.body")}
         />
       </div>
     );
@@ -32,11 +37,10 @@ export default async function NotificationsPage() {
     <div className="container flex flex-col gap-8 py-10">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          Notifications
+          {t("title")}
         </h1>
         <p className="mt-1 max-w-2xl text-muted-foreground">
-          Everything happening around your recipes and family. Mentions,
-          replies, reviews, reactions, and cook-alongs.
+          {t("description")}
         </p>
       </header>
       <NotificationInbox

@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   BookHeart,
   ChefHat,
@@ -44,40 +45,19 @@ import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "~/lib/site-seo";
 import { serializeJsonLd } from "~/lib/recipe-seo";
 
+/**
+ * Landing feature grid. Only the icon and the "coming soon" flag are structural.
+ * The title and body for each entry live in `home.features.<id>` so the whole
+ * marketing pitch is translated with the rest of the page.
+ */
 const features = [
-  {
-    icon: ChefHat,
-    title: "Ridiculously easy to write",
-    body: "A structured editor that turns a scribbled idea into a beautiful recipe in minutes. Ingredients, steps, photos and all.",
-  },
-  {
-    icon: Timer,
-    title: "Cook mode that cooks with you",
-    body: "Step-by-step, hands-free, with built-in timers, serving scaling and unit conversion. Works offline in the kitchen.",
-  },
-  {
-    icon: BookHeart,
-    title: "A living family history",
-    body: "Track how a dish evolved across generations with timelines and adaptations. Nothing gets lost.",
-    soon: true,
-  },
-  {
-    icon: Share2,
-    title: "Share & collaborate",
-    body: "Invite family to a group cookbook. Rate, comment, and suggest tweaks together.",
-  },
-  {
-    icon: Printer,
-    title: "Print any way you like",
-    body: "Recipe card, full page, or compact. Export and print in the format that suits the moment.",
-  },
-  {
-    icon: Import,
-    title: "Import from anywhere",
-    body: "Pull recipes from websites and social posts, then make them your own.",
-    soon: true,
-  },
-];
+  { id: "editor", icon: ChefHat },
+  { id: "cookMode", icon: Timer },
+  { id: "history", icon: BookHeart, soon: true },
+  { id: "share", icon: Share2 },
+  { id: "print", icon: Printer },
+  { id: "import", icon: Import, soon: true },
+] as const;
 
 /**
  * Personalized home data for signed-in users with a database (#426): the "back
@@ -128,7 +108,12 @@ export default async function HomePage() {
   const personalizedHome =
     personalized != null && personalized.library.length > 0;
   const firstName = user?.name?.trim().split(/\s+/)[0];
-  const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back";
+  const t = await getTranslations("home");
+  const tNav = await getTranslations("nav");
+  const tAuth = await getTranslations("auth");
+  const greeting = firstName
+    ? t("greeting.named", { name: firstName })
+    : t("greeting.generic");
 
   return (
     <div className="flex flex-col">
@@ -159,23 +144,23 @@ export default async function HomePage() {
                   {greeting}
                 </h1>
                 <p className="mt-1 text-muted-foreground">
-                  Pick up where you left off, or start something new.
+                  {t("greeting.body")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
                   <Link href="/recipes/new">
-                    <ChefHat /> New recipe
+                    <ChefHat /> {tNav("newRecipe")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
                   <Link href="/recipes">
-                    <BookHeart /> Browse
+                    <BookHeart /> {t("actions.browse")}
                   </Link>
                 </Button>
                 <Button asChild variant="outline">
                   <Link href="/groups">
-                    <Users /> Family
+                    <Users /> {tNav("family")}
                   </Link>
                 </Button>
               </div>
@@ -205,10 +190,10 @@ export default async function HomePage() {
         <section className="container py-12">
           <div className="mb-5 flex items-end justify-between gap-3">
             <h2 className="font-display text-2xl font-bold tracking-tight">
-              Your recipes
+              {t("yourRecipes")}
             </h2>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/recipes">View all</Link>
+              <Link href="/recipes">{t("viewAll")}</Link>
             </Button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -223,15 +208,12 @@ export default async function HomePage() {
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                Recent activity from your families
+                {t("activity.heading")}
               </h2>
-              <p className="mt-1 text-muted-foreground">
-                What everyone&apos;s been cooking, adding, and saying across
-                your groups.
-              </p>
+              <p className="mt-1 text-muted-foreground">{t("activity.body")}</p>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/groups">Your families</Link>
+              <Link href="/groups">{t("activity.yourFamilies")}</Link>
             </Button>
           </div>
           <div className="max-w-2xl">
@@ -251,11 +233,10 @@ export default async function HomePage() {
           <div className="mb-5 flex items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                From cooks you follow
+                {t("following.heading")}
               </h2>
               <p className="mt-1 text-muted-foreground">
-                Public recipes, cooks, and reviews from cooks you follow.
-                Separate from your families.
+                {t("following.body")}
               </p>
             </div>
           </div>
@@ -279,38 +260,39 @@ export default async function HomePage() {
             <div className="container flex flex-col items-center gap-6 py-16 text-center sm:py-24">
               <Badge variant="accent" className="gap-1.5">
                 <Sparkles className="size-3.5" />
-                Family recipes, reimagined
+                {t("hero.badge")}
               </Badge>
               <h1 className="max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-                Every recipe your family loves,{" "}
-                <span className="text-primary">kept alive</span> and easy to
-                cook.
+                {t.rich("hero.heading", {
+                  highlight: (chunks) => (
+                    <span className="text-primary">{chunks}</span>
+                  ),
+                })}
               </h1>
               <p className="max-w-xl text-pretty text-lg text-muted-foreground">
-                {brand.name} is the cutest, easiest way to write, cook, share
-                and pass down recipes. From your kitchen to the whole family.
+                {t("hero.body", { brand: brand.name })}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="xl">
                   <Link href="/recipes/new">
-                    <ChefHat /> Start your cookbook
+                    <ChefHat /> {tAuth("startCookbook")}
                   </Link>
                 </Button>
                 <Button asChild size="xl" variant="outline">
                   <Link href="/discover">
-                    <Compass /> Discover recipes
+                    <Compass /> {t("hero.discover")}
                   </Link>
                 </Button>
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
-                  <Clock3 className="size-4" /> Offline cook mode
+                  <Clock3 className="size-4" /> {t("hero.offlineCookMode")}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Users className="size-4" /> Family groups
+                  <Users className="size-4" /> {t("hero.familyGroups")}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Wand2 className="size-4" /> Kids & accessibility modes
+                  <Wand2 className="size-4" /> {t("hero.kidsModes")}
                 </span>
               </div>
             </div>
@@ -321,15 +303,13 @@ export default async function HomePage() {
             <div className="container py-14">
               <div className="mb-8 flex flex-col items-center gap-3 text-center">
                 <Badge className="gap-1.5">
-                  <Palette className="size-3.5" /> Make it yours
+                  <Palette className="size-3.5" /> {t("themes.badge")}
                 </Badge>
                 <h2 className="font-display text-3xl font-bold tracking-tight">
-                  Five looks. One tap. Try them now.
+                  {t("themes.heading")}
                 </h2>
                 <p className="max-w-xl text-muted-foreground">
-                  Kitchen warmth, playful whimsy, clean professional,
-                  big-and-bright kids, or dead-simple. Each has light and dark.
-                  Pick one and watch the whole app transform.
+                  {t("themes.body")}
                 </p>
               </div>
               <ModePicker />
@@ -340,22 +320,24 @@ export default async function HomePage() {
           <section className="container py-16">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {features.map((f) => (
-                <Card key={f.title} interactive className="h-full">
+                <Card key={f.id} interactive className="h-full">
                   <CardContent className="flex flex-col gap-3 p-6">
                     <span className="bg-primary/12 inline-flex size-11 items-center justify-center rounded-xl text-primary">
                       <f.icon className="size-5" />
                     </span>
                     <div className="flex items-center gap-2">
                       <h3 className="font-display text-lg font-semibold">
-                        {f.title}
+                        {t(`features.${f.id}.title`)}
                       </h3>
-                      {f.soon && (
+                      {"soon" in f && f.soon && (
                         <Badge variant="muted" className="text-[0.65rem]">
-                          Soon
+                          {t("soon")}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{f.body}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t(`features.${f.id}.body`)}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -367,22 +349,19 @@ export default async function HomePage() {
             <Card className="overflow-hidden border-primary/20 bg-primary/5">
               <CardContent className="flex flex-col items-center gap-5 p-10 text-center">
                 <h2 className="max-w-2xl font-display text-3xl font-bold tracking-tight">
-                  Start with one recipe. Build a legacy.
+                  {t("closing.heading")}
                 </h2>
                 <p className="max-w-lg text-muted-foreground">
-                  Write down the dish you make from memory. The one everyone
-                  asks for. {brand.name} makes it beautiful and keeps it
-                  forever.
+                  {t("closing.body", { brand: brand.name })}
                 </p>
                 <Button asChild size="xl">
                   <Link href="/recipes/new">
-                    <ChefHat /> Create your first recipe
+                    <ChefHat /> {t("closing.cta")}
                   </Link>
                 </Button>
                 <div className="mt-2 w-full max-w-md">
                   <p className="mb-3 text-sm text-muted-foreground">
-                    Not ready yet? Get early access and cooking tips in your
-                    inbox. No account needed.
+                    {t("closing.waitlist")}
                   </p>
                   <WaitlistForm source="closing" />
                 </div>
@@ -400,18 +379,16 @@ export default async function HomePage() {
  * yet: a warm nudge toward the app's default social surface (family groups)
  * rather than a dead end.
  */
-function FamilyFeedEmptyNudge() {
+async function FamilyFeedEmptyNudge() {
+  const t = await getTranslations("home.emptyFamily");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <Users className="mx-auto mb-2 size-6" aria-hidden="true" />
-      <p className="font-medium text-foreground">No family activity yet</p>
-      <p className="mt-1 text-sm">
-        Join or start a family group to see what everyone&apos;s cooking, all in
-        one place.
-      </p>
+      <p className="font-medium text-foreground">{t("title")}</p>
+      <p className="mt-1 text-sm">{t("body")}</p>
       <Button asChild size="sm" className="mt-4">
         <Link href="/groups">
-          <Users /> Find your family
+          <Users /> {t("cta")}
         </Link>
       </Button>
     </div>

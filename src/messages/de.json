@@ -316,6 +316,104 @@
         "short_name": "Einkauf",
         "description": "Überprüfe und hake deine Einkaufsliste ab."
       }
+    },
+    "blocked": {
+      "title": "Blockierte Personen"
+    },
+    "notificationSettings": {
+      "title": "Benachrichtigungseinstellungen"
+    },
+    "followingSettings": {
+      "title": "Abos & Follower"
+    },
+    "unitSettings": {
+      "title": "Einheiten & Maße"
+    },
+    "dietarySettings": {
+      "title": "Ernährungsprofile"
+    },
+    "dataSettings": {
+      "title": "Deine Daten"
+    },
+    "shopping": {
+      "title": "Einkaufsliste"
+    },
+    "notifications": {
+      "title": "Benachrichtigungen"
+    },
+    "moderation": {
+      "title": "Moderation"
+    },
+    "groupSettings": {
+      "title": "Gruppeneinstellungen",
+      "named": "Einstellungen von {name}"
+    },
+    "cookProfile": {
+      "notFound": "Person nicht gefunden",
+      "title": "{name} · Rezepte",
+      "description": "{count, plural, one {# öffentliches Rezept} other {# öffentliche Rezepte}} von {name} auf {brand}."
+    },
+    "followers": {
+      "title": "Follower · @{handle}",
+      "description": "Wer {name} auf Heirloom folgt."
+    },
+    "following": {
+      "title": "Abos · @{handle}",
+      "description": "Wem {name} auf Heirloom folgt."
+    },
+    "discover": {
+      "title": "Rezepte entdecken",
+      "description": "Stöbere in öffentlichen Familienrezepten aus der {brand}-Gemeinschaft. Ganz ohne Konto."
+    },
+    "tags": {
+      "title": "Schlagwörter durchstöbern",
+      "description": "Erkunde das Familienkochbuch nach Schlagwort."
+    },
+    "cookWith": {
+      "title": "Koch mit dem, was da ist",
+      "description": "Trage deinen Vorrat ein und sieh, was du sofort zubereiten kannst."
+    },
+    "pricing": {
+      "title": "Preise",
+      "description": "Einfache, ehrliche Preise für Heirloom. Gratis loslegen, für unbegrenzte Rezepte und KI-Hilfe auf Family wechseln. Jederzeit kündbar."
+    },
+    "billing": {
+      "title": "Abrechnung & Tarif"
+    },
+    "redeem": {
+      "title": "Geschenk einlösen",
+      "description": "Du hast einen Heirloom-Geschenkcode? Löse ihn hier ein und schalte Family frei. Unbegrenzte Rezepte, KI-Hilfe und Platz für die ganze Familie."
+    },
+    "join": {
+      "title": "Einem Familienkochbuch beitreten",
+      "description": "Nimm eine Einladung zu einem gemeinsamen Familienkochbuch auf Heirloom an."
+    },
+    "groups": {
+      "title": "Familie",
+      "description": "Gemeinsame Kochbücher für die Menschen, mit denen du kochst."
+    },
+    "group": {
+      "notFound": "Gruppe nicht gefunden",
+      "title": "Kochbuch von {name}",
+      "description": "Ein gemeinsames Familienkochbuch auf {brand}."
+    },
+    "saved": {
+      "title": "Gemerkt",
+      "description": "Deine Rezeptsammlungen. Regale für die Gerichte, die du liebst."
+    },
+    "collection": {
+      "notFound": "Sammlung nicht gefunden",
+      "description": "Eine Rezeptsammlung auf {brand}."
+    },
+    "journal": {
+      "title": "Kochtagebuch"
+    },
+    "plan": {
+      "title": "Wochenplan"
+    },
+    "library": {
+      "title": "Deine Rezepte",
+      "description": "Jedes Rezept, das du gespeichert und angelegt hast, in einer Bibliothek."
     }
   },
   "pwa": {
@@ -723,14 +821,16 @@
       "emptyViewer": "Die Schritte wurden diesem Rezept noch nicht hinzugefügt.",
       "editRecipe": "Rezept bearbeiten",
       "stepLabel": "Schritt {position}",
-      "stepImageAlt": "{title}, Schritt {position}"
+      "stepImageAlt": "{title}, Schritt {position}",
+      "targetTemp": "{value} °C"
     },
     "tabs": {
       "recipe": "Rezept",
       "timeline": "Verlauf",
       "cooked": "Gekocht",
       "discussion": "Diskussion"
-    }
+    },
+    "storyMemories": "Geschichte & Erinnerungen"
   },
   "foodCategories": {
     "liquid": "Flüssigkeit",
@@ -1035,6 +1135,113 @@
           "schedule": "Planen"
         }
       }
+    },
+    "moderationPage": {
+      "title": "Moderation",
+      "description": "Meldungen aus dieser Familie. Blende aus, was zu weit geht, und verwirf die übrigen Meldungen.",
+      "backToGroup": "Zurück zur Gruppe"
+    },
+    "settingsPage": {
+      "breadcrumb": "Einstellungen",
+      "title": "Gruppeneinstellungen",
+      "description": "Halte Name, Notiz und Familienfoto aktuell.",
+      "backToGroup": "Zurück zur Gruppe",
+      "rolesHeading": "Rollen & Rechte",
+      "rolesDescription": "Wer in dieser Gruppe was darf. Die Rolle eines Mitglieds änderst du auf der Gruppenseite.",
+      "roles": {
+        "owner": {
+          "label": "Inhaberin",
+          "hint": "Volle Kontrolle. Einstellungen und Mitglieder verwalten, Admins ernennen, Inhaberschaft übergeben oder die Gruppe löschen."
+        },
+        "admin": {
+          "label": "Admin",
+          "hint": "Hilft dir beim Führen der Gruppe. Einstellungen bearbeiten, Leute einladen sowie Mitglieder und Kinder verwalten (aber keine weiteren Admins ernennen)."
+        },
+        "member": {
+          "label": "Mitglied",
+          "hint": "Jemand aus der Familie. Liest das gemeinsame Kochbuch und fügt Rezepte hinzu."
+        },
+        "kid": {
+          "label": "Kind",
+          "hint": "Ein Kinderkonto mit der kindgerechten Ansicht. Immer gratis. Belegt nie einen bezahlten Platz."
+        }
+      }
+    },
+    "page": {
+      "title": "Deine Familien & Gruppen",
+      "description": "Versammle alle, die kochen, probieren und Geschichten bewahren und deine Rezepte nach Zuhause schmecken lassen.",
+      "links": {
+        "dietary": "Ernährungsprofile",
+        "blocked": "Blockierte Personen",
+        "download": "Kochbuch herunterladen"
+      },
+      "newGroup": "Neue Gruppe",
+      "empty": {
+        "title": "Leg eine Familientafel an",
+        "body": "Schaffe einen Ort für alle, die Erfolge unter der Woche, Festtagsklassiker und die kleinen Notizen teilen, die ein Gericht zu deinem machen."
+      },
+      "signIn": {
+        "title": "Familiengruppen sind privat",
+        "body": "Melde dich oben an, um eine Gruppe anzulegen und gemeinsam zu kochen."
+      }
+    },
+    "detail": {
+      "publicView": "Öffentliche Ansicht",
+      "defaultDescription": "Ein gemeinsames Familienkochbuch für Rezepte, Notizen und Erinnerungen.",
+      "moderation": "Moderation",
+      "settings": "Einstellungen",
+      "activity": {
+        "heading": "Aktivität",
+        "body": "Was die Familie gekocht, ergänzt und geschrieben hat."
+      },
+      "members": {
+        "heading": "Mitglieder",
+        "body": "Die Köchinnen und Bewahrer rund um diese Tafel.",
+        "privateNote": "{count, plural, one {# Person hütet} other {# Personen hüten}} diese Tafel. Nur Mitglieder sehen, wer hier versammelt ist."
+      },
+      "cookbook": {
+        "heading": "Gruppenkochbuch",
+        "body": "Rezepte, die für diesen Familienkreis gespeichert sind.",
+        "addRecipe": "Rezept hinzufügen"
+      },
+      "shared": {
+        "heading": "Geteilte Sammlungen",
+        "body": "Kochbücher, die Familienmitglieder mit dieser Gruppe geteilt haben."
+      },
+      "tools": {
+        "heading": "Familienwerkzeuge",
+        "member": "Verwalte deinen Platz an dieser Tafel. Inhaberinnen können die Gruppe löschen. Rezepte bleiben in der Sammlung jeder Person.",
+        "visitor": "Nur eingeladene Mitglieder können Rezepte hinzufügen oder diese Familientafel verwalten."
+      },
+      "sharedBy": "Geteilt von <author>{name}</author>",
+      "empty": {
+        "title": "Noch keine Rezepte in diesem Regal",
+        "body": "Speichere das Gericht, nach dem alle fragen, und teile es mit dieser Gruppe.",
+        "cta": "Erstes Rezept hinzufügen"
+      }
+    },
+    "joinPage": {
+      "backHome": "Zurück zu {brand}",
+      "invalid": {
+        "title": "Dieser Einladungslink ist ungültig",
+        "body": "Vielleicht hat er sich vertippt oder er existiert nicht mehr. Bitte um einen frischen Link."
+      },
+      "status": {
+        "expired": {
+          "title": "Dieser Einladungslink ist abgelaufen",
+          "body": "Bitte die Person, die ihn geteilt hat, um einen frischen Link."
+        },
+        "revoked": {
+          "title": "Dieser Einladungslink ist nicht mehr aktiv",
+          "body": "Die Gruppe hat ihn abgeschaltet. Bitte um einen neuen."
+        },
+        "exhausted": {
+          "title": "Dieser Einladungslink ist aufgebraucht",
+          "body": "Er hat sein Limit erreicht. Bitte die Gruppe um einen frischen Link."
+        }
+      },
+      "invitedTo": "Du bist eingeladen bei",
+      "defaultDescription": "Ein gemeinsames Familienkochbuch auf {brand}."
     }
   },
   "collections": {
@@ -1167,7 +1374,40 @@
     "card": {
       "recipeCount": "{count, plural, one {# Rezept} other {# Rezepte}}",
       "sharedWith": "Geteilt mit {group}",
-      "sharedMore": " und {count} weitere"
+      "sharedMore": " und {count} weitere",
+      "recipeCountByOwner": "{count, plural, one {# Rezept} other {# Rezepte}} · von {name}"
+    },
+    "page": {
+      "title": "Gemerkte Rezepte",
+      "description": "Deine Favoriten und die Sammlungen, die du angelegt hast. Die Gerichte, zu denen du zurückkehrst.",
+      "newCollection": "Neue Sammlung",
+      "favorites": {
+        "heading": "Favoriten",
+        "emptyTitle": "Noch keine Favoriten",
+        "emptyBody": "Tippe bei einem Rezept auf das Herz, dann liegt es hier griffbereit."
+      },
+      "collections": {
+        "heading": "Sammlungen",
+        "emptyTitle": "Leg deine erste Sammlung an",
+        "emptyBody": "Fasse Rezepte zu Kochbüchern zusammen. Abendessen unter der Woche, Festtagsgebäck oder Familienklassiker."
+      },
+      "sharedWithYou": "Mit dir geteilt",
+      "signIn": {
+        "title": "Deine gemerkten Rezepte sind privat",
+        "body": "Melde dich oben an, um Rezepte zu merken und Sammlungen anzulegen."
+      }
+    },
+    "detail": {
+      "backToSaved": "Gemerkt",
+      "kicker": "Sammlung",
+      "byOwnerWithCount": "Eine Sammlung von {name} · {count, plural, one {# Rezept} other {# Rezepte}}",
+      "browseRecipes": "Rezepte ansehen",
+      "empty": {
+        "ownerTitle": "Hier ist noch nichts gespeichert",
+        "ownerBody": "Öffne ein Rezept und wähle „In Sammlung speichern“, um dieses Regal zu füllen.",
+        "viewerTitle": "Hier gibt es noch nichts zu sehen",
+        "viewerBody": "In dieser Sammlung sind gerade keine Rezepte, die du sehen kannst."
+      }
     }
   },
   "errors": {
@@ -1270,6 +1510,10 @@
       "cancel": "Abbrechen",
       "adding": "Hinzufügen…",
       "confirm": "Zur Liste hinzufügen"
+    },
+    "page": {
+      "title": "Einkaufsliste",
+      "description": "Alles, was du brauchst, aus deinen Rezepten zusammengefasst und aufsummiert. Hake beim Einkaufen einfach ab."
     }
   },
   "print": {
@@ -1542,6 +1786,24 @@
         "soloPrefix": "Für diese Woche ist noch nichts geplant. Tippe auf",
         "soloSuffix": "an einem beliebigen Tag, um ein Rezept oder eine kurze Notiz einzutragen."
       }
+    },
+    "page": {
+      "kicker": "Wochenplaner",
+      "description": "Plane die Mahlzeiten der Woche. Weise jedem Tag Rezepte oder kurze Notizen zu.",
+      "printWeek": "Diese Woche drucken",
+      "thisWeek": "Diese Woche",
+      "myPlan": "Mein Plan",
+      "familyMember": "Jemand aus der Familie",
+      "a11y": {
+        "weekNavigation": "Wochennavigation",
+        "previousWeek": "Vorherige Woche",
+        "nextWeek": "Nächste Woche",
+        "planScope": "Planbereich"
+      },
+      "signIn": {
+        "title": "Dein Wochenplan ist privat",
+        "body": "Melde dich oben an, um die Woche zu planen und deine Rezepte einzubinden."
+      }
     }
   },
   "engagement": {
@@ -1763,6 +2025,32 @@
         "title": "Diesen Kochmoment aus deinem Tagebuch löschen?",
         "description": "Er verschwindet aus deinem Kochtagebuch. Das kann nicht rückgängig gemacht werden.",
         "confirmLabel": "Kochmoment löschen"
+      }
+    },
+    "journal": {
+      "title": "Kochtagebuch",
+      "description": "Jedes Mal, wenn du etwas gekocht hast. Geschichte, lebendig bewahrt.",
+      "insights": {
+        "cooksLogged": "{count, plural, one {Kochbericht} other {Kochberichte}}",
+        "mostRecent": "zuletzt gekocht",
+        "mostCooked": "Am häufigsten gekocht",
+        "nothingYet": "Noch nichts"
+      },
+      "noMatches": {
+        "title": "Kein Kochbericht passt zu diesen Filtern",
+        "withFilters": "Nimm einen größeren Zeitraum oder ein anderes Rezept.",
+        "withoutFilters": "Trag einen Kochbericht ein, dann füllt sich dein Verlauf.",
+        "clearFilters": "Filter zurücksetzen"
+      },
+      "entry": {
+        "untitled": "Ein Rezept",
+        "cookedOn": "{date}, {relative}",
+        "loggedEarlier": "Früher eingetragen"
+      },
+      "empty": {
+        "title": "Noch keine Kochberichte",
+        "body": "Öffne ein Rezept und tippe auf „Habe ich gekocht“, um dein Tagebuch zu eröffnen. Notizen und Fotos ergeben einen Verlauf, in dem du gern blätterst.",
+        "cta": "Rezepte ansehen"
       }
     }
   },
@@ -2062,6 +2350,51 @@
     "rotation": {
       "heading": "Zurück im Speiseplan",
       "description": "Familienlieblinge, die du länger nicht gekocht hast."
+    },
+    "discover": {
+      "kicker": "Entdecken",
+      "heading": "Öffentliche Rezepte aus der {brand}-Gemeinschaft",
+      "empty": {
+        "title": "Noch keine öffentlichen Rezepte",
+        "body": "Teile als Erste eines mit der Welt.",
+        "cta": "Rezept anlegen"
+      }
+    },
+    "tags": {
+      "backToRecipes": "Zurück zu den Rezepten",
+      "title": "Schlagwörter durchstöbern",
+      "intro": "Alle Schlagwörter der Rezepte, die du sehen kannst. Wähle eines und springe in die gefilterte Ansicht.",
+      "introEmpty": "Schlagwörter erscheinen hier, sobald Rezepte verschlagwortet sind.",
+      "popular": "Beliebt",
+      "allTags": "Alle Schlagwörter",
+      "empty": "Noch keine Schlagwörter.",
+      "browseRecipes": "Rezepte ansehen"
+    },
+    "cookWith": {
+      "backToRecipes": "Zurück zu den Rezepten",
+      "title": "Koch mit dem, was da ist",
+      "coverage": "Du hast {matched} von {total}",
+      "readyToCook": "Kann losgehen",
+      "prompt": "Trage oben ein paar Zutaten ein, etwa <example>Hähnchen, Reis, Spinat</example>, dann sortieren wir die Rezepte danach, wie viel du schon da hast.",
+      "noMatches": "Zu diesen Zutaten gibt es noch kein Rezept. Nimm weniger oder gängigere Zutaten."
+    },
+    "library": {
+      "title": "Dein Kochbuch",
+      "description": "Alles, was du und deine Familie gespeichert habt.",
+      "cookWith": "Koch mit dem, was da ist",
+      "newRecipe": "Neues Rezept",
+      "recentlyViewed": "Zuletzt angesehen",
+      "browseByTag": "Nach Schlagwort stöbern",
+      "allTags": "Alle Schlagwörter",
+      "discover": "Entdecken",
+      "noResults": {
+        "title": "Keine Treffer",
+        "titleWithQuery": "Keine Treffer für „{query}“",
+        "body": "Nimm weniger Filter oder eine andere Suche. Dein nächster Liebling versteckt sich vielleicht unter einem anderen Namen.",
+        "clearFilters": "Alle Filter zurücksetzen",
+        "create": "Rezept anlegen",
+        "createWithQuery": "„{query}“ anlegen"
+      }
     }
   },
   "settings": {
@@ -2204,6 +2537,60 @@
         "description": "Blockiere jemanden über das Menü an einem Kommentar oder einer Bewertung, um dessen Beiträge auszublenden."
       },
       "unblock": "Entsperren"
+    },
+    "blockedPage": {
+      "title": "Blockierte Personen",
+      "description": "Wen du blockierst, sieht deine Kommentare und Bewertungen nicht mehr, und du siehst seine auch nicht. Das Blockieren bleibt privat. Niemand wird benachrichtigt.",
+      "signIn": {
+        "title": "Deine Blockierliste ist privat",
+        "body": "Melde dich oben an, um zu verwalten, wen du blockiert hast."
+      }
+    },
+    "notificationsPage": {
+      "title": "Benachrichtigungen",
+      "description": "Entscheide, was Heirloom dir mailt. Wir halten es knapp. Deine Rezepte und Familiendaten werden nie weitergegeben.",
+      "signIn": {
+        "title": "Benachrichtigungseinstellungen sind privat",
+        "body": "Melde dich oben an, um deine E-Mail-Einstellungen zu verwalten."
+      }
+    },
+    "followingPage": {
+      "title": "Abos & Follower",
+      "description": "Folgen ist freiwillig und öffentlich. Deine Familiengruppen bleiben unberührt. Geteilt wird nur, was du ausdrücklich öffentlich gemacht hast: Rezepte, Bewertungen und Kochberichte.",
+      "signIn": {
+        "title": "Diese Einstellungen sind privat",
+        "body": "Melde dich oben an, um dein öffentliches Profil zu verwalten."
+      }
+    },
+    "unitsPage": {
+      "title": "Einheiten & Maße",
+      "description": "Wähle die Einheiten, in denen du kochst. Heirloom rechnet jedes Rezept um und lässt die Originalmengen der Autorinnen und Autoren unangetastet.",
+      "signIn": {
+        "title": "Deine Einheiten sind persönlich",
+        "body": "Melde dich oben an, um deine Einheiten geräteübergreifend zu speichern."
+      }
+    },
+    "dietaryPage": {
+      "title": "Ernährungsprofile",
+      "description": "Deine Familie isst nicht alle gleich. Halte Allergien, Ernährungsweisen und Kalorienziele einmal fest, dann hilft Heirloom dir, für alle sicher zu kochen.",
+      "signIn": {
+        "title": "Ernährungsprofile sind privat",
+        "body": "Melde dich oben an, um festzuhalten, für wen du kochst."
+      }
+    },
+    "dataPage": {
+      "title": "Deine Daten",
+      "description": "Deine Rezepte gehören dir. Lade dein ganzes Kochbuch herunter, wann du willst. Zum Lesen brauchst du später weder Konto noch App noch Internet.",
+      "download": {
+        "title": "Mein Kochbuch herunterladen",
+        "body": "Eine ZIP-Datei mit einer gut lesbaren Seite je Rezept und zusätzlich einer Kopie als <code>recipes.json</code>. Deine Geschichten und die Herkunft jedes Rezepts sind dabei, es bleibt also nichts zurück.",
+        "cta": "Mein Kochbuch herunterladen (.zip)",
+        "reassurance": "Wird auf unseren eigenen Servern erstellt. Deine Rezepte gehen nirgendwo sonst hin."
+      },
+      "signIn": {
+        "title": "Melde dich an, um deine Rezepte zu laden",
+        "body": "Die Sicherung enthält jedes Rezept deines Kontos, deshalb müssen wir wissen, dass du es bist."
+      }
     }
   },
   "theme": {
@@ -2289,6 +2676,96 @@
       "title": "Eine Family-Funktion",
       "description": "Wechsle zu Family, um dies freizuschalten. Alles, was du bereits gespeichert hast, bleibt kostenlos. Nichts, was du erstellt hast, wird entfernt.",
       "seePlans": "Pläne ansehen"
+    },
+    "plans": {
+      "free": {
+        "name": "Gratis",
+        "tagline": "Alles, was eine Familie zum gemeinsamen Kochen braucht.",
+        "highlights": {
+          "recipes": "Bis zu 50 gespeicherte Rezepte",
+          "group": "Eine Familiengruppe mit bis zu 5 Mitgliedern",
+          "storage": "200 MB Fotospeicher",
+          "tools": "Kochmodus, Wochenplanung und Einkaufslisten"
+        }
+      },
+      "family": {
+        "name": "Family",
+        "tagline": "Unbegrenzte Rezepte und KI-Hilfe für die ganze Familie.",
+        "highlights": {
+          "recipes": "Unbegrenzte Rezepte",
+          "members": "Bis zu 20 Familienmitglieder in unbegrenzt vielen Gruppen",
+          "storage": "10 GB Foto- und Videospeicher",
+          "ai": "KI-Rezeptideen, Kochcoach und Zutatenersatz",
+          "video": "Video- und Reel-Export für deine Gerichte",
+          "credits": "500 KI-Guthaben pro Monat"
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Einfache Preise für jede Familie",
+      "subheading": "Im Gratistarif bleibt alles erhalten, was du kochst. Wechsle zu Family, sobald du unbegrenzte Rezepte und KI-Hilfe möchtest. Kein Kleingedrucktes, keine Countdowns, jederzeit kündbar.",
+      "checkoutDisabled": "Der Bezahlvorgang ist in dieser Umgebung noch nicht aktiv. Du kannst die Tarife hier vergleichen, aber gerade nichts abschließen.",
+      "currentPlan": "Aktueller Tarif",
+      "mostPopular": "Am beliebtesten",
+      "perMonth": "/ Monat",
+      "trialNote": "{days} Tage gratis testen, danach {price} $/Monat",
+      "freeCta": "Rezept anlegen",
+      "trialCta": "{plan} {days} Tage gratis testen",
+      "upgradeCta": "Auf {plan} wechseln",
+      "gift": {
+        "title": "{brand} verschenken",
+        "description": "Schenke jemandem {months} Monate {plan}. Eine warme Art, einem lieben Menschen alle Familienrezepte zu sichern. Einmal zahlen, kein Abo, geliefert als Code zum Einlösen.",
+        "cta": "{months} Monate verschenken",
+        "haveCode": "Du hast einen Code? <link>Geschenk einlösen</link>."
+      }
+    },
+    "settings": {
+      "title": "Abrechnung & Tarif",
+      "description": "Sieh deinen Tarif, verfolge deinen Verbrauch und verwalte die Abrechnung, alles an einem Ort.",
+      "checkoutSuccess": "Alles bereit. Willkommen bei {plan}! Es kann einen Moment dauern, bis dein neuer Tarif unten erscheint.",
+      "freePlan": "Gratistarif",
+      "perMonth": "/ Monat",
+      "viewAllPlans": "Alle Tarife ansehen",
+      "upgrade": "Auf {plan} wechseln",
+      "billingUnavailable": "Die Abrechnungsverwaltung ist in dieser Umgebung nicht verfügbar.",
+      "notConfigured": "Die Abrechnung ist in dieser Umgebung noch nicht eingerichtet. Du kannst die Tarife unten ansehen, Abos gibt es aber erst mit Datenbank und Stripe.",
+      "status": {
+        "trialing": "Testphase",
+        "active": "Aktiv",
+        "past_due": "Zahlung überfällig",
+        "canceled": "Gekündigt",
+        "incomplete": "Unvollständig"
+      },
+      "usage": {
+        "title": "Verbrauch",
+        "description": "Wie viel von deinem Tarif du in diesem Zeitraum genutzt hast.",
+        "recipes": "Rezepte",
+        "storage": "Foto- & Videospeicher",
+        "aiCredits": "KI-Guthaben"
+      },
+      "renewal": {
+        "ends": "Dein Tarif endet am {date}. Bis dahin behältst du {plan}.",
+        "trialEnds": "Deine Testphase endet am {date}.",
+        "renews": "Verlängert sich am {date}."
+      },
+      "signIn": {
+        "title": "Deine Abrechnung ist privat",
+        "body": "Melde dich oben an, um deinen Tarif zu sehen und die Abrechnung zu verwalten."
+      }
+    },
+    "redeemPage": {
+      "title": "Löse dein Geschenk ein",
+      "description": "Jemand möchte, dass deine Rezepte weiterleben. Gib deinen Code ein und schalte Heirloom Family frei.",
+      "purchased": "Danke, dass du Heirloom verschenkst! Dein Code ist unterwegs. Gib ihn einem lieben Menschen oder löse ihn unten selbst ein.",
+      "form": {
+        "title": "Gib deinen Geschenkcode ein",
+        "description": "Codes sehen aus wie <code>GIFT-XXXX-XXXX-XXXX</code> und lassen sich einmal einlösen."
+      },
+      "unavailable": "Das Einlösen von Geschenken ist in dieser Umgebung noch nicht möglich. Sobald eine Datenbank eingerichtet ist, schaltet dein Code hier Family frei.",
+      "signIn": {
+        "title": "Melde dich an, um dein Geschenk einzulösen",
+        "body": "Dein Geschenk schaltet Family für dein Konto frei. Melde dich oben an und komm dann zum Einlösen zurück."
+      }
     }
   },
   "notifications": {
@@ -2307,6 +2784,14 @@
     "empty": {
       "title": "Noch keine Benachrichtigungen",
       "description": "Erwähnungen, Antworten, Bewertungen und Einladungen zum gemeinsamen Kochen erscheinen hier."
+    },
+    "page": {
+      "title": "Benachrichtigungen",
+      "description": "Alles rund um deine Rezepte und deine Familie. Erwähnungen, Antworten, Bewertungen, Reaktionen und gemeinsame Kochabende.",
+      "signIn": {
+        "title": "Melde dich an, um Benachrichtigungen zu sehen",
+        "body": "Erwähnungen, Antworten, Bewertungen und Einladungen zum gemeinsamen Kochen erscheinen hier, sobald du angemeldet bist."
+      }
     }
   },
   "follows": {
@@ -2625,5 +3110,110 @@
     },
     "facetSelected": "{count} ausgewählt",
     "facetAria": "Filter {label}, {count} ausgewählt"
+  },
+  "dbNotice": {
+    "blocked": "Verbinde eine Datenbank, um blockierte Personen zu verwalten. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "notifications": "Verbinde eine Datenbank, um E-Mail-Einstellungen zu verwalten. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "following": "Verbinde eine Datenbank, um dein öffentliches Profil zu verwalten. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "units": "Verbinde eine Datenbank, um deine Einheiten zu speichern. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "dietary": "Verbinde eine Datenbank, um Ernährungsprofile zu speichern. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "title": "Verbinde eine Datenbank zum Loslegen",
+    "collections": "Verbinde eine Datenbank, um Favoriten zu speichern und Sammlungen anzulegen. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "groups": "Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "journal": "Für ein Kochtagebuch setze <code>DATABASE_URL</code> (siehe <file>.env.example</file>) oder führe <code>docker compose up -d</code> aus.",
+    "plan": "Verbinde eine Datenbank, um Mahlzeiten zu planen. Setze <code>DATABASE_URL</code> (siehe <file>.env.example</file>) oder führe <code>docker compose up -d</code> aus.",
+    "recipes": "Setze <code>DATABASE_URL</code> (siehe <file>.env.example</file>) oder führe <code>docker compose up -d</code> aus."
+  },
+  "cooks": {
+    "profile": {
+      "publicRecipeCount": "{count, plural, one {# öffentliches Rezept} other {# öffentliche Rezepte}}",
+      "followerCount": "<strong>{count}</strong> {count, plural, one {Follower} other {Follower}}",
+      "followingCount": "<strong>{count}</strong> Abos",
+      "empty": {
+        "title": "Noch keine öffentlichen Rezepte",
+        "body": "{name} hat bisher kein Rezept öffentlich geteilt. Schau bald wieder vorbei."
+      }
+    },
+    "followers": {
+      "title": "Follower",
+      "empty": "{name} hat noch keine Follower."
+    },
+    "following": {
+      "title": "Abos",
+      "empty": "{name} folgt noch niemandem."
+    }
+  },
+  "home": {
+    "soon": "Bald",
+    "greeting": {
+      "named": "Willkommen zurück, {name}",
+      "generic": "Willkommen zurück",
+      "body": "Mach da weiter, wo du aufgehört hast, oder leg etwas Neues an."
+    },
+    "actions": {
+      "browse": "Stöbern"
+    },
+    "yourRecipes": "Deine Rezepte",
+    "viewAll": "Alle ansehen",
+    "activity": {
+      "heading": "Neues aus deinen Familien",
+      "body": "Was alle in deinen Gruppen gekocht, ergänzt und geschrieben haben.",
+      "yourFamilies": "Deine Familien"
+    },
+    "following": {
+      "heading": "Von Leuten, denen du folgst",
+      "body": "Öffentliche Rezepte, Kochberichte und Bewertungen von Leuten, denen du folgst. Getrennt von deinen Familien."
+    },
+    "hero": {
+      "badge": "Familienrezepte, neu gedacht",
+      "heading": "Jedes Rezept, das deine Familie liebt, <highlight>lebendig bewahrt</highlight> und leicht zu kochen.",
+      "body": "{brand} ist der schönste und einfachste Weg, Rezepte zu schreiben, zu kochen, zu teilen und weiterzugeben. Von deiner Küche an die ganze Familie.",
+      "discover": "Rezepte entdecken",
+      "offlineCookMode": "Kochmodus offline",
+      "familyGroups": "Familiengruppen",
+      "kidsModes": "Kinder- & Barrierefreiheitsmodus"
+    },
+    "themes": {
+      "badge": "Mach es zu deinem",
+      "heading": "Fünf Looks. Ein Tipp. Probier sie gleich aus.",
+      "body": "Küchenwärme, verspielte Fantasie, klar und professionell, groß und bunt für Kinder oder ganz schlicht. Jeder mit Hell und Dunkel. Wähle einen und sieh zu, wie sich die ganze App verwandelt."
+    },
+    "features": {
+      "editor": {
+        "title": "Kinderleicht zu schreiben",
+        "body": "Ein strukturierter Editor, der eine hingekritzelte Idee in Minuten zu einem schönen Rezept macht. Zutaten, Schritte, Fotos und alles andere."
+      },
+      "cookMode": {
+        "title": "Ein Kochmodus, der mitkocht",
+        "body": "Schritt für Schritt, freihändig, mit Timern, Portionsrechner und Einheitenumrechnung. Funktioniert auch offline in der Küche."
+      },
+      "history": {
+        "title": "Eine lebendige Familiengeschichte",
+        "body": "Verfolge mit Zeitleisten und Abwandlungen, wie sich ein Gericht über Generationen verändert hat. Nichts geht verloren."
+      },
+      "share": {
+        "title": "Teilen & gemeinsam pflegen",
+        "body": "Lade deine Familie in ein gemeinsames Kochbuch ein. Bewertet, kommentiert und schlagt gemeinsam Änderungen vor."
+      },
+      "print": {
+        "title": "Drucken, ganz wie du magst",
+        "body": "Rezeptkarte, ganze Seite oder kompakt. Exportiere und drucke im Format, das gerade passt."
+      },
+      "import": {
+        "title": "Von überall importieren",
+        "body": "Hol Rezepte von Webseiten und aus sozialen Beiträgen und mach sie zu deinen."
+      }
+    },
+    "closing": {
+      "heading": "Fang mit einem Rezept an. Bau ein Erbe auf.",
+      "body": "Schreib das Gericht auf, das du auswendig kochst. Das, nach dem alle fragen. {brand} macht es schön und bewahrt es für immer.",
+      "cta": "Leg dein erstes Rezept an",
+      "waitlist": "Noch unentschlossen? Hol dir früher Zugang und Kochtipps per E-Mail. Ganz ohne Konto."
+    },
+    "emptyFamily": {
+      "title": "Noch keine Familienaktivität",
+      "body": "Tritt einer Familiengruppe bei oder leg eine an, um zu sehen, was alle kochen, an einem Ort.",
+      "cta": "Finde deine Familie"
+    }
   }
 }

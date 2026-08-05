@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Tags, TrendingUp } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -8,10 +9,13 @@ import { listTagsWithCounts } from "~/server/recipes/queries";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-export const metadata: Metadata = {
-  title: "Browse tags",
-  description: "Explore the family cookbook by tag.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("tags.title"),
+    description: t("tags.description"),
+  };
+}
 
 /** How many of the most-used tags to surface in the "Popular" strip. */
 const POPULAR_TAG_COUNT = 12;
@@ -21,6 +25,7 @@ type TagCount = { slug: string; name: string; count: number };
 export default async function TagsDirectoryPage() {
   const user = await getCurrentUser();
   const tags = isDbConfigured() ? await listTagsWithCounts(user) : [];
+  const t = await getTranslations("recipe.tags");
 
   const popular = [...tags]
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
@@ -37,19 +42,17 @@ export default async function TagsDirectoryPage() {
           className="-ms-2 w-fit text-muted-foreground"
         >
           <Link href="/recipes">
-            <ArrowLeft /> Back to recipes
+            <ArrowLeft /> {t("backToRecipes")}
           </Link>
         </Button>
         <div className="flex items-center gap-3">
           <Tags className="size-7 text-primary" />
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Browse tags
+            {t("title")}
           </h1>
         </div>
         <p className="text-muted-foreground">
-          {tags.length > 0
-            ? "Every tag across the recipes you can see. Pick one to jump into a filtered view."
-            : "Tags will appear here as recipes get tagged."}
+          {tags.length > 0 ? t("intro") : t("introEmpty")}
         </p>
       </div>
 
@@ -61,7 +64,7 @@ export default async function TagsDirectoryPage() {
             <div className="flex items-center gap-2">
               <TrendingUp className="size-5 text-primary" />
               <h2 className="font-display text-xl font-bold tracking-tight">
-                Popular
+                {t("popular")}
               </h2>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -99,7 +102,8 @@ function TagCloudLink({ tag, maxCount }: { tag: TagCount; maxCount: number }) {
 }
 
 /** All tags grouped into an A-Z index. */
-function TagIndex({ tags }: { tags: TagCount[] }) {
+async function TagIndex({ tags }: { tags: TagCount[] }) {
+  const t = await getTranslations("recipe.tags");
   const groups = new Map<string, TagCount[]>();
   for (const tag of tags) {
     const first = tag.name.charAt(0).toUpperCase();
@@ -113,7 +117,7 @@ function TagIndex({ tags }: { tags: TagCount[] }) {
   return (
     <section className="flex flex-col gap-6">
       <h2 className="font-display text-xl font-bold tracking-tight">
-        All tags{" "}
+        {t("allTags")}{" "}
         <span className="text-base font-normal text-muted-foreground">
           ({tags.length})
         </span>
@@ -145,13 +149,14 @@ function TagIndex({ tags }: { tags: TagCount[] }) {
   );
 }
 
-function EmptyTags() {
+async function EmptyTags() {
+  const t = await getTranslations("recipe.tags");
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <Tags className="size-10 text-muted-foreground" />
-      <p className="text-muted-foreground">No tags yet.</p>
+      <p className="text-muted-foreground">{t("empty")}</p>
       <Button asChild variant="outline">
-        <Link href="/recipes">Browse recipes</Link>
+        <Link href="/recipes">{t("browseRecipes")}</Link>
       </Button>
     </div>
   );

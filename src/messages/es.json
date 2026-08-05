@@ -316,6 +316,104 @@
         "short_name": "Compra",
         "description": "Revisa y marca tu lista de la compra."
       }
+    },
+    "blocked": {
+      "title": "Personas bloqueadas"
+    },
+    "notificationSettings": {
+      "title": "Ajustes de notificaciones"
+    },
+    "followingSettings": {
+      "title": "Seguidos y seguidores"
+    },
+    "unitSettings": {
+      "title": "Unidades y medidas"
+    },
+    "dietarySettings": {
+      "title": "Perfiles alimentarios"
+    },
+    "dataSettings": {
+      "title": "Tus datos"
+    },
+    "shopping": {
+      "title": "Lista de la compra"
+    },
+    "notifications": {
+      "title": "Notificaciones"
+    },
+    "moderation": {
+      "title": "Moderación"
+    },
+    "groupSettings": {
+      "title": "Ajustes del grupo",
+      "named": "Ajustes de {name}"
+    },
+    "cookProfile": {
+      "notFound": "No encontramos a esa persona",
+      "title": "{name} · Recetas",
+      "description": "{count, plural, one {# receta pública} other {# recetas públicas}} de {name} en {brand}."
+    },
+    "followers": {
+      "title": "Seguidores · @{handle}",
+      "description": "Personas que siguen a {name} en Heirloom."
+    },
+    "following": {
+      "title": "Siguiendo · @{handle}",
+      "description": "Personas a las que sigue {name} en Heirloom."
+    },
+    "discover": {
+      "title": "Descubrir recetas",
+      "description": "Explora las recetas familiares públicas que comparte la comunidad de {brand}. No hace falta cuenta."
+    },
+    "tags": {
+      "title": "Explorar etiquetas",
+      "description": "Recorre el recetario familiar por etiquetas."
+    },
+    "cookWith": {
+      "title": "Cocina con lo que tienes",
+      "description": "Escribe lo que hay en tu despensa y descubre qué puedes preparar ahora mismo."
+    },
+    "pricing": {
+      "title": "Precios",
+      "description": "Precios sencillos y honestos para Heirloom. Empieza gratis y pasa a Family para recetas ilimitadas y ayuda con IA. Cancela cuando quieras."
+    },
+    "billing": {
+      "title": "Facturación y plan"
+    },
+    "redeem": {
+      "title": "Canjear un regalo",
+      "description": "¿Tienes un código de regalo de Heirloom? Canjéalo aquí para desbloquear Family. Recetas ilimitadas, ayuda con IA y sitio para toda la familia."
+    },
+    "join": {
+      "title": "Únete a un recetario familiar",
+      "description": "Acepta una invitación a un recetario familiar compartido en Heirloom."
+    },
+    "groups": {
+      "title": "Familia",
+      "description": "Recetarios compartidos con la gente con la que cocinas."
+    },
+    "group": {
+      "notFound": "No encontramos ese grupo",
+      "title": "Recetario de {name}",
+      "description": "Un recetario familiar compartido en {brand}."
+    },
+    "saved": {
+      "title": "Guardado",
+      "description": "Tus colecciones de recetas. Estantes para los platos que quieres."
+    },
+    "collection": {
+      "notFound": "No encontramos esa colección",
+      "description": "Una colección de recetas en {brand}."
+    },
+    "journal": {
+      "title": "Diario de cocina"
+    },
+    "plan": {
+      "title": "Menú semanal"
+    },
+    "library": {
+      "title": "Tus recetas",
+      "description": "Todas las recetas que has guardado y creado, juntas en una biblioteca."
     }
   },
   "pwa": {
@@ -723,14 +821,16 @@
       "emptyViewer": "Todavía no se han añadido los pasos a esta receta.",
       "editRecipe": "Editar receta",
       "stepLabel": "Paso {position}",
-      "stepImageAlt": "{title}, paso {position}"
+      "stepImageAlt": "{title}, paso {position}",
+      "targetTemp": "{value} °C"
     },
     "tabs": {
       "recipe": "Receta",
       "timeline": "Historial",
       "cooked": "Cocinada",
       "discussion": "Comentarios"
-    }
+    },
+    "storyMemories": "Historia y recuerdos"
   },
   "foodCategories": {
     "liquid": "Líquido",
@@ -1035,6 +1135,113 @@
           "schedule": "Programar"
         }
       }
+    },
+    "moderationPage": {
+      "title": "Moderación",
+      "description": "Denuncias de los miembros de esta familia. Oculta lo que cruce la raya y descarta las denuncias que no.",
+      "backToGroup": "Volver al grupo"
+    },
+    "settingsPage": {
+      "breadcrumb": "Ajustes",
+      "title": "Ajustes del grupo",
+      "description": "Mantén al día el nombre, la nota y la foto de familia.",
+      "backToGroup": "Volver al grupo",
+      "rolesHeading": "Roles y permisos",
+      "rolesDescription": "Quién puede hacer qué en este grupo. El rol de cada miembro se cambia desde la página del grupo.",
+      "roles": {
+        "owner": {
+          "label": "Propietario",
+          "hint": "Control total. Gestiona ajustes y miembros, nombra administradores, transfiere la propiedad o elimina el grupo."
+        },
+        "admin": {
+          "label": "Administrador",
+          "hint": "Te ayuda a llevar el grupo. Edita ajustes, invita a gente y gestiona a miembros y peques (pero no puede nombrar otros administradores)."
+        },
+        "member": {
+          "label": "Miembro",
+          "hint": "Alguien de la familia. Lee el recetario compartido y añade recetas."
+        },
+        "kid": {
+          "label": "Peque",
+          "hint": "Una cuenta infantil con la experiencia segura para peques. Siempre gratis. Nunca ocupa una plaza de pago."
+        }
+      }
+    },
+    "page": {
+      "title": "Tus familias y grupos",
+      "description": "Reúne a quienes cocinan, prueban y guardan las historias que hacen que tus recetas sepan a casa.",
+      "links": {
+        "dietary": "Perfiles alimentarios",
+        "blocked": "Personas bloqueadas",
+        "download": "Descargar recetario"
+      },
+      "newGroup": "Nuevo grupo",
+      "empty": {
+        "title": "Crea una mesa familiar",
+        "body": "Haz un espacio para quienes comparten los aciertos entre semana, los clásicos de fiesta y las notas que hacen tuyo un plato."
+      },
+      "signIn": {
+        "title": "Los grupos familiares son privados",
+        "body": "Inicia sesión desde la cabecera para crear un grupo y cocinar en compañía."
+      }
+    },
+    "detail": {
+      "publicView": "Vista pública",
+      "defaultDescription": "Un recetario familiar compartido para recetas, notas y recuerdos.",
+      "moderation": "Moderación",
+      "settings": "Ajustes",
+      "activity": {
+        "heading": "Actividad",
+        "body": "Lo que la familia ha cocinado, añadido y comentado."
+      },
+      "members": {
+        "heading": "Miembros",
+        "body": "Quienes cocinan y guardan la memoria alrededor de esta mesa.",
+        "privateNote": "{count, plural, one {# persona cuida} other {# personas cuidan}} esta mesa. Solo los miembros ven quién se reúne aquí."
+      },
+      "cookbook": {
+        "heading": "Recetario del grupo",
+        "body": "Recetas guardadas para este círculo familiar.",
+        "addRecipe": "Añadir receta"
+      },
+      "shared": {
+        "heading": "Colecciones compartidas",
+        "body": "Recetarios que la familia ha compartido con este grupo."
+      },
+      "tools": {
+        "heading": "Herramientas de familia",
+        "member": "Gestiona tu sitio en esta mesa. Quien sea propietario puede eliminar el grupo. Las recetas se quedan en la colección de cada persona.",
+        "visitor": "Solo los miembros invitados pueden añadir recetas o gestionar esta mesa familiar."
+      },
+      "sharedBy": "Compartida por <author>{name}</author>",
+      "empty": {
+        "title": "Todavía no hay recetas en este estante",
+        "body": "Guarda el plato que todos te piden y compártelo con este grupo.",
+        "cta": "Añadir la primera receta"
+      }
+    },
+    "joinPage": {
+      "backHome": "Volver a {brand}",
+      "invalid": {
+        "title": "Este enlace de invitación no es válido",
+        "body": "Puede estar mal escrito o ya no existir. Pide a quien te lo envió que te mande uno nuevo."
+      },
+      "status": {
+        "expired": {
+          "title": "Este enlace de invitación ha caducado",
+          "body": "Pide a quien te lo envió que te mande uno nuevo."
+        },
+        "revoked": {
+          "title": "Este enlace de invitación ya no está activo",
+          "body": "El grupo lo ha desactivado. Pídeles uno nuevo."
+        },
+        "exhausted": {
+          "title": "Este enlace de invitación se ha agotado",
+          "body": "Llegó a su límite. Pide al grupo un enlace nuevo."
+        }
+      },
+      "invitedTo": "Te han invitado a unirte a",
+      "defaultDescription": "Un recetario familiar compartido en {brand}."
     }
   },
   "collections": {
@@ -1167,7 +1374,40 @@
     "card": {
       "recipeCount": "{count, plural, one {# receta} other {# recetas}}",
       "sharedWith": "Compartido con {group}",
-      "sharedMore": " y {count} más"
+      "sharedMore": " y {count} más",
+      "recipeCountByOwner": "{count, plural, one {# receta} other {# recetas}} · de {name}"
+    },
+    "page": {
+      "title": "Recetas guardadas",
+      "description": "Tus favoritas y las colecciones que has ido reuniendo. Los platos a los que vale la pena volver.",
+      "newCollection": "Nueva colección",
+      "favorites": {
+        "heading": "Favoritas",
+        "emptyTitle": "Todavía no hay favoritas",
+        "emptyBody": "Toca el corazón en cualquier receta para tenerla siempre a mano."
+      },
+      "collections": {
+        "heading": "Colecciones",
+        "emptyTitle": "Crea tu primera colección",
+        "emptyBody": "Agrupa recetas en recetarios. Cenas entre semana, horneados de fiesta o clásicos de familia."
+      },
+      "sharedWithYou": "Compartido contigo",
+      "signIn": {
+        "title": "Tus recetas guardadas son privadas",
+        "body": "Inicia sesión desde la cabecera para marcar favoritas y crear colecciones."
+      }
+    },
+    "detail": {
+      "backToSaved": "Guardado",
+      "kicker": "Colección",
+      "byOwnerWithCount": "Una colección de {name} · {count, plural, one {# receta} other {# recetas}}",
+      "browseRecipes": "Ver recetas",
+      "empty": {
+        "ownerTitle": "Todavía no has guardado nada aquí",
+        "ownerBody": "Abre cualquier receta y elige «Guardar en una colección» para llenar este estante.",
+        "viewerTitle": "Todavía no hay nada que ver aquí",
+        "viewerBody": "Esta colección no tiene ninguna receta que puedas ver ahora mismo."
+      }
     }
   },
   "errors": {
@@ -1270,6 +1510,10 @@
       "cancel": "Cancelar",
       "adding": "Agregando…",
       "confirm": "Agregar a la lista"
+    },
+    "page": {
+      "title": "Lista de la compra",
+      "description": "Todo lo que necesitas, agrupado y sumado a partir de tus recetas. Ve marcando mientras compras."
     }
   },
   "print": {
@@ -1542,6 +1786,24 @@
         "soloPrefix": "Todavía no hay nada planeado para esta semana. Toca",
         "soloSuffix": "en cualquier día para poner una receta o una nota rápida."
       }
+    },
+    "page": {
+      "kicker": "Planificador de comidas",
+      "description": "Planifica las comidas de la semana. Asigna recetas o notas rápidas a cada día.",
+      "printWeek": "Imprimir esta semana",
+      "thisWeek": "Esta semana",
+      "myPlan": "Mi menú",
+      "familyMember": "Alguien de la familia",
+      "a11y": {
+        "weekNavigation": "Navegación por semanas",
+        "previousWeek": "Semana anterior",
+        "nextWeek": "Semana siguiente",
+        "planScope": "Ámbito del menú"
+      },
+      "signIn": {
+        "title": "Tu menú semanal es privado",
+        "body": "Inicia sesión desde la cabecera para planificar la semana con tus recetas."
+      }
     }
   },
   "engagement": {
@@ -1763,6 +2025,32 @@
         "title": "¿Eliminar esta cocinada de tu diario?",
         "description": "Se irá de tu diario de cocina. Esto no se puede deshacer.",
         "confirmLabel": "Eliminar cocinada"
+      }
+    },
+    "journal": {
+      "title": "Diario de cocina",
+      "description": "Cada vez que has cocinado algo. Historia, siempre viva.",
+      "insights": {
+        "cooksLogged": "{count, plural, one {cocinado registrado} other {cocinados registrados}}",
+        "mostRecent": "cocinado más reciente",
+        "mostCooked": "Lo más cocinado",
+        "nothingYet": "Nada aún"
+      },
+      "noMatches": {
+        "title": "Ningún cocinado coincide con estos filtros",
+        "withFilters": "Prueba con un periodo más amplio o con otra receta.",
+        "withoutFilters": "Registra un cocinado para ir llenando tu historial.",
+        "clearFilters": "Quitar filtros"
+      },
+      "entry": {
+        "untitled": "Una receta",
+        "cookedOn": "{date}, {relative}",
+        "loggedEarlier": "Registrado antes"
+      },
+      "empty": {
+        "title": "Todavía no hay cocinados registrados",
+        "body": "Abre una receta y toca «Lo he cocinado» para inaugurar tu diario. Las notas y las fotos crean un historial al que te encantará volver.",
+        "cta": "Ver recetas"
       }
     }
   },
@@ -2062,6 +2350,51 @@
     "rotation": {
       "heading": "De vuelta al menú",
       "description": "Las favoritas de la familia que hace tiempo que no preparas."
+    },
+    "discover": {
+      "kicker": "Descubrir",
+      "heading": "Recetas públicas de la comunidad de {brand}",
+      "empty": {
+        "title": "Todavía no hay recetas públicas",
+        "body": "Sé la primera persona en compartir una con el mundo.",
+        "cta": "Crear una receta"
+      }
+    },
+    "tags": {
+      "backToRecipes": "Volver a las recetas",
+      "title": "Explorar etiquetas",
+      "intro": "Todas las etiquetas de las recetas que puedes ver. Elige una para saltar a esa vista filtrada.",
+      "introEmpty": "Las etiquetas irán apareciendo aquí a medida que etiquetes recetas.",
+      "popular": "Populares",
+      "allTags": "Todas las etiquetas",
+      "empty": "Todavía no hay etiquetas.",
+      "browseRecipes": "Ver recetas"
+    },
+    "cookWith": {
+      "backToRecipes": "Volver a las recetas",
+      "title": "Cocina con lo que tienes",
+      "coverage": "Tienes {matched} de {total}",
+      "readyToCook": "Lista para cocinar",
+      "prompt": "Añade arriba algunos ingredientes, por ejemplo <example>pollo, arroz, espinacas</example>, y ordenaremos las recetas según cuánto tengas ya.",
+      "noMatches": "Todavía no hay recetas con esos ingredientes. Prueba con menos o con productos más comunes."
+    },
+    "library": {
+      "title": "Tu recetario",
+      "description": "Todo lo que tú y tu familia habéis guardado.",
+      "cookWith": "Cocina con lo que tienes",
+      "newRecipe": "Nueva receta",
+      "recentlyViewed": "Vistas hace poco",
+      "browseByTag": "Explorar por etiqueta",
+      "allTags": "Todas las etiquetas",
+      "discover": "Descubrir",
+      "noResults": {
+        "title": "Sin coincidencias",
+        "titleWithQuery": "Sin coincidencias para «{query}»",
+        "body": "Prueba con menos filtros o con otra búsqueda. Tu próxima favorita puede estar escondida con otro nombre.",
+        "clearFilters": "Quitar todos los filtros",
+        "create": "Crear una receta",
+        "createWithQuery": "Crear «{query}»"
+      }
     }
   },
   "settings": {
@@ -2204,6 +2537,60 @@
         "description": "Bloquea a alguien desde el menú de su comentario o reseña para ocultar sus publicaciones."
       },
       "unblock": "Desbloquear"
+    },
+    "blockedPage": {
+      "title": "Personas bloqueadas",
+      "description": "Quien esté bloqueado no verá tus comentarios ni tus reseñas, y tú tampoco verás los suyos. El bloqueo es privado. Nunca se les avisa.",
+      "signIn": {
+        "title": "Tu lista de bloqueos es privada",
+        "body": "Inicia sesión desde la cabecera para gestionar a quién has bloqueado."
+      }
+    },
+    "notificationsPage": {
+      "title": "Notificaciones",
+      "description": "Elige qué te envía Heirloom por correo. Lo mantenemos al mínimo. Tus recetas y los datos de tu familia nunca se comparten.",
+      "signIn": {
+        "title": "Los ajustes de notificaciones son privados",
+        "body": "Inicia sesión desde la cabecera para gestionar tus preferencias de correo."
+      }
+    },
+    "followingPage": {
+      "title": "Seguidos y seguidores",
+      "description": "Seguir a alguien es opcional y público. Nunca afecta a tus grupos familiares. Solo se comparte con quienes te siguen aquello que hayas hecho público: recetas, reseñas y cocinados.",
+      "signIn": {
+        "title": "Estos ajustes son privados",
+        "body": "Inicia sesión desde la cabecera para gestionar tu perfil público."
+      }
+    },
+    "unitsPage": {
+      "title": "Unidades y medidas",
+      "description": "Elige las unidades con las que cocinas. Heirloom convierte cada receta para que encajen, sin tocar las cantidades originales de cada autor.",
+      "signIn": {
+        "title": "Tus unidades son personales",
+        "body": "Inicia sesión desde la cabecera para guardar tus unidades en todos tus dispositivos."
+      }
+    },
+    "dietaryPage": {
+      "title": "Perfiles alimentarios",
+      "description": "Tu familia no sigue una sola dieta. Anota una vez las alergias, las dietas y los objetivos de calorías de cada persona y Heirloom te ayudará a cocinar con seguridad para todos.",
+      "signIn": {
+        "title": "Los perfiles alimentarios son privados",
+        "body": "Inicia sesión desde la cabecera para anotar para quién cocinas."
+      }
+    },
+    "dataPage": {
+      "title": "Tus datos",
+      "description": "Tus recetas son tuyas. Descarga todo tu recetario cuando quieras. Después podrás leerlo sin cuenta, sin aplicación y sin internet.",
+      "download": {
+        "title": "Descargar mi recetario",
+        "body": "Un único archivo ZIP con una página fácil de leer por receta y una copia <code>recipes.json</code> para guardar. Incluye tus historias y el origen de cada receta, así no se queda nada atrás.",
+        "cta": "Descargar mi recetario (.zip)",
+        "reassurance": "Se prepara en nuestros propios servidores. Tus recetas nunca se envían a ningún otro sitio."
+      },
+      "signIn": {
+        "title": "Inicia sesión para descargar tus recetas",
+        "body": "La copia de tu recetario incluye todas las recetas de tu cuenta, así que necesitamos saber que eres tú."
+      }
     }
   },
   "theme": {
@@ -2289,6 +2676,96 @@
       "title": "Una función de Family",
       "description": "Actualiza a Family para desbloquear esto. Todo lo que ya guardaste sigue siendo gratis. Nada de lo que hiciste se quita.",
       "seePlans": "Ver planes"
+    },
+    "plans": {
+      "free": {
+        "name": "Gratis",
+        "tagline": "Todo lo que una familia necesita para cocinar junta.",
+        "highlights": {
+          "recipes": "Hasta 50 recetas guardadas",
+          "group": "Un grupo familiar, hasta 5 miembros",
+          "storage": "200 MB de almacenamiento de fotos",
+          "tools": "Modo cocina, menús semanales y listas de la compra"
+        }
+      },
+      "family": {
+        "name": "Family",
+        "tagline": "Recetas ilimitadas y ayuda con IA para toda la familia.",
+        "highlights": {
+          "recipes": "Recetas ilimitadas",
+          "members": "Hasta 20 familiares en grupos ilimitados",
+          "storage": "10 GB de almacenamiento de fotos y vídeo",
+          "ai": "Generación de recetas, tutor de cocina y sustituciones con IA",
+          "video": "Exportación de vídeos y reels para lucir tus platos",
+          "credits": "500 créditos de IA cada mes"
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Precios sencillos para cada familia",
+      "subheading": "El plan gratuito conserva todo lo que cocinas. Pasa a Family cuando quieras recetas ilimitadas y ayuda con IA. Sin letra pequeña, sin cuentas atrás y cancelas cuando quieras.",
+      "checkoutDisabled": "El pago todavía no está activado en este entorno, así que puedes comparar los planes pero no suscribirte ahora mismo.",
+      "currentPlan": "Plan actual",
+      "mostPopular": "El más elegido",
+      "perMonth": "/ mes",
+      "trialNote": "{days} días de prueba gratis y luego {price} $/mes",
+      "freeCta": "Crear una receta",
+      "trialCta": "Prueba {plan} gratis {days} días",
+      "upgradeCta": "Pasar a {plan}",
+      "gift": {
+        "title": "Regala {brand}",
+        "description": "Regala {months} meses de {plan}. Una forma cálida de ayudar a alguien a conservar todas sus recetas familiares. Un solo pago, sin suscripción, y se entrega como un código para canjear.",
+        "cta": "Regalar {months} meses",
+        "haveCode": "¿Tienes un código? <link>Canjea tu regalo</link>."
+      }
+    },
+    "settings": {
+      "title": "Facturación y plan",
+      "description": "Consulta tu plan, mira cuánto has usado y gestiona la facturación, todo en un sitio.",
+      "checkoutSuccess": "Todo listo. ¡Bienvenida a {plan}! Puede tardar un momento en aparecer tu nuevo plan aquí abajo.",
+      "freePlan": "Plan gratuito",
+      "perMonth": "/ mes",
+      "viewAllPlans": "Ver todos los planes",
+      "upgrade": "Pasar a {plan}",
+      "billingUnavailable": "La gestión de facturación no está disponible en este entorno.",
+      "notConfigured": "La facturación todavía no está configurada en este entorno. Puedes ver los planes aquí abajo, pero no habrá suscripciones hasta que se configuren la base de datos y Stripe.",
+      "status": {
+        "trialing": "Prueba gratuita",
+        "active": "Activo",
+        "past_due": "Pago pendiente",
+        "canceled": "Cancelado",
+        "incomplete": "Incompleto"
+      },
+      "usage": {
+        "title": "Uso",
+        "description": "Cuánto has usado de tu plan en este periodo.",
+        "recipes": "Recetas",
+        "storage": "Almacenamiento de fotos y vídeo",
+        "aiCredits": "Créditos de IA"
+      },
+      "renewal": {
+        "ends": "Tu plan termina el {date}. Conservarás {plan} hasta entonces.",
+        "trialEnds": "Tu prueba gratuita termina el {date}.",
+        "renews": "Se renueva el {date}."
+      },
+      "signIn": {
+        "title": "Tu facturación es privada",
+        "body": "Inicia sesión desde la cabecera para ver tu plan y gestionar la facturación."
+      }
+    },
+    "redeemPage": {
+      "title": "Canjea tu regalo",
+      "description": "Alguien quiere que tus recetas perduren. Escribe tu código para desbloquear Heirloom Family.",
+      "purchased": "¡Gracias por regalar Heirloom! Tu código va de camino. Compártelo con alguien a quien quieras o canjéalo aquí abajo.",
+      "form": {
+        "title": "Escribe tu código de regalo",
+        "description": "Los códigos son del tipo <code>GIFT-XXXX-XXXX-XXXX</code> y se canjean una sola vez."
+      },
+      "unavailable": "El canje de regalos todavía no está disponible en este entorno. En cuanto haya una base de datos configurada, tu código desbloqueará Family aquí.",
+      "signIn": {
+        "title": "Inicia sesión para canjear tu regalo",
+        "body": "Tu regalo desbloquea Family en tu cuenta. Inicia sesión desde la cabecera y vuelve para canjear el código."
+      }
     }
   },
   "notifications": {
@@ -2307,6 +2784,14 @@
     "empty": {
       "title": "Aún no hay notificaciones",
       "description": "Las menciones, respuestas, reseñas e invitaciones para cocinar juntos aparecerán aquí."
+    },
+    "page": {
+      "title": "Notificaciones",
+      "description": "Todo lo que ocurre alrededor de tus recetas y tu familia. Menciones, respuestas, reseñas, reacciones y cocinados en grupo.",
+      "signIn": {
+        "title": "Inicia sesión para ver las notificaciones",
+        "body": "Las menciones, respuestas, reseñas e invitaciones a cocinar juntos aparecen aquí cuando inicias sesión."
+      }
     }
   },
   "follows": {
@@ -2625,5 +3110,110 @@
     },
     "facetSelected": "{count} seleccionados",
     "facetAria": "Filtro de {label}, {count} seleccionados"
+  },
+  "dbNotice": {
+    "blocked": "Conecta una base de datos para gestionar a las personas bloqueadas. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "notifications": "Conecta una base de datos para gestionar las preferencias de correo. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "following": "Conecta una base de datos para gestionar tu perfil público. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "units": "Conecta una base de datos para guardar tus preferencias de unidades. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "dietary": "Conecta una base de datos para guardar los perfiles alimentarios. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "title": "Conecta una base de datos para empezar",
+    "collections": "Conecta una base de datos para guardar favoritos y crear colecciones. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "groups": "Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "journal": "Para llevar un diario de cocina, define <code>DATABASE_URL</code> (mira <file>.env.example</file>) o ejecuta <code>docker compose up -d</code>.",
+    "plan": "Conecta una base de datos para planificar comidas. Define <code>DATABASE_URL</code> (mira <file>.env.example</file>) o ejecuta <code>docker compose up -d</code>.",
+    "recipes": "Define <code>DATABASE_URL</code> (mira <file>.env.example</file>) o ejecuta <code>docker compose up -d</code>."
+  },
+  "cooks": {
+    "profile": {
+      "publicRecipeCount": "{count, plural, one {# receta pública} other {# recetas públicas}}",
+      "followerCount": "<strong>{count}</strong> {count, plural, one {seguidor} other {seguidores}}",
+      "followingCount": "<strong>{count}</strong> siguiendo",
+      "empty": {
+        "title": "Todavía no hay recetas públicas",
+        "body": "{name} aún no ha compartido ninguna receta pública. Vuelve pronto."
+      }
+    },
+    "followers": {
+      "title": "Seguidores",
+      "empty": "{name} todavía no tiene seguidores."
+    },
+    "following": {
+      "title": "Siguiendo",
+      "empty": "{name} todavía no sigue a nadie."
+    }
+  },
+  "home": {
+    "soon": "Pronto",
+    "greeting": {
+      "named": "Hola de nuevo, {name}",
+      "generic": "Hola de nuevo",
+      "body": "Retoma donde lo dejaste o crea algo nuevo."
+    },
+    "actions": {
+      "browse": "Explorar"
+    },
+    "yourRecipes": "Tus recetas",
+    "viewAll": "Ver todo",
+    "activity": {
+      "heading": "Actividad reciente de tus familias",
+      "body": "Lo que todos han cocinado, añadido y comentado en tus grupos.",
+      "yourFamilies": "Tus familias"
+    },
+    "following": {
+      "heading": "De cocineros que sigues",
+      "body": "Recetas, cocinados y reseñas públicas de quienes sigues. Aparte de tus familias."
+    },
+    "hero": {
+      "badge": "Recetas de familia, reinventadas",
+      "heading": "Cada receta que tu familia adora, <highlight>siempre viva</highlight> y fácil de cocinar.",
+      "body": "{brand} es la forma más bonita y sencilla de escribir, cocinar, compartir y transmitir recetas. De tu cocina a toda la familia.",
+      "discover": "Descubrir recetas",
+      "offlineCookMode": "Modo cocina sin conexión",
+      "familyGroups": "Grupos familiares",
+      "kidsModes": "Modos peques y accesibilidad"
+    },
+    "themes": {
+      "badge": "Hazlo tuyo",
+      "heading": "Cinco estilos. Un toque. Pruébalos ya.",
+      "body": "Calidez de cocina, fantasía juguetona, profesional y limpio, grande y luminoso para peques, o supersencillo. Cada uno con modo claro y oscuro. Elige uno y mira cómo cambia toda la aplicación."
+    },
+    "features": {
+      "editor": {
+        "title": "Facilísimo de escribir",
+        "body": "Un editor con estructura que convierte una idea garabateada en una receta preciosa en minutos. Ingredientes, pasos, fotos y todo lo demás."
+      },
+      "cookMode": {
+        "title": "Un modo cocina que cocina contigo",
+        "body": "Paso a paso, sin manos, con temporizadores, ajuste de raciones y conversión de unidades. Funciona sin conexión en la cocina."
+      },
+      "history": {
+        "title": "Una historia familiar viva",
+        "body": "Sigue cómo ha cambiado un plato entre generaciones con líneas de tiempo y adaptaciones. No se pierde nada."
+      },
+      "share": {
+        "title": "Comparte y colabora",
+        "body": "Invita a tu familia a un recetario de grupo. Valora, comenta y propón cambios en equipo."
+      },
+      "print": {
+        "title": "Imprime como prefieras",
+        "body": "Ficha de receta, página completa o formato compacto. Exporta e imprime como mejor te venga."
+      },
+      "import": {
+        "title": "Importa desde donde sea",
+        "body": "Trae recetas de webs y publicaciones sociales y hazlas tuyas."
+      }
+    },
+    "closing": {
+      "heading": "Comienza con una receta. Construye un legado.",
+      "body": "Anota el plato que haces de memoria. Ese que todos te piden. {brand} lo deja precioso y lo guarda para siempre.",
+      "cta": "Crea tu primera receta",
+      "waitlist": "¿Aún no te decides? Recibe acceso anticipado y consejos de cocina en tu correo. Sin crear cuenta."
+    },
+    "emptyFamily": {
+      "title": "Todavía no hay actividad familiar",
+      "body": "Únete a un grupo familiar o crea uno para ver qué cocina cada quien, todo en un sitio.",
+      "cta": "Encuentra a tu familia"
+    }
   }
 }

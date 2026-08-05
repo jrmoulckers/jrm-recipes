@@ -736,7 +736,9 @@ export default async function RecipePage({
                               {step.targetTempC != null && (
                                 <Badge variant="secondary" className="gap-1">
                                   <Thermometer className="size-3" />
-                                  {step.targetTempC}°C
+                                  {t("method.targetTemp", {
+                                    value: step.targetTempC,
+                                  })}
                                 </Badge>
                               )}
                               {step.doneness && (
@@ -796,7 +798,7 @@ export default async function RecipePage({
                           className="size-4 text-secondary"
                           aria-hidden="true"
                         />
-                        Story &amp; memories
+                        {t("storyMemories")}
                       </h3>
                       <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                         {recipe.story}

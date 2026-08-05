@@ -3,6 +3,7 @@ import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChefHat } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getPublicProfileByHandle } from "~/server/users/queries";
 import { getCurrentUser } from "~/server/auth";
@@ -34,7 +35,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { handle } = await parseHandleParams(params);
   const profile = await load(handle);
-  if (!profile) return { title: "Cook not found", robots: { index: false } };
+  const t = await getTranslations("metadata");
+  if (!profile)
+    return { title: t("cookProfile.notFound"), robots: { index: false } };
 
   const displayName = displayNameFrom(
     profile.user.name,
@@ -42,10 +45,14 @@ export async function generateMetadata({
   );
   const count = profile.recipes.length;
   const canonical = absoluteUrl(`/cooks/${profile.user.handle}`);
-  const description = `${count} public recipe${count === 1 ? "" : "s"} by ${displayName} on ${brand.name}.`;
+  const description = t("cookProfile.description", {
+    count,
+    name: displayName,
+    brand: brand.name,
+  });
 
   return {
-    title: `${displayName} · Recipes`,
+    title: t("cookProfile.title", { name: displayName }),
     description,
     alternates: { canonical },
     robots: { index: true, follow: true },
@@ -86,6 +93,7 @@ export default async function CookProfilePage({
       ])
     : [null, false];
   const isSelf = viewer?.id === user.id;
+  const t = await getTranslations("cooks.profile");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -102,7 +110,7 @@ export default async function CookProfilePage({
           </h1>
           <p className="text-muted-foreground">@{user.handle}</p>
           <p className="text-sm text-muted-foreground">
-            {count} public recipe{count === 1 ? "" : "s"}
+            {t("publicRecipeCount", { count })}
           </p>
           {showFollow && counts && (
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -110,19 +118,27 @@ export default async function CookProfilePage({
                 href={`/cooks/${user.handle}/followers`}
                 className="text-muted-foreground underline-offset-2 hover:underline"
               >
-                <span className="font-semibold text-foreground">
-                  {counts.followers}
-                </span>{" "}
-                follower{counts.followers === 1 ? "" : "s"}
+                {t.rich("followerCount", {
+                  count: counts.followers,
+                  strong: (chunks) => (
+                    <span className="font-semibold text-foreground">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </Link>
               <Link
                 href={`/cooks/${user.handle}/following`}
                 className="text-muted-foreground underline-offset-2 hover:underline"
               >
-                <span className="font-semibold text-foreground">
-                  {counts.following}
-                </span>{" "}
-                following
+                {t.rich("followingCount", {
+                  count: counts.following,
+                  strong: (chunks) => (
+                    <span className="font-semibold text-foreground">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </Link>
             </div>
           )}
@@ -150,11 +166,10 @@ export default async function CookProfilePage({
           </span>
           <div>
             <h2 className="font-display text-xl font-semibold">
-              No public recipes yet
+              {t("empty.title")}
             </h2>
             <p className="mt-1 max-w-sm text-muted-foreground">
-              {displayName} hasn&apos;t shared any public recipes so far. Check
-              back soon.
+              {t("empty.body", { name: displayName })}
             </p>
           </div>
         </div>

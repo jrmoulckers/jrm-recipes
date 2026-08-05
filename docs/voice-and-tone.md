@@ -322,15 +322,20 @@ ran as a warning, in `jsx-only` mode, across four attributes, which made it blin
 to every string in a `.ts` file. That is where the toasts and server-action errors
 live, so the majority of user-facing copy never reached the catalog.
 
-The fix is a ratchet rather than a big-bang migration:
+The migration ran as a ratchet rather than a big-bang rewrite. Area by area, as
+each gained its i18n namespace, `i18next/no-literal-string` was raised from warn
+to **error** for that directory, and the `--max-warnings` cap in the `lint`
+script was lowered to the new total. The count could fall but never rise.
 
-- `i18next/no-literal-string` is set to **error** per directory, one feature area
-  at a time, as that area gains its i18n namespace.
-- An area that has been migrated can never regress, because the rule is an error
-  there from then on.
-- Areas not yet migrated stay at warn. They are a known backlog, not a surprise.
-- Adding a new feature area means adding its namespace and its override together.
-  New code does not get to start out non-compliant.
+That backlog is now empty, so the ratchet has been retired. The rule is
+**error globally**, with a single override turning it off for non-shipping code
+(tests, fixtures, seed data, and `/design`).
 
-Migration backlog, currently without a namespace: groups, shopping, planner,
-engagement, billing, dietary, moderation, notifications, timeline, follows, theme.
+Global is the stronger setting, not merely the tidier one. An allowlist of
+finished directories only protects directories someone remembered to list, so a
+newly created one would start out unguarded, which is exactly the state the
+ratchet existed to escape. Enforcing globally means new code is compliant by
+default and an exemption has to be argued for in the config.
+
+Practically: put user-facing copy in `src/messages/*` from the first commit.
+There is no longer a warn tier to land in.

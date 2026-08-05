@@ -55,7 +55,7 @@ export function JoinGroupPanel({
         router.push(`/groups/${result.slug}`);
       });
     });
-  }, [token, groupName, router]);
+  }, [token, groupName, router, t]);
 
   // Auto-join once when returning from auth with the intent flag set.
   React.useEffect(() => {

@@ -2,6 +2,7 @@ import { type Metadata } from "next";
 import { type ReactNode } from "react";
 import Link from "next/link";
 import { BookMarked, Heart, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -17,15 +18,19 @@ import { CollectionCard } from "~/components/collections/collection-card";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { CreateCollectionDialog } from "~/components/collections/create-collection-dialog";
 
-export const metadata: Metadata = {
-  title: "Saved",
-  description: "Your recipe collections. Shelves for the dishes you love.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("saved.title"),
+    description: t("saved.description"),
+  };
+}
 
 export default async function CollectionsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
+  const t = await getTranslations("collections.page");
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
@@ -41,18 +46,17 @@ export default async function CollectionsPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Saved recipes
+            {t("title")}
           </h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            Your favorites and the collections you&apos;ve gathered. The dishes
-            worth coming back to.
+            {t("description")}
           </p>
         </div>
         {user && dbConfigured ? (
           <CreateCollectionDialog />
         ) : (
           <Button size="lg" disabled>
-            New collection
+            {t("newCollection")}
           </Button>
         )}
       </header>
@@ -65,7 +69,7 @@ export default async function CollectionsPage() {
             <div className="flex items-center gap-2">
               <Heart className="size-5 text-primary" />
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                Favorites
+                {t("favorites.heading")}
               </h2>
             </div>
             {favorites.length > 0 ? (
@@ -82,8 +86,8 @@ export default async function CollectionsPage() {
             ) : (
               <EmptyState
                 icon={<Heart className="size-7" />}
-                title="No favorites yet"
-                description="Tap the heart on any recipe to keep it here for quick access."
+                title={t("favorites.emptyTitle")}
+                description={t("favorites.emptyBody")}
               />
             )}
           </section>
@@ -92,7 +96,7 @@ export default async function CollectionsPage() {
             <div className="flex items-center gap-2">
               <BookMarked className="size-5 text-primary" />
               <h2 className="font-display text-2xl font-bold tracking-tight">
-                Collections
+                {t("collections.heading")}
               </h2>
             </div>
             {collections.length > 0 ? (
@@ -104,8 +108,8 @@ export default async function CollectionsPage() {
             ) : (
               <EmptyState
                 icon={<BookMarked className="size-7" />}
-                title="Create your first collection"
-                description="Group recipes into cookbooks. Weeknight dinners, holiday bakes, or family classics."
+                title={t("collections.emptyTitle")}
+                description={t("collections.emptyBody")}
                 action={<CreateCollectionDialog />}
               />
             )}
@@ -116,7 +120,7 @@ export default async function CollectionsPage() {
               <div className="flex items-center gap-2">
                 <Users className="size-5 text-primary" />
                 <h2 className="font-display text-2xl font-bold tracking-tight">
-                  Shared with you
+                  {t("sharedWithYou")}
                 </h2>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -135,11 +139,12 @@ export default async function CollectionsPage() {
   );
 }
 
-function SharedWithYouCard({
+async function SharedWithYouCard({
   collection,
 }: {
   collection: ViewerSharedCollection;
 }) {
+  const tCard = await getTranslations("collections.card");
   return (
     <Link
       href={`/collections/${collection.id}`}
@@ -162,7 +167,7 @@ function SharedWithYouCard({
         {collection.groupName ? (
           <div className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-xs font-medium text-primary backdrop-blur">
             <Users className="size-3" aria-hidden="true" />
-            Shared with {collection.groupName}
+            {tCard("sharedWith", { group: collection.groupName })}
           </div>
         ) : null}
       </div>
@@ -176,9 +181,12 @@ function SharedWithYouCard({
           </p>
         )}
         <div className="mt-auto pt-1 text-xs text-muted-foreground">
-          {collection.recipeCount}{" "}
-          {collection.recipeCount === 1 ? "recipe" : "recipes"}
-          {collection.ownerName ? <> · by {collection.ownerName}</> : null}
+          {collection.ownerName
+            ? tCard("recipeCountByOwner", {
+                count: collection.recipeCount,
+                name: collection.ownerName,
+              })
+            : tCard("recipeCount", { count: collection.recipeCount })}
         </div>
       </div>
     </Link>
@@ -210,7 +218,8 @@ function EmptyState({
   );
 }
 
-function SignInNudge() {
+async function SignInNudge() {
+  const t = await getTranslations("collections.page.signIn");
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -219,27 +228,27 @@ function SignInNudge() {
         </span>
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Your saved recipes are private
+            {t("title")}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Sign in from the header to favorite recipes and build collections.
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("body")}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <p className="mx-auto max-w-md">
-        Connect a database to start favoriting recipes and building collections.
-        Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        or start the local Postgres container.
+        {t.rich("collections", {
+          code: (chunks: ReactNode) => (
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+              {chunks}
+            </code>
+          ),
+        })}
       </p>
     </div>
   );

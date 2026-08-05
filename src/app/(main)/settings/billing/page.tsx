@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { getPlan } from "~/config/plans";
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
@@ -11,6 +12,7 @@ import {
 } from "~/server/billing/entitlements";
 import { isBillingConfigured } from "~/server/billing/stripe";
 import { type SubscriptionStatus } from "~/server/db/schema";
+import { formatDate } from "~/lib/dates";
 import { Badge, type BadgeProps } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,23 +25,22 @@ import {
 import { UsageMeter } from "~/components/billing/usage-meter";
 import { ManageBillingButton } from "~/components/billing/manage-billing-button";
 
-export const metadata: Metadata = { title: "Billing & plan" };
-
-/** Friendly label + badge tone for each synced Stripe status. */
-const STATUS_META: Record<
-  SubscriptionStatus,
-  { label: string; variant: BadgeProps["variant"] }
-> = {
-  trialing: { label: "Free trial", variant: "success" },
-  active: { label: "Active", variant: "success" },
-  past_due: { label: "Payment past due", variant: "warning" },
-  canceled: { label: "Canceled", variant: "secondary" },
-  incomplete: { label: "Incomplete", variant: "warning" },
-};
-
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(date);
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("billing.title") };
 }
+
+/**
+ * Badge tone for each synced Stripe status. The label itself is read from
+ * `billing.settings.status.<status>` so it follows the reader's locale.
+ */
+const STATUS_VARIANT: Record<SubscriptionStatus, BadgeProps["variant"]> = {
+  trialing: "success",
+  active: "success",
+  past_due: "warning",
+  canceled: "secondary",
+  incomplete: "warning",
+};
 
 /** MB → human copy, promoting to GB once we cross a gigabyte. */
 function formatMb(mb: number): string {
@@ -89,18 +90,16 @@ export default async function BillingSettingsPage({
     : null;
   const [recipes, storage, aiCredits] = meters ?? [null, null, null];
 
-  const status = snapshot ? STATUS_META[snapshot.status] : null;
+  const t = await getTranslations("billing.settings");
+  const tPlan = await getTranslations("billing.plans");
 
   return (
     <div className="container flex max-w-3xl flex-col gap-8 py-10">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          Billing &amp; plan
+          {t("title")}
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          See your plan, track how much you&apos;ve used, and manage billing.
-          all in one place.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("description")}</p>
       </header>
 
       {checkout === "success" ? (
@@ -108,8 +107,7 @@ export default async function BillingSettingsPage({
           role="status"
           className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success"
         >
-          You&apos;re all set. Welcome to {getPlan("family").name}! It may take
-          a moment for your new plan to appear below.
+          {t("checkoutSuccess", { plan: tPlan("family.name") })}
         </p>
       ) : null}
 
@@ -120,22 +118,26 @@ export default async function BillingSettingsPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="size-5 text-primary" aria-hidden="true" />
-              {plan.name}
+              {tPlan(`${plan.id}.name`)}
             </CardTitle>
-            {status ? (
-              <Badge variant={status.variant}>{status.label}</Badge>
+            {snapshot ? (
+              <Badge variant={STATUS_VARIANT[snapshot.status]}>
+                {t(`status.${snapshot.status}`)}
+              </Badge>
             ) : (
-              <Badge variant="secondary">Free plan</Badge>
+              <Badge variant="secondary">{t("freePlan")}</Badge>
             )}
           </div>
-          <CardDescription>{plan.tagline}</CardDescription>
+          <CardDescription>{tPlan(`${plan.id}.tagline`)}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <p className="flex items-baseline gap-1">
             <span className="font-display text-2xl font-bold">
               ${plan.monthlyPriceUsd}
             </span>
-            <span className="text-sm text-muted-foreground">/ month</span>
+            <span className="text-sm text-muted-foreground">
+              {t("perMonth")}
+            </span>
           </p>
 
           {snapshot ? <RenewalNote snapshot={snapshot} /> : null}
@@ -144,14 +146,16 @@ export default async function BillingSettingsPage({
             {isPaid ? <ManageBillingButton /> : null}
             <Button asChild variant={isPaid ? "ghost" : "default"}>
               <Link href="/pricing">
-                {isPaid ? "View all plans" : "Upgrade to Family"}
+                {isPaid
+                  ? t("viewAllPlans")
+                  : t("upgrade", { plan: tPlan("family.name") })}
               </Link>
             </Button>
           </div>
 
           {isPaid && !billingReady ? (
             <p className="text-sm text-muted-foreground">
-              Billing management is unavailable in this environment.
+              {t("billingUnavailable")}
             </p>
           ) : null}
         </CardContent>
@@ -160,21 +164,19 @@ export default async function BillingSettingsPage({
       {recipes && storage && aiCredits ? (
         <Card>
           <CardHeader>
-            <CardTitle>Usage</CardTitle>
-            <CardDescription>
-              How much of your plan you&apos;ve used this period.
-            </CardDescription>
+            <CardTitle>{t("usage.title")}</CardTitle>
+            <CardDescription>{t("usage.description")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <UsageMeter
-              label="Recipes"
+              label={t("usage.recipes")}
               used={recipes.used}
               limit={recipes.limit}
               ratio={recipes.ratio}
               state={recipes.state}
             />
             <UsageMeter
-              label="Photo & video storage"
+              label={t("usage.storage")}
               used={storage.used}
               limit={storage.limit}
               ratio={storage.ratio}
@@ -182,7 +184,7 @@ export default async function BillingSettingsPage({
               format={formatMb}
             />
             <UsageMeter
-              label="AI credits"
+              label={t("usage.aiCredits")}
               used={aiCredits.used}
               limit={aiCredits.limit}
               ratio={aiCredits.ratio}
@@ -195,24 +197,35 @@ export default async function BillingSettingsPage({
   );
 }
 
-function RenewalNote({
+async function RenewalNote({
   snapshot,
 }: {
   snapshot: NonNullable<Awaited<ReturnType<typeof getSubscriptionSnapshot>>>;
 }) {
+  const t = await getTranslations("billing.settings.renewal");
+  const tPlan = await getTranslations("billing.plans");
+  const locale = await getLocale();
   let text: string | null = null;
   if (snapshot.cancelAtPeriodEnd && snapshot.currentPeriodEnd) {
-    text = `Your plan ends on ${formatDate(snapshot.currentPeriodEnd)}. You'll keep Family until then.`;
+    text = t("ends", {
+      date: formatDate(snapshot.currentPeriodEnd, "PPP", locale),
+      plan: tPlan("family.name"),
+    });
   } else if (snapshot.status === "trialing" && snapshot.trialEnd) {
-    text = `Your free trial ends on ${formatDate(snapshot.trialEnd)}.`;
+    text = t("trialEnds", {
+      date: formatDate(snapshot.trialEnd, "PPP", locale),
+    });
   } else if (snapshot.currentPeriodEnd) {
-    text = `Renews on ${formatDate(snapshot.currentPeriodEnd)}.`;
+    text = t("renews", {
+      date: formatDate(snapshot.currentPeriodEnd, "PPP", locale),
+    });
   }
   if (!text) return null;
   return <p className="text-sm text-muted-foreground">{text}</p>;
 }
 
-function SignInNudge() {
+async function SignInNudge() {
+  const t = await getTranslations("billing.settings.signIn");
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -221,25 +234,20 @@ function SignInNudge() {
         </span>
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Your billing is private
+            {t("title")}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Sign in from the header to see your plan and manage billing.
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("body")}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("billing.settings");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-6 text-center text-sm text-muted-foreground">
-      <p className="mx-auto max-w-md">
-        Billing isn&apos;t set up in this environment yet. You can preview the
-        plans below, but subscriptions aren&apos;t available until a database
-        and Stripe are configured.
-      </p>
+      <p className="mx-auto max-w-md">{t("notConfigured")}</p>
     </div>
   );
 }

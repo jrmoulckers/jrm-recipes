@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { CalendarX2, Link2Off, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -15,11 +16,14 @@ import { brand } from "~/config/brand";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 
 // Invite links are private, single-purpose URLs. Never index them.
-export const metadata: Metadata = {
-  title: "Join a family cookbook",
-  description: "Accept an invitation to a shared family cookbook on Heirloom.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("join.title"),
+    description: t("join.description"),
+    robots: { index: false, follow: false },
+  };
+}
 
 function initials(name: string) {
   return (
@@ -43,30 +47,12 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-const STATUS_COPY: Record<
-  Exclude<InviteLinkStatus, "active">,
-  { title: string; body: string }
-> = {
-  expired: {
-    title: "This invite link has expired",
-    body: "Ask whoever shared it to send you a fresh link.",
-  },
-  revoked: {
-    title: "This invite link is no longer active",
-    body: "The group turned this link off. Ask them for a new one.",
-  },
-  exhausted: {
-    title: "This invite link is all used up",
-    body: "It reached its limit. Ask the group for a fresh link.",
-  },
-};
-
-function StatusCard({
+async function StatusCard({
   status,
 }: {
   status: Exclude<InviteLinkStatus, "active">;
 }) {
-  const copy = STATUS_COPY[status];
+  const t = await getTranslations("groups.joinPage");
   const Icon = status === "expired" ? CalendarX2 : Link2Off;
   return (
     <Shell>
@@ -74,11 +60,11 @@ function StatusCard({
         <Icon className="size-7" aria-hidden="true" />
       </span>
       <h1 className="mt-4 font-display text-2xl font-bold tracking-tight">
-        {copy.title}
+        {t(`status.${status}.title`)}
       </h1>
-      <p className="mt-2 text-muted-foreground">{copy.body}</p>
+      <p className="mt-2 text-muted-foreground">{t(`status.${status}.body`)}</p>
       <Button asChild variant="outline" className="mt-6">
-        <Link href="/">Back to {brand.name}</Link>
+        <Link href="/">{t("backHome", { brand: brand.name })}</Link>
       </Button>
     </Shell>
   );
@@ -90,6 +76,8 @@ export default async function JoinPage({
   params: Promise<TokenRouteParams>;
 }) {
   const { token } = await parseTokenParams(params);
+  const t = await getTranslations("groups.joinPage");
+  const tCard = await getTranslations("groups.card");
 
   const preview = isDbConfigured() ? await getInviteLinkPreview(token) : null;
 
@@ -100,14 +88,11 @@ export default async function JoinPage({
           <Link2Off className="size-7" aria-hidden="true" />
         </span>
         <h1 className="mt-4 font-display text-2xl font-bold tracking-tight">
-          This invite link isn&apos;t valid
+          {t("invalid.title")}
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          The link may be mistyped or no longer exists. Ask whoever shared it to
-          send you a fresh one.
-        </p>
+        <p className="mt-2 text-muted-foreground">{t("invalid.body")}</p>
         <Button asChild variant="outline" className="mt-6">
-          <Link href="/">Back to {brand.name}</Link>
+          <Link href="/">{t("backHome", { brand: brand.name })}</Link>
         </Button>
       </Shell>
     );
@@ -130,9 +115,7 @@ export default async function JoinPage({
           {initials(group.name)}
         </AvatarFallback>
       </Avatar>
-      <p className="mt-4 text-sm font-medium text-primary">
-        You&apos;re invited to join
-      </p>
+      <p className="mt-4 text-sm font-medium text-primary">{t("invitedTo")}</p>
       <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">
         {group.name}
       </h1>
@@ -140,12 +123,12 @@ export default async function JoinPage({
         <p className="mt-2 text-muted-foreground">{group.description}</p>
       ) : (
         <p className="mt-2 text-muted-foreground">
-          A shared family cookbook on {brand.name}.
+          {t("defaultDescription", { brand: brand.name })}
         </p>
       )}
       <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
         <Users className="size-4" aria-hidden="true" />
-        {memberCount} {memberCount === 1 ? "member" : "members"}
+        {tCard("memberCount", { count: memberCount })}
       </p>
 
       <div className="mt-6">

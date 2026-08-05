@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import { type ReactNode } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -8,7 +9,7 @@ import {
   Flame,
   UtensilsCrossed,
 } from "lucide-react";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -18,7 +19,6 @@ import {
   getJournalInsights,
   type JournalInsights,
 } from "~/server/cooklog/queries";
-import { cookedTimesLabel, formatServingsMade } from "~/server/cooklog/summary";
 import { formatDate, formatRelativeTime } from "~/lib/dates";
 import { journalRangeSince, parseJournalRange } from "~/lib/journal-range";
 import { Badge } from "~/components/ui/badge";
@@ -26,9 +26,17 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { JournalFilters } from "~/components/cooklog/journal-filters";
 
-export const metadata: Metadata = {
-  title: "Cook journal",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("journal.title") };
+}
+
+/** A recorded servings count, or `null` when nothing usable was saved. */
+function normalizeServings(servingsMade?: number | null): number | null {
+  if (servingsMade == null || !Number.isFinite(servingsMade)) return null;
+  const n = Math.max(0, Math.floor(servingsMade));
+  return n > 0 ? n : null;
+}
 
 export default async function JournalPage({
   searchParams,
@@ -72,22 +80,22 @@ export default async function JournalPage({
 
   const hasAnyCooks = recipeOptions.length > 0;
   const filtersActive = selectedRecipeId !== null || range !== "all";
+  const t = await getTranslations("cookLog.journal");
+  const tSection = await getTranslations("cookLog.section");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Cooking journal
+            {t("title")}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Every time you&apos;ve made something. History, kept alive.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         {insights.totalCooks > 0 && (
           <Badge variant="secondary" className="gap-1.5">
             <CookingPot className="size-3.5" aria-hidden="true" />
-            {cookedTimesLabel(insights.totalCooks)}
+            {tSection("cookedTimes", { count: insights.totalCooks })}
           </Badge>
         )}
       </div>
@@ -125,13 +133,14 @@ export default async function JournalPage({
 
 type Cook = Awaited<ReturnType<typeof getFilteredCooks>>[number];
 
-function InsightsStrip({
+async function InsightsStrip({
   insights,
   locale,
 }: {
   insights: JournalInsights;
   locale: string;
 }) {
+  const t = await getTranslations("cookLog.journal.insights");
   const mostRecent = insights.mostRecent ? new Date(insights.mostRecent) : null;
   const mostRecentValid = mostRecent && !Number.isNaN(mostRecent.getTime());
 
@@ -146,7 +155,7 @@ function InsightsStrip({
             {insights.totalCooks}
           </p>
           <p className="text-sm text-muted-foreground">
-            {insights.totalCooks === 1 ? "cook logged" : "cooks logged"}
+            {t("cooksLogged", { count: insights.totalCooks })}
           </p>
         </div>
       </div>
@@ -159,14 +168,14 @@ function InsightsStrip({
           <p className="truncate font-medium leading-tight">
             {mostRecentValid ? formatRelativeTime(mostRecent, locale) : "—"}
           </p>
-          <p className="text-sm text-muted-foreground">most recent cook</p>
+          <p className="text-sm text-muted-foreground">{t("mostRecent")}</p>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 shadow-token">
         <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Flame className="size-4 text-primary" aria-hidden="true" />
-          Most cooked
+          {t("mostCooked")}
         </div>
         {insights.topRecipes.length > 0 ? (
           <ol className="flex flex-col gap-1">
@@ -188,36 +197,37 @@ function InsightsStrip({
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-muted-foreground">Nothing yet</p>
+          <p className="text-sm text-muted-foreground">{t("nothingYet")}</p>
         )}
       </div>
     </div>
   );
 }
 
-function NoMatches({ filtersActive }: { filtersActive: boolean }) {
+async function NoMatches({ filtersActive }: { filtersActive: boolean }) {
+  const t = await getTranslations("cookLog.journal.noMatches");
   return (
     <div className="rounded-xl border border-dashed border-border bg-background/60 p-8 text-center">
-      <p className="font-medium">No cooks match these filters</p>
+      <p className="font-medium">{t("title")}</p>
       <p className="mt-1 text-sm text-muted-foreground">
-        {filtersActive
-          ? "Try a wider time range or a different recipe."
-          : "Log a cook to start filling in your history."}
+        {filtersActive ? t("withFilters") : t("withoutFilters")}
       </p>
       {filtersActive && (
         <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link href="/journal">Clear filters</Link>
+          <Link href="/journal">{t("clearFilters")}</Link>
         </Button>
       )}
     </div>
   );
 }
 
-function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
+async function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
+  const t = await getTranslations("cookLog.journal.entry");
+  const tSection = await getTranslations("cookLog.section");
   const cookedAt = new Date(cook.cookedAt);
   const valid = !Number.isNaN(cookedAt.getTime());
-  const servings = formatServingsMade(cook.servingsMade);
-  const title = cook.recipe?.title ?? "A recipe";
+  const servingsMade = normalizeServings(cook.servingsMade);
+  const title = cook.recipe?.title ?? t("untitled");
 
   const body = (
     <article className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-token transition-[transform,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-token-lg">
@@ -237,20 +247,20 @@ function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
           <h2 className="font-display text-lg font-semibold leading-tight">
             {title}
           </h2>
-          {servings && (
+          {servingsMade != null && (
             <Badge variant="muted" className="gap-1">
               <UtensilsCrossed className="size-3" aria-hidden="true" />
-              {servings}
+              {tSection("servings", { count: servingsMade })}
             </Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground">
           {valid
-            ? `${formatDate(cookedAt, "PPP", locale)} · ${formatRelativeTime(
-                cookedAt,
-                locale,
-              )}`
-            : "Logged earlier"}
+            ? t("cookedOn", {
+                date: formatDate(cookedAt, "PPP", locale),
+                relative: formatRelativeTime(cookedAt, locale),
+              })
+            : t("loggedEarlier")}
         </p>
         {cook.note && (
           <p className="mt-1 line-clamp-2 whitespace-pre-line text-sm text-muted-foreground">
@@ -277,16 +287,17 @@ function JournalEntry({ cook, locale }: { cook: Cook; locale: string }) {
   );
 }
 
-function EmptyJournal() {
+async function EmptyJournal() {
+  const t = await getTranslations("cookLog.journal.empty");
   return (
     <EmptyState
       icon={<CookingPot />}
-      title="No cooks logged yet"
-      description="Open a recipe and tap “I cooked this” to start your journal. Notes and photos build a history you'll love looking back on."
+      title={t("title")}
+      description={t("body")}
       action={
         <Button asChild size="lg">
           <Link href="/recipes">
-            <BookOpen /> Browse recipes
+            <BookOpen /> {t("cta")}
           </Link>
         </Button>
       }
@@ -294,24 +305,22 @@ function EmptyJournal() {
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <EmptyState
       icon={<Database />}
-      title="Connect a database to start"
-      description={
-        <>
-          Keep a cooking journal by setting{" "}
+      title={t("title")}
+      description={t.rich("journal", {
+        code: (chunks: ReactNode) => (
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            DATABASE_URL
-          </code>{" "}
-          (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            docker compose up -d
+            {chunks}
           </code>
-          .
-        </>
-      }
+        ),
+        file: (chunks: ReactNode) => (
+          <code className="font-mono text-sm">{chunks}</code>
+        ),
+      })}
     />
   );
 }

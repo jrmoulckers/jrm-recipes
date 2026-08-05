@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
+import { type ReactNode } from "react";
 import Link from "next/link";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   CalendarDays,
   ChevronLeft,
@@ -58,9 +59,10 @@ import {
   type BoardRecipe,
 } from "~/components/planner/planner-board";
 
-export const metadata: Metadata = {
-  title: "Meal plan",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("plan.title") };
+}
 
 export default async function PlanPage({
   searchParams,
@@ -69,6 +71,7 @@ export default async function PlanPage({
 }) {
   const { week, scope } = await searchParams;
   const locale = await getLocale();
+  const t = await getTranslations("planner.page");
   const focusDate = parseDateParam(week);
   const { start, end, days } = getPlannerWeek(focusDate, locale);
   const startParam = toDateParam(start);
@@ -126,7 +129,7 @@ export default async function PlanPage({
     // Prep-ahead nudge (#388): scan tomorrow's planned recipes for "start it
     // tonight" language. Dedupe by slug so a recipe planned twice (lunch +
     // dinner) only nudges once. Personal plane only.
-    const tomorrowLabel = formatDayName(parseDateParam(tomorrow));
+    const tomorrowLabel = formatDayName(parseDateParam(tomorrow), locale);
     const plannedTomorrow = new Map<string, PlannedPrepRecipe>();
     for (const entry of prepRows) {
       const recipe = entry.recipe;
@@ -162,7 +165,7 @@ export default async function PlanPage({
     note: entry.note,
     author:
       "user" in entry && entry.user
-        ? { id: entry.user.id, name: entry.user.name ?? "A family member" }
+        ? { id: entry.user.id, name: entry.user.name ?? t("familyMember") }
         : null,
     recipe: entry.recipe
       ? {
@@ -188,7 +191,7 @@ export default async function PlanPage({
         <div className="flex items-center gap-2 text-primary">
           <CalendarDays className="size-5" aria-hidden="true" />
           <span className="text-sm font-semibold uppercase tracking-wide">
-            Meal planner
+            {t("kicker")}
           </span>
         </div>
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -196,14 +199,11 @@ export default async function PlanPage({
             <h1 className="font-display text-3xl font-bold tracking-tight">
               {formatWeekRange(start, end, locale)}
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              Plan the week&rsquo;s meals. Assign recipes or quick notes to
-              each day.
-            </p>
+            <p className="mt-1 text-muted-foreground">{t("description")}</p>
           </div>
           <nav
             className="flex flex-wrap items-center gap-2"
-            aria-label="Week navigation"
+            aria-label={t("a11y.weekNavigation")}
           >
             {dbConfigured && user && !isGroupScope && (
               <CopyLastWeekButton week={startParam} />
@@ -214,7 +214,7 @@ export default async function PlanPage({
             {dbConfigured && user && !isGroupScope && (
               <Button asChild variant="outline">
                 <Link href={`/plan/print?week=${startParam}`}>
-                  <Printer /> Print this week
+                  <Printer /> {t("printWeek")}
                 </Link>
               </Button>
             )}
@@ -222,7 +222,7 @@ export default async function PlanPage({
               asChild
               variant="outline"
               size="icon"
-              aria-label="Previous week"
+              aria-label={t("a11y.previousWeek")}
             >
               <Link
                 href={
@@ -242,14 +242,14 @@ export default async function PlanPage({
                     : `/plan?week=${todayParam()}`
                 }
               >
-                This week
+                {t("thisWeek")}
               </Link>
             </Button>
             <Button
               asChild
               variant="outline"
               size="icon"
-              aria-label="Next week"
+              aria-label={t("a11y.nextWeek")}
             >
               <Link
                 href={
@@ -268,7 +268,7 @@ export default async function PlanPage({
           <div
             className="flex flex-wrap items-center gap-1.5"
             role="tablist"
-            aria-label="Plan scope"
+            aria-label={t("a11y.planScope")}
           >
             <Button
               asChild
@@ -280,7 +280,7 @@ export default async function PlanPage({
                 role="tab"
                 aria-selected={!isGroupScope}
               >
-                <UserRound /> My plan
+                <UserRound /> {t("myPlan")}
               </Link>
             </Button>
             {viewerGroups.map((group) => (
@@ -326,25 +326,28 @@ export default async function PlanPage({
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <div className="rounded-xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <p className="mx-auto max-w-md">
-        Connect a database to start planning meals. Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          docker compose up -d
-        </code>
-        .
+        {t.rich("plan", {
+          code: (chunks: ReactNode) => (
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+              {chunks}
+            </code>
+          ),
+          file: (chunks: ReactNode) => (
+            <code className="font-mono text-sm">{chunks}</code>
+          ),
+        })}
       </p>
     </div>
   );
 }
 
-function SignInNudge() {
+async function SignInNudge() {
+  const t = await getTranslations("planner.page.signIn");
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
       <span className="bg-primary/12 inline-flex size-16 items-center justify-center rounded-2xl text-primary">
@@ -352,11 +355,9 @@ function SignInNudge() {
       </span>
       <div>
         <h2 className="font-display text-2xl font-bold tracking-tight">
-          Your meal plan is private
+          {t("title")}
         </h2>
-        <p className="mt-2 text-muted-foreground">
-          Sign in from the header to plan the week and pull in your recipes.
-        </p>
+        <p className="mt-2 text-muted-foreground">{t("body")}</p>
       </div>
     </div>
   );

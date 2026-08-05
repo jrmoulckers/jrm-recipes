@@ -59,11 +59,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
-  if (!group) return { title: "Group not found" };
+  const tMeta = await getTranslations("metadata");
+  if (!group) return { title: tMeta("group.notFound") };
   const canonical = absoluteUrl(`/groups/${group.slug}`);
   const description =
-    group.description ?? `A shared family cookbook on ${brand.name}.`;
-  const title = `${group.name} cookbook`;
+    group.description ?? tMeta("group.description", { brand: brand.name });
+  const title = tMeta("group.title", { name: group.name });
   return {
     title,
     description,
@@ -136,6 +137,8 @@ export default async function GroupPage({
     user: member.user,
   }));
   const tNav = await getTranslations("nav");
+  const t = await getTranslations("groups.detail");
+  const tCard = await getTranslations("groups.card");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -166,17 +169,15 @@ export default async function GroupPage({
                 {group.viewerRole ? (
                   <RoleBadge role={group.viewerRole} />
                 ) : (
-                  <Badge variant="muted">Public view</Badge>
+                  <Badge variant="muted">{t("publicView")}</Badge>
                 )}
                 <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Users className="size-4" aria-hidden="true" />
-                  {group.members.length}{" "}
-                  {group.members.length === 1 ? "member" : "members"}
+                  {tCard("memberCount", { count: group.members.length })}
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <BookOpen className="size-4" aria-hidden="true" />
-                  {group.recipes.length}{" "}
-                  {group.recipes.length === 1 ? "recipe" : "recipes"}
+                  {tCard("recipeCount", { count: group.recipes.length })}
                 </span>
               </div>
               <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight">
@@ -188,7 +189,7 @@ export default async function GroupPage({
                 </p>
               ) : (
                 <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
-                  A shared family cookbook for recipes, notes, and memories.
+                  {t("defaultDescription")}
                 </p>
               )}
             </div>
@@ -199,7 +200,7 @@ export default async function GroupPage({
               <Button asChild variant="outline">
                 <Link href={`/groups/${group.slug}/moderation`}>
                   <ShieldAlert />
-                  Moderation
+                  {t("moderation")}
                   {openReportCount > 0 ? (
                     <Badge variant="destructive" className="ms-1">
                       {openReportCount}
@@ -212,7 +213,7 @@ export default async function GroupPage({
               <Button asChild variant="outline">
                 <Link href={`/groups/${group.slug}/settings`}>
                   <Settings />
-                  Settings
+                  {t("settings")}
                 </Link>
               </Button>
             ) : null}
@@ -226,10 +227,10 @@ export default async function GroupPage({
             <section className="flex flex-col gap-4">
               <div>
                 <h2 className="font-display text-2xl font-bold tracking-tight">
-                  Activity
+                  {t("activity.heading")}
                 </h2>
                 <p className="mt-1 text-muted-foreground">
-                  What the family&apos;s been cooking, adding, and saying.
+                  {t("activity.body")}
                 </p>
               </div>
               <ActivityFeed
@@ -260,10 +261,10 @@ export default async function GroupPage({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-display text-2xl font-bold tracking-tight">
-                  Members
+                  {t("members.heading")}
                 </h2>
                 <p className="mt-1 text-muted-foreground">
-                  The cooks and keepers gathered around this table.
+                  {t("members.body")}
                 </p>
               </div>
               {canManage ? <InviteLinkManager slug={group.slug} /> : null}
@@ -278,9 +279,7 @@ export default async function GroupPage({
             ) : (
               <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-6 text-center text-muted-foreground">
                 <p className="mx-auto max-w-md">
-                  {group.members.length}{" "}
-                  {group.members.length === 1 ? "cook keeps" : "cooks keep"}{" "}
-                  this table. Only members can see who&apos;s gathered here.
+                  {t("members.privateNote", { count: group.members.length })}
                 </p>
               </div>
             )}
@@ -292,17 +291,17 @@ export default async function GroupPage({
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="font-display text-2xl font-bold tracking-tight">
-                  Group cookbook
+                  {t("cookbook.heading")}
                 </h2>
                 <p className="mt-1 text-muted-foreground">
-                  Recipes saved for this family circle.
+                  {t("cookbook.body")}
                 </p>
               </div>
               {group.viewerRole ? (
                 <Button asChild variant="outline">
                   <Link href="/recipes/new">
                     <Plus />
-                    Add recipe
+                    {t("cookbook.addRecipe")}
                   </Link>
                 </Button>
               ) : null}
@@ -325,10 +324,10 @@ export default async function GroupPage({
               <section className="flex flex-col gap-4">
                 <div>
                   <h2 className="font-display text-2xl font-bold tracking-tight">
-                    Shared collections
+                    {t("shared.heading")}
                   </h2>
                   <p className="mt-1 text-muted-foreground">
-                    Cookbooks family members have shared with this group.
+                    {t("shared.body")}
                   </p>
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2">
@@ -347,11 +346,11 @@ export default async function GroupPage({
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:self-start">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-token">
-            <h2 className="font-display text-xl font-semibold">Family tools</h2>
+            <h2 className="font-display text-xl font-semibold">
+              {t("tools.heading")}
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {group.viewerRole
-                ? "Manage your place at this table. Owners can delete the group. Recipes stay in each cook's collection."
-                : "Only invited members can add recipes or manage this family table."}
+              {group.viewerRole ? t("tools.member") : t("tools.visitor")}
             </p>
             <div className="mt-4">
               <GroupActions
@@ -371,7 +370,8 @@ export default async function GroupPage({
   );
 }
 
-function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
+async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
+  const t = await getTranslations("groups.detail");
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
@@ -415,10 +415,12 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
         ) : null}
         {recipe.author?.name ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Shared by{" "}
-            <span className="font-medium text-foreground">
-              {recipe.author.name}
-            </span>
+            {t.rich("sharedBy", {
+              name: recipe.author.name,
+              author: (chunks) => (
+                <span className="font-medium text-foreground">{chunks}</span>
+              ),
+            })}
           </p>
         ) : null}
       </div>
@@ -426,13 +428,14 @@ function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
   );
 }
 
-function SharedCollectionCard({
+async function SharedCollectionCard({
   collection,
   groupName,
 }: {
   collection: SharedGroupCollection;
   groupName: string;
 }) {
+  const tCard = await getTranslations("collections.card");
   return (
     <Link
       href={`/collections/${collection.id}`}
@@ -455,7 +458,7 @@ function SharedCollectionCard({
         <div className="absolute start-3 top-3">
           <Badge variant="muted" className="gap-1 backdrop-blur">
             <Users className="size-3" aria-hidden="true" />
-            Shared with {groupName}
+            {tCard("sharedWith", { group: groupName })}
           </Badge>
         </div>
       </div>
@@ -469,29 +472,29 @@ function SharedCollectionCard({
           </p>
         ) : null}
         <p className="mt-auto pt-2 text-xs text-muted-foreground">
-          {collection.recipeCount}{" "}
-          {collection.recipeCount === 1 ? "recipe" : "recipes"}
-          {collection.ownerName ? <> · by {collection.ownerName}</> : null}
+          {collection.ownerName
+            ? tCard("recipeCountByOwner", {
+                count: collection.recipeCount,
+                name: collection.ownerName,
+              })
+            : tCard("recipeCount", { count: collection.recipeCount })}
         </p>
       </div>
     </Link>
   );
 }
 
-function EmptyCookbook({ isMember }: { isMember: boolean }) {
+async function EmptyCookbook({ isMember }: { isMember: boolean }) {
+  const t = await getTranslations("groups.detail.empty");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center">
-      <h3 className="font-display text-xl font-semibold">
-        No recipes on this shelf yet
-      </h3>
-      <p className="mx-auto mt-1 max-w-md text-muted-foreground">
-        Save the dish everyone asks for, then share it with this group.
-      </p>
+      <h3 className="font-display text-xl font-semibold">{t("title")}</h3>
+      <p className="mx-auto mt-1 max-w-md text-muted-foreground">{t("body")}</p>
       {isMember ? (
         <Button asChild className="mt-4">
           <Link href="/recipes/new">
             <Plus />
-            Add the first recipe
+            {t("cta")}
           </Link>
         </Button>
       ) : null}
