@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 
@@ -68,11 +69,12 @@ function Skeleton({
  * status on its root and marks its inner blocks decorative.
  */
 function RecipeCardSkeleton() {
+  const t = useTranslations("common");
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading recipe…"
+      aria-label={t("loadingRecipe")}
       className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token"
     >
       <Skeleton decorative className="aspect-[16/10] w-full rounded-none" />
@@ -91,11 +93,12 @@ function RecipeCardSkeleton() {
 }
 
 function ListRowSkeleton() {
+  const t = useTranslations("common");
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading…"
+      aria-label={t("loading")}
       className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-token"
     >
       <Skeleton decorative className="size-20 shrink-0 rounded-lg" />

@@ -1984,5 +1984,25 @@
     "searchPlaceholder": "Search for a recipe by name…",
     "searchSubmit": "Search",
     "browseRecipes": "Browse recipes"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "loading": "Loading…",
+    "loadingRecipe": "Loading recipe…"
+  },
+  "imageUpload": {
+    "previewAlt": "Selected photo preview",
+    "errorTitle": "Couldn't load image",
+    "errorHint": "Check the link, then try again",
+    "remove": "Remove photo",
+    "addPhoto": "Add photo",
+    "uploadPhoto": "Upload a photo",
+    "dropHint": "Drag and drop, take a photo, or paste a URL below",
+    "urlPlaceholderWithUpload": "…or paste an image URL",
+    "urlPlaceholder": "Paste an image URL",
+    "urlLabel": "Image URL",
+    "urlLabelFor": "{label} URL"
   }
 }

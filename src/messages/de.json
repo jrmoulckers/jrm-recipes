@@ -1984,5 +1984,25 @@
     "searchPlaceholder": "Suche ein Rezept nach Namen…",
     "searchSubmit": "Suchen",
     "browseRecipes": "Rezepte ansehen"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "close": "Schließen",
+    "loading": "Wird geladen…",
+    "loadingRecipe": "Rezept wird geladen…"
+  },
+  "imageUpload": {
+    "previewAlt": "Vorschau des gewählten Fotos",
+    "errorTitle": "Bild konnte nicht geladen werden",
+    "errorHint": "Prüfe den Link und versuche es noch einmal",
+    "remove": "Foto entfernen",
+    "addPhoto": "Foto hinzufügen",
+    "uploadPhoto": "Lade ein Foto hoch",
+    "dropHint": "Ziehen und ablegen, ein Foto aufnehmen oder unten eine URL einfügen",
+    "urlPlaceholderWithUpload": "…oder füge eine Bild-URL ein",
+    "urlPlaceholder": "Füge eine Bild-URL ein",
+    "urlLabel": "Bild-URL",
+    "urlLabelFor": "URL für {label}"
   }
 }

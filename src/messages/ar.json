@@ -1984,5 +1984,25 @@
     "searchPlaceholder": "ابحث عن وصفة بالاسم…",
     "searchSubmit": "بحث",
     "browseRecipes": "تصفح الوصفات"
+  },
+  "common": {
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "close": "إغلاق",
+    "loading": "جارٍ التحميل…",
+    "loadingRecipe": "جارٍ تحميل الوصفة…"
+  },
+  "imageUpload": {
+    "previewAlt": "معاينة الصورة المختارة",
+    "errorTitle": "تعذر تحميل الصورة",
+    "errorHint": "تحقق من الرابط ثم حاول مرة أخرى",
+    "remove": "إزالة الصورة",
+    "addPhoto": "إضافة صورة",
+    "uploadPhoto": "ارفع صورة",
+    "dropHint": "اسحب وأفلت، أو التقط صورة، أو الصق رابطا في الأسفل",
+    "urlPlaceholderWithUpload": "…أو الصق رابط صورة",
+    "urlPlaceholder": "الصق رابط صورة",
+    "urlLabel": "رابط الصورة",
+    "urlLabelFor": "رابط {label}"
   }
 }

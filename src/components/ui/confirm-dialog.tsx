@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import {
   AlertDialog,
@@ -41,6 +42,7 @@ const ConfirmContext = React.createContext<
  * restructuring the surrounding handler into declarative open state.
  */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("common");
   const [options, setOptions] = React.useState<ConfirmOptions | null>(null);
   const resolverRef = React.useRef<Resolver | null>(null);
 
@@ -81,13 +83,13 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => settle(false)}>
-                {options.cancelLabel ?? "Cancel"}
+                {options.cancelLabel ?? t("cancel")}
               </AlertDialogCancel>
               <AlertDialogAction
                 destructive={options.destructive ?? true}
                 onClick={() => settle(true)}
               >
-                {options.confirmLabel ?? "Delete"}
+                {options.confirmLabel ?? t("delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

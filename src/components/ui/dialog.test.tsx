@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { IntlWrapper } from "~/test/intl";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ function renderDialog(className?: string) {
         <DialogDescription>Body</DialogDescription>
       </DialogContent>
     </Dialog>,
+    { wrapper: IntlWrapper },
   );
   return screen.getByRole("dialog");
 }
@@ -31,6 +33,7 @@ function renderSized(size: "sm" | "md" | "lg" | "xl") {
         <DialogDescription>Body</DialogDescription>
       </DialogContent>
     </Dialog>,
+    { wrapper: IntlWrapper },
   );
   return screen.getByRole("dialog");
 }
@@ -98,6 +101,7 @@ describe("DialogContent sheet variant motion", () => {
           <DialogDescription>Body</DialogDescription>
         </DialogContent>
       </Dialog>,
+      { wrapper: IntlWrapper },
     );
     const content = screen.getByRole("dialog");
     // LTR: dock + slide on the right edge.
