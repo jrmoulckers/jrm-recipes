@@ -229,7 +229,35 @@
       "hintUnset": "Rezepte verwenden ihre eigenen Portionen. Lege dies fest, um den Kochmodus und Einkaufslisten automatisch zu skalieren.",
       "hintSet": "Kochmodus und Einkaufslisten starten auf deine Familie skaliert.",
       "reset": "Portionen jedes Rezepts verwenden"
-    }
+    },
+    "dialogTitle": "Barrierefreiheit & Komfort",
+    "dialogDescription": "Stelle ein, wie {brand} aussieht und sich liest. Diese Einstellungen funktionieren mit jedem Design und werden auf diesem Gerät gespeichert.",
+    "textSizeLabel": "Textgröße",
+    "textSizes": {
+      "default": "Standard",
+      "large": "Groß",
+      "xl": "Größer"
+    },
+    "contrast": {
+      "title": "Hoher Kontrast",
+      "followingSystem": "Folgt deiner Systemeinstellung. Kräftigerer Text und Rahmen.",
+      "description": "Kräftigerer Text und Rahmen für leichteres Lesen."
+    },
+    "motion": {
+      "title": "Bewegung reduzieren",
+      "followingSystem": "Folgt deiner Systemeinstellung. Animationen sind ausgeschaltet.",
+      "description": "Animationen und Übergänge ausschalten."
+    },
+    "reading": {
+      "title": "Gut lesbarer Text",
+      "description": "Mehr Abstand und eine besonders gut lesbare Schrift."
+    },
+    "kids": {
+      "title": "Kindermodus",
+      "description": "Große Knöpfe, kräftige Farben und einfachere Ansichten."
+    },
+    "privacyHeading": "Datenschutz",
+    "reset": "Auf Standard zurücksetzen"
   },
   "localeSwitcher": {
     "trigger": "Sprache ändern",
@@ -1947,5 +1975,14 @@
   "embed": {
     "byAuthor": "von {name}",
     "viewFullRecipe": "Ganzes Rezept ansehen"
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "heading": "Wir konnten diese Seite nicht finden",
+    "body": "Dieses Rezept ist wohl von der Arbeitsplatte verschwunden. Zurück in die Küche von {brand}.",
+    "searchLabel": "Rezepte suchen",
+    "searchPlaceholder": "Suche ein Rezept nach Namen…",
+    "searchSubmit": "Suchen",
+    "browseRecipes": "Rezepte ansehen"
   }
 }

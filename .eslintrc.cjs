@@ -101,6 +101,8 @@ const config = {
       // fall but never rise. Move an area here once it reaches zero.
       files: [
         "src/app/embed/**",
+        "src/app/not-found.tsx",
+        "src/components/a11y/**",
         "src/app/~offline/**",
         "src/app/layout.tsx",
         "src/components/analytics/**",
@@ -134,8 +136,13 @@ const config = {
       },
     },
     {
-      // Non-shipping code: tests, fixtures, and DB seed data are not
-      // user-facing UI, so the literal-string guard would only add noise.
+      // Non-shipping code: tests, fixtures, DB seed data, and the internal
+      // design-system reference page are not user-facing product UI, so the
+      // literal-string guard would only add noise. `/design` is robots-
+      // disallowed, absent from nav, and labels itself "Dev / reference"; its
+      // strings are component demo labels, so translating them would pad the
+      // catalogs with keys no reader ever sees.
+      //
       // This override is LAST on purpose: later overrides win in ESLint, so
       // keeping it here means the ratchet above never re-enables the rule for
       // a test file that happens to live inside a locked area.
@@ -144,6 +151,7 @@ const config = {
         "**/*.test.tsx",
         "src/test/**",
         "src/server/db/seed.ts",
+        "src/app/(main)/design/**",
       ],
       rules: {
         "i18next/no-literal-string": "off",

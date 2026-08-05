@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { TEXT_SIZES, type TextSize, isA11yActive } from "~/config/a11y";
+import { brand } from "~/config/brand";
 import {
   DEFAULT_HOUSEHOLD,
   MAX_HOUSEHOLD,
@@ -40,10 +41,10 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 
-const TEXT_SIZE_META: Record<TextSize, { label: string; sample: string }> = {
-  default: { label: "Default", sample: "text-sm" },
-  large: { label: "Large", sample: "text-base" },
-  xl: { label: "Larger", sample: "text-xl" },
+const TEXT_SIZE_SAMPLE: Record<TextSize, string> = {
+  default: "text-sm",
+  large: "text-base",
+  xl: "text-xl",
 };
 
 function ToggleRow({
@@ -123,11 +124,10 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Accessibility className="size-5 text-primary" />
-            Accessibility &amp; comfort
+            {t("dialogTitle")}
           </DialogTitle>
           <DialogDescription>
-            Tune how {`Heirloom`} looks and reads. These settings work with any
-            theme and are saved on this device.
+            {t("dialogDescription", { brand: brand.name })}
           </DialogDescription>
         </DialogHeader>
 
@@ -136,7 +136,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Type className="size-4 text-muted-foreground" />
-              Text size
+              {t("textSizeLabel")}
             </div>
             <ToggleGroup
               aria-label={t("textSizeGroup")}
@@ -153,13 +153,13 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
                   <span
                     className={cn(
                       "font-display font-semibold leading-none",
-                      TEXT_SIZE_META[size].sample,
+                      TEXT_SIZE_SAMPLE[size],
                     )}
                   >
                     A
                   </span>
                   <span className="text-[0.7rem]">
-                    {TEXT_SIZE_META[size].label}
+                    {t(`textSizes.${size}`)}
                   </span>
                 </ToggleGroupItem>
               ))}
@@ -171,11 +171,11 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
             <ToggleRow
               id="a11y-contrast"
               icon={Contrast}
-              title="High contrast"
+              title={t("contrast.title")}
               description={
                 prefs.contrast === undefined && effective.contrast
-                  ? "Following your system setting. Stronger text and borders."
-                  : "Stronger text and borders for easier reading."
+                  ? t("contrast.followingSystem")
+                  : t("contrast.description")
               }
               checked={effective.contrast}
               onChange={(v) => update({ contrast: v ? "on" : "off" })}
@@ -183,11 +183,11 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
             <ToggleRow
               id="a11y-motion"
               icon={Zap}
-              title="Reduce motion"
+              title={t("motion.title")}
               description={
                 prefs.motion === undefined && effective.motion
-                  ? "Following your system setting. Animations are turned off."
-                  : "Turn off animations and transitions."
+                  ? t("motion.followingSystem")
+                  : t("motion.description")
               }
               checked={effective.motion}
               onChange={(v) => update({ motion: v ? "on" : "off" })}
@@ -195,8 +195,8 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
             <ToggleRow
               id="a11y-reading"
               icon={BookOpenText}
-              title="Easy-reading text"
-              description="Roomier spacing and a highly legible typeface."
+              title={t("reading.title")}
+              description={t("reading.description")}
               checked={prefs.reading}
               onChange={(v) => update({ reading: v })}
             />
@@ -276,9 +276,11 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
               htmlFor="a11y-kids"
               className="min-w-0 flex-1 cursor-pointer select-none"
             >
-              <span className="block text-sm font-semibold">Kids mode</span>
+              <span className="block text-sm font-semibold">
+                {t("kids.title")}
+              </span>
               <span className="block text-xs text-muted-foreground">
-                Big buttons, bright colors, and simpler screens.
+                {t("kids.description")}
               </span>
             </label>
             <Switch
@@ -294,7 +296,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
           <section className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldCheck className="size-4 text-muted-foreground" />
-              Privacy
+              {t("privacyHeading")}
             </div>
             <PrivacyToggle />
           </section>
@@ -307,7 +309,7 @@ export function AccessibilityMenu({ label }: { label?: string } = {}) {
               className="self-start text-muted-foreground"
             >
               <RotateCcw className="size-4" />
-              Reset to defaults
+              {t("reset")}
             </Button>
           )}
         </div>

@@ -229,7 +229,35 @@
       "hintUnset": "Las recetas usan sus propias porciones. Ajústalo para escalar automáticamente el modo cocina y las listas de la compra.",
       "hintSet": "El modo cocina y las listas de la compra empiezan ajustados a tu familia.",
       "reset": "Usar las porciones de cada receta"
-    }
+    },
+    "dialogTitle": "Accesibilidad y comodidad",
+    "dialogDescription": "Ajusta cómo se ve y se lee {brand}. Estos ajustes funcionan con cualquier tema y se guardan en este dispositivo.",
+    "textSizeLabel": "Tamaño del texto",
+    "textSizes": {
+      "default": "Normal",
+      "large": "Grande",
+      "xl": "Más grande"
+    },
+    "contrast": {
+      "title": "Alto contraste",
+      "followingSystem": "Siguiendo el ajuste de tu sistema. Texto y bordes más marcados.",
+      "description": "Texto y bordes más marcados para leer mejor."
+    },
+    "motion": {
+      "title": "Reducir movimiento",
+      "followingSystem": "Siguiendo el ajuste de tu sistema. Las animaciones están desactivadas.",
+      "description": "Desactiva animaciones y transiciones."
+    },
+    "reading": {
+      "title": "Texto de lectura fácil",
+      "description": "Espaciado más amplio y una tipografía muy legible."
+    },
+    "kids": {
+      "title": "Modo infantil",
+      "description": "Botones grandes, colores vivos y pantallas más simples."
+    },
+    "privacyHeading": "Privacidad",
+    "reset": "Restablecer los valores predeterminados"
   },
   "localeSwitcher": {
     "trigger": "Cambiar idioma",
@@ -1947,5 +1975,14 @@
   "embed": {
     "byAuthor": "por {name}",
     "viewFullRecipe": "Ver la receta completa"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "heading": "No encontramos esa página",
+    "body": "Parece que esta receta se escapó de la encimera. Volvamos a la cocina de {brand}.",
+    "searchLabel": "Buscar recetas",
+    "searchPlaceholder": "Busca una receta por su nombre…",
+    "searchSubmit": "Buscar",
+    "browseRecipes": "Ver recetas"
   }
 }

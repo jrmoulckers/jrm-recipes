@@ -229,7 +229,35 @@
       "hintUnset": "Recipes use their own servings. Set this to auto-scale Cook Mode and shopping lists.",
       "hintSet": "Cook Mode and shopping lists start scaled to your family.",
       "reset": "Use each recipe's servings"
-    }
+    },
+    "dialogTitle": "Accessibility & comfort",
+    "dialogDescription": "Tune how {brand} looks and reads. These settings work with any theme and are saved on this device.",
+    "textSizeLabel": "Text size",
+    "textSizes": {
+      "default": "Default",
+      "large": "Large",
+      "xl": "Larger"
+    },
+    "contrast": {
+      "title": "High contrast",
+      "followingSystem": "Following your system setting. Stronger text and borders.",
+      "description": "Stronger text and borders for easier reading."
+    },
+    "motion": {
+      "title": "Reduce motion",
+      "followingSystem": "Following your system setting. Animations are turned off.",
+      "description": "Turn off animations and transitions."
+    },
+    "reading": {
+      "title": "Easy-reading text",
+      "description": "Roomier spacing and a highly legible typeface."
+    },
+    "kids": {
+      "title": "Kids mode",
+      "description": "Big buttons, bright colors, and simpler screens."
+    },
+    "privacyHeading": "Privacy",
+    "reset": "Reset to defaults"
   },
   "localeSwitcher": {
     "trigger": "Change language",
@@ -1947,5 +1975,14 @@
   "embed": {
     "byAuthor": "by {name}",
     "viewFullRecipe": "View full recipe"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "heading": "We couldn't find that page",
+    "body": "This recipe seems to have wandered off the counter. Let's get you back to the {brand} kitchen.",
+    "searchLabel": "Search recipes",
+    "searchPlaceholder": "Search for a recipe by name…",
+    "searchSubmit": "Search",
+    "browseRecipes": "Browse recipes"
   }
 }
