@@ -103,6 +103,8 @@ const config = {
         "src/app/embed/**",
         "src/app/not-found.tsx",
         "src/components/a11y/**",
+        "src/components/cook/**",
+        "src/components/print/**",
         "src/components/ui/**",
         "src/app/~offline/**",
         "src/app/layout.tsx",

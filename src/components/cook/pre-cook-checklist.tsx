@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChefHat } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -42,6 +43,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
           <span className="text-xl font-bold leading-tight">{title}</span>
           <span className="text-base text-muted-foreground">{detail}</span>
         </span>
+        {/* eslint-disable i18next/no-literal-string -- decorative checkmark symbol, not a translatable string */}
         <span
           aria-hidden="true"
           className={cn(
@@ -53,6 +55,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
         >
           ✓
         </span>
+        {/* eslint-enable i18next/no-literal-string */}
       </button>
     </li>
   );
@@ -79,39 +82,41 @@ export function PreCookChecklist({
   largeTargets: boolean;
   onReady: () => void;
 }) {
+  const t = useTranslations("cook.preCook");
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-8 px-4 py-10">
         <div className="flex flex-col items-center gap-3 text-center">
+          {/* eslint-disable-next-line i18next/no-literal-string -- decorative emoji */}
           <span aria-hidden="true" className="text-6xl">
             🧑‍🍳
           </span>
           <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            Let&apos;s get ready!
+            {t("heading")}
           </h1>
           <p className="text-lg text-muted-foreground">
-            A few quick things before we cook {recipeTitle}.
+            {t("subtitle", { title: recipeTitle })}
           </p>
         </div>
 
         <ul className="flex w-full flex-col gap-4">
           <ChecklistItem
             emoji="🧼"
-            title="Wash your hands"
-            detail="Soap and warm water for 20 seconds. Sing your favorite song!"
+            title={t("washHands.title")}
+            detail={t("washHands.detail")}
           />
           {hasHazards && (
             <ChecklistItem
               emoji="🧑‍🍳"
-              title="Cook with a grown-up"
-              detail="This recipe has hot or sharp steps. Ask a grown-up to help."
+              title={t("grownUp.title")}
+              detail={t("grownUp.detail")}
               highlight
             />
           )}
           <ChecklistItem
             emoji="🥣"
-            title="Grab your tools"
-            detail="Get your bowls, spoons, and everything the recipe needs."
+            title={t("grabTools.title")}
+            detail={t("grabTools.detail")}
           />
         </ul>
 
@@ -126,14 +131,14 @@ export function PreCookChecklist({
             )}
           >
             <ChefHat aria-hidden="true" />
-            I&apos;m ready. Let&apos;s cook!
+            {t("ready")}
           </Button>
           <button
             type="button"
             onClick={onReady}
             className="rounded-md px-2 py-1 text-base text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Skip for now
+            {t("skip")}
           </button>
         </div>
       </main>

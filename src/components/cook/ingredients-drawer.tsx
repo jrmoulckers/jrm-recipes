@@ -85,11 +85,9 @@ export function IngredientsDrawer({
         <DialogHeader className="border-b border-border p-5 pe-14 pt-[max(1.25rem,env(safe-area-inset-top))] text-start">
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Utensils className="size-5 text-primary" />
-            Ingredients
+            {t("title")}
           </DialogTitle>
-          <DialogDescription>
-            Scale the recipe, switch units, and tap ingredients as you use them.
-          </DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pr-[max(1.25rem,env(safe-area-inset-right))]">
@@ -104,11 +102,10 @@ export function IngredientsDrawer({
           ) : (
             <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground">
               <p className="font-display text-xl font-semibold">
-                No ingredients listed yet
+                {t("emptyHeading")}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                The recipe owner has not added an ingredient list, but you can
-                still follow the cooking steps.
+                {t("emptyBody")}
               </p>
             </div>
           )}

@@ -132,6 +132,169 @@
       "mayContain": "May also contain (check labels):",
       "disclaimer": "Best-effort from ingredient text. Always double-check labels and brands.",
       "gotIt": "Got it"
+    },
+    "header": {
+      "cookMode": "Cook mode",
+      "stepOf": "Step {current} of {total}",
+      "activeTimers": "{count} active",
+      "screenAwake": "Screen awake"
+    },
+    "step": {
+      "stepOf": "Step {current} of {total}",
+      "lastStep": "Last step",
+      "swipeHint": "Tap the sides or swipe to move between steps.",
+      "imageAlt": "Step {number} visual for {title}",
+      "videoFallback": "Your browser does not support embedded recipe videos.",
+      "announcement": "Step {current} of {total}",
+      "preheat": {
+        "heading": "Preheat now",
+        "body": "Step {number} needs the oven{temp}."
+      }
+    },
+    "nav": {
+      "previous": "Previous",
+      "next": "Next",
+      "finish": "Finish cooking",
+      "backToRecipe": "Back to recipe"
+    },
+    "timerCard": {
+      "heading": "Step timer",
+      "done": "Done",
+      "pause": "Pause",
+      "restart": "Restart",
+      "start": "Start",
+      "reset": "Reset",
+      "timerStarted": "Timer started, {time} remaining",
+      "timerPaused": "Timer paused, {time} remaining",
+      "timerComplete": "Timer complete"
+    },
+    "timers": {
+      "heading": "Timers",
+      "forThisStep": "For this step",
+      "timerLabel": "Timer label",
+      "labelPlaceholder": "Label (e.g. {example})",
+      "minutesLabel": "Minutes",
+      "minutesPlaceholder": "min",
+      "secondsLabel": "Seconds",
+      "secondsPlaceholder": "sec",
+      "addButton": "Add",
+      "stepDefaultLabel": "Step {number} timer",
+      "done": "Done",
+      "dismissTimer": "Dismiss {label}",
+      "pause": "Pause",
+      "restart": "Restart",
+      "start": "Start",
+      "reset": "Reset"
+    },
+    "activeTimers": {
+      "heading": "Active timers",
+      "step": "Step {number}",
+      "pause": "Pause",
+      "start": "Start",
+      "reset": "Reset"
+    },
+    "stepIngredients": {
+      "heading": "For this step"
+    },
+    "equipment": {
+      "heading": "Gather your tools"
+    },
+    "notepad": {
+      "heading": "My notes",
+      "hint": "Private to this device. Only you can see these.",
+      "placeholder": "Needed 5 more minutes. Used honey instead of sugar…",
+      "ariaLabel": "Private per-cook notes"
+    },
+    "atAGlance": {
+      "heading": "At a glance",
+      "total": "total",
+      "prep": "prep",
+      "cooking": "cooking",
+      "servings": "servings"
+    },
+    "cookNotes": {
+      "heading": "Cook's notes"
+    },
+    "overview": {
+      "button": "Overview",
+      "title": "Recipe overview",
+      "description": "Jump to any step without stopping timers."
+    },
+    "narration": {
+      "readItToMe": "Read it to me",
+      "stopReading": "Stop reading"
+    },
+    "empty": {
+      "heading": "No steps to cook through yet",
+      "body": "This recipe is saved, but cook mode needs step-by-step instructions to guide you. Head back and add a few steps to start cooking.",
+      "back": "Back to recipe"
+    },
+    "trail": {
+      "goToStep": "Go to step {current} of {total}"
+    },
+    "miseEnPlace": {
+      "subtitle": "Mise en place",
+      "exitAriaLabel": "Exit cook mode",
+      "heading": "Gather & prep everything first",
+      "body": "Lay out all {count, plural, one {# ingredient} other {# ingredients}} and finish any prep so you can cook without pausing. Tap items as you set them out.",
+      "prepAhead": "Prep ahead",
+      "optional": "(optional)",
+      "gatherIngredients": "Gather your ingredients",
+      "noIngredients": "No ingredients listed for this recipe.",
+      "startCooking": "Begin cooking"
+    },
+    "completion": {
+      "kidsHeading": "You did it! 🎉",
+      "heading": "Nicely done!",
+      "finished": "You finished {title}.",
+      "photoAlt": "My finished {title}",
+      "kidsCaption": "Look what I made! 🍰",
+      "caption": "Your finished dish",
+      "retakePhoto": "Retake photo",
+      "takePhoto": "I made it! 📸 Take a photo",
+      "allDone": "All done",
+      "skipAndFinish": "Skip and finish"
+    },
+    "feedback": {
+      "saved": "Thanks. Saved to this recipe.",
+      "heading": "How did it turn out?",
+      "starGroupLabel": "Your star rating",
+      "starLabel": "Rate {n} {n, plural, one {star} other {stars}}",
+      "tastingNoteLabel": "Tasting note (optional)",
+      "tastingNotePlaceholder": "Kids loved it, halve the salt next time…",
+      "logThisCook": "Log that I made this",
+      "saving": "Saving…",
+      "save": "Save"
+    },
+    "preCook": {
+      "heading": "Let's get ready!",
+      "subtitle": "A few quick things before we cook {title}.",
+      "washHands": {
+        "title": "Wash your hands",
+        "detail": "Soap and warm water for 20 seconds. Sing your favorite song!"
+      },
+      "grownUp": {
+        "title": "Cook with a grown-up",
+        "detail": "This recipe has hot or sharp steps. Ask a grown-up to help."
+      },
+      "grabTools": {
+        "title": "Grab your tools",
+        "detail": "Get your bowls, spoons, and everything the recipe needs."
+      },
+      "ready": "I'm ready. Let's cook!",
+      "skip": "Skip for now"
+    },
+    "badges": {
+      "newSingle": "New badge earned!",
+      "newMultiple": "New badges earned!",
+      "hide": "Hide my badges",
+      "show": "My badges ({count})"
+    },
+    "techniques": {
+      "didYouMean": "Did you mean {suggestion}?",
+      "unrecognizedAria": "Unrecognized technique {label}. Did you mean {suggestion}?",
+      "learnAria": "Learn the {label} technique",
+      "badge": "Technique"
     }
   },
   "metadata": {
@@ -278,7 +441,11 @@
     "create": "Create"
   },
   "ingredientsDrawer": {
-    "region": "{label} list and recipe scaling"
+    "region": "{label} list and recipe scaling",
+    "title": "Ingredients",
+    "description": "Scale the recipe, switch units, and tap ingredients as you use them.",
+    "emptyHeading": "No ingredients listed yet",
+    "emptyBody": "The recipe owner has not added an ingredient list, but you can still follow the cooking steps."
   },
   "recipeEditor": {
     "importUrl": "Recipe URL to import",
@@ -967,6 +1134,32 @@
         "linkCopied": "Link copied to clipboard",
         "copyLinkFailed": "We couldn't copy the link."
       }
+    },
+    "cookbook": {
+      "empty": {
+        "heading": "This cookbook is still empty",
+        "body": "Add a few recipes to \"{name}\" and they'll be bound together here. Cover, contents, and all. Ready to print.",
+        "back": "Back to collection"
+      },
+      "cover": {
+        "subtitle": "A family cookbook",
+        "collectedBy": "Collected by {name}",
+        "recipeCount": "{count, plural, one {1 recipe} other {# recipes}}"
+      },
+      "toc": "Contents"
+    },
+    "body": {
+      "ingredients": "Ingredients",
+      "noIngredients": "No ingredients listed.",
+      "method": "Method",
+      "noSteps": "No steps listed.",
+      "notes": "Notes",
+      "story": "Story",
+      "source": "Source",
+      "recipeSheet": "{brand} recipe sheet",
+      "byAuthor": "By {name}",
+      "recipeDetail": "Recipe detail",
+      "optional": "optional"
     }
   },
   "dietary": {

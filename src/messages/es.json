@@ -132,6 +132,169 @@
       "mayContain": "También puede contener (revisa las etiquetas):",
       "disclaimer": "Estimación a partir del texto de los ingredientes. Revisa siempre etiquetas y marcas.",
       "gotIt": "Entendido"
+    },
+    "header": {
+      "cookMode": "Modo cocina",
+      "stepOf": "Paso {current} de {total}",
+      "activeTimers": "{count} activos",
+      "screenAwake": "Pantalla activa"
+    },
+    "step": {
+      "stepOf": "Paso {current} de {total}",
+      "lastStep": "Último paso",
+      "swipeHint": "Toca los lados o desliza para moverte entre pasos.",
+      "imageAlt": "Imagen del paso {number} de {title}",
+      "videoFallback": "Tu navegador no admite vídeos incrustados.",
+      "announcement": "Paso {current} de {total}",
+      "preheat": {
+        "heading": "Precalienta ahora",
+        "body": "El paso {number} necesita el horno{temp}."
+      }
+    },
+    "nav": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "finish": "Terminar",
+      "backToRecipe": "Volver a la receta"
+    },
+    "timerCard": {
+      "heading": "Temporizador del paso",
+      "done": "Listo",
+      "pause": "Pausar",
+      "restart": "Reiniciar",
+      "start": "Iniciar",
+      "reset": "Restablecer",
+      "timerStarted": "Temporizador iniciado, {time} restante",
+      "timerPaused": "Temporizador pausado, {time} restante",
+      "timerComplete": "Temporizador completado"
+    },
+    "timers": {
+      "heading": "Temporizadores",
+      "forThisStep": "Para este paso",
+      "timerLabel": "Nombre del temporizador",
+      "labelPlaceholder": "Nombre (p. ej. {example})",
+      "minutesLabel": "Minutos",
+      "minutesPlaceholder": "min",
+      "secondsLabel": "Segundos",
+      "secondsPlaceholder": "seg",
+      "addButton": "Añadir",
+      "stepDefaultLabel": "Temporizador del paso {number}",
+      "done": "Listo",
+      "dismissTimer": "Cerrar {label}",
+      "pause": "Pausar",
+      "restart": "Reiniciar",
+      "start": "Iniciar",
+      "reset": "Restablecer"
+    },
+    "activeTimers": {
+      "heading": "Temporizadores activos",
+      "step": "Paso {number}",
+      "pause": "Pausar",
+      "start": "Iniciar",
+      "reset": "Restablecer"
+    },
+    "stepIngredients": {
+      "heading": "Para este paso"
+    },
+    "equipment": {
+      "heading": "Prepara tus utensilios"
+    },
+    "notepad": {
+      "heading": "Mis notas",
+      "hint": "Solo visible en este dispositivo.",
+      "placeholder": "Necesité 5 minutos más. Usé miel en lugar de azúcar…",
+      "ariaLabel": "Notas privadas de esta cocción"
+    },
+    "atAGlance": {
+      "heading": "De un vistazo",
+      "total": "total",
+      "prep": "preparación",
+      "cooking": "cocción",
+      "servings": "raciones"
+    },
+    "cookNotes": {
+      "heading": "Notas del cocinero"
+    },
+    "overview": {
+      "button": "Resumen",
+      "title": "Resumen de la receta",
+      "description": "Salta a cualquier paso sin detener los temporizadores."
+    },
+    "narration": {
+      "readItToMe": "Léemelo",
+      "stopReading": "Parar"
+    },
+    "empty": {
+      "heading": "Todavía no hay pasos",
+      "body": "La receta está guardada, pero el modo cocina necesita instrucciones paso a paso. Vuelve y añade algunos pasos para empezar a cocinar.",
+      "back": "Volver a la receta"
+    },
+    "trail": {
+      "goToStep": "Ir al paso {current} de {total}"
+    },
+    "miseEnPlace": {
+      "subtitle": "Preparacion previa",
+      "exitAriaLabel": "Salir del modo cocina",
+      "heading": "Reúne y prepara todo primero",
+      "body": "Coloca {count, plural, one {# ingrediente} other {# ingredientes}} y termina los preparativos para cocinar sin pausas. Marca cada uno al sacarlo.",
+      "prepAhead": "Prepara con antelación",
+      "optional": "(opcional)",
+      "gatherIngredients": "Reúne los ingredientes",
+      "noIngredients": "Esta receta no tiene ingredientes en la lista.",
+      "startCooking": "Empezar a cocinar"
+    },
+    "completion": {
+      "kidsHeading": "¡Lo lograste! 🎉",
+      "heading": "¡Bien hecho!",
+      "finished": "Terminaste {title}.",
+      "photoAlt": "Mi {title} terminado",
+      "kidsCaption": "¡Mira lo que hice! 🍰",
+      "caption": "Tu plato terminado",
+      "retakePhoto": "Volver a hacer la foto",
+      "takePhoto": "¡Lo hice! 📸 Haz una foto",
+      "allDone": "Terminar",
+      "skipAndFinish": "Omitir y terminar"
+    },
+    "feedback": {
+      "saved": "Guardado en esta receta.",
+      "heading": "¿Cómo quedó?",
+      "starGroupLabel": "Tu valoración con estrellas",
+      "starLabel": "Valorar con {n} {n, plural, one {estrella} other {estrellas}}",
+      "tastingNoteLabel": "Nota de cata (opcional)",
+      "tastingNotePlaceholder": "A los niños les encantó, la próxima vez pondré menos sal…",
+      "logThisCook": "Registrar que lo hice",
+      "saving": "Guardando…",
+      "save": "Guardar"
+    },
+    "preCook": {
+      "heading": "¡Prepárate!",
+      "subtitle": "Unas cosas rápidas antes de cocinar {title}.",
+      "washHands": {
+        "title": "Lávate las manos",
+        "detail": "Con agua caliente y jabón durante 20 segundos. ¡Canta tu canción favorita!"
+      },
+      "grownUp": {
+        "title": "Cocina con un adulto",
+        "detail": "Esta receta tiene pasos con calor o cosas cortantes. Pide ayuda a un adulto."
+      },
+      "grabTools": {
+        "title": "Coge tus utensilios",
+        "detail": "Prepara los boles, cucharas y todo lo que necesita la receta."
+      },
+      "ready": "¡Estoy listo. A cocinar!",
+      "skip": "Omitir por ahora"
+    },
+    "badges": {
+      "newSingle": "¡Insignia nueva!",
+      "newMultiple": "¡Insignias nuevas!",
+      "hide": "Ocultar mis insignias",
+      "show": "Mis insignias ({count})"
+    },
+    "techniques": {
+      "didYouMean": "¿Quisiste decir {suggestion}?",
+      "unrecognizedAria": "Técnica desconocida: {label}. ¿Quisiste decir {suggestion}?",
+      "learnAria": "Conoce la técnica {label}",
+      "badge": "Técnica"
     }
   },
   "metadata": {
@@ -278,7 +441,11 @@
     "create": "Crear"
   },
   "ingredientsDrawer": {
-    "region": "Lista de {label} y ajuste de raciones"
+    "region": "Lista de {label} y ajuste de raciones",
+    "title": "Ingredientes",
+    "description": "Ajusta las raciones, cambia las unidades y marca los ingredientes al usarlos.",
+    "emptyHeading": "Aún no hay ingredientes",
+    "emptyBody": "El creador de la receta no ha añadido ingredientes, pero puedes seguir los pasos de cocción."
   },
   "recipeEditor": {
     "importUrl": "URL de la receta para importar",
@@ -967,6 +1134,32 @@
         "linkCopied": "Enlace copiado al portapapeles",
         "copyLinkFailed": "No pudimos copiar el enlace."
       }
+    },
+    "cookbook": {
+      "empty": {
+        "heading": "Este recetario aún está vacío",
+        "body": "Añade algunas recetas a \"{name}\" y se reunirán aquí con portada, índice y todo. Lista para imprimir.",
+        "back": "Volver a la colección"
+      },
+      "cover": {
+        "subtitle": "Un recetario familiar",
+        "collectedBy": "Recopilado por {name}",
+        "recipeCount": "{count, plural, one {1 receta} other {# recetas}}"
+      },
+      "toc": "Contenido"
+    },
+    "body": {
+      "ingredients": "Ingredientes",
+      "noIngredients": "No hay ingredientes en la lista.",
+      "method": "Elaboración",
+      "noSteps": "No hay pasos en la lista.",
+      "notes": "Notas",
+      "story": "Historia",
+      "source": "Fuente",
+      "recipeSheet": "Receta de {brand}",
+      "byAuthor": "Por {name}",
+      "recipeDetail": "Detalle de la receta",
+      "optional": "opcional"
     }
   },
   "dietary": {

@@ -223,6 +223,7 @@ function SourceBlock({
   shareUrl: string | null;
   className?: string;
 }) {
+  const t = useTranslations("print");
   const attribution =
     !recipe.sourceName && !recipe.sourceUrl ? (
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground print:text-black">
@@ -233,7 +234,7 @@ function SourceBlock({
       <div className="flex flex-col gap-1 text-sm text-muted-foreground print:text-black">
         <p>
           <span className="font-medium text-foreground print:text-black">
-            Source:
+            {t("body.source")}
           </span>{" "}
           {recipe.sourceUrl ? (
             <a
@@ -266,6 +267,7 @@ function SourceBlock({
 }
 
 function MetaPills({ recipe }: { recipe: PrintRecipe }) {
+  const t = useTranslations("print");
   const meta = formatRecipeMeta(recipe);
 
   if (meta.length === 0) return null;
@@ -277,7 +279,7 @@ function MetaPills({ recipe }: { recipe: PrintRecipe }) {
           key={item}
           className="rounded-full border border-border bg-muted px-3 py-1 print:border-black/40 print:bg-white print:px-0 print:py-0"
         >
-          <dt className="sr-only">Recipe detail</dt>
+          <dt className="sr-only">{t("body.recipeDetail")}</dt>
           <dd>{item}</dd>
         </div>
       ))}
@@ -306,10 +308,11 @@ function IngredientsList({
   ingredients: PrintRecipeIngredient[];
   dense?: boolean;
 }) {
+  const t = useTranslations("print");
   if (ingredients.length === 0) {
     return (
       <p className="text-muted-foreground print:text-black">
-        No ingredients listed.
+        {t("body.noIngredients")}
       </p>
     );
   }
@@ -352,12 +355,12 @@ function IngredientsList({
                   {ingredient.note && (
                     <span className="text-muted-foreground print:text-black">
                       {" "}
-. {ingredient.note}
+                      . {ingredient.note}
                     </span>
                   )}
                   {ingredient.optional && (
                     <span className="ms-1 text-xs text-muted-foreground print:text-black">
-                      optional
+                      {t("body.optional")}
                     </span>
                   )}
                 </li>
@@ -377,9 +380,12 @@ function StepsList({
   steps: PrintRecipeStep[];
   dense?: boolean;
 }) {
+  const t = useTranslations("print");
   if (steps.length === 0) {
     return (
-      <p className="text-muted-foreground print:text-black">No steps listed.</p>
+      <p className="text-muted-foreground print:text-black">
+        {t("body.noSteps")}
+      </p>
     );
   }
 
@@ -462,12 +468,13 @@ function FullPage({
   url: string;
   shareUrl: string | null;
 }) {
+  const t = useTranslations("print");
   return (
     <article className="space-y-8 print:space-y-5">
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] print:block">
         <div className="space-y-4">
           <p className="text-sm font-medium text-muted-foreground print:text-black">
-            {brand.name} recipe sheet
+            {t("body.recipeSheet", { brand: brand.name })}
           </p>
           <div className="space-y-3">
             <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground print:text-3xl print:text-black">
@@ -499,14 +506,14 @@ function FullPage({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] print:grid-cols-2 print:gap-8">
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-2xl font-bold tracking-tight print:text-xl print:text-black">
-            Ingredients
+            {t("body.ingredients")}
           </h2>
           <IngredientsList ingredients={recipe.ingredients} />
         </section>
 
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-2xl font-bold tracking-tight print:text-xl print:text-black">
-            Method
+            {t("body.method")}
           </h2>
           <StepsList steps={recipe.steps} />
         </section>
@@ -515,7 +522,7 @@ function FullPage({
       {recipe.notes && (
         <section className="heirloom-print-section rounded-2xl border border-border bg-card p-5 print:rounded-none print:border-black/30 print:bg-white print:p-0 print:pt-4">
           <h2 className="font-display text-xl font-bold print:text-lg print:text-black">
-            Notes
+            {t("body.notes")}
           </h2>
           <p className="mt-2 whitespace-pre-line leading-relaxed text-muted-foreground print:text-black">
             {recipe.notes}
@@ -537,6 +544,7 @@ function CompactPage({
   url: string;
   shareUrl: string | null;
 }) {
+  const t = useTranslations("print");
   return (
     <article className="space-y-6 print:space-y-4">
       <header className="space-y-3 border-b border-border pb-5 print:border-black/30 print:pb-3">
@@ -560,7 +568,7 @@ function CompactPage({
         <aside className="space-y-5">
           <section className="heirloom-print-section space-y-3">
             <h2 className="font-display text-xl font-bold print:text-base print:text-black">
-              Ingredients
+              {t("body.ingredients")}
             </h2>
             <IngredientsList ingredients={recipe.ingredients} dense />
           </section>
@@ -568,7 +576,7 @@ function CompactPage({
           {recipe.notes && (
             <section className="heirloom-print-section space-y-2 rounded-xl border border-border bg-card p-4 print:rounded-none print:border-black/30 print:bg-white print:p-0 print:pt-3">
               <h2 className="font-display text-lg font-bold print:text-sm print:text-black">
-                Notes
+                {t("body.notes")}
               </h2>
               <p className="whitespace-pre-line text-sm text-muted-foreground print:text-black">
                 {recipe.notes}
@@ -579,7 +587,7 @@ function CompactPage({
 
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-xl font-bold print:text-base print:text-black">
-            Method
+            {t("body.method")}
           </h2>
           <StepsList steps={recipe.steps} dense />
         </section>
@@ -599,6 +607,7 @@ function IndexCard({
   url: string;
   shareUrl: string | null;
 }) {
+  const t = useTranslations("print");
   const meta = formatRecipeMeta(recipe);
 
   return (
@@ -606,7 +615,9 @@ function IndexCard({
       <header className="space-y-2 border-b border-border pb-3 print:border-black/30 print:pb-2">
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground print:text-black">
           <span>{brand.name}</span>
-          {recipe.author?.name && <span>By {recipe.author.name}</span>}
+          {recipe.author?.name && (
+            <span>{t("body.byAuthor", { name: recipe.author.name })}</span>
+          )}
         </div>
         <h1 className="font-display text-2xl font-bold leading-tight tracking-tight print:text-[15pt] print:text-black">
           {recipe.title}
@@ -621,11 +632,11 @@ function IndexCard({
       <div className="print-card-body grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
         <section className="heirloom-print-section space-y-2">
           <h2 className="font-display text-sm font-bold print:text-[9pt] print:text-black">
-            Ingredients
+            {t("body.ingredients")}
           </h2>
           {recipe.ingredients.length === 0 ? (
             <p className="text-xs text-muted-foreground print:text-black">
-              No ingredients listed.
+              {t("body.noIngredients")}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -643,11 +654,11 @@ function IndexCard({
 
         <section className="print-card-method heirloom-print-section space-y-2">
           <h2 className="font-display text-sm font-bold print:text-[9pt] print:text-black">
-            Method
+            {t("body.method")}
           </h2>
           {recipe.steps.length === 0 ? (
             <p className="text-xs text-muted-foreground print:text-black">
-              No steps listed.
+              {t("body.noSteps")}
             </p>
           ) : (
             <ol className="space-y-1">
@@ -682,25 +693,27 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
   const [format, setFormat] = React.useState<PrintFormat>("full");
   const [largePrint, setLargePrint] = React.useState(false);
   const [canNativeShare, setCanNativeShare] = React.useState(false);
-  const formatCopy: Record<PrintFormat, Pick<FormatDetails, "label" | "hint">> =
-    {
-      full: {
-        label: t("formats.full.label"),
-        hint: t("formats.full.hint"),
-      },
-      compact: {
-        label: t("formats.compact.label"),
-        hint: t("formats.compact.hint"),
-      },
-      "card-4x6": {
-        label: t("formats.card4x6.label"),
-        hint: t("formats.card4x6.hint"),
-      },
-      "card-3x5": {
-        label: t("formats.card3x5.label"),
-        hint: t("formats.card3x5.hint"),
-      },
-    };
+  const formatCopy: Record<
+    PrintFormat,
+    Pick<FormatDetails, "label" | "hint">
+  > = {
+    full: {
+      label: t("formats.full.label"),
+      hint: t("formats.full.hint"),
+    },
+    compact: {
+      label: t("formats.compact.label"),
+      hint: t("formats.compact.hint"),
+    },
+    "card-4x6": {
+      label: t("formats.card4x6.label"),
+      hint: t("formats.card4x6.hint"),
+    },
+    "card-3x5": {
+      label: t("formats.card3x5.label"),
+      hint: t("formats.card3x5.hint"),
+    },
+  };
   const activeFormat = { ...FORMAT_DETAILS[format], ...formatCopy[format] };
   const url = recipeUrl(recipe);
   const shareUrl = canShareRecipe(recipe.visibility) ? url : null;
@@ -892,7 +905,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                     value={formatId}
                     className="flex-none rounded-lg px-3"
                   >
-                    {FORMAT_DETAILS[formatId].label}
+                    {formatCopy[formatId].label}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
@@ -907,13 +920,12 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                     : "border-border text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Type aria-hidden="true" className="size-4" /> {t("largePrint.label")}
+                <Type aria-hidden="true" className="size-4" />{" "}
+                {t("largePrint.label")}
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
-              {largePrint
-                ? t("largePrint.hint")
-                : activeFormat.hint}
+              {largePrint ? t("largePrint.hint") : activeFormat.hint}
             </p>
           </div>
         </div>

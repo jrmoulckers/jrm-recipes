@@ -132,6 +132,169 @@
       "mayContain": "قد تحتوي أيضًا على (تحقق من الملصقات):",
       "disclaimer": "تقدير اعتمادًا على نص المكونات. تحقق دائمًا من الملصقات والعلامات التجارية.",
       "gotIt": "فهمت"
+    },
+    "header": {
+      "cookMode": "وضع الطبخ",
+      "stepOf": "الخطوة {current} من {total}",
+      "activeTimers": "{count} نشط",
+      "screenAwake": "الشاشة نشطة"
+    },
+    "step": {
+      "stepOf": "الخطوة {current} من {total}",
+      "lastStep": "الخطوة الأخيرة",
+      "swipeHint": "اضغط على الجانبين أو اسحب للتنقل بين الخطوات.",
+      "imageAlt": "صورة الخطوة {number} من {title}",
+      "videoFallback": "متصفحك لا يدعم تشغيل الفيديو المضمّن.",
+      "announcement": "الخطوة {current} من {total}",
+      "preheat": {
+        "heading": "سخّن الفرن الآن",
+        "body": "الخطوة {number} تحتاج الفرن{temp}."
+      }
+    },
+    "nav": {
+      "previous": "السابق",
+      "next": "التالي",
+      "finish": "انتهيت من الطبخ",
+      "backToRecipe": "العودة إلى الوصفة"
+    },
+    "timerCard": {
+      "heading": "مؤقت الخطوة",
+      "done": "تم",
+      "pause": "إيقاف مؤقت",
+      "restart": "إعادة التشغيل",
+      "start": "بدء",
+      "reset": "إعادة تعيين",
+      "timerStarted": "بدأ المؤقت، {time} متبقية",
+      "timerPaused": "المؤقت موقوف، {time} متبقية",
+      "timerComplete": "انتهى المؤقت"
+    },
+    "timers": {
+      "heading": "المؤقتات",
+      "forThisStep": "لهذه الخطوة",
+      "timerLabel": "اسم المؤقت",
+      "labelPlaceholder": "اسم (مثل {example})",
+      "minutesLabel": "الدقائق",
+      "minutesPlaceholder": "د",
+      "secondsLabel": "الثواني",
+      "secondsPlaceholder": "ث",
+      "addButton": "إضافة",
+      "stepDefaultLabel": "مؤقت الخطوة {number}",
+      "done": "تم",
+      "dismissTimer": "إغلاق {label}",
+      "pause": "إيقاف مؤقت",
+      "restart": "إعادة التشغيل",
+      "start": "بدء",
+      "reset": "إعادة تعيين"
+    },
+    "activeTimers": {
+      "heading": "المؤقتات النشطة",
+      "step": "الخطوة {number}",
+      "pause": "إيقاف مؤقت",
+      "start": "بدء",
+      "reset": "إعادة تعيين"
+    },
+    "stepIngredients": {
+      "heading": "لهذه الخطوة"
+    },
+    "equipment": {
+      "heading": "احضر أدواتك"
+    },
+    "notepad": {
+      "heading": "ملاحظاتي",
+      "hint": "خاصة بهذا الجهاز فقط.",
+      "placeholder": "احتجت 5 دقائق إضافية. استخدمت العسل بدلاً من السكر…",
+      "ariaLabel": "ملاحظات طبخ خاصة"
+    },
+    "atAGlance": {
+      "heading": "نظرة سريعة",
+      "total": "المجموع",
+      "prep": "التحضير",
+      "cooking": "الطهي",
+      "servings": "حصص"
+    },
+    "cookNotes": {
+      "heading": "ملاحظات الطاهي"
+    },
+    "overview": {
+      "button": "نظرة عامة",
+      "title": "نظرة عامة على الوصفة",
+      "description": "انتقل إلى أي خطوة دون إيقاف المؤقتات."
+    },
+    "narration": {
+      "readItToMe": "اقرأها لي",
+      "stopReading": "إيقاف القراءة"
+    },
+    "empty": {
+      "heading": "لا توجد خطوات للطبخ بعد",
+      "body": "الوصفة محفوظة، لكن وضع الطبخ يحتاج تعليمات خطوة بخطوة. ارجع وأضف بعض الخطوات للبدء.",
+      "back": "العودة إلى الوصفة"
+    },
+    "trail": {
+      "goToStep": "الانتقال إلى الخطوة {current} من {total}"
+    },
+    "miseEnPlace": {
+      "subtitle": "التحضير",
+      "exitAriaLabel": "الخروج من وضع الطبخ",
+      "heading": "اجمع وجهّز كل شيء أولاً",
+      "body": "ضع {count, plural, zero {جميع المكونات} one {المكوّن الواحد} two {المكوّنين} few {# مكونات} many {# مكوّن} other {# مكوّن}} وأنهِ التحضير قبل البدء.",
+      "prepAhead": "التحضير المسبق",
+      "optional": "(اختياري)",
+      "gatherIngredients": "اجمع المكونات",
+      "noIngredients": "لا توجد مكونات مدرجة لهذه الوصفة.",
+      "startCooking": "ابدأ الطبخ"
+    },
+    "completion": {
+      "kidsHeading": "أنجزت! 🎉",
+      "heading": "أحسنت!",
+      "finished": "أتممت {title}.",
+      "photoAlt": "طبقي المكتمل: {title}",
+      "kidsCaption": "انظر ما صنعت! 🍰",
+      "caption": "طبقك المكتمل",
+      "retakePhoto": "التقاط صورة أخرى",
+      "takePhoto": "أنجزت! 📸 التقط صورة",
+      "allDone": "انتهيت",
+      "skipAndFinish": "تخطي والإنهاء"
+    },
+    "feedback": {
+      "saved": "تم الحفظ في هذه الوصفة.",
+      "heading": "كيف كانت النتيجة؟",
+      "starGroupLabel": "تقييمك بالنجوم",
+      "starLabel": "تقييم {n} {n, plural, zero {نجوم} one {نجمة} two {نجمتان} few {نجوم} many {نجمة} other {نجمة}}",
+      "tastingNoteLabel": "ملاحظة التذوق (اختيارية)",
+      "tastingNotePlaceholder": "أحبها الأطفال، المرة القادمة سأقلل الملح…",
+      "logThisCook": "تسجيل أنني طبختها",
+      "saving": "جارٍ الحفظ…",
+      "save": "حفظ"
+    },
+    "preCook": {
+      "heading": "لنستعد!",
+      "subtitle": "أشياء سريعة قبل طبخ {title}.",
+      "washHands": {
+        "title": "اغسل يديك",
+        "detail": "بالصابون والماء الدافئ لمدة 20 ثانية. غنِّ أغنيتك المفضلة!"
+      },
+      "grownUp": {
+        "title": "اطبخ مع بالغ",
+        "detail": "هذه الوصفة فيها خطوات ساخنة أو حادة. اطلب مساعدة من بالغ."
+      },
+      "grabTools": {
+        "title": "احضر أدواتك",
+        "detail": "أحضر الأوعية والملاعق وكل ما تحتاجه الوصفة."
+      },
+      "ready": "أنا مستعد. لنطبخ!",
+      "skip": "تخطي الآن"
+    },
+    "badges": {
+      "newSingle": "شارة جديدة!",
+      "newMultiple": "شارات جديدة!",
+      "hide": "إخفاء شاراتي",
+      "show": "شاراتي ({count})"
+    },
+    "techniques": {
+      "didYouMean": "هل تقصد {suggestion}؟",
+      "unrecognizedAria": "أسلوب غير معروف: {label}. هل تقصد {suggestion}؟",
+      "learnAria": "تعلّم أسلوب {label}",
+      "badge": "أسلوب"
     }
   },
   "metadata": {
@@ -278,7 +441,11 @@
     "create": "إنشاء"
   },
   "ingredientsDrawer": {
-    "region": "قائمة {label} وتحجيم الوصفة"
+    "region": "قائمة {label} وتحجيم الوصفة",
+    "title": "المكونات",
+    "description": "عدّل الحصص وغيّر الوحدات وضع إشارة على المكونات عند استخدامها.",
+    "emptyHeading": "لا توجد مكونات بعد",
+    "emptyBody": "لم يضف منشئ الوصفة قائمة مكونات، لكن يمكنك متابعة خطوات الطبخ."
   },
   "recipeEditor": {
     "importUrl": "رابط الوصفة المراد استيرادها",
@@ -967,6 +1134,32 @@
         "linkCopied": "تم نسخ الرابط إلى الحافظة",
         "copyLinkFailed": "لم نتمكن من نسخ الرابط."
       }
+    },
+    "cookbook": {
+      "empty": {
+        "heading": "كتاب الطبخ هذا لا يزال فارغاً",
+        "body": "أضف بعض الوصفات إلى \"{name}\" وستُجمع هنا مع الغلاف والفهرس.",
+        "back": "العودة إلى المجموعة"
+      },
+      "cover": {
+        "subtitle": "كتاب طبخ عائلي",
+        "collectedBy": "جمعه {name}",
+        "recipeCount": "{count, plural, zero {لا وصفات} one {وصفة واحدة} two {وصفتان} few {# وصفات} many {# وصفة} other {# وصفة}}"
+      },
+      "toc": "المحتويات"
+    },
+    "body": {
+      "ingredients": "المكونات",
+      "noIngredients": "لا توجد مكونات مدرجة.",
+      "method": "طريقة التحضير",
+      "noSteps": "لا توجد خطوات مدرجة.",
+      "notes": "ملاحظات",
+      "story": "القصة",
+      "source": "المصدر",
+      "recipeSheet": "وصفة {brand}",
+      "byAuthor": "بقلم {name}",
+      "recipeDetail": "تفاصيل الوصفة",
+      "optional": "اختياري"
     }
   },
   "dietary": {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Camera, PartyPopper, RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -33,6 +34,7 @@ export function CookCompletion({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const headingRef = React.useRef<HTMLHeadingElement>(null);
   const [photoUrl, setPhotoUrl] = React.useState<string | null>(null);
+  const t = useTranslations("cook.completion");
 
   React.useEffect(() => {
     headingRef.current?.focus();
@@ -92,10 +94,10 @@ export function CookCompletion({
             celebratory ? "text-4xl" : "text-2xl",
           )}
         >
-          {celebratory ? "You did it! 🎉" : "Nicely done!"}
+          {t(celebratory ? "kidsHeading" : "heading")}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          You finished <span className="font-semibold">{recipeTitle}</span>.
+          {t("finished", { title: recipeTitle })}
         </p>
 
         {children}
@@ -105,11 +107,11 @@ export function CookCompletion({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photoUrl}
-              alt={`My finished ${recipeTitle}`}
+              alt={t("photoAlt", { title: recipeTitle })}
               className="mx-auto max-h-72 w-full rounded-2xl object-cover shadow-token"
             />
             <figcaption className="mt-2 text-sm text-muted-foreground">
-              {celebratory ? "Look what I made! 🍰" : "Your finished dish"}
+              {t(celebratory ? "kidsCaption" : "caption")}
             </figcaption>
             <Button
               type="button"
@@ -119,7 +121,7 @@ export function CookCompletion({
               onClick={() => inputRef.current?.click()}
             >
               <RotateCcw />
-              Retake photo
+              {t("retakePhoto")}
             </Button>
           </figure>
         ) : (
@@ -129,7 +131,8 @@ export function CookCompletion({
             className="mt-6 w-full gap-2"
             onClick={() => inputRef.current?.click()}
           >
-            <Camera />I made it! 📸 Take a photo
+            <Camera />
+            {t("takePhoto")}
           </Button>
         )}
 
@@ -149,7 +152,7 @@ export function CookCompletion({
           className="mt-3 w-full"
           onClick={onDone}
         >
-          {photoUrl ? "All done" : "Skip and finish"}
+          {t(photoUrl ? "allDone" : "skipAndFinish")}
         </Button>
       </div>
     </div>
