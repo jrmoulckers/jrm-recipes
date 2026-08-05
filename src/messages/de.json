@@ -474,7 +474,205 @@
     "validation": {
       "titleToast": "Dein Rezept braucht einen Titel.",
       "groupToast": "Wähle eine Gruppe aus oder ändere die Sichtbarkeit des Rezepts."
-    }
+    },
+    "nav": {
+      "aria": "Rezeptabschnitte",
+      "progressAria": "Rezeptfortschritt: {done} von {total} Abschnitten begonnen. Abschnitte anzeigen.",
+      "show": "Abschnitte anzeigen",
+      "barAria": "{done} von {total} Abschnitten begonnen",
+      "hide": "Rezeptabschnitte ausblenden",
+      "allStarted": "Alle Abschnitte begonnen 🎉",
+      "jump": "Zu einem Abschnitt springen",
+      "srStarted": " (begonnen)",
+      "srOptionalNotStarted": " (optional, nicht begonnen)",
+      "srNotStarted": " (nicht begonnen)"
+    },
+    "sections": {
+      "basics": "Grunddaten",
+      "ingredients": "Zutaten",
+      "steps": "Schritte",
+      "details": "Details und Foto",
+      "story": "Notizen und Geschichte"
+    },
+    "planLimitTitle": "Du hast das Limit deines Tarifs erreicht",
+    "editRecipe": "Rezept bearbeiten",
+    "newRecipe": "Neues Rezept",
+    "editingRecipe": "Rezept wird bearbeitet",
+    "viewAria": "Editoransicht",
+    "edit": "Bearbeiten",
+    "preview": "Vorschau",
+    "cancel": "Abbrechen",
+    "saveChanges": "Änderungen speichern",
+    "saveRecipe": "Rezept speichern",
+    "draft": {
+      "aria": "Unfertiges Rezept",
+      "title": "Du hast ein unfertiges Rezept",
+      "body": "Mach dort weiter, wo du aufgehört hast, oder fang neu an.",
+      "discard": "Verwerfen",
+      "restore": "Wiederherstellen"
+    },
+    "errorSummary": {
+      "one": "Bitte korrigiere dieses Feld vor dem Speichern:",
+      "many": "Bitte korrigiere diese {count} Felder vor dem Speichern:"
+    },
+    "fields": {
+      "title": "Titel",
+      "description": "Beschreibung",
+      "servings": "Portionen",
+      "servingsNoun": "Einheit",
+      "prepMinutes": "Vorbereitung (Min)",
+      "cookMinutes": "Garzeit (Min)",
+      "restMinutes": "Ruhezeit / Wartezeit",
+      "makeAheadNote": "Vorbereitung im Voraus",
+      "equipment": "Ausstattung und Werkzeuge",
+      "difficulty": "Schwierigkeit",
+      "cuisine": "Küche",
+      "notes": "Notizen",
+      "story": "Geschichte und Erinnerungen",
+      "handedDownFrom": "Weitergegeben von",
+      "originYear": "Wann",
+      "originPlace": "Ort",
+      "calories": "Kalorien",
+      "proteinGrams": "Eiweiß",
+      "carbsGrams": "Kohlenhydrate",
+      "fatGrams": "Fett",
+      "saturatedFatGrams": "Gesättigte Fettsäuren",
+      "sodiumMg": "Natrium",
+      "sugarGrams": "Zucker",
+      "fiberGrams": "Ballaststoffe",
+      "tags": "Schlagwörter",
+      "visibility": "Wer darf das sehen?",
+      "groupId": "Gruppe",
+      "status": "Status",
+      "ingredients": "Zutaten",
+      "steps": "Schritte",
+      "dietaryFlags": "Ernährung",
+      "coverImageUrl": "Titelfoto"
+    },
+    "hints": {
+      "description": "Ein Satz über das Gericht.",
+      "notes": "Allgemeine Tipps, Alternativen und Serviervorschläge.",
+      "story": "In deinen eigenen Worten: von wem es stammt, wann du es kochst, was es bedeutet.",
+      "equipment": "Mit Komma getrennt. Erscheint im Kochmodus als Durchgang zum Bereitlegen.",
+      "tags": "Mit Komma getrennt.",
+      "coverImage": "Lade ein Foto hoch oder füge eine Bild-URL ein."
+    },
+    "info": {
+      "restMinutes": "Wartezeit, etwa zum Kühlen, Gehen oder Ruhen.",
+      "makeAhead": "Eine Beschreibung, was sich vorbereiten lässt und wie lange im Voraus."
+    },
+    "placeholders": {
+      "title": "z. B. Omas Sonntags-Marinara",
+      "description": "z. B. eine langsam geköchelte Sauce für Sonntagsessen",
+      "item": "z. B. Weizenmehl",
+      "quantity": "z. B. 2 oder 1 1/2",
+      "unit": "z. B. Tassen",
+      "quantityMax": "z. B. 3",
+      "prep": "z. B. fein gewürfelt",
+      "note": "z. B. geteilt",
+      "ingredientGroupName": "z. B. trockene Zutaten",
+      "stepTitle": "Diesem Schritt einen Namen geben (optional)",
+      "instruction": "z. B. Eier und Zucker verrühren, bis alles verbunden ist",
+      "timerMinutes": "z. B. 10",
+      "techniques": "z. B. unterheben, aufschlagen",
+      "targetTempC": "z. B. 180",
+      "doneness": "z. B. goldbraun",
+      "videoUrl": "z. B. https://…",
+      "stepSectionName": "z. B. Teig vorbereiten",
+      "story": "z. B. Nonna hat es von ihrer Mutter in Kalabrien gelernt…",
+      "handedDownFrom": "z. B. Urgroßmutter Rosa Bianchi",
+      "originYear": "z. B. 1935 oder 1930er",
+      "originPlace": "z. B. Kalabrien, Italien",
+      "makeAhead": "z. B. Teig lässt sich bis zu 2 Tage vorher zubereiten",
+      "equipment": "z. B. Küchenmaschine, Backform, Teigkarte",
+      "cuisine": "z. B. italienisch",
+      "tags": "z. B. Abendessen, unter der Woche"
+    },
+    "ingredientsHeading": "Zutaten",
+    "convert": "Umrechnen: {fromLabel} {fromUnit} → {toLabel} {toUnit}",
+    "dismissConversion": "Umrechnung verwerfen",
+    "group": "Gruppe",
+    "noGroup": "Keine Gruppe",
+    "untitledGroup": "Gruppe ohne Titel",
+    "newGroup": "+ Neue Gruppe…",
+    "fewerOptions": "Weniger Optionen",
+    "moreOptions": "Mehr Optionen",
+    "maxQuantity": "Höchstmenge",
+    "prep": "Vorbereitung",
+    "note": "Notiz",
+    "usedInStep": "Verwendet in Schritt",
+    "noSpecificStep": "Kein bestimmter Schritt",
+    "optionalIngredient": "Optionale Zutat",
+    "ungrouped": "Ohne Gruppe",
+    "ungroupedSteps": "Schritte ohne Abschnitt",
+    "addIngredient": "Zutat hinzufügen",
+    "addGroup": "Gruppe hinzufügen",
+    "groupName": "Gruppenname",
+    "itemCount": "{count, plural, one {# Eintrag} other {# Einträge}}",
+    "removeGroup": "Gruppe entfernen (Zutaten behalten)",
+    "stepsHeading": "Schritte",
+    "instruction": "Anleitung",
+    "section": "Abschnitt",
+    "noSection": "Kein Abschnitt",
+    "untitledSection": "Abschnitt ohne Titel",
+    "newSection": "+ Neuer Abschnitt…",
+    "targetTemp": "Zieltemperatur °C",
+    "doneness": "Merkmal für den Garpunkt",
+    "videoUrl": "Video-URL",
+    "photo": "Foto",
+    "sectionName": "Abschnittsname",
+    "stepCount": "{count, plural, one {# Schritt} other {# Schritte}}",
+    "removeSection": "Abschnitt entfernen (Schritte behalten)",
+    "addStep": "Schritt hinzufügen",
+    "addSection": "Abschnitt hinzufügen",
+    "notesStoryHeading": "Notizen und Geschichte",
+    "notesStoryDescription": "Zum ganzen Rezept. Nicht an einen einzelnen Schritt gebunden.",
+    "handedDown": {
+      "legend": "Weitergegeben von",
+      "description": "Angaben zur Person, von der dieses Rezept stammt. Alles optional.",
+      "name": "Name der Person"
+    },
+    "difficulty": {
+      "easy": "Einfach",
+      "medium": "Mittel",
+      "hard": "Schwer"
+    },
+    "dietaryLegend": "Ernährung",
+    "dietaryHint": "Gib an, wofür dieses Rezept geeignet ist. Im Zweifel lass es lieber leer.",
+    "moreDietary": "Mehr Optionen (ohne Ei, allergenfrei…)",
+    "nutritionLegend": "Nährwerte",
+    "nutritionPerServing": "(pro Portion)",
+    "nutritionHint": "Optional. Lass es leer, wenn dir die Werte fehlen.",
+    "estimateFromIngredients": "Aus den Zutaten schätzen",
+    "nutrition": {
+      "calories": "Kalorien",
+      "proteinGrams": "Eiweiß",
+      "carbsGrams": "Kohlenhydrate",
+      "fatGrams": "Fett",
+      "saturatedFatGrams": "Gesättigte Fettsäuren",
+      "sodiumMg": "Natrium",
+      "sugarGrams": "Zucker gesamt",
+      "fiberGrams": "Ballaststoffe"
+    },
+    "visibilityStatus": "Sichtbarkeit und Status",
+    "visibilityAria": "Sichtbarkeitseinstellungen: {visibility}, {status}",
+    "visibility": {
+      "private": "Nur ich",
+      "group": "Eine Familie oder Gruppe",
+      "unlisted": "Alle mit dem Link",
+      "public": "Alle (öffentlich)"
+    },
+    "status": {
+      "published": "Veröffentlicht",
+      "draft": "Entwurf"
+    },
+    "chooseGroup": "Wähle eine Gruppe…",
+    "vitals": {
+      "ingredients": "{count, plural, one {# Zutat} other {# Zutaten}}",
+      "steps": "{count, plural, one {# Schritt} other {# Schritte}}",
+      "servingsNoun": "Portionen"
+    },
+    "about": "Infos zu {label}"
   },
   "characterCounter": {
     "remaining": "Noch {count}",
@@ -1668,7 +1866,8 @@
         "imported": "Rezept importiert. Prüfe die Details und speichere dann.",
         "linkError": "Beim Importieren dieses Links ist etwas schiefgelaufen.",
         "textError": "Beim Lesen dieses Textes ist etwas schiefgelaufen."
-      }
+      },
+      "textPlaceholder": "Omas Marinara\n\nZutaten\n2 Tassen passierte Tomaten\n1 Knoblauchzehe, fein gehackt\n\nZubereitung\n1. Das Öl erhitzen.\n2. Knoblauch dazugeben und köcheln lassen."
     },
     "keepsake": {
       "trigger": "Weitergeben",
@@ -1684,7 +1883,10 @@
       }
     },
     "lineage": {
-      "aria": "Rezeptlinie"
+      "aria": "Rezeptlinie",
+      "adaptedFrom": "Angepasst von",
+      "by": "von {name}",
+      "adaptations": "Anpassungen ({count})"
     },
     "quickCapture": {
       "trigger": "Schnell hinzufügen",
@@ -1702,7 +1904,8 @@
       "savedTitle": "Als Entwurf gespeichert",
       "savedDescription": "Erfasst. Öffne den vollständigen Editor, um Zutaten, Schritte und Fotos hinzuzufügen, oder komm später aus deinem Kochbuch zurück.",
       "finish": "Im vollständigen Editor fertigstellen",
-      "addAnother": "Noch eins hinzufügen"
+      "addAnother": "Noch eins hinzufügen",
+      "notesPlaceholder": "Füge ein oder tippe irgendetwas, z. B.\n450 g Rinderhack\n1 Ei\n\nVermengen, formen, bei 200 °C backen."
     },
     "quickPlan": {
       "addThisWeek": "Zum Plan dieser Woche hinzufügen",
@@ -1729,7 +1932,15 @@
     },
     "recipeCard": {
       "cookAria": "{title} kochen",
-      "unrated": "Nicht bewertet"
+      "unrated": "Nicht bewertet",
+      "matches": "Treffer bei {field}:",
+      "matchField": {
+        "title": "Titel",
+        "ingredient": "Zutat",
+        "tag": "Schlagwort",
+        "cuisine": "Küche",
+        "description": "Beschreibung"
+      }
     },
     "reel": {
       "trigger": "Kurzvideo",
@@ -1816,7 +2027,8 @@
       "restoreVersion": "Version {version} wiederherstellen",
       "toast": {
         "restored": "Version {version} wiederhergestellt"
-      }
+      },
+      "savedVersions": "Gespeicherte Versionen"
     },
     "emptyLibrary": {
       "control": {
@@ -1829,6 +2041,27 @@
         "body": "Bewahre die Gerichte, die alle lieben, an einem Ort auf. Fang mit dem an, nach dem sie dich immer fragen.",
         "cta": "Dein erstes Rezept speichern"
       }
+    },
+    "story": {
+      "aria": "Verlauf von {title}",
+      "emptyTitle": "Hier beginnt die Geschichte",
+      "emptyBody": "Wenn dieses Rezept bearbeitet, geteilt und angepasst wird, sammelt sich hier seine Familiengeschichte. Eine Spur jeder Hand, die es geformt hat.",
+      "heading": "Familiengeschichte",
+      "description": "Wie dieses Rezept mit der Zeit gewachsen ist und sich verzweigt hat.",
+      "kind": {
+        "created": "Rezept begonnen",
+        "adaptedFrom": "Angepasst von",
+        "adapted": "Angepasst",
+        "newAdaptation": "Neue Anpassung",
+        "adaptedByFamily": "Von der Familie angepasst",
+        "published": "Mit der Familie geteilt",
+        "suggestionApplied": "Vorschlag übernommen",
+        "updated": "Aktualisiert"
+      }
+    },
+    "rotation": {
+      "heading": "Zurück im Speiseplan",
+      "description": "Familienlieblinge, die du länger nicht gekocht hast."
     }
   },
   "settings": {
@@ -2197,5 +2430,200 @@
     "urlPlaceholder": "Füge eine Bild-URL ein",
     "urlLabel": "Bild-URL",
     "urlLabelFor": "URL für {label}"
+  },
+  "keepsake": {
+    "viewRecipe": "Rezept ansehen",
+    "print": "Andenken drucken",
+    "handedDown": "Ein Rezept, das an dich weitergegeben wurde",
+    "withLove": "Alles Liebe, {from}",
+    "noSteps": "Keine Schritte angegeben.",
+    "story": "Geschichte"
+  },
+  "allergenSummary": {
+    "none": "Keine häufigen Allergene erkannt. Prüfe die Zutaten immer selbst.",
+    "aria": "Allergen-Übersicht",
+    "contains": "Enthält",
+    "containsList": "Enthaltene Allergene",
+    "oftenHides": "Versteckt oft",
+    "hiddenList": "Möglicherweise versteckte Allergene",
+    "disclaimer": "Erkennung nach bestem Wissen. Prüfe die Zutaten bei Allergien immer selbst."
+  },
+  "ingredientSubstitutions": {
+    "safeSwapsAria": "Sichere Alternativen für {item}. Passt nicht zu den gewählten Ernährungsbedürfnissen",
+    "substitutionsAria": "Alternativen für {item}",
+    "safeSwapsTitle": "Sichere Alternativen ansehen",
+    "substitutionsTitle": "Alternativen ansehen",
+    "outOf": "Kein {item} mehr da?",
+    "confidenceMatch": "Treffer mit {level} Sicherheit",
+    "confidence": {
+      "high": "hoher",
+      "medium": "mittlerer",
+      "low": "geringer"
+    },
+    "filterAria": "Alternativen nach Ernährungsbedarf filtern",
+    "filters": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarisch",
+      "dairyFree": "Ohne Milchprodukte",
+      "glutenFree": "Glutenfrei",
+      "eggFree": "Ohne Ei"
+    },
+    "noMatches": "Keine Alternative erfüllt alle gewählten Ernährungsbedürfnisse."
+  },
+  "ingredientsPanel": {
+    "fewerServings": "Weniger Portionen",
+    "moreServings": "Mehr Portionen",
+    "servingsNoun": "Portionen",
+    "reset": "Zurücksetzen",
+    "scaleTo": "Anpassen auf…",
+    "bakersPercent": "Bäckerprozent",
+    "ingredients": "Zutaten",
+    "systemAria": "Maßsystem",
+    "system": {
+      "original": "Wie angegeben",
+      "us": "USA",
+      "metric": "Metrisch",
+      "grams": "Gramm"
+    },
+    "ingredient": "Zutat",
+    "targetAmount": "Zielmenge",
+    "unit": "Einheit",
+    "apply": "Übernehmen",
+    "pinHint": "Lege eine Zutat auf deinen Vorrat fest und rechne das ganze Rezept um.",
+    "scaleFactor": "≈ {factor}× des Rezepts",
+    "scaleFactorWithServings": "≈ {factor}× des Rezepts, {servings} {noun}",
+    "cannotConvert": "Diese Menge lässt sich nicht in die Einheit dieser Zutat umrechnen.",
+    "totalFlour": "Mehl gesamt",
+    "hydration": "Hydratation",
+    "batchWeight": "Teiggewicht",
+    "divideInto": "Aufteilen in",
+    "pieceCountAria": "Anzahl der Stücke",
+    "each": "= je {weight}",
+    "scaledToHousehold": "Angepasst an deine Familie mit {count} Personen.",
+    "cookingFor": "Kochen für",
+    "everyone": "Alle",
+    "flagging": "Zutaten markiert, die {name} meiden sollte.",
+    "noRestrictions": "Für {name} sind keine Einschränkungen gespeichert.",
+    "step": "Schritt {position}",
+    "optional": "optional",
+    "containsSr": "Enthält ",
+    "containsTitle": "Enthält {allergen}",
+    "dietaryWarningSr": "Ernährungshinweis. ",
+    "measureAsSr": "Abmessen als ",
+    "reasonContains": "enthält {list}",
+    "reasonNot": "nicht {list}",
+    "rangeTo": "{low} bis {high}"
+  },
+  "nutritionPanel": {
+    "aria": "Nährwertangaben",
+    "heading": "Nährwerte",
+    "basisAria": "Nährwertbezug",
+    "perServing": "Pro Portion",
+    "wholeRecipe": "Ganzes Rezept",
+    "wholeRecipeBasis": "Ganzes Rezept · {servings} {noun}",
+    "amountsPerServing": "Angaben pro Portion",
+    "wholeRecipeTotal": "Ganzes Rezept ({servings} {noun}): <value>{calories}</value> kcal",
+    "memberSelectAria": "Familienmitglied für das Kalorienziel",
+    "ofDailyCaloriesFor": "der Tageskalorien von",
+    "wholeRecipeSuffix": "(ganzes Rezept)",
+    "flagsAria": "Ernährungshinweise pro Portion",
+    "level": {
+      "low": "Niedrig",
+      "moderate": "Mittel",
+      "high": "Hoch"
+    },
+    "flag": "{level} {nutrient} · {percent}% TB",
+    "estimatedPartial": "Geschätzt aus der Zutatenliste ({sourced} von {total} Zutaten).",
+    "estimated": "Geschätzt aus der Zutatenliste.",
+    "entered": "Geschätzte Werte, wie sie beim Kochen eingetragen wurden.",
+    "servingsNoun": "Portionen"
+  },
+  "recipePreview": {
+    "notice": "Eine Vorschau darauf, wie dieses Rezept beim Kochen aussieht. Noch ist nichts gespeichert.",
+    "untitled": "Rezept ohne Titel",
+    "titlePlaceholder": "Titel deines Rezepts",
+    "noIngredients": "Noch keine Zutaten.",
+    "noSteps": "Noch keine Schritte.",
+    "optional": "optional",
+    "storyMemories": "Geschichte und Erinnerungen",
+    "handedDownFrom": "Weitergegeben von {name}",
+    "since": "seit {year}",
+    "prep": "Vorbereitung {time}",
+    "rest": "Ruhezeit {time}"
+  },
+  "versionCompare": {
+    "aria": "Rezeptversionen vergleichen",
+    "heading": "Versionen vergleichen",
+    "description": "Sieh genau, was sich zwischen zwei Punkten im Verlauf dieses Rezepts geändert hat.",
+    "currentRecipe": "Aktuelles Rezept",
+    "from": "Von",
+    "to": "Bis",
+    "fromAria": "Vergleichen ab Version",
+    "toAria": "Vergleichen bis Version",
+    "compare": "Vergleichen",
+    "summaryChanged": "{count} geändert",
+    "summaryAdded": "{count} hinzugefügt",
+    "summaryRemoved": "{count} entfernt",
+    "noDifferences": "Keine Unterschiede",
+    "identical": "Diese beiden Versionen sind identisch.",
+    "details": "Einzelheiten",
+    "hideUnchanged": "Unveränderte ausblenden",
+    "showUnchanged": "{count} unveränderte anzeigen",
+    "noChanges": "Keine Änderungen.",
+    "kind": {
+      "added": "Hinzugefügt",
+      "removed": "Entfernt",
+      "changed": "Geändert",
+      "unchanged": "Unverändert"
+    }
+  },
+  "recipeSearch": {
+    "quickFiltersAria": "Schnellfilter",
+    "quickPicks": "Schnellauswahl",
+    "searchLabel": "Rezepte suchen",
+    "searchPlaceholder": "Rezepte, Zutaten, Küchen, Schlagwörter suchen…",
+    "filters": "Filter",
+    "anyCuisine": "Beliebige Küche",
+    "anyLevel": "Beliebiges Niveau",
+    "anyTime": "Beliebige Dauer",
+    "minutesOrLess": "{minutes} Min oder weniger",
+    "anyTag": "Beliebiges Schlagwort",
+    "anyDiet": "Beliebige Ernährung",
+    "ingredientPlaceholder": "z. B. Koriander",
+    "ingredientAria": "Nach Zutat filtern",
+    "anyone": "Alle",
+    "addProfile": "Profil anlegen",
+    "anyFamily": "Beliebige Familie",
+    "onlyMyRecipes": "Nur meine Rezepte",
+    "myRecipes": "Meine Rezepte",
+    "clear": "Leeren",
+    "activeFiltersAria": "Aktive Filter",
+    "removeFilter": "Filter entfernen",
+    "safeForNote": "Filterung nach bestem Wissen anhand von Zutatennamen und angegebenen Ernährungsweisen. Prüfe Etiketten bei Allergien immer selbst.",
+    "field": {
+      "cuisine": "Küche",
+      "difficulty": "Schwierigkeit",
+      "maxTime": "Maximale Dauer",
+      "tag": "Schlagwort",
+      "dietary": "Ernährung",
+      "ingredient": "Zutat",
+      "safeFor": "Sicher für",
+      "family": "Familie",
+      "onlyMine": "Nur meine",
+      "sort": "Sortieren"
+    },
+    "chip": {
+      "query": "„{q}“",
+      "cuisine": "Küche: {value}",
+      "difficulty": "Schwierigkeit: {value}",
+      "maxTime": "≤ {minutes} Min",
+      "tag": "Schlagwort: {value}",
+      "diet": "Ernährung: {value}",
+      "safeForNamed": "Sicher für: {name}",
+      "ingredient": "Zutat: {value}",
+      "familyNamed": "Familie: {name}"
+    },
+    "facetSelected": "{count} ausgewählt",
+    "facetAria": "Filter {label}, {count} ausgewählt"
   }
 }

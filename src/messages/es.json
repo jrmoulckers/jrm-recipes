@@ -474,7 +474,205 @@
     "validation": {
       "titleToast": "Tu receta necesita un título.",
       "groupToast": "Elige un grupo o cambia la visibilidad de la receta."
-    }
+    },
+    "nav": {
+      "aria": "Secciones de la receta",
+      "progressAria": "Progreso de la receta: {done} de {total} secciones empezadas. Mostrar las secciones.",
+      "show": "Mostrar las secciones",
+      "barAria": "{done} de {total} secciones empezadas",
+      "hide": "Ocultar las secciones de la receta",
+      "allStarted": "Todas las secciones empezadas 🎉",
+      "jump": "Ir a una sección",
+      "srStarted": " (empezada)",
+      "srOptionalNotStarted": " (opcional, sin empezar)",
+      "srNotStarted": " (sin empezar)"
+    },
+    "sections": {
+      "basics": "Lo básico",
+      "ingredients": "Ingredientes",
+      "steps": "Pasos",
+      "details": "Detalles y foto",
+      "story": "Notas e historia"
+    },
+    "planLimitTitle": "Has llegado al límite de tu plan",
+    "editRecipe": "Editar la receta",
+    "newRecipe": "Receta nueva",
+    "editingRecipe": "Editando la receta",
+    "viewAria": "Vista del editor",
+    "edit": "Editar",
+    "preview": "Vista previa",
+    "cancel": "Cancelar",
+    "saveChanges": "Guardar los cambios",
+    "saveRecipe": "Guardar la receta",
+    "draft": {
+      "aria": "Receta sin terminar",
+      "title": "Tienes una receta sin terminar",
+      "body": "Continúa donde lo dejaste, o empieza de cero.",
+      "discard": "Descartar",
+      "restore": "Restaurar"
+    },
+    "errorSummary": {
+      "one": "Corrige este campo antes de guardar:",
+      "many": "Corrige estos {count} campos antes de guardar:"
+    },
+    "fields": {
+      "title": "Título",
+      "description": "Descripción",
+      "servings": "Raciones",
+      "servingsNoun": "Unidad",
+      "prepMinutes": "Preparación (min)",
+      "cookMinutes": "Cocción (min)",
+      "restMinutes": "Reposo / tiempo inactivo",
+      "makeAheadNote": "Preparar con antelación",
+      "equipment": "Utensilios y herramientas",
+      "difficulty": "Dificultad",
+      "cuisine": "Cocina",
+      "notes": "Notas",
+      "story": "Historia y recuerdos",
+      "handedDownFrom": "Transmitida por",
+      "originYear": "Cuándo",
+      "originPlace": "Lugar",
+      "calories": "Calorías",
+      "proteinGrams": "Proteínas",
+      "carbsGrams": "Carbohidratos",
+      "fatGrams": "Grasas",
+      "saturatedFatGrams": "Grasas saturadas",
+      "sodiumMg": "Sodio",
+      "sugarGrams": "Azúcar",
+      "fiberGrams": "Fibra",
+      "tags": "Etiquetas",
+      "visibility": "¿Quién puede verla?",
+      "groupId": "Grupo",
+      "status": "Estado",
+      "ingredients": "Ingredientes",
+      "steps": "Pasos",
+      "dietaryFlags": "Dieta",
+      "coverImageUrl": "Foto de portada"
+    },
+    "hints": {
+      "description": "Una frase sobre el plato.",
+      "notes": "Consejos generales, sustituciones e ideas para servir.",
+      "story": "Con tus palabras: de quién viene, cuándo la preparas, qué significa.",
+      "equipment": "Separados por comas. Se muestran como una pasada para reunir utensilios en el modo cocina.",
+      "tags": "Separadas por comas.",
+      "coverImage": "Sube una foto o pega la URL de una imagen."
+    },
+    "info": {
+      "restMinutes": "Tiempo inactivo, como enfriar, fermentar o reposar.",
+      "makeAhead": "Una descripción de qué se puede preparar por adelantado, y con cuánta antelación."
+    },
+    "placeholders": {
+      "title": "p. ej. la marinara de los domingos de la abuela",
+      "description": "p. ej. una salsa a fuego lento para las cenas del domingo",
+      "item": "p. ej. harina común",
+      "quantity": "p. ej. 2 o 1 1/2",
+      "unit": "p. ej. tazas",
+      "quantityMax": "p. ej. 3",
+      "prep": "p. ej. picado fino",
+      "note": "p. ej. dividido",
+      "ingredientGroupName": "p. ej. ingredientes secos",
+      "stepTitle": "Ponle nombre a este paso (opcional)",
+      "instruction": "p. ej. bate los huevos y el azúcar hasta integrarlos del todo",
+      "timerMinutes": "p. ej. 10",
+      "techniques": "p. ej. envolver, batir",
+      "targetTempC": "p. ej. 180",
+      "doneness": "p. ej. dorado",
+      "videoUrl": "p. ej. https://…",
+      "stepSectionName": "p. ej. preparar la masa",
+      "story": "p. ej. la nonna lo aprendió de su madre en Calabria…",
+      "handedDownFrom": "p. ej. la bisabuela Rosa Bianchi",
+      "originYear": "p. ej. 1935 o los años treinta",
+      "originPlace": "p. ej. Calabria, Italia",
+      "makeAhead": "p. ej. la masa se puede hacer hasta 2 días antes",
+      "equipment": "p. ej. batidora de pie, molde, rasqueta",
+      "cuisine": "p. ej. italiana",
+      "tags": "p. ej. cena, entre semana"
+    },
+    "ingredientsHeading": "Ingredientes",
+    "convert": "Convertir {fromLabel} {fromUnit} → {toLabel} {toUnit}",
+    "dismissConversion": "Descartar la conversión",
+    "group": "Grupo",
+    "noGroup": "Sin grupo",
+    "untitledGroup": "Grupo sin título",
+    "newGroup": "+ Grupo nuevo…",
+    "fewerOptions": "Menos opciones",
+    "moreOptions": "Más opciones",
+    "maxQuantity": "Cantidad máxima",
+    "prep": "Preparación",
+    "note": "Nota",
+    "usedInStep": "Se usa en el paso",
+    "noSpecificStep": "Ningún paso concreto",
+    "optionalIngredient": "Ingrediente opcional",
+    "ungrouped": "Sin agrupar",
+    "ungroupedSteps": "Pasos sin agrupar",
+    "addIngredient": "Añadir ingrediente",
+    "addGroup": "Añadir grupo",
+    "groupName": "Nombre del grupo",
+    "itemCount": "{count, plural, one {# elemento} other {# elementos}}",
+    "removeGroup": "Quitar el grupo (conservar sus ingredientes)",
+    "stepsHeading": "Pasos",
+    "instruction": "Instrucción",
+    "section": "Sección",
+    "noSection": "Sin sección",
+    "untitledSection": "Sección sin título",
+    "newSection": "+ Sección nueva…",
+    "targetTemp": "Temperatura objetivo (°C)",
+    "doneness": "Señal de punto",
+    "videoUrl": "URL del vídeo",
+    "photo": "Foto",
+    "sectionName": "Nombre de la sección",
+    "stepCount": "{count, plural, one {# paso} other {# pasos}}",
+    "removeSection": "Quitar la sección (conservar sus pasos)",
+    "addStep": "Añadir paso",
+    "addSection": "Añadir sección",
+    "notesStoryHeading": "Notas e historia",
+    "notesStoryDescription": "Sobre la receta entera. No van ligadas a ningún paso concreto.",
+    "handedDown": {
+      "legend": "Transmitida por",
+      "description": "Datos sobre quien creó esta receta. Todo es opcional.",
+      "name": "Nombre"
+    },
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    },
+    "dietaryLegend": "Dieta",
+    "dietaryHint": "Indica para qué es apta esta receta. Si tienes dudas, es mejor dejarlo sin marcar.",
+    "moreDietary": "Más opciones (sin huevo, sin alérgenos…)",
+    "nutritionLegend": "Nutrición",
+    "nutritionPerServing": "(por ración)",
+    "nutritionHint": "Opcional. Déjalo en blanco si no tienes los datos.",
+    "estimateFromIngredients": "Estimar a partir de los ingredientes",
+    "nutrition": {
+      "calories": "Calorías",
+      "proteinGrams": "Proteínas",
+      "carbsGrams": "Carbohidratos",
+      "fatGrams": "Grasas",
+      "saturatedFatGrams": "Grasas saturadas",
+      "sodiumMg": "Sodio",
+      "sugarGrams": "Azúcares",
+      "fiberGrams": "Fibra"
+    },
+    "visibilityStatus": "Visibilidad y estado",
+    "visibilityAria": "Ajustes de visibilidad: {visibility}, {status}",
+    "visibility": {
+      "private": "Solo yo",
+      "group": "Una familia o grupo",
+      "unlisted": "Cualquiera con el enlace",
+      "public": "Todo el mundo (pública)"
+    },
+    "status": {
+      "published": "Publicada",
+      "draft": "Borrador"
+    },
+    "chooseGroup": "Elige un grupo…",
+    "vitals": {
+      "ingredients": "{count, plural, one {# ingrediente} other {# ingredientes}}",
+      "steps": "{count, plural, one {# paso} other {# pasos}}",
+      "servingsNoun": "raciones"
+    },
+    "about": "Sobre {label}"
   },
   "characterCounter": {
     "remaining": "Quedan {count}",
@@ -1668,7 +1866,8 @@
         "imported": "Importamos la receta. Revisa los detalles y luego guarda.",
         "linkError": "Algo salió mal al importar ese enlace.",
         "textError": "Algo salió mal al leer ese texto."
-      }
+      },
+      "textPlaceholder": "Marinara de la abuela\n\nIngredientes\n2 tazas de tomate triturado\n1 diente de ajo picado\n\nPreparación\n1. Calienta el aceite.\n2. Añade el ajo y deja cocer a fuego lento."
     },
     "keepsake": {
       "trigger": "Regalar",
@@ -1684,7 +1883,10 @@
       }
     },
     "lineage": {
-      "aria": "Linaje de la receta"
+      "aria": "Linaje de la receta",
+      "adaptedFrom": "Adaptada de",
+      "by": "de {name}",
+      "adaptations": "Adaptaciones ({count})"
     },
     "quickCapture": {
       "trigger": "Añadir rápido",
@@ -1702,7 +1904,8 @@
       "savedTitle": "Guardada como borrador",
       "savedDescription": "La capturamos. Abre el editor completo para añadir ingredientes, pasos y fotos, o vuelve a ella luego desde tu recetario.",
       "finish": "Terminar en el editor completo",
-      "addAnother": "Añadir otra"
+      "addAnother": "Añadir otra",
+      "notesPlaceholder": "Pega o escribe lo que sea, p. ej.\n450 g de carne\n1 huevo\n\nMezcla, forma bolas y hornea a 200 °C."
     },
     "quickPlan": {
       "addThisWeek": "Añadir al plan de esta semana",
@@ -1729,7 +1932,15 @@
     },
     "recipeCard": {
       "cookAria": "Cocinar {title}",
-      "unrated": "Sin calificar"
+      "unrated": "Sin calificar",
+      "matches": "Coincide en {field}:",
+      "matchField": {
+        "title": "el título",
+        "ingredient": "un ingrediente",
+        "tag": "una etiqueta",
+        "cuisine": "la cocina",
+        "description": "la descripción"
+      }
     },
     "reel": {
       "trigger": "Vídeo corto",
@@ -1816,7 +2027,8 @@
       "restoreVersion": "Restaurar v{version}",
       "toast": {
         "restored": "Versión {version} restaurada"
-      }
+      },
+      "savedVersions": "Versiones guardadas"
     },
     "emptyLibrary": {
       "control": {
@@ -1829,6 +2041,27 @@
         "body": "Ten en un solo lugar los platos que todos quieren. Empieza por ese que siempre te piden.",
         "cta": "Guardar tu primera receta"
       }
+    },
+    "story": {
+      "aria": "Cronología de {title}",
+      "emptyTitle": "La historia empieza aquí",
+      "emptyBody": "A medida que esta receta se edite, se comparta y se adapte, su historia familiar se irá reuniendo aquí. El rastro de cada mano que la formó.",
+      "heading": "Historia familiar",
+      "description": "Cómo ha crecido y se ha ramificado esta receta con el tiempo.",
+      "kind": {
+        "created": "Receta empezada",
+        "adaptedFrom": "Adaptada de",
+        "adapted": "Adaptada",
+        "newAdaptation": "Nueva adaptación",
+        "adaptedByFamily": "Adaptada por la familia",
+        "published": "Compartida con la familia",
+        "suggestionApplied": "Sugerencia aplicada",
+        "updated": "Actualizada"
+      }
+    },
+    "rotation": {
+      "heading": "De vuelta al menú",
+      "description": "Las favoritas de la familia que hace tiempo que no preparas."
     }
   },
   "settings": {
@@ -2197,5 +2430,200 @@
     "urlPlaceholder": "Pega la URL de una imagen",
     "urlLabel": "URL de la imagen",
     "urlLabelFor": "URL de {label}"
+  },
+  "keepsake": {
+    "viewRecipe": "Ver la receta",
+    "print": "Imprimir este recuerdo",
+    "handedDown": "Una receta que te han transmitido",
+    "withLove": "Con cariño, {from}",
+    "noSteps": "No hay pasos indicados.",
+    "story": "Historia"
+  },
+  "allergenSummary": {
+    "none": "No se detectaron alérgenos comunes. Revisa siempre los ingredientes.",
+    "aria": "Resumen de alérgenos",
+    "contains": "Contiene",
+    "containsList": "Alérgenos que contiene",
+    "oftenHides": "Suele esconder",
+    "hiddenList": "Posibles alérgenos ocultos",
+    "disclaimer": "Detección aproximada. Revisa siempre los ingredientes si hay alergias."
+  },
+  "ingredientSubstitutions": {
+    "safeSwapsAria": "Sustituciones seguras para {item}. Choca con las necesidades dietéticas elegidas",
+    "substitutionsAria": "Sustituciones para {item}",
+    "safeSwapsTitle": "Ver sustituciones seguras",
+    "substitutionsTitle": "Ver sustituciones",
+    "outOf": "¿Te quedaste sin {item}?",
+    "confidenceMatch": "Coincidencia de confianza {level}",
+    "confidence": {
+      "high": "alta",
+      "medium": "media",
+      "low": "baja"
+    },
+    "filterAria": "Filtrar sustituciones por necesidad dietética",
+    "filters": {
+      "vegan": "Vegano",
+      "vegetarian": "Vegetariano",
+      "dairyFree": "Sin lácteos",
+      "glutenFree": "Sin gluten",
+      "eggFree": "Sin huevo"
+    },
+    "noMatches": "Ninguna sustitución cumple todas las necesidades dietéticas elegidas."
+  },
+  "ingredientsPanel": {
+    "fewerServings": "Menos raciones",
+    "moreServings": "Más raciones",
+    "servingsNoun": "raciones",
+    "reset": "Restablecer",
+    "scaleTo": "Ajustar a…",
+    "bakersPercent": "% del panadero",
+    "ingredients": "Ingredientes",
+    "systemAria": "Sistema de medida",
+    "system": {
+      "original": "Originales",
+      "us": "EE. UU.",
+      "metric": "Métrico",
+      "grams": "Gramos"
+    },
+    "ingredient": "Ingrediente",
+    "targetAmount": "Cantidad objetivo",
+    "unit": "Unidad",
+    "apply": "Aplicar",
+    "pinHint": "Fija un ingrediente a lo que tengas y recalcula toda la receta.",
+    "scaleFactor": "≈ {factor}× la receta",
+    "scaleFactorWithServings": "≈ {factor}× la receta, {servings} {noun}",
+    "cannotConvert": "Esa cantidad no se puede convertir a la unidad de este ingrediente.",
+    "totalFlour": "Harina total",
+    "hydration": "Hidratación",
+    "batchWeight": "Peso de la tanda",
+    "divideInto": "Dividir en",
+    "pieceCountAria": "Número de piezas",
+    "each": "= {weight} cada una",
+    "scaledToHousehold": "Ajustado a tu familia de {count}.",
+    "cookingFor": "Cocinas para",
+    "everyone": "Todos",
+    "flagging": "Marcamos los ingredientes que {name} debe evitar.",
+    "noRestrictions": "No hay restricciones guardadas para {name}.",
+    "step": "Paso {position}",
+    "optional": "opcional",
+    "containsSr": "Contiene ",
+    "containsTitle": "Contiene {allergen}",
+    "dietaryWarningSr": "Aviso dietético. ",
+    "measureAsSr": "Mide como ",
+    "reasonContains": "contiene {list}",
+    "reasonNot": "no es {list}",
+    "rangeTo": "{low} a {high}"
+  },
+  "nutritionPanel": {
+    "aria": "Información nutricional",
+    "heading": "Nutrición",
+    "basisAria": "Base nutricional",
+    "perServing": "Por ración",
+    "wholeRecipe": "Receta entera",
+    "wholeRecipeBasis": "Receta entera · {servings} {noun}",
+    "amountsPerServing": "Las cantidades son por ración",
+    "wholeRecipeTotal": "Receta entera ({servings} {noun}): <value>{calories}</value> kcal",
+    "memberSelectAria": "Miembro de la familia para el objetivo de calorías",
+    "ofDailyCaloriesFor": "de las calorías diarias de",
+    "wholeRecipeSuffix": "(receta entera)",
+    "flagsAria": "Indicadores dietéticos por ración",
+    "level": {
+      "low": "Bajo",
+      "moderate": "Moderado",
+      "high": "Alto"
+    },
+    "flag": "{level} en {nutrient} · {percent}% VD",
+    "estimatedPartial": "Estimado a partir de la lista de ingredientes ({sourced} de {total} ingredientes).",
+    "estimated": "Estimado a partir de la lista de ingredientes.",
+    "entered": "Valores estimados según los introdujo quien cocina.",
+    "servingsNoun": "raciones"
+  },
+  "recipePreview": {
+    "notice": "Una vista previa de cómo verán esta receta quienes cocinan. Todavía no se ha guardado nada.",
+    "untitled": "Receta sin título",
+    "titlePlaceholder": "El título de tu receta",
+    "noIngredients": "Todavía no hay ingredientes.",
+    "noSteps": "Todavía no hay pasos.",
+    "optional": "opcional",
+    "storyMemories": "Historia y recuerdos",
+    "handedDownFrom": "Transmitida por {name}",
+    "since": "desde {year}",
+    "prep": "Preparación {time}",
+    "rest": "Reposo {time}"
+  },
+  "versionCompare": {
+    "aria": "Comparar versiones de la receta",
+    "heading": "Comparar versiones",
+    "description": "Mira exactamente qué cambió entre dos momentos del historial de esta receta.",
+    "currentRecipe": "Receta actual",
+    "from": "Desde",
+    "to": "Hasta",
+    "fromAria": "Comparar desde la versión",
+    "toAria": "Comparar hasta la versión",
+    "compare": "Comparar",
+    "summaryChanged": "{count} con cambios",
+    "summaryAdded": "{count} añadidos",
+    "summaryRemoved": "{count} eliminados",
+    "noDifferences": "Sin diferencias",
+    "identical": "Estas dos versiones son idénticas.",
+    "details": "Detalles",
+    "hideUnchanged": "Ocultar lo que no cambió",
+    "showUnchanged": "Mostrar {count} sin cambios",
+    "noChanges": "Sin cambios.",
+    "kind": {
+      "added": "Añadido",
+      "removed": "Eliminado",
+      "changed": "Modificado",
+      "unchanged": "Sin cambios"
+    }
+  },
+  "recipeSearch": {
+    "quickFiltersAria": "Filtros rápidos",
+    "quickPicks": "Selección rápida",
+    "searchLabel": "Buscar recetas",
+    "searchPlaceholder": "Busca recetas, ingredientes, cocinas, etiquetas…",
+    "filters": "Filtros",
+    "anyCuisine": "Cualquier cocina",
+    "anyLevel": "Cualquier nivel",
+    "anyTime": "Cualquier duración",
+    "minutesOrLess": "{minutes} min o menos",
+    "anyTag": "Cualquier etiqueta",
+    "anyDiet": "Cualquier dieta",
+    "ingredientPlaceholder": "p. ej. cilantro",
+    "ingredientAria": "Filtrar por ingrediente",
+    "anyone": "Cualquiera",
+    "addProfile": "Añadir un perfil",
+    "anyFamily": "Cualquier familia",
+    "onlyMyRecipes": "Solo mis recetas",
+    "myRecipes": "Mis recetas",
+    "clear": "Limpiar",
+    "activeFiltersAria": "Filtros activos",
+    "removeFilter": "Quitar el filtro",
+    "safeForNote": "Filtrado aproximado a partir de los nombres de los ingredientes y las dietas declaradas. Revisa siempre las etiquetas si hay alergias.",
+    "field": {
+      "cuisine": "Cocina",
+      "difficulty": "Dificultad",
+      "maxTime": "Tiempo máximo",
+      "tag": "Etiqueta",
+      "dietary": "Dieta",
+      "ingredient": "Ingrediente",
+      "safeFor": "Seguro para",
+      "family": "Familia",
+      "onlyMine": "Solo las mías",
+      "sort": "Ordenar"
+    },
+    "chip": {
+      "query": "“{q}”",
+      "cuisine": "Cocina: {value}",
+      "difficulty": "Dificultad: {value}",
+      "maxTime": "Hasta {minutes} min",
+      "tag": "Etiqueta: {value}",
+      "diet": "Dieta: {value}",
+      "safeForNamed": "Seguro para: {name}",
+      "ingredient": "Ingrediente: {value}",
+      "familyNamed": "Familia: {name}"
+    },
+    "facetSelected": "{count} seleccionados",
+    "facetAria": "Filtro de {label}, {count} seleccionados"
   }
 }

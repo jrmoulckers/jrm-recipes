@@ -1,17 +1,24 @@
 import {
   cleanup,
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
 
+import { IntlWrapper } from "~/test/intl";
+import esMessages from "~/messages/es.json";
 import { NutritionPanel, type CalorieMember } from "./nutrition-panel";
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { type Nutrition } from "~/lib/nutrition";
 
 afterEach(cleanup);
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 const PER_SERVING: Nutrition = {
   calories: 500,
@@ -130,6 +137,27 @@ describe("NutritionPanel", () => {
       screen.getByText(
         /estimated from the ingredient list \(2 of 5 ingredients\)/i,
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("resolves its copy from the Spanish catalog", () => {
+    rtlRender(
+      <IntlWrapper locale="es" messages={esMessages}>
+        <NutritionPanel
+          nutrition={PER_SERVING}
+          servings={4}
+          servingsNoun="raciones"
+        />
+      </IntlWrapper>,
+    );
+    const region = screen.getByRole("region", {
+      name: /información nutricional/i,
+    });
+    expect(
+      within(region).getByText(/las cantidades son por ración/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/valores estimados según los introdujo quien cocina/i),
     ).toBeInTheDocument();
   });
 });

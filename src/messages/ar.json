@@ -474,7 +474,205 @@
     "validation": {
       "titleToast": "تحتاج وصفتك إلى عنوان.",
       "groupToast": "اختر مجموعة، أو غيّر ظهور الوصفة."
-    }
+    },
+    "nav": {
+      "aria": "أقسام الوصفة",
+      "progressAria": "تقدم الوصفة: بدأت {done} من {total} أقسام. أظهر الأقسام.",
+      "show": "أظهر الأقسام",
+      "barAria": "بدأت {done} من {total} أقسام",
+      "hide": "أخف أقسام الوصفة",
+      "allStarted": "بدأت كل الأقسام 🎉",
+      "jump": "انتقل إلى قسم",
+      "srStarted": " (بدأت)",
+      "srOptionalNotStarted": " (اختياري، لم يبدأ)",
+      "srNotStarted": " (لم يبدأ)"
+    },
+    "sections": {
+      "basics": "الأساسيات",
+      "ingredients": "المكونات",
+      "steps": "الخطوات",
+      "details": "التفاصيل والصورة",
+      "story": "الملاحظات والحكاية"
+    },
+    "planLimitTitle": "لقد بلغت حد خطتك",
+    "editRecipe": "تحرير الوصفة",
+    "newRecipe": "وصفة جديدة",
+    "editingRecipe": "جارٍ تحرير الوصفة",
+    "viewAria": "عرض المحرر",
+    "edit": "تحرير",
+    "preview": "معاينة",
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات",
+    "saveRecipe": "حفظ الوصفة",
+    "draft": {
+      "aria": "وصفة غير مكتملة",
+      "title": "لديك وصفة غير مكتملة",
+      "body": "تابع من حيث توقفت، أو ابدأ من جديد.",
+      "discard": "تجاهل",
+      "restore": "استعادة"
+    },
+    "errorSummary": {
+      "one": "صحح هذا الحقل قبل الحفظ:",
+      "many": "صحح هذه الحقول ({count}) قبل الحفظ:"
+    },
+    "fields": {
+      "title": "العنوان",
+      "description": "الوصف",
+      "servings": "الحصص",
+      "servingsNoun": "الوحدة",
+      "prepMinutes": "التحضير (دقيقة)",
+      "cookMinutes": "الطهي (دقيقة)",
+      "restMinutes": "الراحة / الوقت غير الفعال",
+      "makeAheadNote": "التحضير المسبق",
+      "equipment": "الأدوات والمعدات",
+      "difficulty": "الصعوبة",
+      "cuisine": "المطبخ",
+      "notes": "الملاحظات",
+      "story": "الحكاية والذكريات",
+      "handedDownFrom": "متوارثة عن",
+      "originYear": "متى",
+      "originPlace": "المكان",
+      "calories": "السعرات",
+      "proteinGrams": "البروتين",
+      "carbsGrams": "الكربوهيدرات",
+      "fatGrams": "الدهون",
+      "saturatedFatGrams": "الدهون المشبعة",
+      "sodiumMg": "الصوديوم",
+      "sugarGrams": "السكر",
+      "fiberGrams": "الألياف",
+      "tags": "الوسوم",
+      "visibility": "من يمكنه رؤيتها؟",
+      "groupId": "المجموعة",
+      "status": "الحالة",
+      "ingredients": "المكونات",
+      "steps": "الخطوات",
+      "dietaryFlags": "النظام الغذائي",
+      "coverImageUrl": "صورة الغلاف"
+    },
+    "hints": {
+      "description": "جملة عن الطبق.",
+      "notes": "نصائح عامة وبدائل وأفكار للتقديم.",
+      "story": "بكلماتك: ممن جاءت، ومتى تعدها، وماذا تعني لك.",
+      "equipment": "افصل بينها بفواصل. تظهر في وضع الطهي كجولة لتجهيز الأدوات.",
+      "tags": "افصل بينها بفواصل.",
+      "coverImage": "ارفع صورة أو الصق رابط صورة."
+    },
+    "info": {
+      "restMinutes": "وقت غير فعال، مثل التبريد أو التخمير أو الراحة.",
+      "makeAhead": "وصف لما يمكن تحضيره مسبقا، وقبل كم من الوقت."
+    },
+    "placeholders": {
+      "title": "مثل صلصة مارينارا الأحد من الجدة",
+      "description": "مثل صلصة على نار هادئة لعشاء الأحد",
+      "item": "مثل دقيق متعدد الاستعمالات",
+      "quantity": "مثل 2 أو 1 1/2",
+      "unit": "مثل أكواب",
+      "quantityMax": "مثل 3",
+      "prep": "مثل مقطع ناعما",
+      "note": "مثل مقسم",
+      "ingredientGroupName": "مثل المكونات الجافة",
+      "stepTitle": "سم هذه الخطوة (اختياري)",
+      "instruction": "مثل اخفق البيض والسكر حتى يمتزجا تماما",
+      "timerMinutes": "مثل 10",
+      "techniques": "مثل التقليب، الخفق",
+      "targetTempC": "مثل 180",
+      "doneness": "مثل ذهبي اللون",
+      "videoUrl": "مثل https://…",
+      "stepSectionName": "مثل تحضير العجين",
+      "story": "مثل تعلمتها الجدة من أمها في كالابريا…",
+      "handedDownFrom": "مثل الجدة الكبرى روزا بيانكي",
+      "originYear": "مثل 1935 أو ثلاثينيات القرن الماضي",
+      "originPlace": "مثل كالابريا، إيطاليا",
+      "makeAhead": "مثل يمكن تحضير العجين قبل يومين",
+      "equipment": "مثل عجانة كهربائية، قالب كيك، مكشطة عجين",
+      "cuisine": "مثل إيطالي",
+      "tags": "مثل عشاء، أيام الأسبوع"
+    },
+    "ingredientsHeading": "المكونات",
+    "convert": "حول {fromLabel} {fromUnit} ← {toLabel} {toUnit}",
+    "dismissConversion": "تجاهل التحويل",
+    "group": "المجموعة",
+    "noGroup": "بلا مجموعة",
+    "untitledGroup": "مجموعة بلا اسم",
+    "newGroup": "+ مجموعة جديدة…",
+    "fewerOptions": "خيارات أقل",
+    "moreOptions": "خيارات أكثر",
+    "maxQuantity": "أقصى كمية",
+    "prep": "التحضير",
+    "note": "ملاحظة",
+    "usedInStep": "يستخدم في الخطوة",
+    "noSpecificStep": "بلا خطوة محددة",
+    "optionalIngredient": "مكون اختياري",
+    "ungrouped": "غير مجمعة",
+    "ungroupedSteps": "خطوات غير مجمعة",
+    "addIngredient": "أضف مكونا",
+    "addGroup": "أضف مجموعة",
+    "groupName": "اسم المجموعة",
+    "itemCount": "{count, plural, one {عنصر واحد} other {# عناصر}}",
+    "removeGroup": "أزل المجموعة (مع الإبقاء على مكوناتها)",
+    "stepsHeading": "الخطوات",
+    "instruction": "التعليمات",
+    "section": "القسم",
+    "noSection": "بلا قسم",
+    "untitledSection": "قسم بلا اسم",
+    "newSection": "+ قسم جديد…",
+    "targetTemp": "الحرارة المستهدفة °م",
+    "doneness": "علامة النضج",
+    "videoUrl": "رابط الفيديو",
+    "photo": "صورة",
+    "sectionName": "اسم القسم",
+    "stepCount": "{count, plural, one {خطوة واحدة} other {# خطوات}}",
+    "removeSection": "أزل القسم (مع الإبقاء على خطواته)",
+    "addStep": "أضف خطوة",
+    "addSection": "أضف قسما",
+    "notesStoryHeading": "الملاحظات والحكاية",
+    "notesStoryDescription": "عن الوصفة كلها. غير مرتبطة بخطوة بعينها.",
+    "handedDown": {
+      "legend": "متوارثة عن",
+      "description": "تفاصيل عمن ابتكر هذه الوصفة. كلها اختيارية.",
+      "name": "الاسم"
+    },
+    "difficulty": {
+      "easy": "سهل",
+      "medium": "متوسط",
+      "hard": "صعب"
+    },
+    "dietaryLegend": "النظام الغذائي",
+    "dietaryHint": "حدد لمن تصلح هذه الوصفة. إن لم تكن متأكدا، فالأفضل تركها بلا تحديد.",
+    "moreDietary": "خيارات أكثر (خال من البيض، خال من مسببات الحساسية…)",
+    "nutritionLegend": "التغذية",
+    "nutritionPerServing": "(لكل حصة)",
+    "nutritionHint": "اختياري. اتركه فارغا إن لم تكن لديك الأرقام.",
+    "estimateFromIngredients": "قدر من المكونات",
+    "nutrition": {
+      "calories": "السعرات",
+      "proteinGrams": "البروتين",
+      "carbsGrams": "الكربوهيدرات",
+      "fatGrams": "الدهون",
+      "saturatedFatGrams": "الدهون المشبعة",
+      "sodiumMg": "الصوديوم",
+      "sugarGrams": "السكريات",
+      "fiberGrams": "الألياف"
+    },
+    "visibilityStatus": "الظهور والحالة",
+    "visibilityAria": "إعدادات الظهور: {visibility}، {status}",
+    "visibility": {
+      "private": "أنا فقط",
+      "group": "عائلة أو مجموعة",
+      "unlisted": "كل من لديه الرابط",
+      "public": "الجميع (عام)"
+    },
+    "status": {
+      "published": "منشورة",
+      "draft": "مسودة"
+    },
+    "chooseGroup": "اختر مجموعة…",
+    "vitals": {
+      "ingredients": "{count, plural, one {مكون واحد} other {# مكونات}}",
+      "steps": "{count, plural, one {خطوة واحدة} other {# خطوات}}",
+      "servingsNoun": "حصص"
+    },
+    "about": "عن {label}"
   },
   "characterCounter": {
     "remaining": "متبقٍ {count}",
@@ -1668,7 +1866,8 @@
         "imported": "تم استيراد الوصفة. راجع التفاصيل، ثم احفظ.",
         "linkError": "حدث خطأ أثناء استيراد ذلك الرابط.",
         "textError": "حدث خطأ أثناء قراءة ذلك النص."
-      }
+      },
+      "textPlaceholder": "صلصة مارينارا من الجدة\n\nالمكونات\nكوبان من الطماطم المهروسة\nفص ثوم مفروم\n\nالتحضير\n1. سخن الزيت.\n2. أضف الثوم واتركه على نار هادئة."
     },
     "keepsake": {
       "trigger": "أهدِها",
@@ -1684,7 +1883,10 @@
       }
     },
     "lineage": {
-      "aria": "سلالة الوصفة"
+      "aria": "سلالة الوصفة",
+      "adaptedFrom": "مقتبسة من",
+      "by": "بواسطة {name}",
+      "adaptations": "الاقتباسات ({count})"
     },
     "quickCapture": {
       "trigger": "إضافة سريعة",
@@ -1702,7 +1904,8 @@
       "savedTitle": "حُفظت كمسودة",
       "savedDescription": "تم التقاطها. افتح المحرّر الكامل لإضافة المكوّنات والخطوات والصور، أو عُد إليها لاحقًا من كتاب طبخك.",
       "finish": "إكمالها في المحرّر الكامل",
-      "addAnother": "إضافة واحدة أخرى"
+      "addAnother": "إضافة واحدة أخرى",
+      "notesPlaceholder": "الصق أو اكتب أي شيء، مثل\n450 غرام لحم بقري\nبيضة واحدة\n\nاخلط وشكل واخبز على 200 درجة."
     },
     "quickPlan": {
       "addThisWeek": "أضف إلى خطة هذا الأسبوع",
@@ -1729,7 +1932,15 @@
     },
     "recipeCard": {
       "cookAria": "اطبخ {title}",
-      "unrated": "غير مقيّمة"
+      "unrated": "غير مقيّمة",
+      "matches": "تطابق في {field}:",
+      "matchField": {
+        "title": "العنوان",
+        "ingredient": "مكون",
+        "tag": "وسم",
+        "cuisine": "المطبخ",
+        "description": "الوصف"
+      }
     },
     "reel": {
       "trigger": "مقطع قصير",
@@ -1816,7 +2027,8 @@
       "restoreVersion": "استعادة الإصدار {version}",
       "toast": {
         "restored": "تمت استعادة الإصدار {version}"
-      }
+      },
+      "savedVersions": "الإصدارات المحفوظة"
     },
     "emptyLibrary": {
       "control": {
@@ -1829,6 +2041,27 @@
         "body": "احتفظ بالأطباق التي يحبها الجميع في مكان واحد. ابدأ بالطبق الذي يطلبونه منك دائمًا.",
         "cta": "احفظ وصفتك الأولى"
       }
+    },
+    "story": {
+      "aria": "الخط الزمني لـ {title}",
+      "emptyTitle": "الحكاية تبدأ من هنا",
+      "emptyBody": "كلما جرى تعديل هذه الوصفة ومشاركتها واقتباسها، تجمع هنا حكايتها العائلية. أثر كل يد شكلتها.",
+      "heading": "الحكاية العائلية",
+      "description": "كيف نمت هذه الوصفة وتفرعت مع الوقت.",
+      "kind": {
+        "created": "بدأت الوصفة",
+        "adaptedFrom": "مقتبسة من",
+        "adapted": "مقتبسة",
+        "newAdaptation": "اقتباس جديد",
+        "adaptedByFamily": "اقتبستها العائلة",
+        "published": "شوركت مع العائلة",
+        "suggestionApplied": "طبق الاقتراح",
+        "updated": "محدثة"
+      }
+    },
+    "rotation": {
+      "heading": "عادت إلى الجدول",
+      "description": "أطباق العائلة المفضلة التي لم تعدها منذ فترة."
     }
   },
   "settings": {
@@ -2197,5 +2430,200 @@
     "urlPlaceholder": "الصق رابط صورة",
     "urlLabel": "رابط الصورة",
     "urlLabelFor": "رابط {label}"
+  },
+  "keepsake": {
+    "viewRecipe": "عرض الوصفة",
+    "print": "اطبع هذه الذكرى",
+    "handedDown": "وصفة انتقلت إليك",
+    "withLove": "مع الحب، {from}",
+    "noSteps": "لا توجد خطوات مدرجة.",
+    "story": "الحكاية"
+  },
+  "allergenSummary": {
+    "none": "لم يتم رصد مسببات حساسية شائعة. تحقق دائما من المكونات.",
+    "aria": "ملخص مسببات الحساسية",
+    "contains": "يحتوي على",
+    "containsList": "مسببات الحساسية الموجودة",
+    "oftenHides": "غالبا ما يخفي",
+    "hiddenList": "مسببات حساسية قد تكون مخفية",
+    "disclaimer": "الرصد تقريبي. تحقق دائما من المكونات في حال وجود حساسية."
+  },
+  "ingredientSubstitutions": {
+    "safeSwapsAria": "بدائل آمنة لـ {item}. يتعارض مع الاحتياجات الغذائية المحددة",
+    "substitutionsAria": "بدائل لـ {item}",
+    "safeSwapsTitle": "عرض البدائل الآمنة",
+    "substitutionsTitle": "عرض البدائل",
+    "outOf": "نفد {item}؟",
+    "confidenceMatch": "تطابق بثقة {level}",
+    "confidence": {
+      "high": "عالية",
+      "medium": "متوسطة",
+      "low": "منخفضة"
+    },
+    "filterAria": "تصفية البدائل حسب الاحتياج الغذائي",
+    "filters": {
+      "vegan": "نباتي صرف",
+      "vegetarian": "نباتي",
+      "dairyFree": "خال من الألبان",
+      "glutenFree": "خال من الغلوتين",
+      "eggFree": "خال من البيض"
+    },
+    "noMatches": "لا يوجد بديل يلبي كل الاحتياجات الغذائية المحددة."
+  },
+  "ingredientsPanel": {
+    "fewerServings": "حصص أقل",
+    "moreServings": "حصص أكثر",
+    "servingsNoun": "حصص",
+    "reset": "إعادة الضبط",
+    "scaleTo": "اضبط على…",
+    "bakersPercent": "نسبة الخباز",
+    "ingredients": "المكونات",
+    "systemAria": "نظام القياس",
+    "system": {
+      "original": "الأصلي",
+      "us": "أمريكي",
+      "metric": "متري",
+      "grams": "غرامات"
+    },
+    "ingredient": "المكون",
+    "targetAmount": "الكمية المستهدفة",
+    "unit": "الوحدة",
+    "apply": "تطبيق",
+    "pinHint": "ثبت مكونا واحدا على ما لديك وأعد حساب الوصفة كلها.",
+    "scaleFactor": "≈ {factor}× من الوصفة",
+    "scaleFactorWithServings": "≈ {factor}× من الوصفة، {servings} {noun}",
+    "cannotConvert": "لا يمكن تحويل هذه الكمية إلى وحدة هذا المكون.",
+    "totalFlour": "إجمالي الدقيق",
+    "hydration": "نسبة الماء",
+    "batchWeight": "وزن الدفعة",
+    "divideInto": "قسمها إلى",
+    "pieceCountAria": "عدد القطع",
+    "each": "= {weight} لكل قطعة",
+    "scaledToHousehold": "معدلة لعائلتك المكونة من {count}.",
+    "cookingFor": "تطبخ لـ",
+    "everyone": "الجميع",
+    "flagging": "نبرز المكونات التي يجب أن يتجنبها {name}.",
+    "noRestrictions": "لا توجد قيود محفوظة لـ {name}.",
+    "step": "الخطوة {position}",
+    "optional": "اختياري",
+    "containsSr": "يحتوي على ",
+    "containsTitle": "يحتوي على {allergen}",
+    "dietaryWarningSr": "تنبيه غذائي. ",
+    "measureAsSr": "قس كالتالي ",
+    "reasonContains": "يحتوي على {list}",
+    "reasonNot": "ليس {list}",
+    "rangeTo": "{low} إلى {high}"
+  },
+  "nutritionPanel": {
+    "aria": "القيم الغذائية",
+    "heading": "التغذية",
+    "basisAria": "أساس القيم الغذائية",
+    "perServing": "لكل حصة",
+    "wholeRecipe": "الوصفة كاملة",
+    "wholeRecipeBasis": "الوصفة كاملة · {servings} {noun}",
+    "amountsPerServing": "الكميات لكل حصة",
+    "wholeRecipeTotal": "الوصفة كاملة ({servings} {noun}): <value>{calories}</value> سعرة",
+    "memberSelectAria": "فرد الأسرة لهدف السعرات",
+    "ofDailyCaloriesFor": "من السعرات اليومية لـ",
+    "wholeRecipeSuffix": "(الوصفة كاملة)",
+    "flagsAria": "مؤشرات غذائية لكل حصة",
+    "level": {
+      "low": "منخفض",
+      "moderate": "متوسط",
+      "high": "مرتفع"
+    },
+    "flag": "{level} {nutrient} · {percent}% من الاحتياج",
+    "estimatedPartial": "تقدير من قائمة المكونات ({sourced} من {total} مكونا).",
+    "estimated": "تقدير من قائمة المكونات.",
+    "entered": "قيم تقديرية كما أدخلها الطاهي.",
+    "servingsNoun": "حصص"
+  },
+  "recipePreview": {
+    "notice": "معاينة لكيفية ظهور هذه الوصفة للطهاة. لم يحفظ شيء بعد.",
+    "untitled": "وصفة بلا عنوان",
+    "titlePlaceholder": "عنوان وصفتك",
+    "noIngredients": "لا مكونات بعد.",
+    "noSteps": "لا خطوات بعد.",
+    "optional": "اختياري",
+    "storyMemories": "الحكاية والذكريات",
+    "handedDownFrom": "متوارثة عن {name}",
+    "since": "منذ {year}",
+    "prep": "تحضير {time}",
+    "rest": "راحة {time}"
+  },
+  "versionCompare": {
+    "aria": "مقارنة إصدارات الوصفة",
+    "heading": "قارن الإصدارات",
+    "description": "شاهد بالضبط ما تغير بين نقطتين في سجل هذه الوصفة.",
+    "currentRecipe": "الوصفة الحالية",
+    "from": "من",
+    "to": "إلى",
+    "fromAria": "المقارنة بدءا من الإصدار",
+    "toAria": "المقارنة حتى الإصدار",
+    "compare": "قارن",
+    "summaryChanged": "{count} تغيرت",
+    "summaryAdded": "{count} أضيفت",
+    "summaryRemoved": "{count} حذفت",
+    "noDifferences": "لا فروق",
+    "identical": "هذان الإصداران متطابقان.",
+    "details": "التفاصيل",
+    "hideUnchanged": "إخفاء غير المتغير",
+    "showUnchanged": "عرض {count} دون تغيير",
+    "noChanges": "لا تغييرات.",
+    "kind": {
+      "added": "مضاف",
+      "removed": "محذوف",
+      "changed": "معدل",
+      "unchanged": "دون تغيير"
+    }
+  },
+  "recipeSearch": {
+    "quickFiltersAria": "مرشحات سريعة",
+    "quickPicks": "اختيارات سريعة",
+    "searchLabel": "ابحث في الوصفات",
+    "searchPlaceholder": "ابحث في الوصفات والمكونات والمطابخ والوسوم…",
+    "filters": "المرشحات",
+    "anyCuisine": "أي مطبخ",
+    "anyLevel": "أي مستوى",
+    "anyTime": "أي مدة",
+    "minutesOrLess": "{minutes} دقيقة أو أقل",
+    "anyTag": "أي وسم",
+    "anyDiet": "أي نظام غذائي",
+    "ingredientPlaceholder": "مثل الكزبرة",
+    "ingredientAria": "التصفية حسب المكون",
+    "anyone": "أي شخص",
+    "addProfile": "أضف ملفا شخصيا",
+    "anyFamily": "أي عائلة",
+    "onlyMyRecipes": "وصفاتي فقط",
+    "myRecipes": "وصفاتي",
+    "clear": "مسح",
+    "activeFiltersAria": "المرشحات النشطة",
+    "removeFilter": "إزالة المرشح",
+    "safeForNote": "تصفية تقريبية بناء على أسماء المكونات والأنظمة الغذائية المعلنة. تحقق دائما من الملصقات في حال وجود حساسية.",
+    "field": {
+      "cuisine": "المطبخ",
+      "difficulty": "الصعوبة",
+      "maxTime": "أقصى مدة",
+      "tag": "الوسم",
+      "dietary": "النظام الغذائي",
+      "ingredient": "المكون",
+      "safeFor": "آمن لـ",
+      "family": "العائلة",
+      "onlyMine": "لي فقط",
+      "sort": "الترتيب"
+    },
+    "chip": {
+      "query": "«{q}»",
+      "cuisine": "المطبخ: {value}",
+      "difficulty": "الصعوبة: {value}",
+      "maxTime": "≤ {minutes} دقيقة",
+      "tag": "الوسم: {value}",
+      "diet": "النظام الغذائي: {value}",
+      "safeForNamed": "آمن لـ: {name}",
+      "ingredient": "المكون: {value}",
+      "familyNamed": "العائلة: {name}"
+    },
+    "facetSelected": "{count} محددة",
+    "facetAria": "مرشح {label}، {count} محددة"
   }
 }

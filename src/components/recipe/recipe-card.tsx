@@ -157,7 +157,7 @@ export function RecipeCard({
           className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
           <Play className="size-3.5" aria-hidden />
-          Cook
+          {t("common.cook")}
         </Link>
       </div>
       <Link
@@ -212,7 +212,11 @@ export function RecipeCard({
           </h3>
           {matchReason && matchReason.field !== "title" && (
             <p className="text-xs text-muted-foreground">
-              Matches {matchFieldLabel(matchReason.field)}:{" "}
+              {t("recipeCard.matches", {
+                field: t(
+                  `recipeCard.matchField.${matchFieldLabel(matchReason.field)}`,
+                ),
+              })}{" "}
               <span className="font-medium text-foreground/80">
                 {matchReason.term}
               </span>
@@ -242,7 +246,9 @@ export function RecipeCard({
               </span>
             )}
             {rating.unrated ? (
-              <span className="text-muted-foreground">{t("recipeCard.unrated")}</span>
+              <span className="text-muted-foreground">
+                {t("recipeCard.unrated")}
+              </span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <StarRating filled={rating.filled} label={rating.label} />

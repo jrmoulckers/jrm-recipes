@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeftRight } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -41,12 +42,12 @@ const FILTER_TAGS = [
   "egg-free",
 ] as const satisfies readonly DietaryTag[];
 
-const FILTER_LABEL: Record<(typeof FILTER_TAGS)[number], string> = {
-  vegan: "Vegan",
-  vegetarian: "Vegetarian",
-  "dairy-free": "Dairy-free",
-  "gluten-free": "Gluten-free",
-  "egg-free": "Egg-free",
+const FILTER_LABEL_KEY: Record<(typeof FILTER_TAGS)[number], string> = {
+  vegan: "vegan",
+  vegetarian: "vegetarian",
+  "dairy-free": "dairyFree",
+  "gluten-free": "glutenFree",
+  "egg-free": "eggFree",
 };
 
 /**
@@ -79,6 +80,7 @@ export function IngredientSubstitutions({
    */
   avoidAllergens?: Allergen[];
 }) {
+  const t = useTranslations("ingredientSubstitutions");
   const presetKey = (presetTags ?? []).join("|");
   const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>(
     presetTags ?? [],
@@ -105,8 +107,7 @@ export function IngredientSubstitutions({
   if (!match) return null;
 
   const { entry, confidence } = match;
-  const confidenceLabel =
-    confidence.charAt(0).toUpperCase() + confidence.slice(1);
+  const confidenceLabel = t(`confidence.${confidence}`);
 
   function toggleTag(tag: DietaryTag) {
     setSelectedTags((current) =>
@@ -123,10 +124,10 @@ export function IngredientSubstitutions({
           type="button"
           aria-label={
             flagged
-              ? `Safe swaps for ${entry.name.toLowerCase()}. Conflicts with the selected dietary needs`
-              : `Substitutions for ${entry.name.toLowerCase()}`
+              ? t("safeSwapsAria", { item: entry.name.toLowerCase() })
+              : t("substitutionsAria", { item: entry.name.toLowerCase() })
           }
-          title={flagged ? "See safe swaps" : "See substitutions"}
+          title={flagged ? t("safeSwapsTitle") : t("substitutionsTitle")}
           className={cn(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
             flagged
@@ -142,15 +143,15 @@ export function IngredientSubstitutions({
         <div className="mb-3 space-y-1.5">
           <div className="flex items-center gap-1.5 font-display text-sm font-semibold">
             <ArrowLeftRight className="size-3.5 text-primary" />
-            Out of {entry.name.toLowerCase()}?
+            {t("outOf", { item: entry.name.toLowerCase() })}
           </div>
           <p className="text-xs text-muted-foreground">
-            {confidenceLabel} confidence match
+            {t("confidenceMatch", { level: confidenceLabel })}
           </p>
         </div>
         <div
           role="group"
-          aria-label="Filter substitutions by dietary need"
+          aria-label={t("filterAria")}
           className="mb-3 flex flex-wrap gap-1.5"
         >
           {FILTER_TAGS.map((tag) => {
@@ -165,7 +166,7 @@ export function IngredientSubstitutions({
                 onClick={() => toggleTag(tag)}
                 className="h-7 rounded-full px-2 text-xs"
               >
-                {FILTER_LABEL[tag]}
+                {t(`filters.${FILTER_LABEL_KEY[tag]}`)}
               </Button>
             );
           })}
@@ -199,7 +200,7 @@ export function IngredientSubstitutions({
           </ul>
         ) : (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-            No swaps match every selected dietary need.
+            {t("noMatches")}
           </p>
         )}
       </PopoverContent>

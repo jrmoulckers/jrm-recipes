@@ -474,7 +474,205 @@
     "validation": {
       "titleToast": "Your recipe needs a title.",
       "groupToast": "Pick a group, or change the recipe's visibility."
-    }
+    },
+    "nav": {
+      "aria": "Recipe sections",
+      "progressAria": "Recipe progress: {done} of {total} sections started. Show sections.",
+      "show": "Show sections",
+      "barAria": "{done} of {total} sections started",
+      "hide": "Hide recipe sections",
+      "allStarted": "All sections started 🎉",
+      "jump": "Jump to a section",
+      "srStarted": " (started)",
+      "srOptionalNotStarted": " (optional, not started)",
+      "srNotStarted": " (not started)"
+    },
+    "sections": {
+      "basics": "Basics",
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "details": "Details & photo",
+      "story": "Notes & story"
+    },
+    "planLimitTitle": "You've reached your plan's limit",
+    "editRecipe": "Edit recipe",
+    "newRecipe": "New recipe",
+    "editingRecipe": "Editing recipe",
+    "viewAria": "Editor view",
+    "edit": "Edit",
+    "preview": "Preview",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "saveRecipe": "Save recipe",
+    "draft": {
+      "aria": "Unfinished recipe",
+      "title": "You have an unfinished recipe",
+      "body": "Pick up where you left off, or start fresh.",
+      "discard": "Discard",
+      "restore": "Restore"
+    },
+    "errorSummary": {
+      "one": "Please fix this field before saving:",
+      "many": "Please fix these {count} fields before saving:"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "servings": "Servings",
+      "servingsNoun": "Unit",
+      "prepMinutes": "Prep (min)",
+      "cookMinutes": "Cook (min)",
+      "restMinutes": "Rest / Inactive Time",
+      "makeAheadNote": "Make-ahead",
+      "equipment": "Equipment & tools",
+      "difficulty": "Difficulty",
+      "cuisine": "Cuisine",
+      "notes": "Notes",
+      "story": "Story & memories",
+      "handedDownFrom": "Handed down from",
+      "originYear": "When",
+      "originPlace": "Place",
+      "calories": "Calories",
+      "proteinGrams": "Protein",
+      "carbsGrams": "Carbs",
+      "fatGrams": "Fat",
+      "saturatedFatGrams": "Saturated fat",
+      "sodiumMg": "Sodium",
+      "sugarGrams": "Sugar",
+      "fiberGrams": "Fiber",
+      "tags": "Tags",
+      "visibility": "Who can see this?",
+      "groupId": "Group",
+      "status": "Status",
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "dietaryFlags": "Dietary",
+      "coverImageUrl": "Cover photo"
+    },
+    "hints": {
+      "description": "A sentence about the dish.",
+      "notes": "Overall tips, substitutions and serving ideas.",
+      "story": "In your own words: who it came from, when you make it, what it means.",
+      "equipment": "Comma-separated. Shown as a gather-your-tools pass in Cook Mode.",
+      "tags": "Comma separated.",
+      "coverImage": "Upload a photo or paste an image URL."
+    },
+    "info": {
+      "restMinutes": "Inactive time, such as chilling, proving, or resting.",
+      "makeAhead": "A description of what can be prepared in advance, and how far ahead."
+    },
+    "placeholders": {
+      "title": "e.g. Grandma's Sunday marinara",
+      "description": "e.g. A slow-simmered sauce for Sunday dinners",
+      "item": "e.g. All-purpose flour",
+      "quantity": "e.g. 2 or 1 1/2",
+      "unit": "e.g. cups",
+      "quantityMax": "e.g. 3",
+      "prep": "e.g. finely diced",
+      "note": "e.g. divided",
+      "ingredientGroupName": "e.g. Dry Ingredients",
+      "stepTitle": "Name this step (optional)",
+      "instruction": "e.g. Whisk the eggs and sugar until fully incorporated",
+      "timerMinutes": "e.g. 10",
+      "techniques": "e.g. fold, whisk",
+      "targetTempC": "e.g. 180",
+      "doneness": "e.g. golden brown",
+      "videoUrl": "e.g. https://…",
+      "stepSectionName": "e.g. Prepare the dough",
+      "story": "e.g. Nonna learned this from her mother in Calabria…",
+      "handedDownFrom": "e.g. Great-Grandma Rosa Bianchi",
+      "originYear": "e.g. 1935 or 1930s",
+      "originPlace": "e.g. Calabria, Italy",
+      "makeAhead": "e.g. Dough can be made up to 2 days ahead",
+      "equipment": "e.g. stand mixer, cake tin, bench scraper",
+      "cuisine": "e.g. Italian",
+      "tags": "e.g. dinner, weeknight"
+    },
+    "ingredientsHeading": "Ingredients",
+    "convert": "Convert {fromLabel} {fromUnit} → {toLabel} {toUnit}",
+    "dismissConversion": "Dismiss conversion",
+    "group": "Group",
+    "noGroup": "No group",
+    "untitledGroup": "Untitled group",
+    "newGroup": "+ New group…",
+    "fewerOptions": "Fewer options",
+    "moreOptions": "More options",
+    "maxQuantity": "Max quantity",
+    "prep": "Prep",
+    "note": "Note",
+    "usedInStep": "Used in step",
+    "noSpecificStep": "No specific step",
+    "optionalIngredient": "Optional ingredient",
+    "ungrouped": "Ungrouped",
+    "ungroupedSteps": "Ungrouped steps",
+    "addIngredient": "Add ingredient",
+    "addGroup": "Add group",
+    "groupName": "Group name",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "removeGroup": "Remove group (keep its ingredients)",
+    "stepsHeading": "Steps",
+    "instruction": "Instruction",
+    "section": "Section",
+    "noSection": "No section",
+    "untitledSection": "Untitled section",
+    "newSection": "+ New section…",
+    "targetTemp": "Target °C",
+    "doneness": "Doneness cue",
+    "videoUrl": "Video URL",
+    "photo": "Photo",
+    "sectionName": "Section name",
+    "stepCount": "{count, plural, one {# step} other {# steps}}",
+    "removeSection": "Remove section (keep its steps)",
+    "addStep": "Add step",
+    "addSection": "Add section",
+    "notesStoryHeading": "Notes & story",
+    "notesStoryDescription": "About the whole recipe. Not tied to any single step.",
+    "handedDown": {
+      "legend": "Handed down from",
+      "description": "Details about the original creator of this recipe. All optional.",
+      "name": "Name"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "dietaryLegend": "Dietary",
+    "dietaryHint": "Declare what this recipe is suitable for. If you are unsure, it is best to leave it unchecked.",
+    "moreDietary": "More options (egg-free, allergen-free…)",
+    "nutritionLegend": "Nutrition",
+    "nutritionPerServing": "(per serving)",
+    "nutritionHint": "Optional. Leave blank if you don't have the numbers.",
+    "estimateFromIngredients": "Estimate from ingredients",
+    "nutrition": {
+      "calories": "Calories",
+      "proteinGrams": "Protein",
+      "carbsGrams": "Carbs",
+      "fatGrams": "Fat",
+      "saturatedFatGrams": "Saturated fat",
+      "sodiumMg": "Sodium",
+      "sugarGrams": "Sugars",
+      "fiberGrams": "Fiber"
+    },
+    "visibilityStatus": "Visibility & status",
+    "visibilityAria": "Visibility settings: {visibility}, {status}",
+    "visibility": {
+      "private": "Only me",
+      "group": "A family/group",
+      "unlisted": "Anyone with the link",
+      "public": "Everyone (public)"
+    },
+    "status": {
+      "published": "Published",
+      "draft": "Draft"
+    },
+    "chooseGroup": "Choose a group…",
+    "vitals": {
+      "ingredients": "{count, plural, one {# ingredient} other {# ingredients}}",
+      "steps": "{count, plural, one {# step} other {# steps}}",
+      "servingsNoun": "servings"
+    },
+    "about": "About {label}"
   },
   "characterCounter": {
     "remaining": "{count} left",
@@ -1668,7 +1866,8 @@
         "imported": "Imported the recipe. Review the details, then save.",
         "linkError": "Something went wrong importing that link.",
         "textError": "Something went wrong reading that text."
-      }
+      },
+      "textPlaceholder": "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer."
     },
     "keepsake": {
       "trigger": "Hand down",
@@ -1684,7 +1883,10 @@
       }
     },
     "lineage": {
-      "aria": "Recipe lineage"
+      "aria": "Recipe lineage",
+      "adaptedFrom": "Adapted from",
+      "by": "by {name}",
+      "adaptations": "Adaptations ({count})"
     },
     "quickCapture": {
       "trigger": "Quick add",
@@ -1702,7 +1904,8 @@
       "savedTitle": "Saved as a draft",
       "savedDescription": "Captured. Open the full editor to add ingredients, steps and photos, or come back to it later from your cookbook.",
       "finish": "Finish in full editor",
-      "addAnother": "Add another"
+      "addAnother": "Add another",
+      "notesPlaceholder": "Paste or type anything, e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."
     },
     "quickPlan": {
       "addThisWeek": "Add to this week's plan",
@@ -1729,7 +1932,15 @@
     },
     "recipeCard": {
       "cookAria": "Cook {title}",
-      "unrated": "Unrated"
+      "unrated": "Unrated",
+      "matches": "Matches {field}:",
+      "matchField": {
+        "title": "title",
+        "ingredient": "ingredient",
+        "tag": "tag",
+        "cuisine": "cuisine",
+        "description": "description"
+      }
     },
     "reel": {
       "trigger": "Reel",
@@ -1816,7 +2027,8 @@
       "restoreVersion": "Restore v{version}",
       "toast": {
         "restored": "Restored version {version}"
-      }
+      },
+      "savedVersions": "Saved versions"
     },
     "emptyLibrary": {
       "control": {
@@ -1829,6 +2041,27 @@
         "body": "Keep the dishes everyone loves in one place. Start with the one they always ask you to make.",
         "cta": "Save your first recipe"
       }
+    },
+    "story": {
+      "aria": "Timeline for {title}",
+      "emptyTitle": "The story starts here",
+      "emptyBody": "As this recipe is edited, shared, and adapted, its family history will gather here. A trail of every hand that shaped it.",
+      "heading": "Family history",
+      "description": "How this recipe has grown and branched over time.",
+      "kind": {
+        "created": "Recipe started",
+        "adaptedFrom": "Adapted from",
+        "adapted": "Adapted",
+        "newAdaptation": "New adaptation",
+        "adaptedByFamily": "Adapted by the family",
+        "published": "Shared with the family",
+        "suggestionApplied": "Suggestion applied",
+        "updated": "Updated"
+      }
+    },
+    "rotation": {
+      "heading": "Back in the rotation",
+      "description": "Family favorites you haven't made in a while."
     }
   },
   "settings": {
@@ -2197,5 +2430,200 @@
     "urlPlaceholder": "Paste an image URL",
     "urlLabel": "Image URL",
     "urlLabelFor": "{label} URL"
+  },
+  "keepsake": {
+    "viewRecipe": "View recipe",
+    "print": "Print this keepsake",
+    "handedDown": "A recipe handed down to you",
+    "withLove": "With love, {from}",
+    "noSteps": "No steps listed.",
+    "story": "Story"
+  },
+  "allergenSummary": {
+    "none": "No common allergens detected. Always double-check the ingredients.",
+    "aria": "Allergen summary",
+    "contains": "Contains",
+    "containsList": "Contains allergens",
+    "oftenHides": "Often hides",
+    "hiddenList": "Possibly hidden allergens",
+    "disclaimer": "Best-effort detection. Always double-check the ingredients for allergies."
+  },
+  "ingredientSubstitutions": {
+    "safeSwapsAria": "Safe swaps for {item}. Conflicts with the selected dietary needs",
+    "substitutionsAria": "Substitutions for {item}",
+    "safeSwapsTitle": "See safe swaps",
+    "substitutionsTitle": "See substitutions",
+    "outOf": "Out of {item}?",
+    "confidenceMatch": "{level} confidence match",
+    "confidence": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "filterAria": "Filter substitutions by dietary need",
+    "filters": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "dairyFree": "Dairy-free",
+      "glutenFree": "Gluten-free",
+      "eggFree": "Egg-free"
+    },
+    "noMatches": "No swaps match every selected dietary need."
+  },
+  "ingredientsPanel": {
+    "fewerServings": "Fewer servings",
+    "moreServings": "More servings",
+    "servingsNoun": "servings",
+    "reset": "Reset",
+    "scaleTo": "Scale to…",
+    "bakersPercent": "Baker's %",
+    "ingredients": "Ingredients",
+    "systemAria": "Measurement system",
+    "system": {
+      "original": "Original",
+      "us": "US",
+      "metric": "Metric",
+      "grams": "Grams"
+    },
+    "ingredient": "Ingredient",
+    "targetAmount": "Target amount",
+    "unit": "Unit",
+    "apply": "Apply",
+    "pinHint": "Pin one ingredient to what you have and rescale the whole recipe.",
+    "scaleFactor": "≈ {factor}× the recipe",
+    "scaleFactorWithServings": "≈ {factor}× the recipe, {servings} {noun}",
+    "cannotConvert": "That amount can't be converted to this ingredient's unit.",
+    "totalFlour": "Total flour",
+    "hydration": "Hydration",
+    "batchWeight": "Batch weight",
+    "divideInto": "Divide into",
+    "pieceCountAria": "Number of pieces",
+    "each": "= {weight} each",
+    "scaledToHousehold": "Scaled to your family of {count}.",
+    "cookingFor": "Cooking for",
+    "everyone": "Everyone",
+    "flagging": "Flagging ingredients {name} should avoid.",
+    "noRestrictions": "No restrictions saved for {name}.",
+    "step": "Step {position}",
+    "optional": "optional",
+    "containsSr": "Contains ",
+    "containsTitle": "Contains {allergen}",
+    "dietaryWarningSr": "Dietary warning. ",
+    "measureAsSr": "Measure as ",
+    "reasonContains": "contains {list}",
+    "reasonNot": "not {list}",
+    "rangeTo": "{low} to {high}"
+  },
+  "nutritionPanel": {
+    "aria": "Nutrition facts",
+    "heading": "Nutrition",
+    "basisAria": "Nutrition basis",
+    "perServing": "Per serving",
+    "wholeRecipe": "Whole recipe",
+    "wholeRecipeBasis": "Whole recipe · {servings} {noun}",
+    "amountsPerServing": "Amounts are per serving",
+    "wholeRecipeTotal": "Whole recipe ({servings} {noun}): <value>{calories}</value> kcal",
+    "memberSelectAria": "Family member for calorie goal",
+    "ofDailyCaloriesFor": "of the daily calories for",
+    "wholeRecipeSuffix": "(whole recipe)",
+    "flagsAria": "Dietary flags per serving",
+    "level": {
+      "low": "Low",
+      "moderate": "Moderate",
+      "high": "High"
+    },
+    "flag": "{level} {nutrient} · {percent}% DV",
+    "estimatedPartial": "Estimated from the ingredient list ({sourced} of {total} ingredients).",
+    "estimated": "Estimated from the ingredient list.",
+    "entered": "Estimated values as entered by the cook.",
+    "servingsNoun": "servings"
+  },
+  "recipePreview": {
+    "notice": "A preview of how this recipe will appear to cooks. Nothing is saved yet.",
+    "untitled": "Untitled recipe",
+    "titlePlaceholder": "Your recipe title",
+    "noIngredients": "No ingredients yet.",
+    "noSteps": "No steps yet.",
+    "optional": "optional",
+    "storyMemories": "Story & memories",
+    "handedDownFrom": "Handed down from {name}",
+    "since": "since {year}",
+    "prep": "Prep {time}",
+    "rest": "Rest {time}"
+  },
+  "versionCompare": {
+    "aria": "Compare recipe versions",
+    "heading": "Compare versions",
+    "description": "See exactly what changed between two points in this recipe's history.",
+    "currentRecipe": "Current recipe",
+    "from": "From",
+    "to": "To",
+    "fromAria": "Compare from version",
+    "toAria": "Compare to version",
+    "compare": "Compare",
+    "summaryChanged": "{count} changed",
+    "summaryAdded": "{count} added",
+    "summaryRemoved": "{count} removed",
+    "noDifferences": "No differences",
+    "identical": "These two versions are identical.",
+    "details": "Details",
+    "hideUnchanged": "Hide unchanged",
+    "showUnchanged": "Show {count} unchanged",
+    "noChanges": "No changes.",
+    "kind": {
+      "added": "Added",
+      "removed": "Removed",
+      "changed": "Changed",
+      "unchanged": "Unchanged"
+    }
+  },
+  "recipeSearch": {
+    "quickFiltersAria": "Quick filters",
+    "quickPicks": "Quick picks",
+    "searchLabel": "Search recipes",
+    "searchPlaceholder": "Search recipes, ingredients, cuisines, tags…",
+    "filters": "Filters",
+    "anyCuisine": "Any cuisine",
+    "anyLevel": "Any level",
+    "anyTime": "Any time",
+    "minutesOrLess": "{minutes} min or less",
+    "anyTag": "Any tag",
+    "anyDiet": "Any diet",
+    "ingredientPlaceholder": "e.g. cilantro",
+    "ingredientAria": "Filter by ingredient",
+    "anyone": "Anyone",
+    "addProfile": "Add a profile",
+    "anyFamily": "Any family",
+    "onlyMyRecipes": "Only my recipes",
+    "myRecipes": "My recipes",
+    "clear": "Clear",
+    "activeFiltersAria": "Active filters",
+    "removeFilter": "Remove filter",
+    "safeForNote": "Best-effort filtering from ingredient names and declared diets. Always double-check labels for allergies.",
+    "field": {
+      "cuisine": "Cuisine",
+      "difficulty": "Difficulty",
+      "maxTime": "Max time",
+      "tag": "Tag",
+      "dietary": "Dietary",
+      "ingredient": "Ingredient",
+      "safeFor": "Safe for",
+      "family": "Family",
+      "onlyMine": "Only mine",
+      "sort": "Sort"
+    },
+    "chip": {
+      "query": "“{q}”",
+      "cuisine": "Cuisine: {value}",
+      "difficulty": "Difficulty: {value}",
+      "maxTime": "≤ {minutes} min",
+      "tag": "Tag: {value}",
+      "diet": "Diet: {value}",
+      "safeForNamed": "Safe for: {name}",
+      "ingredient": "Ingredient: {value}",
+      "familyNamed": "Family: {name}"
+    },
+    "facetSelected": "{count} selected",
+    "facetAria": "{label} filter, {count} selected"
   }
 }

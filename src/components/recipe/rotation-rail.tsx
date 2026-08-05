@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChefHat, RotateCcw } from "lucide-react";
 
 import {
@@ -22,6 +23,7 @@ export function RotationRail({
   recipes: CardRecipe[];
   quickPlan: QuickPlanContext | null;
 }) {
+  const t = useTranslations("recipe");
   if (recipes.length === 0) return null;
 
   return (
@@ -30,11 +32,11 @@ export function RotationRail({
         <div className="flex items-center gap-2">
           <RotateCcw className="size-5 text-primary" />
           <h2 className="font-display text-xl font-bold tracking-tight">
-            Back in the rotation
+            {t("rotation.heading")}
           </h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Family favorites you haven&apos;t made in a while.
+          {t("rotation.description")}
         </p>
       </div>
       <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
@@ -47,7 +49,7 @@ export function RotationRail({
             <div className="flex gap-2">
               <Button asChild size="sm" variant="outline" className="flex-1">
                 <Link href={`/recipes/${recipe.slug}/cook`}>
-                  <ChefHat /> Cook
+                  <ChefHat /> {t("common.cook")}
                 </Link>
               </Button>
               {quickPlan ? (

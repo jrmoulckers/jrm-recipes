@@ -1,4 +1,5 @@
 import { History } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getRecipeTimeline, getRecipeVersions } from "~/server/recipes/queries";
 import { type RecipeForViewer } from "~/server/recipes/loaders";
@@ -24,6 +25,7 @@ export async function RecipeTimelineSection({
   canRevert: boolean;
   user: RecipeForViewer["user"];
 }) {
+  const t = await getTranslations("recipe.timeline");
   const [timeline, versions] = await Promise.all([
     getRecipeTimeline(recipeId, user),
     getRecipeVersions(recipeId),
@@ -35,7 +37,7 @@ export async function RecipeTimelineSection({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <History className="size-4" aria-hidden="true" />
-          Saved versions
+          {t("savedVersions")}
         </div>
         <RecipeTimeline
           versions={versions.items}
@@ -49,7 +51,7 @@ export async function RecipeTimelineSection({
             versionNumber: version.versionNumber,
             label:
               version.label ??
-              (version.versionNumber === 1 ? "Created" : "Updated"),
+              (version.versionNumber === 1 ? t("created") : t("updated")),
           }))}
         />
       </div>

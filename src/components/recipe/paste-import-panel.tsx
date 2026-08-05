@@ -58,9 +58,7 @@ export function PasteImportPanel({
         <Textarea
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
-          placeholder={
-            "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer."
-          }
+          placeholder={t("import.textPlaceholder")}
           rows={6}
           disabled={importing}
           aria-label={t("import.textAria")}

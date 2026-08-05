@@ -128,7 +128,9 @@ export function QuickCaptureDialog() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quick-title">{t("quickCapture.titleLabel")}</Label>
+              <Label htmlFor="quick-title">
+                {t("quickCapture.titleLabel")}
+              </Label>
               <Input
                 id="quick-title"
                 value={title}
@@ -156,9 +158,7 @@ export function QuickCaptureDialog() {
                 id="quick-notes"
                 value={freeform}
                 onChange={(event) => setFreeform(event.target.value)}
-                placeholder={
-                  "Paste or type anything, e.g.\n1 lb beef\n1 egg\n\nMix, roll, bake at 400."
-                }
+                placeholder={t("quickCapture.notesPlaceholder")}
                 rows={6}
                 maxLength={4000}
               />

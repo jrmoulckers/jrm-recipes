@@ -296,17 +296,16 @@ type NutritionKey =
  * cook knows whether a field wants grams or milligrams.
  */
 const NUTRITION_FIELDS = [
-  { key: "calories", label: "Calories", unit: "kcal" },
-  { key: "proteinGrams", label: "Protein", unit: "g" },
-  { key: "carbsGrams", label: "Carbs", unit: "g" },
-  { key: "fatGrams", label: "Fat", unit: "g" },
-  { key: "saturatedFatGrams", label: "Saturated fat", unit: "g" },
-  { key: "sodiumMg", label: "Sodium", unit: "mg" },
-  { key: "sugarGrams", label: "Sugars", unit: "g" },
-  { key: "fiberGrams", label: "Fiber", unit: "g" },
+  { key: "calories", unit: "kcal" },
+  { key: "proteinGrams", unit: "g" },
+  { key: "carbsGrams", unit: "g" },
+  { key: "fatGrams", unit: "g" },
+  { key: "saturatedFatGrams", unit: "g" },
+  { key: "sodiumMg", unit: "mg" },
+  { key: "sugarGrams", unit: "g" },
+  { key: "fiberGrams", unit: "g" },
 ] as const satisfies readonly {
   key: NutritionKey;
-  label: string;
   unit: string;
 }[];
 
@@ -325,26 +324,12 @@ function amountOrUndef(s: string): number | undefined {
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm";
 
-/** Trigger summary + icon for the consolidated visibility settings popdown. */
-const VISIBILITY_LABELS = {
-  private: "Only me",
-  group: "A family/group",
-  unlisted: "Anyone with the link",
-  public: "Everyone (public)",
-} as const;
-
+/** Trigger icon for the consolidated visibility settings popdown. */
 const VISIBILITY_ICON = {
   private: Lock,
   group: Users,
   unlisted: Link2,
   public: Globe,
-} as const;
-
-/** Human-friendly labels for the difficulty select (mirrors its options). */
-const DIFFICULTY_LABELS = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
 } as const;
 
 /**
@@ -398,12 +383,13 @@ function InfoHint({
   label: string;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("recipeEditor");
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`About ${label}`}
+          aria-label={t("about", { label })}
           className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <Info className="size-4" aria-hidden="true" />
@@ -452,6 +438,7 @@ function EditorSectionNav({
   topOffset: number;
   onJump: (id: string) => void;
 }) {
+  const t = useTranslations("recipeEditor.nav");
   const done = sections.filter((s) => s.complete).length;
   const total = sections.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -499,7 +486,7 @@ function EditorSectionNav({
   return (
     <nav
       ref={navRef}
-      aria-label="Recipe sections"
+      aria-label={t("aria")}
       // When pinned, sit flush under the sticky site header sharing its glass
       // finish (the 1px overlap closes the hairline seam). When not pinned it
       // stays a normal rounded card so it never looks like a cut-off panel.
@@ -519,8 +506,8 @@ function EditorSectionNav({
           onClick={toggle}
           aria-expanded={false}
           aria-controls={panelId}
-          aria-label={`Recipe progress: ${done} of ${total} sections started. Show sections.`}
-          title="Show sections"
+          aria-label={t("progressAria", { done, total })}
+          title={t("show")}
           className="group flex min-h-0 w-full items-center px-3 py-[3px] transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:px-4"
         >
           <span
@@ -542,7 +529,7 @@ function EditorSectionNav({
             aria-valuenow={done}
             aria-valuemin={0}
             aria-valuemax={total}
-            aria-label={`${done} of ${total} sections started`}
+            aria-label={t("barAria", { done, total })}
           >
             <span
               className="block h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
@@ -562,7 +549,7 @@ function EditorSectionNav({
             aria-controls={panelId}
             className="-me-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <span className="sr-only">Hide recipe sections</span>
+            <span className="sr-only">{t("hide")}</span>
             <ChevronUp className="size-4" aria-hidden="true" />
           </button>
         </div>
@@ -580,7 +567,7 @@ function EditorSectionNav({
         <div className="overflow-hidden" inert={collapsed}>
           <div className="flex flex-col gap-2 px-3 pb-3 lg:px-4">
             <span className="text-xs font-medium text-muted-foreground">
-              {done === total ? "All sections started 🎉" : "Jump to a section"}
+              {done === total ? t("allStarted") : t("jump")}
             </span>
             <ul className="flex flex-wrap gap-1.5">
               {sections.map((section) => (
@@ -607,10 +594,10 @@ function EditorSectionNav({
                     {section.label}
                     <span className="sr-only">
                       {section.complete
-                        ? " (started)"
+                        ? t("srStarted")
                         : section.optional
-                          ? " (optional, not started)"
-                          : " (not started)"}
+                          ? t("srOptionalNotStarted")
+                          : t("srNotStarted")}
                     </span>
                   </a>
                 </li>
@@ -840,9 +827,7 @@ export function RecipeEditor({
       servings,
     );
     if (est.sourced === 0) {
-      toast.error(
-        t("toast.estimateError"),
-      );
+      toast.error(t("toast.estimateError"));
       return;
     }
     const round = (n: number, decimals = 0) => {
@@ -1351,11 +1336,7 @@ export function RecipeEditor({
       const payload = buildPayloadRef.current();
       if (!payload.title) {
         toast.error(
-          pickKidCopy(
-            kidSafe,
-            "validation.title",
-            t("validation.titleToast"),
-          ),
+          pickKidCopy(kidSafe, "validation.title", t("validation.titleToast")),
         );
         return { title: ["Give your recipe a title"] };
       }
@@ -1399,22 +1380,22 @@ export function RecipeEditor({
   const editorSections: EditorSection[] = [
     {
       id: "editor-basics",
-      label: "Basics",
+      label: t("sections.basics"),
       complete: form.title.trim() !== "",
     },
     {
       id: "editor-ingredients",
-      label: "Ingredients",
+      label: t("sections.ingredients"),
       complete: ingredients.some((row) => row.item.trim() !== ""),
     },
     {
       id: "editor-steps",
-      label: "Steps",
+      label: t("sections.steps"),
       complete: steps.some((row) => row.instruction.trim() !== ""),
     },
     {
       id: "editor-details",
-      label: "Details & photo",
+      label: t("sections.details"),
       complete:
         form.coverImageUrl.trim() !== "" ||
         form.difficulty !== "" ||
@@ -1422,7 +1403,7 @@ export function RecipeEditor({
     },
     {
       id: "editor-story",
-      label: "Notes & story",
+      label: t("sections.story"),
       complete: form.notes.trim() !== "" || form.story.trim() !== "",
       optional: true,
     },
@@ -1453,16 +1434,14 @@ export function RecipeEditor({
     summaryVitals.push({
       key: "ingredients",
       icon: Carrot,
-      text: `${filledIngredientCount} ${
-        filledIngredientCount === 1 ? "ingredient" : "ingredients"
-      }`,
+      text: t("vitals.ingredients", { count: filledIngredientCount }),
     });
   }
   if (filledStepCount > 0) {
     summaryVitals.push({
       key: "steps",
       icon: ListOrdered,
-      text: `${filledStepCount} ${filledStepCount === 1 ? "step" : "steps"}`,
+      text: t("vitals.steps", { count: filledStepCount }),
     });
   }
   if (totalMinutes > 0) {
@@ -1477,7 +1456,9 @@ export function RecipeEditor({
       key: "servings",
       icon: Users,
       text: `${trimmedServings} ${
-        trimmedServingsNoun === "" ? "servings" : trimmedServingsNoun
+        trimmedServingsNoun === ""
+          ? t("vitals.servingsNoun")
+          : trimmedServingsNoun
       }`,
     });
   }
@@ -1486,7 +1467,7 @@ export function RecipeEditor({
     summaryVitals.push({
       key: "difficulty",
       icon: ChefHat,
-      text: DIFFICULTY_LABELS[difficulty],
+      text: t(`difficulty.${difficulty}`),
     });
   }
   const trimmedCuisine = form.cuisine.trim();
@@ -1498,7 +1479,8 @@ export function RecipeEditor({
     });
   }
   const trimmedTitle = form.title.trim();
-  const barFallbackTitle = mode === "edit" ? "Editing recipe" : "New recipe";
+  const barFallbackTitle =
+    mode === "edit" ? t("editingRecipe") : t("newRecipe");
   const barTitle = trimmedTitle === "" ? barFallbackTitle : trimmedTitle;
 
   // Move focus to the summary whenever a submit attempt produces errors so
@@ -1554,18 +1536,18 @@ export function RecipeEditor({
           onOpenChange={(next) => {
             if (!next) setUpgrade(null);
           }}
-          title="You've reached your plan's limit"
+          title={t("planLimitTitle")}
           description={upgrade}
         />
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          {mode === "edit" ? "Edit recipe" : "New recipe"}
+          {mode === "edit" ? t("editRecipe") : t("newRecipe")}
         </h1>
         <div
           className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1"
           role="group"
-          aria-label="Editor view"
+          aria-label={t("viewAria")}
         >
           <Button
             type="button"
@@ -1574,7 +1556,7 @@ export function RecipeEditor({
             aria-pressed={!previewMode}
             onClick={() => setPreviewMode(false)}
           >
-            <Pencil /> Edit
+            <Pencil /> {t("edit")}
           </Button>
           <Button
             type="button"
@@ -1583,7 +1565,7 @@ export function RecipeEditor({
             aria-pressed={previewMode}
             onClick={() => setPreviewMode(true)}
           >
-            <Eye /> Preview
+            <Eye /> {t("preview")}
           </Button>
         </div>
       </div>
@@ -1591,7 +1573,7 @@ export function RecipeEditor({
       {!previewMode && draft.availableDraft ? (
         <div
           role="region"
-          aria-label="Unfinished recipe"
+          aria-label={t("draft.aria")}
           className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-3">
@@ -1600,10 +1582,8 @@ export function RecipeEditor({
               aria-hidden="true"
             />
             <div>
-              <p className="font-medium">You have an unfinished recipe</p>
-              <p className="text-sm text-muted-foreground">
-                Pick up where you left off, or start fresh.
-              </p>
+              <p className="font-medium">{t("draft.title")}</p>
+              <p className="text-sm text-muted-foreground">{t("draft.body")}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -1612,7 +1592,7 @@ export function RecipeEditor({
               variant="outline"
               onClick={() => draft.discardDraft()}
             >
-              Discard
+              {t("draft.discard")}
             </Button>
             <Button
               type="button"
@@ -1621,7 +1601,7 @@ export function RecipeEditor({
                 if (pending) restoreDraft(pending);
               }}
             >
-              Restore
+              {t("draft.restore")}
             </Button>
           </div>
         </div>
@@ -1641,12 +1621,14 @@ export function RecipeEditor({
           >
             <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
             {errorKeys.length === 1
-              ? "Please fix this field before saving:"
-              : `Please fix these ${errorKeys.length} fields before saving:`}
+              ? t("errorSummary.one")
+              : t("errorSummary.many", { count: errorKeys.length })}
           </h2>
           <ul className="mt-2 flex list-disc flex-col gap-1 ps-8">
             {errorKeys.map((key) => {
-              const label = FIELD_LABELS[key] ?? prettifyFieldKey(key);
+              const label = LABELLED_FIELDS.has(key)
+                ? t(`fields.${key}`)
+                : prettifyFieldKey(key);
               const message = errors[key]?.[0];
               const targetId = `recipe-field-${key}`;
               return (
@@ -1710,24 +1692,29 @@ export function RecipeEditor({
               id="editor-basics"
               className="flex scroll-mt-28 flex-col gap-4"
             >
-              <Field label="Title" name="title" error={errors.title} required>
+              <Field
+                label={t("fields.title")}
+                name="title"
+                error={errors.title}
+                required
+              >
                 <Input
                   value={form.title}
                   onChange={(e) => set("title", e.target.value)}
-                  placeholder="e.g. Grandma's Sunday marinara"
+                  placeholder={t("placeholders.title")}
                   autoFocus
                 />
               </Field>
               <Field
-                label="Description"
+                label={t("fields.description")}
                 name="description"
-                hint="A sentence about the dish."
+                hint={t("hints.description")}
                 error={errors.description}
               >
                 <Textarea
                   value={form.description}
                   onChange={(e) => set("description", e.target.value)}
-                  placeholder="e.g. A slow-simmered sauce for Sunday dinners"
+                  placeholder={t("placeholders.description")}
                   rows={2}
                 />
               </Field>
@@ -1739,7 +1726,7 @@ export function RecipeEditor({
               className="flex scroll-mt-28 flex-col gap-3"
             >
               <h2 className="font-display text-xl font-semibold">
-                Ingredients
+                {t("ingredientsHeading")}
               </h2>
               <datalist id={unitDatalistId}>
                 {unitOptions.map((o) => (
@@ -1798,7 +1785,7 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. All-purpose flour"
+                                placeholder={t("placeholders.item")}
                               />
                             </RowField>
                             <RowField label={t("quantity")}>
@@ -1807,7 +1794,7 @@ export function RecipeEditor({
                                 onChange={(e) =>
                                   changeIngredientQuantity(row, e.target.value)
                                 }
-                                placeholder="e.g. 2 or 1 1/2"
+                                placeholder={t("placeholders.quantity")}
                                 inputMode="decimal"
                               />
                             </RowField>
@@ -1818,7 +1805,7 @@ export function RecipeEditor({
                                 onChange={(e) =>
                                   changeIngredientUnit(row, e.target.value)
                                 }
-                                placeholder="e.g. cups"
+                                placeholder={t("placeholders.unit")}
                                 autoComplete="off"
                               />
                               {convertHints[row.key] ? (
@@ -1832,15 +1819,18 @@ export function RecipeEditor({
                                       className="size-3"
                                       aria-hidden="true"
                                     />
-                                    Convert {convertHints[row.key]!.fromLabel}{" "}
-                                    {convertHints[row.key]!.fromUnit} →{" "}
-                                    {convertHints[row.key]!.toLabel}{" "}
-                                    {convertHints[row.key]!.toUnit}
+                                    {t("convert", {
+                                      fromLabel:
+                                        convertHints[row.key]!.fromLabel,
+                                      fromUnit: convertHints[row.key]!.fromUnit,
+                                      toLabel: convertHints[row.key]!.toLabel,
+                                      toUnit: convertHints[row.key]!.toUnit,
+                                    })}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => clearConvertHint(row.key)}
-                                    aria-label="Dismiss conversion"
+                                    aria-label={t("dismissConversion")}
                                     className="text-muted-foreground hover:text-foreground"
                                   >
                                     <X
@@ -1871,7 +1861,7 @@ export function RecipeEditor({
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
-                            <span className="shrink-0">Group</span>
+                            <span className="shrink-0">{t("group")}</span>
                             <NativeSelect
                               wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
@@ -1882,13 +1872,13 @@ export function RecipeEditor({
                                 else assignIngredientToGroup(row.key, v);
                               }}
                             >
-                              <option value="">No group</option>
+                              <option value="">{t("noGroup")}</option>
                               {ingredientGroupChoices.map((g) => (
                                 <option key={g.id} value={g.id}>
-                                  {g.name.trim() || "Untitled group"}
+                                  {g.name.trim() || t("untitledGroup")}
                                 </option>
                               ))}
-                              <option value="__new__">+ New group…</option>
+                              <option value="__new__">{t("newGroup")}</option>
                             </NativeSelect>
                           </label>
                           {!hasOptionData && (
@@ -1904,14 +1894,16 @@ export function RecipeEditor({
                                   optionsOpen && "rotate-180",
                                 )}
                               />
-                              {optionsOpen ? "Fewer options" : "More options"}
+                              {optionsOpen
+                                ? t("fewerOptions")
+                                : t("moreOptions")}
                             </button>
                           )}
                         </div>
 
                         {optionsOpen && (
                           <div className="grid gap-x-3 gap-y-2 border-t border-border/70 pt-3 sm:grid-cols-2">
-                            <RowField label="Max quantity">
+                            <RowField label={t("maxQuantity")}>
                               <Input
                                 value={row.quantityMax}
                                 onChange={(e) =>
@@ -1923,11 +1915,11 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. 3"
+                                placeholder={t("placeholders.quantityMax")}
                                 inputMode="decimal"
                               />
                             </RowField>
-                            <RowField label="Prep">
+                            <RowField label={t("prep")}>
                               <Input
                                 value={row.prep}
                                 onChange={(e) =>
@@ -1939,10 +1931,13 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. finely diced"
+                                placeholder={t("placeholders.prep")}
                               />
                             </RowField>
-                            <RowField label="Note" className="sm:col-span-2">
+                            <RowField
+                              label={t("note")}
+                              className="sm:col-span-2"
+                            >
                               <Input
                                 value={row.note}
                                 onChange={(e) =>
@@ -1954,10 +1949,10 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. divided"
+                                placeholder={t("placeholders.note")}
                               />
                             </RowField>
-                            <RowField label="Used in step">
+                            <RowField label={t("usedInStep")}>
                               <NativeSelect
                                 value={row.stepPosition}
                                 onChange={(e) =>
@@ -1970,10 +1965,10 @@ export function RecipeEditor({
                                   )
                                 }
                               >
-                                <option value="">No specific step</option>
+                                <option value="">{t("noSpecificStep")}</option>
                                 {steps.map((_, si) => (
                                   <option key={si} value={String(si + 1)}>
-                                    Step {si + 1}
+                                    {t("step", { position: si + 1 })}
                                   </option>
                                 ))}
                               </NativeSelect>
@@ -1991,7 +1986,7 @@ export function RecipeEditor({
                                   )
                                 }
                               />
-                              Optional ingredient
+                              {t("optionalIngredient")}
                             </label>
                           </div>
                         )}
@@ -2016,7 +2011,7 @@ export function RecipeEditor({
                         className="flex flex-col gap-2.5"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <span>Ungrouped</span>
+                          <span>{t("ungrouped")}</span>
                           <span className="text-muted-foreground/60">
                             · {block.rows.length}
                           </span>
@@ -2027,7 +2022,7 @@ export function RecipeEditor({
                           onClick={addIngredient}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
-                          <Plus className="size-3.5" /> Add ingredient
+                          <Plus className="size-3.5" /> {t("addIngredient")}
                         </button>
                       </div>
                     );
@@ -2042,7 +2037,7 @@ export function RecipeEditor({
                         <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                           <Layers className="size-5" />
                         </span>
-                        <RowField label="Group name" className="flex-1">
+                        <RowField label={t("groupName")} className="flex-1">
                           <Input
                             id={`ing-group-name-${block.groupId}`}
                             value={block.section}
@@ -2052,18 +2047,17 @@ export function RecipeEditor({
                                 e.target.value,
                               )
                             }
-                            placeholder="e.g. Dry Ingredients"
+                            placeholder={t("placeholders.ingredientGroupName")}
                           />
                         </RowField>
                         <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          {block.rows.length}{" "}
-                          {block.rows.length === 1 ? "item" : "items"}
+                          {t("itemCount", { count: block.rows.length })}
                         </span>
                         <button
                           type="button"
                           onClick={() => dissolveIngredientGroup(block.groupId)}
-                          aria-label="Remove group (keep its ingredients)"
-                          title="Remove group (keep its ingredients)"
+                          aria-label={t("removeGroup")}
+                          title={t("removeGroup")}
                           className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <X className="size-4" />
@@ -2078,7 +2072,7 @@ export function RecipeEditor({
                           }
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
-                          <Plus className="size-3.5" /> Add ingredient
+                          <Plus className="size-3.5" /> {t("addIngredient")}
                         </button>
                       </div>
                     </div>
@@ -2093,7 +2087,7 @@ export function RecipeEditor({
                     variant="outline"
                     onClick={addIngredient}
                   >
-                    <Plus /> Add ingredient
+                    <Plus /> {t("addIngredient")}
                   </Button>
                 )}
                 <Button
@@ -2103,7 +2097,7 @@ export function RecipeEditor({
                   className="text-muted-foreground"
                   onClick={addIngredientGroup}
                 >
-                  <Plus /> Add group
+                  <Plus /> {t("addGroup")}
                 </Button>
               </div>
             </section>
@@ -2113,7 +2107,9 @@ export function RecipeEditor({
               id="editor-steps"
               className="flex scroll-mt-28 flex-col gap-3"
             >
-              <h2 className="font-display text-xl font-semibold">Steps</h2>
+              <h2 className="font-display text-xl font-semibold">
+                {t("stepsHeading")}
+              </h2>
               <div className="flex flex-col gap-4">
                 {blocksByGroup(steps).map((block) => {
                   const rowList = block.rows.map((row, indexInBlock) => {
@@ -2135,7 +2131,9 @@ export function RecipeEditor({
                         <div className="flex items-start gap-2">
                           <div className="flex flex-1 flex-col gap-2">
                             <RowField
-                              label={`Step ${stepNumberByKey.get(row.key)}`}
+                              label={t("step", {
+                                position: stepNumberByKey.get(row.key) ?? 0,
+                              })}
                             >
                               <Input
                                 value={row.title}
@@ -2148,10 +2146,10 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="Name this step (optional)"
+                                placeholder={t("placeholders.stepTitle")}
                               />
                             </RowField>
-                            <RowField label="Instruction">
+                            <RowField label={t("instruction")}>
                               <Textarea
                                 value={row.instruction}
                                 onChange={(e) =>
@@ -2163,7 +2161,7 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. Whisk the eggs and sugar until fully incorporated"
+                                placeholder={t("placeholders.instruction")}
                                 rows={2}
                               />
                             </RowField>
@@ -2187,7 +2185,7 @@ export function RecipeEditor({
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
-                            <span className="shrink-0">Section</span>
+                            <span className="shrink-0">{t("section")}</span>
                             <NativeSelect
                               wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
@@ -2198,13 +2196,13 @@ export function RecipeEditor({
                                 else assignStepToGroup(row.key, v);
                               }}
                             >
-                              <option value="">No section</option>
+                              <option value="">{t("noSection")}</option>
                               {stepGroupChoices.map((g) => (
                                 <option key={g.id} value={g.id}>
-                                  {g.name.trim() || "Untitled section"}
+                                  {g.name.trim() || t("untitledSection")}
                                 </option>
                               ))}
-                              <option value="__new__">+ New section…</option>
+                              <option value="__new__">{t("newSection")}</option>
                             </NativeSelect>
                           </label>
                           {!hasOptionData && (
@@ -2220,7 +2218,9 @@ export function RecipeEditor({
                                   optionsOpen && "rotate-180",
                                 )}
                               />
-                              {optionsOpen ? "Fewer options" : "More options"}
+                              {optionsOpen
+                                ? t("fewerOptions")
+                                : t("moreOptions")}
                             </button>
                           )}
                         </div>
@@ -2239,7 +2239,7 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. 10"
+                                placeholder={t("placeholders.timerMinutes")}
                                 inputMode="decimal"
                               />
                             </RowField>
@@ -2255,10 +2255,10 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. fold, whisk"
+                                placeholder={t("placeholders.techniques")}
                               />
                             </RowField>
-                            <RowField label="Target °C">
+                            <RowField label={t("targetTemp")}>
                               <Input
                                 value={row.targetTempC}
                                 onChange={(e) =>
@@ -2270,11 +2270,11 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. 180"
+                                placeholder={t("placeholders.targetTempC")}
                                 inputMode="numeric"
                               />
                             </RowField>
-                            <RowField label="Doneness cue">
+                            <RowField label={t("doneness")}>
                               <Input
                                 value={row.doneness}
                                 onChange={(e) =>
@@ -2286,11 +2286,11 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. golden brown"
+                                placeholder={t("placeholders.doneness")}
                               />
                             </RowField>
                             <RowField
-                              label="Video URL"
+                              label={t("videoUrl")}
                               className="sm:col-span-2"
                             >
                               <Input
@@ -2306,12 +2306,12 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder="e.g. https://…"
+                                placeholder={t("placeholders.videoUrl")}
                               />
                             </RowField>
                             <div className="flex min-w-0 flex-col gap-1 sm:col-span-2">
                               <span className="text-xs font-medium text-muted-foreground">
-                                Photo
+                                {t("photo")}
                               </span>
                               <ImageUploadField
                                 size="compact"
@@ -2350,7 +2350,7 @@ export function RecipeEditor({
                         className="flex flex-col gap-2.5"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <span>Ungrouped steps</span>
+                          <span>{t("ungroupedSteps")}</span>
                           <span className="text-muted-foreground/60">
                             · {block.rows.length}
                           </span>
@@ -2361,7 +2361,7 @@ export function RecipeEditor({
                           onClick={addStep}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
-                          <Plus className="size-3.5" /> Add step
+                          <Plus className="size-3.5" /> {t("addStep")}
                         </button>
                       </div>
                     );
@@ -2376,25 +2376,24 @@ export function RecipeEditor({
                         <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                           <Layers className="size-5" />
                         </span>
-                        <RowField label="Section name" className="flex-1">
+                        <RowField label={t("sectionName")} className="flex-1">
                           <Input
                             id={`step-group-name-${block.groupId}`}
                             value={block.section}
                             onChange={(e) =>
                               renameStepGroup(block.groupId, e.target.value)
                             }
-                            placeholder="e.g. Prepare the dough"
+                            placeholder={t("placeholders.stepSectionName")}
                           />
                         </RowField>
                         <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          {block.rows.length}{" "}
-                          {block.rows.length === 1 ? "step" : "steps"}
+                          {t("stepCount", { count: block.rows.length })}
                         </span>
                         <button
                           type="button"
                           onClick={() => dissolveStepGroup(block.groupId)}
-                          aria-label="Remove section (keep its steps)"
-                          title="Remove section (keep its steps)"
+                          aria-label={t("removeSection")}
+                          title={t("removeSection")}
                           className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <X className="size-4" />
@@ -2409,7 +2408,7 @@ export function RecipeEditor({
                           }
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
-                          <Plus className="size-3.5" /> Add step
+                          <Plus className="size-3.5" /> {t("addStep")}
                         </button>
                       </div>
                     </div>
@@ -2424,7 +2423,7 @@ export function RecipeEditor({
                     variant="outline"
                     onClick={addStep}
                   >
-                    <Plus /> Add step
+                    <Plus /> {t("addStep")}
                   </Button>
                 )}
                 <Button
@@ -2434,7 +2433,7 @@ export function RecipeEditor({
                   className="text-muted-foreground"
                   onClick={addStepGroup}
                 >
-                  <Plus /> Add section
+                  <Plus /> {t("addSection")}
                 </Button>
               </div>
             </section>
@@ -2445,16 +2444,16 @@ export function RecipeEditor({
             >
               <div className="flex flex-col gap-1">
                 <h2 className="font-display text-xl font-semibold">
-                  Notes &amp; story
+                  {t("notesStoryHeading")}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  About the whole recipe. Not tied to any single step.
+                  {t("notesStoryDescription")}
                 </p>
               </div>
               <Field
-                label="Notes"
+                label={t("fields.notes")}
                 name="notes"
-                hint="Overall tips, substitutions and serving ideas."
+                hint={t("hints.notes")}
                 error={errors.notes}
               >
                 <Textarea
@@ -2465,15 +2464,15 @@ export function RecipeEditor({
               </Field>
 
               <Field
-                label="Story & memories"
+                label={t("fields.story")}
                 name="story"
-                hint="In your own words: who it came from, when you make it, what it means."
+                hint={t("hints.story")}
                 error={errors.story}
               >
                 <Textarea
                   value={form.story}
                   onChange={(e) => set("story", e.target.value)}
-                  placeholder="e.g. Nonna learned this from her mother in Calabria…"
+                  placeholder={t("placeholders.story")}
                   rows={4}
                 />
               </Field>
@@ -2481,39 +2480,43 @@ export function RecipeEditor({
 
             <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
               <legend className="px-1 text-sm font-medium text-foreground">
-                Handed down from
+                {t("handedDown.legend")}
               </legend>
               <p className="text-xs text-muted-foreground">
-                Details about the original creator of this recipe. All optional.
+                {t("handedDown.description")}
               </p>
               <Field
-                label="Name"
+                label={t("handedDown.name")}
                 name="handedDownFrom"
                 error={errors.handedDownFrom}
               >
                 <Input
                   value={form.handedDownFrom}
                   onChange={(e) => set("handedDownFrom", e.target.value)}
-                  placeholder="e.g. Great-Grandma Rosa Bianchi"
+                  placeholder={t("placeholders.handedDownFrom")}
                 />
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="When" name="originYear" error={errors.originYear}>
+                <Field
+                  label={t("fields.originYear")}
+                  name="originYear"
+                  error={errors.originYear}
+                >
                   <Input
                     value={form.originYear}
                     onChange={(e) => set("originYear", e.target.value)}
-                    placeholder="e.g. 1935 or 1930s"
+                    placeholder={t("placeholders.originYear")}
                   />
                 </Field>
                 <Field
-                  label="Place"
+                  label={t("fields.originPlace")}
                   name="originPlace"
                   error={errors.originPlace}
                 >
                   <Input
                     value={form.originPlace}
                     onChange={(e) => set("originPlace", e.target.value)}
-                    placeholder="e.g. Calabria, Italy"
+                    placeholder={t("placeholders.originPlace")}
                   />
                 </Field>
               </div>
@@ -2527,7 +2530,11 @@ export function RecipeEditor({
             className="flex h-fit scroll-mt-28 flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky"
           >
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Servings" name="servings" error={errors.servings}>
+              <Field
+                label={t("fields.servings")}
+                name="servings"
+                error={errors.servings}
+              >
                 <Input
                   value={form.servings}
                   onChange={(e) => set("servings", e.target.value)}
@@ -2535,7 +2542,7 @@ export function RecipeEditor({
                 />
               </Field>
               <Field
-                label="Unit"
+                label={t("fields.servingsNoun")}
                 name="servingsNoun"
                 error={errors.servingsNoun}
               >
@@ -2545,7 +2552,7 @@ export function RecipeEditor({
                 />
               </Field>
               <Field
-                label="Prep (min)"
+                label={t("fields.prepMinutes")}
                 name="prepMinutes"
                 error={errors.prepMinutes}
               >
@@ -2556,7 +2563,7 @@ export function RecipeEditor({
                 />
               </Field>
               <Field
-                label="Cook (min)"
+                label={t("fields.cookMinutes")}
                 name="cookMinutes"
                 error={errors.cookMinutes}
               >
@@ -2567,9 +2574,9 @@ export function RecipeEditor({
                 />
               </Field>
               <Field
-                label="Rest / Inactive Time"
+                label={t("fields.restMinutes")}
                 name="restMinutes"
-                info="Inactive time, such as chilling, proving, or resting."
+                info={t("info.restMinutes")}
                 error={errors.restMinutes}
                 className="col-span-2"
               >
@@ -2582,34 +2589,34 @@ export function RecipeEditor({
             </div>
 
             <Field
-              label="Make-ahead"
+              label={t("fields.makeAheadNote")}
               name="makeAheadNote"
-              info="A description of what can be prepared in advance, and how far ahead."
+              info={t("info.makeAhead")}
               error={errors.makeAheadNote}
             >
               <Textarea
                 value={form.makeAheadNote}
                 onChange={(e) => set("makeAheadNote", e.target.value)}
-                placeholder="e.g. Dough can be made up to 2 days ahead"
+                placeholder={t("placeholders.makeAhead")}
                 rows={2}
               />
             </Field>
 
             <Field
-              label="Equipment & tools"
+              label={t("fields.equipment")}
               name="equipment"
-              hint="Comma-separated. Shown as a gather-your-tools pass in Cook Mode."
+              hint={t("hints.equipment")}
               error={errors.equipment}
             >
               <Input
                 value={form.equipment}
                 onChange={(e) => set("equipment", e.target.value)}
-                placeholder="e.g. stand mixer, cake tin, bench scraper"
+                placeholder={t("placeholders.equipment")}
               />
             </Field>
 
             <Field
-              label="Difficulty"
+              label={t("fields.difficulty")}
               name="difficulty"
               error={errors.difficulty}
             >
@@ -2620,17 +2627,21 @@ export function RecipeEditor({
                 }
               >
                 <option value="">—</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                <option value="easy">{t("difficulty.easy")}</option>
+                <option value="medium">{t("difficulty.medium")}</option>
+                <option value="hard">{t("difficulty.hard")}</option>
               </NativeSelect>
             </Field>
 
-            <Field label="Cuisine" name="cuisine" error={errors.cuisine}>
+            <Field
+              label={t("fields.cuisine")}
+              name="cuisine"
+              error={errors.cuisine}
+            >
               <Input
                 value={form.cuisine}
                 onChange={(e) => set("cuisine", e.target.value)}
-                placeholder="e.g. Italian"
+                placeholder={t("placeholders.cuisine")}
               />
             </Field>
 
@@ -2638,10 +2649,9 @@ export function RecipeEditor({
 
             <fieldset className="flex flex-col gap-3">
               <legend className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                Dietary
-                <InfoHint label="Dietary">
-                  Declare what this recipe is suitable for. If you are unsure,
-                  it is best to leave it unchecked.
+                {t("dietaryLegend")}
+                <InfoHint label={t("dietaryLegend")}>
+                  {t("dietaryHint")}
                 </InfoHint>
               </legend>
               <div className="flex flex-wrap gap-2">
@@ -2677,9 +2687,7 @@ export function RecipeEditor({
                 ) : (
                   <ChevronDown className="size-3.5" aria-hidden="true" />
                 )}
-                {showMoreDietary
-                  ? "Fewer options"
-                  : "More options (egg-free, allergen-free…)"}
+                {showMoreDietary ? t("fewerOptions") : t("moreDietary")}
               </button>
             </fieldset>
 
@@ -2687,13 +2695,13 @@ export function RecipeEditor({
 
             <fieldset className="flex flex-col gap-3">
               <legend className="text-sm font-medium text-foreground">
-                Nutrition
+                {t("nutritionLegend")}
                 <span className="ms-1 font-normal text-muted-foreground">
-                  (per serving)
+                  {t("nutritionPerServing")}
                 </span>
               </legend>
               <p className="text-xs text-muted-foreground">
-                Optional. Leave blank if you don&apos;t have the numbers.
+                {t("nutritionHint")}
               </p>
               <button
                 type="button"
@@ -2704,14 +2712,14 @@ export function RecipeEditor({
                   className="size-3.5 text-primary"
                   aria-hidden="true"
                 />
-                Estimate from ingredients
+                {t("estimateFromIngredients")}
               </button>
               <div className="grid grid-cols-2 gap-3">
                 {NUTRITION_FIELDS.map((f) => (
                   <Field
                     key={f.key}
                     name={f.key}
-                    label={`${f.label} (${f.unit})`}
+                    label={`${t(`nutrition.${f.key}`)} (${f.unit})`}
                     error={errors[f.key]}
                   >
                     <Input
@@ -2728,16 +2736,16 @@ export function RecipeEditor({
             <div className="h-px bg-border" />
 
             <Field
-              label="Tags"
+              label={t("fields.tags")}
               name="tags"
-              hint="Comma separated."
+              hint={t("hints.tags")}
               error={errors.tags}
             >
               <Input
                 id="recipe-field-tags"
                 value={form.tags}
                 onChange={(e) => set("tags", e.target.value)}
-                placeholder="e.g. dinner, weeknight"
+                placeholder={t("placeholders.tags")}
               />
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {SUGGESTED_TAGS.map((tag) => {
@@ -2765,8 +2773,8 @@ export function RecipeEditor({
             </Field>
 
             <ImageUploadField
-              label="Cover photo"
-              hint="Upload a photo or paste an image URL."
+              label={t("fields.coverImageUrl")}
+              hint={t("hints.coverImage")}
               value={form.coverImageUrl}
               onChange={(url) => set("coverImageUrl", url)}
             />
@@ -2775,15 +2783,19 @@ export function RecipeEditor({
 
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-foreground">
-                Visibility &amp; status
+                {t("visibilityStatus")}
               </span>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    aria-label={`Visibility settings: ${VISIBILITY_LABELS[form.visibility]}, ${
-                      form.status === "published" ? "Published" : "Draft"
-                    }`}
+                    aria-label={t("visibilityAria", {
+                      visibility: t(`visibility.${form.visibility}`),
+                      status:
+                        form.status === "published"
+                          ? t("status.published")
+                          : t("status.draft"),
+                    })}
                     className={cn(
                       selectClass,
                       "flex items-center justify-between gap-2 text-left",
@@ -2795,10 +2807,13 @@ export function RecipeEditor({
                         aria-hidden="true"
                       />
                       <span className="truncate">
-                        {VISIBILITY_LABELS[form.visibility]}
+                        {t(`visibility.${form.visibility}`)}
                       </span>
                       <span className="shrink-0 text-muted-foreground">
-                        · {form.status === "published" ? "Published" : "Draft"}
+                        ·{" "}
+                        {form.status === "published"
+                          ? t("status.published")
+                          : t("status.draft")}
                       </span>
                     </span>
                     <ChevronDown
@@ -2809,7 +2824,7 @@ export function RecipeEditor({
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80 space-y-4">
                   <Field
-                    label="Who can see this?"
+                    label={t("fields.visibility")}
                     name="visibility"
                     error={errors.visibility}
                   >
@@ -2822,22 +2837,28 @@ export function RecipeEditor({
                         )
                       }
                     >
-                      <option value="private">Only me</option>
+                      <option value="private">{t("visibility.private")}</option>
                       <option value="group" disabled={groups.length === 0}>
-                        A family/group
+                        {t("visibility.group")}
                       </option>
-                      <option value="unlisted">Anyone with the link</option>
-                      <option value="public">Everyone (public)</option>
+                      <option value="unlisted">
+                        {t("visibility.unlisted")}
+                      </option>
+                      <option value="public">{t("visibility.public")}</option>
                     </NativeSelect>
                   </Field>
 
                   {form.visibility === "group" && groups.length > 0 && (
-                    <Field label="Group" name="groupId" error={errors.groupId}>
+                    <Field
+                      label={t("fields.groupId")}
+                      name="groupId"
+                      error={errors.groupId}
+                    >
                       <NativeSelect
                         value={form.groupId}
                         onChange={(e) => set("groupId", e.target.value)}
                       >
-                        <option value="">Choose a group…</option>
+                        <option value="">{t("chooseGroup")}</option>
                         {groups.map((g) => (
                           <option key={g.id} value={g.id}>
                             {g.name}
@@ -2847,15 +2868,19 @@ export function RecipeEditor({
                     </Field>
                   )}
 
-                  <Field label="Status" name="status" error={errors.status}>
+                  <Field
+                    label={t("fields.status")}
+                    name="status"
+                    error={errors.status}
+                  >
                     <NativeSelect
                       value={form.status}
                       onChange={(e) =>
                         set("status", e.target.value as typeof form.status)
                       }
                     >
-                      <option value="published">Published</option>
-                      <option value="draft">Draft</option>
+                      <option value="published">{t("status.published")}</option>
+                      <option value="draft">{t("status.draft")}</option>
                     </NativeSelect>
                   </Field>
                 </PopoverContent>
@@ -2913,7 +2938,7 @@ export function RecipeEditor({
               className="flex-1 sm:flex-none"
               onClick={() => router.back()}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="submit"
@@ -2921,7 +2946,7 @@ export function RecipeEditor({
               disabled={pending}
             >
               {pending ? <Loader2 className="animate-spin" /> : <Save />}
-              {mode === "edit" ? "Save changes" : "Save recipe"}
+              {mode === "edit" ? t("saveChanges") : t("saveRecipe")}
             </Button>
           </div>
         </div>
@@ -2984,37 +3009,44 @@ function RowControls({
   );
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  title: "Title",
-  description: "Description",
-  servings: "Servings",
-  servingsNoun: "Unit",
-  prepMinutes: "Prep (min)",
-  cookMinutes: "Cook (min)",
-  difficulty: "Difficulty",
-  cuisine: "Cuisine",
-  notes: "Notes",
-  story: "Story & memories",
-  handedDownFrom: "Handed down from",
-  originYear: "When",
-  originPlace: "Place",
-  calories: "Calories",
-  proteinGrams: "Protein",
-  carbsGrams: "Carbs",
-  fatGrams: "Fat",
-  saturatedFatGrams: "Saturated fat",
-  sodiumMg: "Sodium",
-  sugarGrams: "Sugar",
-  fiberGrams: "Fiber",
-  tags: "Tags",
-  visibility: "Who can see this?",
-  groupId: "Group",
-  status: "Status",
-  ingredients: "Ingredients",
-  steps: "Steps",
-  dietaryFlags: "Dietary",
-  coverImageUrl: "Cover photo",
-};
+/**
+ * Field keys that carry a hand-written label under `recipeEditor.fields` in the
+ * catalogs. Anything outside this set falls back to {@link prettifyFieldKey}.
+ */
+const LABELLED_FIELDS = new Set([
+  "title",
+  "description",
+  "servings",
+  "servingsNoun",
+  "prepMinutes",
+  "cookMinutes",
+  "restMinutes",
+  "makeAheadNote",
+  "equipment",
+  "difficulty",
+  "cuisine",
+  "notes",
+  "story",
+  "handedDownFrom",
+  "originYear",
+  "originPlace",
+  "calories",
+  "proteinGrams",
+  "carbsGrams",
+  "fatGrams",
+  "saturatedFatGrams",
+  "sodiumMg",
+  "sugarGrams",
+  "fiberGrams",
+  "tags",
+  "visibility",
+  "groupId",
+  "status",
+  "ingredients",
+  "steps",
+  "dietaryFlags",
+  "coverImageUrl",
+]);
 
 // Fields that render a control with a matching `recipe-field-<key>` id, so the
 // error-summary entry can be an anchor that focuses the offending control.

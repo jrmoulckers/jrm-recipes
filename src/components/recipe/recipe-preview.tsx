@@ -9,7 +9,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { formatMinutes } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
@@ -20,12 +20,6 @@ import type {
   RecipeInput,
   StepInput,
 } from "~/server/recipes/validation";
-
-const DIFFICULTY_LABEL: Record<"easy" | "medium" | "hard", string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-};
 
 /** Group ingredients under their section, preserving first-appearance order.
  *  mirrors how the live recipe page renders grouped ingredients. */
@@ -70,6 +64,8 @@ export function RecipePreview({
   mode: "create" | "edit";
 }) {
   const locale = useLocale();
+  const t = useTranslations("recipePreview");
+  const td = useTranslations("recipeDetail");
 
   const prep = recipe.prepMinutes ?? null;
   const cook = recipe.cookMinutes ?? null;
@@ -79,16 +75,25 @@ export function RecipePreview({
   const meta: { icon: LucideIcon; label: string }[] = [];
   if (total > 0) meta.push({ icon: Clock3, label: formatMinutes(total) });
   if (prep != null)
-    meta.push({ icon: Timer, label: `Prep ${formatMinutes(prep)}` });
+    meta.push({
+      icon: Timer,
+      label: t("prep", { time: formatMinutes(prep) }),
+    });
   if (rest != null && rest > 0)
-    meta.push({ icon: Hourglass, label: `Rest ${formatMinutes(rest)}` });
+    meta.push({
+      icon: Hourglass,
+      label: t("rest", { time: formatMinutes(rest) }),
+    });
   if (recipe.servings != null)
     meta.push({
       icon: Users,
-      label: `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`,
+      label: `${recipe.servings} ${recipe.servingsNoun ?? td("servingsNoun")}`,
     });
   if (recipe.difficulty)
-    meta.push({ icon: Flame, label: DIFFICULTY_LABEL[recipe.difficulty] });
+    meta.push({
+      icon: Flame,
+      label: td(`difficulty.${recipe.difficulty}`),
+    });
 
   const ingredientGroups = groupBySection(recipe.ingredients);
   const dietary = recipe.dietaryFlags ?? [];
@@ -96,8 +101,10 @@ export function RecipePreview({
   const equipment = recipe.equipment ?? [];
 
   const origin = [
-    recipe.handedDownFrom ? `Handed down from ${recipe.handedDownFrom}` : null,
-    recipe.originYear ? `since ${recipe.originYear}` : null,
+    recipe.handedDownFrom
+      ? t("handedDownFrom", { name: recipe.handedDownFrom })
+      : null,
+    recipe.originYear ? t("since", { year: recipe.originYear }) : null,
     recipe.originPlace,
   ].filter(Boolean);
 
@@ -116,8 +123,8 @@ export function RecipePreview({
   return (
     <div className="flex flex-col gap-8">
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Sparkles className="size-4 text-primary" aria-hidden="true" />A preview
-        of how this recipe will appear to cooks. Nothing is saved yet.
+        <Sparkles className="size-4 text-primary" aria-hidden="true" />
+        {t("notice")}
       </p>
 
       {/* Hero */}
@@ -159,7 +166,7 @@ export function RecipePreview({
         <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           {recipe.title || (
             <span className="text-muted-foreground">
-              {mode === "edit" ? "Untitled recipe" : "Your recipe title"}
+              {mode === "edit" ? t("untitled") : t("titlePlaceholder")}
             </span>
           )}
         </h1>
@@ -208,7 +215,7 @@ export function RecipePreview({
         {/* Ingredients */}
         <div className="flex flex-col gap-4">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            Ingredients
+            {td("ingredients.heading")}
           </h2>
           {ingredientGroups.length > 0 ? (
             <div className="flex flex-col gap-5">
@@ -244,7 +251,7 @@ export function RecipePreview({
                                 variant="muted"
                                 className="ml-2 align-middle"
                               >
-                                optional
+                                {t("optional")}
                               </Badge>
                             )}
                             {ing.note && (
@@ -261,14 +268,14 @@ export function RecipePreview({
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">No ingredients yet.</p>
+            <p className="text-muted-foreground">{t("noIngredients")}</p>
           )}
 
           {recipe.makeAheadNote && (
             <div className="mt-2 rounded-xl border border-border bg-muted/40 p-4">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
                 <Hourglass className="size-4 text-primary" />
-                Make ahead
+                {td("ingredients.makeAhead")}
               </h3>
               <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                 {recipe.makeAheadNote}
@@ -280,7 +287,7 @@ export function RecipePreview({
             <div className="mt-2">
               <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
                 <Wrench className="size-4 text-primary" />
-                Equipment
+                {td("ingredients.equipment")}
               </h3>
               <ul className="flex flex-col gap-1.5 text-sm">
                 {equipment.map((tool) => (
@@ -300,7 +307,7 @@ export function RecipePreview({
         {/* Method */}
         <div className="flex flex-col gap-6">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            Method
+            {td("method.heading")}
           </h2>
           {recipe.steps.length > 0 ? (
             <ol className="flex flex-col gap-5">
@@ -347,7 +354,7 @@ export function RecipePreview({
                         {step.targetTempC != null && (
                           <Badge variant="secondary" className="gap-1">
                             <Thermometer className="size-3" />
-                            {step.targetTempC}&deg;C
+                            {`${step.targetTempC}\u00b0C`}
                           </Badge>
                         )}
                         {step.doneness && (
@@ -371,7 +378,7 @@ export function RecipePreview({
               ))}
             </ol>
           ) : (
-            <p className="text-muted-foreground">No steps yet.</p>
+            <p className="text-muted-foreground">{t("noSteps")}</p>
           )}
 
           {recipe.story && (
@@ -381,7 +388,7 @@ export function RecipePreview({
                   className="size-4 text-secondary"
                   aria-hidden="true"
                 />
-                Story &amp; memories
+                {t("storyMemories")}
               </h3>
               <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                 {recipe.story}
@@ -393,7 +400,9 @@ export function RecipePreview({
             Boolean(recipe.sourceName) ||
             Boolean(recipe.sourceUrl)) && (
             <div className="flex flex-col gap-2 border-t border-border pt-6">
-              <h3 className="font-display text-lg font-semibold">Notes</h3>
+              <h3 className="font-display text-lg font-semibold">
+                {td("notes")}
+              </h3>
               {recipe.notes && (
                 <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                   {recipe.notes}
@@ -401,7 +410,7 @@ export function RecipePreview({
               )}
               {(Boolean(recipe.sourceName) || Boolean(recipe.sourceUrl)) && (
                 <p className="text-sm text-muted-foreground">
-                  Source:{" "}
+                  {td("source")}{" "}
                   {recipe.sourceUrl ? (
                     <a
                       href={recipe.sourceUrl}

@@ -105,6 +105,7 @@ const config = {
         "src/components/a11y/**",
         "src/components/cook/**",
         "src/components/print/**",
+        "src/components/recipe/**",
         "src/components/ui/**",
         "src/app/~offline/**",
         "src/app/layout.tsx",
