@@ -407,6 +407,8 @@ export function CommandMenu() {
                           )}
                         >
                           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                            {/* Decorative: the thumbnail repeats the recipe title
+                            rendered beside it in the result row. */}
                             {recipe.imageUrl ? (
                               <CloudinaryImage
                                 src={recipe.imageUrl}

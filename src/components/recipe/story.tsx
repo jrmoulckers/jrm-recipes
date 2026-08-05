@@ -154,6 +154,8 @@ export function RecipeStory({
                   {author && (
                     <span className="inline-flex items-center gap-1.5">
                       <Avatar className="size-5">
+                        {/* Decorative: the avatar repeats the author name
+                            rendered beside it. */}
                         {entry.actor?.avatarUrl && (
                           <AvatarImage src={entry.actor.avatarUrl} alt="" />
                         )}

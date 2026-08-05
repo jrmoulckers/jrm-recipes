@@ -327,6 +327,7 @@ export default async function RecipePage({
       )}
       {/* Hero */}
       <div className="relative">
+        {/* Decorative: the hero cover sits directly above the recipe title. */}
         {recipe.coverImageUrl ? (
           <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
             <CloudinaryImage

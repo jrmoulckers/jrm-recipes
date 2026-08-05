@@ -492,6 +492,8 @@ function FullPage({
 
         {recipe.coverImageUrl && (
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted print:mb-4 print:max-h-[2.2in] print:rounded-none print:border-black/30">
+            {/* Decorative: the cover sits directly above the recipe title in
+                the printed header. */}
             <CloudinaryImage
               src={recipe.coverImageUrl}
               alt=""

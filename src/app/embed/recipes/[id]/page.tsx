@@ -69,6 +69,8 @@ export default async function EmbedRecipePage({
         className="group flex w-full overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-shadow hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative hidden w-2/5 shrink-0 bg-primary/10 sm:block">
+          {/* Decorative: the cover sits directly above the recipe title, which
+              names the enclosing link. */}
           {recipe.coverImageUrl ? (
             <CloudinaryImage
               src={recipe.coverImageUrl}

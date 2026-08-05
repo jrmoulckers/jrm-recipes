@@ -26,6 +26,7 @@ export async function GroupCard({ group }: { group: MyGroup }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="bg-primary/12 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-lg font-bold text-primary">
+          {/* Decorative: the avatar repeats the group name shown beside it. */}
           {group.avatarUrl ? (
             <CloudinaryImage
               src={group.avatarUrl}
@@ -55,9 +56,7 @@ export async function GroupCard({ group }: { group: MyGroup }) {
           <Users className="size-4" aria-hidden="true" />
           {t("memberCount", { count: group.memberCount })}
         </span>
-        <span>
-          {t("recipeCount", { count: group.recipeCount })}
-        </span>
+        <span>{t("recipeCount", { count: group.recipeCount })}</span>
       </div>
     </Link>
   );

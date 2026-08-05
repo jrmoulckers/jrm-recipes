@@ -233,6 +233,9 @@ function CoverCard({ data }: { data: CardData }) {
         fontFamily: "Nunito",
       }}
     >
+      {/* satori renders this tree to a PNG, so `alt` is inert here. The text
+          alternative for the finished image is `export const alt` in the
+          sibling `opengraph-image.tsx`, which Next emits as og:image:alt. */}
       <img
         src={data.cover ?? ""}
         alt=""

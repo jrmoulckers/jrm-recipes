@@ -178,6 +178,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
                     "-translate-y-0.5 scale-110 ring-2 ring-primary",
                 )}
               >
+                {/* Decorative: the avatar repeats the name rendered beside it. */}
                 {user.avatarUrl ? (
                   <AvatarImage src={user.avatarUrl} alt="" />
                 ) : null}

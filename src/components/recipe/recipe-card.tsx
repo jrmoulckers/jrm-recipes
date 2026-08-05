@@ -165,6 +165,8 @@ export function RecipeCard({
         className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted/40 active:shadow-token"
       >
         <div className="relative aspect-[16/10] overflow-hidden">
+          {/* Decorative: the cover sits directly above the recipe title, which
+              names the enclosing link. */}
           {recipe.coverImageUrl ? (
             <CloudinaryImage
               src={recipe.coverImageUrl}

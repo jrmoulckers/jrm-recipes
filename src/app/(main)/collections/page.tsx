@@ -151,6 +151,8 @@ async function SharedWithYouCard({
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="bg-primary/12 relative aspect-[16/10] overflow-hidden">
+        {/* Decorative: the cover sits directly above the collection name, which
+            names the enclosing link. */}
         {collection.coverImageUrl ? (
           <CloudinaryImage
             src={collection.coverImageUrl}

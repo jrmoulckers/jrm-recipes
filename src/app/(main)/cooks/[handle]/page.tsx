@@ -99,6 +99,7 @@ export default async function CookProfilePage({
     <div className="container flex flex-col gap-8 py-10">
       <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-start">
         <Avatar className="size-20 text-xl">
+          {/* Decorative: the avatar repeats the display name in the h1 below. */}
           {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt="" />}
           <AvatarFallback>
             {initials(displayNameFrom(user.name, user.handle, "?"))}

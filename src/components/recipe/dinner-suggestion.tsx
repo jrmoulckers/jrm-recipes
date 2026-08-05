@@ -106,9 +106,7 @@ export function DinnerSuggestion({
       {candidates.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-start gap-3 p-6">
-            <p className="text-sm text-muted-foreground">
-              {t("dinner.empty")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("dinner.empty")}</p>
             <div className="flex flex-wrap gap-2">
               <Button asChild>
                 <Link href="/recipes/new">
@@ -133,6 +131,13 @@ export function DinnerSuggestion({
             <Link
               href={`/recipes/${current.slug}`}
               className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden sm:w-56"
+              // This link holds only the cover image, so it has no accessible
+              // name of its own and would announce as an empty link. It points
+              // at the same recipe as the title link below, so it is hidden
+              // from assistive tech and removed from the tab order rather than
+              // given duplicate alt text.
+              aria-hidden="true"
+              tabIndex={-1}
             >
               {current.coverImageUrl ? (
                 <CloudinaryImage
@@ -184,7 +189,8 @@ export function DinnerSuggestion({
                 >
                   {planned ? (
                     <>
-                      <Check className={cn("text-primary")} /> {t("dinner.onPlan")}
+                      <Check className={cn("text-primary")} />{" "}
+                      {t("dinner.onPlan")}
                     </>
                   ) : (
                     <>

@@ -152,6 +152,7 @@ export default async function GroupPage({
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
             <div className="bg-primary/12 flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-2xl font-bold text-primary">
+              {/* Decorative: the avatar repeats the group name shown beside it. */}
               {group.avatarUrl ? (
                 <Image
                   src={group.avatarUrl}
@@ -378,6 +379,8 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
       className="group overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
+        {/* Decorative: the cover sits directly above the recipe title, which
+            names the enclosing link. */}
         {recipe.coverImageUrl ? (
           <CloudinaryImage
             src={recipe.coverImageUrl}
@@ -442,6 +445,8 @@ async function SharedCollectionCard({
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
+        {/* Decorative: the cover sits directly above the collection name, which
+            names the enclosing link. */}
         {collection.coverImageUrl ? (
           <CloudinaryImage
             src={collection.coverImageUrl}

@@ -298,6 +298,16 @@ who can't see the screen. Treat them as first-class copy, not afterthoughts.
 - When you use `alt=""`, leave a short comment saying why. The empty string
   should read as a deliberate decision, not a skipped field. This is the only
   way a reviewer can tell the two apart.
+- A card's cover image is the usual valid empty case, but only when the link
+  around it also contains the title. If a link wraps the image *alone*, `alt=""`
+  leaves that link with no accessible name. Either name it or, when a second
+  link to the same place sits right beside it, take the image link out of the
+  accessibility tree with `aria-hidden` and `tabIndex={-1}`.
+- Open Graph cards are rendered to a PNG by satori, so the `alt` on an `<img>`
+  inside one does nothing. The real text alternative is `export const alt` in
+  the route's `opengraph-image.tsx`. Those stay English: Next requires a static
+  module-level value, so they cannot be resolved per request through the
+  catalog. They are read by link-preview crawlers, not by the app's readers.
 
 ## Onboarding & first-run
 

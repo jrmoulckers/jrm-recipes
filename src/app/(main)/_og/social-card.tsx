@@ -73,6 +73,9 @@ function AvatarCircle({
         flexShrink: 0,
       }}
     >
+      {/* satori renders this tree to a PNG, so `alt` is inert here. The text
+          alternative for the finished image is `export const alt` in the
+          route's `opengraph-image.tsx`, which Next emits as og:image:alt. */}
       {src ? (
         <img
           src={src}
