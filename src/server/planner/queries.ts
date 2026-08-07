@@ -1,9 +1,22 @@
 import "server-only";
 
-import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+} from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
+  cookLogEntries,
   groupMembers,
   groups,
   mealPlanEntries,
@@ -63,6 +76,7 @@ export async function listEntriesWithPrepText(userId: string, date: string) {
     where: and(
       eq(mealPlanEntries.userId, userId),
       eq(mealPlanEntries.date, date),
+      isNull(mealPlanEntries.leftoverSourceId),
     ),
     orderBy: [asc(mealPlanEntries.position), asc(mealPlanEntries.createdAt)],
     with: {
@@ -100,7 +114,7 @@ export async function listWeekDinners(
       lte(mealPlanEntries.date, endDate),
     ),
     orderBy: [asc(mealPlanEntries.date), asc(mealPlanEntries.position)],
-    columns: { date: true, note: true },
+    columns: { date: true, note: true, leftoverSourceId: true },
     with: {
       recipe: { columns: { title: true, totalMinutes: true } },
     },
@@ -130,11 +144,45 @@ export async function listPlannableRecipes(viewer: User | null) {
     groupIds.length > 0
       ? or(eq(recipes.authorId, viewer.id), inArray(recipes.groupId, groupIds))
       : eq(recipes.authorId, viewer.id);
-  return db.query.recipes.findMany({
+  const rows = await db.query.recipes.findMany({
     where: scope,
     orderBy: [asc(recipes.title)],
-    columns: { id: true, slug: true, title: true, coverImageUrl: true },
+    columns: {
+      id: true,
+      slug: true,
+      title: true,
+      coverImageUrl: true,
+      servings: true,
+    },
   });
+  if (rows.length === 0) return [];
+
+  const latest = await db
+    .selectDistinctOn([cookLogEntries.recipeId], {
+      recipeId: cookLogEntries.recipeId,
+      servingsMade: cookLogEntries.servingsMade,
+    })
+    .from(cookLogEntries)
+    .where(
+      and(
+        eq(cookLogEntries.userId, viewer.id),
+        inArray(
+          cookLogEntries.recipeId,
+          rows.map((recipe) => recipe.id),
+        ),
+        isNotNull(cookLogEntries.servingsMade),
+        gt(cookLogEntries.servingsMade, 0),
+      ),
+    )
+    .orderBy(cookLogEntries.recipeId, desc(cookLogEntries.cookedAt));
+  const latestByRecipe = new Map(
+    latest.map((entry) => [entry.recipeId, entry.servingsMade]),
+  );
+
+  return rows.map((recipe) => ({
+    ...recipe,
+    lastServings: latestByRecipe.get(recipe.id) ?? null,
+  }));
 }
 
 export type PlannableRecipe = Awaited<

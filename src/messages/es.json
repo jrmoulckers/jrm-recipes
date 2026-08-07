@@ -1764,6 +1764,7 @@
       "allergenContains": "Contiene {allergens}",
       "allergenTitle": "Estimación a partir de los nombres de ingredientes. Revisa etiquetas y marcas.",
       "leftovers": "Sobras",
+      "servings": "{count, plural, one {# porción} other {# porciones}}",
       "cooked": "Cocinado",
       "logging": "Registrando…",
       "cookedIt": "Lo cociné",
@@ -1781,17 +1782,30 @@
         "removedMealAndLeftovers": "Se quitaron la comida y sus sobras",
         "removedFromPlan": "Se quitó de tu plan",
         "loggedToJournal": "Guardado en tu diario",
-        "addedWithLeftovers": "Añadido a tu plan. También reservamos una noche de sobras",
+        "addedWithLeftovers": "Añadido a tu plan con todas las comidas de sobras",
         "addedToPlan": "Añadido a tu plan"
+      },
+      "servingPlan": {
+        "title": "Porciones y sobras",
+        "lastUsed": "Última vez: {count, plural, one {# porción} other {# porciones}}",
+        "recipeDefault": "La receta rinde {count, plural, one {# porción} other {# porciones}}",
+        "lastUsedDetail": "La última vez preparaste {count, plural, one {# porción} other {# porciones}}.",
+        "recipeDefaultDetail": "Esta receta rinde {count, plural, one {# porción} other {# porciones}} por defecto.",
+        "thisMealLabel": "Porciones para esta comida",
+        "allocation": "Comida de sobras {number}",
+        "dateLabel": "Fecha",
+        "mealLabel": "Comida",
+        "servingsLabel": "Porciones",
+        "removeAllocation": "Quitar la comida de sobras {number}",
+        "addAllocation": "Añadir comida de sobras",
+        "total": "Preparar {count, plural, one {# porción} other {# porciones}} en total",
+        "summary": "Preparar {total, plural, one {# porción} other {# porciones}} · {allocationTotal, plural, one {guardar #} other {guardar #}}",
+        "summaryTitle": "Preparar {total, plural, one {# porción} other {# porciones}} para {meals, plural, one {# comida} other {# comidas}}"
       },
       "batch": {
         "titleWithDay": "Cocina {multiple}×. Sobras el {day}",
         "titleWithoutDay": "Cocina {multiple}×. Extra para sobras",
-        "badge": "Lote ×{multiple}",
-        "toggle": "Cocinar de más. Comer otra noche",
-        "makeLabel": "Preparar",
-        "option": "Lote de {multiple}×",
-        "leftoversNightLabel": "Noche de sobras"
+        "badge": "Lote ×{multiple}"
       },
       "removeBatch": {
         "title": "¿Quitar esta comida?",
@@ -1800,9 +1814,16 @@
         "justThis": "Solo esta",
         "removeBoth": "Quitar ambas"
       },
+      "removeServingPlan": {
+        "description": "{meals, plural, one {Hay # comida vinculada} other {Hay # comidas vinculadas}} a esta preparación. ¿Quieres quitarlas todas o conservar las sobras como comidas independientes?",
+        "removeAll": "Quitar {meals, plural, one {# comida} other {las # comidas}}"
+      },
       "validation": {
         "pickRecipeOrNote": "Elige una receta o añade una nota",
-        "pickLeftoversNight": "Elige una noche para las sobras"
+        "enterServings": "Introduce un número entero de porciones",
+        "pickDifferentMeal": "Elige otra comida para las sobras",
+        "duplicateLeftoverMeal": "Cada comida de sobras necesita otra fecha o comida",
+        "noMoreMeals": "Todas las comidas de esta semana ya tienen una asignación"
       },
       "dialog": {
         "title": "Añadir a {slot}",

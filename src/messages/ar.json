@@ -1764,6 +1764,7 @@
       "allergenContains": "يحتوي على {allergens}",
       "allergenTitle": "تقدير قدر الإمكان من أسماء المكونات. راجع الملصقات والعلامات التجارية.",
       "leftovers": "بقايا الطعام",
+      "servings": "{count, plural, one {حصة واحدة} two {حصتان} few {# حصص} many {# حصة} other {# حصة}}",
       "cooked": "طُبخ",
       "logging": "جار التسجيل…",
       "cookedIt": "طبخته",
@@ -1781,17 +1782,30 @@
         "removedMealAndLeftovers": "أُزيلت الوجبة وبقاياها",
         "removedFromPlan": "أُزيلت من خطتك",
         "loggedToJournal": "حُفظت في يومياتك",
-        "addedWithLeftovers": "أُضيفت إلى خطتك. وحُجزت ليلة للبقايا أيضًا",
+        "addedWithLeftovers": "أُضيفت إلى خطتك مع جميع وجبات البقايا",
         "addedToPlan": "أُضيفت إلى خطتك"
+      },
+      "servingPlan": {
+        "title": "الحصص والبقايا",
+        "lastUsed": "آخر مرة: {count, plural, one {حصة واحدة} two {حصتان} few {# حصص} many {# حصة} other {# حصة}}",
+        "recipeDefault": "تكفي الوصفة {count, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}}",
+        "lastUsedDetail": "حضّرت في المرة السابقة {count, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}}.",
+        "recipeDefaultDetail": "تكفي هذه الوصفة افتراضيًا {count, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}}.",
+        "thisMealLabel": "حصص هذه الوجبة",
+        "allocation": "وجبة البقايا {number}",
+        "dateLabel": "التاريخ",
+        "mealLabel": "الوجبة",
+        "servingsLabel": "الحصص",
+        "removeAllocation": "إزالة وجبة البقايا {number}",
+        "addAllocation": "إضافة وجبة بقايا",
+        "total": "حضّر إجمالًا {count, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}}",
+        "summary": "حضّر {total, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}} · احفظ {allocationTotal, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}}",
+        "summaryTitle": "حضّر {total, plural, one {حصة واحدة} two {حصتين} few {# حصص} many {# حصة} other {# حصة}} من أجل {meals, plural, one {وجبة واحدة} two {وجبتين} few {# وجبات} many {# وجبة} other {# وجبة}}"
       },
       "batch": {
         "titleWithDay": "اطبخ {multiple}×. البقايا يوم {day}",
         "titleWithoutDay": "اطبخ {multiple}×. كمية إضافية للبقايا",
-        "badge": "دفعة ×{multiple}",
-        "toggle": "اطبخ كمية أكبر. كُلها مرة أخرى في ليلة ثانية",
-        "makeLabel": "حضّر",
-        "option": "دفعة {multiple}×",
-        "leftoversNightLabel": "ليلة البقايا"
+        "badge": "دفعة ×{multiple}"
       },
       "removeBatch": {
         "title": "إزالة هذه الوجبة؟",
@@ -1800,9 +1814,16 @@
         "justThis": "هذه فقط",
         "removeBoth": "إزالة الاثنين"
       },
+      "removeServingPlan": {
+        "description": "ترتبط بهذا الطهي {meals, plural, one {وجبة واحدة} two {وجبتان} few {# وجبات} many {# وجبة} other {# وجبة}}. هل تريد إزالتها كلها أم الاحتفاظ بالبقايا كوجبات مستقلة؟",
+        "removeAll": "إزالة {meals, plural, one {وجبة واحدة} two {الوجبتين} few {# وجبات} many {# وجبة} other {# وجبة}}"
+      },
       "validation": {
         "pickRecipeOrNote": "اختر وصفة أو أضف ملاحظة",
-        "pickLeftoversNight": "اختر ليلة للبقايا"
+        "enterServings": "أدخل عددًا صحيحًا من الحصص",
+        "pickDifferentMeal": "اختر وجبة أخرى للبقايا",
+        "duplicateLeftoverMeal": "تحتاج كل وجبة بقايا إلى تاريخ أو وجبة مختلفة",
+        "noMoreMeals": "كل وجبات هذا الأسبوع لها حصة موزعة بالفعل"
       },
       "dialog": {
         "title": "إضافة إلى {slot}",

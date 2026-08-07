@@ -18,10 +18,9 @@ import {
 } from "./week";
 import type {
   AddEntryInput,
-  BatchCookInput,
+  MealWithLeftoversInput,
   MoveEntryInput,
 } from "./validation";
-import { formatLeftoversNote } from "~/lib/planner-batch";
 import {
   planWarningsForRecipe,
   type PlanSafetyWarning,
@@ -134,6 +133,8 @@ export async function addEntry(input: AddEntryInput, user: User) {
         date: input.date,
         slot: input.slot,
         recipeId,
+        plannedServings: recipeId ? (input.servings ?? null) : null,
+        servingsMade: recipeId ? (input.servings ?? null) : null,
         note: input.note ?? null,
         position,
       })
@@ -152,29 +153,23 @@ export async function addEntry(input: AddEntryInput, user: User) {
   return { entry, warnings };
 }
 
-export type BatchCookResult = {
+export type MealWithLeftoversResult = {
   primaryId: string;
-  leftoversId: string;
+  leftoverIds: string[];
   warnings: PlanSafetyWarning[];
 };
 
-/**
- * Batch cook (#380): insert the primary recipe entry and a linked leftovers
- * entry on `leftoversDate` in a single transaction. The leftovers entry reuses
- * the same `recipeId` and stores a structured note (see `~/lib/planner-batch`)
- * so the board can recognise and style it. No schema change required.
- */
-export async function addBatchCook(
-  input: BatchCookInput,
+/** Create one cooked meal and one or more linked serving allocations. */
+export async function addMealWithLeftovers(
+  input: MealWithLeftoversInput,
   user: User,
-): Promise<BatchCookResult> {
-  const { primaryId, leftoversId, recipeId } = await db.transaction(
+): Promise<MealWithLeftoversResult> {
+  const { primaryId, leftoverIds, recipeId } = await db.transaction(
     async (tx) => {
       const recipe = await tx.query.recipes.findFirst({
         where: eq(recipes.id, input.recipeId),
         columns: {
           id: true,
-          title: true,
           authorId: true,
           visibility: true,
           groupId: true,
@@ -185,8 +180,6 @@ export async function addBatchCook(
         recipe.visibility === "group" ? await viewerGroupIds(tx, user.id) : [];
       if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
 
-      // Group-scoped batch cook (issue #363): both nights land on the shared group
-      // board when a group is in scope. Membership is enforced first.
       let entryGroupId: string | null = null;
       if (input.groupId) {
         if (!(await isGroupMember(tx, input.groupId, user.id)))
@@ -209,43 +202,55 @@ export async function addBatchCook(
           date: input.date,
           slot: input.slot,
           recipeId: recipe.id,
+          plannedServings: input.mealServings,
+          servingsMade:
+            input.mealServings +
+            input.leftovers.reduce(
+              (total, allocation) => total + allocation.servings,
+              0,
+            ),
           note: input.note ?? null,
           position: primaryPosition,
         })
         .returning({ id: mealPlanEntries.id });
 
-      const leftoversPosition = await nextPosition(
-        tx,
-        user.id,
-        input.leftoversDate,
-        input.slot,
-        entryGroupId,
-      );
-      const [leftovers] = await tx
-        .insert(mealPlanEntries)
-        .values({
-          userId: user.id,
-          groupId: entryGroupId,
-          date: input.leftoversDate,
-          slot: input.slot,
-          recipeId: recipe.id,
-          note: formatLeftoversNote(recipe.title, input.multiple),
-          position: leftoversPosition,
-        })
-        .returning({ id: mealPlanEntries.id });
+      const leftoverIds: string[] = [];
+      for (const allocation of input.leftovers) {
+        const position = await nextPosition(
+          tx,
+          user.id,
+          allocation.date,
+          allocation.slot,
+          entryGroupId,
+        );
+        const [leftover] = await tx
+          .insert(mealPlanEntries)
+          .values({
+            userId: user.id,
+            groupId: entryGroupId,
+            date: allocation.date,
+            slot: allocation.slot,
+            recipeId: recipe.id,
+            plannedServings: allocation.servings,
+            leftoverSourceId: primary!.id,
+            position,
+          })
+          .returning({ id: mealPlanEntries.id });
+        leftoverIds.push(leftover!.id);
+      }
 
       return {
         primaryId: primary!.id,
-        leftoversId: leftovers!.id,
+        leftoverIds,
         recipeId: recipe.id,
       };
     },
   );
 
-  // Proactive gating: warn if the batch-cooked recipe conflicts with a saved
+  // Proactive gating: warn if the cooked recipe conflicts with a saved
   // family profile. Best-effort. Never blocks the entries that just saved.
   const warnings = await planWarningsForRecipe(user.id, recipeId);
-  return { primaryId, leftoversId, warnings };
+  return { primaryId, leftoverIds, warnings };
 }
 
 export async function moveEntry(input: MoveEntryInput, user: User) {
@@ -278,13 +283,23 @@ export async function moveEntry(input: MoveEntryInput, user: User) {
   });
 }
 
-export async function removeEntry(entryId: string, user: User) {
+export async function removeEntry(
+  entryId: string,
+  user: User,
+  removeAllocations = false,
+) {
   return db.transaction(async (tx) => {
     // Owner removes their personal entries. Any member removes a group entry
     // (issue #363).
     const entry = await tx.query.mealPlanEntries.findFirst({
       where: eq(mealPlanEntries.id, entryId),
-      columns: { id: true, userId: true, groupId: true },
+      columns: {
+        id: true,
+        userId: true,
+        groupId: true,
+        plannedServings: true,
+        leftoverSourceId: true,
+      },
     });
     if (!entry) throw new Error("NOT_FOUND");
     if (entry.groupId) {
@@ -294,11 +309,34 @@ export async function removeEntry(entryId: string, user: User) {
       throw new Error("NOT_FOUND");
     }
 
+    if (removeAllocations) {
+      await tx
+        .delete(mealPlanEntries)
+        .where(eq(mealPlanEntries.leftoverSourceId, entryId));
+    } else if (entry.leftoverSourceId == null) {
+      await tx
+        .update(mealPlanEntries)
+        .set({
+          leftoverSourceId: null,
+          servingsMade: mealPlanEntries.plannedServings,
+        })
+        .where(eq(mealPlanEntries.leftoverSourceId, entryId));
+    }
+
     const [row] = await tx
       .delete(mealPlanEntries)
       .where(eq(mealPlanEntries.id, entryId))
       .returning({ id: mealPlanEntries.id });
     if (!row) throw new Error("NOT_FOUND");
+
+    if (entry.leftoverSourceId && entry.plannedServings) {
+      await tx
+        .update(mealPlanEntries)
+        .set({
+          servingsMade: sql`greatest(coalesce(${mealPlanEntries.servingsMade}, 0) - ${entry.plannedServings}, coalesce(${mealPlanEntries.plannedServings}, 1))`,
+        })
+        .where(eq(mealPlanEntries.id, entry.leftoverSourceId));
+    }
     return row;
   });
 }
@@ -325,15 +363,20 @@ export async function copyPreviousWeek(
     const previous = await tx.query.mealPlanEntries.findMany({
       where: and(
         eq(mealPlanEntries.userId, user.id),
+        isNull(mealPlanEntries.groupId),
         gte(mealPlanEntries.date, prevStart),
         lte(mealPlanEntries.date, prevEnd),
       ),
       orderBy: [asc(mealPlanEntries.date), asc(mealPlanEntries.position)],
       columns: {
         date: true,
+        id: true,
         slot: true,
         recipeId: true,
         groupId: true,
+        plannedServings: true,
+        servingsMade: true,
+        leftoverSourceId: true,
         note: true,
         position: true,
       },
@@ -344,6 +387,7 @@ export async function copyPreviousWeek(
     const current = await tx.query.mealPlanEntries.findMany({
       where: and(
         eq(mealPlanEntries.userId, user.id),
+        isNull(mealPlanEntries.groupId),
         gte(mealPlanEntries.date, startParam),
         lte(mealPlanEntries.date, endParam),
       ),
@@ -352,21 +396,73 @@ export async function copyPreviousWeek(
     // Cells (day + slot) already holding something this week are left untouched.
     const occupied = new Set(current.map((e) => `${e.date}|${e.slot}`));
 
-    const rows = previous
-      .map((entry) => ({
+    const eligible = previous.filter(
+      (entry) =>
+        !occupied.has(`${addDaysToParam(entry.date, 7)}|${entry.slot}`),
+    );
+    const copiedIds = new Map<string, string>();
+    const copiedTotals = new Map<string, number>();
+    let copied = 0;
+
+    for (const entry of eligible.filter(
+      (row) => row.leftoverSourceId == null,
+    )) {
+      const [created] = await tx
+        .insert(mealPlanEntries)
+        .values({
+          userId: user.id,
+          groupId: entry.groupId,
+          date: addDaysToParam(entry.date, 7),
+          slot: entry.slot,
+          recipeId: entry.recipeId,
+          plannedServings: entry.plannedServings,
+          servingsMade: entry.plannedServings ?? entry.servingsMade,
+          note: entry.note,
+          position: entry.position,
+        })
+        .returning({ id: mealPlanEntries.id });
+      copiedIds.set(entry.id, created!.id);
+      if (entry.plannedServings != null) {
+        copiedTotals.set(entry.id, entry.plannedServings);
+      }
+      copied += 1;
+    }
+
+    for (const entry of eligible.filter(
+      (row) => row.leftoverSourceId != null,
+    )) {
+      const sourceId = copiedIds.get(entry.leftoverSourceId!);
+      await tx.insert(mealPlanEntries).values({
         userId: user.id,
         groupId: entry.groupId,
         date: addDaysToParam(entry.date, 7),
         slot: entry.slot,
         recipeId: entry.recipeId,
+        plannedServings: entry.plannedServings,
+        servingsMade: sourceId ? null : entry.plannedServings,
+        leftoverSourceId: sourceId ?? null,
         note: entry.note,
         position: entry.position,
-      }))
-      .filter((row) => !occupied.has(`${row.date}|${row.slot}`));
+      });
+      if (sourceId) {
+        copiedTotals.set(
+          entry.leftoverSourceId!,
+          (copiedTotals.get(entry.leftoverSourceId!) ?? 0) +
+            (entry.plannedServings ?? 0),
+        );
+      }
+      copied += 1;
+    }
 
-    if (rows.length === 0) return { copied: 0, previousEmpty: false };
+    for (const [oldSourceId, servingsMade] of copiedTotals) {
+      const sourceId = copiedIds.get(oldSourceId);
+      if (!sourceId) continue;
+      await tx
+        .update(mealPlanEntries)
+        .set({ servingsMade })
+        .where(eq(mealPlanEntries.id, sourceId));
+    }
 
-    await tx.insert(mealPlanEntries).values(rows);
-    return { copied: rows.length, previousEmpty: false };
+    return { copied, previousEmpty: false };
   });
 }

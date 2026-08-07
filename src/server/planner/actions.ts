@@ -6,19 +6,19 @@ import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import {
   addEntryInput,
-  batchCookInput,
   copyWeekInput,
+  mealWithLeftoversInput,
   moveEntryInput,
   removeEntryInput,
   type AddEntryInput,
-  type BatchCookInput,
   type CopyWeekInput,
+  type MealWithLeftoversInput,
   type MoveEntryInput,
   type RemoveEntryInput,
 } from "./validation";
 import {
-  addBatchCook,
   addEntry,
+  addMealWithLeftovers,
   copyPreviousWeek,
   moveEntry,
   removeEntry,
@@ -112,7 +112,11 @@ export async function removeEntryAction(
 
   const user = await requireUser();
   try {
-    await removeEntry(parsed.data.entryId, user);
+    await removeEntry(
+      parsed.data.entryId,
+      user,
+      parsed.data.removeAllocations ?? false,
+    );
     revalidatePath("/plan");
     return { ok: true };
   } catch (error) {
@@ -120,12 +124,12 @@ export async function removeEntryAction(
   }
 }
 
-export async function addBatchCookAction(
-  input: BatchCookInput,
+export async function addMealWithLeftoversAction(
+  input: MealWithLeftoversInput,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
-  const parsed = batchCookInput.safeParse(input);
+  const parsed = mealWithLeftoversInput.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -136,7 +140,7 @@ export async function addBatchCookAction(
 
   const user = await requireUser();
   try {
-    const { warnings } = await addBatchCook(parsed.data, user);
+    const { warnings } = await addMealWithLeftovers(parsed.data, user);
     revalidatePath("/plan");
     return { ok: true, warnings };
   } catch (error) {

@@ -17,18 +17,14 @@ import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 
 import {
-  addBatchCookAction,
   addEntryAction,
+  addMealWithLeftoversAction,
   removeEntryAction,
 } from "~/server/planner/actions";
 import { logCookAction } from "~/server/cooklog/actions";
 import { MEAL_SLOTS, type MealSlotValue } from "~/server/planner/validation";
 import { cn } from "~/lib/utils";
-import {
-  BATCH_MULTIPLES,
-  parseLeftoversNote,
-  type BatchMultiple,
-} from "~/lib/planner-batch";
+import { parseLeftoversNote } from "~/lib/planner-batch";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import {
   allergenConflicts,
@@ -39,7 +35,6 @@ import { formatList } from "~/lib/i18n-format";
 import { formatPlanWarnings } from "~/lib/plan-safety-copy";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
@@ -65,6 +60,9 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
+  plannedServings: number | null;
+  servingsMade: number | null;
+  leftoverSourceId: string | null;
   /** Who planned this entry. It is shown on the shared group board (#363). */
   author?: { id: string; name: string } | null;
   recipe: {
@@ -79,13 +77,21 @@ export type BoardRecipe = {
   id: string;
   title: string;
   slug: string;
+  defaultServings: number | null;
+  lastServings: number | null;
 };
 
 type Cell = { dateParam: string; slot: MealSlotValue; dayLabel: string };
+type DraftAllocation = {
+  id: number;
+  date: string;
+  slot: MealSlotValue;
+  servings: string;
+};
 
-/** Derived batch-cook link shown on a primary entry (#380). */
-type BatchBadge = {
-  multiple: BatchMultiple;
+/** Compatibility metadata for pre-allocation batch entries from issue #380. */
+type LegacyBatchBadge = {
+  multiple: 2 | 3;
   dayLabel: string | null;
   leftoversEntryId: string;
 };
@@ -127,8 +133,19 @@ export function PlannerBoard({
     return map;
   }, [entries]);
 
-  // First leftovers entry per recipe, so a primary can show its batch intent.
-  const leftoversByRecipeId = React.useMemo(() => {
+  const allocationsBySourceId = React.useMemo(() => {
+    const map = new Map<string, BoardEntry[]>();
+    for (const entry of entries) {
+      if (!entry.leftoverSourceId) continue;
+      const allocations = map.get(entry.leftoverSourceId);
+      if (allocations) allocations.push(entry);
+      else map.set(entry.leftoverSourceId, [entry]);
+    }
+    return map;
+  }, [entries]);
+
+  // Keep old note-encoded batch entries readable until they are edited/replaced.
+  const legacyLeftoversByRecipeId = React.useMemo(() => {
     const map = new Map<string, BoardEntry>();
     for (const entry of entries) {
       if (
@@ -147,9 +164,15 @@ export function PlannerBoard({
     [days],
   );
 
-  function batchBadgeFor(entry: BoardEntry): BatchBadge | undefined {
-    if (!entry.recipe || parseLeftoversNote(entry.note)) return undefined;
-    const link = leftoversByRecipeId.get(entry.recipe.id);
+  function legacyBatchFor(entry: BoardEntry): LegacyBatchBadge | undefined {
+    if (
+      !entry.recipe ||
+      entry.leftoverSourceId ||
+      parseLeftoversNote(entry.note)
+    ) {
+      return undefined;
+    }
+    const link = legacyLeftoversByRecipeId.get(entry.recipe.id);
     if (!link || link.id === entry.id) return undefined;
     const info = parseLeftoversNote(link.note);
     if (!info) return undefined;
@@ -209,9 +232,11 @@ export function PlannerBoard({
                         avoidAllergens={avoidAllergens}
                         leftovers={
                           entry.recipe != null &&
-                          parseLeftoversNote(entry.note) != null
+                          (entry.leftoverSourceId != null ||
+                            parseLeftoversNote(entry.note) != null)
                         }
-                        batch={batchBadgeFor(entry)}
+                        allocations={allocationsBySourceId.get(entry.id) ?? []}
+                        legacyBatch={legacyBatchFor(entry)}
                       />
                     ))}
 
@@ -256,12 +281,14 @@ function EntryChip({
   entry,
   avoidAllergens,
   leftovers = false,
-  batch,
+  allocations,
+  legacyBatch,
 }: {
   entry: BoardEntry;
   avoidAllergens: Allergen[];
   leftovers?: boolean;
-  batch?: BatchBadge;
+  allocations: BoardEntry[];
+  legacyBatch?: LegacyBatchBadge;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -273,19 +300,26 @@ function EntryChip({
 
   function removeEntries(alsoLeftovers: boolean) {
     startTransition(async () => {
-      const ids =
-        alsoLeftovers && batch
-          ? [entry.id, batch.leftoversEntryId]
-          : [entry.id];
-      const results = await Promise.all(
-        ids.map((id) => removeEntryAction({ entryId: id })),
-      );
+      const results =
+        alsoLeftovers && allocations.length > 0
+          ? [
+              await removeEntryAction({
+                entryId: entry.id,
+                removeAllocations: true,
+              }),
+            ]
+          : alsoLeftovers && legacyBatch
+            ? await Promise.all([
+                removeEntryAction({ entryId: legacyBatch.leftoversEntryId }),
+                removeEntryAction({ entryId: entry.id }),
+              ])
+            : [await removeEntryAction({ entryId: entry.id })];
       const failed = results.find((result) => !result.ok);
       if (failed && !failed.ok) {
         toast.error(friendlyError(failed.error));
       } else {
         toast.success(
-          alsoLeftovers && batch
+          alsoLeftovers && (allocations.length > 0 || legacyBatch)
             ? t("toast.removedMealAndLeftovers")
             : t("toast.removedFromPlan"),
         );
@@ -296,7 +330,7 @@ function EntryChip({
   }
 
   function onRemoveClick() {
-    if (batch) setConfirmOpen(true);
+    if (allocations.length > 0 || legacyBatch) setConfirmOpen(true);
     else removeEntries(false);
   }
 
@@ -308,10 +342,14 @@ function EntryChip({
         recipeId: recipe.id,
         recipeSlug: recipe.slug,
         cookedAt: entry.dateParam,
+        ...(entry.servingsMade != null
+          ? { servingsMade: entry.servingsMade }
+          : {}),
       });
       if (result.ok) {
         setCooked(true);
         toast.success(t("toast.loggedToJournal"));
+        router.refresh();
       } else {
         toast.error(friendlyError(result.error));
       }
@@ -369,6 +407,11 @@ function EntryChip({
                 {entry.author.name}
               </span>
             ) : null}
+            {entry.plannedServings != null && (
+              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                {t("servings", { count: entry.plannedServings })}
+              </span>
+            )}
             {alertText && (
               <span
                 className="mt-1 flex items-center gap-1 font-medium text-foreground"
@@ -392,23 +435,42 @@ function EntryChip({
 
         {entry.recipe && !leftovers && (
           <div className="flex flex-wrap items-center gap-1.5">
-            {batch && (
+            {allocations.length > 0 && entry.servingsMade != null && (
+              <span
+                className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
+                title={t("servingPlan.summaryTitle", {
+                  total: entry.servingsMade,
+                  meals: allocations.length + 1,
+                })}
+              >
+                <Repeat className="size-3.5" aria-hidden />
+                {t("servingPlan.summary", {
+                  total: entry.servingsMade,
+                  allocationTotal: allocations.reduce(
+                    (total, allocation) =>
+                      total + (allocation.plannedServings ?? 0),
+                    0,
+                  ),
+                })}
+              </span>
+            )}
+            {legacyBatch && (
               <span
                 className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
                 title={
-                  batch.dayLabel
+                  legacyBatch.dayLabel
                     ? t("batch.titleWithDay", {
-                        multiple: batch.multiple,
-                        day: batch.dayLabel,
+                        multiple: legacyBatch.multiple,
+                        day: legacyBatch.dayLabel,
                       })
                     : t("batch.titleWithoutDay", {
-                        multiple: batch.multiple,
+                        multiple: legacyBatch.multiple,
                       })
                 }
               >
                 <Repeat className="size-3.5" aria-hidden />
-                {t("batch.badge", { multiple: batch.multiple })}
-                {batch.dayLabel ? ` · ${batch.dayLabel}` : ""}
+                {t("batch.badge", { multiple: legacyBatch.multiple })}
+                {legacyBatch.dayLabel ? ` · ${legacyBatch.dayLabel}` : ""}
               </span>
             )}
             {cooked ? (
@@ -431,7 +493,7 @@ function EntryChip({
         )}
       </div>
 
-      {batch && (
+      {(allocations.length > 0 || legacyBatch) && (
         <Dialog
           open={confirmOpen}
           onOpenChange={(open) => !open && setConfirmOpen(false)}
@@ -440,9 +502,15 @@ function EntryChip({
             <DialogHeader>
               <DialogTitle>{t("removeBatch.title")}</DialogTitle>
               <DialogDescription>
-                {batch.dayLabel
-                  ? t("removeBatch.descriptionWithDay", { day: batch.dayLabel })
-                  : t("removeBatch.descriptionWithoutDay")}
+                {allocations.length > 0
+                  ? t("removeServingPlan.description", {
+                      meals: allocations.length + 1,
+                    })
+                  : legacyBatch?.dayLabel
+                    ? t("removeBatch.descriptionWithDay", {
+                        day: legacyBatch.dayLabel,
+                      })
+                    : t("removeBatch.descriptionWithoutDay")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -460,7 +528,11 @@ function EntryChip({
                 onClick={() => removeEntries(true)}
                 disabled={isPending}
               >
-                {t("removeBatch.removeBoth")}
+                {allocations.length > 0
+                  ? t("removeServingPlan.removeAll", {
+                      meals: allocations.length + 1,
+                    })
+                  : t("removeBatch.removeBoth")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -488,18 +560,28 @@ function AddEntryDialog({
   const t = useTranslations("planner.board");
   const noteId = React.useId();
   const searchId = React.useId();
-  const leftoversId = React.useId();
+  const mealServingsId = React.useId();
+  const allocationBaseId = React.useId();
+  const nextAllocationId = React.useRef(0);
   const [isPending, startTransition] = React.useTransition();
   const [query, setQuery] = React.useState("");
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [note, setNote] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
-  const [batchOn, setBatchOn] = React.useState(false);
-  const [multiple, setMultiple] = React.useState<BatchMultiple>(2);
-  const [leftoversDate, setLeftoversDate] = React.useState("");
+  const [mealServings, setMealServings] = React.useState("4");
+  const [allocations, setAllocations] = React.useState<DraftAllocation[]>([]);
 
-  const leftoversOptions = React.useMemo(
-    () => (cell ? days.filter((day) => day.dateParam !== cell.dateParam) : []),
+  const selectedRecipe =
+    recipes.find((recipe) => recipe.id === selectedId) ?? null;
+  const allocationCells = React.useMemo(
+    () =>
+      cell
+        ? days.flatMap((day) =>
+            MEAL_SLOTS.filter(
+              (slot) => day.dateParam !== cell.dateParam || slot !== cell.slot,
+            ).map((slot) => ({ date: day.dateParam, slot })),
+          )
+        : [],
     [cell, days],
   );
 
@@ -509,22 +591,62 @@ function AddEntryDialog({
       setSelectedId(null);
       setNote("");
       setError(null);
-      setBatchOn(false);
-      setMultiple(2);
-      setLeftoversDate("");
+      setMealServings("4");
+      setAllocations([]);
+      nextAllocationId.current = 0;
     }
   }, [cell]);
 
-  const canBatch = cell?.slot === "dinner" && selectedId != null;
-
-  function toggleBatch(next: boolean) {
-    setBatchOn(next);
-    if (next && !leftoversDate && cell) {
-      const after = leftoversOptions.find(
-        (day) => day.dateParam > cell.dateParam,
-      );
-      setLeftoversDate((after ?? leftoversOptions[0])?.dateParam ?? "");
+  function selectRecipe(recipe: BoardRecipe, selected: boolean) {
+    if (selected) {
+      setSelectedId(null);
+      setAllocations([]);
+      return;
     }
+    const preferred = recipe.lastServings ?? recipe.defaultServings ?? 4;
+    setSelectedId(recipe.id);
+    setMealServings(String(Math.max(1, preferred)));
+    setAllocations([]);
+    setError(null);
+  }
+
+  function addAllocation() {
+    if (!cell) return;
+    const used = new Set(
+      allocations.map((allocation) => `${allocation.date}|${allocation.slot}`),
+    );
+    const available = allocationCells.filter(
+      (option) => !used.has(`${option.date}|${option.slot}`),
+    );
+    const preferred =
+      available.find(
+        (option) => option.date > cell.dateParam && option.slot === cell.slot,
+      ) ?? available[0];
+    if (!preferred) {
+      setError(t("validation.noMoreMeals"));
+      return;
+    }
+    setAllocations((current) => [
+      ...current,
+      {
+        id: nextAllocationId.current++,
+        date: preferred.date,
+        slot: preferred.slot,
+        servings: "1",
+      },
+    ]);
+    setError(null);
+  }
+
+  function updateAllocation(
+    id: number,
+    update: Partial<Omit<DraftAllocation, "id">>,
+  ) {
+    setAllocations((current) =>
+      current.map((allocation) =>
+        allocation.id === id ? { ...allocation, ...update } : allocation,
+      ),
+    );
   }
 
   const filtered = React.useMemo(() => {
@@ -545,24 +667,58 @@ function AddEntryDialog({
       return;
     }
 
-    const batching = batchOn && canBatch;
-    if (batching && !leftoversDate) {
-      setError(t("validation.pickLeftoversNight"));
+    const parsedMealServings = Number(mealServings);
+    if (
+      selectedId &&
+      (!Number.isInteger(parsedMealServings) ||
+        parsedMealServings < 1 ||
+        parsedMealServings > 100000)
+    ) {
+      setError(t("validation.enterServings"));
       return;
+    }
+    const parsedAllocations = allocations.map((allocation) => ({
+      date: allocation.date,
+      slot: allocation.slot,
+      servings: Number(allocation.servings),
+    }));
+    if (
+      parsedAllocations.some(
+        (allocation) =>
+          !Number.isInteger(allocation.servings) ||
+          allocation.servings < 1 ||
+          allocation.servings > 100000,
+      )
+    ) {
+      setError(t("validation.enterServings"));
+      return;
+    }
+    const destinations = new Set<string>();
+    for (const allocation of parsedAllocations) {
+      const destination = `${allocation.date}|${allocation.slot}`;
+      if (destination === `${cell.dateParam}|${cell.slot}`) {
+        setError(t("validation.pickDifferentMeal"));
+        return;
+      }
+      if (destinations.has(destination)) {
+        setError(t("validation.duplicateLeftoverMeal"));
+        return;
+      }
+      destinations.add(destination);
     }
     setError(null);
 
     startTransition(async () => {
       const result =
-        batching && selectedId
-          ? await addBatchCookAction({
+        parsedAllocations.length > 0 && selectedId
+          ? await addMealWithLeftoversAction({
               date: cell.dateParam,
               slot: cell.slot,
               recipeId: selectedId,
               groupId: groupId ?? undefined,
               note: trimmedNote.length > 0 ? trimmedNote : undefined,
-              leftoversDate,
-              multiple,
+              mealServings: parsedMealServings,
+              leftovers: parsedAllocations,
             })
           : await addEntryAction({
               date: cell.dateParam,
@@ -570,11 +726,14 @@ function AddEntryDialog({
               recipeId: selectedId ?? undefined,
               groupId: groupId ?? undefined,
               note: trimmedNote.length > 0 ? trimmedNote : undefined,
+              servings: selectedId ? parsedMealServings : undefined,
             });
 
       if (result.ok) {
         toast.success(
-          batching ? t("toast.addedWithLeftovers") : t("toast.addedToPlan"),
+          parsedAllocations.length > 0
+            ? t("toast.addedWithLeftovers")
+            : t("toast.addedToPlan"),
         );
         const warning = formatPlanWarnings(result.warnings ?? [], locale);
         if (warning) {
@@ -591,7 +750,7 @@ function AddEntryDialog({
 
   return (
     <Dialog open={cell != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         {cell && (
           <form onSubmit={submit} className="grid gap-4">
             <DialogHeader>
@@ -632,9 +791,7 @@ function AddEntryDialog({
                         <li key={recipe.id}>
                           <button
                             type="button"
-                            onClick={() =>
-                              setSelectedId(selected ? null : recipe.id)
-                            }
+                            onClick={() => selectRecipe(recipe, selected)}
                             className={cn(
                               "flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
                               selected && "bg-primary/10 text-foreground",
@@ -651,8 +808,19 @@ function AddEntryDialog({
                             >
                               {selected && <Check className="size-3" />}
                             </span>
-                            <span className="line-clamp-1 flex-1">
-                              {recipe.title}
+                            <span className="min-w-0 flex-1">
+                              <span className="line-clamp-1 block">
+                                {recipe.title}
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                {recipe.lastServings != null
+                                  ? t("servingPlan.lastUsed", {
+                                      count: recipe.lastServings,
+                                    })
+                                  : t("servingPlan.recipeDefault", {
+                                      count: recipe.defaultServings ?? 4,
+                                    })}
+                              </span>
                             </span>
                           </button>
                         </li>
@@ -680,64 +848,154 @@ function AddEntryDialog({
               />
             </div>
 
-            {canBatch && (
-              <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Checkbox
-                    checked={batchOn}
-                    onCheckedChange={(value) => toggleBatch(value === true)}
-                  />
-                  <span className="inline-flex items-center gap-1.5">
+            {selectedRecipe && (
+              <section className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div>
+                  <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
                     <Repeat className="size-4 text-primary" aria-hidden />
-                    {t("batch.toggle")}
-                  </span>
-                </label>
+                    {t("servingPlan.title")}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {selectedRecipe.lastServings != null
+                      ? t("servingPlan.lastUsedDetail", {
+                          count: selectedRecipe.lastServings,
+                        })
+                      : t("servingPlan.recipeDefaultDetail", {
+                          count: selectedRecipe.defaultServings ?? 4,
+                        })}
+                  </p>
+                </div>
 
-                {batchOn && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-1.5">
-                      <Label>{t("batch.makeLabel")}</Label>
-                      <div className="flex gap-1.5">
-                        {BATCH_MULTIPLES.map((value) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setMultiple(value)}
-                            aria-pressed={multiple === value}
-                            className={cn(
-                              "flex-1 rounded-md border px-2 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                              multiple === value
-                                ? "border-primary bg-primary/10 text-foreground"
-                                : "border-border text-muted-foreground hover:bg-muted",
-                            )}
-                          >
-                            {t("batch.option", { multiple: value })}
-                          </button>
-                        ))}
+                <div className="grid gap-1.5 sm:max-w-48">
+                  <Label htmlFor={mealServingsId}>
+                    {t("servingPlan.thisMealLabel")}
+                  </Label>
+                  <Input
+                    id={mealServingsId}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={100000}
+                    value={mealServings}
+                    onChange={(event) => setMealServings(event.target.value)}
+                  />
+                </div>
+
+                {allocations.map((allocation, index) => {
+                  const dateId = `${allocationBaseId}-date-${allocation.id}`;
+                  const slotId = `${allocationBaseId}-slot-${allocation.id}`;
+                  const servingsId = `${allocationBaseId}-servings-${allocation.id}`;
+                  return (
+                    <fieldset
+                      key={allocation.id}
+                      className="grid gap-2 border-t border-border/70 pt-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_6rem_auto]"
+                    >
+                      <legend className="sr-only">
+                        {t("servingPlan.allocation", { number: index + 1 })}
+                      </legend>
+                      <div className="grid gap-1.5">
+                        <Label htmlFor={dateId}>
+                          {t("servingPlan.dateLabel")}
+                        </Label>
+                        <NativeSelect
+                          id={dateId}
+                          value={allocation.date}
+                          onChange={(event) =>
+                            updateAllocation(allocation.id, {
+                              date: event.target.value,
+                            })
+                          }
+                        >
+                          {days.map((day) => (
+                            <option key={day.dateParam} value={day.dateParam}>
+                              {day.fullLabel}
+                            </option>
+                          ))}
+                        </NativeSelect>
                       </div>
-                    </div>
-
-                    <div className="grid gap-1.5">
-                      <Label htmlFor={leftoversId}>
-                        {t("batch.leftoversNightLabel")}
-                      </Label>
-                      <NativeSelect
-                        id={leftoversId}
-                        value={leftoversDate}
-                        onChange={(event) =>
-                          setLeftoversDate(event.target.value)
+                      <div className="grid gap-1.5">
+                        <Label htmlFor={slotId}>
+                          {t("servingPlan.mealLabel")}
+                        </Label>
+                        <NativeSelect
+                          id={slotId}
+                          value={allocation.slot}
+                          onChange={(event) =>
+                            updateAllocation(allocation.id, {
+                              slot: event.target.value as MealSlotValue,
+                            })
+                          }
+                        >
+                          {MEAL_SLOTS.map((slot) => (
+                            <option key={slot} value={slot}>
+                              {t(`mealSlot.${slot}`)}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label htmlFor={servingsId}>
+                          {t("servingPlan.servingsLabel")}
+                        </Label>
+                        <Input
+                          id={servingsId}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={100000}
+                          value={allocation.servings}
+                          onChange={(event) =>
+                            updateAllocation(allocation.id, {
+                              servings: event.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAllocations((current) =>
+                            current.filter((item) => item.id !== allocation.id),
+                          )
                         }
+                        aria-label={t("servingPlan.removeAllocation", {
+                          number: index + 1,
+                        })}
+                        className="self-end rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        {leftoversOptions.map((day) => (
-                          <option key={day.dateParam} value={day.dateParam}>
-                            {day.fullLabel}
-                          </option>
-                        ))}
-                      </NativeSelect>
-                    </div>
-                  </div>
-                )}
-              </div>
+                        <Trash2 className="size-4" aria-hidden />
+                      </button>
+                    </fieldset>
+                  );
+                })}
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addAllocation}
+                    disabled={allocations.length >= allocationCells.length}
+                  >
+                    <Plus aria-hidden />
+                    {t("servingPlan.addAllocation")}
+                  </Button>
+                  <p
+                    className="text-sm font-semibold text-foreground"
+                    aria-live="polite"
+                  >
+                    {t("servingPlan.total", {
+                      count:
+                        (Number(mealServings) || 0) +
+                        allocations.reduce(
+                          (total, allocation) =>
+                            total + (Number(allocation.servings) || 0),
+                          0,
+                        ),
+                    })}
+                  </p>
+                </div>
+              </section>
             )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}

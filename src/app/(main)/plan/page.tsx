@@ -163,6 +163,9 @@ export default async function PlanPage({
     dateParam: entry.date,
     slot: entry.slot,
     note: entry.note,
+    plannedServings: entry.plannedServings,
+    servingsMade: entry.servingsMade,
+    leftoverSourceId: entry.leftoverSourceId,
     author:
       "user" in entry && entry.user
         ? { id: entry.user.id, name: entry.user.name ?? t("familyMember") }
@@ -181,6 +184,8 @@ export default async function PlanPage({
     id: recipe.id,
     title: recipe.title,
     slug: recipe.slug,
+    defaultServings: recipe.servings,
+    lastServings: recipe.lastServings,
   }));
 
   const showSignIn = authConfigured && dbConfigured && !user;

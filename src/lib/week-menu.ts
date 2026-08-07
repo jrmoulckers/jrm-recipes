@@ -22,6 +22,7 @@ export type WeekMenuDayInput = {
 export type WeekMenuEntry = {
   dateParam: string;
   note: string | null;
+  leftoverSourceId?: string | null;
   recipe: { title: string; totalMinutes: number | null } | null;
 };
 
@@ -50,11 +51,14 @@ export function buildWeekMenu(
 ): WeekMenuDay[] {
   const byDate = new Map<string, WeekMenuDinner[]>();
   for (const entry of entries) {
-    const leftovers = entry.recipe ? parseLeftoversNote(entry.note) : null;
+    const legacyLeftovers = entry.recipe
+      ? parseLeftoversNote(entry.note)
+      : null;
+    const leftovers = entry.leftoverSourceId != null || legacyLeftovers != null;
     let dinner: WeekMenuDinner | null = null;
-    if (leftovers) {
+    if (leftovers && entry.recipe) {
       dinner = {
-        title: `Leftovers: ${leftovers.title}`,
+        title: `Leftovers: ${legacyLeftovers?.title ?? entry.recipe.title}`,
         timeLabel: null,
         leftovers: true,
       };

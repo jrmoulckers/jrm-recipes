@@ -4,6 +4,7 @@ import {
   MEAL_SLOTS,
   MEAL_SLOT_LABELS,
   addEntryInput,
+  mealWithLeftoversInput,
   moveEntryInput,
   removeEntryInput,
 } from "./validation";
@@ -16,12 +17,14 @@ describe("addEntryInput", () => {
         slot: "dinner",
         recipeId: "recipe123",
         note: "  double batch  ",
+        servings: 4,
       }),
     ).toMatchObject({
       date: "2026-07-06",
       slot: "dinner",
       recipeId: "recipe123",
       note: "double batch",
+      servings: 4,
     });
   });
 
@@ -57,6 +60,17 @@ describe("addEntryInput", () => {
         "Pick a recipe or add a note",
       );
     }
+  });
+
+  it("only accepts servings for recipe entries", () => {
+    expect(
+      addEntryInput.safeParse({
+        date: "2026-07-06",
+        slot: "dinner",
+        note: "Order pizza",
+        servings: 4,
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects an unknown slot", () => {
@@ -122,6 +136,80 @@ describe("removeEntryInput", () => {
       entryId: "entry1",
     });
     expect(removeEntryInput.safeParse({ entryId: " " }).success).toBe(false);
+    expect(
+      removeEntryInput.parse({
+        entryId: "entry1",
+        removeAllocations: true,
+      }),
+    ).toEqual({ entryId: "entry1", removeAllocations: true });
+  });
+});
+
+describe("mealWithLeftoversInput", () => {
+  it("accepts exact servings across multiple dates and meal slots", () => {
+    expect(
+      mealWithLeftoversInput.parse({
+        date: "2026-07-06",
+        slot: "dinner",
+        recipeId: "recipe123",
+        mealServings: 3,
+        leftovers: [
+          { date: "2026-07-07", slot: "lunch", servings: 1 },
+          { date: "2026-07-09", slot: "dinner", servings: 2 },
+        ],
+      }),
+    ).toMatchObject({
+      mealServings: 3,
+      leftovers: [
+        { slot: "lunch", servings: 1 },
+        { slot: "dinner", servings: 2 },
+      ],
+    });
+  });
+
+  it("allows leftovers before the source date and later the same day", () => {
+    expect(
+      mealWithLeftoversInput.safeParse({
+        date: "2026-07-06",
+        slot: "dinner",
+        recipeId: "recipe123",
+        mealServings: 2,
+        leftovers: [
+          { date: "2026-07-05", slot: "breakfast", servings: 1 },
+          { date: "2026-07-06", slot: "snack", servings: 1 },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects the source meal, duplicate destinations, and invalid servings", () => {
+    const base = {
+      date: "2026-07-06",
+      slot: "dinner" as const,
+      recipeId: "recipe123",
+      mealServings: 3,
+    };
+    expect(
+      mealWithLeftoversInput.safeParse({
+        ...base,
+        leftovers: [{ date: "2026-07-06", slot: "dinner", servings: 1 }],
+      }).success,
+    ).toBe(false);
+    expect(
+      mealWithLeftoversInput.safeParse({
+        ...base,
+        leftovers: [
+          { date: "2026-07-07", slot: "lunch", servings: 1 },
+          { date: "2026-07-07", slot: "lunch", servings: 2 },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      mealWithLeftoversInput.safeParse({
+        ...base,
+        leftovers: [{ date: "2026-07-07", slot: "lunch", servings: 0 }],
+      }).success,
+    ).toBe(false);
   });
 });
 

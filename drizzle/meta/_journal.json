@@ -225,6 +225,13 @@
       "when": 1785443557845,
       "tag": "0031_dark_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786140221098,
+      "tag": "0032_funny_cerise",
+      "breakpoints": true
     }
   ]
 }
