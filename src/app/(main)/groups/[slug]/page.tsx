@@ -383,9 +383,14 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
         {/* Decorative: the cover sits directly above the recipe title, which
             names the enclosing link. */}
         <RecipeImage
+          alt=""
           src={recipe.coverImageUrl}
           fallbackKey={recipe.id}
-          alt=""
+          fallbackContext={{
+            title: recipe.title,
+            cuisine: recipe.cuisine,
+            tags: recipe.tags.map(({ tag }) => tag.name),
+          }}
           fill
           sizes="(max-width: 640px) 100vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"

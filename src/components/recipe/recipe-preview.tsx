@@ -133,9 +133,14 @@ export function RecipePreview({
       {/* Hero */}
       <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
         <RecipeImage
+          alt=""
           src={recipe.coverImageUrl}
           fallbackKey={fallbackKey}
-          alt=""
+          fallbackContext={{
+            title: recipe.title,
+            cuisine: recipe.cuisine,
+            tags: recipe.tags,
+          }}
           fill
           sizes="(max-width: 1280px) 100vw, 1200px"
           className="object-cover"

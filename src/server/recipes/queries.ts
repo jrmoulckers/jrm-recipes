@@ -407,12 +407,16 @@ export async function getPublicRecipeCard(idOrSlug: string) {
       title: true,
       description: true,
       coverImageUrl: true,
+      cuisine: true,
       servings: true,
       servingsNoun: true,
       totalMinutes: true,
       difficulty: true,
     },
-    with: { author: { columns: { name: true, handle: true } } },
+    with: {
+      author: { columns: { name: true, handle: true } },
+      tags: { with: { tag: { columns: { name: true } } } },
+    },
   });
   return recipe ?? null;
 }
@@ -733,6 +737,8 @@ export type DinnerCandidate = {
   slug: string;
   title: string;
   coverImageUrl: string | null;
+  cuisine: string | null;
+  tags: string[];
   totalMinutes: number | null;
   difficulty: "easy" | "medium" | "hard" | null;
 };
@@ -764,8 +770,12 @@ export async function listDinnerCandidates(
         slug: true,
         title: true,
         coverImageUrl: true,
+        cuisine: true,
         totalMinutes: true,
         difficulty: true,
+      },
+      with: {
+        tags: { with: { tag: { columns: { name: true } } } },
       },
     }),
     db.query.mealPlanEntries.findMany({
@@ -792,7 +802,10 @@ export async function listDinnerCandidates(
       recipe.difficulty !== "hard",
   );
   const pool = preferred.length > 0 ? preferred : available;
-  return pool.slice(0, limit);
+  return pool.slice(0, limit).map(({ tags, ...recipe }) => ({
+    ...recipe,
+    tags: tags.map(({ tag }) => tag.name),
+  }));
 }
 
 /**

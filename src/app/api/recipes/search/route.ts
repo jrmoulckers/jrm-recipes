@@ -16,6 +16,8 @@ export type CommandRecipeResult = {
   title: string;
   slug: string;
   imageUrl: string | null;
+  cuisine: string | null;
+  tags: string[];
 };
 
 /**
@@ -42,6 +44,8 @@ export async function GET(request: Request) {
     title: recipe.title,
     slug: recipe.slug,
     imageUrl: recipe.coverImageUrl ?? null,
+    cuisine: recipe.cuisine,
+    tags: recipe.tags.map(({ tag }) => tag.name),
   }));
 
   return Response.json(

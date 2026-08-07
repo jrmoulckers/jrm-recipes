@@ -495,9 +495,14 @@ function FullPage({
             {/* Decorative: the cover sits directly above the recipe title in
                 the printed header. */}
             <RecipeImage
+              alt=""
               src={recipe.coverImageUrl}
               fallbackKey={recipe.id}
-              alt=""
+              fallbackContext={{
+                title: recipe.title,
+                cuisine: recipe.cuisine,
+                tags: recipe.tags.map(({ tag }) => tag.name),
+              }}
               fill
               sizes="(max-width: 1024px) 100vw, 18rem"
               className="object-cover"

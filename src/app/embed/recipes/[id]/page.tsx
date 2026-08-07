@@ -72,9 +72,14 @@ export default async function EmbedRecipePage({
           {/* Decorative: the cover sits directly above the recipe title, which
               names the enclosing link. */}
           <RecipeImage
+            alt=""
             src={recipe.coverImageUrl}
             fallbackKey={recipe.id}
-            alt=""
+            fallbackContext={{
+              title: recipe.title,
+              cuisine: recipe.cuisine,
+              tags: recipe.tags.map(({ tag }) => tag.name),
+            }}
             fill
             sizes="200px"
             className="object-cover"

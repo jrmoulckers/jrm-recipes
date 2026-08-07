@@ -10,22 +10,31 @@ function decodedSrc(image: HTMLImageElement): string {
 }
 
 describe("RecipeImage", () => {
-  it("renders the stable local fallback when no cover is provided", () => {
+  it("renders and softens a semantic fallback when no cover is provided", () => {
     const { container } = render(
       <RecipeImage
         src={null}
         fallbackKey="recipe-without-cover"
+        fallbackContext={{ title: "Blueberry Buttermilk Pancakes" }}
         alt=""
         width={640}
         height={400}
+        className="object-cover group-hover:scale-[1.03]"
       />,
     );
     const image = container.querySelector("img")!;
 
     expect(decodedSrc(image)).toContain(
-      recipeFallbackImage("recipe-without-cover"),
+      recipeFallbackImage("recipe-without-cover", {
+        title: "Blueberry Buttermilk Pancakes",
+      }),
     );
     expect(image).toHaveAttribute("data-fallback");
+    expect(image).toHaveClass(
+      "blur-[1px]",
+      "scale-[1.02]",
+      "group-hover:scale-[1.03]",
+    );
   });
 
   it("replaces a failed remote cover with the local fallback", () => {
@@ -33,6 +42,7 @@ describe("RecipeImage", () => {
       <RecipeImage
         src="https://example.test/missing-cover.jpg"
         fallbackKey="recipe-with-broken-cover"
+        fallbackContext={{ cuisine: "Italian" }}
         alt=""
         width={640}
         height={400}
@@ -43,9 +53,31 @@ describe("RecipeImage", () => {
     expect(decodedSrc(image)).toContain("missing-cover.jpg");
     fireEvent.error(image);
     expect(decodedSrc(image)).toContain(
-      recipeFallbackImage("recipe-with-broken-cover"),
+      recipeFallbackImage("recipe-with-broken-cover", {
+        cuisine: "Italian",
+      }),
     );
     expect(image).toHaveAttribute("data-fallback");
+    expect(image).toHaveClass("blur-[1px]", "scale-[1.02]");
+  });
+
+  it("keeps a valid uploaded cover crisp", () => {
+    const { container } = render(
+      <RecipeImage
+        src="https://example.test/uploaded-cover.jpg"
+        fallbackKey="recipe-with-cover"
+        fallbackContext={{ tags: ["Breakfast"] }}
+        alt=""
+        width={640}
+        height={400}
+        className="object-cover"
+      />,
+    );
+    const image = container.querySelector("img")!;
+
+    expect(image).not.toHaveAttribute("data-fallback");
+    expect(image).not.toHaveClass("blur-[1px]", "scale-[1.02]");
+    expect(image).toHaveClass("object-cover");
   });
 
   it("uses the fallback before rendering a malformed draft URL", () => {

@@ -397,9 +397,14 @@ export function CommandMenu() {
                             {/* Decorative: the thumbnail repeats the recipe title
                             rendered beside it in the result row. */}
                             <RecipeImage
+                              alt=""
                               src={recipe.imageUrl}
                               fallbackKey={recipe.id}
-                              alt=""
+                              fallbackContext={{
+                                title: recipe.title,
+                                cuisine: recipe.cuisine,
+                                tags: recipe.tags,
+                              }}
                               width={36}
                               height={36}
                               className="size-9 object-cover"

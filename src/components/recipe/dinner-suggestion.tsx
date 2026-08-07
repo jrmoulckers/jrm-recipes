@@ -140,9 +140,14 @@ export function DinnerSuggestion({
               tabIndex={-1}
             >
               <RecipeImage
+                alt=""
                 src={current.coverImageUrl}
                 fallbackKey={current.id}
-                alt=""
+                fallbackContext={{
+                  title: current.title,
+                  cuisine: current.cuisine,
+                  tags: current.tags,
+                }}
                 fill
                 sizes="(max-width: 640px) 100vw, 224px"
                 className="object-cover"

@@ -43,6 +43,7 @@ export type CardRecipe = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  cuisine?: string | null;
   totalMinutes: number | null;
   servings: number | null;
   difficulty: "easy" | "medium" | "hard" | null;
@@ -154,9 +155,14 @@ export function RecipeCard({
           {/* Decorative: the cover sits directly above the recipe title, which
               names the enclosing link. */}
           <RecipeImage
+            alt=""
             src={recipe.coverImageUrl}
             fallbackKey={recipe.id}
-            alt=""
+            fallbackContext={{
+              title: recipe.title,
+              cuisine: recipe.cuisine,
+              tags: recipe.tags?.map(({ tag }) => tag.name),
+            }}
             fill
             priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

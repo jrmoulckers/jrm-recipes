@@ -52,6 +52,8 @@ const candidate = (id: string, title: string): DinnerCandidate => ({
   slug: id,
   title,
   coverImageUrl: null,
+  cuisine: null,
+  tags: [],
   totalMinutes: 30,
   difficulty: "easy",
 });
