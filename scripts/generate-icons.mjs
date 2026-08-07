@@ -1,11 +1,11 @@
-// Generates Heirloom PWA icons into /public/icons.
+// Generates Heirloom browser, PWA, and iOS icons.
 // Run: node scripts/generate-icons.mjs
-// Uses sharp to rasterize a simple on-brand vector mark (a cream heart on a
-// warm plate) so there are no external design dependencies.
+// Uses sharp to rasterize the potted plant from src/components/layout/logo.tsx
+// so installed-app surfaces carry the same mark as the site.
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -22,33 +22,33 @@ try {
 const outDir = join(root, "public", "icons");
 mkdirSync(outDir, { recursive: true });
 
-const AMBER_A = "#c2620a";
-const AMBER_B = "#a4490a";
-const CREAM = "#fff7ec";
+const BACKGROUND = "#fffaf3";
+const POT = "#b4552d";
+const LEAF = "#5d764c";
+const RIM = "#f28c18";
 
-// lucide "heart" path, filled.
-const HEART =
-  "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+function markSvg({ x, y, size }) {
+  const scale = size / 32;
+
+  return `<g transform="translate(${x} ${y}) scale(${scale})">
+    <path d="M16 12c0-3 1.6-5.2 4-6.4-.2 2.9-1.3 5-4 6.4Z" fill="${LEAF}"/>
+    <path d="M16 12c0-2.6-1.4-4.6-3.8-5.7.1 2.6 1.2 4.5 3.8 5.7Z" fill="${LEAF}" fill-opacity=".7"/>
+    <path d="M6 13h20l-1.5 10.2A4 4 0 0 1 20.5 27h-9a4 4 0 0 1-4-3.8L6 13Z" fill="${POT}"/>
+    <rect x="4.5" y="10.5" width="23" height="3.4" rx="1.7" fill="${RIM}"/>
+    <circle cx="4.6" cy="12.2" r="1.9" fill="${RIM}"/>
+    <circle cx="27.4" cy="12.2" r="1.9" fill="${RIM}"/>
+  </g>`;
+}
 
 function svg({ size = 512, mark = 260, radius = 112, bleed = false } = {}) {
-  const s = mark / 24;
   const offset = (size - mark) / 2;
-  const plateR = mark * 0.62;
   const rect = bleed
-    ? `<rect width="${size}" height="${size}" fill="url(#g)"/>`
-    : `<rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" fill="url(#g)"/>`;
+    ? `<rect width="${size}" height="${size}" fill="${BACKGROUND}"/>`
+    : `<rect width="${size}" height="${size}" rx="${radius}" fill="${BACKGROUND}"/>`;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${AMBER_A}"/>
-      <stop offset="1" stop-color="${AMBER_B}"/>
-    </linearGradient>
-  </defs>
   ${rect}
-  <circle cx="${size / 2}" cy="${size / 2}" r="${plateR}" fill="none" stroke="${CREAM}" stroke-opacity="0.22" stroke-width="${size * 0.02}"/>
-  <g transform="translate(${offset} ${offset}) scale(${s})">
-    <path d="${HEART}" fill="${CREAM}"/>
-  </g>
+  ${markSvg({ x: offset, y: offset, size: mark })}
 </svg>`;
 }
 
@@ -58,28 +58,44 @@ async function emit(name, opts) {
   console.log("wrote", name);
 }
 
+async function emitFavicon() {
+  const png = await sharp(Buffer.from(svg({ size: 64, mark: 48, radius: 12 })))
+    .resize(32, 32)
+    .png()
+    .toBuffer();
+  const header = Buffer.alloc(22);
+
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(1, 4);
+  header.writeUInt8(32, 6);
+  header.writeUInt8(32, 7);
+  header.writeUInt16LE(1, 10);
+  header.writeUInt16LE(32, 12);
+  header.writeUInt32LE(png.length, 14);
+  header.writeUInt32LE(header.length, 18);
+
+  writeFileSync(
+    join(root, "public", "favicon.ico"),
+    Buffer.concat([header, png]),
+  );
+  console.log("wrote favicon.ico");
+}
+
 // --- iOS launch splash screens (#187) -------------------------------------
 // Flat launch screen matching the app's initial paint (brand cream) with the
-// centered brand mark in amber, so an installed iOS app shows a branded splash
-// instead of a blank white flash. One image per device × orientation.
-const SPLASH_BG = "#fffaf3"; // brand.backgroundColor, matches manifest + body
-const AMBER = "#b45309"; // brand.themeColor
+// centered brand mark, so an installed iOS app shows a branded splash instead
+// of a blank white flash. One image per device × orientation.
 
 function splashSvg(width, height) {
   const min = Math.min(width, height);
   const mark = Math.round(min * 0.3);
-  const s = mark / 24;
-  const cx = width / 2;
-  const cy = height / 2;
-  const offX = cx - mark / 2;
-  const offY = cy - mark / 2;
-  const plateR = mark * 0.62;
+  const offX = (width - mark) / 2;
+  const offY = (height - mark) / 2;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <rect width="${width}" height="${height}" fill="${SPLASH_BG}"/>
-  <circle cx="${cx}" cy="${cy}" r="${plateR}" fill="none" stroke="${AMBER}" stroke-opacity="0.18" stroke-width="${min * 0.012}"/>
-  <g transform="translate(${offX} ${offY}) scale(${s})">
-    <path d="${HEART}" fill="${AMBER}"/>
-  </g>
+  <rect width="${width}" height="${height}" fill="${BACKGROUND}"/>
+  ${markSvg({ x: offX, y: offY, size: mark })}
 </svg>`;
 }
 
@@ -119,6 +135,7 @@ await emit("apple-touch-icon.png", {
   radius: 0,
   bleed: true,
 });
+await emitFavicon();
 
 const splashDevices = JSON.parse(
   readFileSync(join(root, "src/config/ios-splash-devices.json"), "utf8"),
