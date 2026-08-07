@@ -195,19 +195,25 @@ export function recipeCategoryForTag(name: string): RecipeCategory | undefined {
   return RECIPE_CATEGORY_LOOKUP.get(tagKey(name));
 }
 
+/** Find every canonical meal/course term occurring in longer text. */
+export function recipeCategoriesInText(
+  text: string | null | undefined,
+): RecipeCategory[] {
+  const key = slugify(text ?? "");
+  if (!key) return [];
+  const searchable = `-${key}-`;
+  return RECIPE_CATEGORY_TERMS.flatMap(({ category, terms }) =>
+    terms.some((term) => searchable.includes(`-${tagKey(term)}-`))
+      ? [category]
+      : [],
+  );
+}
+
 /** Find the first canonical meal/course term occurring in longer text. */
 export function recipeCategoryInText(
   text: string | null | undefined,
 ): RecipeCategory | undefined {
-  const key = slugify(text ?? "");
-  if (!key) return undefined;
-  const searchable = `-${key}-`;
-  for (const { category, terms } of RECIPE_CATEGORY_TERMS) {
-    if (terms.some((term) => searchable.includes(`-${tagKey(term)}-`))) {
-      return category;
-    }
-  }
-  return undefined;
+  return recipeCategoriesInText(text)[0];
 }
 
 /** alias/canonical slug -> canonical tag. Built once at module load. */

@@ -10,7 +10,7 @@ function decodedSrc(image: HTMLImageElement): string {
 }
 
 describe("RecipeImage", () => {
-  it("renders and softens a semantic fallback when no cover is provided", () => {
+  it("renders a pre-blurred semantic fallback when no cover is provided", () => {
     const { container } = render(
       <RecipeImage
         src={null}
@@ -30,11 +30,7 @@ describe("RecipeImage", () => {
       }),
     );
     expect(image).toHaveAttribute("data-fallback");
-    expect(image).toHaveClass(
-      "blur-[1px]",
-      "scale-[1.02]",
-      "group-hover:scale-[1.03]",
-    );
+    expect(image).toHaveClass("scale-[1.02]", "group-hover:scale-[1.03]");
   });
 
   it("replaces a failed remote cover with the local fallback", () => {
@@ -58,7 +54,7 @@ describe("RecipeImage", () => {
       }),
     );
     expect(image).toHaveAttribute("data-fallback");
-    expect(image).toHaveClass("blur-[1px]", "scale-[1.02]");
+    expect(image).toHaveClass("scale-[1.02]");
   });
 
   it("keeps a valid uploaded cover crisp", () => {
@@ -76,7 +72,7 @@ describe("RecipeImage", () => {
     const image = container.querySelector("img")!;
 
     expect(image).not.toHaveAttribute("data-fallback");
-    expect(image).not.toHaveClass("blur-[1px]", "scale-[1.02]");
+    expect(image).not.toHaveClass("scale-[1.02]");
     expect(image).toHaveClass("object-cover");
   });
 

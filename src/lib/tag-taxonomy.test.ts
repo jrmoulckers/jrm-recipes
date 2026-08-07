@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalizeTag,
   isCanonicalTag,
+  recipeCategoriesInText,
   recipeCategoryForTag,
   recipeCategoryInText,
   SUGGESTED_TAGS,
@@ -88,5 +89,12 @@ describe("recipe category normalization", () => {
 
   it("does not match meal terms embedded inside other words", () => {
     expect(recipeCategoryInText("Breakfasted at dawn")).toBeUndefined();
+  });
+
+  it("returns all course terms from mixed recipe titles", () => {
+    expect(recipeCategoriesInText("Lunch Dumpling Soup")).toEqual([
+      "Lunch",
+      "Soup",
+    ]);
   });
 });

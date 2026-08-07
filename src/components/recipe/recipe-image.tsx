@@ -47,7 +47,7 @@ export function RecipeImage({
     <CloudinaryImage
       {...props}
       src={resolvedSrc}
-      className={cn(className, isFallback && "scale-[1.02] blur-[1px]")}
+      className={cn(className, isFallback && "scale-[1.02]")}
       {...(isFallback || unoptimized ? { unoptimized: true } : {})}
       data-fallback={isFallback ? "" : undefined}
       onError={(event) => {
