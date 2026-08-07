@@ -341,7 +341,7 @@ export default async function RecipePage({
         </div>
       </div>
 
-      <div className="container -mt-16 flex flex-col gap-8">
+      <div className="container relative z-10 -mt-16 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <Breadcrumbs
