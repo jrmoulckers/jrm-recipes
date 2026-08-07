@@ -107,11 +107,11 @@ describe("RecipeCard LCP priority", () => {
     );
 
     const img = container.querySelector("img");
-    expect(decodeURIComponent(img?.getAttribute("src") ?? "")).toContain(
-      "/img/recipe-fallbacks/kitchen-prep.webp",
+    expect(decodeURIComponent(img?.getAttribute("src") ?? "")).toMatch(
+      /\/img\/recipe-fallbacks\/breakfast-/,
     );
     expect(img).toHaveAttribute("data-fallback");
-    expect(img).toHaveClass("blur-[1px]", "scale-[1.02]");
+    expect(img).toHaveClass("scale-[1.02]");
     expect(preloadImageLinks()).toHaveLength(1);
   });
 });

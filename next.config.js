@@ -4,6 +4,7 @@
  */
 import "./src/env.js";
 
+import { readdirSync } from "node:fs";
 import withSerwistInit from "@serwist/next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import createNextIntlPlugin from "next-intl/plugin";
@@ -23,6 +24,17 @@ const buildRevision =
   process.env.GITHUB_SHA ??
   Date.now().toString(36);
 
+const recipeFallbackPrecacheEntries = readdirSync(
+  new URL("./public/img/recipe-fallbacks/", import.meta.url),
+  { withFileTypes: true },
+)
+  .filter((entry) => entry.isFile() && entry.name.endsWith(".webp"))
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .map((entry) => ({
+    url: `/img/recipe-fallbacks/${entry.name}`,
+    revision: buildRevision,
+  }));
+
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
@@ -40,22 +52,7 @@ const withSerwist = withSerwistInit({
   // build so a new deploy refreshes them.
   additionalPrecacheEntries: [
     { url: "/~offline", revision: buildRevision },
-    {
-      url: "/img/recipe-fallbacks/shared-table.webp",
-      revision: buildRevision,
-    },
-    {
-      url: "/img/recipe-fallbacks/kitchen-prep.webp",
-      revision: buildRevision,
-    },
-    {
-      url: "/img/recipe-fallbacks/plated-supper.webp",
-      revision: buildRevision,
-    },
-    {
-      url: "/img/recipe-fallbacks/pasta-table.webp",
-      revision: buildRevision,
-    },
+    ...recipeFallbackPrecacheEntries,
   ],
 });
 

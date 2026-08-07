@@ -19,7 +19,7 @@ The PWA behavior is implemented in:
 - `swSrc: "src/app/sw.ts"` and `swDest: "public/sw.js"` compile the TypeScript service worker into the public worker.
 - The worker is disabled in development (`disable: process.env.NODE_ENV === "development"`).
 - `reloadOnOnline: false` avoids reloading the app under an active Cook Mode session when connectivity returns.
-- `additionalPrecacheEntries` explicitly precaches `/~offline` and the four images in `/img/recipe-fallbacks/`, all revisioned by the deploy SHA or a build-time fallback.
+- `additionalPrecacheEntries` explicitly precaches `/~offline` and every WebP image in `/img/recipe-fallbacks/`, all revisioned by the deploy SHA or a build-time fallback.
 
 The explicit fallback precache is necessary because the root layout reads cookies, so routes render dynamically and route HTML does not automatically land in the precache manifest. The service worker still receives Serwist's generated `self.__SW_MANIFEST` for revisioned build/app-shell assets and those explicit fallback URLs.
 
