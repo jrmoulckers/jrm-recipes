@@ -68,12 +68,12 @@ passed through `t()`, need no escaping and should be typed straight.
 
 Quotation marks are **per locale**, and each catalog is internally consistent:
 
-| Locale | Marks   | Example       |
-| ------ | ------- | ------------- |
-| `en`   | `“…”`   | `Saved to “Weeknights”`  |
-| `es`   | `«…»`   | `Guardado en «Weeknights»` |
-| `de`   | `„…“`   | `In „Weeknights“ gespeichert` |
-| `ar`   | `«…»`   | `«Weeknights»` |
+| Locale | Marks | Example                       |
+| ------ | ----- | ----------------------------- |
+| `en`   | `“…”` | `Saved to “Weeknights”`       |
+| `es`   | `«…»` | `Guardado en «Weeknights»`    |
+| `de`   | `„…“` | `In „Weeknights“ gespeichert` |
+| `ar`   | `«…»` | `«Weeknights»`                |
 
 Never carry the English `“…”` into a translated catalog. It is the most common
 tell that a string was copied rather than translated.
@@ -299,7 +299,7 @@ who can't see the screen. Treat them as first-class copy, not afterthoughts.
   should read as a deliberate decision, not a skipped field. This is the only
   way a reviewer can tell the two apart.
 - A card's cover image is the usual valid empty case, but only when the link
-  around it also contains the title. If a link wraps the image *alone*, `alt=""`
+  around it also contains the title. If a link wraps the image _alone_, `alt=""`
   leaves that link with no accessible name. Either name it or, when a second
   link to the same place sits right beside it, take the image link out of the
   accessibility tree with `aria-hidden` and `tabIndex={-1}`.
@@ -349,3 +349,41 @@ default and an exemption has to be argued for in the config.
 
 Practically: put user-facing copy in `src/messages/*` from the first commit.
 There is no longer a warn tier to land in.
+
+### The guards
+
+The linter only sees JSX, so four checks run alongside it in CI. Run them all
+locally with `pnpm copy:check`.
+
+| Command                  | Catches                                                                 |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `pnpm i18n:validate`     | Missing, extra, or untranslated keys, ICU drift, and banned punctuation |
+| `pnpm i18n:english-leak` | Values reworded but left in English                                     |
+| `pnpm i18n:rich-tags`    | A `t.rich` tag with no handler, which throws at runtime                 |
+| `pnpm a11y:alt-audit`    | Hardcoded or unjustified `alt` text                                     |
+
+Each exists because something got past everything else:
+
+- **English leakage.** `i18n:validate` flags a value only when it is
+  byte-identical to English. A value that was reworded and left in English
+  differs from the source, so parity, identity, and the linter all pass it.
+  Roughly 750 keys once shipped that way, under fully translated key names.
+- **Rich-text tags.** next-intl throws when a message contains a tag the
+  `t.rich` call has no handler for. TypeScript does not read catalog values and
+  the linter does not either, so this crashes in production, in one locale only.
+  The check unions the tags across all locales, because a translator can keep a
+  tag the English source dropped.
+- **Alt text.** A skipped `alt` and a deliberate one are identical in code. The
+  comment required above is what makes the difference reviewable, so it is
+  enforced rather than requested.
+
+Two rules of thumb, both learned the hard way on this branch:
+
+1. **A gate must test the property you actually care about.** Agents asked to
+   translate and then verify reported "in sync" while leaving values in English,
+   because the gate they were given only compared key names. They were not
+   wrong, the gate was.
+2. **Break a new check once before trusting it.** Every guard here was
+   mutation-tested, and `scripts/copy-guards.test.mjs` keeps that honest. A
+   broken checker reports success forever, which is worse than no checker: the
+   green tick stops anyone from looking.

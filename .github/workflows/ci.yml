@@ -112,10 +112,13 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-  # Catalog parity, ICU placeholder parity, and untranslated-value detection.
-  # Uses only Node builtins, so it skips the dependency install entirely.
+  # Copy guards: catalog parity, ICU placeholders, untranslated and
+  # English-leaking values, rich-text tag handlers, and alt-text justification.
+  # These run as separate steps rather than one command so a failure names the
+  # guard that caught it. All use only Node builtins, so this job skips the
+  # dependency install entirely and stays fast.
   i18n:
-    name: i18n catalogs
+    name: Copy and i18n guards
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -128,6 +131,17 @@ jobs:
           node-version: 20
       - name: Validate catalogs
         run: node scripts/i18n-validate.mjs
+      # Catches values that were reworded but left in English. Catalog parity
+      # and the identical-value check both pass those, which is how ~750 keys
+      # once shipped English under translated keys.
+      - name: Check for English leakage
+        run: node scripts/i18n-english-leak.mjs
+      # A tag with no handler makes next-intl throw at runtime, in that locale
+      # only. Neither tsc nor eslint can see it.
+      - name: Check rich-text tag handlers
+        run: node scripts/i18n-rich-tags.mjs
+      - name: Audit alt text
+        run: node scripts/alt-audit.mjs
 
   typecheck:
     name: Typecheck
