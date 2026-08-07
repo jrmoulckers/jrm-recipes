@@ -23,8 +23,8 @@ import { slugify } from "./utils";
  * 1509440159596-0249088772ff, 1549931319-a545dcf3bc73,
  * 1551183053-bf91a1d81141.
  *
- * Every asset is cropped to 1600×1000 and baked with a Gaussian sigma of 45,
- * keeping only the scene's color and broad composition.
+ * Every asset is cropped to 1600×1000 and baked with a Gaussian sigma of 34
+ * (roughly 60% visual blur), keeping the scene atmospheric but recognizable.
  */
 export const RECIPE_FALLBACK_IMAGES = [
   "/img/recipe-fallbacks/shared-table.webp",
