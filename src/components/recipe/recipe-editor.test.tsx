@@ -45,6 +45,24 @@ function expectNoIosZoom(select: Element) {
   expect(select).not.toHaveClass("text-sm");
 }
 
+describe("RecipeEditor view toggle", () => {
+  it("uses the shared segmented-control states when switching views", async () => {
+    const user = userEvent.setup();
+    render(<RecipeEditor mode="create" />);
+
+    const edit = screen.getByRole("button", { name: "Edit" });
+    const preview = screen.getByRole("button", { name: "Preview" });
+
+    expect(edit).toHaveAttribute("data-state", "on");
+    expect(preview).toHaveAttribute("data-state", "off");
+
+    await user.click(preview);
+
+    expect(edit).toHaveAttribute("data-state", "off");
+    expect(preview).toHaveAttribute("data-state", "on");
+  });
+});
+
 // Visibility + Status now live behind a "Visibility settings" popdown, so the
 // guard tests open it to reach those selects (they portal to document.body).
 async function openVisibilityPopdown(user: ReturnType<typeof userEvent.setup>) {

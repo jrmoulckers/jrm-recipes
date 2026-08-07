@@ -72,6 +72,7 @@ import { NativeSelect } from "~/components/ui/native-select";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUploadField } from "~/components/ui/image-upload";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   Popover,
   PopoverContent,
@@ -1545,30 +1546,18 @@ export function RecipeEditor({
         <h1 className="font-display text-3xl font-bold tracking-tight">
           {mode === "edit" ? t("editRecipe") : t("newRecipe")}
         </h1>
-        <div
-          className="inline-flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1"
-          role="group"
+        <ToggleGroup
           aria-label={t("viewAria")}
+          value={previewMode ? "preview" : "edit"}
+          onValueChange={(value) => setPreviewMode(value === "preview")}
         >
-          <Button
-            type="button"
-            variant={previewMode ? "ghost" : "secondary"}
-            size="sm"
-            aria-pressed={!previewMode}
-            onClick={() => setPreviewMode(false)}
-          >
-            <Pencil /> {t("edit")}
-          </Button>
-          <Button
-            type="button"
-            variant={previewMode ? "secondary" : "ghost"}
-            size="sm"
-            aria-pressed={previewMode}
-            onClick={() => setPreviewMode(true)}
-          >
-            <Eye /> {t("preview")}
-          </Button>
-        </div>
+          <ToggleGroupItem value="edit">
+            <Pencil className="size-4" /> {t("edit")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="preview">
+            <Eye className="size-4" /> {t("preview")}
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {!previewMode && draft.availableDraft ? (
