@@ -371,7 +371,7 @@ function EntryChip({
             ) : null}
             {alertText && (
               <span
-                className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
+                className="mt-1 flex items-center gap-1 font-medium text-foreground"
                 title={t("allergenTitle")}
               >
                 <AlertTriangle className="size-3 shrink-0" aria-hidden />

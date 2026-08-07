@@ -36,7 +36,7 @@ export function UsageLimitNotice({
       className={cn(
         "flex flex-col gap-3 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between",
         blocked
-          ? "border-warning/40 bg-warning/10 text-warning-foreground"
+          ? "border-warning/40 bg-warning/10 text-foreground"
           : "border-border bg-surface/60 text-muted-foreground",
         className,
       )}

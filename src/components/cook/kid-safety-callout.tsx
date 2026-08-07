@@ -13,7 +13,7 @@ import { cn } from "~/lib/utils";
 /** High-contrast, theme-token styles per hazard (heat = danger, sharp = caution). */
 const HAZARD_STYLES: Record<KidHazard, string> = {
   heat: "border-destructive/45 bg-destructive/10 text-destructive",
-  sharp: "border-warning/55 bg-warning/15 text-warning-foreground",
+  sharp: "border-warning/55 bg-warning/15 text-foreground",
 };
 
 /**

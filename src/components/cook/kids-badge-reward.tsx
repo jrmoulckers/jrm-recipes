@@ -24,7 +24,7 @@ export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
     <div className="mt-6">
       {newlyEarned.length > 0 && (
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-warning-foreground">
+          <p className="text-sm font-bold uppercase tracking-wide text-foreground">
             {t(newlyEarned.length > 1 ? "newMultiple" : "newSingle")}
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-4">

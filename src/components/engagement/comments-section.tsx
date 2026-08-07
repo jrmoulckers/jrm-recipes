@@ -231,7 +231,7 @@ export function CommentsSection(props: CommentsSectionProps) {
                 onClick={() => setKind("suggestion")}
                 className={cn(
                   kind === "suggestion" &&
-                    "bg-warning/20 text-warning-foreground hover:bg-warning/25",
+                    "bg-warning/20 text-foreground hover:bg-warning/25",
                 )}
               >
                 <Lightbulb /> {t("suggestion")}
@@ -407,7 +407,7 @@ function CommentItem({
             {isSuggestion ? (
               <Badge
                 variant="warning"
-                className="bg-warning/25 text-warning-foreground"
+                className="bg-warning/25 text-foreground"
               >
                 <Lightbulb className="size-3" />
                 {t("suggestion")}

@@ -32,7 +32,9 @@ describe("AllergenSummary", () => {
     const region = screen.getByRole("region", {
       name: /resumen de alérgenos/i,
     });
-    expect(within(region).getByText(/contiene/i)).toBeInTheDocument();
+    expect(within(region).getByText(/contiene/i)).toHaveClass(
+      "text-foreground",
+    );
 
     const badges = within(region).getByRole("list");
     const labels = within(badges)

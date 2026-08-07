@@ -66,7 +66,7 @@ export function AllergenSummary({
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <span
             id={headingId}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-warning-foreground"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground"
           >
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
             {t("contains")}
