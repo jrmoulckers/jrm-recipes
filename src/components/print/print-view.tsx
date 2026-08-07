@@ -20,7 +20,7 @@ import { brand } from "~/config/brand";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   DropdownMenu,
@@ -494,8 +494,9 @@ function FullPage({
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted print:mb-4 print:max-h-[2.2in] print:rounded-none print:border-black/30">
             {/* Decorative: the cover sits directly above the recipe title in
                 the printed header. */}
-            <CloudinaryImage
+            <RecipeImage
               src={recipe.coverImageUrl}
+              fallbackKey={recipe.id}
               alt=""
               fill
               sizes="(max-width: 1024px) 100vw, 18rem"

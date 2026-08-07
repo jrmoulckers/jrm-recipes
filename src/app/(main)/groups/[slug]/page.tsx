@@ -40,6 +40,7 @@ import { RoleBadge } from "~/components/groups/role-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { Separator } from "~/components/ui/separator";
 import { brand } from "~/config/brand";
@@ -381,19 +382,14 @@ async function GroupRecipeCard({ recipe }: { recipe: GroupRecipe }) {
       <div className="bg-primary/12 relative aspect-[16/9] overflow-hidden">
         {/* Decorative: the cover sits directly above the recipe title, which
             names the enclosing link. */}
-        {recipe.coverImageUrl ? (
-          <CloudinaryImage
-            src={recipe.coverImageUrl}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, 50vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center text-4xl">
-            🍲
-          </div>
-        )}
+        <RecipeImage
+          src={recipe.coverImageUrl}
+          fallbackKey={recipe.id}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
         <div className="absolute start-3 top-3 flex gap-2">
           {recipe.visibility !== "public" ? (
             <Badge variant="muted" className="capitalize backdrop-blur">

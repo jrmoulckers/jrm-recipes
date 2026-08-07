@@ -15,6 +15,7 @@ import { formatMinutes } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
 import { DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { Badge } from "~/components/ui/badge";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import type {
   IngredientInput,
   RecipeInput,
@@ -59,9 +60,11 @@ function formatTimer(totalSeconds: number): string {
 export function RecipePreview({
   recipe,
   mode,
+  fallbackKey,
 }: {
   recipe: RecipeInput;
   mode: "create" | "edit";
+  fallbackKey: string;
 }) {
   const locale = useLocale();
   const t = useTranslations("recipePreview");
@@ -128,19 +131,17 @@ export function RecipePreview({
       </p>
 
       {/* Hero */}
-      {recipe.coverImageUrl ? (
-        <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element -- author URLs can't be pre-allowlisted for next/image */}
-          <img
-            src={recipe.coverImageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/10 to-transparent" />
-        </div>
-      ) : (
-        <div className="aspect-[21/9] max-h-72 w-full rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20" />
-      )}
+      <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
+        <RecipeImage
+          src={recipe.coverImageUrl}
+          fallbackKey={fallbackKey}
+          alt=""
+          fill
+          sizes="(max-width: 1280px) 100vw, 1200px"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/10 to-transparent" />
+      </div>
 
       <header className="flex flex-col gap-4">
         {(recipe.visibility !== "public" ||
@@ -331,12 +332,18 @@ export function RecipePreview({
                       {step.instruction}
                     </p>
                     {step.imageUrl && (
-                      <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- author URLs can't be pre-allowlisted for next/image */}
-                        <img
+                      <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border empty:hidden">
+                        <RecipeImage
                           src={step.imageUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
+                          fallbackKey={`${fallbackKey}-step-${i + 1}`}
+                          fallbackMode="hide"
+                          alt={td("method.stepImageAlt", {
+                            title: recipe.title || t("titlePlaceholder"),
+                            position: i + 1,
+                          })}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 28rem"
+                          className="object-cover"
                         />
                       </div>
                     )}

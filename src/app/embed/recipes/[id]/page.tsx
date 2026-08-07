@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
 
 import { brand } from "~/config/brand";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { getPublicRecipeCard } from "~/server/recipes/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
@@ -71,19 +71,14 @@ export default async function EmbedRecipePage({
         <div className="relative hidden w-2/5 shrink-0 bg-primary/10 sm:block">
           {/* Decorative: the cover sits directly above the recipe title, which
               names the enclosing link. */}
-          {recipe.coverImageUrl ? (
-            <CloudinaryImage
-              src={recipe.coverImageUrl}
-              alt=""
-              fill
-              sizes="200px"
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-primary">
-              <ChefHat className="size-10" aria-hidden="true" />
-            </div>
-          )}
+          <RecipeImage
+            src={recipe.coverImageUrl}
+            fallbackKey={recipe.id}
+            alt=""
+            fill
+            sizes="200px"
+            className="object-cover"
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4">

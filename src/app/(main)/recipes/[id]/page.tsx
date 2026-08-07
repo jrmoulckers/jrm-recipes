@@ -54,7 +54,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge, badgeVariants } from "~/components/ui/badge";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
@@ -327,21 +327,18 @@ export default async function RecipePage({
       {/* Hero */}
       <div className="relative">
         {/* Decorative: the hero cover sits directly above the recipe title. */}
-        {recipe.coverImageUrl ? (
-          <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
-            <CloudinaryImage
-              src={recipe.coverImageUrl}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          </div>
-        ) : (
-          <div className="aspect-[21/9] max-h-72 w-full bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20" />
-        )}
+        <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
+          <RecipeImage
+            src={recipe.coverImageUrl}
+            fallbackKey={recipe.id}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        </div>
       </div>
 
       <div className="container -mt-16 flex flex-col gap-8">
@@ -711,9 +708,11 @@ export default async function RecipePage({
                               {step.instruction}
                             </p>
                             {step.imageUrl && (
-                              <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border">
-                                <CloudinaryImage
+                              <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border empty:hidden">
+                                <RecipeImage
                                   src={step.imageUrl}
+                                  fallbackKey={`${recipe.id}-step-${step.id}`}
+                                  fallbackMode="hide"
                                   alt={t("method.stepImageAlt", {
                                     title: recipe.title,
                                     position: i + 1,

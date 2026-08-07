@@ -36,7 +36,7 @@ import { toast } from "sonner";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { Input } from "~/components/ui/input";
 import {
   Dialog,
@@ -990,9 +990,11 @@ function StepMedia({
       )}
     >
       {step.imageUrl && (
-        <div className="relative aspect-video overflow-hidden rounded-xl bg-background short-landscape:aspect-auto short-landscape:h-[28dvh]">
-          <CloudinaryImage
+        <div className="relative aspect-video overflow-hidden rounded-xl bg-background empty:hidden short-landscape:aspect-auto short-landscape:h-[28dvh]">
+          <RecipeImage
             src={step.imageUrl}
+            fallbackKey={`${recipeTitle}-step-${stepNumber}`}
+            fallbackMode="hide"
             alt={tS("imageAlt", { number: stepNumber, title: recipeTitle })}
             fill
             priority
