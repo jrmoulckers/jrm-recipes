@@ -103,6 +103,7 @@ describe("listLibraryRecipeIds (#57)", () => {
 
 describe("searchRecipes pagination (#58)", () => {
   const baseSearch: RecipeSearch = {
+    meals: [],
     cuisines: [],
     tags: [],
     diets: [],

@@ -48,6 +48,7 @@ import {
 } from "~/server/recipes/search";
 import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { type SavedSearch } from "~/server/searches/queries";
+import { canonicalizeTag } from "~/lib/tag-taxonomy";
 
 /** Sentinel for "no filter". Radix Select forbids empty-string item values. */
 const ANY = "any";
@@ -56,6 +57,7 @@ const TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
 
 type Facets = {
   cuisines: { value: string; count: number }[];
+  meals: { slug: string; name: string; count: number }[];
   tags: { slug: string; name: string; count: number }[];
 };
 
@@ -67,6 +69,7 @@ type GroupOption = { id: string; name: string };
 
 type ParamKey =
   | "q"
+  | "meal"
   | "cuisine"
   | "difficulty"
   | "maxTime"
@@ -96,6 +99,7 @@ export function RecipeSearchControls({
   const router = useRouter();
   const t = useTranslations("recipeSearch");
   const tDifficulty = useTranslations("recipeDetail.difficulty");
+  const tNames = useTranslations("classificationNames");
   const pathname = usePathname();
   const currentParams = useSearchParams();
   const searchId = React.useId();
@@ -139,10 +143,10 @@ export function RecipeSearchControls({
     [currentParams, pathname, router],
   );
 
-  // Multi-select facets (cuisine, tag) carry several repeated params. Replace the
+  // Multi-select facets carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
-    (key: "cuisine" | "tag" | "diet", values: string[]) => {
+    (key: "meal" | "cuisine" | "tag" | "diet", values: string[]) => {
       const params = new URLSearchParams(currentParams.toString());
       params.delete(key);
       for (const value of values) params.append(key, value);
@@ -158,7 +162,7 @@ export function RecipeSearchControls({
 
   const toggleListValue = React.useCallback(
     (
-      key: "cuisine" | "tag" | "diet",
+      key: "meal" | "cuisine" | "tag" | "diet",
       current: string[],
       value: string,
       on: boolean,
@@ -247,10 +251,32 @@ export function RecipeSearchControls({
       },
     });
   }
+  for (const meal of search.meals) {
+    const name =
+      facets.meals.find((item) => item.slug === meal.toLowerCase())?.name ??
+      meal;
+    const slug = canonicalizeTag(name, "meal").slug;
+    activeChips.push({
+      key: `meal:${meal}`,
+      label: t("chip.meal", {
+        value: tNames.has(slug) ? tNames(slug) : name,
+      }),
+      onRemove: () =>
+        pushListParam(
+          "meal",
+          search.meals.filter(
+            (value) => value.toLowerCase() !== meal.toLowerCase(),
+          ),
+        ),
+    });
+  }
   for (const cuisine of search.cuisines) {
+    const slug = canonicalizeTag(cuisine, "cuisine").slug;
     activeChips.push({
       key: `cuisine:${cuisine}`,
-      label: t("chip.cuisine", { value: cuisine }),
+      label: t("chip.cuisine", {
+        value: tNames.has(slug) ? tNames(slug) : cuisine,
+      }),
       onRemove: () =>
         pushListParam(
           "cuisine",
@@ -416,6 +442,31 @@ export function RecipeSearchControls({
             filtersOpen ? "flex" : "hidden",
           )}
         >
+          {facets.meals.length > 0 && (
+            <FacetMultiSelect
+              label={t("field.meal")}
+              placeholder={t("anyMeal")}
+              selected={search.meals}
+              options={facets.meals
+                .filter(
+                  (meal) =>
+                    meal.count > 0 ||
+                    search.meals.some(
+                      (selected) => selected.toLowerCase() === meal.slug,
+                    ),
+                )
+                .map((meal) => ({
+                  value: meal.slug,
+                  label: `${
+                    tNames.has(meal.slug) ? tNames(meal.slug) : meal.name
+                  } (${meal.count})`,
+                }))}
+              onToggle={(value, on) =>
+                toggleListValue("meal", search.meals, value, on)
+              }
+            />
+          )}
+
           {facets.cuisines.length > 0 && (
             <FacetMultiSelect
               label={t("field.cuisine")}
@@ -431,7 +482,11 @@ export function RecipeSearchControls({
                 )
                 .map((c) => ({
                   value: c.value,
-                  label: `${c.value} (${c.count})`,
+                  label: `${
+                    tNames.has(canonicalizeTag(c.value, "cuisine").slug)
+                      ? tNames(canonicalizeTag(c.value, "cuisine").slug)
+                      : c.value
+                  } (${c.count})`,
                 }))}
               onToggle={(value, on) =>
                 toggleListValue("cuisine", search.cuisines, value, on)
@@ -490,7 +545,9 @@ export function RecipeSearchControls({
                 )
                 .map((t) => ({
                   value: t.slug,
-                  label: `${t.name} (${t.count})`,
+                  label: `${
+                    tNames.has(t.slug) ? tNames(t.slug) : t.name
+                  } (${t.count})`,
                 }))}
               onToggle={(value, on) =>
                 toggleListValue("tag", search.tags, value, on)
@@ -504,7 +561,7 @@ export function RecipeSearchControls({
             selected={search.diets}
             options={DIETARY_TAGS.map((tag) => ({
               value: tag,
-              label: DIETARY_TAG_LABELS[tag],
+              label: tNames.has(tag) ? tNames(tag) : DIETARY_TAG_LABELS[tag],
             }))}
             onToggle={(value, on) =>
               toggleListValue("diet", search.diets, value, on)
@@ -734,6 +791,7 @@ function FacetMultiSelect({
         </PopoverTrigger>
         <PopoverContent
           align="start"
+          aria-label={label}
           className="max-h-72 w-56 overflow-y-auto p-1.5"
         >
           <ul className="flex flex-col">

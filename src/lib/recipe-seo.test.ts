@@ -249,6 +249,23 @@ describe("buildRecipeJsonLd taxonomy", () => {
     expect(jsonLd.recipeCuisine).toBe("Italian");
   });
 
+  it("emits deduped multi-value cuisines and meal categories", () => {
+    const jsonLd = buildRecipeJsonLd(
+      makeRecipe({
+        cuisine: "Italian",
+        tags: [
+          { tag: { name: "italian", category: "cuisine" } },
+          { tag: { name: "Mediterranean", category: "cuisine" } },
+          { tag: { name: "Italian", category: "cuisine" } },
+          { tag: { name: "dinner", category: "meal" } },
+          { tag: { name: "Main Course", category: "meal" } },
+        ],
+      }),
+    );
+    expect(jsonLd.recipeCuisine).toEqual(["Italian", "Mediterranean"]);
+    expect(jsonLd.recipeCategory).toEqual(["Dinner", "Main Course"]);
+  });
+
   it("omits recipeCuisine for blank/whitespace cuisine", () => {
     expect(
       buildRecipeJsonLd(makeRecipe({ cuisine: "   " })).recipeCuisine,

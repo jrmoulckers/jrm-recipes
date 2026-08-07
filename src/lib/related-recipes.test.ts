@@ -49,6 +49,23 @@ describe("similarityScore (#275)", () => {
     expect(similarityScore(source, empty)).toBe(0);
   });
 
+  it("matches any shared cuisine, including secondary cuisines", () => {
+    const source: RecipeSignals = {
+      tagSlugs: [],
+      cuisine: "Italian",
+      cuisines: ["Italian", "Mediterranean"],
+      ingredientTokens: [],
+    };
+    expect(
+      similarityScore(source, {
+        tagSlugs: [],
+        cuisine: "Greek",
+        cuisines: ["Greek", "mediterranean"],
+        ingredientTokens: [],
+      }),
+    ).toBe(2);
+  });
+
   it("caps ingredient overlap so pantry staples can't dominate a shared tag", () => {
     const source: RecipeSignals = {
       tagSlugs: ["dessert"],

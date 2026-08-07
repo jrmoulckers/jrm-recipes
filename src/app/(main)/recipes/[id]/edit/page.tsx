@@ -11,6 +11,7 @@ import { toCustomUnitDefs } from "~/lib/unit-prefs";
 import { isDbConfigured } from "~/server/db";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import { groupRecipeClassifications } from "~/lib/recipe-classifications";
 
 export const metadata = { title: "Edit recipe" };
 
@@ -30,6 +31,10 @@ export default async function EditRecipePage({
   const customUnits = isDbConfigured()
     ? toCustomUnitDefs(await listCustomUnits(user.id))
     : [];
+  const classifications = groupRecipeClassifications(
+    recipe.tags,
+    recipe.cuisine,
+  );
 
   const initial: RecipeEditorValue = {
     title: recipe.title,
@@ -53,7 +58,8 @@ export default async function EditRecipePage({
     sugarGrams: recipe.sugarGrams != null ? String(recipe.sugarGrams) : "",
     fiberGrams: recipe.fiberGrams != null ? String(recipe.fiberGrams) : "",
     difficulty: recipe.difficulty ?? "",
-    cuisine: recipe.cuisine ?? "",
+    cuisines: classifications.cuisine.map((item) => item.name).join(", "),
+    mealTypes: classifications.meal.map((item) => item.name).join(", "),
     sourceName: recipe.sourceName ?? "",
     sourceUrl: recipe.sourceUrl ?? "",
     notes: recipe.notes ?? "",
@@ -64,7 +70,9 @@ export default async function EditRecipePage({
     visibility: recipe.visibility,
     status: recipe.status,
     groupId: recipe.groupId ?? "",
-    tags: recipe.tags.map(({ tag }) => tag.name).join(", "),
+    tags: [...classifications.general, ...classifications.dietary]
+      .map((item) => item.name)
+      .join(", "),
     dietaryFlags: (recipe.dietaryFlags ?? []).filter((t): t is DietaryTag =>
       (DIETARY_TAGS as readonly string[]).includes(t),
     ),

@@ -1,5 +1,6 @@
 import {
   cleanup,
+  fireEvent,
   render as rtlRender,
   screen,
   waitFor,
@@ -77,11 +78,12 @@ describe("QuickCaptureDialog (#389)", () => {
       slug: "grandmas-meatballs",
     });
 
-    await user.type(screen.getByLabelText("Title"), "Grandma's meatballs");
-    await user.type(
-      screen.getByLabelText(/ingredients and steps/i),
-      "1 lb beef\nMix and bake.",
-    );
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Grandma's meatballs" },
+    });
+    fireEvent.change(screen.getByLabelText(/ingredients and steps/i), {
+      target: { value: "1 lb beef\nMix and bake." },
+    });
     await user.click(screen.getByRole("button", { name: /save draft/i }));
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
@@ -93,6 +95,8 @@ describe("QuickCaptureDialog (#389)", () => {
         visibility: "private",
         ingredients: [],
         steps: [],
+        cuisines: [],
+        mealTypes: [],
       }),
     );
 

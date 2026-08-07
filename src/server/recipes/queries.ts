@@ -12,7 +12,6 @@ import {
   gt,
   ilike,
   inArray,
-  isNotNull,
   isNull,
   lt,
   lte,
@@ -987,7 +986,7 @@ export function recipeUsesFoodConditionSql(foodId: string): SQL {
 export function searchFilterConditions(
   search: RecipeSearch,
   opts: {
-    skip?: "cuisine" | "tag";
+    skip?: "cuisine" | "meal" | "tag";
     ingredientFoodId?: string | null;
   } = {},
 ): SQL[] {
@@ -1006,10 +1005,45 @@ export function searchFilterConditions(
     );
   }
 
-  if (opts.skip !== "cuisine" && search.cuisines.length > 0)
+  if (opts.skip !== "cuisine" && search.cuisines.length > 0) {
+    const cuisineSlugs = search.cuisines.map(tagFilterSlug);
     conditions.push(
-      or(...search.cuisines.map((c) => ilike(recipes.cuisine, c))),
+      or(
+        ...search.cuisines.map((c) => ilike(recipes.cuisine, c)),
+        exists(
+          qb
+            .select({ one: sql`1` })
+            .from(recipeTags)
+            .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+            .where(
+              and(
+                eq(recipeTags.recipeId, recipes.id),
+                eq(tags.category, "cuisine"),
+                inArray(tags.slug, cuisineSlugs),
+              ),
+            ),
+        ),
+      ),
     );
+  }
+
+  if (opts.skip !== "meal" && search.meals.length > 0) {
+    conditions.push(
+      exists(
+        qb
+          .select({ one: sql`1` })
+          .from(recipeTags)
+          .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+          .where(
+            and(
+              eq(recipeTags.recipeId, recipes.id),
+              eq(tags.category, "meal"),
+              inArray(tags.slug, search.meals.map(tagFilterSlug)),
+            ),
+          ),
+      ),
+    );
+  }
   if (search.difficulty)
     conditions.push(eq(recipes.difficulty, search.difficulty));
   if (search.maxTime != null)
@@ -1409,7 +1443,7 @@ export async function suggestSearchTerm(
 }
 
 /**
- * Cuisines + tags present in a viewer's visible recipes, each with a result
+ * Typed classifications present in a viewer's visible recipes, each with a result
  * count scoped to the *other* active filters (the counted facet itself is
  * excluded, so a count answers "how many if I also pick this?"). When `search`
  * is omitted the counts are global. Empty when the DB is off.
@@ -1425,9 +1459,10 @@ export async function listRecipeFacets(
   search?: RecipeSearch,
 ): Promise<{
   cuisines: { value: string; count: number }[];
+  meals: { slug: string; name: string; count: number }[];
   tags: { slug: string; name: string; count: number }[];
 }> {
-  if (!isDbConfigured()) return { cuisines: [], tags: [] };
+  if (!isDbConfigured()) return { cuisines: [], meals: [], tags: [] };
   const groupIds = await viewerGroupIds(viewer);
   const scope = visibleRecipesScope(viewer, groupIds);
   // Facet counts must reflect the active ingredient filter too, so resolve it
@@ -1436,36 +1471,37 @@ export async function listRecipeFacets(
     ? await resolveIngredientFilter(search)
     : undefined;
 
-  // Count each facet against the active filters minus that same facet.
-  const cuisineWhere = and(
-    scope,
-    ...(search
-      ? searchFilterConditions(search, { skip: "cuisine", ingredientFoodId })
-      : []),
-    isNotNull(recipes.cuisine),
-  );
-  const tagRecipeIds = db
-    .select({ id: recipes.id })
-    .from(recipes)
-    .where(
-      and(
-        scope,
-        ...(search
-          ? searchFilterConditions(search, { skip: "tag", ingredientFoodId })
-          : []),
-      ),
-    );
+  // OR facets exclude themselves so alternatives stay visible. General tags use
+  // AND semantics, so their counts retain selected tags and show intersections.
+  const facetRecipeIds = (skip?: "cuisine" | "meal") =>
+    db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(
+        and(
+          scope,
+          ...(search
+            ? searchFilterConditions(search, { skip, ingredientFoodId })
+            : []),
+        ),
+      );
 
-  const [cuisineRows, tagRows] = await Promise.all([
+  const [cuisineRows, mealRows, tagRows] = await Promise.all([
     db
       .select({
-        value: recipes.cuisine,
+        value: tags.name,
         count: sql<number>`count(*)::int`,
       })
-      .from(recipes)
-      .where(cuisineWhere)
-      .groupBy(recipes.cuisine)
-      .orderBy(asc(recipes.cuisine)),
+      .from(tags)
+      .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+      .where(
+        and(
+          eq(tags.category, "cuisine"),
+          inArray(recipeTags.recipeId, facetRecipeIds("cuisine")),
+        ),
+      )
+      .groupBy(tags.slug, tags.name)
+      .orderBy(asc(tags.name)),
     db
       .select({
         slug: tags.slug,
@@ -1474,7 +1510,28 @@ export async function listRecipeFacets(
       })
       .from(tags)
       .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-      .where(inArray(recipeTags.recipeId, tagRecipeIds))
+      .where(
+        and(
+          eq(tags.category, "meal"),
+          inArray(recipeTags.recipeId, facetRecipeIds("meal")),
+        ),
+      )
+      .groupBy(tags.slug, tags.name)
+      .orderBy(asc(tags.name)),
+    db
+      .select({
+        slug: tags.slug,
+        name: tags.name,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tags)
+      .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+      .where(
+        and(
+          eq(tags.category, "general"),
+          inArray(recipeTags.recipeId, facetRecipeIds()),
+        ),
+      )
       .groupBy(tags.slug, tags.name)
       .orderBy(asc(tags.name)),
   ]);
@@ -1482,6 +1539,11 @@ export async function listRecipeFacets(
   const cuisines = cuisineRows
     .filter((r): r is { value: string; count: number } => Boolean(r.value))
     .map((r) => ({ value: r.value, count: r.count }));
+  const meals = mealRows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    count: r.count,
+  }));
   const tags_ = tagRows.map((r) => ({
     slug: r.slug,
     name: r.name,
@@ -1492,6 +1554,11 @@ export async function listRecipeFacets(
   for (const selected of search?.cuisines ?? []) {
     if (!cuisines.some((c) => c.value.toLowerCase() === selected.toLowerCase()))
       cuisines.push({ value: selected, count: 0 });
+  }
+  for (const selected of search?.meals ?? []) {
+    const slug = tagFilterSlug(selected);
+    if (!meals.some((meal) => meal.slug === slug))
+      meals.push({ slug, name: selected, count: 0 });
   }
   for (const selected of search?.tags ?? []) {
     const slug = tagFilterSlug(selected);
@@ -1504,9 +1571,10 @@ export async function listRecipeFacets(
       tags_.push({ slug, name: selected, count: 0 });
   }
   cuisines.sort((a, b) => a.value.localeCompare(b.value));
+  meals.sort((a, b) => a.name.localeCompare(b.name));
   tags_.sort((a, b) => a.name.localeCompare(b.name));
 
-  return { cuisines, tags: tags_ };
+  return { cuisines, meals, tags: tags_ };
 }
 
 /**
@@ -1514,9 +1582,14 @@ export async function listRecipeFacets(
  * Empty tags (no recipes the viewer can see) are omitted. Ordered by name (A-Z).
  * callers that want a "popular" view can re-sort by count.
  */
-export async function listTagsWithCounts(
-  viewer: User | null,
-): Promise<{ slug: string; name: string; count: number }[]> {
+export async function listTagsWithCounts(viewer: User | null): Promise<
+  {
+    slug: string;
+    name: string;
+    category: typeof tags.$inferSelect.category;
+    count: number;
+  }[]
+> {
   if (!isDbConfigured()) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope = visibleRecipesScope(viewer, groupIds);
@@ -1525,16 +1598,22 @@ export async function listTagsWithCounts(
     .select({
       slug: tags.slug,
       name: tags.name,
+      category: tags.category,
       count: sql<number>`count(*)::int`,
     })
     .from(tags)
     .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
     .innerJoin(recipes, eq(recipes.id, recipeTags.recipeId))
     .where(scope)
-    .groupBy(tags.slug, tags.name)
+    .groupBy(tags.slug, tags.name, tags.category)
     .orderBy(asc(tags.name));
 
-  return rows.map((r) => ({ slug: r.slug, name: r.name, count: r.count }));
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    category: r.category,
+    count: r.count,
+  }));
 }
 
 /** How many recency-ordered candidates to score before trimming to `limit`. */
@@ -1559,15 +1638,24 @@ export async function listSimilarRecipes(
     where: eq(recipes.id, recipeId),
     columns: { id: true, cuisine: true },
     with: {
-      tags: { with: { tag: { columns: { slug: true } } } },
+      tags: {
+        with: {
+          tag: { columns: { slug: true, name: true, category: true } },
+        },
+      },
       ingredients: { columns: { item: true } },
     },
   });
   if (!source) return [];
 
   const sourceSignals = {
-    tagSlugs: source.tags.map((t) => t.tag.slug),
+    tagSlugs: source.tags
+      .filter((t) => t.tag.category === "general" || t.tag.category === "meal")
+      .map((t) => t.tag.slug),
     cuisine: source.cuisine,
+    cuisines: source.tags
+      .filter((t) => t.tag.category === "cuisine")
+      .map((t) => t.tag.name),
     ingredientTokens: tokenizeIngredients(
       source.ingredients.map((i) => i.item),
     ),
@@ -1587,10 +1675,28 @@ export async function listSimilarRecipes(
           ),
       )
     : undefined;
-  const sharesCuisine = source.cuisine
+  const sharesLegacyCuisine = source.cuisine
     ? ilike(recipes.cuisine, source.cuisine)
     : undefined;
-  const related = or(sharesTag, sharesCuisine);
+  const sourceCuisineSlugs = source.tags
+    .filter((link) => link.tag.category === "cuisine")
+    .map((link) => link.tag.slug);
+  const sharesCuisineTag = sourceCuisineSlugs.length
+    ? exists(
+        db
+          .select({ one: sql`1` })
+          .from(recipeTags)
+          .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+          .where(
+            and(
+              eq(recipeTags.recipeId, recipes.id),
+              eq(tags.category, "cuisine"),
+              inArray(tags.slug, sourceCuisineSlugs),
+            ),
+          ),
+      )
+    : undefined;
+  const related = or(sharesTag, sharesLegacyCuisine, sharesCuisineTag);
   if (!related) return [];
 
   const candidates = await db.query.recipes.findMany({
@@ -1612,8 +1718,15 @@ export async function listSimilarRecipes(
       .map((recipe) => ({
         recipe,
         signals: {
-          tagSlugs: recipe.tags.map((t) => t.tag.slug),
+          tagSlugs: recipe.tags
+            .filter(
+              (t) => t.tag.category === "general" || t.tag.category === "meal",
+            )
+            .map((t) => t.tag.slug),
           cuisine: recipe.cuisine,
+          cuisines: recipe.tags
+            .filter((t) => t.tag.category === "cuisine")
+            .map((t) => t.tag.name),
           ingredientTokens: tokenizeIngredients(
             recipe.ingredients.map((i) => i.item),
           ),

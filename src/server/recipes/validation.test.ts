@@ -16,6 +16,8 @@ describe("recipeInput", () => {
       ingredients: [],
       steps: [],
       tags: [],
+      cuisines: [],
+      mealTypes: [],
     });
   });
 
@@ -37,6 +39,19 @@ describe("recipeInput", () => {
       totalMinutes: 30,
       ingredients: [{ item: "Flour", quantity: 1.5, quantityMax: 2 }],
       steps: [{ instruction: "Rest batter", timerSeconds: 120 }],
+    });
+  });
+
+  it("trims multiple cuisine and meal classifications", () => {
+    expect(
+      recipeInput.parse({
+        title: "Scallion Pancakes",
+        cuisines: [" Chinese ", "Taiwanese"],
+        mealTypes: [" Breakfast", "Snack "],
+      }),
+    ).toMatchObject({
+      cuisines: ["Chinese", "Taiwanese"],
+      mealTypes: ["Breakfast", "Snack"],
     });
   });
 

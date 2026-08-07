@@ -13,6 +13,8 @@ function recipe(overrides: Partial<RecipeInput> = {}): RecipeInput {
     ingredients: [],
     steps: [],
     tags: [],
+    cuisines: [],
+    mealTypes: [],
     equipment: [],
     dietaryFlags: [],
     visibility: "private",
@@ -96,6 +98,31 @@ describe("diffRecipeSnapshots", () => {
     const title = diff.fields.find((f) => f.key === "title");
     expect(title?.before).toBe("Cake");
     expect(title?.after).toBe("Big Cake");
+    expect(diff.identical).toBe(false);
+  });
+
+  it("detects multi-value cuisine and meal changes", () => {
+    const diff = diffRecipeSnapshots(
+      recipe({ cuisines: ["Thai"], mealTypes: ["Dinner"] }),
+      recipe({
+        cuisines: ["Thai", "Mediterranean"],
+        mealTypes: ["Dinner", "Main Course"],
+      }),
+    );
+    expect(diff.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "cuisines",
+          before: "Thai",
+          after: "Thai, Mediterranean",
+        }),
+        expect.objectContaining({
+          key: "mealTypes",
+          before: "Dinner",
+          after: "Dinner, Main Course",
+        }),
+      ]),
+    );
     expect(diff.identical).toBe(false);
   });
 

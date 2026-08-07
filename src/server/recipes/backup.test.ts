@@ -19,6 +19,7 @@ function recipe(overrides: Partial<PrintRecipe> = {}): PrintRecipe {
     totalMinutes: 65,
     difficulty: null,
     cuisine: null,
+    cuisines: [],
     sourceName: null,
     sourceUrl: null,
     notes: null,

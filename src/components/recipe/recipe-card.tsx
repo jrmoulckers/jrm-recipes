@@ -26,6 +26,8 @@ import {
   CardDietaryBadge,
   type CardDietaryMember,
 } from "~/components/recipe/card-dietary-badge";
+import { groupRecipeClassifications } from "~/lib/recipe-classifications";
+import { RecipeClassificationBadges } from "./recipe-classification-badges";
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
@@ -48,8 +50,15 @@ export type CardRecipe = {
   servings: number | null;
   difficulty: "easy" | "medium" | "hard" | null;
   visibility: string;
+  cuisine?: string | null;
   author?: { name: string | null } | null;
-  tags?: { tag: { name: string } }[];
+  tags?: {
+    tag: {
+      name: string;
+      slug?: string;
+      category?: "meal" | "cuisine" | "dietary" | "general";
+    };
+  }[];
   /** Denormalized, owner-excluded rating aggregates (issue #154). Preferred. */
   ratingCount?: number;
   ratingSum?: number;
@@ -110,6 +119,14 @@ export function RecipeCard({
   const titleSegments = matchReason
     ? splitHighlight(recipe.title, matchReason.term)
     : null;
+  const classifications = groupRecipeClassifications(
+    recipe.tags ?? [],
+    recipe.cuisine,
+  );
+  const cardClassifications = [
+    ...classifications.meal,
+    ...classifications.cuisine,
+  ];
 
   return (
     <div className="group/card relative">
@@ -211,6 +228,11 @@ export function RecipeCard({
               {recipe.description}
             </p>
           )}
+          <RecipeClassificationBadges
+            items={cardClassifications}
+            linked={false}
+            limit={2}
+          />
           {members && members.length > 0 && (
             <CardDietaryBadge
               members={members}

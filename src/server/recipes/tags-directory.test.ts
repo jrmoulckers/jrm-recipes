@@ -35,12 +35,12 @@ describe("listTagsWithCounts (tag directory, #279)", () => {
 
   it("maps visible tag rows to slug/name/count", async () => {
     state.rows = [
-      { slug: "quick", name: "Quick", count: 5 },
-      { slug: "vegan", name: "Vegan", count: 2 },
+      { slug: "quick", name: "Quick", category: "general", count: 5 },
+      { slug: "vegan", name: "Vegan", category: "dietary", count: 2 },
     ];
     await expect(listTagsWithCounts(null)).resolves.toEqual([
-      { slug: "quick", name: "Quick", count: 5 },
-      { slug: "vegan", name: "Vegan", count: 2 },
+      { slug: "quick", name: "Quick", category: "general", count: 5 },
+      { slug: "vegan", name: "Vegan", category: "dietary", count: 2 },
     ]);
     expect(dbMock.select).toHaveBeenCalledTimes(1);
   });

@@ -294,7 +294,7 @@ function TagRow({ recipe }: { recipe: PrintRecipe }) {
     <div className="flex flex-wrap gap-2 print:hidden">
       {recipe.tags.map(({ tag }) => (
         <Badge key={tag.name} variant="muted">
-          #{tag.name}
+          {tag.category === "general" ? `#${tag.name}` : tag.name}
         </Badge>
       ))}
     </div>

@@ -235,7 +235,14 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     makeAheadNote: input.makeAheadNote ?? null,
     equipment: input.equipment.length > 0 ? input.equipment : null,
     difficulty: input.difficulty ?? null,
-    cuisine: input.cuisine ?? null,
+    // Keep the legacy scalar populated for older readers while the category-aware
+    // join rows are the source of truth for multi-cuisine recipes.
+    cuisine:
+      input.cuisines[0] != null
+        ? canonicalizeTag(input.cuisines[0], "cuisine").name
+        : input.cuisine != null
+          ? canonicalizeTag(input.cuisine, "cuisine").name
+          : null,
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
     // "safe for" filtering has a trustworthy, structured source (issue #404).
     dietaryFlags: input.dietaryFlags.length > 0 ? input.dietaryFlags : null,
@@ -311,29 +318,44 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
   }
 }
 
-async function syncTags(tx: Tx, recipeId: string, names: string[]) {
+async function syncTags(tx: Tx, recipeId: string, input: RecipeInput) {
   await tx.delete(recipeTags).where(eq(recipeTags.recipeId, recipeId));
-  const unique = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
-  if (unique.length === 0) return;
 
-  // Fold known aliases onto their canonical tag, then de-dup by the resulting
-  // slug so e.g. "veggie" and "Vegetarian" collapse into one tag.
-  const bySlug = new Map<string, { slug: string; name: string }>();
-  for (const name of unique) {
-    const canonical = canonicalizeTag(name);
-    if (!bySlug.has(canonical.slug)) bySlug.set(canonical.slug, canonical);
+  // Process general tags first so an explicitly classified custom value wins if
+  // the same spelling appears in more than one input group. Known vocabulary
+  // always resolves to its curated category regardless of the hint.
+  const sources = [
+    ...input.tags.map((name) => ({ name, category: "general" as const })),
+    ...input.mealTypes.map((name) => ({ name, category: "meal" as const })),
+    ...(input.cuisines.length > 0
+      ? input.cuisines
+      : input.cuisine
+        ? [input.cuisine]
+        : []
+    ).map((name) => ({ name, category: "cuisine" as const })),
+  ];
+  const bySlug = new Map<string, ReturnType<typeof canonicalizeTag>>();
+  for (const source of sources) {
+    const canonical = canonicalizeTag(source.name, source.category);
+    bySlug.set(canonical.slug, canonical);
   }
-  const slugs = [...bySlug.values()];
+  const classifications = [...bySlug.values()];
+  if (classifications.length === 0) return;
 
   await tx
     .insert(tags)
-    .values(slugs.map((s) => ({ slug: s.slug, name: s.name })))
-    .onConflictDoNothing({ target: tags.slug });
+    .values(classifications)
+    .onConflictDoUpdate({
+      target: tags.slug,
+      set: {
+        name: sql`excluded.name`,
+      },
+    });
 
   const rows = await tx.query.tags.findMany({
     where: inArray(
       tags.slug,
-      slugs.map((s) => s.slug),
+      classifications.map((classification) => classification.slug),
     ),
     columns: { id: true },
   });
@@ -432,7 +454,7 @@ async function applyRecipeInput(
   await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
   await insertChildren(tx, id, input);
-  await syncTags(tx, id, input.tags);
+  await syncTags(tx, id, input);
   await journal(tx, id, author.id, input, label);
   // Mint a share token the first time a recipe becomes unlisted (issue #204).
   // Guarded by `share_token IS NULL` so an existing token (and its enabled /
@@ -466,7 +488,7 @@ export async function createRecipe(input: RecipeInput, author: User) {
         .returning({ id: recipes.id, slug: recipes.slug });
       const recipe = row!;
       await insertChildren(tx, recipe.id, input);
-      await syncTags(tx, recipe.id, input.tags);
+      await syncTags(tx, recipe.id, input);
       await journal(tx, recipe.id, author.id, input, "Created");
       await recordEvent(tx, {
         recipeId: recipe.id,
@@ -582,7 +604,7 @@ export async function forkRecipe(
 
       const recipe = row!;
       await insertChildren(tx, recipe.id, input);
-      await syncTags(tx, recipe.id, input.tags);
+      await syncTags(tx, recipe.id, input);
       await journal(
         tx,
         recipe.id,

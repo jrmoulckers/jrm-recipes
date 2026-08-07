@@ -163,7 +163,11 @@ export const recipeInput = z
     ),
     makeAheadNote: optionalString(500),
     difficulty: recipeDifficulty.optional(),
+    // Legacy single-value projection retained while cuisine classifications
+    // migrate. New clients send `cuisines`; writes mirror the first value here.
     cuisine: optionalString(80),
+    cuisines: z.array(z.string().trim().min(1).max(80)).max(12).default([]),
+    mealTypes: z.array(z.string().trim().min(1).max(80)).max(12).default([]),
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
     notes: optionalString(4000, "Keep notes under 4,000 characters"),
@@ -196,7 +200,7 @@ export const recipeInput = z
     groupId: optionalString(24),
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
-    tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+    tags: z.array(z.string().trim().min(1).max(80)).max(30).default([]),
     // Required tools/equipment (#410). Deduped, trimmed, order-preserving.
     equipment: z
       .array(z.string().trim().min(1).max(120))

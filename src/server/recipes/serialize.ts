@@ -2,6 +2,7 @@ import { pickNutrition } from "~/lib/nutrition";
 import type { FullRecipe } from "~/server/recipes/queries";
 import type { CookRecipe } from "~/components/cook/types";
 import type { PrintRecipe } from "~/components/print/types";
+import { groupRecipeClassifications } from "~/lib/recipe-classifications";
 
 /**
  * `FullRecipe` → client DTO serialization for the immersive surfaces (#203).
@@ -66,6 +67,10 @@ export function toCookRecipe(recipe: FullRecipe): CookRecipe {
 
 /** Map an authorized recipe onto the Print DTO. */
 export function toPrintRecipe(recipe: FullRecipe): PrintRecipe {
+  const classifications = groupRecipeClassifications(
+    recipe.tags,
+    recipe.cuisine,
+  );
   return {
     id: recipe.id,
     slug: recipe.slug,
@@ -80,6 +85,7 @@ export function toPrintRecipe(recipe: FullRecipe): PrintRecipe {
     totalMinutes: recipe.totalMinutes,
     difficulty: recipe.difficulty,
     cuisine: recipe.cuisine,
+    cuisines: classifications.cuisine.map((item) => item.name),
     sourceName: recipe.sourceName,
     sourceUrl: recipe.sourceUrl,
     notes: recipe.notes,
@@ -108,6 +114,8 @@ export function toPrintRecipe(recipe: FullRecipe): PrintRecipe {
     tags: recipe.tags.map(({ tag }) => ({
       tag: {
         name: tag.name,
+        slug: tag.slug,
+        category: tag.category,
       },
     })),
   };

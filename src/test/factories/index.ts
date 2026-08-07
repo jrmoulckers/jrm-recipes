@@ -102,6 +102,8 @@ export function makeRecipeInput(
     ingredients: [],
     steps: [],
     tags: [],
+    cuisines: [],
+    mealTypes: [],
     equipment: [],
     dietaryFlags: [],
     ...overrides,
@@ -212,6 +214,7 @@ export function makeTag(overrides: Partial<Tag> = {}): Tag {
     id: "tag_1",
     slug: "dessert",
     name: "Dessert",
+    category: "general",
     ...overrides,
   } satisfies Tag;
 }

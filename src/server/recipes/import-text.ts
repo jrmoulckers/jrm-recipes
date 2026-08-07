@@ -25,6 +25,8 @@ const EMPTY: ImportedRecipe = {
   prepMinutes: "",
   cookMinutes: "",
   cuisine: "",
+  cuisines: "",
+  mealTypes: "",
   sourceName: "",
   sourceUrl: "",
   tags: "",

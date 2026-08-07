@@ -14,10 +14,9 @@ import type { SearchParams } from "~/lib/route-params";
  * This module is deliberately free of `server-only` and database imports so it
  * can be shared by the server query (`searchRecipes`) and the client controls
  * that push URL params. State lives entirely in the querystring
- * (`?q=&cuisine=&difficulty=&maxTime=&tag=&diet=&safeFor=&group=&mine=&sort=`) so results
- * are shareable and SSR-friendly. `cuisine` and `tag` may repeat (`?tag=quick&tag=vegan`) or be
- * comma-joined (`?tag=quick,vegan`) to select several facet values at once,
- * while a single value stays back-compatible with older shared links.
+ * (`?q=&meal=&cuisine=&difficulty=&maxTime=&tag=&diet=&safeFor=&group=&mine=&sort=`)
+ * so results are shareable and SSR-friendly. Classification params may repeat
+ * or be comma-joined to select several values at once.
  */
 
 export const recipeSortValues = [
@@ -180,6 +179,8 @@ export const recipeSearchSchema = z.object({
 });
 
 export type RecipeSearch = z.infer<typeof recipeSearchSchema> & {
+  /** Selected meals/courses (OR-matched). Empty when unfiltered. */
+  meals: string[];
   /** Selected cuisines (OR-matched). Empty when unfiltered. */
   cuisines: string[];
   /** Selected tags (AND-matched. A recipe must carry every one). */
@@ -206,8 +207,9 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
   });
   return {
     ...parsed,
+    meals: parseFacetList(params.meal, 80),
     cuisines: parseFacetList(params.cuisine, 80),
-    tags: parseFacetList(params.tag, 60),
+    tags: parseFacetList(params.tag, 80),
     diets: parseDietList(params.diet),
     sort: parsed.sort ?? defaultSortFor(parsed.q),
   };
@@ -217,6 +219,7 @@ export function parseRecipeSearch(params: RawSearchParams): RecipeSearch {
 export function hasActiveRecipeFilters(search: RecipeSearch): boolean {
   return (
     search.q != null ||
+    search.meals.length > 0 ||
     search.cuisines.length > 0 ||
     search.difficulty != null ||
     search.maxTime != null ||
@@ -247,6 +250,7 @@ export function recipeSearchToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
   if (search.q) params.set("q", search.q);
+  for (const meal of search.meals ?? []) params.append("meal", meal);
   for (const cuisine of search.cuisines ?? [])
     params.append("cuisine", cuisine);
   if (search.difficulty) params.set("difficulty", search.difficulty);
@@ -271,7 +275,7 @@ export function recipeSearchToQueryString(
 
 /** Slug form used to match a `tag` filter against the `tags` table. */
 export function tagFilterSlug(tag: string): string {
-  return slugify(tag).slice(0, 60) || tag.trim().toLowerCase();
+  return slugify(tag) || tag.trim().toLowerCase().slice(0, 80);
 }
 
 /** Upper bound on pantry items accepted by the "cook with what you have" mode. */
