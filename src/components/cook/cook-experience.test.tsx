@@ -405,6 +405,7 @@ describe("Cook Mode 'Read it to me' narration (issue #411)", () => {
 
     const stopButton = screen.getByRole("button", { name: /stop reading/i });
     expect(stopButton).toHaveAttribute("aria-pressed", "true");
+    expect(stopButton).toHaveAttribute("data-variant", "default");
     fireEvent.click(stopButton);
     expect(cancelSpy).toHaveBeenCalled();
     expect(
