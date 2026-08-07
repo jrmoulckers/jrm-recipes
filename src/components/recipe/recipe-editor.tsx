@@ -1664,7 +1664,13 @@ export function RecipeEditor({
         />
       )}
 
-      {previewMode && <RecipePreview recipe={buildPayload()} mode={mode} />}
+      {previewMode && (
+        <RecipePreview
+          recipe={buildPayload()}
+          mode={mode}
+          fallbackKey={recipeId ?? "new-recipe"}
+        />
+      )}
 
       {!previewMode && (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">

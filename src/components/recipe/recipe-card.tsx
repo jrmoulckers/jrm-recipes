@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Clock3, Play, Star, UtensilsCrossed, Users } from "lucide-react";
+import { Clock3, Play, Star, Users } from "lucide-react";
 
 import { cn, formatMinutes } from "~/lib/utils";
 import {
@@ -16,8 +16,8 @@ import {
   type RecipeMatchReason,
 } from "~/lib/search-match";
 import { Badge } from "~/components/ui/badge";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { FavoriteButton } from "~/components/collections/favorite-button";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import {
   QuickPlanButton,
   type QuickPlanDay,
@@ -61,19 +61,6 @@ export type CardRecipe = {
    */
   allergens?: Allergen[] | null;
 };
-
-const GRADIENTS = [
-  "from-primary/25 to-accent/20",
-  "from-accent/25 to-primary/15",
-  "from-secondary/30 to-primary/15",
-  "from-primary/20 to-secondary/25",
-];
-
-function hashIndex(s: string, mod: number) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h % mod;
-}
 
 export function RecipeCard({
   recipe,
@@ -119,7 +106,6 @@ export function RecipeCard({
       ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
       : ratingSummary(recipe.ratings ?? []);
   const rating = ratingDisplay(summary);
-  const gradient = GRADIENTS[hashIndex(recipe.id, GRADIENTS.length)]!;
   const titleSegments = matchReason
     ? splitHighlight(recipe.title, matchReason.term)
     : null;
@@ -167,25 +153,15 @@ export function RecipeCard({
         <div className="relative aspect-[16/10] overflow-hidden">
           {/* Decorative: the cover sits directly above the recipe title, which
               names the enclosing link. */}
-          {recipe.coverImageUrl ? (
-            <CloudinaryImage
-              src={recipe.coverImageUrl}
-              alt=""
-              fill
-              priority={priority}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
-          ) : (
-            <div
-              className={cn(
-                "flex size-full items-center justify-center bg-gradient-to-br",
-                gradient,
-              )}
-            >
-              <UtensilsCrossed className="size-10 text-foreground/25" />
-            </div>
-          )}
+          <RecipeImage
+            src={recipe.coverImageUrl}
+            fallbackKey={recipe.id}
+            alt=""
+            fill
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
           {recipe.visibility !== "public" && (
             <span className="absolute start-2 top-2">
               <Badge variant="muted" className="capitalize backdrop-blur">

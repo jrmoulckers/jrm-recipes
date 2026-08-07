@@ -21,7 +21,7 @@ import { cn, formatMinutes } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 
 /** Fisher–Yates shuffle of a fresh index array, so consecutive picks differ. */
 function shuffledIndices(length: number): number[] {
@@ -139,19 +139,14 @@ export function DinnerSuggestion({
               aria-hidden="true"
               tabIndex={-1}
             >
-              {current.coverImageUrl ? (
-                <CloudinaryImage
-                  src={current.coverImageUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 100vw, 224px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex size-full items-center justify-center bg-gradient-to-br from-primary/25 to-accent/20">
-                  <UtensilsCrossed className="size-10 text-foreground/25" />
-                </div>
-              )}
+              <RecipeImage
+                src={current.coverImageUrl}
+                fallbackKey={current.id}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 224px"
+                className="object-cover"
+              />
             </Link>
             <CardContent className="flex flex-1 flex-col gap-3 p-5">
               <div className="flex flex-col gap-1">

@@ -4,14 +4,14 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { CornerDownLeft, Search, UtensilsCrossed } from "lucide-react";
+import { CornerDownLeft, Search } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { primaryNav } from "~/config/nav";
 import { recipeSearchToQueryString } from "~/server/recipes/search";
 import { pathnameWithQuery } from "~/lib/routes";
 import { filterNavCommands, wrapIndex } from "~/lib/command-menu";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
+import { RecipeImage } from "~/components/recipe/recipe-image";
 import { OVERLAY_SURFACE } from "~/components/ui/overlay-surface";
 import type { CommandRecipeResult } from "~/app/api/recipes/search/route";
 
@@ -396,20 +396,14 @@ export function CommandMenu() {
                           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
                             {/* Decorative: the thumbnail repeats the recipe title
                             rendered beside it in the result row. */}
-                            {recipe.imageUrl ? (
-                              <CloudinaryImage
-                                src={recipe.imageUrl}
-                                alt=""
-                                width={36}
-                                height={36}
-                                className="size-9 object-cover"
-                              />
-                            ) : (
-                              <UtensilsCrossed
-                                className="size-4 text-muted-foreground"
-                                aria-hidden
-                              />
-                            )}
+                            <RecipeImage
+                              src={recipe.imageUrl}
+                              fallbackKey={recipe.id}
+                              alt=""
+                              width={36}
+                              height={36}
+                              className="size-9 object-cover"
+                            />
                           </span>
                           <span className="flex-1 truncate">
                             {recipe.title}

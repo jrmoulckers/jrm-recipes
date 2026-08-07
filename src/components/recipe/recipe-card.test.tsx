@@ -95,12 +95,16 @@ describe("RecipeCard LCP priority", () => {
     ).toBe(true);
   });
 
-  it("renders no image or preload when the recipe has no cover", () => {
+  it("eagerly loads a bundled fallback when the recipe has no cover", () => {
     const { container } = render(
       <RecipeCard recipe={makeRecipe({ coverImageUrl: null })} priority />,
     );
 
-    expect(container.querySelector("img")).toBeNull();
-    expect(preloadImageLinks()).toHaveLength(0);
+    const img = container.querySelector("img");
+    expect(decodeURIComponent(img?.getAttribute("src") ?? "")).toContain(
+      "/img/recipe-fallbacks/",
+    );
+    expect(img).toHaveAttribute("data-fallback");
+    expect(preloadImageLinks()).toHaveLength(1);
   });
 });

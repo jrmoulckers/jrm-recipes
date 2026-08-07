@@ -19,7 +19,7 @@ The PWA behavior is implemented in:
 - `swSrc: "src/app/sw.ts"` and `swDest: "public/sw.js"` compile the TypeScript service worker into the public worker.
 - The worker is disabled in development (`disable: process.env.NODE_ENV === "development"`).
 - `reloadOnOnline: false` avoids reloading the app under an active Cook Mode session when connectivity returns.
-- `additionalPrecacheEntries` explicitly precaches `/~offline` and `/img/recipe-image-placeholder.svg`, both revisioned by the deploy SHA or a build-time fallback.
+- `additionalPrecacheEntries` explicitly precaches `/~offline` and the four images in `/img/recipe-fallbacks/`, all revisioned by the deploy SHA or a build-time fallback.
 
 The explicit fallback precache is necessary because the root layout reads cookies, so routes render dynamically and route HTML does not automatically land in the precache manifest. The service worker still receives Serwist's generated `self.__SW_MANIFEST` for revisioned build/app-shell assets and those explicit fallback URLs.
 
@@ -42,7 +42,7 @@ The `/import` route handler in [`src/app/import/route.ts`](../src/app/import/rou
 
 | Cache name               | Strategy         | What it holds                                                                                                                                       | Bound                                                                                                                       |
 | ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Serwist precache         | Precache         | Generated revisioned app-shell/build assets plus `/~offline` and `/img/recipe-image-placeholder.svg` from `additionalPrecacheEntries`.              | Revisioned by the Serwist manifest and `buildRevision`.                                                                     |
+| Serwist precache         | Precache         | Generated revisioned app-shell/build assets plus `/~offline` and the bundled recipe fallback rotation from `additionalPrecacheEntries`.             | Revisioned by the Serwist manifest and `buildRevision`.                                                                     |
 | `heirloom-recipe-images` | `CacheFirst`     | Cloudinary-backed recipe and Cook Mode images, including direct `res.cloudinary.com` images and `/_next/image?url=<cloudinary>` optimizer requests. | `ExpirationPlugin`: 128 entries, 30 days, `purgeOnQuotaError`, and `CacheableResponsePlugin` allows statuses `0` and `200`. |
 | `heirloom-recipes`       | `NetworkFirst`   | Same-origin recipe detail and Cook Mode documents plus their RSC payloads.                                                                          | `networkTimeoutSeconds: 3`, `ExpirationPlugin`: 64 entries, 30 days, `purgeOnQuotaError`, and only status `200` is cached.  |
 | Serwist `defaultCache`   | Serwist defaults | Remaining Next.js/runtime requests not matched by the custom recipe caches.                                                                         | Defined by `@serwist/next/worker`.                                                                                          |
@@ -54,7 +54,7 @@ The `/import` route handler in [`src/app/import/route.ts`](../src/app/import/rou
 - the exact Cloudinary host `res.cloudinary.com`, or
 - the Next image optimizer path `/_next/image` whose decoded `url` parameter points at Cloudinary.
 
-The cache uses `CacheFirst` because recipe photos are effectively immutable and should load instantly once stored. It permits opaque status `0` responses for cross-origin Cloudinary responses and uses an expiration plugin to cap storage.
+The cache uses `CacheFirst` because recipe photos are effectively immutable and should load instantly once stored. It permits opaque status `0` responses for cross-origin Cloudinary responses and uses an expiration plugin to cap storage. When a remote image is unavailable, the recipe image component selects one of the precached local fallbacks using the recipe id; rendering those local assets unoptimized keeps their browser requests identical to the precached URLs.
 
 ### Recipe pages
 

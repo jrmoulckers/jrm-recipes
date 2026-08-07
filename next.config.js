@@ -35,12 +35,27 @@ const withSerwist = withSerwistInit({
   reloadOnOnline: false,
   // Root layout reads cookies() (for theme SSR), so every route renders
   // dynamically and nothing lands in the precache manifest automatically.
-  // Precache the offline fallback + the offline recipe-image placeholder
+  // Precache the offline fallback + the default recipe-image rotation
   // explicitly so they're available with no network. Revisions are stamped per
   // build so a new deploy refreshes them.
   additionalPrecacheEntries: [
     { url: "/~offline", revision: buildRevision },
-    { url: "/img/recipe-image-placeholder.svg", revision: buildRevision },
+    {
+      url: "/img/recipe-fallbacks/shared-table.webp",
+      revision: buildRevision,
+    },
+    {
+      url: "/img/recipe-fallbacks/kitchen-prep.webp",
+      revision: buildRevision,
+    },
+    {
+      url: "/img/recipe-fallbacks/plated-supper.webp",
+      revision: buildRevision,
+    },
+    {
+      url: "/img/recipe-fallbacks/pasta-table.webp",
+      revision: buildRevision,
+    },
   ],
 });
 
