@@ -1805,11 +1805,7 @@
       "batch": {
         "titleWithDay": "اطبخ {multiple}×. البقايا يوم {day}",
         "titleWithoutDay": "اطبخ {multiple}×. كمية إضافية للبقايا",
-        "badge": "دفعة ×{multiple}",
-        "toggle": "اطبخ كمية أكبر. كُلها مرة أخرى في ليلة ثانية",
-        "makeLabel": "حضّر",
-        "option": "دفعة {multiple}×",
-        "leftoversNightLabel": "ليلة البقايا"
+        "badge": "دفعة ×{multiple}"
       },
       "removeBatch": {
         "title": "إزالة هذه الوجبة؟",
@@ -1824,7 +1820,6 @@
       },
       "validation": {
         "pickRecipeOrNote": "اختر وصفة أو أضف ملاحظة",
-        "pickLeftoversNight": "اختر ليلة للبقايا",
         "enterServings": "أدخل عددًا صحيحًا من الحصص",
         "pickDifferentMeal": "اختر وجبة أخرى للبقايا",
         "duplicateLeftoverMeal": "تحتاج كل وجبة بقايا إلى تاريخ أو وجبة مختلفة",

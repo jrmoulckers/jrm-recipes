@@ -1805,11 +1805,7 @@
       "batch": {
         "titleWithDay": "Cook {multiple}×. Leftovers on {day}",
         "titleWithoutDay": "Cook {multiple}×. Extra for leftovers",
-        "badge": "Batch ×{multiple}",
-        "toggle": "Batch cook. Eat again another night",
-        "makeLabel": "Make",
-        "option": "{multiple}× batch",
-        "leftoversNightLabel": "Leftovers night"
+        "badge": "Batch ×{multiple}"
       },
       "removeBatch": {
         "title": "Remove this meal?",
@@ -1824,7 +1820,6 @@
       },
       "validation": {
         "pickRecipeOrNote": "Pick a recipe or add a note",
-        "pickLeftoversNight": "Pick a night for the leftovers",
         "enterServings": "Enter a whole number of servings",
         "pickDifferentMeal": "Choose a different meal for the leftovers",
         "duplicateLeftoverMeal": "Each leftover meal needs a different date and meal",

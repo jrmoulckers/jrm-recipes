@@ -1805,11 +1805,7 @@
       "batch": {
         "titleWithDay": "Cocina {multiple}×. Sobras el {day}",
         "titleWithoutDay": "Cocina {multiple}×. Extra para sobras",
-        "badge": "Lote ×{multiple}",
-        "toggle": "Cocinar de más. Comer otra noche",
-        "makeLabel": "Preparar",
-        "option": "Lote de {multiple}×",
-        "leftoversNightLabel": "Noche de sobras"
+        "badge": "Lote ×{multiple}"
       },
       "removeBatch": {
         "title": "¿Quitar esta comida?",
@@ -1824,7 +1820,6 @@
       },
       "validation": {
         "pickRecipeOrNote": "Elige una receta o añade una nota",
-        "pickLeftoversNight": "Elige una noche para las sobras",
         "enterServings": "Introduce un número entero de porciones",
         "pickDifferentMeal": "Elige otra comida para las sobras",
         "duplicateLeftoverMeal": "Cada comida de sobras necesita otra fecha o comida",

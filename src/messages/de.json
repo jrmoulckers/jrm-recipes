@@ -1805,11 +1805,7 @@
       "batch": {
         "titleWithDay": "{multiple}× kochen. Reste am {day}",
         "titleWithoutDay": "{multiple}× kochen. Extra für Reste",
-        "badge": "Vorrat ×{multiple}",
-        "toggle": "Auf Vorrat kochen. An einem anderen Abend wieder essen",
-        "makeLabel": "Machen",
-        "option": "{multiple}×-Batch",
-        "leftoversNightLabel": "Resteabend"
+        "badge": "Vorrat ×{multiple}"
       },
       "removeBatch": {
         "title": "Diese Mahlzeit entfernen?",
@@ -1824,7 +1820,6 @@
       },
       "validation": {
         "pickRecipeOrNote": "Wähle ein Rezept oder füge eine Notiz hinzu",
-        "pickLeftoversNight": "Wähle einen Abend für die Reste",
         "enterServings": "Gib eine ganze Anzahl Portionen ein",
         "pickDifferentMeal": "Wähle für die Reste eine andere Mahlzeit",
         "duplicateLeftoverMeal": "Jede Restemahlzeit braucht ein anderes Datum oder eine andere Mahlzeit",
