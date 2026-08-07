@@ -16,3 +16,12 @@ CHANGELOG.md
 coverage/
 playwright-report/
 test-results/
+
+# The studio sync engine owns these: canon is authored in jrmoulckers/.github and
+# written here verbatim (plus a provenance header), so formatting them would make
+# the "Format" gate fight every chore(sync) PR forever. Fix formatting upstream.
+.github/agents/
+.github/skills/
+.github/prompts/
+.github/instructions/
+AGENTS.md

@@ -161,7 +161,9 @@ export function CommentsSection(props: CommentsSectionProps) {
       });
       if (result.ok) {
         toast.success(
-          resolved ? t("toast.suggestionResolved") : t("toast.suggestionReopened"),
+          resolved
+            ? t("toast.suggestionResolved")
+            : t("toast.suggestionReopened"),
         );
         router.refresh();
       } else {
@@ -201,9 +203,7 @@ export function CommentsSection(props: CommentsSectionProps) {
           <h2 className="font-display text-xl font-semibold text-foreground">
             {t("heading")}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            {t("description")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
       </div>
 
@@ -421,8 +421,7 @@ function CommentItem({
                 {comment.anchorType === "ingredient"
                   ? t("anchor.ingredient")
                   : t("anchor.step")}
-                :{" "}
-                {comment.anchorLabel}
+                : {comment.anchorLabel}
               </Badge>
             ) : null}
             {isApplied ? (

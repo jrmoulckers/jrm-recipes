@@ -78,9 +78,7 @@ export async function resolveFoodIds(
     const aliasFoodIds = new Set(index.values());
     const needVerify = [
       ...new Set(
-        candidates.filter(
-          (id): id is string => !!id && !aliasFoodIds.has(id),
-        ),
+        candidates.filter((id): id is string => !!id && !aliasFoodIds.has(id)),
       ),
     ];
     const verified =

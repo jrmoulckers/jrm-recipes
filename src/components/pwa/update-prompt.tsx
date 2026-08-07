@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { hasRunningCookTimers } from "~/lib/cook-state";
 import { SKIP_WAITING_MESSAGE, shouldShowUpdatePrompt } from "~/lib/sw-update";
 
@@ -193,15 +194,11 @@ export function UpdatePrompt() {
           <RefreshCw className="size-4" />
           {t("action")}
         </Button>
-        <Button
-          size="icon"
-          variant="ghost"
+        <CloseButton
           onClick={dismiss}
-          aria-label={t("dismiss")}
-          className="size-9 shrink-0"
-        >
-          <X className="size-4" />
-        </Button>
+          label={t("dismiss")}
+          className="shrink-0"
+        />
       </div>
     </div>
   );

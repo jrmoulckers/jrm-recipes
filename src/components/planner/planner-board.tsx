@@ -22,10 +22,7 @@ import {
   removeEntryAction,
 } from "~/server/planner/actions";
 import { logCookAction } from "~/server/cooklog/actions";
-import {
-  MEAL_SLOTS,
-  type MealSlotValue,
-} from "~/server/planner/validation";
+import { MEAL_SLOTS, type MealSlotValue } from "~/server/planner/validation";
 import { cn } from "~/lib/utils";
 import {
   BATCH_MULTIPLES,
@@ -577,9 +574,7 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          batching
-            ? t("toast.addedWithLeftovers")
-            : t("toast.addedToPlan"),
+          batching ? t("toast.addedWithLeftovers") : t("toast.addedToPlan"),
         );
         const warning = formatPlanWarnings(result.warnings ?? [], locale);
         if (warning) {

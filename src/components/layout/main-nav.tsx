@@ -40,12 +40,17 @@ function initialsOf(name: string | null): string {
 export function MainNav() {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  // "Create" is intentionally dropped from the horizontal bar: it points at the
+  // same /recipes/new route as the prominent "New recipe" header CTA sitting
+  // right beside this nav, so listing it twice only crowds the row. It still
+  // appears in the command menu and the mobile Profile hub.
+  const items = primaryNav.filter((item) => item.id !== "create");
   return (
     <nav
       aria-label={t("landmarks.primary")}
       className="hidden items-center gap-1 md:flex"
     >
-      {primaryNav.map((item) => {
+      {items.map((item) => {
         const active = isActive(pathname, item);
         return (
           <Link
@@ -111,7 +116,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   return (
     <nav
       aria-label={t("landmarks.primaryMobile")}
-      className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur md:hidden"
+      className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur xl:hidden"
     >
       <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-safe-b">
         {/* A pill that glides along the top edge to the active tab. */}

@@ -34,7 +34,10 @@ const TARGET_META: Record<
   cook_log: { labelKey: "cookLog", icon: CookingPot },
 };
 
-const REASON_KEY: Record<string, "spam" | "harassment" | "inappropriate" | "other"> = {
+const REASON_KEY: Record<
+  string,
+  "spam" | "harassment" | "inappropriate" | "other"
+> = {
   spam: "spam",
   harassment: "harassment",
   inappropriate: "inappropriate",
@@ -63,7 +66,8 @@ function QueueRow({
 
   const meta = TARGET_META[item.targetType];
   const Icon = meta.icon;
-  const authorName = item.author?.name ?? item.author?.handle ?? t("fallbackAuthor");
+  const authorName =
+    item.author?.name ?? item.author?.handle ?? t("fallbackAuthor");
 
   return (
     <li className="rounded-xl border border-border bg-card p-4 shadow-token">

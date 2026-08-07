@@ -235,31 +235,18 @@ export function CommandMenu() {
 
   return (
     <>
-      {/* Desktop: an input-styled button so the header reads like it has a real
-          search field, without shipping the palette's client JS inline. */}
+      {/* Search opens the ⌘K command palette. The header keeps a compact icon
+          trigger on every breakpoint: a full-width "Search…" bar can't share the
+          capped header track with the primary nav and the New-recipe CTA without
+          crowding them, so the icon (plus the ⌘K/Ctrl-K shortcut) is the
+          affordance and the palette itself carries the real input. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("triggerAria")}
         aria-keyshortcuts="Meta+K Control+K"
-        className="hidden h-9 min-w-44 items-center gap-2 rounded-lg border border-input bg-background/60 px-3 text-sm text-muted-foreground shadow-token-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:inline-flex"
-      >
-        <Search className="size-4 shrink-0" aria-hidden />
-        <span className="flex-1 text-start">{t("trigger")}</span>
-        <kbd
-          suppressHydrationWarning
-          className="pointer-events-none hidden rounded border border-border bg-muted px-1.5 font-sans text-[0.7rem] font-medium text-muted-foreground lg:inline-block"
-        >
-          {isMac ? "⌘K" : "Ctrl K"}
-        </kbd>
-      </button>
-
-      {/* Mobile: an icon-only trigger that opens the same palette. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t("triggerAria")}
-        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden"
+        title={t("triggerTitle", { shortcut: isMac ? "⌘K" : "Ctrl K" })}
+        className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Search className="size-5" aria-hidden />
       </button>

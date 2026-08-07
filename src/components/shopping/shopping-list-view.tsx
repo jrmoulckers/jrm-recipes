@@ -16,6 +16,7 @@ import { allergenConflicts } from "~/lib/dietary-match";
 import { toast } from "sonner";
 import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -26,7 +27,6 @@ import {
   Share2,
   ShoppingCart,
   Trash2,
-  X,
 } from "lucide-react";
 
 export type ShoppingViewItem = {
@@ -226,15 +226,13 @@ function ItemRow({
           </option>
         ))}
       </select>
-      <button
-        type="button"
+      <CloseButton
+        tone="danger"
         disabled={disabled}
         onClick={() => onRemove(item.id)}
-        aria-label={t("item.remove", { item: item.item })}
-        className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-      >
-        <X className="size-4" />
-      </button>
+        label={t("item.remove", { item: item.item })}
+        className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+      />
     </li>
   );
 }

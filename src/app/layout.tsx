@@ -12,6 +12,7 @@ import {
 } from "next/font/google";
 
 import { brand } from "~/config/brand";
+import { clerkAppearance } from "~/config/clerk-appearance";
 import { env } from "~/env";
 import {
   DEFAULT_COLOR_SCHEME,
@@ -224,5 +225,9 @@ export default async function RootLayout({
   );
 
   // Only mount ClerkProvider when auth is actually configured.
-  return authConfigured ? <ClerkProvider>{tree}</ClerkProvider> : tree;
+  return authConfigured ? (
+    <ClerkProvider appearance={clerkAppearance}>{tree}</ClerkProvider>
+  ) : (
+    tree
+  );
 }

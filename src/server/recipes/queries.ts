@@ -21,6 +21,8 @@ import {
   type SQL,
 } from "drizzle-orm";
 
+import { QueryBuilder } from "drizzle-orm/pg-core";
+
 import { db, isDbConfigured } from "~/server/db";
 import {
   excludeOwnerRatings,
@@ -83,6 +85,16 @@ import { todayParam } from "~/server/planner/week";
  * events, ratings, comments) is preserved and returns intact on restore.
  */
 const notDeleted = isNull(recipes.deletedAt);
+
+/**
+ * Connection-less builder for correlated subqueries embedded in other queries'
+ * WHERE / ORDER BY. Building a subquery is pure SQL construction, so it must not
+ * reach for the live `db` handle: when such a subquery is embedded inside the
+ * relational query builder (`db.query.recipes.findMany`) it keeps its own table
+ * scope, whereas a raw `${otherTable.column}` reference is mis-qualified to the
+ * root `recipes` alias and crashes the query (`column recipes.tag_id ...`).
+ */
+const qb = new QueryBuilder();
 
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
@@ -148,20 +160,36 @@ export function topRatedOrderBy(): SQL[] {
  * LIKE-escaped `%term%` pattern. Exported for unit assertions.
  */
 export function relevanceScoreSql(like: string): SQL {
+  // The tag- and ingredient-match terms are correlated EXISTS subqueries built
+  // with the query builder rather than a raw `sql` join. This matters: when this
+  // fragment is embedded as an ORDER BY inside the relational query builder
+  // (`db.query.recipes.findMany`), a raw `${recipeTags.tagId}` column reference
+  // is re-qualified to the *root* `recipes` alias (yielding a bogus
+  // `recipes.tag_id` and a query-time crash), whereas a builder subquery keeps
+  // its own table scope. Mirrors the working `recipeMatchesTermSql` pattern.
+  const tagMatch = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(recipeTags)
+      .innerJoin(tags, eq(recipeTags.tagId, tags.id))
+      .where(and(eq(recipeTags.recipeId, recipes.id), ilike(tags.name, like))),
+  );
+  const ingredientMatch = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(recipeIngredients)
+      .where(
+        and(
+          eq(recipeIngredients.recipeId, recipes.id),
+          ilike(recipeIngredients.item, like),
+        ),
+      ),
+  );
   return sql`(
     (case when ${recipes.title} ilike ${like} then 5 else 0 end)
-    + (case when exists(
-        select 1 from ${recipeTags}
-        inner join ${tags} on ${recipeTags.tagId} = ${tags.id}
-        where ${recipeTags.recipeId} = ${recipes.id}
-          and ${tags.name} ilike ${like}
-      ) then 4 else 0 end)
+    + (case when ${tagMatch} then 4 else 0 end)
     + (case when ${recipes.cuisine} ilike ${like} then 3 else 0 end)
-    + (case when exists(
-        select 1 from ${recipeIngredients}
-        where ${recipeIngredients.recipeId} = ${recipes.id}
-          and ${recipeIngredients.item} ilike ${like}
-      ) then 2 else 0 end)
+    + (case when ${ingredientMatch} then 2 else 0 end)
     + (case when ${recipes.description} ilike ${like} then 1 else 0 end)
   )`;
 }
@@ -188,22 +216,36 @@ export function relevanceOrderBy(like: string): SQL[] {
  * actually makes and keeps. Exported for unit assertions.
  */
 export function popularityScoreSql(): SQL {
-  return sql`(
-    (select count(*) from ${cookLogEntries}
-       where ${cookLogEntries.recipeId} = ${recipes.id})
-    + (select count(*) from ${favorites}
-       where ${favorites.recipeId} = ${recipes.id})
-  )`;
+  // Correlated scalar count subqueries built with the query builder so the inner
+  // table scope survives embedding as an ORDER BY inside the relational query
+  // builder. A raw `${cookLogEntries.recipeId}` would be mis-qualified to the
+  // root `recipes` alias. See relevanceScoreSql.
+  const cookCount = qb
+    .select({ n: sql`count(*)` })
+    .from(cookLogEntries)
+    .where(eq(cookLogEntries.recipeId, recipes.id));
+  const saveCount = qb
+    .select({ n: sql`count(*)` })
+    .from(favorites)
+    .where(eq(favorites.recipeId, recipes.id));
+  return sql`((${cookCount}) + (${saveCount}))`;
 }
 
 /** Whether a recipe has any cook-log or favorite, so inert recipes sort last. */
 function popularHasActivitySql(): SQL {
-  return sql`(
-    exists(select 1 from ${cookLogEntries}
-      where ${cookLogEntries.recipeId} = ${recipes.id})
-    or exists(select 1 from ${favorites}
-      where ${favorites.recipeId} = ${recipes.id})
-  )`;
+  const cooked = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(cookLogEntries)
+      .where(eq(cookLogEntries.recipeId, recipes.id)),
+  );
+  const saved = exists(
+    qb
+      .select({ one: sql`1` })
+      .from(favorites)
+      .where(eq(favorites.recipeId, recipes.id)),
+  );
+  return sql`(${cooked} or ${saved})`;
 }
 
 /**
@@ -886,18 +928,35 @@ export function recipeSearchRankSql(q: string): SQL {
  * FTS + facet WHERE without widening the row set. Exported for unit assertions.
  */
 export function recipeUsesFoodConditionSql(foodId: string): SQL {
-  return sql`(
-    exists (
-      select 1 from ${recipeIngredients}
-      where ${recipeIngredients.recipeId} = ${recipes.id}
-        and ${recipeIngredients.foodId} = ${foodId}
-    )
-    or exists (
-      select 1 from ${foodRecipeLinks}
-      where ${foodRecipeLinks.recipeId} = ${recipes.id}
-        and ${foodRecipeLinks.foodId} = ${foodId}
-    )
-  )`;
+  // Built with the query builder (not raw `sql`) so each subquery keeps its own
+  // table scope when embedded as a WHERE inside the relational query builder
+  // (`db.query.recipes.findMany`). A raw `${recipeIngredients.recipeId}` would be
+  // re-qualified to the root `recipes` alias, producing a bogus
+  // `recipes.recipe_id` and a query-time crash. See relevanceScoreSql.
+  return or(
+    exists(
+      qb
+        .select({ one: sql`1` })
+        .from(recipeIngredients)
+        .where(
+          and(
+            eq(recipeIngredients.recipeId, recipes.id),
+            eq(recipeIngredients.foodId, foodId),
+          ),
+        ),
+    ),
+    exists(
+      qb
+        .select({ one: sql`1` })
+        .from(foodRecipeLinks)
+        .where(
+          and(
+            eq(foodRecipeLinks.recipeId, recipes.id),
+            eq(foodRecipeLinks.foodId, foodId),
+          ),
+        ),
+    ),
+  )!;
 }
 
 /**

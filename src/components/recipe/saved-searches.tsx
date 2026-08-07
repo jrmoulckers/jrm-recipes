@@ -99,7 +99,8 @@ export function SavedSearches({
         <Popover open={listOpen} onOpenChange={setListOpen}>
           <PopoverTrigger asChild>
             <Button type="button" variant="outline">
-              <Bookmark /> {t("savedSearches.saved", { count: savedSearches.length })}
+              <Bookmark />{" "}
+              {t("savedSearches.saved", { count: savedSearches.length })}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-72 p-2">
@@ -120,7 +121,9 @@ export function SavedSearches({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t("savedSearches.deleteAria", { name: saved.name })}
+                    aria-label={t("savedSearches.deleteAria", {
+                      name: saved.name,
+                    })}
                     disabled={isPending}
                     onClick={() => onDelete(saved.id)}
                   >
@@ -138,9 +141,7 @@ export function SavedSearches({
           type="button"
           variant="outline"
           disabled={!filtersActive}
-          title={
-            filtersActive ? undefined : t("savedSearches.disabledTitle")
-          }
+          title={filtersActive ? undefined : t("savedSearches.disabledTitle")}
           onClick={() => setSaveOpen(true)}
         >
           <BookmarkPlus /> {t("savedSearches.trigger")}

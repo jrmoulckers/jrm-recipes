@@ -48,9 +48,7 @@ export function RecipeTimeline({
           <History className="size-4" aria-hidden="true" />
           {t("timeline.emptyTitle")}
         </div>
-        <p className="mt-1">
-          {t("timeline.emptyBody")}
-        </p>
+        <p className="mt-1">{t("timeline.emptyBody")}</p>
       </section>
     );
   }
@@ -65,7 +63,9 @@ export function RecipeTimeline({
           <History className="size-4" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-xl font-semibold">{t("timeline.title")}</h2>
+          <h2 className="font-display text-xl font-semibold">
+            {t("timeline.title")}
+          </h2>
           <p className="text-sm text-muted-foreground">
             {t("timeline.description")}
           </p>
@@ -77,11 +77,15 @@ export function RecipeTimeline({
           const isLatest = version.versionNumber === latestVersion;
           const canRestore = canRevert && !isLatest && versions.length > 1;
           const author =
-            version.author?.name ?? version.author?.handle ?? t("timeline.familyCook");
+            version.author?.name ??
+            version.author?.handle ??
+            t("timeline.familyCook");
           const createdAt = new Date(version.createdAt);
           const label =
             version.label ??
-            (version.versionNumber === 1 ? t("timeline.created") : t("timeline.updated"));
+            (version.versionNumber === 1
+              ? t("timeline.created")
+              : t("timeline.updated"));
 
           return (
             <li key={version.id} className="relative flex gap-4">
@@ -105,7 +109,9 @@ export function RecipeTimeline({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
-                      {t("timeline.version", { version: version.versionNumber })}
+                      {t("timeline.version", {
+                        version: version.versionNumber,
+                      })}
                     </p>
                     <h3 className="mt-1 font-display text-lg font-semibold leading-tight">
                       {label}

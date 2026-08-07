@@ -286,7 +286,9 @@ export function ReelStudio({
           {busy && exportMode === "video" && (
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-foreground/70 p-3">
               <span className="text-center text-xs font-medium text-background">
-                {t("reel.renderingVideo", { percent: Math.round(progress * 100) })}
+                {t("reel.renderingVideo", {
+                  percent: Math.round(progress * 100),
+                })}
               </span>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-background/30">
                 <div
@@ -348,7 +350,9 @@ export function ReelStudio({
           ) : (
             <Download />
           )}
-          {exportMode === "image" ? t("reel.downloadImage") : t("common.download")}
+          {exportMode === "image"
+            ? t("reel.downloadImage")
+            : t("common.download")}
         </Button>
       </DialogFooter>
     </>

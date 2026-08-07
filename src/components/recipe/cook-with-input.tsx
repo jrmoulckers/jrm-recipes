@@ -3,9 +3,10 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { pathnameWithQuery } from "~/lib/routes";
 import { MAX_PANTRY_ITEMS } from "~/server/recipes/search";
 
@@ -78,14 +79,12 @@ export function CookWithInput({ initial }: { initial: string[] }) {
             className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-sm text-accent-foreground"
           >
             {item}
-            <button
-              type="button"
+            <CloseButton
+              size="sm"
               onClick={() => remove(item)}
-              className="rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={t("cookWithInput.removeItem", { item })}
-            >
-              <X className="size-3.5" />
-            </button>
+              label={t("cookWithInput.removeItem", { item })}
+              className="-me-1 text-accent-foreground/70 hover:bg-accent-foreground/10 hover:text-accent-foreground"
+            />
           </span>
         ))}
         <input
@@ -94,7 +93,9 @@ export function CookWithInput({ initial }: { initial: string[] }) {
           onKeyDown={handleKeyDown}
           onBlur={() => addFrom(draft)}
           placeholder={
-            items.length === 0 ? t("cookWithInput.addIngredients") : t("cookWithInput.addMore")
+            items.length === 0
+              ? t("cookWithInput.addIngredients")
+              : t("cookWithInput.addMore")
           }
           className="min-w-[10rem] flex-1 bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground"
           aria-label={t("cookWithInput.addIngredientAria")}
@@ -110,9 +111,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
           </Button>
         )}
       </div>
-      <p className="text-sm text-muted-foreground">
-        {t("cookWithInput.help")}
-      </p>
+      <p className="text-sm text-muted-foreground">{t("cookWithInput.help")}</p>
     </div>
   );
 }

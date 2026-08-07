@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 
 import { removeRecipeFromCollectionAction } from "~/server/collections/actions";
 import { cn } from "~/lib/utils";
+import { CloseButton } from "~/components/ui/close-button";
 
 export function RemoveFromCollectionButton({
   collectionId,
@@ -43,23 +44,16 @@ export function RemoveFromCollectionButton({
   }
 
   return (
-    <button
-      type="button"
+    <CloseButton
+      variant="overlay"
+      size="lg"
+      tone="danger"
       onClick={onRemove}
       disabled={pending}
-      aria-label={t("a11y.remove")}
-      title={t("a11y.remove")}
-      className={cn(
-        "inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none",
-        pending && "cursor-wait",
-        className,
-      )}
+      label={t("a11y.remove")}
+      className={cn(pending && "cursor-wait", className)}
     >
-      {pending ? (
-        <Loader2 className="size-4 animate-spin" />
-      ) : (
-        <X className="size-5" />
-      )}
-    </button>
+      {pending ? <Loader2 className="animate-spin" /> : undefined}
+    </CloseButton>
   );
 }

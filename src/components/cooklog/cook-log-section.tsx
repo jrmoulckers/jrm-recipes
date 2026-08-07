@@ -466,9 +466,7 @@ function LogCookButton({
           />
 
           <div className="grid gap-2">
-            <Label htmlFor="cook-servings">
-              {t("dialog.servingsLabel")}
-            </Label>
+            <Label htmlFor="cook-servings">{t("dialog.servingsLabel")}</Label>
             <Input
               id="cook-servings"
               type="number"
@@ -498,7 +496,9 @@ function LogCookButton({
                 checked={shareWithFamily}
                 onCheckedChange={setShareWithFamily}
                 disabled={pending}
-                aria-label={t("a11y.shareWithGroup", { group: shareGroup.name })}
+                aria-label={t("a11y.shareWithGroup", {
+                  group: shareGroup.name,
+                })}
               />
             </div>
           )}

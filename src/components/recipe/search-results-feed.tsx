@@ -78,14 +78,21 @@ export function SearchResultsFeed({
           </h2>
           {correction && (
             <p className="text-sm text-muted-foreground">
-              {t.rich("searchResults.correction", { from: correction.from, to: correction.to, strong: (chunks) => (
-                <span className="font-medium text-foreground">{chunks}</span>
-              ) })}
+              {t.rich("searchResults.correction", {
+                from: correction.from,
+                to: correction.to,
+                strong: (chunks) => (
+                  <span className="font-medium text-foreground">{chunks}</span>
+                ),
+              })}
             </p>
           )}
         </div>
         <span className="text-sm text-muted-foreground">
-          {t("searchResults.count", { count: items.length, plus: hasMore ? "+" : "" })}
+          {t("searchResults.count", {
+            count: items.length,
+            plus: hasMore ? "+" : "",
+          })}
         </span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

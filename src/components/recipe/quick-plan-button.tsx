@@ -95,7 +95,11 @@ export function QuickPlanButton({
         const dayLabel =
           days.find((d) => d.value === date)?.label ?? t("quickPlan.yourPlan");
         toast.success(
-          t("quickPlan.toast.added", { title: recipeTitle, day: dayLabel, meal: MEAL_SLOT_LABELS[slot].toLowerCase() }),
+          t("quickPlan.toast.added", {
+            title: recipeTitle,
+            day: dayLabel,
+            meal: MEAL_SLOT_LABELS[slot].toLowerCase(),
+          }),
         );
         setOpen(false);
         router.refresh();

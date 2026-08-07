@@ -18,7 +18,7 @@ const FlagsContext = React.createContext<FlagMap>({});
 /**
  * Seeds the client flag map from SSR-evaluated values (issue #335) so variants
  * render identically on the server and the first client paint. No flicker. Once
- * the live backend has loaded its flags it refreshes the seeded keys in place;
+ * the live backend has loaded its flags, it refreshes the seeded keys in place.
  * until then the SSR values stand, and when analytics is unconfigured the map
  * simply stays as-is (all control).
  */

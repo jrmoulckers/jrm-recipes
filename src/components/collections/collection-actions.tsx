@@ -169,7 +169,9 @@ export function CollectionActions({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor={descriptionId}>{t("edit.fields.description")}</Label>
+              <Label htmlFor={descriptionId}>
+                {t("edit.fields.description")}
+              </Label>
               <Textarea
                 id={descriptionId}
                 value={description}

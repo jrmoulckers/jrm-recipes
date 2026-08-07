@@ -79,7 +79,10 @@ export function AddToShoppingList({
 
   function added() {
     toast.success(t("toasts.added"), {
-      action: { label: t("toasts.viewList"), onClick: () => router.push("/shopping") },
+      action: {
+        label: t("toasts.viewList"),
+        onClick: () => router.push("/shopping"),
+      },
     });
     setOpen(false);
   }

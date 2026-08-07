@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChefHat, X } from "lucide-react";
+import { ChefHat } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { brand } from "~/config/brand";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 
 /** Step order for the welcome card. Keys match `onboarding.welcome.steps`. */
 const WELCOME_STEPS = ["create", "cook", "share"] as const;
@@ -74,15 +75,11 @@ export function WelcomeChecklist() {
           : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
       )}
     >
-      <Button
-        size="icon"
-        variant="ghost"
+      <CloseButton
         onClick={dismiss}
-        aria-label={t("dismiss")}
-        className="absolute end-3 top-3 size-9 text-muted-foreground"
-      >
-        <X className="size-4" />
-      </Button>
+        label={t("dismiss")}
+        className="absolute end-3 top-3"
+      />
 
       <div className="max-w-xl">
         <h2

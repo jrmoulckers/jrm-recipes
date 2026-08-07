@@ -22,6 +22,7 @@
     "skipToContent": "Saltar al contenido",
     "newRecipe": "Nueva receta",
     "homeLink": "Inicio de Heirloom",
+    "settings": "Ajustes",
     "landmarks": {
       "primary": "Principal",
       "primaryMobile": "Principal móvil",
@@ -90,6 +91,7 @@
     "title": "Buscar",
     "trigger": "Buscar…",
     "triggerAria": "Buscar recetas y páginas",
+    "triggerTitle": "Buscar {shortcut}",
     "placeholder": "Buscar recetas y páginas…",
     "navHeading": "Ir a",
     "recipesHeading": "Recetas",
@@ -775,6 +777,38 @@
   "characterCounter": {
     "remaining": "Quedan {count}",
     "over": "Te pasaste por {count}. {message}"
+  },
+  "share": {
+    "button": "Compartir",
+    "menu": {
+      "share": "Compartir…",
+      "shareCard": "Compartir tarjeta…",
+      "copyLink": "Copiar enlace",
+      "personalize": "Personalizar enlace…",
+      "disableLink": "Desactivar enlace",
+      "enableLink": "Activar enlace",
+      "resetLink": "Restablecer enlace"
+    },
+    "toast": {
+      "linkUpdateError": "No se pudo actualizar el enlace para compartir",
+      "linkReset": "Enlace restablecido: el anterior ya no funciona",
+      "linkDisabled": "Enlace para compartir desactivado",
+      "linkEnabled": "Enlace para compartir activado",
+      "linkCopied": "Enlace de la receta copiado",
+      "copyError": "No se pudo copiar el enlace",
+      "personalizedCopied": "Enlace personalizado copiado: listo para regalar"
+    },
+    "personalize": {
+      "title": "Personaliza este enlace",
+      "description": "Añade tu nombre y un mensaje personal para compartir esta receta como un recuerdo entrañable: un pequeño regalo, no solo un enlace.",
+      "nameLabel": "Tu nombre",
+      "namePlaceholder": "Abuela",
+      "messageLabel": "Tu mensaje",
+      "messagePlaceholder": "La que te encantaba de niña. Con cariño, la abuela.",
+      "copy": "Copiar enlace personalizado",
+      "preview": "Vista previa",
+      "done": "Listo"
+    }
   },
   "recipeDetail": {
     "backToRecipes": "Recetas",

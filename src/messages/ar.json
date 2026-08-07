@@ -22,6 +22,7 @@
     "skipToContent": "تخطّي إلى المحتوى",
     "newRecipe": "وصفة جديدة",
     "homeLink": "الصفحة الرئيسية لـ Heirloom",
+    "settings": "الإعدادات",
     "landmarks": {
       "primary": "التنقّل الرئيسي",
       "primaryMobile": "التنقّل الرئيسي للجوال",
@@ -90,6 +91,7 @@
     "title": "بحث",
     "trigger": "بحث…",
     "triggerAria": "ابحث في الوصفات والصفحات",
+    "triggerTitle": "بحث {shortcut}",
     "placeholder": "ابحث في الوصفات والصفحات…",
     "navHeading": "الانتقال إلى",
     "recipesHeading": "الوصفات",
@@ -775,6 +777,38 @@
   "characterCounter": {
     "remaining": "متبقٍ {count}",
     "over": "تجاوزت بمقدار {count}. {message}"
+  },
+  "share": {
+    "button": "مشاركة",
+    "menu": {
+      "share": "مشاركة…",
+      "shareCard": "مشاركة البطاقة…",
+      "copyLink": "نسخ الرابط",
+      "personalize": "تخصيص الرابط…",
+      "disableLink": "تعطيل الرابط",
+      "enableLink": "تفعيل الرابط",
+      "resetLink": "إعادة تعيين الرابط"
+    },
+    "toast": {
+      "linkUpdateError": "تعذّر تحديث رابط المشاركة",
+      "linkReset": "تمت إعادة تعيين الرابط. لم يعد الرابط القديم يعمل",
+      "linkDisabled": "تم تعطيل رابط المشاركة",
+      "linkEnabled": "تم تفعيل رابط المشاركة",
+      "linkCopied": "تم نسخ رابط الوصفة",
+      "copyError": "تعذّر نسخ الرابط",
+      "personalizedCopied": "تم نسخ الرابط المخصّص. أصبح جاهزًا لتقديمه هدية"
+    },
+    "personalize": {
+      "title": "خصّص هذا الرابط",
+      "description": "أضِف اسمك ورسالة شخصية لمشاركة هذه الوصفة كذكرى دافئة. إنها هدية صغيرة، وليست مجرد رابط.",
+      "nameLabel": "اسمك",
+      "namePlaceholder": "نونا",
+      "messageLabel": "رسالتك",
+      "messagePlaceholder": "تلك التي أحببتِها في صغرك. مع حبي، نونا.",
+      "copy": "نسخ الرابط المخصّص",
+      "preview": "معاينة",
+      "done": "تم"
+    }
   },
   "recipeDetail": {
     "backToRecipes": "الوصفات",

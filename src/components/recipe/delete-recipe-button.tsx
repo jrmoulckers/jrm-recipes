@@ -86,7 +86,8 @@ export function DeleteRecipeButton({
       disabled={pending}
       onClick={onDelete}
     >
-      <Trash2 /> {pending ? t("deleteRecipe.deleting") : t("deleteRecipe.delete")}
+      <Trash2 />{" "}
+      {pending ? t("deleteRecipe.deleting") : t("deleteRecipe.delete")}
     </Button>
   );
 }

@@ -37,29 +37,32 @@ export function ImportRecipePanel({
   const onImportedRef = React.useRef(onImported);
   onImportedRef.current = onImported;
 
-  const runImport = React.useCallback(async (rawUrl: string) => {
-    const url = rawUrl.trim();
-    if (!url) return;
-    setImporting(true);
-    try {
-      const res = await importRecipeFromUrlAction(url);
-      if (res.ok) {
-        onImportedRef.current(res.recipe);
-        toast.success(
-          res.recipe.title
-            ? t("import.toast.importedNamed", { title: res.recipe.title })
-            : t("import.toast.imported"),
-        );
-        setImportUrl("");
-      } else {
-        toast.error(friendlyError(res.error));
+  const runImport = React.useCallback(
+    async (rawUrl: string) => {
+      const url = rawUrl.trim();
+      if (!url) return;
+      setImporting(true);
+      try {
+        const res = await importRecipeFromUrlAction(url);
+        if (res.ok) {
+          onImportedRef.current(res.recipe);
+          toast.success(
+            res.recipe.title
+              ? t("import.toast.importedNamed", { title: res.recipe.title })
+              : t("import.toast.imported"),
+          );
+          setImportUrl("");
+        } else {
+          toast.error(friendlyError(res.error));
+        }
+      } catch {
+        toast.error(t("import.toast.linkError"));
+      } finally {
+        setImporting(false);
       }
-    } catch {
-      toast.error(t("import.toast.linkError"));
-    } finally {
-      setImporting(false);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   async function handleImport() {
     await runImport(importUrl);

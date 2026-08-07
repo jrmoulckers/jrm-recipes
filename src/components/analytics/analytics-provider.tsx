@@ -31,7 +31,7 @@ export function AnalyticsProvider({
   userId?: string | null;
 }) {
   // `ready` gates identity on the async backend mount: when analytics is
-  // unconfigured we're immediately "ready" (identify is a harmless no-op);
+  // When unconfigured, we are immediately "ready" because identify is a harmless no-op.
   // when configured we wait for the real backend so the identify isn't lost.
   const [ready, setReady] = React.useState(() => !isAnalyticsConfigured());
 

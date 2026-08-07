@@ -88,14 +88,10 @@ export function ShareWithGroupControl({
       <PopoverContent align="end" className="w-72 space-y-2">
         <div className="space-y-0.5">
           <p className="text-sm font-medium">{t("title")}</p>
-          <p className="text-xs text-muted-foreground">
-            {t("description")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("description")}</p>
         </div>
         {groups.length === 0 ? (
-          <p className="py-2 text-sm text-muted-foreground">
-            {t("empty")}
-          </p>
+          <p className="py-2 text-sm text-muted-foreground">{t("empty")}</p>
         ) : (
           <ul className="flex flex-col">
             {groups.map((group) => {

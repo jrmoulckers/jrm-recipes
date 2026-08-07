@@ -36,7 +36,12 @@ export function RecipeActionsMenu({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="lg" aria-label={label ?? t("actions.moreActions")}>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          aria-label={label ?? t("actions.moreActions")}
+        >
           <MoreHorizontal aria-hidden="true" />
           {t("actions.more")}
         </Button>
@@ -50,6 +55,12 @@ export function RecipeActionsMenu({
           // deep selectors reach the <button>/<a> each action renders, even
           // when wrapped (e.g. GrownUpControls fragments, QuickPlan wrapper).
           "[&_a]:h-11 [&_a]:w-full [&_a]:justify-start [&_button]:h-11 [&_button]:w-full [&_button]:justify-start",
+          // The children arrive with mismatched Button `size` variants (sm/
+          // default/lg) and hand-rolled icon sizes, which made every row start
+          // its icon and label at a different x. Pin padding, gap, type scale
+          // and icon box so the icons and labels line up in a single column.
+          "[&_a]:gap-3 [&_a]:px-3 [&_a]:text-base [&_button]:gap-3 [&_button]:px-3 [&_button]:text-base",
+          "[&_a_svg]:size-5 [&_button_svg]:size-5",
         )}
       >
         {children}

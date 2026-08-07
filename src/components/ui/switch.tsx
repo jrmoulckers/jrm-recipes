@@ -9,10 +9,14 @@ import { cn } from "~/lib/utils";
  * Toggle switch. Its dimensions are driven by `--control-scale` (see
  * themes.css) so the pill, thumb, and checked travel all grow together in the
  * large-target modes (Kids/Simple). At the default scale of 1 the classes
- * resolve to the original h-6 / w-11 / size-5 / translate-x-5. Height also
- * meets `--tap-min` via the global `button` rule in globals.css. The 2px
- * (0.25rem across both borders) offset is preserved, which is why the checked
- * translate subtracts 0.25rem to stay flush at every scale.
+ * resolve to the original h-6 / w-11 / size-5 / translate-x-5. The pill is
+ * floored to `--control-min` (0 in default themes, `--tap-min` in Kids/Simple)
+ * via the `[role="switch"]` rule in globals.css, which overrides the blanket
+ * `button` tap-target floor so the default-theme pill keeps its 24px height
+ * instead of being stretched into a blob. The paired `<label>` carries the tap
+ * target at default scale. The 2px (0.25rem across both borders) offset is
+ * preserved, which is why the checked translate subtracts 0.25rem to stay flush
+ * at every scale.
  */
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,

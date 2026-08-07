@@ -71,6 +71,21 @@
     min-width: var(--tap-min, 2.75rem);
   }
 
+  /* Compact toggle controls (Switch, Checkbox, Radio) render as <button>, so the
+   * blanket 44px floor above would stretch them, turning the 24px Switch pill
+   * into a squashed blob and the 20px Checkbox into an oversized square. They are
+   * sized by their own tokens and paired with a <label> that carries the hit
+   * target, so we floor them to `--control-min` instead: 0 in the default themes
+   * (render at their designed size, a normal-looking toggle) and `--tap-min` in
+   * the large-target Kids/Simple modes, where `--control-scale` grows the pill to
+   * match. Role selectors (0,1,0) outrank the bare `button` rule (0,0,1). */
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"] {
+    min-height: var(--control-min, 0px);
+    min-width: var(--control-min, 0px);
+  }
+
   /* Remove the legacy double-tap-zoom gesture (and its ~300ms tap delay) from
    * interactive controls so rapid taps. E.g. Cook Mode Next/Previous with wet
    * hands. Register instantly. `manipulation` still allows panning/scrolling

@@ -108,9 +108,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
       <PopoverContent align="end" className="w-80 space-y-3">
         <div className="space-y-1">
           <p className="text-sm font-medium">{t("title")}</p>
-          <p className="text-xs text-muted-foreground">
-            {t("description")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("description")}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

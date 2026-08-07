@@ -41,17 +41,16 @@ describe("MainNav", () => {
     expect(inactive.className).not.toContain("font-semibold");
   });
 
-  it("does not mark Recipes active on the create route", () => {
+  it("keeps Recipes inactive on the create route and omits the Create link", () => {
     pathnameMock.mockReturnValue("/recipes/new");
     renderNav(<MainNav />);
 
     expect(screen.getByRole("link", { name: "Recipes" })).not.toHaveAttribute(
       "aria-current",
     );
-    expect(screen.getByRole("link", { name: "Create" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    // "Create" is no longer a horizontal nav link. It is represented by the
+    // prominent "New recipe" header CTA, so it must not appear in the bar.
+    expect(screen.queryByRole("link", { name: "Create" })).toBeNull();
   });
 });
 

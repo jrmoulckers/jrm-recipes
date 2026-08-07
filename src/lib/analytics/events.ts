@@ -24,7 +24,7 @@ export type RecipeSource = "manual" | "import";
 export type CookUnitSystem = "original" | "us" | "metric" | "grams";
 
 /** How a recipe was shared. */
-export type ShareMethod = "native" | "file" | "copy_link";
+export type ShareMethod = "native" | "file" | "copy_link" | "keepsake";
 
 /** Reel export shape + delivery. */
 export type ReelExportKind = "image" | "video";
@@ -97,7 +97,6 @@ export interface EventProperties {
 
   // --- Share & reel virality loop (#316) ---
   recipe_shared: { method: ShareMethod };
-  share_card_downloaded: Record<string, never>;
   share_link_copied: Record<string, never>;
   // Owner-facing share-link revocation / rotation (issue #207).
   share_link_disabled: Record<string, never>;

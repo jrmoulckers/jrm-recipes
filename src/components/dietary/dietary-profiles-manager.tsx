@@ -283,7 +283,9 @@ export function DietaryProfilesManager({
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
-                {editing?.kind === "add" ? t("dialog.addTitle") : t("dialog.editTitle")}
+                {editing?.kind === "add"
+                  ? t("dialog.addTitle")
+                  : t("dialog.editTitle")}
               </DialogTitle>
             </DialogHeader>
 

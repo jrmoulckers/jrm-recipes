@@ -63,7 +63,10 @@ function knownErrorCode(value: string): ErrorCopyCode | null {
   return upper in ERROR_COPY ? upper : null;
 }
 
-function safeFallback(fallback: string | undefined, defaultCopy: string): string {
+function safeFallback(
+  fallback: string | undefined,
+  defaultCopy: string,
+): string {
   return fallback && fallback.trim().length > 0 ? fallback : defaultCopy;
 }
 

@@ -154,7 +154,10 @@ export function ReadAloudButton({
             <Square aria-hidden="true" />
           </Button>
           <span className="text-sm text-muted-foreground" aria-live="polite">
-            {t("readAloud.progress", { current: index + 1, total: steps.length })}
+            {t("readAloud.progress", {
+              current: index + 1,
+              total: steps.length,
+            })}
           </span>
         </>
       )}

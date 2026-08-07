@@ -104,7 +104,9 @@ export function CreateCollectionDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor={descriptionId}>{t("fields.description.label")}</Label>
+            <Label htmlFor={descriptionId}>
+              {t("fields.description.label")}
+            </Label>
             <Textarea
               id={descriptionId}
               value={description}

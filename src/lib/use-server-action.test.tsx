@@ -114,7 +114,8 @@ describe("useServerAction (#198)", () => {
     const onError = vi.fn();
 
     const { result } = renderHook(
-      () => useServerAction(action, { errorToast: true, onError, refresh: true }),
+      () =>
+        useServerAction(action, { errorToast: true, onError, refresh: true }),
       { wrapper: IntlWrapper },
     );
 
@@ -178,9 +179,7 @@ describe("useServerAction (#198)", () => {
   });
 
   it("uses the localized offline copy when the browser is offline", async () => {
-    const onLine = vi
-      .spyOn(navigator, "onLine", "get")
-      .mockReturnValue(false);
+    const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const action = vi.fn(async (): Promise<ActionResult> => ({
       ok: false,
       error: "NETWORK",

@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Download, Share, X } from "lucide-react";
+import { Download, Share } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { LogoMark } from "~/components/layout/logo";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -269,15 +270,11 @@ export function InstallPrompt() {
             {t("action")}
           </Button>
         )}
-        <Button
-          size="icon"
-          variant="ghost"
+        <CloseButton
           onClick={dismiss}
-          aria-label={t("dismiss")}
-          className="size-9 shrink-0"
-        >
-          <X className="size-4" />
-        </Button>
+          label={t("dismiss")}
+          className="shrink-0"
+        />
       </div>
     </div>
   );

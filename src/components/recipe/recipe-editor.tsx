@@ -65,6 +65,7 @@ import {
   updateRecipeAction,
 } from "~/server/recipes/actions";
 import { Button } from "~/components/ui/button";
+import { CloseButton } from "~/components/ui/close-button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { NativeSelect } from "~/components/ui/native-select";
@@ -1827,17 +1828,11 @@ export function RecipeEditor({
                                       toUnit: convertHints[row.key]!.toUnit,
                                     })}
                                   </button>
-                                  <button
-                                    type="button"
+                                  <CloseButton
+                                    size="sm"
                                     onClick={() => clearConvertHint(row.key)}
-                                    aria-label={t("dismissConversion")}
-                                    className="text-muted-foreground hover:text-foreground"
-                                  >
-                                    <X
-                                      className="size-3.5"
-                                      aria-hidden="true"
-                                    />
-                                  </button>
+                                    label={t("dismissConversion")}
+                                  />
                                 </div>
                               ) : null}
                             </RowField>

@@ -92,7 +92,21 @@ export function extractPlaceholders(message) {
  * English word. Anything not listed here is treated as untranslated.
  */
 const ALLOWED_IDENTICAL = {
-  de: new Set(["Plan", "Timer", "Start", "Familie", "Import", "Links", "Pause", "optional", "(optional)", "Status", "Vegan", "Moderation", "Admin"]),
+  de: new Set([
+    "Plan",
+    "Timer",
+    "Start",
+    "Familie",
+    "Import",
+    "Links",
+    "Pause",
+    "optional",
+    "(optional)",
+    "Status",
+    "Vegan",
+    "Moderation",
+    "Admin",
+  ]),
   es: new Set(["Plan", "Timer", "Ideal", "Total", "total", "min"]),
   ar: new Set([]),
 };

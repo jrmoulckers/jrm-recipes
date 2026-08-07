@@ -22,6 +22,7 @@
     "skipToContent": "Zum Inhalt springen",
     "newRecipe": "Neues Rezept",
     "homeLink": "Heirloom Startseite",
+    "settings": "Einstellungen",
     "landmarks": {
       "primary": "Hauptnavigation",
       "primaryMobile": "Mobile Hauptnavigation",
@@ -90,6 +91,7 @@
     "title": "Suche",
     "trigger": "Suchen…",
     "triggerAria": "Rezepte und Seiten suchen",
+    "triggerTitle": "Suchen {shortcut}",
     "placeholder": "Rezepte und Seiten suchen…",
     "navHeading": "Gehe zu",
     "recipesHeading": "Rezepte",
@@ -775,6 +777,38 @@
   "characterCounter": {
     "remaining": "Noch {count}",
     "over": "{count} zu viel. {message}"
+  },
+  "share": {
+    "button": "Teilen",
+    "menu": {
+      "share": "Teilen…",
+      "shareCard": "Karte teilen…",
+      "copyLink": "Link kopieren",
+      "personalize": "Link personalisieren…",
+      "disableLink": "Link deaktivieren",
+      "enableLink": "Link aktivieren",
+      "resetLink": "Link zurücksetzen"
+    },
+    "toast": {
+      "linkUpdateError": "Der Teilen-Link konnte nicht aktualisiert werden",
+      "linkReset": "Link zurückgesetzt. Der alte Link funktioniert nicht mehr",
+      "linkDisabled": "Teilen-Link deaktiviert",
+      "linkEnabled": "Teilen-Link aktiviert",
+      "linkCopied": "Rezept-Link kopiert",
+      "copyError": "Der Link konnte nicht kopiert werden",
+      "personalizedCopied": "Personalisierter Link kopiert. Bereit zum Verschenken"
+    },
+    "personalize": {
+      "title": "Diesen Link personalisieren",
+      "description": "Füge deinen Namen und eine persönliche Nachricht hinzu, um dieses Rezept als herzliches Andenken zu teilen. Es ist ein kleines Geschenk, nicht nur ein Link.",
+      "nameLabel": "Dein Name",
+      "namePlaceholder": "Oma",
+      "messageLabel": "Deine Nachricht",
+      "messagePlaceholder": "Das, das du als Mädchen geliebt hast. Alles Liebe, Oma.",
+      "copy": "Personalisierten Link kopieren",
+      "preview": "Vorschau",
+      "done": "Fertig"
+    }
   },
   "recipeDetail": {
     "backToRecipes": "Rezepte",

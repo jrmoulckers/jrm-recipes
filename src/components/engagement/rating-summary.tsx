@@ -30,9 +30,7 @@ export async function RatingSummary({
         aria-label={t("a11y.breakdown")}
         className="rounded-2xl border border-border bg-card p-4 shadow-token sm:p-5"
       >
-        <p className="text-sm text-muted-foreground">
-          {t("empty")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("empty")}</p>
       </section>
     );
   }

@@ -47,9 +47,7 @@ function StarRow({
       className="flex items-center gap-0.5"
       role={interactive ? "group" : undefined}
       aria-label={
-        interactive
-          ? t("a11y.yourStarRating")
-          : t("a11y.outOfStars", { value })
+        interactive ? t("a11y.yourStarRating") : t("a11y.outOfStars", { value })
       }
     >
       {[1, 2, 3, 4, 5].map((n) => {
@@ -163,9 +161,7 @@ export function ReviewsSection({
           <h2 className="font-display text-xl font-semibold text-foreground">
             {t("heading")}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            {t("description")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
       </div>
 
@@ -214,9 +210,7 @@ export function ReviewsSection({
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              {t("helper")}
-            </p>
+            <p className="text-xs text-muted-foreground">{t("helper")}</p>
             <div className="flex items-center gap-2">
               {viewerReview ? (
                 <Button

@@ -90,11 +90,7 @@ export function GroupActions({
                 confirmLabel: t("confirm.delete.confirmLabel"),
               });
               if (!ok) return;
-              run(
-                "delete",
-                () => deleteGroupAction(slug),
-                t("toast.deleted"),
-              );
+              run("delete", () => deleteGroupAction(slug), t("toast.deleted"));
             }}
             disabled={isPending}
           >

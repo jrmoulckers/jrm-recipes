@@ -76,7 +76,9 @@ export function AdaptButton({
             <ChefHat className="size-5" aria-hidden="true" />
           </div>
           <DialogTitle>{t("adapt.title")}</DialogTitle>
-          <DialogDescription>{t("adapt.description", { title: sourceTitle })}</DialogDescription>
+          <DialogDescription>
+            {t("adapt.description", { title: sourceTitle })}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
@@ -89,9 +91,7 @@ export function AdaptButton({
             placeholder={t("adapt.notePlaceholder")}
             disabled={pending}
           />
-          <p className="text-xs text-muted-foreground">
-            {t("adapt.noteHint")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("adapt.noteHint")}</p>
         </div>
 
         <DialogFooter>

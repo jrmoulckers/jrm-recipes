@@ -390,7 +390,14 @@ export function useCookSession(
         stepId: step.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers, tTimer]);
+  }, [
+    recipe.id,
+    recipe.slug,
+    recipe.steps,
+    recipe.title,
+    state.timers,
+    tTimer,
+  ]);
 
   // Announce completion once per custom timer (#392), keyed by the timer's own
   // id and titled with its label so several finishing at once each speak for

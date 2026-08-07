@@ -7,11 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/layout/logo";
 import { MainNav } from "~/components/layout/main-nav";
 import { CommandMenu } from "~/components/layout/command-menu";
-import { ThemeSwitcher } from "~/components/theme/theme-switcher";
-import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
-import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
-import { AccessibilityMenu } from "~/components/a11y/accessibility-menu";
-import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
+import { HeaderSettingsMenu } from "~/components/layout/header-settings-menu";
 import { AuthControls } from "~/components/auth/auth-controls";
 import { NotificationBellServer } from "~/components/notifications/notification-bell-server";
 
@@ -30,25 +26,23 @@ export async function SiteHeader() {
           <Logo wordmarkClassName="hidden min-[360px]:inline" />
         </Link>
 
-        <div className="mx-2 hidden md:block">
+        <div className="mx-2 hidden xl:block">
           <MainNav />
         </div>
 
-        <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+        <div className="ms-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
           <CommandMenu />
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <Link href="/recipes/new">{t("newRecipe")}</Link>
           </Button>
-          {/* Secondary utility controls stay inline on desktop (lg+). On
-              phones/tablets they now live in the Profile hub (reached via the
-              bottom bar's Profile tab), so the header stays a clean single row
-              without a duplicate "More" menu. */}
-          <div className="hidden items-center gap-2 lg:flex">
-            <ThemeSwitcher />
-            <KidsModeToggle />
-            <LocaleSwitcher />
-            <AccessibilityMenu />
-            <OfflineStorageMenu />
+          {/* All device-level utility controls (appearance, Kids mode, language,
+              accessibility, offline storage) collapse into one Settings popover
+              on desktop so the top-right stays a single clean row. Below xl the
+              full horizontal nav gives way to the app bottom bar, and these
+              utilities live in its Profile hub, so the header never grows a
+              duplicate row of look-alike icons. */}
+          <div className="hidden xl:block">
+            <HeaderSettingsMenu />
           </div>
           <NotificationBellServer />
           {/* Account avatar / sign-in stays visible on every breakpoint as a
