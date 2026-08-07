@@ -34,9 +34,13 @@ async function bootServiceWorker(page: Page): Promise<void> {
  */
 async function startCooking(page: Page): Promise<void> {
   const startCooking = page.getByRole("button", { name: /start cooking/i });
-  if (await startCooking.count()) {
+  const currentStep = page.locator("#current-step-title");
+
+  await expect(startCooking.first().or(currentStep).first()).toBeVisible();
+  if (await startCooking.first().isVisible()) {
     await startCooking.first().click();
   }
+  await expect(currentStep).toBeVisible();
 }
 
 test("serves the offline fallback for an uncached navigation", async ({
