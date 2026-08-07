@@ -21,8 +21,9 @@ import { UI_THEME_IDS } from "~/config/themes";
 const css = readFileSync(join(process.cwd(), "src/styles/themes.css"), "utf8");
 
 const HSL_RE = /^([\d.]+)\s+([\d.]+)%\s+([\d.]+)%$/;
+type RGB = [number, number, number];
 
-function hslToRgb(value: string): [number, number, number] {
+function hslToRgb(value: string): RGB {
   const m = HSL_RE.exec(value.trim());
   if (!m) throw new Error(`Unparseable HSL token: "${value}"`);
   const [, hRaw, sRaw, lRaw] = m;
@@ -46,17 +47,28 @@ function hslToRgb(value: string): [number, number, number] {
   return [hue(h + 1 / 3), hue(h), hue(h - 1 / 3)];
 }
 
-function relativeLuminance([r, g, b]: [number, number, number]) {
+function relativeLuminance([r, g, b]: RGB) {
   const f = (c: number) =>
     c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 }
 
-function contrast(a: string, b: string) {
-  const la = relativeLuminance(hslToRgb(a));
-  const lb = relativeLuminance(hslToRgb(b));
+function contrastRgb(a: RGB, b: RGB) {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
   const [hi, lo] = la > lb ? [la, lb] : [lb, la];
   return (hi + 0.05) / (lo + 0.05);
+}
+
+function contrast(a: string, b: string) {
+  return contrastRgb(hslToRgb(a), hslToRgb(b));
+}
+
+function composite(foreground: RGB, background: RGB, alpha: number): RGB {
+  return foreground.map(
+    (channel, index) =>
+      channel * alpha + (background[index] ?? 0) * (1 - alpha),
+  ) as RGB;
 }
 
 type Block = { selector: string; tokens: Record<string, string> };
@@ -124,6 +136,9 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
   ["ring", "background"],
 ];
 
+const WARNING_TINT_ALPHAS = [0.1, 0.15, 0.2, 0.25];
+const WARNING_TINT_BACKDROPS = ["background", "surface", "card"];
+
 const COMBOS = UI_THEME_IDS.flatMap((theme) =>
   [false, true].map((dark) => ({
     theme,
@@ -167,6 +182,27 @@ describe("theme token contrast (issue #132)", () => {
           ratio,
           `--${fg} on --${bg} = ${ratio.toFixed(2)}:1 (need 3.0)`,
         ).toBeGreaterThanOrEqual(3.0);
+      }
+    },
+  );
+
+  it.each(COMBOS)(
+    "$label. Foreground text on warning tints meets AA 4.5:1",
+    ({ theme, dark }) => {
+      const tok = resolveTokens(theme, dark);
+      const foreground = hslToRgb(tok.foreground ?? "");
+      const warning = hslToRgb(tok.warning ?? "");
+
+      for (const backdropName of WARNING_TINT_BACKDROPS) {
+        const backdrop = hslToRgb(tok[backdropName] ?? "");
+        for (const alpha of WARNING_TINT_ALPHAS) {
+          const tint = composite(warning, backdrop, alpha);
+          const ratio = contrastRgb(foreground, tint);
+          expect(
+            ratio,
+            `--foreground on --warning/${alpha} over --${backdropName} = ${ratio.toFixed(2)}:1 (need 4.5)`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
       }
     },
   );

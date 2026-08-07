@@ -45,7 +45,7 @@ export function CookAllergenBanner({ recipe }: { recipe: CookRecipe }) {
     <div
       role="region"
       aria-label={t("region")}
-      className="border-b border-warning/50 bg-warning/15 text-warning-foreground motion-safe:animate-fade-in"
+      className="border-b border-warning/50 bg-warning/15 text-foreground motion-safe:animate-fade-in"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-3 py-3 sm:px-5 sm:py-4">
         <AlertTriangle className="size-7 shrink-0" aria-hidden="true" />

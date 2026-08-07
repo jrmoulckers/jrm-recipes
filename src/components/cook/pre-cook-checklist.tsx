@@ -31,7 +31,7 @@ function ChecklistItem({ emoji, title, detail, highlight }: ChecklistItemData) {
         className={cn(
           "flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5",
           highlight
-            ? "border-warning/55 bg-warning/15 text-warning-foreground"
+            ? "border-warning/55 bg-warning/15 text-foreground"
             : "border-border bg-card text-card-foreground",
           done && "border-success/60 bg-success/10",
         )}
