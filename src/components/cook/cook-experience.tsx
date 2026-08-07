@@ -956,7 +956,7 @@ function StepNarrationButton({
     <Button
       type="button"
       size={prominent ? "xl" : "sm"}
-      variant={speaking ? "secondary" : prominent ? "accent" : "ghost"}
+      variant={speaking ? "default" : prominent ? "accent" : "ghost"}
       aria-pressed={speaking}
       onClick={() => narration.toggle(instruction)}
       className={cn(

@@ -103,11 +103,15 @@ export function ReadAloudButton({
       className={cn("flex flex-wrap items-center gap-2", className)}
     >
       {status === "playing" ? (
-        <Button type="button" variant="secondary" onClick={pause}>
+        <Button type="button" onClick={pause}>
           <Pause aria-hidden="true" /> {t("readAloud.pause")}
         </Button>
       ) : (
-        <Button type="button" variant="secondary" onClick={play}>
+        <Button
+          type="button"
+          variant={active ? "default" : "outline"}
+          onClick={play}
+        >
           <Play aria-hidden="true" />
           {status === "paused" ? t("readAloud.resume") : t("readAloud.start")}
         </Button>
