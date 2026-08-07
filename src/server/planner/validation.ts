@@ -41,6 +41,7 @@ const noteInput = z
   );
 
 const positionInput = z.number().int().min(0).max(1000).optional();
+export const servingsInput = z.number().int().min(1).max(100000);
 
 export const addEntryInput = z
   .object({
@@ -50,10 +51,15 @@ export const addEntryInput = z
     groupId: idInput.optional(),
     note: noteInput,
     position: positionInput,
+    servings: servingsInput.optional(),
   })
   .refine((value) => Boolean(value.recipeId) || Boolean(value.note), {
     message: "Pick a recipe or add a note",
     path: ["recipeId"],
+  })
+  .refine((value) => value.servings == null || Boolean(value.recipeId), {
+    message: "Servings require a recipe",
+    path: ["servings"],
   });
 
 export const moveEntryInput = z.object({
@@ -65,37 +71,55 @@ export const moveEntryInput = z.object({
 
 export const removeEntryInput = z.object({
   entryId: idInput,
+  removeAllocations: z.boolean().optional(),
 });
 
 export const copyWeekInput = z.object({
   week: dateParam,
 });
 
-/** Servings multiple for a batch cook (#380). */
-export const batchMultipleSchema = z.union([z.literal(2), z.literal(3)]);
+export const leftoverAllocationInput = z.object({
+  date: dateParam,
+  slot: mealSlotSchema,
+  servings: servingsInput,
+});
 
-/**
- * Batch cook: create a primary recipe entry plus a linked leftovers entry on a
- * second day. Reuses the same recipe + note columns as a normal entry (#380).
- */
-export const batchCookInput = z
+/** A cooked meal plus exact serving allocations for linked leftover meals. */
+export const mealWithLeftoversInput = z
   .object({
     date: dateParam,
     slot: mealSlotSchema,
     recipeId: idInput,
     groupId: idInput.optional(),
     note: noteInput,
-    leftoversDate: dateParam,
-    multiple: batchMultipleSchema,
+    mealServings: servingsInput,
+    leftovers: z.array(leftoverAllocationInput).min(1).max(28),
   })
-  .refine((value) => value.leftoversDate !== value.date, {
-    message: "Pick a different night for the leftovers",
-    path: ["leftoversDate"],
+  .superRefine((value, context) => {
+    const destinations = new Set<string>();
+    value.leftovers.forEach((allocation, index) => {
+      const destination = `${allocation.date}|${allocation.slot}`;
+      if (destination === `${value.date}|${value.slot}`) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Pick a different meal for the leftovers",
+          path: ["leftovers", index, "date"],
+        });
+      }
+      if (destinations.has(destination)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Each leftovers meal must be unique",
+          path: ["leftovers", index, "date"],
+        });
+      }
+      destinations.add(destination);
+    });
   });
 
 export type AddEntryInput = z.infer<typeof addEntryInput>;
 export type MoveEntryInput = z.infer<typeof moveEntryInput>;
 export type RemoveEntryInput = z.infer<typeof removeEntryInput>;
 export type CopyWeekInput = z.infer<typeof copyWeekInput>;
-export type BatchCookInput = z.infer<typeof batchCookInput>;
-export type BatchMultipleValue = z.infer<typeof batchMultipleSchema>;
+export type LeftoverAllocationInput = z.infer<typeof leftoverAllocationInput>;
+export type MealWithLeftoversInput = z.infer<typeof mealWithLeftoversInput>;

@@ -1764,6 +1764,7 @@
       "allergenContains": "Contains {allergens}",
       "allergenTitle": "Best effort from ingredient names. Double-check labels and brands.",
       "leftovers": "Leftovers",
+      "servings": "{count, plural, one {# serving} other {# servings}}",
       "cooked": "Cooked",
       "logging": "Logging…",
       "cookedIt": "Cooked it",
@@ -1781,8 +1782,25 @@
         "removedMealAndLeftovers": "Removed the meal and its leftovers",
         "removedFromPlan": "Removed from your plan",
         "loggedToJournal": "Logged to your journal",
-        "addedWithLeftovers": "Added to your plan. Leftovers night booked too",
+        "addedWithLeftovers": "Added to your plan with all leftover meals",
         "addedToPlan": "Added to your plan"
+      },
+      "servingPlan": {
+        "title": "Servings & leftovers",
+        "lastUsed": "Last used: {count, plural, one {# serving} other {# servings}}",
+        "recipeDefault": "Recipe makes {count, plural, one {# serving} other {# servings}}",
+        "lastUsedDetail": "You made {count, plural, one {# serving} other {# servings}} last time.",
+        "recipeDefaultDetail": "This recipe makes {count, plural, one {# serving} other {# servings}} by default.",
+        "thisMealLabel": "Servings for this meal",
+        "allocation": "Leftover meal {number}",
+        "dateLabel": "Date",
+        "mealLabel": "Meal",
+        "servingsLabel": "Servings",
+        "removeAllocation": "Remove leftover meal {number}",
+        "addAllocation": "Add leftover meal",
+        "total": "Make {count, plural, one {# serving} other {# servings}} total",
+        "summary": "Make {total, plural, one {# serving} other {# servings}} · {allocationTotal, plural, one {# saved} other {# saved}}",
+        "summaryTitle": "Make {total, plural, one {# serving} other {# servings}} for {meals, plural, one {# meal} other {# meals}}"
       },
       "batch": {
         "titleWithDay": "Cook {multiple}×. Leftovers on {day}",
@@ -1800,9 +1818,17 @@
         "justThis": "Just this one",
         "removeBoth": "Remove both"
       },
+      "removeServingPlan": {
+        "description": "{meals, plural, one {# meal is} other {# meals are}} linked to this cook. Remove all of them, or keep the leftovers as separate meals?",
+        "removeAll": "Remove all {meals, plural, one {# meal} other {# meals}}"
+      },
       "validation": {
         "pickRecipeOrNote": "Pick a recipe or add a note",
-        "pickLeftoversNight": "Pick a night for the leftovers"
+        "pickLeftoversNight": "Pick a night for the leftovers",
+        "enterServings": "Enter a whole number of servings",
+        "pickDifferentMeal": "Choose a different meal for the leftovers",
+        "duplicateLeftoverMeal": "Each leftover meal needs a different date and meal",
+        "noMoreMeals": "Every meal this week already has an allocation"
       },
       "dialog": {
         "title": "Add to {slot}",

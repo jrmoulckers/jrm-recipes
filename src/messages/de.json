@@ -1764,6 +1764,7 @@
       "allergenContains": "Enthält {allergens}",
       "allergenTitle": "Beste Einschätzung aus den Zutatennamen. Prüfe Etiketten und Marken noch einmal.",
       "leftovers": "Reste",
+      "servings": "{count, plural, one {# Portion} other {# Portionen}}",
       "cooked": "Gekocht",
       "logging": "Trage ein…",
       "cookedIt": "Gekocht",
@@ -1781,8 +1782,25 @@
         "removedMealAndLeftovers": "Die Mahlzeit und ihre Reste wurden entfernt",
         "removedFromPlan": "Aus deinem Plan entfernt",
         "loggedToJournal": "In deinem Tagebuch gespeichert",
-        "addedWithLeftovers": "Zu deinem Plan hinzugefügt. Der Resteabend ist auch gebucht",
+        "addedWithLeftovers": "Mit allen Restemahlzeiten zu deinem Plan hinzugefügt",
         "addedToPlan": "Zu deinem Plan hinzugefügt"
+      },
+      "servingPlan": {
+        "title": "Portionen & Reste",
+        "lastUsed": "Zuletzt: {count, plural, one {# Portion} other {# Portionen}}",
+        "recipeDefault": "Das Rezept ergibt {count, plural, one {# Portion} other {# Portionen}}",
+        "lastUsedDetail": "Beim letzten Mal hast du {count, plural, one {# Portion} other {# Portionen}} zubereitet.",
+        "recipeDefaultDetail": "Dieses Rezept ergibt standardmäßig {count, plural, one {# Portion} other {# Portionen}}.",
+        "thisMealLabel": "Portionen für diese Mahlzeit",
+        "allocation": "Restemahlzeit {number}",
+        "dateLabel": "Datum",
+        "mealLabel": "Mahlzeit",
+        "servingsLabel": "Portionen",
+        "removeAllocation": "Restemahlzeit {number} entfernen",
+        "addAllocation": "Restemahlzeit hinzufügen",
+        "total": "Insgesamt {count, plural, one {# Portion} other {# Portionen}} zubereiten",
+        "summary": "{total, plural, one {# Portion} other {# Portionen}} zubereiten · {allocationTotal, plural, one {# zurücklegen} other {# zurücklegen}}",
+        "summaryTitle": "{total, plural, one {# Portion} other {# Portionen}} für {meals, plural, one {# Mahlzeit} other {# Mahlzeiten}} zubereiten"
       },
       "batch": {
         "titleWithDay": "{multiple}× kochen. Reste am {day}",
@@ -1800,9 +1818,17 @@
         "justThis": "Nur diese",
         "removeBoth": "Beides entfernen"
       },
+      "removeServingPlan": {
+        "description": "Mit diesem Kochvorgang sind {meals, plural, one {# Mahlzeit} other {# Mahlzeiten}} verknüpft. Alle entfernen oder die Reste als eigene Mahlzeiten behalten?",
+        "removeAll": "Alle {meals, plural, one {# Mahlzeit} other {# Mahlzeiten}} entfernen"
+      },
       "validation": {
         "pickRecipeOrNote": "Wähle ein Rezept oder füge eine Notiz hinzu",
-        "pickLeftoversNight": "Wähle einen Abend für die Reste"
+        "pickLeftoversNight": "Wähle einen Abend für die Reste",
+        "enterServings": "Gib eine ganze Anzahl Portionen ein",
+        "pickDifferentMeal": "Wähle für die Reste eine andere Mahlzeit",
+        "duplicateLeftoverMeal": "Jede Restemahlzeit braucht ein anderes Datum oder eine andere Mahlzeit",
+        "noMoreMeals": "Jede Mahlzeit dieser Woche hat bereits eine Zuteilung"
       },
       "dialog": {
         "title": "Zu {slot} hinzufügen",

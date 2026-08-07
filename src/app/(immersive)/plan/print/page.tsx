@@ -43,6 +43,7 @@ export default async function WeekMenuPrintPage({
     entries = rows.map((row) => ({
       dateParam: row.date,
       note: row.note,
+      leftoverSourceId: row.leftoverSourceId,
       recipe: row.recipe
         ? { title: row.recipe.title, totalMinutes: row.recipe.totalMinutes }
         : null,

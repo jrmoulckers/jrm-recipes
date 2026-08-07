@@ -175,7 +175,12 @@ export async function buildListFromPlan(
       gte(mealPlanEntries.date, startDate),
       lte(mealPlanEntries.date, endDate),
     ),
-    columns: { recipeId: true, note: true },
+    columns: {
+      recipeId: true,
+      note: true,
+      servingsMade: true,
+      leftoverSourceId: true,
+    },
     with: {
       recipe: {
         columns: { id: true, servings: true },
@@ -198,7 +203,10 @@ export async function buildListFromPlan(
   // batch-cooked meal isn't shopped for twice. Cooking the same recipe on two
   // separate nights DOES contribute twice (quantities combine below).
   const cooking = entries.filter(
-    (e) => e.recipe != null && parseLeftoversNote(e.note) == null,
+    (e) =>
+      e.recipe != null &&
+      e.leftoverSourceId == null &&
+      parseLeftoversNote(e.note) == null,
   );
   if (cooking.length === 0) {
     return { recipesUsed: 0, added: 0, merged: 0, empty: true, warnings: [] };
@@ -208,11 +216,12 @@ export async function buildListFromPlan(
   const recipeIds = new Set<string>();
   for (const entry of cooking) {
     const recipe = entry.recipe!;
+    const baseServings = recipe.servings ?? 4;
     recipeIds.add(recipe.id);
     const items = toShoppingItems({
       recipeId: recipe.id,
-      servings: recipe.servings,
-      desiredServings: recipe.servings ?? undefined,
+      servings: baseServings,
+      desiredServings: entry.servingsMade ?? baseServings,
       ingredients: recipe.ingredients.map((ing) => ({
         item: ing.item,
         quantity: ing.quantity,

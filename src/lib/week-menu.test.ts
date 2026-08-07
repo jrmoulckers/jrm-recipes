@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLeftoversNote } from "./planner-batch";
 import {
   buildWeekMenu,
   formatCookTime,
@@ -44,7 +43,8 @@ describe("buildWeekMenu (#438)", () => {
       },
       {
         dateParam: "2026-07-08",
-        note: formatLeftoversNote("Weeknight Chili", 2),
+        note: null,
+        leftoverSourceId: "source-1",
         recipe: { title: "Weeknight Chili", totalMinutes: 45 },
       },
       { dateParam: "2026-07-07", note: "Order pizza", recipe: null },
