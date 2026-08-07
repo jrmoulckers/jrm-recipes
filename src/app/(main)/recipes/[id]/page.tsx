@@ -329,9 +329,14 @@ export default async function RecipePage({
         {/* Decorative: the hero cover sits directly above the recipe title. */}
         <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
           <RecipeImage
+            alt=""
             src={recipe.coverImageUrl}
             fallbackKey={recipe.id}
-            alt=""
+            fallbackContext={{
+              title: recipe.title,
+              cuisine: recipe.cuisine,
+              tags: recipe.tags.flatMap(({ tag }) => (tag ? [tag.name] : [])),
+            }}
             fill
             priority
             sizes="100vw"

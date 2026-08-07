@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalizeTag,
   isCanonicalTag,
+  recipeCategoryForTag,
+  recipeCategoryInText,
   SUGGESTED_TAGS,
 } from "./tag-taxonomy";
 
@@ -74,5 +76,17 @@ describe("SUGGESTED_TAGS (#282)", () => {
       expect(canonicalizeTag(tag.name)).toEqual(tag);
       expect(isCanonicalTag(tag.name)).toBe(true);
     }
+  });
+});
+
+describe("recipe category normalization", () => {
+  it("shares canonical meal aliases across exact tags and longer text", () => {
+    expect(recipeCategoryForTag("brunch")).toBe("Breakfast");
+    expect(recipeCategoryForTag("main-course")).toBe("Main");
+    expect(recipeCategoryInText("Easy brunch pancakes")).toBe("Breakfast");
+  });
+
+  it("does not match meal terms embedded inside other words", () => {
+    expect(recipeCategoryInText("Breakfasted at dawn")).toBeUndefined();
   });
 });

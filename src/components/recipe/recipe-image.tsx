@@ -3,12 +3,17 @@
 import { useState } from "react";
 import { type ImageProps } from "next/image";
 
-import { recipeFallbackImage } from "~/lib/recipe-image-fallback";
+import {
+  recipeFallbackImage,
+  type RecipeFallbackContext,
+} from "~/lib/recipe-image-fallback";
+import { cn } from "~/lib/utils";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 
 type RecipeImageProps = Omit<ImageProps, "src"> & {
   src?: string | null;
   fallbackKey: string;
+  fallbackContext?: RecipeFallbackContext;
   fallbackMode?: "editorial" | "hide";
 };
 
@@ -19,7 +24,9 @@ type RecipeImageProps = Omit<ImageProps, "src"> & {
 export function RecipeImage({
   src,
   fallbackKey,
+  fallbackContext,
   fallbackMode = "editorial",
+  className,
   onError,
   unoptimized,
   ...props
@@ -28,18 +35,19 @@ export function RecipeImage({
   const normalizedSrc = isRenderableImageSrc(candidateSrc)
     ? candidateSrc
     : null;
-  const fallbackSrc = recipeFallbackImage(fallbackKey);
+  const fallbackSrc = recipeFallbackImage(fallbackKey, fallbackContext);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const unavailable = !normalizedSrc || normalizedSrc === failedSrc;
   if (unavailable && fallbackMode === "hide") return null;
 
   const resolvedSrc = unavailable ? fallbackSrc : normalizedSrc;
-  const isFallback = resolvedSrc === fallbackSrc;
+  const isFallback = unavailable;
 
   return (
     <CloudinaryImage
       {...props}
       src={resolvedSrc}
+      className={cn(className, isFallback && "scale-[1.02] blur-[1px]")}
       {...(isFallback || unoptimized ? { unoptimized: true } : {})}
       data-fallback={isFallback ? "" : undefined}
       onError={(event) => {

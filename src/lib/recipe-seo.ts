@@ -9,6 +9,7 @@
  */
 import { absoluteUrl } from "~/lib/utils";
 import { displayUnit, formatQuantity } from "~/lib/units";
+import { recipeCategoryForTag } from "~/lib/tag-taxonomy";
 
 export type SeoIngredient = {
   quantity: number | null;
@@ -217,42 +218,6 @@ function buildNutrition(
   };
 }
 
-/**
- * Known meal-course categories mapped from lowercased tag names (and a few
- * common synonyms) to the canonical schema.org-friendly label. Used to resolve
- * `recipeCategory` from free-form tags (issue #314): the first recipe tag whose
- * name matches this vocabulary wins. When none match the field is omitted.
- */
-const CATEGORY_VOCAB = new Map<string, string>([
-  ["appetizer", "Appetizer"],
-  ["appetizers", "Appetizer"],
-  ["starter", "Appetizer"],
-  ["breakfast", "Breakfast"],
-  ["brunch", "Breakfast"],
-  ["lunch", "Lunch"],
-  ["dinner", "Main"],
-  ["main", "Main"],
-  ["main course", "Main"],
-  ["main dish", "Main"],
-  ["entree", "Main"],
-  ["entrée", "Main"],
-  ["side", "Side"],
-  ["side dish", "Side"],
-  ["salad", "Salad"],
-  ["soup", "Soup"],
-  ["dessert", "Dessert"],
-  ["desserts", "Dessert"],
-  ["snack", "Snack"],
-  ["snacks", "Snack"],
-  ["drink", "Drink"],
-  ["drinks", "Drink"],
-  ["beverage", "Drink"],
-  ["cocktail", "Drink"],
-  ["bread", "Bread"],
-  ["sauce", "Sauce"],
-  ["condiment", "Sauce"],
-]);
-
 /** Clean, non-empty, case-insensitively de-duplicated tag names in order. */
 function cleanTagNames(recipe: SeoRecipe): string[] {
   const seen = new Set<string>();
@@ -271,7 +236,7 @@ function cleanTagNames(recipe: SeoRecipe): string[] {
 /** First tag matching the meal-course vocabulary, as a canonical label. */
 function resolveCategory(tagNames: string[]): string | undefined {
   for (const name of tagNames) {
-    const canonical = CATEGORY_VOCAB.get(name.toLowerCase());
+    const canonical = recipeCategoryForTag(name);
     if (canonical) return canonical;
   }
   return undefined;

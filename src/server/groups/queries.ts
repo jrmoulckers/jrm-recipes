@@ -162,6 +162,7 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
       title: true,
       description: true,
       coverImageUrl: true,
+      cuisine: true,
       visibility: true,
       status: true,
       authorId: true,
@@ -177,6 +178,7 @@ export async function getGroupBySlug(slug: string, viewer: User | null) {
           avatarUrl: true,
         },
       },
+      tags: { with: { tag: { columns: { name: true } } } },
     },
   });
 

@@ -13,6 +13,20 @@ export type CanonicalTag = { slug: string; name: string };
 
 type TaxonomyEntry = CanonicalTag & { aliases: string[] };
 
+export type RecipeCategory =
+  | "Appetizer"
+  | "Breakfast"
+  | "Lunch"
+  | "Main"
+  | "Side"
+  | "Salad"
+  | "Soup"
+  | "Dessert"
+  | "Snack"
+  | "Drink"
+  | "Bread"
+  | "Sauce";
+
 /**
  * Curated canonical tags plus the aliases that should resolve to them. Only
  * high-confidence synonyms are listed. Ambiguous single words (e.g. "veg",
@@ -110,6 +124,90 @@ const TAXONOMY: TaxonomyEntry[] = [
 /** Match key for a free-text tag: its slug (falling back to a lowercased trim). */
 function tagKey(name: string): string {
   return slugify(name).slice(0, 60) || name.trim().toLowerCase();
+}
+
+/**
+ * Shared meal/course vocabulary for tag normalization, structured data, and
+ * semantic recipe imagery.
+ */
+const RECIPE_CATEGORY_TERMS: readonly {
+  category: RecipeCategory;
+  terms: readonly string[];
+}[] = [
+  {
+    category: "Appetizer",
+    terms: ["appetizer", "appetizers", "starter", "starters"],
+  },
+  {
+    category: "Breakfast",
+    terms: ["breakfast", "breakfasts", "brunch"],
+  },
+  { category: "Lunch", terms: ["lunch", "lunches"] },
+  {
+    category: "Main",
+    terms: [
+      "dinner",
+      "dinners",
+      "supper",
+      "suppers",
+      "main",
+      "mains",
+      "main course",
+      "main dish",
+      "entree",
+      "entrée",
+    ],
+  },
+  { category: "Side", terms: ["side", "sides", "side dish"] },
+  { category: "Salad", terms: ["salad", "salads"] },
+  { category: "Soup", terms: ["soup", "soups"] },
+  {
+    category: "Dessert",
+    terms: ["dessert", "desserts", "sweet", "sweets", "pudding", "puddings"],
+  },
+  { category: "Snack", terms: ["snack", "snacks"] },
+  {
+    category: "Drink",
+    terms: [
+      "drink",
+      "drinks",
+      "beverage",
+      "beverages",
+      "cocktail",
+      "cocktails",
+    ],
+  },
+  { category: "Bread", terms: ["bread", "breads"] },
+  {
+    category: "Sauce",
+    terms: ["sauce", "sauces", "condiment", "condiments"],
+  },
+];
+
+const RECIPE_CATEGORY_LOOKUP = new Map<string, RecipeCategory>(
+  RECIPE_CATEGORY_TERMS.flatMap(({ category, terms }) =>
+    terms.map((term) => [tagKey(term), category] as const),
+  ),
+);
+
+/** Resolve an exact free-text tag to its canonical meal/course category. */
+export function recipeCategoryForTag(name: string): RecipeCategory | undefined {
+  return RECIPE_CATEGORY_LOOKUP.get(tagKey(name));
+}
+
+/** Find the first canonical meal/course term occurring in longer text. */
+export function recipeCategoryInText(
+  text: string | null | undefined,
+): RecipeCategory | undefined {
+  const key = slugify(text ?? "");
+  if (!key) return undefined;
+  const searchable = `-${key}-`;
+  for (const { category, terms } of RECIPE_CATEGORY_TERMS) {
+    if (terms.some((term) => searchable.includes(`-${tagKey(term)}-`))) {
+      return category;
+    }
+  }
+  return undefined;
 }
 
 /** alias/canonical slug -> canonical tag. Built once at module load. */
