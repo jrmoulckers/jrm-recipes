@@ -19,12 +19,16 @@ async function openCookMode(page: Page): Promise<boolean> {
   await page.goto(COOK_PATH);
   // A seeded recipe lists ingredients, so Cook Mode opens on the mise en place
   // pre-cook screen (#402), step through it to reach step 1.
-  const startCooking = page.getByRole("button", { name: /start cooking/i });
-  if (await startCooking.count()) {
+  const startCooking = page.getByTestId("cook-mode-start");
+  const title = page.locator(STEP_TITLE);
+  try {
+    await startCooking.or(title).first().waitFor({ state: "visible" });
+  } catch {
+    return false;
+  }
+  if (await startCooking.isVisible()) {
     await startCooking.first().click();
   }
-  const title = page.locator(STEP_TITLE);
-  if ((await title.count()) === 0) return false;
   await expect(title).toBeVisible();
   return true;
 }

@@ -33,7 +33,7 @@ async function bootServiceWorker(page: Page): Promise<void> {
  * `#current-step-title` heading is present. Mirrors tests/e2e/cook-journey.spec.ts.
  */
 async function startCooking(page: Page): Promise<void> {
-  const startCooking = page.getByRole("button", { name: /start cooking/i });
+  const startCooking = page.getByTestId("cook-mode-start");
   const currentStep = page.locator("#current-step-title");
 
   await expect(startCooking.first().or(currentStep).first()).toBeVisible();

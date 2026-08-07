@@ -167,6 +167,7 @@ export function MiseEnPlaceScreen({
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-2">
           <Button
             type="button"
+            data-testid="cook-mode-start"
             onClick={onStart}
             size="xl"
             className={cn(
