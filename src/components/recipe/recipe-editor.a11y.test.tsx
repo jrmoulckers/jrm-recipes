@@ -2,6 +2,7 @@ import {
   cleanup,
   render as rtlRender,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -92,7 +93,7 @@ describe("RecipeEditor error summary (issue #124)", () => {
 
     const alert = await screen.findByRole("alert");
     // Summary receives focus so keyboard/SR users land on it.
-    expect(alert).toHaveFocus();
+    await waitFor(() => expect(alert).toHaveFocus());
 
     const link = within(alert).getByRole("link", { name: "Title" });
     expect(link).toHaveAttribute("href", "#recipe-field-title");
