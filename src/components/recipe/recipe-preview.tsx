@@ -337,7 +337,10 @@ export function RecipePreview({
                           src={step.imageUrl}
                           fallbackKey={`${fallbackKey}-step-${i + 1}`}
                           fallbackMode="hide"
-                          alt=""
+                          alt={td("method.stepImageAlt", {
+                            title: recipe.title || t("titlePlaceholder"),
+                            position: i + 1,
+                          })}
                           fill
                           sizes="(max-width: 768px) 100vw, 28rem"
                           className="object-cover"
