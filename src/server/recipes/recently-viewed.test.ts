@@ -76,7 +76,7 @@ describe("listRecentlyViewed (#280)", () => {
     };
     dbMock.select.mockReturnValue(chain);
 
-    // Recipe rows come back in arbitrary order; the function re-sorts them.
+    // Recipe rows come back in arbitrary order. The function re-sorts them.
     dbMock.query.recipes.findMany.mockResolvedValue([
       { id: "r1", title: "One" },
       { id: "r2", title: "Two" },

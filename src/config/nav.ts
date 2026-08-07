@@ -46,7 +46,7 @@ export type NavItem = {
   match?: (pathname: string) => boolean;
   /**
    * Seed the default mobile bottom bar with this destination. Users can pin a
-   * different set (see {@link DEFAULT_MOBILE_PINNED}); this only feeds the
+   * different set (see {@link DEFAULT_MOBILE_PINNED}). This only feeds the
    * out-of-the-box defaults.
    */
   mobile?: boolean;
@@ -130,7 +130,7 @@ export const navByKey: Record<NavKey, NavItem> = Object.fromEntries(
 ) as Record<NavKey, NavItem>;
 
 /**
- * Destinations a user may pin to the mobile bottom bar. "Create" is excluded —
+ * Destinations a user may pin to the mobile bottom bar. "Create" is excluded.
  * it lives as a header CTA and a Profile action rather than a tab (and the
  * bottom bar hides itself on the editor routes anyway).
  */
@@ -138,7 +138,7 @@ export const pinnableNav: NavItem[] = primaryNav.filter(
   (item) => item.id !== "create",
 );
 
-/** Maximum number of user-pinned tabs; the Profile slot is always the 5th. */
+/** Maximum number of user-pinned tabs. The Profile slot is always the 5th. */
 export const MAX_PINNED = 4;
 
 /**
@@ -181,7 +181,7 @@ export type FooterNavItem = {
 
 /**
  * Secondary links shown in the footer (issues #312 / #319). Kept here so the
- * pricing and billing surfaces have a single source of truth for their routes;
+ * pricing and billing surfaces have a single source of truth for their routes.
  * labels stay localized via the `footer` message namespace.
  */
 export const footerNav: FooterNavItem[] = [

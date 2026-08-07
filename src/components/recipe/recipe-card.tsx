@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Clock3, Play, Star, UtensilsCrossed, Users } from "lucide-react";
 
@@ -28,7 +29,7 @@ import {
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
- * by browse pages for signed-in users with a database; omit it and no quick-plan
+ * by browse pages for signed-in users with a database. Omit it and no quick-plan
  * affordance renders.
  */
 export type QuickPlanContext = {
@@ -107,11 +108,12 @@ export function RecipeCard({
   matchReason?: RecipeMatchReason | null;
   /**
    * Family members to power the "safe for [name]" badge (#431). When supplied
-   * and one is active, the card shows an allergen safety signal; omit it (the
+   * and one is active, the card shows an allergen safety signal. Omit it (the
    * default) and no badge renders.
    */
   members?: CardDietaryMember[];
 }) {
+  const t = useTranslations("recipe");
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
       ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
@@ -147,15 +149,15 @@ export function RecipeCard({
       {/* One-tap Cook (#118): a real, focusable link that jumps straight to the
           immersive cook route. Kept a sibling of the card link (never nested) to
           avoid anchor-in-anchor. Overlays the image region via a pointer-events
-          gate; always visible on touch, hover/focus-revealed on desktop. */}
+          gate. Always visible on touch, hover/focus-revealed on desktop. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
         <Link
           href={`/recipes/${recipe.slug}/cook`}
-          aria-label={`Cook ${recipe.title}`}
+          aria-label={t("recipeCard.cookAria", { title: recipe.title })}
           className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
           <Play className="size-3.5" aria-hidden />
-          Cook
+          {t("common.cook")}
         </Link>
       </div>
       <Link
@@ -163,6 +165,8 @@ export function RecipeCard({
         className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted/40 active:shadow-token"
       >
         <div className="relative aspect-[16/10] overflow-hidden">
+          {/* Decorative: the cover sits directly above the recipe title, which
+              names the enclosing link. */}
           {recipe.coverImageUrl ? (
             <CloudinaryImage
               src={recipe.coverImageUrl}
@@ -210,7 +214,11 @@ export function RecipeCard({
           </h3>
           {matchReason && matchReason.field !== "title" && (
             <p className="text-xs text-muted-foreground">
-              Matches {matchFieldLabel(matchReason.field)}:{" "}
+              {t("recipeCard.matches", {
+                field: t(
+                  `recipeCard.matchField.${matchFieldLabel(matchReason.field)}`,
+                ),
+              })}{" "}
               <span className="font-medium text-foreground/80">
                 {matchReason.term}
               </span>
@@ -240,7 +248,9 @@ export function RecipeCard({
               </span>
             )}
             {rating.unrated ? (
-              <span className="text-muted-foreground">Unrated</span>
+              <span className="text-muted-foreground">
+                {t("recipeCard.unrated")}
+              </span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <StarRating filled={rating.filled} label={rating.label} />

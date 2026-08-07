@@ -3,7 +3,7 @@
  *
  * Two orthogonal axes:
  *   • UI mode   -> [data-theme="kitchen|whimsy|professional|kids|barebones"]
- *   • Scheme    -> .dark (added to <html> for dark; absent for light)
+ *   • Scheme    -> .dark (added to <html> for dark. absent for light)
  *
  * Components ONLY ever reference the semantic tokens below (via Tailwind:
  * bg-primary, text-muted-foreground, rounded-lg, shadow-token, font-display…).
@@ -30,7 +30,7 @@
   --motion-scale: 1;
   /* Motion vocabulary. Durations are scaled by --motion-scale, so Simple mode
    * (scale 0) collapses every tokenized transition to 0ms through the token
-   * path; the OS/user reduced-motion rules in globals.css still layer on top.
+   * path. the OS/user reduced-motion rules in globals.css still layer on top.
    * --ease-standard intentionally equals the enter-animation curve (ease-out)
    * so fade-in / pop-in keep their exact feel. */
   --duration-fast: calc(150ms * var(--motion-scale));
@@ -39,18 +39,18 @@
   --ease-standard: cubic-bezier(0, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.4, 0, 0.2, 1);
   /* Interactive-control sizing (Switch/Slider). `--control-scale` multiplies
-   * their visible dimensions; `--control-min` floors a control's hit area to
-   * `--tap-min`. Both are no-ops here so default modes render unchanged; the
+   * their visible dimensions. `--control-min` floors a control's hit area to
+   * `--tap-min`. Both are no-ops here so default modes render unchanged. the
    * large-target modes (Kids/Simple) raise them below. */
   --control-scale: 1;
   --control-min: 0px;
 
   /* Soft-badge text inks. A tinted badge (bg-<color>/12–20) can't legibly show
-   * its own saturated color as text — the tint sits too close to the page. So
+   * its own saturated color as text. The tint sits too close to the page. So
    * we synthesize a legible "step" of the badge's own hue by blending it toward
    * --foreground (a "soft"/label-style token, like Radix step-11 or a Primer
    * label). --foreground flips per scheme, so one declaration adapts to every
-   * mode x light/dark: the blend lands deep in light, pastel in dark. var()s
+   * mode x light/dark: the blend lands deep in light, pastel in dark. Var()s
    * resolve against the badge's cascade, so each theme's own hue is used.
    * Blend % is the minimum that clears WCAG AA (>=4.5:1, verified >=4.7:1)
    * over every badge surface. Light-only hues (amber/accent) can't reach it and
@@ -89,7 +89,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * KITCHEN — warm, cozy, home-baked. (Also the safe default palette.)
+ * KITCHEN. Warm, cozy, home-baked. (Also the safe default palette.)
  * ------------------------------------------------------------------------- */
 :root,
 [data-theme="kitchen"] {
@@ -159,7 +159,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * WHIMSY — playful, colorful, bubbly.
+ * WHIMSY. Playful, colorful, bubbly.
  * ------------------------------------------------------------------------- */
 [data-theme="whimsy"] {
   --radius: 1.4rem;
@@ -232,7 +232,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * PROFESSIONAL — clean, editorial, magazine-grade.
+ * PROFESSIONAL. Clean, editorial, magazine-grade.
  * ------------------------------------------------------------------------- */
 [data-theme="professional"] {
   --radius: 0.4rem;
@@ -305,7 +305,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * KIDS — big, bright, friendly, safe. Larger targets + text.
+ * KIDS. Big, bright, friendly, safe. Larger targets + text.
  * ------------------------------------------------------------------------- */
 [data-theme="kids"] {
   --radius: 1.5rem;
@@ -386,7 +386,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * BAREBONES (Simple) — ultra-simple, high-contrast, minimal chrome.
+ * BAREBONES (Simple). Ultra-simple, high-contrast, minimal chrome.
  * ------------------------------------------------------------------------- */
 [data-theme="barebones"] {
   --radius: 0.25rem;

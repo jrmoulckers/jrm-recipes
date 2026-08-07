@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export function CreateCollectionDialog({
   children?: React.ReactNode;
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.create");
   const nameId = React.useId();
   const descriptionId = React.useId();
   const [open, setOpen] = React.useState(false);
@@ -57,7 +59,7 @@ export function CreateCollectionDialog({
           return;
         }
 
-        toast.success("Collection created");
+        toast.success(t("toast.created"));
         setOpen(false);
         resetForm();
         router.push(`/collections/${result.id}`);
@@ -70,27 +72,24 @@ export function CreateCollectionDialog({
       <DialogTrigger asChild>
         {children ?? (
           <Button size="lg">
-            <Plus /> New collection
+            <Plus /> {t("trigger")}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={onSubmit} className="grid gap-5">
           <DialogHeader>
-            <DialogTitle>Create a collection</DialogTitle>
-            <DialogDescription>
-              Group the recipes you love into a cookbook — weeknight dinners,
-              holiday bakes, or the dishes you always come back to.
-            </DialogDescription>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
-            <Label htmlFor={nameId}>Name</Label>
+            <Label htmlFor={nameId}>{t("fields.name.label")}</Label>
             <Input
               id={nameId}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Weeknight Winners"
+              placeholder={t("fields.name.placeholder")}
               aria-invalid={Boolean(fieldErrors.name)}
               aria-describedby={
                 fieldErrors.name ? `${nameId}-error` : undefined
@@ -105,12 +104,14 @@ export function CreateCollectionDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor={descriptionId}>Description</Label>
+            <Label htmlFor={descriptionId}>
+              {t("fields.description.label")}
+            </Label>
             <Textarea
               id={descriptionId}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Fast, reliable dinners the whole family eats."
+              placeholder={t("fields.description.placeholder")}
               aria-invalid={Boolean(fieldErrors.description)}
               aria-describedby={
                 fieldErrors.description ? `${descriptionId}-error` : undefined
@@ -133,10 +134,10 @@ export function CreateCollectionDialog({
               onClick={() => setOpen(false)}
               disabled={isPending}
             >
-              Cancel
+              {t("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating…" : "Create collection"}
+              {isPending ? t("actions.creating") : t("actions.create")}
             </Button>
           </DialogFooter>
         </form>

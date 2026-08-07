@@ -23,28 +23,13 @@ import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
 /**
  * Plain-language capability hints for each group role, surfaced right where a
- * manager assigns them (issue #344). Copy only — the roles and rules themselves
+ * manager assigns them (issue #344). The role ids are structural. Their labels
+ * and hints live in the `groups.settingsPage.roles.*` catalog entries, so the
+ * copy is translated like the rest of the page. The roles and rules themselves
  * live in the server (`src/server/groups/mutations.ts`) and are documented in
  * `docs/group-roles.md`.
  */
-const ROLE_HINTS = [
-  {
-    role: "Owner",
-    hint: "Full control — manage settings and members, assign admins, transfer ownership, or delete the group.",
-  },
-  {
-    role: "Admin",
-    hint: "Helps you run the group — edit settings, invite people, and manage members and kids (but can't add other admins).",
-  },
-  {
-    role: "Member",
-    hint: "A family member — reads the shared cookbook and adds recipes.",
-  },
-  {
-    role: "Kid",
-    hint: "A child account with the kid-safe experience. Always free — never uses a paid seat.",
-  },
-] as const;
+const ROLE_KEYS = ["owner", "admin", "member", "kid"] as const;
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -59,8 +44,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await parseSlugParams(params);
   const { group } = await load(slug);
-  if (!group) return { title: "Group settings" };
-  return { title: `${group.name} settings` };
+  const t = await getTranslations("metadata");
+  if (!group) return { title: t("groupSettings.title") };
+  return { title: t("groupSettings.named", { name: group.name }) };
 }
 
 export default async function GroupSettingsPage({
@@ -73,6 +59,7 @@ export default async function GroupSettingsPage({
   if (!group || !canManageGroup(group.viewerRole)) notFound();
 
   const tNav = await getTranslations("nav");
+  const t = await getTranslations("groups.settingsPage");
 
   return (
     <div className="container max-w-3xl py-10">
@@ -81,20 +68,18 @@ export default async function GroupSettingsPage({
         items={[
           { label: tNav("family"), href: "/groups" },
           { label: group.name },
-          { label: "Settings" },
+          { label: t("breadcrumb") },
         ]}
       />
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Group settings
+            {t("title")}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Keep the name, note, and family photo current.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         <Button asChild variant="outline">
-          <Link href={`/groups/${group.slug}`}>Back to group</Link>
+          <Link href={`/groups/${group.slug}`}>{t("backToGroup")}</Link>
         </Button>
       </div>
       <GroupSettingsForm
@@ -108,18 +93,19 @@ export default async function GroupSettingsPage({
 
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle>Roles &amp; permissions</CardTitle>
-          <CardDescription>
-            Who can do what in this group. You can set a member&apos;s role from
-            the group page.
-          </CardDescription>
+          <CardTitle>{t("rolesHeading")}</CardTitle>
+          <CardDescription>{t("rolesDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-3 sm:grid-cols-2">
-            {ROLE_HINTS.map(({ role, hint }) => (
+            {ROLE_KEYS.map((role) => (
               <div key={role}>
-                <dt className="text-sm font-medium">{role}</dt>
-                <dd className="mt-0.5 text-sm text-muted-foreground">{hint}</dd>
+                <dt className="text-sm font-medium">
+                  {t(`roles.${role}.label`)}
+                </dt>
+                <dd className="mt-0.5 text-sm text-muted-foreground">
+                  {t(`roles.${role}.hint`)}
+                </dd>
               </div>
             ))}
           </dl>

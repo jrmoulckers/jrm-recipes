@@ -27,7 +27,7 @@ export async function recordStorageUsageAction(bytes: number): Promise<void> {
     const megabytes = Math.ceil(bytes / BYTES_PER_MB);
     await incrementUsage(user, "storage_mb", megabytes);
   } catch {
-    // Metering is non-critical; swallow (e.g. unauthenticated) rather than
+    // Metering is non-critical. Swallow (e.g. unauthenticated) rather than
     // surfacing an error over a successful upload.
   }
 }

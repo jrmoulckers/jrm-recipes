@@ -109,7 +109,7 @@ describe("mintGiftCode", () => {
       planId: "family",
       durationMonths: 12,
     });
-    // Idempotent insert — a retried webhook can't create a second row.
+    // Idempotent insert. A retried webhook can't create a second row.
     expect(db.insert).toHaveBeenCalledTimes(1);
   });
 

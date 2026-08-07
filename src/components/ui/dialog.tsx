@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -63,29 +64,32 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
     VariantProps<typeof dialogContentVariants>
->(({ className, children, size, variant, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        dialogContentVariants({ size, variant }),
-        OVERLAY_SURFACE,
-        OVERLAY_PADDING.dialog,
-        // Clear the home indicator on notched phones (issue #291).
-        "pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute end-4 top-4 inline-flex items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity duration-fast ease-standard hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-        <X className="size-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(({ className, children, size, variant, ...props }, ref) => {
+  const t = useTranslations("common");
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          dialogContentVariants({ size, variant }),
+          OVERLAY_SURFACE,
+          OVERLAY_PADDING.dialog,
+          // Clear the home indicator on notched phones (issue #291).
+          "pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="absolute end-4 top-4 inline-flex items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity duration-fast ease-standard hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <X className="size-4" />
+          <span className="sr-only">{t("close")}</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 function DialogHeader({

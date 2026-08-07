@@ -1,7 +1,7 @@
 /**
  * Central brand + product configuration.
  *
- * Change the app's name/tagline in ONE place — it threads through metadata,
+ * Change the app's name/tagline in ONE place. It threads through metadata,
  * the PWA manifest, share cards, and the UI.
  */
 export const brand = {
@@ -9,7 +9,7 @@ export const brand = {
   shortName: "Heirloom",
   tagline: "Family recipes, kept alive.",
   description:
-    "Create, cook, and pass down the recipes your family loves — beautifully, together.",
+    "Create, cook, and pass down the recipes your family loves. Beautifully, together.",
   // Used for PWA theme color fallback + social cards. Real colors come from
   // the active theme tokens at runtime.
   themeColor: "#b45309",

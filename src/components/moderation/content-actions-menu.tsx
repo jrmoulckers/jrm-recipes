@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Flag, MoreHorizontal, Trash2, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 import { blockUserAction } from "~/server/moderation/actions";
+import { useFriendlyError } from "~/lib/error-copy";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -17,7 +19,7 @@ import { ReportDialog, type ReportTargetType } from "./report-dialog";
 
 /**
  * The overflow menu shared by comments, reviews, and cook posts (#355/#356).
- * Bundles the safety actions — Report content and Block author — with an
+ * Bundles the safety actions: Report content and Block author, with an
  * optional Delete slot. Report/Block only appear for a signed-in viewer acting
  * on someone else's content.
  */
@@ -42,6 +44,8 @@ export function ContentActionsMenu({
 }) {
   const [reportOpen, setReportOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
+  const t = useTranslations("moderation");
+  const friendlyError = useFriendlyError();
 
   const isOwnContent = authorId != null && authorId === currentUserId;
   const canModerate =
@@ -54,10 +58,10 @@ export function ContentActionsMenu({
     startTransition(async () => {
       const result = await blockUserAction({ blockedId: authorId });
       if (result.ok) {
-        toast.success(`You blocked ${authorName}. You won't see their posts.`);
+        toast.success(t("toasts.blocked", { name: authorName }));
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   };
 
@@ -70,7 +74,7 @@ export function ContentActionsMenu({
             variant="ghost"
             size="icon"
             disabled={disabled || pending}
-            aria-label="More actions"
+            aria-label={t("actions.more")}
             className="ms-auto size-8 text-muted-foreground"
           >
             <MoreHorizontal className="size-4" />
@@ -79,12 +83,12 @@ export function ContentActionsMenu({
         <DropdownMenuContent align="end">
           {canModerate ? (
             <DropdownMenuItem onSelect={() => setReportOpen(true)}>
-              <Flag /> Report
+              <Flag /> {t("actions.report")}
             </DropdownMenuItem>
           ) : null}
           {canModerate ? (
             <DropdownMenuItem onSelect={block}>
-              <UserX /> Block {authorName}
+              <UserX /> {t("actions.block", { name: authorName })}
             </DropdownMenuItem>
           ) : null}
           {canDelete && onDelete ? (
@@ -94,7 +98,7 @@ export function ContentActionsMenu({
                 onSelect={onDelete}
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
               >
-                <Trash2 /> Delete
+                <Trash2 /> {t("actions.delete")}
               </DropdownMenuItem>
             </>
           ) : null}

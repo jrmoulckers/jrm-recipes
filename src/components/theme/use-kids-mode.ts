@@ -9,9 +9,9 @@ import { useTheme } from "~/components/theme/theme-provider";
  * The single entry point for flipping Kids mode. It couples the two orthogonal
  * axes that Kids mode spans:
  *
- *   • UI theme — switches to/from the `kids` mode, remembering and restoring the
+ *   • UI theme. Switches to/from the `kids` mode, remembering and restoring the
  *     grown-up's prior mode (owned by the theme provider).
- *   • Accessibility (#445) — bumps *unset* comfort defaults to kid-friendly
+ *   • Accessibility (#445). Bumps *unset* comfort defaults to kid-friendly
  *     values (larger text + easy-reading type) and snapshots the prior a11y
  *     prefs, restoring them when Kids mode turns off. Explicit grown-up choices
  *     are never overwritten.

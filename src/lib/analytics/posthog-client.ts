@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The concrete PostHog client adapter — the *only* module that imports the
+ * The concrete PostHog client adapter. The *only* module that imports the
  * vendor SDK (issue #306). It's dynamically imported by `<AnalyticsProvider>`
  * and only when a key is configured, so the SDK is never bundled into the
  * no-config path and the rest of the app stays vendor-agnostic behind
@@ -17,7 +17,7 @@ let initialized = false;
 
 /**
  * Initialize PostHog (once) and return a backend bound to it, or `null` when
- * unconfigured / on the server. Safe to call repeatedly — re-initialization is
+ * unconfigured / on the server. Safe to call repeatedly. Re-initialization is
  * guarded so React StrictMode's double-invoke doesn't re-init the SDK.
  */
 export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
@@ -33,7 +33,7 @@ export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
       // Cookieless: keep persistence in memory so no analytics cookies are set.
       persistence: "memory",
       // Pageviews are emitted manually by <PageviewTracker> (#322) to catch
-      // App Router client navigations; disable autocapture to avoid double counts.
+      // App Router client navigations. Disable autocapture to avoid double counts.
       capture_pageview: false,
       capture_pageleave: true,
       // Only create person profiles once a user is identified (#321).

@@ -5,8 +5,8 @@ import { brand } from "~/config/brand";
  *
  * Sharing is the "pass it down" loop, so the words matter: a warm, familial
  * one-liner naming the recipe (and the cook, when known) beats a naked URL in a
- * family chat. Kept short for messaging apps, with no hashtags or promo fluff —
- * see the share-text pattern in docs/voice-and-tone.md.
+ * family chat. Kept short for messaging apps, with no hashtags or promo fluff.
+ * See the share-text pattern in docs/voice-and-tone.md.
  *
  * The returned `text` is the message WITHOUT the URL (for `navigator.share`,
  * which takes `url` separately). Use {@link shareMessageWithUrl} for the
@@ -23,7 +23,7 @@ export function shareText({
   if (cook) {
     return `${title}, from ${cook}'s kitchen. Made with ${brand.name}.`;
   }
-  return `${title} — a family recipe on ${brand.name}.`;
+  return `${title}. A family recipe on ${brand.name}.`;
 }
 
 /** The share message with the link appended, for the clipboard fallback. */

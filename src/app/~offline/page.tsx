@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("metaTitle"),
     description: t("metaDescription", { brand: brand.name }),
-    // The offline fallback is a utility shell with no standalone search value —
+    // The offline fallback is a utility shell with no standalone search value.
     // keep crawlers from indexing it (it's precached and served only offline).
     robots: { index: false, follow: false },
   };

@@ -54,7 +54,7 @@ describe("ratingBreakdown (issue #334)", () => {
       { value: 0 },
       { value: 6 },
     ]);
-    // 4.6 → 5, 2.4 → 2; 0 and 6 are dropped from the distribution.
+    // 4.6 → 5, 2.4 → 2. 0 and 6 are dropped from the distribution.
     expect(result.distribution).toEqual([
       { star: 5, count: 1 },
       { star: 4, count: 0 },

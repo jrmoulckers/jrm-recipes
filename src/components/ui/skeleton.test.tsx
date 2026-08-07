@@ -1,6 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { IntlWrapper } from "~/test/intl";
 import { ListRowSkeleton, RecipeCardSkeleton, Skeleton } from "./skeleton";
 
 afterEach(cleanup);
@@ -63,7 +64,9 @@ describe("Skeleton", () => {
 
 describe("composed skeletons", () => {
   it("RecipeCardSkeleton mirrors the card surface with several blocks", () => {
-    const { container } = render(<RecipeCardSkeleton />);
+    const { container } = render(<RecipeCardSkeleton />, {
+      wrapper: IntlWrapper,
+    });
     const card = container.firstElementChild as HTMLElement;
     expect(card.className).toContain("bg-card");
     expect(card.className).toContain("border-border");
@@ -74,9 +77,11 @@ describe("composed skeletons", () => {
   });
 
   it("exposes exactly one loading status per composed skeleton", () => {
-    const { container } = render(<RecipeCardSkeleton />);
+    const { container } = render(<RecipeCardSkeleton />, {
+      wrapper: IntlWrapper,
+    });
     const card = container.firstElementChild as HTMLElement;
-    // Root carries the single status; the inner blocks are decorative so a card
+    // Root carries the single status. The inner blocks are decorative so a card
     // announces "loading" once, not seven times.
     expect(card).toHaveAttribute("role", "status");
     expect(card).toHaveAttribute("aria-busy", "true");
@@ -84,7 +89,9 @@ describe("composed skeletons", () => {
   });
 
   it("ListRowSkeleton mirrors a media-and-text row", () => {
-    const { container } = render(<ListRowSkeleton />);
+    const { container } = render(<ListRowSkeleton />, {
+      wrapper: IntlWrapper,
+    });
     const row = container.firstElementChild as HTMLElement;
     expect(row.className).toContain("bg-card");
     // avatar + 3 text lines = 4 skeleton blocks.

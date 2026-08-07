@@ -5,7 +5,7 @@ import {
   type OfflineFallbackRequest,
 } from "./offline-fallback";
 
-/** Build a minimal request shape; a real `Request` can't set `destination`. */
+/** Build a minimal request shape. A real `Request` can't set `destination`. */
 const makeRequest = (
   destination: Request["destination"],
   headers: Record<string, string> = {},
@@ -20,7 +20,7 @@ describe("isOfflineFallbackRequest", () => {
   });
 
   it("matches soft App Router navigations that fetch an RSC payload", () => {
-    // Client-side navigations don't request a document — they carry `RSC: 1`.
+    // Client-side navigations don't request a document. They carry `RSC: 1`.
     expect(isOfflineFallbackRequest(makeRequest("", { RSC: "1" }))).toBe(true);
   });
 

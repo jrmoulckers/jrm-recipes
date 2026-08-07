@@ -227,7 +227,7 @@ describe("getRecipeTimeline pagination (#159)", () => {
   });
 
   it("skips the synthetic origin and fork side-list on a continuation page", async () => {
-    // A later page carries only events — no `created`/`adapted` origin present.
+    // A later page carries only events. No `created`/`adapted` origin present.
     dbMock.query.recipeEvents.findMany.mockResolvedValue([
       eventRow("e5", 5),
       eventRow("e6", 6),
@@ -324,7 +324,7 @@ describe("getRecipeFamilyTree (#359)", () => {
   });
 
   it("does not loop on cyclic or self-referential fork links", async () => {
-    // Current recipe's parent link points back at itself; a descendant links
+    // Current recipe's parent link points back at itself. A descendant links
     // back up to the current recipe. Neither should re-enter the tree.
     dbMock.query.recipes.findFirst.mockResolvedValueOnce(recipeRow("c", "c"));
     dbMock.query.recipes.findMany

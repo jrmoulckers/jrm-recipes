@@ -3,8 +3,8 @@
  * and `server-only` so the merge shape can be unit-tested without a database.
  *
  * Suggestions carry free-text `body` only (no structured ingredient/step
- * target), so "applying" one means appending its text — credited to the
- * contributor — to the recipe's notes, which the owner can then refine.
+ * target), so "applying" one means appending its text. Credited to the
+ * contributor. To the recipe's notes, which the owner can then refine.
  */
 
 const FALLBACK_CONTRIBUTOR = "a family cook";
@@ -36,6 +36,6 @@ export function mergeSuggestionIntoNotes(
   if (!suggestion) return base;
 
   const who = contributor.trim() || FALLBACK_CONTRIBUTOR;
-  const line = `${suggestion} — suggested by ${who}`;
+  const line = `${suggestion}. Suggested by ${who}`;
   return base ? `${base}\n\n${line}` : line;
 }

@@ -5,6 +5,7 @@ import {
   BrandCard,
   CREAM,
   MUTED,
+  OG_SITE_HOST,
   TERRACOTTA,
   TERRACOTTA_DEEP,
   Wordmark,
@@ -12,11 +13,11 @@ import {
 } from "../recipes/[id]/_assets/card";
 
 /**
- * Shared, satori-safe Open Graph cards for public *social* surfaces — creator
+ * Shared, satori-safe Open Graph cards for public *social* surfaces. Creator
  * profiles (issue #337) and group cookbooks (issue #339). Reuses the recipe
  * card's brand palette, `Wordmark`, and neutral `BrandCard` fallback plus the
  * font/cover helpers in `_assets/og.ts`, so there's a single satori setup. Only
- * public-safe fields are ever passed in; unknown handles/slugs render the
+ * public-safe fields are ever passed in. Unknown handles/slugs render the
  * neutral brand card via `data === null`.
  */
 
@@ -72,6 +73,9 @@ function AvatarCircle({
         flexShrink: 0,
       }}
     >
+      {/* satori renders this tree to a PNG, so `alt` is inert here. The text
+          alternative for the finished image is `export const alt` in the
+          route's `opengraph-image.tsx`, which Next emits as og:image:alt. */}
       {src ? (
         <img
           src={src}
@@ -164,7 +168,7 @@ function Frame({
           color: MUTED,
         }}
       >
-        heirloom.jrmoulckers.com
+        {OG_SITE_HOST}
       </div>
     </div>
   );

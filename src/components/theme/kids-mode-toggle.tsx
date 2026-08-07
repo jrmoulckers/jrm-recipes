@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Blocks } from "lucide-react";
 
 import { useKidsMode } from "~/components/theme/use-kids-mode";
@@ -10,8 +11,8 @@ import { cn } from "~/lib/utils";
 /**
  * Always-visible, one-tap Kids mode toggle for the site header (#435).
  *
- * Reuses the shared {@link useKidsMode} bridge — the exact same logic the
- * Accessibility dialog toggle calls — so the two stay in perfect sync. It flips
+ * Reuses the shared {@link useKidsMode} bridge. The exact same logic the
+ * Accessibility dialog toggle calls. So the two stay in perfect sync. It flips
  * the UI theme (restoring the previous mode when switched off) and couples the
  * a11y comfort defaults (#445). The filled/active state makes the current mode
  * obvious at a glance without opening any dialog.
@@ -28,6 +29,7 @@ export function KidsModeToggle({
    */
   label?: string;
 }) {
+  const t = useTranslations("theme.kidsMode");
   const { kidsOn, setKidsMode } = useKidsMode();
 
   return (
@@ -37,9 +39,9 @@ export function KidsModeToggle({
       size={label ? "default" : "icon"}
       aria-pressed={kidsOn}
       aria-label={
-        label ? undefined : kidsOn ? "Turn off Kids mode" : "Turn on Kids mode"
+        label ? undefined : kidsOn ? t("turnOffAria") : t("turnOnAria")
       }
-      title={kidsOn ? "Kids mode is on" : "Kids mode"}
+      title={kidsOn ? t("onTitle") : t("title")}
       onClick={() => setKidsMode(!kidsOn)}
       className={cn(
         label && "h-11 w-full justify-start gap-3 px-2 font-medium",

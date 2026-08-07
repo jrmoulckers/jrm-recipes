@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import {
   formatIngredientLine,
   formatRecipeMeta,
@@ -15,6 +17,7 @@ import type { PrintRecipe } from "~/components/print/types";
  * on paper and never touches server-only data.
  */
 export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
+  const t = useTranslations("print.body");
   const meta = formatRecipeMeta(recipe);
   const provenance = provenanceLines(recipe);
   let stepNumber = 0;
@@ -32,9 +35,11 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
       ) : null}
 
       <section className="mt-6">
-        <h3 className="font-display text-lg font-semibold">Ingredients</h3>
+        <h3 className="font-display text-lg font-semibold">
+          {t("ingredients")}
+        </h3>
         {recipe.ingredients.length === 0 ? (
-          <p className="mt-1 text-muted-foreground">No ingredients listed.</p>
+          <p className="mt-1 text-muted-foreground">{t("noIngredients")}</p>
         ) : (
           groupIngredients(recipe.ingredients).map((group, groupIndex) => (
             <div key={group.section ?? `ing-${groupIndex}`} className="mt-2">
@@ -56,9 +61,9 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
       </section>
 
       <section className="mt-6">
-        <h3 className="font-display text-lg font-semibold">Method</h3>
+        <h3 className="font-display text-lg font-semibold">{t("method")}</h3>
         {recipe.steps.length === 0 ? (
-          <p className="mt-1 text-muted-foreground">No steps listed.</p>
+          <p className="mt-1 text-muted-foreground">{t("noSteps")}</p>
         ) : (
           groupSteps(recipe.steps).map((group, groupIndex) => (
             <div key={group.section ?? `step-${groupIndex}`} className="mt-2">
@@ -87,7 +92,7 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
 
       {recipe.notes ? (
         <section className="mt-6">
-          <h3 className="font-display text-lg font-semibold">Notes</h3>
+          <h3 className="font-display text-lg font-semibold">{t("notes")}</h3>
           <p className="mt-1 whitespace-pre-line text-muted-foreground">
             {recipe.notes.trim()}
           </p>
@@ -96,7 +101,7 @@ export function RecipePrintBody({ recipe }: { recipe: PrintRecipe }) {
 
       {recipe.story || provenance.length > 0 ? (
         <section className="mt-6">
-          <h3 className="font-display text-lg font-semibold">Story</h3>
+          <h3 className="font-display text-lg font-semibold">{t("story")}</h3>
           {provenance.map((line) => (
             <p key={line} className="mt-1 text-sm italic text-muted-foreground">
               {line}

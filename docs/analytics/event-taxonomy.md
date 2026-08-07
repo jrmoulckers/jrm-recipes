@@ -29,7 +29,7 @@ This prevents drift such as `recipe_created` vs. `create_recipe`.
 
 ## Capture, consent, and scrubbing
 
-Browser capture flows through `track()` in `src/lib/analytics/index.ts`; server
+Browser capture flows through `track()` in `src/lib/analytics/index.ts`. Server
 capture flows through `captureServer()` in `src/lib/analytics/server.ts`. Both
 paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
 Scrubbing drops keys that look identifying, except allowlisted PostHog fields,
@@ -55,7 +55,7 @@ Current call sites are in the paths named in the "When it fires" column.
 
 | Event       | Properties                                 | When it fires                                                                                                                                            |
 | ----------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `$pageview` | `pathname: string`; `$current_url: string` | On initial load and App Router client navigation in `src/components/analytics/pageview-tracker.tsx`; paths are normalized and query strings are dropped. |
+| `$pageview` | `pathname: string`; `$current_url: string` | On initial load and App Router client navigation in `src/components/analytics/pageview-tracker.tsx`. Paths are normalized and query strings are dropped. |
 
 ### Recipe creation and editing funnel
 
@@ -97,7 +97,7 @@ Current call sites are in the paths named in the "When it fires" column.
 
 | Event                 | Properties                                                           | When it fires                                                                                                              |
 | --------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `group_created`       | `groupId: string`; `sizeBucket: GroupSizeBucket`                     | After `createGroupAction` creates a group in `src/server/groups/actions.ts`; a new group uses size bucket `"1"`.           |
+| `group_created`       | `groupId: string`; `sizeBucket: GroupSizeBucket`                     | After `createGroupAction` creates a group in `src/server/groups/actions.ts`. A new group uses size bucket `"1"`.           |
 | `invite_sent`         | `groupId: string`; `role: InviteRole`; `sizeBucket: GroupSizeBucket` | When `addMemberAction` adds an existing user to a group in `src/server/groups/actions.ts`.                                 |
 | `invite_accepted`     | `groupId: string`; `role: string`                                    | When a directly added member is activated, or when a new member accepts an invite link, in `src/server/groups/actions.ts`. |
 | `invite_link_created` | `groupId: string`; `role: InviteRole`                                | When a manager creates a shareable invite link in `src/server/groups/actions.ts`.                                          |
@@ -120,7 +120,7 @@ Current call sites are in the paths named in the "When it fires" column.
 
 | Event             | Properties                                     | When it fires                                                                                                               |
 | ----------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `waitlist_joined` | `source: WaitlistSource`; `duplicate: boolean` | After a successful waitlist submission in `src/components/marketing/waitlist-form.tsx`; the email is not an event property. |
+| `waitlist_joined` | `source: WaitlistSource`; `duplicate: boolean` | After a successful waitlist submission in `src/components/marketing/waitlist-form.tsx`. The email is not an event property. |
 
 ### Weekly digest
 
@@ -132,8 +132,8 @@ Current call sites are in the paths named in the "When it fires" column.
 
 | Event                  | Properties                                                           | When it fires                                                                                                                                                                 |
 | ---------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `$feature_flag_called` | `$feature_flag: string`; `$feature_flag_response: string \| boolean` | When `useFeatureFlag()` resolves a key/value and records an exposure in `src/components/analytics/flags-provider.tsx`; deduped per key/value and consent-gated by `track()`.  |
-| `experiment_exposed`   | `experiment: string`; `variant: string`                              | Taxonomy-defined for explicit experiment exposure events in `src/lib/analytics/events.ts`; current code search found `$feature_flag_called` as the active exposure mechanism. |
+| `$feature_flag_called` | `$feature_flag: string`; `$feature_flag_response: string \| boolean` | When `useFeatureFlag()` resolves a key/value and records an exposure in `src/components/analytics/flags-provider.tsx`. Deduped per key/value and consent-gated by `track()`.  |
+| `experiment_exposed`   | `experiment: string`; `variant: string`                              | Taxonomy-defined for explicit experiment exposure events in `src/lib/analytics/events.ts`. Current code search found `$feature_flag_called` as the active exposure mechanism. |
 
 ## Type aliases used by event properties
 

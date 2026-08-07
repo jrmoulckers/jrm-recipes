@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -100,7 +100,7 @@ function playTimerTone() {
 
 /**
  * Fire a system notification for a completed timer when the tab is backgrounded
- * (#186). Foreground completion keeps its tone + toast; this surfaces the alert
+ * (#186). Foreground completion keeps its tone + toast. This surfaces the alert
  * on the lock screen / tray via the SW registration when the cook has stepped
  * away. Best-effort: degrades silently where the SW or notifications are
  * unavailable (dev, unsupported, denied).
@@ -127,7 +127,7 @@ function notifyTimerComplete(input: {
   void navigator.serviceWorker.ready
     .then((registration) => registration.showNotification(title, options))
     .catch(() => {
-      // SW not ready or notifications unavailable — tone + toast already fired.
+      // SW not ready or notifications unavailable. Tone + toast already fired.
     });
 }
 
@@ -150,10 +150,11 @@ function defaultState(
  * Background system notification for a completed custom timer (#392). Mirrors
  * `notifyTimerComplete` but titles the alert with the timer's own label instead
  * of a step number. Best-effort and silent where the SW/notifications aren't
- * available; foreground completion still gets its tone + toast.
+ * available. Foreground completion still gets its tone + toast.
  */
 function notifyCustomTimerComplete(input: {
   label: string;
+  title: string;
   recipeTitle: string;
   recipeSlug: string;
   timerId: string;
@@ -172,7 +173,7 @@ function notifyCustomTimerComplete(input: {
   const url = cookTimerNotificationUrl(input.recipeSlug);
   void navigator.serviceWorker.ready
     .then((registration) =>
-      registration.showNotification(`${input.label} is done`, {
+      registration.showNotification(input.title, {
         body: input.recipeTitle,
         tag: `${COOK_NOTIFICATION_TAG_PREFIX}:${input.recipeSlug}:${input.timerId}`,
         icon: "/icons/icon-192.png",
@@ -181,7 +182,7 @@ function notifyCustomTimerComplete(input: {
       }),
     )
     .catch(() => {
-      // SW not ready or notifications unavailable — tone + toast already fired.
+      // SW not ready or notifications unavailable. Tone + toast already fired.
     });
 }
 
@@ -222,9 +223,10 @@ export function useCookSession(
   const totalSteps = recipe.steps.length;
   const baseServings = recipe.servings ?? null;
   // No stored preference yet? Start from the system the reader's locale implies
-  // (US → imperial, elsewhere → metric); an explicit, persisted choice always
+  // (US → imperial, elsewhere → metric). An explicit, persisted choice always
   // wins during hydration below.
   const locale = useLocale();
+  const tTimer = useTranslations("cook.timer");
 
   const [state, setState] = React.useState<StoredCookState>(() =>
     defaultState(recipe, householdSize, defaultSystemForLocale(locale)),
@@ -266,7 +268,7 @@ export function useCookSession(
     setLoaded(true);
   }, [storageKey, totalSteps, baseServings, householdSize]);
 
-  // Persist after hydration; skipping the pre-load render avoids clobbering
+  // Persist after hydration. Skipping the pre-load render avoids clobbering
   // stored data with the initial defaults.
   React.useEffect(() => {
     if (!loaded || typeof window === "undefined") return;
@@ -377,7 +379,7 @@ export function useCookSession(
       playTimerTone();
       vibrate(HAPTICS.timerComplete);
       track("cook_timer_completed", { recipeId: recipe.id });
-      toast.success(`Step ${index + 1} timer is done`, {
+      toast.success(tTimer("stepDone", { position: index + 1 }), {
         description: step.section ?? recipe.title,
       });
       notifyTimerComplete({
@@ -388,7 +390,14 @@ export function useCookSession(
         stepId: step.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.steps, recipe.title, state.timers]);
+  }, [
+    recipe.id,
+    recipe.slug,
+    recipe.steps,
+    recipe.title,
+    state.timers,
+    tTimer,
+  ]);
 
   // Announce completion once per custom timer (#392), keyed by the timer's own
   // id and titled with its label so several finishing at once each speak for
@@ -402,17 +411,19 @@ export function useCookSession(
       playTimerTone();
       vibrate(HAPTICS.timerComplete);
       track("cook_timer_completed", { recipeId: recipe.id });
-      toast.success(`${timer.label || "Timer"} is done`, {
+      const label = timer.label || tTimer("defaultTimer");
+      toast.success(tTimer("customDone", { label }), {
         description: recipe.title,
       });
       notifyCustomTimerComplete({
-        label: timer.label || "Timer",
+        label,
+        title: tTimer("customDone", { label }),
         recipeTitle: recipe.title,
         recipeSlug: recipe.slug,
         timerId: timer.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.title, state.customTimers]);
+  }, [recipe.id, recipe.slug, recipe.title, state.customTimers, tTimer]);
 
   const goToStep = React.useCallback(
     (index: number) => {
@@ -452,7 +463,7 @@ export function useCookSession(
       announcedTimersRef.current.delete(step.id);
       // Contextual permission ask (#186): the user just chose to run a timer, so
       // prompt now (a user gesture) rather than on cold load. No-op unless the
-      // permission is still "default"; denial degrades to tone + toast only.
+      // permission is still "default". Denial degrades to tone + toast only.
       void requestTimerNotificationPermission(
         typeof Notification !== "undefined" ? Notification : undefined,
       );
@@ -536,7 +547,7 @@ export function useCookSession(
       announcedTimersRef.current.delete(id);
       const timer = makeCustomTimer({
         id,
-        label: input.label.trim() || "Timer",
+        label: input.label.trim() || tTimer("defaultTimer"),
         durationSeconds: input.durationSeconds,
         stepPosition: input.stepPosition ?? null,
         start: true,
@@ -547,7 +558,7 @@ export function useCookSession(
       }));
       return id;
     },
-    [recipe.id],
+    [recipe.id, tTimer],
   );
 
   const startCustomTimer = React.useCallback((id: string) => {

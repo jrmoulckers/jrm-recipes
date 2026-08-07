@@ -3,7 +3,7 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-// searchFilterConditions only touches `db` for free-text/tag EXISTS subqueries;
+// searchFilterConditions only touches `db` for free-text/tag EXISTS subqueries.
 // every case here avoids those, so a bare stub keeps the import side-effect-free.
 vi.mock("~/server/db", () => ({ db: {}, isDbConfigured: () => true }));
 
@@ -50,7 +50,7 @@ describe("searchFilterConditions (scoped facet counts, #274)", () => {
       tag: ["vegan", "weeknight"],
       difficulty: "easy",
     });
-    // Only the difficulty filter should remain — no correlated tag subquery.
+    // Only the difficulty filter should remain. No correlated tag subquery.
     const conditions = searchFilterConditions(search, { skip: "tag" });
     expect(conditions).toHaveLength(1);
     expect(render(search, { skip: "tag" })).not.toContain("exists");
@@ -63,7 +63,7 @@ describe("searchFilterConditions (scoped facet counts, #274)", () => {
   });
 });
 
-describe("searchFilterConditions — dietary filter (#273)", () => {
+describe("searchFilterConditions. Dietary filter (#273)", () => {
   it("matches a selected diet against BOTH derived and declared columns", () => {
     const sql = render(parseRecipeSearch({ diet: "vegan" }));
     expect(sql).toContain("dietary_tags");
@@ -87,7 +87,7 @@ describe("searchFilterConditions — dietary filter (#273)", () => {
   });
 });
 
-describe("searchFilterConditions — viewer-scoped params stay out (#91)", () => {
+describe("searchFilterConditions. Viewer-scoped params stay out (#91)", () => {
   it("emits no predicate for group or mine (they filter in searchRecipes)", () => {
     // `group`/`mine` need the viewer + their group ids, so they're applied in
     // `searchRecipes` (like `safeFor`), never in this pure, viewer-less builder.

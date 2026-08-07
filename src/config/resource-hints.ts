@@ -6,13 +6,13 @@
 export const RESOURCE_HINT_ORIGINS = {
   /** Serves the LCP recipe imagery (covers/hero/step) on image-bearing routes. */
   cloudinary: "https://res.cloudinary.com",
-  /** Serves member/group avatars — only when auth is configured. */
+  /** Serves member/group avatars. Only when auth is configured. */
   clerk: "https://img.clerk.com",
 } as const;
 
 /**
  * Origins to preconnect from the root layout. `res.cloudinary.com` is always
- * included because it fronts the LCP image on recipe routes; `img.clerk.com` is
+ * included because it fronts the LCP image on recipe routes. `img.clerk.com` is
  * only added when auth is configured, so we never preconnect to an origin the
  * page can't actually use.
  */

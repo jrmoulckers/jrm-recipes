@@ -32,7 +32,7 @@ const group = { id: "group_1", slug: "family", name: "Family" };
 
 /**
  * Fake Drizzle transaction. `memberships` is consumed in call order for the
- * plain `membershipFor` lookups (actor first, then any target/existing check);
+ * plain `membershipFor` lookups (actor first, then any target/existing check).
  * `memberWithUser` answers the hydrated lookup (the one passing `with`).
  */
 function fakeTx(opts: {
@@ -312,7 +312,7 @@ describe("deleteGroup downgrades group recipes (sp03)", () => {
 /**
  * Cross-tenant / negative-authorization regression guards (issue #220). Each
  * case asserts a privilege boundary and fails if the corresponding guard is
- * removed — the class of access-control regression that otherwise slips through
+ * removed. The class of access-control regression that otherwise slips through
  * CI. Complements the positive role happy-paths above.
  */
 describe("group authz regression guards (i220)", () => {

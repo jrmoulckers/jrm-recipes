@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ChefHat, ListChecks, Check, UtensilsCrossed, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "~/components/ui/button";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
@@ -17,7 +18,7 @@ import type { CookRecipe } from "./types";
  * one". Shown before step 1 when the recipe has ingredients. Reuses the shared
  * IngredientsPanel (scaling, units, and the same checklist state Cook Mode uses)
  * for the gather list, and derives a read-only "prep ahead" list from the
- * recipe's structured ingredient prep notes. Purely additive — nothing here
+ * recipe's structured ingredient prep notes. It is purely additive. Nothing here
  * writes to the recipe or the database.
  */
 export function MiseEnPlaceScreen({
@@ -31,6 +32,7 @@ export function MiseEnPlaceScreen({
   largeTargets: boolean;
   onStart: () => void;
 }) {
+  const t = useTranslations("cook");
   const prepTasks = React.useMemo(
     () => derivePrepTasks(recipe.ingredients),
     [recipe.ingredients],
@@ -45,7 +47,7 @@ export function MiseEnPlaceScreen({
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-muted-foreground">
-              Mise en place
+              {t("miseEnPlace.subtitle")}
             </p>
             <h1 className="truncate font-display text-lg font-semibold tracking-tight sm:text-2xl">
               {recipe.title}
@@ -55,7 +57,7 @@ export function MiseEnPlaceScreen({
             asChild
             variant="ghost"
             size="icon"
-            aria-label="Exit cook mode"
+            aria-label={t("a11y.exit")}
           >
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
@@ -70,13 +72,10 @@ export function MiseEnPlaceScreen({
             🧺
           </span>
           <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Gather &amp; prep everything first
+            {t("miseEnPlace.heading")}
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            Lay out all {ingredientCount}{" "}
-            {ingredientCount === 1 ? "ingredient" : "ingredients"} and finish
-            any prep so you can cook without pausing. Tap items as you set them
-            out.
+            {t("miseEnPlace.body", { count: ingredientCount })}
           </p>
         </div>
 
@@ -84,7 +83,7 @@ export function MiseEnPlaceScreen({
           <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
             <h3 className="flex items-center gap-2 font-display text-xl font-semibold">
               <UtensilsCrossed className="size-5 text-primary" />
-              Prep ahead
+              {t("miseEnPlace.prepAhead")}
             </h3>
             <ul className="mt-4 flex flex-col gap-1.5">
               {prepTasks.map((task) => {
@@ -129,7 +128,7 @@ export function MiseEnPlaceScreen({
                         {task.item}
                         {task.optional && (
                           <span className="ms-1 text-sm text-muted-foreground">
-                            (optional)
+                            {t("miseEnPlace.optional")}
                           </span>
                         )}
                       </span>
@@ -144,7 +143,7 @@ export function MiseEnPlaceScreen({
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
           <h3 className="flex items-center gap-2 font-display text-xl font-semibold">
             <ListChecks className="size-5 text-primary" />
-            Gather your ingredients
+            {t("miseEnPlace.gatherIngredients")}
           </h3>
           <div className="mt-4">
             {ingredientCount > 0 ? (
@@ -157,7 +156,7 @@ export function MiseEnPlaceScreen({
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                No ingredients listed for this recipe.
+                {t("miseEnPlace.noIngredients")}
               </p>
             )}
           </div>
@@ -168,6 +167,7 @@ export function MiseEnPlaceScreen({
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-2">
           <Button
             type="button"
+            data-testid="cook-mode-start"
             onClick={onStart}
             size="xl"
             className={cn(
@@ -176,7 +176,7 @@ export function MiseEnPlaceScreen({
             )}
           >
             <ChefHat aria-hidden="true" />
-            Start cooking
+            {t("miseEnPlace.startCooking")}
           </Button>
         </div>
       </footer>

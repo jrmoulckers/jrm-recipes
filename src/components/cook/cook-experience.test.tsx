@@ -18,7 +18,7 @@ import * as React from "react";
 import { IntlWrapper } from "~/test/intl";
 import { ThemeProvider } from "~/components/theme/theme-provider";
 
-// Cook Mode calls useRouter() for the "Done" flow; stub it so the immersive
+// Cook Mode calls useRouter() for the "Done" flow. Stub it so the immersive
 // chrome renders in jsdom without the App Router runtime.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -38,7 +38,7 @@ afterEach(cleanup);
 
 // ThemeProvider effects lean on matchMedia, which jsdom does not implement.
 // Some blocks below call vi.unstubAllGlobals() (to drop a stubbed speechSynthesis),
-// which would also clear this — so (re)apply it before every test, not just once.
+// which would also clear this. So (re)apply it before every test, not just once.
 function stubMatchMedia() {
   vi.stubGlobal(
     "matchMedia",
@@ -275,7 +275,7 @@ describe("Cook Mode get-ready gate (issue #444)", () => {
   });
 
   it("shows the grown-up-help item only when the recipe has risky steps", () => {
-    const { unmount } = renderKids(makeRecipe()); // "Brown the sausage." — safe
+    const { unmount } = renderKids(makeRecipe()); // "Brown the sausage.". Safe
     expect(screen.queryByText(/cook with a grown-up/i)).toBeNull();
     unmount();
 
@@ -499,7 +499,7 @@ describe("Cook Mode Kids step trail (issue #441)", () => {
         </ThemeProvider>
       </IntlWrapper>,
     );
-    // One accessible marker per step; the bar is replaced by the trail.
+    // One accessible marker per step. The bar is replaced by the trail.
     expect(
       screen.getByRole("button", { name: "Go to step 1 of 3" }),
     ).toBeInTheDocument();

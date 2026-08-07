@@ -25,7 +25,7 @@ export const mealSlot = pgEnum("meal_slot", [
  * A single assignment of a recipe (or a free-form note like "leftovers") to a
  * day + meal slot on a user's weekly plan. `date` is a calendar date with no
  * time component so a plan never drifts across timezones. `recipeId` is nullable
- * so a slot can hold just a note; `groupId` is nullable so a plan can optionally
+ * so a slot can hold just a note. `groupId` is nullable so a plan can optionally
  * be scoped to a family group.
  */
 export const mealPlanEntries = pgTable(

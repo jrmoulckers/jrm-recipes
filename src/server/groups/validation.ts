@@ -33,7 +33,7 @@ export const updateRoleInput = z.object({
   role: manageableRole,
 });
 
-/** Invitee email — validated + normalized, or dropped when left blank. */
+/** Invitee email. Validated + normalized, or dropped when left blank. */
 const optionalInviteEmail = z
   .string()
   .trim()
@@ -45,7 +45,7 @@ const optionalInviteEmail = z
 
 /**
  * A group invitation (issue #181). At least one of `email`/`handle` must be
- * given (mirrored by the `group_invitations_contact_check` DB constraint); the
+ * given (mirrored by the `group_invitations_contact_check` DB constraint). The
  * granted role is limited to the manageable set (never owner). `expiresInDays`
  * bounds how long the accept link stays valid.
  */
@@ -64,8 +64,8 @@ export const inviteInput = z
 /**
  * A shareable group invite link (issue #343). Unlike a targeted invitation this
  * link can be forwarded to anyone, so its role is deliberately limited to the
- * non-privileged set (`member`/`kid`) — a link that mints admins is a footgun.
- * `expiresInDays`/`maxUses` are optional caps; omitting both makes an evergreen,
+ * non-privileged set (`member`/`kid`). A link that mints admins is a footgun.
+ * `expiresInDays`/`maxUses` are optional caps. Omitting both makes an evergreen,
  * unlimited link.
  */
 export const inviteLinkRole = z.enum(["member", "kid"]);

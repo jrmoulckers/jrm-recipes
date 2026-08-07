@@ -1,9 +1,20 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { QuickPlanButton } from "./quick-plan-button";
 import { addEntryAction } from "~/server/planner/actions";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 type ActionResult = { ok: boolean; error?: string };
 
@@ -78,7 +89,7 @@ describe("QuickPlanButton (#379)", () => {
     await user.click(
       screen.getByRole("button", { name: /add to this week's plan/i }),
     );
-    // Default day is the passed-in next empty dinner; slot defaults to dinner.
+    // Default day is the passed-in next empty dinner. Slot defaults to dinner.
     await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
 
     await waitFor(() => expect(mockedAddEntry).toHaveBeenCalledTimes(1));

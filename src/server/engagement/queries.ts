@@ -182,8 +182,8 @@ export async function getAnchoredSuggestions(
  * The members who can be @mentioned on this recipe (issue #340): the recipe
  * author plus its group. Given to the composer for autocomplete and reused by
  * the renderer to resolve which `@handles` become links. Members the viewer has
- * blocked (or who have blocked them) are excluded so you can't mention — and
- * won't be offered — someone you've blocked (#355).
+ * blocked (or who have blocked them) are excluded so you can't mention them and
+ * won't be offered. Someone you've blocked (#355).
  */
 export async function getMentionCandidates(
   recipeId: string,

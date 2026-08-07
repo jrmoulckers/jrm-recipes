@@ -45,7 +45,7 @@ export type ReactionCount = {
 
 /**
  * Optimistically toggle the viewer's reaction for `emoji` against a target's
- * current counts. Adding when absent increments and marks reacted; toggling an
+ * current counts. Adding when absent increments and marks reacted. Toggling an
  * existing reaction decrements and unmarks. Zero-count entries are dropped so
  * the bar only shows emoji someone actually used. Pure: returns a new array.
  */

@@ -16,8 +16,8 @@ export type Technique = {
   description: string;
   /**
    * Optional playful, pre-reader-friendly one-liner shown instead of `shortTip`
-   * when Kids mode is active (#446). Plain words a 9-year-old actually knows —
-   * no "emulsify" or "until ribbons form". Falls back to `shortTip` when unset.
+   * when Kids mode is active (#446). Plain words a 9-year-old actually knows.
+   * No "emulsify" or "until ribbons form". Falls back to `shortTip` when unset.
    */
   kidTip?: string;
 };
@@ -46,18 +46,18 @@ type TechniqueSeed = Technique & { aliases?: string[] };
 
 /**
  * Kid-friendly one-liners keyed by technique slug (#446). Seeded for the most
- * common beginner techniques; anything unlisted simply falls back to the adult
+ * common beginner techniques. Anything unlisted simply falls back to the adult
  * `shortTip`. Static + bundled, so the tutor still works offline.
  */
 const KID_TIPS: Record<string, string> = {
   dice: "Cut it into little squares, about the size of dice.",
   mince: "Chop it up super tiny, into teeny-tiny bits.",
-  chop: "Cut it into bite-size pieces — not too fussy!",
+  chop: "Cut it into bite-size pieces. Not too fussy!",
   julienne: "Cut it into skinny little sticks, like matchsticks.",
   saute: "Cook it fast in a little oil and keep it moving!",
   sear: "Cook one side in a hot pan so it gets brown and yummy.",
   boil: "Heat the water until it's full of big, jumpy bubbles.",
-  simmer: "Keep it just below a boil — tiny, gentle bubbles.",
+  simmer: "Keep it just below a boil. Tiny, gentle bubbles.",
   poach: "Cook it gently in water that's barely wiggling.",
   steam: "Cook it over bubbly water, sitting up in a basket.",
   roast: "Cook it in the oven until it's golden and yummy.",
@@ -81,7 +81,7 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Cut into even, square-ish cubes so everything cooks at the same rate.",
     description:
-      "Trim the ingredient flat so it doesn't roll, slice into planks, cut the planks into sticks, then cut across to make cubes. Small dice is roughly 6 mm; large dice about 2 cm. Even sizing is what keeps cooking uniform.",
+      "Trim the ingredient flat so it doesn't roll, slice into planks, cut the planks into sticks, then cut across to make cubes. Small dice is roughly 6 mm. Large dice about 2 cm. Even sizing is what keeps cooking uniform.",
     aliases: ["diced", "dicing"],
   },
   {
@@ -95,7 +95,7 @@ const SEED: TechniqueSeed[] = [
   {
     slug: "chop",
     name: "Chop",
-    shortTip: "Cut into bite-size, roughly even pieces — tidy but not fussy.",
+    shortTip: "Cut into bite-size, roughly even pieces. Tidy but not fussy.",
     description:
       "A general cut where uniformity matters more than precision. Keep the knife tip on the board and rock the blade through the food. 'Roughly chopped' just means bigger, more casual pieces.",
     aliases: ["chopped", "chopping", "rough chop", "roughly chopped"],
@@ -130,7 +130,7 @@ const SEED: TechniqueSeed[] = [
     name: "Sear",
     shortTip: "Blast one side in a hot, dry-ish pan to build a browned crust.",
     description:
-      "Get the pan and fat hot before the food goes in, then leave it undisturbed so a deep crust forms via the Maillard reaction. Pat the surface dry first — moisture is the enemy of a good sear.",
+      "Get the pan and fat hot before the food goes in, then leave it undisturbed so a deep crust forms via the Maillard reaction. Pat the surface dry first. Moisture is the enemy of a good sear.",
     aliases: ["seared", "searing"],
   },
   {
@@ -138,7 +138,7 @@ const SEED: TechniqueSeed[] = [
     name: "Caramelize",
     shortTip: "Cook sugars low and slow until deeply browned and sweet-nutty.",
     description:
-      "Whether it's onions or sugar, gentle sustained heat turns natural sugars golden to brown, unlocking rich, complex flavor. It takes patience — rushing over high heat scorches instead of caramelizes.",
+      "Whether it's onions or sugar, gentle sustained heat turns natural sugars golden to brown, unlocking rich, complex flavor. It takes patience. Rushing over high heat scorches instead of caramelizes.",
     aliases: [
       "caramelise",
       "caramelized",
@@ -162,7 +162,7 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Brown, then simmer gently in a little liquid, covered, until tender.",
     description:
-      "A combination method: sear for flavor, then cook low and slow partly submerged in liquid. Ideal for tough cuts — collagen melts into gelatin, leaving meat meltingly tender and the liquid rich.",
+      "A combination method: sear for flavor, then cook low and slow partly submerged in liquid. Ideal for tough cuts. Collagen melts into gelatin, leaving meat meltingly tender and the liquid rich.",
     aliases: ["braised", "braising"],
   },
   {
@@ -171,14 +171,14 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Boil briefly, then plunge into ice water to lock color and crunch.",
     description:
-      "A quick dip in rapidly boiling water sets bright color and par-cooks vegetables; the ice-water 'shock' stops cooking instantly. Also loosens skins on tomatoes and peaches for easy peeling.",
+      "A quick dip in rapidly boiling water sets bright color and par-cooks vegetables. The ice-water 'shock' stops cooking instantly. Also loosens skins on tomatoes and peaches for easy peeling.",
     aliases: ["blanched", "blanching", "shock", "parboil"],
   },
   {
     slug: "simmer",
     name: "Simmer",
     shortTip:
-      "Keep the liquid just below a boil — small bubbles, gentle motion.",
+      "Keep the liquid just below a boil. Small bubbles, gentle motion.",
     description:
       "Look for lazy bubbles breaking the surface rather than a rolling boil. Simmering cooks food gently and evenly, keeps proteins tender and lets flavors meld without the violent agitation of a hard boil.",
     aliases: ["simmered", "simmering"],
@@ -188,7 +188,7 @@ const SEED: TechniqueSeed[] = [
     name: "Boil",
     shortTip: "Cook in liquid at a full, rolling bubble (100°C / 212°F).",
     description:
-      "Vigorous, constant bubbles that keep food moving — right for pasta, grains and blanching. A 'rolling boil' can't be stirred down; for delicate foods, drop to a simmer instead.",
+      "Vigorous, constant bubbles that keep food moving. Right for pasta, grains and blanching. A 'rolling boil' can't be stirred down. For delicate foods, drop to a simmer instead.",
     aliases: ["boiled", "boiling", "rolling boil"],
   },
   {
@@ -196,7 +196,7 @@ const SEED: TechniqueSeed[] = [
     name: "Poach",
     shortTip: "Cook gently submerged in barely-trembling liquid (70–80°C).",
     description:
-      "The most delicate wet-heat method — the liquid steams and shivers but never bubbles. Perfect for eggs, fish and fruit where you want silky, tender results without toughening.",
+      "The most delicate wet-heat method. The liquid steams and shivers but never bubbles. Perfect for eggs, fish and fruit where you want silky, tender results without toughening.",
     aliases: ["poached", "poaching"],
   },
   {
@@ -228,7 +228,7 @@ const SEED: TechniqueSeed[] = [
     name: "Fold",
     shortTip: "Combine gently with a spatula to keep air in the batter.",
     description:
-      "Cut down through the mixture, sweep across the bowl bottom and lift over the top, rotating the bowl. Used for whipped egg whites or cream so the airy volume survives — never stir or beat.",
+      "Cut down through the mixture, sweep across the bowl bottom and lift over the top, rotating the bowl. Used for whipped egg whites or cream so the airy volume survives. Never stir or beat.",
     aliases: ["folded", "folding", "fold in", "folded in"],
   },
   {
@@ -244,7 +244,7 @@ const SEED: TechniqueSeed[] = [
     name: "Whip",
     shortTip: "Beat vigorously to trap air until light and voluminous.",
     description:
-      "Whipping cream or egg whites unfolds proteins and fats around air bubbles, building volume and structure. Stop at the peak you need — soft peaks slump, stiff peaks stand — and don't over-whip or it breaks.",
+      "Whipping cream or egg whites unfolds proteins and fats around air bubbles, building volume and structure. Stop at the peak you need. Soft peaks slump, stiff peaks stand. And don't over-whip or it breaks.",
     aliases: ["whipped", "whipping"],
   },
   {
@@ -252,7 +252,7 @@ const SEED: TechniqueSeed[] = [
     name: "Cream",
     shortTip: "Beat butter and sugar until pale, fluffy, and aerated.",
     description:
-      "The foundation of many cakes and cookies. Beating softened butter with sugar drives in tiny air pockets that leaven the bake. Go until noticeably lighter in color and texture — usually a few minutes.",
+      "The foundation of many cakes and cookies. Beating softened butter with sugar drives in tiny air pockets that leaven the bake. Go until noticeably lighter in color and texture. Usually a few minutes.",
     aliases: ["creamed", "creaming"],
   },
   {
@@ -260,7 +260,7 @@ const SEED: TechniqueSeed[] = [
     name: "Knead",
     shortTip: "Work the dough to develop gluten into a smooth, elastic ball.",
     description:
-      "Push, fold and turn dough repeatedly to align gluten strands, which give bread its chew and rise. It's done when the dough is smooth and springs back when poked — typically 8–10 minutes by hand.",
+      "Push, fold and turn dough repeatedly to align gluten strands, which give bread its chew and rise. It's done when the dough is smooth and springs back when poked. Typically 8–10 minutes by hand.",
     aliases: ["kneaded", "kneading"],
   },
   {
@@ -268,7 +268,7 @@ const SEED: TechniqueSeed[] = [
     name: "Proof",
     shortTip: "Let yeasted dough rest and rise until puffy before baking.",
     description:
-      "Resting time lets yeast produce gas that inflates the dough. Proof somewhere warm and draft-free until roughly doubled; a gentle poke should spring back slowly. Also called proving.",
+      "Resting time lets yeast produce gas that inflates the dough. Proof somewhere warm and draft-free until roughly doubled. A gentle poke should spring back slowly. Also called proving.",
     aliases: [
       "proofed",
       "proofing",
@@ -293,7 +293,7 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Whisk fat into liquid in a slow stream to make a stable, creamy blend.",
     description:
-      "Emulsifying suspends tiny droplets of oil in water (or vice versa) so they don't separate — think vinaigrette, mayo or hollandaise. Add the oil gradually while whisking hard, often with an emulsifier like egg yolk or mustard.",
+      "Emulsifying suspends tiny droplets of oil in water (or vice versa) so they don't separate. Think vinaigrette, mayo or hollandaise. Add the oil gradually while whisking hard, often with an emulsifier like egg yolk or mustard.",
     aliases: ["emulsified", "emulsifying", "emulsion"],
   },
   {
@@ -302,14 +302,14 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Warm eggs (or chocolate) gradually so they don't seize or scramble.",
     description:
-      "For custards, whisk a little hot liquid into the eggs to raise their temperature slowly before combining fully — this prevents curdling. For chocolate, controlled heating and cooling sets it glossy and snappy.",
+      "For custards, whisk a little hot liquid into the eggs to raise their temperature slowly before combining fully. This prevents curdling. For chocolate, controlled heating and cooling sets it glossy and snappy.",
     aliases: ["tempered", "tempering"],
   },
   {
     slug: "zest",
     name: "Zest",
     shortTip:
-      "Grate only the colored citrus peel — avoid the bitter white pith.",
+      "Grate only the colored citrus peel. Avoid the bitter white pith.",
     description:
       "The outer rind holds aromatic oils that add bright citrus flavor. Use a microplane or zester and turn the fruit as you go, stopping at the white pith beneath, which tastes bitter.",
     aliases: ["zested", "zesting"],
@@ -320,7 +320,7 @@ const SEED: TechniqueSeed[] = [
     shortTip:
       "Soak in a seasoned liquid to add flavor and, with acid, tenderize.",
     description:
-      "A marinade of acid, fat and aromatics seasons the surface and can slightly tenderize proteins. Marinate in the fridge; acidic mixes work in as little as 30 minutes, while tougher cuts benefit from hours.",
+      "A marinade of acid, fat and aromatics seasons the surface and can slightly tenderize proteins. Marinate in the fridge. Acidic mixes work in as little as 30 minutes, while tougher cuts benefit from hours.",
     aliases: ["marinated", "marinating", "marinade"],
   },
   {
@@ -328,7 +328,7 @@ const SEED: TechniqueSeed[] = [
     name: "Reduce",
     shortTip: "Simmer a liquid down to concentrate flavor and thicken it.",
     description:
-      "Boiling or simmering evaporates water, intensifying taste and body. Reduce sauces, stocks and glazes uncovered until they coat the back of a spoon. It only concentrates — so salt at the end.",
+      "Boiling or simmering evaporates water, intensifying taste and body. Reduce sauces, stocks and glazes uncovered until they coat the back of a spoon. It only concentrates, so salt at the end.",
     aliases: ["reduced", "reducing", "reduction"],
   },
   {
@@ -336,7 +336,7 @@ const SEED: TechniqueSeed[] = [
     name: "Rest",
     shortTip: "Let cooked meat sit before slicing so juices redistribute.",
     description:
-      "Resting lets the muscle fibers relax and reabsorb juices that heat pushed to the center, so they stay on the plate instead of running out. Tent loosely with foil; a few minutes for steaks, longer for roasts.",
+      "Resting lets the muscle fibers relax and reabsorb juices that heat pushed to the center, so they stay on the plate instead of running out. Tent loosely with foil. A few minutes for steaks, longer for roasts.",
     aliases: ["rested", "resting", "let rest"],
   },
   {
@@ -344,7 +344,7 @@ const SEED: TechniqueSeed[] = [
     name: "Purée",
     shortTip: "Blend or mash until completely smooth.",
     description:
-      "Process cooked or soft ingredients into a uniform, lump-free consistency with a blender, food processor or food mill. The base for smooth soups and sauces; add liquid gradually to reach the texture you want.",
+      "Process cooked or soft ingredients into a uniform, lump-free consistency with a blender, food processor or food mill. The base for smooth soups and sauces. Add liquid gradually to reach the texture you want.",
     aliases: ["puree", "pureed", "puréed", "pureeing", "blend", "blended"],
   },
 ];

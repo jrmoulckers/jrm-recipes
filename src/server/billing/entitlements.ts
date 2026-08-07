@@ -23,10 +23,10 @@ import { getUsage } from "./usage";
 import { getActiveGiftPlanId } from "./gifting";
 
 /**
- * Entitlements resolver (issue #302) — the single answer to "what may this user
+ * Entitlements resolver (issue #302). The single answer to "what may this user
  * do right now?"
  *
- * Server actions already gate on `requireUser()`; premium surfaces gate in
+ * Server actions already gate on `requireUser()`. Premium surfaces gate in
  * parallel on entitlements. Resolution reads only the DB (no Stripe network
  * calls in the hot path) and always degrades to Free: unconfigured DB, no
  * billing customer, or no active/trialing subscription all yield the Free
@@ -40,7 +40,7 @@ import { getActiveGiftPlanId } from "./gifting";
 /** Subscription statuses that grant their plan's entitlements. */
 const ENTITLED_STATUSES: readonly SubscriptionStatus[] = ["active", "trialing"];
 
-/** Message thrown by {@link requireEntitlement}; distinct from UNAUTHENTICATED. */
+/** Message thrown by {@link requireEntitlement}. Distinct from UNAUTHENTICATED. */
 export const UPGRADE_REQUIRED = "UPGRADE_REQUIRED";
 
 /**
@@ -105,11 +105,11 @@ export async function getEffectivePlanId(
         ENTITLED_STATUSES.includes(s.status) &&
         (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
     );
-    // Only free/family exist today; any paid plan beats Free.
+    // Only free/family exist today. Any paid plan beats Free.
     if (active.some((s) => s.planId !== "free")) return "family";
   }
 
-  // No entitling subscription — a redeemed, unexpired gift can still grant
+  // No entitling subscription. A redeemed, unexpired gift can still grant
   // Family (#331), resolved here so no feature call site special-cases gifts.
   const giftPlan = await getActiveGiftPlanId(user.id, now);
   return giftPlan ?? "free";
@@ -162,7 +162,7 @@ export async function requireEntitlement(
 
 /**
  * Fraction of a limit at which we start warning the user (issue #318). Chosen so
- * families get a gentle heads-up *before* a hard stop — never a surprise wall.
+ * families get a gentle heads-up *before* a hard stop. Never a surprise wall.
  */
 export const USAGE_WARN_RATIO = 0.8;
 
@@ -171,11 +171,11 @@ export type LimitState = "ok" | "warn" | "blocked";
 
 /** Live snapshot of usage vs. a plan limit, for soft-limit checks + meters. */
 export interface LimitStatus {
-  /** The plan's cap for this metric; `null` means unlimited. */
+  /** The plan's cap for this metric. `null` means unlimited. */
   limit: LimitValue;
   /** Current usage in the active period. */
   used: number;
-  /** Headroom left before the cap; `null` when unlimited. */
+  /** Headroom left before the cap. `null` when unlimited. */
   remaining: number | null;
   /** `used / limit`, clamped to `0` for unlimited plans. */
   ratio: number;
@@ -186,7 +186,7 @@ export interface LimitStatus {
 /**
  * Resolve a user's usage against one of their plan limits (issue #318). Pairs a
  * {@link LimitKey} (the cap, from `src/config/plans.ts`) with its measured
- * {@link UsageMetric} (from `usage.ts`). Unlimited plans are always `ok`; a
+ * {@link UsageMetric} (from `usage.ts`). Unlimited plans are always `ok`. A
  * `0` cap is treated as immediately `blocked`. This is the shared source of
  * truth for both the create/upload soft-limits and the billing usage meters.
  */
@@ -217,9 +217,9 @@ export async function getLimitStatus(
 export interface SubscriptionSnapshot {
   planId: PlanId;
   status: SubscriptionStatus;
-  /** Next renewal boundary; `null` when Stripe hasn't reported one yet. */
+  /** Next renewal boundary. `null` when Stripe hasn't reported one yet. */
   currentPeriodEnd: Date | null;
-  /** Trial end while `status === "trialing"`; `null` otherwise. */
+  /** Trial end while `status === "trialing"`. `null` otherwise. */
   trialEnd: Date | null;
   /** True when the plan is set to lapse at period end (self-serve cancel). */
   cancelAtPeriodEnd: boolean;
@@ -227,8 +227,8 @@ export interface SubscriptionSnapshot {
 
 /**
  * Resolve the caller's active subscription details for the billing settings
- * surface (#319). Mirrors {@link getEffectivePlanId}'s owner resolution — a
- * personal customer OR any group the user belongs to — but returns the winning
+ * surface (#319). Mirrors {@link getEffectivePlanId}'s owner resolution: a
+ * personal customer OR any group the user belongs to. It returns the winning
  * row's full state (status, renewal/trial dates, cancel flag) rather than just
  * the plan id. Returns `null` for the Free case (unconfigured DB, no billing
  * customer, or no entitling subscription), which the UI renders explicitly.
@@ -300,7 +300,7 @@ export async function getSubscriptionSnapshot(
  * Resolve how many seats a group may fill (issue #325).
  *
  * A group's seat allowance is its effective plan's `maxFamilyMembers`, lifted to
- * the purchased subscription `seats` when that's higher — so a Family group
+ * the purchased subscription `seats` when that's higher, so a Family group
  * always gets at least the plan's headline number and more if they bought extra.
  * `null` means unlimited. Falls back to the Free cap when the group has no
  * active subscription (or the DB is unconfigured), and never throws: seat

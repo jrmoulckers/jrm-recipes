@@ -4,7 +4,7 @@
  *
  * Kept free of `db`, `postgres`, and `server-only` so the shapes + invariants
  * can be unit-tested without a database (seed.ts self-executes on import, so it
- * can't be imported from a test). seed.ts feeds these rows straight into
+ * can't be imported from a test). The seed.ts helper feeds these rows straight into
  * idempotent upserts / scoped rebuilds.
  *
  * Every row carries a stable, deterministic id so re-running `pnpm db:seed`
@@ -60,7 +60,7 @@ export function buildCookLogRows(
       recipeId: recipes.gravy,
       userId: ownerId,
       cookedAt: clock(6, 18 * 60),
-      note: "Doubled the batch and froze half — the ribs fell right off the bone.",
+      note: "Doubled the batch and froze half. The ribs fell right off the bone.",
       servingsMade: 8,
     },
     {
@@ -83,7 +83,7 @@ export function buildCookLogRows(
       recipeId: recipes.marinara,
       userId: ownerId,
       cookedAt: clock(3, 19 * 60),
-      note: "Tuesday-night rescue — on the table in 25 minutes.",
+      note: "Tuesday-night rescue. On the table in 25 minutes.",
       servingsMade: 4,
     },
     {

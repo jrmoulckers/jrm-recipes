@@ -19,13 +19,13 @@ import { follows, users } from "~/server/db/schema";
 /**
  * Follow another cook. Enforces every privacy invariant before writing:
  *
- * - you can't follow yourself (`FORBIDDEN`);
+ * - you can't follow yourself (`FORBIDDEN`).
  * - the target must exist and have opted in to a public profile
- *   (`USER_NOT_FOUND` / `FORBIDDEN`);
+ *   (`USER_NOT_FOUND` / `FORBIDDEN`).
  * - a block in either direction blocks the follow (`FORBIDDEN`).
  *
  * Idempotent (`onConflictDoNothing`), and only a genuinely new edge notifies the
- * followee — re-following an already-followed user is a silent no-op.
+ * followee. Re-following an already-followed user is a silent no-op.
  */
 export async function followUser(followerId: string, followeeId: string) {
   if (followerId === followeeId) throw new DomainError("FORBIDDEN");

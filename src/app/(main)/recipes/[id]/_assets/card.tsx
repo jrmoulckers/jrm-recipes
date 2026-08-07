@@ -1,18 +1,33 @@
 /* eslint-disable @next/next/no-img-element */
 import * as React from "react";
 
+import { brand } from "~/config/brand";
+
 /**
  * Shared renderer for the branded recipe "share card" (Open Graph image).
  *
  * Kept out of the route file so it can be reused by the OG route and by any
  * future social surfaces. Everything here is satori-safe (flexbox only, no
- * grid/filter/text-wrap) and fully self-contained — fonts are bundled and the
+ * grid/filter/text-wrap) and fully self-contained. Fonts are bundled and the
  * cover photo is embedded as bytes by the caller, so rendering never depends
  * on a live network fetch.
+ *
+ * The card is an *image*, baked once per recipe and cached by URL, so it has no
+ * request locale to translate against. Everything visible here is brand
+ * identity rather than UI copy: the wordmark, the tagline, and the host. All
+ * three come from config so they stay in one place.
  */
 
 export const SIZE = { width: 1200, height: 630 } as const;
 export const ALT = "A recipe on Heirloom";
+
+/**
+ * Host stamped on the card footer. Derived from `NEXT_PUBLIC_SITE_URL` so a
+ * card generated in any environment shows the right domain, falling back to
+ * production when the var is unset.
+ */
+export const OG_SITE_HOST =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "heirloom.jrmoulckers.com";
 
 export const CREAM = "#fffaf3";
 export const INK = "#3d2817";
@@ -25,7 +40,7 @@ export type CardDifficulty = "easy" | "medium" | "hard";
 export type CardData = {
   title: string;
   description?: string | null;
-  /** Data URI (embedded bytes) — never a remote URL, so satori can't fail. */
+  /** Data URI (embedded bytes). Never a remote URL, so satori can't fail. */
   cover?: string | null;
   author?: string | null;
   group?: string | null;
@@ -120,7 +135,7 @@ export function Wordmark({ onDark }: { onDark: boolean }) {
           color: fg,
         }}
       >
-        Heirloom
+        {brand.name}
       </div>
     </div>
   );
@@ -218,6 +233,9 @@ function CoverCard({ data }: { data: CardData }) {
         fontFamily: "Nunito",
       }}
     >
+      {/* satori renders this tree to a PNG, so `alt` is inert here. The text
+          alternative for the finished image is `export const alt` in the
+          sibling `opengraph-image.tsx`, which Next emits as og:image:alt. */}
       <img
         src={data.cover ?? ""}
         alt=""
@@ -401,7 +419,7 @@ function PlainCard({ data }: { data: CardData }) {
             color: MUTED,
           }}
         >
-          heirloom.jrmoulckers.com
+          {OG_SITE_HOST}
         </div>
       </div>
     </div>
@@ -479,7 +497,7 @@ export function BrandCard() {
             letterSpacing: -0.5,
           }}
         >
-          Heirloom
+          {brand.name}
         </div>
       </div>
       <div
@@ -495,7 +513,7 @@ export function BrandCard() {
           maxWidth: 900,
         }}
       >
-        Family recipes, kept alive.
+        {brand.tagline}
       </div>
     </div>
   );

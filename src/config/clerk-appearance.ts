@@ -10,13 +10,13 @@ type Appearance = NonNullable<
  *
  * Clerk's built-in UI (the sign-in / sign-up modals and the `<UserButton>`
  * dropdown) renders in a portal and otherwise ships with Clerk's own default
- * palette, radius, and typography — which look nothing like the rest of the
+ * palette, radius, and typography, which look nothing like the rest of the
  * app. Rather than hard-code colors here, every value points at the same CSS
  * variables the whole design system already uses (see `styles/themes.css`).
  *
  * Because those tokens live on the root element and flip per UI mode
  * (`data-theme`) and color scheme (`.dark`), Clerk's portaled UI inherits them
- * too — so it automatically tracks all five modes (Kitchen / Whimsy /
+ * too, so it automatically tracks all five modes (Kitchen / Whimsy /
  * Professional / Kids / Barebones) and light/dark with zero extra wiring, just
  * like a native `~/components/ui` primitive.
  */

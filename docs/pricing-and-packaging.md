@@ -3,15 +3,15 @@
 Heirloom's plan catalog is defined in `src/config/plans.ts`. That file is the
 source of truth for plan ids, display copy, feature flags, numeric limits, trial
 length, seat rules, and gift configuration. Real Stripe prices live in Stripe and
-are referenced by environment variable names such as `STRIPE_PRICE_FAMILY`; the
+are referenced by environment variable names such as `STRIPE_PRICE_FAMILY`. The
 display prices in code are product-display values.
 
 ## Current tiers
 
-| Tier   | Display price |   Trial | Tagline                                                | Highlights from code                                                                                                                                                                                           |
-| ------ | ------------: | ------: | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Free   |      $0/month |  0 days | "Everything a family needs to start cooking together." | Up to 50 saved recipes; one family group up to 5 members; 200 MB photo storage; Cook Mode, meal planning, and shopping lists.                                                                                  |
-| Family |      $5/month | 14 days | "Unlimited recipes and AI help for the whole family."  | Unlimited recipes; up to 20 family members across unlimited groups; 10 GB photo and video storage; AI recipe generation, cooking tutor, and substitutions; video and reel exports; 500 AI credits every month. |
+| Tier   | Display price |   Trial | Tagline                                                | Highlights from code                                                                                                                                                                                               |
+| ------ | ------------: | ------: | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Free   |      $0/month |  0 days | "Everything a family needs to start cooking together." | Up to 50 saved recipes, one family group up to 5 members, 200 MB photo storage, Cook Mode, meal planning, and shopping lists.                                                                                      |
+| Family |      $5/month | 14 days | "Unlimited recipes and AI help for the whole family."  | Unlimited recipes, up to 20 family members across unlimited groups, 10 GB photo and video storage, AI recipe generation, cooking tutor, and substitutions, video and reel exports, and 500 AI credits every month. |
 
 ## Entitlement comparison
 
@@ -65,7 +65,7 @@ locked on Free.
   user's personal billing customer and billing customers for every group they
   belong to. Active or trialing paid subscriptions win over Free.
 - The current checkout action in `src/server/billing/actions.ts` creates or
-  finds a personal Stripe customer for the user; group/family billing is
+  finds a personal Stripe customer for the user. Group/family billing is
   represented separately by the group-owned side of the schema.
 - Family subscriptions store `status`, `currentPeriodEnd`, `trialEnd`,
   `cancelAtPeriodEnd`, and `seats` in the `subscriptions` table

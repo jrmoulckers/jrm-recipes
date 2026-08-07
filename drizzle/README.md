@@ -1,8 +1,8 @@
-# `drizzle/` — generated migrations
+# `drizzle/`: generated migrations
 
 These SQL files are **generated** from the Drizzle schema in
 [`../src/server/db/schema/`](../src/server/db/schema/) via `pnpm db:generate`.
-Never hand-edit an already-committed migration — add a new one.
+Never hand-edit an already-committed migration. Add a new one.
 
 Workflow: **edit schema → `pnpm db:generate` → commit the new `drizzle/*.sql`**.
 CI enforces that these stay in sync (the "Migration drift" job fails if a schema

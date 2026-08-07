@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { GitFork } from "lucide-react";
 
@@ -16,12 +17,13 @@ export function RecipeLineage({
     author?: { name: string | null } | null;
   }[];
 }) {
+  const t = useTranslations("recipe");
   if (!parent && adaptations.length === 0) return null;
 
   return (
     <section
       className="rounded-xl border border-border bg-card p-4 shadow-token"
-      aria-label="Recipe lineage"
+      aria-label={t("lineage.aria")}
     >
       <div className="flex flex-col gap-4">
         {parent && (
@@ -31,7 +33,7 @@ export function RecipeLineage({
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-muted-foreground">
-                Adapted from
+                {t("lineage.adaptedFrom")}
               </p>
               <Link
                 href={`/recipes/${parent.slug}`}
@@ -41,7 +43,7 @@ export function RecipeLineage({
               </Link>
               {parent.author?.name && (
                 <p className="mt-1 text-sm text-muted-foreground">
-                  by {parent.author.name}
+                  {t("lineage.by", { name: parent.author.name })}
                 </p>
               )}
             </div>
@@ -52,7 +54,7 @@ export function RecipeLineage({
           <div className="border-t border-border pt-4">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <GitFork className="size-4 text-primary" aria-hidden="true" />
-              Adaptations ({adaptations.length})
+              {t("lineage.adaptations", { count: adaptations.length })}
             </h3>
             <ul className="mt-3 grid gap-2">
               {adaptations.map((adaptation) => (
@@ -67,7 +69,7 @@ export function RecipeLineage({
                       </span>
                       {adaptation.author?.name && (
                         <span className="block truncate text-xs text-muted-foreground">
-                          by {adaptation.author.name}
+                          {t("lineage.by", { name: adaptation.author.name })}
                         </span>
                       )}
                     </span>

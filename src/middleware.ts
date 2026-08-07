@@ -12,7 +12,7 @@ import {
   generateNonce,
 } from "~/lib/security/headers";
 
-/** One year, in seconds — mirrors the locale/theme cookies' persistence. */
+/** One year, in seconds. Mirrors the locale/theme cookies' persistence. */
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 /**
@@ -46,14 +46,14 @@ function securedNext(request: NextRequest): NextResponse {
  *
  * When the `NEXT_LOCALE` cookie is absent we negotiate the best supported
  * locale from the header and persist it on the response cookie. Every
- * downstream reader — `getRequestConfig` on the server and the
- * provider/switcher on the client — then sees one stable cookie value, so the
+ * downstream reader. `getRequestConfig` on the server and the
+ * provider/switcher on the client. Then sees one stable cookie value, so the
  * negotiated language survives reloads with no flash and no hydration mismatch.
  * A present cookie is never overwritten, so an explicit choice from the
  * switcher always wins. The locale value is one of a fixed set of tokens
  * (`en`/`es`/`de`/`ar`), so appending it to `Set-Cookie` needs no escaping and
  * works whether the wrapped middleware returns a `NextResponse` or a plain
- * `Response` (e.g. a Clerk auth redirect).
+ * `Response` (e.g. A Clerk auth redirect).
  */
 function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
   return async (request, event) => {
@@ -80,7 +80,7 @@ function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
  * Fail closed on a real production deploy: skipping Clerk here is exactly the
  * dev-bypass path, so refuse to boot the middleware when it would run
  * unauthenticated in production. Vercel sets `VERCEL_ENV=production` (at build +
- * runtime); `SKIP_ENV_VALIDATION` is the single escape hatch (CI build + e2e).
+ * runtime). `SKIP_ENV_VALIDATION` is the single escape hatch (CI build + e2e).
  * This mirrors the guards in `~/env` and `~/server/auth`.
  */
 const clerkConfigured =

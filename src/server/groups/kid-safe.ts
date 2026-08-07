@@ -8,7 +8,7 @@ import type { MemberRole } from "~/server/db/schema";
  * member. For a family product used by children the kid role must be genuinely
  * safer: no destructive actions, no publishing things to the public web, no
  * member management, and no exposure to moderated/hidden content. This module is
- * the SINGLE SOURCE OF TRUTH for those guardrails — server mutations gate on
+ * the SINGLE SOURCE OF TRUTH for those guardrails. Server mutations gate on
  * {@link roleCan}/{@link assertKidAllowed} and the UI hides/disables the same
  * capabilities via {@link roleCan}, so the two never drift.
  */
@@ -49,7 +49,7 @@ export function isKid(role: MemberRole | null | undefined): boolean {
 
 /**
  * Whether a member with `role` may exercise `capability`. Only the kid role is
- * constrained here — every other role's finer-grained permissions (owner/admin
+ * constrained here. Every other role's finer-grained permissions (owner/admin
  * vs. member) are enforced by the existing role checks in
  * `groups/mutations.ts` and friends. A `null`/absent role (a non-member) is
  * unconstrained by *this* helper: non-members are gated by the surrounding

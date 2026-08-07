@@ -2,8 +2,8 @@
  * The runtime consent gate (issue #324).
  *
  * This module is the single source of truth the typed client (`./index`)
- * consults before dispatching any event. Keeping the decision here — rather than
- * relying only on the vendor SDK's own opt-out — means capture is blocked *before*
+ * consults before dispatching any event. Keeping the decision here. Rather than
+ * relying only on the vendor SDK's own opt-out. Means capture is blocked *before*
  * it ever reaches a backend, so "no events before consent" holds even for the
  * no-op backend and in tests.
  *
@@ -35,7 +35,7 @@ export function configureConsent(patch: Partial<ConsentState>): void {
   state = { ...state, ...patch };
 }
 
-/** Reset to defaults — used in tests. */
+/** Reset to defaults. Used in tests. */
 export function resetConsent(): void {
   state = { ...DEFAULT_STATE };
 }
@@ -46,7 +46,7 @@ export function getConsentState(): ConsentState {
 
 /**
  * Whether capture is currently permitted. The rules, in order:
- *   1. A browser privacy signal (DNT/GPC) always blocks — regardless of config.
+ *   1. A browser privacy signal (DNT/GPC) always blocks. Regardless of config.
  *   2. An explicit "denied" always blocks.
  *   3. When consent is required (opt-in), only an explicit "granted" allows.
  *   4. Otherwise (opt-out model) capture is allowed unless denied above.

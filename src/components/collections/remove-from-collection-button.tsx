@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export function RemoveFromCollectionButton({
   className?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.removeFromCollection");
   const [pending, startTransition] = React.useTransition();
 
   function onRemove(event: React.MouseEvent) {
@@ -33,7 +35,7 @@ export function RemoveFromCollectionButton({
         recipeId,
       });
       if (result.ok) {
-        toast.success("Removed from collection");
+        toast.success(t("toast.removed"));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -48,7 +50,7 @@ export function RemoveFromCollectionButton({
       tone="danger"
       onClick={onRemove}
       disabled={pending}
-      label="Remove from collection"
+      label={t("a11y.remove")}
       className={cn(pending && "cursor-wait", className)}
     >
       {pending ? <Loader2 className="animate-spin" /> : undefined}

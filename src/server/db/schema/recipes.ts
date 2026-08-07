@@ -75,14 +75,14 @@ export const recipes = pgTable(
     prepMinutes: integer(),
     cookMinutes: integer(),
     totalMinutes: integer(),
-    // Inactive / hands-off time — overnight ferments, brines, chilling, resting
+    // Inactive / hands-off time. Overnight ferments, brines, chilling, resting
     // (#409). Kept separate from prep/cook so "30 min work, 12 h waiting" reads
     // honestly and totals can split active vs total. `makeAheadNote` is a short
     // free-text callout ("Make the dough a day ahead").
     restMinutes: integer(),
     makeAheadNote: varchar({ length: 500 }),
     // Required tools/equipment (#410), stored as a simple ordered text[] (NULL
-    // when none) — a Dutch oven, bench scraper, probe thermometer, etc. Optional
+    // when none). A Dutch oven, bench scraper, probe thermometer, etc. Optional
     // so existing recipes are unaffected.
     equipment: text().array(),
     difficulty: recipeDifficulty(),
@@ -91,13 +91,13 @@ export const recipes = pgTable(
     // Structured, author-declared dietary flags (issue #404), stored as the
     // canonical `DietaryTag` strings (vegan, vegetarian, dairy-free,
     // gluten-free, egg-free). Separate from free-text `tags` so "safe for"
-    // filtering and badges have a trustworthy source; NULL/empty means the
+    // filtering and badges have a trustworthy source. NULL/empty means the
     // author made no declaration (not "unsafe").
     dietaryFlags: text().array(),
 
     // DERIVED dietary tags computed from the recipe's ingredients on every
     // create/update (issue #273). Holds ONLY the three reliably-detectable
-    // "-free" tags — dairy-free, gluten-free, egg-free — via allergen detection
+    // "-free" tags, dairy-free, gluten-free, egg-free, via allergen detection
     // (see src/lib/dietary-derive.ts). vegan/vegetarian are intentionally NOT
     // derived here (the allergen KB can't see meat), so they come only from the
     // author-declared `dietaryFlags` above. Search matches the UNION of the two
@@ -108,16 +108,16 @@ export const recipes = pgTable(
     sourceUrl: varchar({ length: 2048 }),
     notes: text(),
 
-    // "Story & memories" (issue #377): free-text heritage — who a recipe came
-    // from, when it's made, what it means — kept distinct from the practical
+    // "Story & memories" (issue #377): free-text heritage. Who a recipe came
+    // from, when it's made, what it means. Kept distinct from the practical
     // `notes` (cooking tips) so the *why* is preserved next to the *how* and can
     // be given its own warm section on the recipe page. NULL/empty means untold.
     story: text(),
 
     // Heirloom provenance (issue #381): short, structured family attribution,
     // distinct from the web `sourceName`/`sourceUrl`. "Handed down from
-    // Great-Grandma Rosa · since the 1930s · Calabria" — displayed as a small
-    // badge/line. All optional; era is free-text ("1935" or "1930s").
+    // Great-Grandma Rosa · since the 1930s · Calabria". Displayed as a small
+    // badge/line. All optional. Era is free-text ("1935" or "1930s").
     handedDownFrom: varchar({ length: 200 }),
     originYear: varchar({ length: 40 }),
     originPlace: varchar({ length: 200 }),
@@ -126,15 +126,15 @@ export const recipes = pgTable(
     // Anonymous viewers can reach an unlisted recipe ONLY via this high-entropy
     // token (served at /r/<shareToken>), never the guessable title-slug.
     // `shareLinkEnabled` lets an owner revoke a leaked link without unsharing the
-    // recipe entirely; `shareTokenRotatedAt` records the last rotation. A NULL
+    // recipe entirely. `shareTokenRotatedAt` records the last rotation. A NULL
     // token means no share link has been minted yet.
     shareToken: varchar({ length: 32 }),
     shareLinkEnabled: boolean().notNull().default(true),
     shareTokenRotatedAt: timestamp({ withTimezone: true }),
 
-    // Optional per-serving nutrition (issue #414). All nullable — a recipe may
+    // Optional per-serving nutrition (issue #414). All nullable. A recipe may
     // carry none, some, or all of these. Energy in kcal and sodium in mg are
-    // whole numbers (integer); macronutrients are grams and may be fractional
+    // whole numbers (integer). Macronutrients are grams and may be fractional
     // (real). Non-negativity is enforced by CHECK constraints below, mirroring
     // the Zod `nutritionInput` bounds in src/server/recipes/validation.ts.
     calories: integer(),
@@ -147,7 +147,7 @@ export const recipes = pgTable(
     fiberGrams: real(),
 
     // Adaptations / timelines. Nullable self-reference to the recipe this was
-    // forked from; on parent deletion the fork survives as an original.
+    // forked from. On parent deletion the fork survives as an original.
     forkedFromId: fk().references((): AnyPgColumn => recipes.id, {
       onDelete: "set null",
     }),
@@ -181,12 +181,12 @@ export const recipes = pgTable(
       .on(t.visibility)
       .where(sql`${t.deletedAt} is null`),
     // Slugs are public lookup keys (getRecipe resolves by slug), so they must be
-    // globally unique — matching groups.slug / tags.slug. The unique constraint
+    // globally unique. Matching groups.slug / tags.slug. The unique constraint
     // also provides the btree index that backs slug lookups, so no separate
     // non-unique index is needed.
     unique("recipes_slug_uq").on(t.slug),
     // Share tokens are the confidentiality secret for unlisted recipes
-    // (issues #204/#207), so they must be globally unique; the constraint's
+    // (issues #204/#207), so they must be globally unique. The constraint's
     // btree also backs the /r/<token> lookup. Multiple NULLs are allowed
     // (Postgres), so recipes without a minted link don't collide.
     unique("recipes_share_token_uq").on(t.shareToken),
@@ -198,9 +198,9 @@ export const recipes = pgTable(
     check("recipes_prep_minutes_check", sql`${t.prepMinutes} >= 0`),
     check("recipes_cook_minutes_check", sql`${t.cookMinutes} >= 0`),
     check("recipes_total_minutes_check", sql`${t.totalMinutes} >= 0`),
-    // Inactive/rest time is non-negative too (#409); NULL passes by SQL semantics.
+    // Inactive/rest time is non-negative too (#409). NULL passes by SQL semantics.
     check("recipes_rest_minutes_check", sql`${t.restMinutes} >= 0`),
-    // Denormalized rating aggregates can never be negative (issue #154); the
+    // Denormalized rating aggregates can never be negative (issue #154). The
     // migration backfills them and the mutations only ever += / -= real votes.
     check("recipes_rating_count_check", sql`${t.ratingCount} >= 0`),
     check("recipes_rating_sum_check", sql`${t.ratingSum} >= 0`),
@@ -226,7 +226,7 @@ export const recipes = pgTable(
  *   - a generated, STORED `tsvector` column `recipes.search_vector`
  *     (`setweight` A/B/C over title/description/cuisine, `english` config) with a
  *     GIN index, queried via `search_vector @@ websearch_to_tsquery(...)` in
- *     `searchRecipes` (see `recipeSearchMatchSql`); and
+ *     `searchRecipes` (see `recipeSearchMatchSql`), and
  *   - `pg_trgm` GIN indexes on `recipe_ingredients.item` and `tags.name` so the
  *     substring `ILIKE '%q%'` fallbacks are index-backed instead of seq scans.
  * Keeping these untracked (like the `pg_trgm` extension itself) avoids
@@ -252,17 +252,17 @@ export const recipeIngredients = pgTable(
     note: varchar({ length: 300 }),
     // Write-time link to the canonical food graph node this line resolves to
     // (nullable, best-effort). Populated by the server-side resolver in
-    // `resolve-food.ts` on every recipe write; NULL when the free-text `item`
+    // `resolve-food.ts` on every recipe write. NULL when the free-text `item`
     // doesn't resolve to a known food. `set null` so deleting a food node
     // detaches the link without touching the ingredient line.
     foodId: fk().references(() => foodItems.id, { onDelete: "set null" }),
-    // Structured prep state — "softened", "finely diced", "room temperature"
+    // Structured prep state. "Softened", "finely diced", "room temperature"
     // (#401). Separate from free-text `note` so it can be emphasized, pulled
     // into a mise en place list, and shown distinctly in Cook Mode.
     prep: varchar({ length: 200 }),
     // Optional link to the step that uses this ingredient (#425), by the step's
     // ordinal position. Positional (not a step id) because steps are rewritten
-    // wholesale on every edit; NULL keeps the ingredient in the overall list only.
+    // wholesale on every edit. NULL keeps the ingredient in the overall list only.
     stepPosition: integer(),
     optional: boolean().notNull().default(false),
   },
@@ -272,7 +272,7 @@ export const recipeIngredients = pgTable(
     // reverse lookup "ingredient lines for a food" and the `set null` cascade
     // both scan by `foodId`.
     index("recipe_ingredients_food_idx").on(t.foodId),
-    // Non-negative quantities; a range's upper bound can't fall below its lower
+    // Non-negative quantities. A range's upper bound can't fall below its lower
     // bound. Mirrors `ingredientInput` (min 0) in src/server/recipes/validation.ts.
     check("recipe_ingredients_quantity_check", sql`${t.quantity} >= 0`),
     check("recipe_ingredients_quantity_max_check", sql`${t.quantityMax} >= 0`),
@@ -305,7 +305,7 @@ export const recipeSteps = pgTable(
     imageUrl: varchar({ length: 2048 }),
     videoUrl: varchar({ length: 2048 }),
     timerSeconds: integer(),
-    // Target internal / doneness temperature in Celsius (#417) — the truth a
+    // Target internal / doneness temperature in Celsius (#417). The truth a
     // timer only approximates ("crumb at 96°C", "chicken at 74°C"). Stored in °C
     // and converted for display to honor the cook's °F/°C choice. `doneness` is
     // a short visual cue ("deep golden, springs back") for when temp isn't apt.
@@ -346,7 +346,7 @@ export const recipeVersions = pgTable(
     // (recipe_id, version_number) is unique at the DB level (issue #151). Version
     // numbers are allocated as max+1, but READ COMMITTED lets two concurrent edits
     // read the same max and write the same number. The constraint makes the DB the
-    // arbiter; its btree also backs the version-ordered history reads that the old
+    // arbiter. Its btree also backs the version-ordered history reads that the old
     // non-unique `recipe_versions_recipe_idx` used to serve.
     unique("recipe_versions_recipe_version_uq").on(t.recipeId, t.versionNumber),
     // Covering index for the authorId foreign key (issue #153): the
@@ -358,7 +358,7 @@ export const recipeVersions = pgTable(
 /**
  * Append-only log of milestones in a recipe's life (created, adapted, edited,
  * published). Powers the "family history" timeline. `relatedRecipeId` links the
- * two halves of a fork: on the new recipe it points back to the source; on the
+ * two halves of a fork: on the new recipe it points back to the source. On the
  * source it points forward to the adaptation.
  */
 export const recipeEvents = pgTable(

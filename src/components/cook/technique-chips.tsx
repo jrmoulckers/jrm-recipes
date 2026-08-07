@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { BookOpen, HelpCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge, badgeVariants } from "~/components/ui/badge";
 import {
@@ -21,7 +22,7 @@ type TechniqueChipsProps = {
 
 /**
  * Renders a step's technique tags as chips. Known techniques become tappable
- * and open a popover with a tip from the bundled knowledge base; unknown or
+ * and open a popover with a tip from the bundled knowledge base. Unknown or
  * empty labels fall back to a plain, non-interactive badge. All data is static
  * so cook mode stays fully offline-capable.
  */
@@ -52,6 +53,7 @@ function TechniqueChip({
   rawLabel: string;
   className?: string;
 }) {
+  const t = useTranslations("cook.techniques");
   const match = lookupTechnique(rawLabel);
   // In Kids mode, prefer the playful kid-friendly tip and skip the adult
   // description (full of grown-up words a pre-reader can't decode yet) (#446).
@@ -67,7 +69,10 @@ function TechniqueChip({
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={`Unrecognized technique ${match.label}. Did you mean ${match.suggestion.label}?`}
+              aria-label={t("unrecognizedAria", {
+                label: match.label,
+                suggestion: match.suggestion.label,
+              })}
               className={cn(
                 badgeVariants({ variant: "outline" }),
                 "cursor-help gap-1 border-dashed text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -80,8 +85,7 @@ function TechniqueChip({
           </PopoverTrigger>
           <PopoverContent align="start" className="flex flex-col gap-2">
             <p className="text-sm text-foreground">
-              Did you mean{" "}
-              <span className="font-semibold">{match.suggestion.label}</span>?
+              {t("didYouMean", { suggestion: match.suggestion.label })}
             </p>
             {suggestedTip && (
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -107,7 +111,7 @@ function TechniqueChip({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Learn the ${match.label} technique`}
+          aria-label={t("learnAria", { label: match.label })}
           className={cn(
             badgeVariants({ variant: "outline" }),
             "cursor-pointer gap-1 border-dashed underline decoration-muted-foreground/60 decoration-dotted underline-offset-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -127,7 +131,7 @@ function TechniqueChip({
             variant="muted"
             className="text-[10px] uppercase tracking-wide"
           >
-            Technique
+            {t("badge")}
           </Badge>
         </div>
         {primaryTip && (

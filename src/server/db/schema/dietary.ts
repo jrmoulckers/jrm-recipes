@@ -7,12 +7,12 @@ import { groups } from "./groups";
 
 /**
  * Per-family-member dietary profiles (issue #396). A cook records each person
- * they cook for once — their allergens, the diets they follow, and an optional
- * daily calorie goal — so downstream "safe for" features can check recipes
+ * they cook for once. Their allergens, the diets they follow, and an optional
+ * daily calorie goal, so downstream "safe for" features can check recipes
  * against real restrictions instead of the cook holding it all in their head.
  *
  * `allergens` stores canonical {@link Allergen} strings and `diets` stores
- * canonical `DietaryTag` strings; validation guarantees no drift from the
+ * canonical `DietaryTag` strings. Validation guarantees no drift from the
  * shared unions. A profile is owned by a user and optionally scoped to a group
  * (e.g. one household), so it can be shared with the right family table.
  */

@@ -4,7 +4,7 @@ import type { NotificationType } from "~/server/db/schema";
  * Warm, human copy for a notification row (issue #348). Pure and UI-agnostic so
  * the bell dropdown, the full inbox, and tests all render the same sentence.
  * `context` is the short pre-rendered label stored on the notification (usually
- * a recipe title or group name); `actor` is the display name of who caused it.
+ * a recipe title or group name). `actor` is the display name of who caused it.
  */
 export function notificationSentence(
   type: NotificationType,

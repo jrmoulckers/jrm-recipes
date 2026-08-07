@@ -11,7 +11,7 @@ export type WaitlistActionResult =
 /**
  * Global, best-effort burst guard (issue #351). A signed-out form has no
  * trustworthy per-caller identity, so this caps the process-wide submission
- * rate as a safety valve; the unique-email index bounds what actually persists.
+ * rate as a safety valve. The unique-email index bounds what actually persists.
  */
 const limiter = createRateLimiter(30, 10_000);
 
@@ -21,7 +21,7 @@ const limiter = createRateLimiter(30, 10_000);
  * signup deduped by email. Works signed-out and degrades gracefully when no DB
  * is configured (the submission is accepted UX-wise but nothing persists). The
  * success analytics event is emitted client-side (browser distinct id) so no
- * PII — not even the email — is ever attached to an event.
+ * PII, not even the email, is ever attached to an event.
  */
 export async function joinWaitlistAction(
   input: WaitlistInput,
@@ -38,14 +38,14 @@ export async function joinWaitlistAction(
   if (!limiter.hit()) {
     return {
       ok: false,
-      error: "Too many requests right now — please try again in a moment.",
+      error: "Too many requests right now. Please try again in a moment.",
     };
   }
 
   try {
     const result = await addToWaitlist(parsed.data);
     // `unavailable` (no DB) still reports success so cold traffic isn't shown a
-    // scary error for a misconfiguration they can't fix; nothing was persisted.
+    // scary error for a misconfiguration they can't fix, since nothing was persisted.
     return { ok: true, duplicate: result === "duplicate" };
   } catch {
     return {

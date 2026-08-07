@@ -4,7 +4,7 @@ This document maps Heirloom's Drizzle schema, delete conventions, integrity chec
 
 ## Source of truth
 
-The schema source of truth is [`src/server/db/schema`](../src/server/db/schema), exported through [`src/server/db/schema/index.ts`](../src/server/db/schema/index.ts). The SQL files under [`drizzle/`](../drizzle/) are generated from that schema with `pnpm db:generate`; [`drizzle/README.md`](../drizzle/README.md) says not to hand-edit already committed migrations. For destructive schema work, follow the expand/contract and forward-fix guidance in [`docs/migrations.md`](./migrations.md).
+The schema source of truth is [`src/server/db/schema`](../src/server/db/schema), exported through [`src/server/db/schema/index.ts`](../src/server/db/schema/index.ts). The SQL files under [`drizzle/`](../drizzle/) are generated from that schema with `pnpm db:generate`. [`drizzle/README.md`](../drizzle/README.md) says not to hand-edit already committed migrations. For destructive schema work, follow the expand/contract and forward-fix guidance in [`docs/migrations.md`](./migrations.md).
 
 ## Shared column helpers
 
@@ -13,7 +13,7 @@ The schema source of truth is [`src/server/db/schema`](../src/server/db/schema),
 - `pk()` creates a `varchar(24)` primary key with a cuid2 default (`createId()`).
 - `fk()` creates a `varchar(24)` foreign-key-width column.
 - `timestamps()` adds `createdAt` and `updatedAt` timestamp columns. Both default to `now()`, and `updatedAt` uses Drizzle's `$onUpdate`.
-- `softDelete(() => users.id)` adds `deletedAt` plus `deletedBy`; `deletedBy` references `users.id` with `onDelete: "set null"`.
+- `softDelete(() => users.id)` adds `deletedAt` plus `deletedBy`. `deletedBy` references `users.id` with `onDelete: "set null"`.
 
 ## Delete conventions
 
@@ -97,7 +97,7 @@ The schema also uses DB-level `CHECK` constraints as a backstop for Zod validati
 
 ## Entity relationship diagram
 
-The diagram focuses on the core relationships declared in `relations()` and `.references()` calls. Optional/set-null relationships are labeled where useful; polymorphic pointers such as `audit_log.targetId`, `reactions.targetId`, and `usage_counters.ownerId` are noted as columns but are not FK edges.
+The diagram focuses on the core relationships declared in `relations()` and `.references()` calls. Optional/set-null relationships are labeled where useful. Polymorphic pointers such as `audit_log.targetId`, `reactions.targetId`, and `usage_counters.ownerId` are noted as columns but are not FK edges.
 
 ```mermaid
 erDiagram

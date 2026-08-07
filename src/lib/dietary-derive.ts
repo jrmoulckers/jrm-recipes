@@ -2,10 +2,10 @@
  * Derive a recipe's structured dietary tags from its ingredient list (issue
  * #273). This is the *derived* half of the hybrid dietary source: it auto-tags
  * only the three "-free" diets the allergen knowledge base can reliably detect
- * from ingredient text — `dairy-free`, `gluten-free`, `egg-free`. The
+ * from ingredient text. `dairy-free`, `gluten-free`, `egg-free`. The
  * self-declared `vegan`/`vegetarian` tags are deliberately NOT derived here,
  * because the KB can't detect meat (a steak recipe would be falsely tagged
- * vegan); those come only from the author's `dietaryFlags` (#404).
+ * vegan). Those come only from the author's `dietaryFlags` (#404).
  *
  * Pure and dependency-light (reuses the allergen detector + the diet→allergen
  * map), so it runs on the write path, in a backfill script, and in unit tests.
@@ -17,7 +17,7 @@ import { type DietaryTag } from "./substitutions";
 
 /**
  * The dietary tags we auto-derive from ingredients, in canonical display order.
- * Only the "-free" tags whose forbidden allergens the KB can detect — never
+ * Only the "-free" tags whose forbidden allergens the KB can detect. Never
  * `vegan`/`vegetarian`, which require author declaration.
  */
 export const DERIVED_DIETARY_TAGS = [

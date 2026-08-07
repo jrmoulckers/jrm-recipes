@@ -1,10 +1,22 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
 
+import { IntlWrapper } from "~/test/intl";
+import esMessages from "~/messages/es.json";
 import { IngredientSubstitutions } from "./ingredient-substitutions";
 
 afterEach(cleanup);
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // "Mayonnaise" is a good fixture: two of its swaps are vegetarian and one
 // ("Vegan mayo") is tagged egg-free/vegan/dairy-free, so dietary filters are
@@ -45,7 +57,7 @@ describe("IngredientSubstitutions dietary filters", () => {
 
     await user.click(screen.getByRole("button", { name: "Egg-free" }));
 
-    // Only the egg-free swap survives; the egg-based ones drop out.
+    // Only the egg-free swap survives. The egg-based ones drop out.
     expect(screen.getByText("Vegan mayo")).toBeInTheDocument();
     expect(screen.queryByText("Plain Greek yogurt")).not.toBeInTheDocument();
     expect(screen.queryByText("Sour cream")).not.toBeInTheDocument();
@@ -74,9 +86,39 @@ describe("IngredientSubstitutions allergen safety (#429)", () => {
       screen.getByRole("button", { name: /substitutions for/i }),
     );
 
-    // The dairy-free swap survives; the dairy-carrying ones are filtered out.
+    // The dairy-free swap survives. The dairy-carrying ones are filtered out.
     expect(await screen.findByText("Vegan mayo")).toBeInTheDocument();
     expect(screen.queryByText("Plain Greek yogurt")).not.toBeInTheDocument();
     expect(screen.queryByText("Sour cream")).not.toBeInTheDocument();
+  });
+});
+
+describe("IngredientSubstitutions localization", () => {
+  it("labels the trigger and dietary filters from the Spanish catalog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    rtlRender(
+      <IntlWrapper locale="es" messages={esMessages}>
+        <IngredientSubstitutions item="mayonnaise" />
+      </IntlWrapper>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /sustituciones para/i }),
+    );
+
+    const group = await screen.findByRole("group", {
+      name: /filtrar sustituciones por necesidad dietética/i,
+    });
+    expect(
+      within(group)
+        .getAllByRole("button")
+        .map((chip) => chip.textContent),
+    ).toEqual([
+      "Vegano",
+      "Vegetariano",
+      "Sin lácteos",
+      "Sin gluten",
+      "Sin huevo",
+    ]);
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
@@ -20,6 +21,9 @@ import {
 
 type Basis = "serving" | "whole";
 
+/** Toggle order for the per-serving / whole-recipe basis switch. */
+const BASIS_OPTIONS = ["serving", "whole"] as const;
+
 /** A family member whose daily calorie goal a serving can be framed against. */
 export type CalorieMember = {
   id: string;
@@ -27,21 +31,21 @@ export type CalorieMember = {
   calorieGoal: number | null;
 };
 
-/** Badge variant + prose for each dietary band (issue #416). */
+/** Badge variant + level key for each dietary band (issue #416). */
 const LEVEL_STYLE: Record<
   NutrientLevel,
-  { variant: "success" | "secondary" | "warning"; word: string }
+  { variant: "success" | "secondary" | "warning" }
 > = {
-  low: { variant: "success", word: "Low" },
-  moderate: { variant: "secondary", word: "Moderate" },
-  high: { variant: "warning", word: "High" },
+  low: { variant: "success" },
+  moderate: { variant: "secondary" },
+  high: { variant: "warning" },
 };
 
 /**
  * A compact Nutrition Facts panel driven by a recipe's stored *per-serving*
  * numbers (issue #414/#415). Per-serving values are invariant as the cook
- * scales the recipe — that's the whole point, since a calorie goal is
- * per-serving — while the "Whole recipe" toggle multiplies them by the current
+ * scales the recipe. That's the whole point, since a calorie goal is
+ * per-serving, while the "Whole recipe" toggle multiplies them by the current
  * serving count. Because it reads the same `servings` the ingredients panel
  * scales with, the two never disagree and nothing is double-counted.
  *
@@ -81,6 +85,7 @@ export function NutritionPanel({
   /** Ingredient lines considered (for the coverage caveat). */
   total?: number;
 }) {
+  const t = useTranslations("nutritionPanel");
   const [basis, setBasis] = React.useState<Basis>("serving");
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
@@ -93,16 +98,16 @@ export function NutritionPanel({
     basis === "whole" ? scaleNutrition(nutrition, wholeServings) : nutrition;
   const rows = nutritionRows(scaled);
 
-  const noun = servingsNoun ?? "servings";
+  const noun = servingsNoun ?? t("servingsNoun");
   const flags = nutritionFlags(nutrition);
 
   // The scaled whole-recipe total for the current (possibly reader-scaled)
   // serving count, shown alongside the per-serving figures so the cook sees both
-  // "per serving" and "makes this much in total" at once — and the total tracks
+  // "per serving" and "makes this much in total" at once, and the total tracks
   // the servings stepper live.
   const wholeCalories = scaleNutrition(nutrition, wholeServings).calories;
 
-  // Only members with a usable goal can produce a percentage; the active
+  // Only members with a usable goal can produce a percentage. The active
   // selection falls back to the first such member so an indicator shows without
   // the cook having to pick one.
   const calorieCandidates = (members ?? []).filter(
@@ -119,7 +124,7 @@ export function NutritionPanel({
 
   return (
     <section
-      aria-label="Nutrition facts"
+      aria-label={t("aria")}
       className={cn(
         "rounded-xl border border-border bg-surface/50 p-4",
         className,
@@ -127,17 +132,17 @@ export function NutritionPanel({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
-          Nutrition
+          {t("heading")}
         </h3>
         <ToggleGroup
-          aria-label="Nutrition basis"
+          aria-label={t("basisAria")}
           className="text-xs"
           value={basis}
           onValueChange={(next) => setBasis(next as Basis)}
         >
-          {(["serving", "whole"] as const).map((b) => (
+          {BASIS_OPTIONS.map((b) => (
             <ToggleGroupItem key={b} value={b} className="px-2 py-1">
-              {b === "serving" ? "Per serving" : "Whole recipe"}
+              {b === "serving" ? t("perServing") : t("wholeRecipe")}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -145,19 +150,27 @@ export function NutritionPanel({
 
       <p className="mt-1 text-xs text-muted-foreground">
         {basis === "whole"
-          ? `Whole recipe · ${formatQuantity(wholeServings)} ${noun}`
-          : "Amounts are per serving"}
+          ? t("wholeRecipeBasis", {
+              servings: formatQuantity(wholeServings),
+              noun,
+            })
+          : t("amountsPerServing")}
       </p>
 
       {basis === "serving" &&
         typeof wholeCalories === "number" &&
         Number.isFinite(wholeCalories) && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Whole recipe ({`${formatQuantity(wholeServings)} ${noun}`}):{" "}
-            <span className="font-medium tabular-nums text-foreground">
-              {formatNutrient(wholeCalories, 0)}
-            </span>{" "}
-            kcal
+            {t.rich("wholeRecipeTotal", {
+              servings: formatQuantity(wholeServings),
+              noun,
+              calories: formatNutrient(wholeCalories, 0),
+              value: (chunks) => (
+                <span className="font-medium tabular-nums text-foreground">
+                  {chunks}
+                </span>
+              ),
+            })}
           </p>
         )}
 
@@ -168,11 +181,11 @@ export function NutritionPanel({
             <span className="font-semibold tabular-nums text-foreground">
               {caloriePercent}%
             </span>{" "}
-            of
+            {t("ofDailyCaloriesFor")}
           </span>
           {calorieCandidates.length > 1 ? (
             <select
-              aria-label="Family member for calorie goal"
+              aria-label={t("memberSelectAria")}
               value={activeMember.id}
               onChange={(e) => setActiveMemberId(e.target.value)}
               className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -188,24 +201,22 @@ export function NutritionPanel({
               {activeMember.name}
             </span>
           )}
-          <span>
-            {"'s "}daily calories
-            {basis === "whole" ? " (whole recipe)" : ""}
-          </span>
+          {basis === "whole" ? <span>{t("wholeRecipeSuffix")}</span> : null}
         </p>
       )}
 
       {flags.length > 0 && (
-        <ul
-          aria-label="Dietary flags per serving"
-          className="mt-3 flex flex-wrap gap-1.5"
-        >
+        <ul aria-label={t("flagsAria")} className="mt-3 flex flex-wrap gap-1.5">
           {flags.map((flag) => {
             const style = LEVEL_STYLE[flag.level];
             return (
               <li key={flag.key}>
                 <Badge variant={style.variant}>
-                  {style.word} {flag.label.toLowerCase()} · {flag.percentDV}% DV
+                  {t("flag", {
+                    level: t(`level.${flag.level}`),
+                    nutrient: flag.label.toLowerCase(),
+                    percent: flag.percentDV,
+                  })}
                 </Badge>
               </li>
             );
@@ -247,9 +258,9 @@ export function NutritionPanel({
             typeof total === "number" &&
             total > 0 &&
             sourced < total
-            ? `Estimated from the ingredient list (${sourced} of ${total} ingredients).`
-            : "Estimated from the ingredient list."
-          : "Estimated values as entered by the cook."}
+            ? t("estimatedPartial", { sourced, total })
+            : t("estimated")
+          : t("entered")}
       </p>
     </section>
   );

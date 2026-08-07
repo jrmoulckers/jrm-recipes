@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { Compass, SearchX } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -11,21 +12,24 @@ import { absoluteUrl } from "~/lib/utils";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { Button } from "~/components/ui/button";
 
-const title = "Discover recipes";
-const description = `Browse public family recipes shared by the ${brand.name} community — no account needed.`;
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  const title = t("discover.title");
+  const description = t("discover.description", { brand: brand.name });
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: { canonical: absoluteUrl("/discover") },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: `${title} · ${brand.name}`,
+  return {
+    title,
     description,
-    url: absoluteUrl("/discover"),
-  },
-  twitter: { card: "summary_large_image", title, description },
-};
+    alternates: { canonical: absoluteUrl("/discover") },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: `${title} · ${brand.name}`,
+      description,
+      url: absoluteUrl("/discover"),
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 /** First row of the widest grid (lg:grid-cols-3) rendered with LCP priority. */
 const LCP_PRIORITY_COUNT = 3;
@@ -42,6 +46,8 @@ export default async function DiscoverPage() {
     listPublicRecipes(),
     getFavoriteRecipeIds(user?.id),
   ]);
+  const t = await getTranslations("recipe.discover");
+  const tMeta = await getTranslations("metadata");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -49,13 +55,15 @@ export default async function DiscoverPage() {
         <div className="flex items-center gap-2 text-primary">
           <Compass className="size-6" />
           <span className="text-sm font-medium uppercase tracking-wide">
-            Discover
+            {t("kicker")}
           </span>
         </div>
         <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-          Public recipes from the {brand.name} community
+          {t("heading", { brand: brand.name })}
         </h1>
-        <p className="max-w-2xl text-muted-foreground">{description}</p>
+        <p className="max-w-2xl text-muted-foreground">
+          {tMeta("discover.description", { brand: brand.name })}
+        </p>
       </header>
 
       {!dbReady || discover.items.length === 0 ? (
@@ -65,14 +73,14 @@ export default async function DiscoverPage() {
           </span>
           <div>
             <h2 className="font-display text-xl font-semibold">
-              No public recipes yet
+              {t("empty.title")}
             </h2>
             <p className="mt-1 max-w-sm text-muted-foreground">
-              Be the first to share one with the world.
+              {t("empty.body")}
             </p>
           </div>
           <Button asChild size="lg">
-            <Link href="/recipes/new">Create a recipe</Link>
+            <Link href="/recipes/new">{t("empty.cta")}</Link>
           </Button>
         </div>
       ) : (

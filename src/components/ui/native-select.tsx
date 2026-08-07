@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   /**
    * Class applied to the positioning wrapper (which owns the chevron). Defaults
-   * to `w-full` for the common form case; pass `w-auto` (or a fixed width) for
+   * to `w-full` for the common form case. Pass `w-auto` (or a fixed width) for
    * compact inline selects such as filter bars.
    */
   wrapperClassName?: string;
@@ -16,7 +16,7 @@ export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelect
  * Standardized native `<select>` control (#UI-overhaul).
  *
  * Some surfaces deliberately use a native select instead of the Radix
- * {@link Select} popover — most notably the recipe editor, where iOS Safari
+ * {@link Select} popover. Most notably the recipe editor, where iOS Safari
  * zooms the viewport for any focused control rendered below 16px and never
  * zooms back out. This primitive is the single source of truth for that
  * pattern: it mirrors the {@link Input}/{@link Textarea} look

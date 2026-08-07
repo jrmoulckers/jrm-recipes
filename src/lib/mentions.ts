@@ -6,7 +6,7 @@
  * A mention is an `@` immediately followed by a handle. Handles are the same
  * charset used for cook profiles (`/cooks/[handle]`): letters, digits,
  * underscore, hyphen, and dot, 1–40 chars. Matching is case-insensitive and a
- * mention only "resolves" when it maps to a real, known member — unknown handles
+ * mention only "resolves" when it maps to a real, known member. Unknown handles
  * are left as plain text.
  */
 
@@ -82,7 +82,7 @@ export function resolveMentions(
 
 /**
  * Split `body` into text + mention segments for rendering. Only handles that
- * resolve to a known candidate become `mention` segments; everything else
+ * resolve to a known candidate become `mention` segments. Everything else
  * (including unknown `@handles`) stays as `text` so it renders verbatim.
  */
 export function splitMentions(

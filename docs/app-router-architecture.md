@@ -67,7 +67,7 @@ The code distinguishes public cacheable reads from personalized reads:
 - [`src/server/recipes/cache-tags.ts`](../src/server/recipes/cache-tags.ts) centralizes tag strings with `PUBLIC_RECIPES_TAG`, `recipeTag(id)`, and `recipeMutationTags(id)`.
 - Recipe actions call `revalidatePath()` for affected route surfaces and `revalidateTag()` through `recipeMutationTags()` after creates, updates, deletes, restores, forks, share-link changes, and version reverts.
 - Group actions in [`src/server/groups/actions.ts`](../src/server/groups/actions.ts) use `revalidatePath("/groups")` plus the affected `/groups/[slug]` and settings paths.
-- Personalized or access-controlled recipe reads stay dynamic; [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) documents that the recipe detail query is intentionally not wrapped in `unstable_cache`.
+- Personalized or access-controlled recipe reads stay dynamic. [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) documents that the recipe detail query is intentionally not wrapped in `unstable_cache`.
 - Auth resolution is request-memoized with React `cache()` in [`src/server/auth/index.ts`](../src/server/auth/index.ts), so multiple server reads in one render share one `auth()`/user lookup without leaking across requests.
 
 Soft-delete filtering is also part of the read convention: [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) defines `notDeleted = isNull(recipes.deletedAt)` and applies it to recipe list, detail, search, lineage, timeline, and facet reads.
@@ -76,9 +76,9 @@ Soft-delete filtering is also part of the read convention: [`src/server/recipes/
 
 [`src/middleware.ts`](../src/middleware.ts) is the request boundary. It wraps requests in Clerk middleware when Clerk keys are configured, or a dev-bypass path for local/test runs when allowed. The same middleware also:
 
-- mints a per-request CSP nonce and forwards it on `x-nonce`;
-- applies security headers;
-- negotiates and persists the locale cookie;
+- mints a per-request CSP nonce and forwards it on `x-nonce`.
+- applies security headers.
+- negotiates and persists the locale cookie.
 - skips static assets and Next internals via the matcher.
 
 App code does not generally import Clerk directly. [`src/server/auth/index.ts`](../src/server/auth/index.ts) centralizes auth:

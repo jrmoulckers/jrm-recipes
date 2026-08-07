@@ -108,7 +108,7 @@ describe("findPreheatCue", () => {
 
 describe("isIngredientForStep", () => {
   it("links a 1-based ingredient stepPosition to the 0-based step position", () => {
-    // The editor stores "Step 1" as stepPosition 1; the DB stores that first
+    // The editor stores "Step 1" as stepPosition 1. The DB stores that first
     // step at position 0. They must still match.
     expect(isIngredientForStep(1, 0)).toBe(true);
     expect(isIngredientForStep(2, 1)).toBe(true);

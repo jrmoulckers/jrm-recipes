@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChefHat, UtensilsCrossed } from "lucide-react";
 
 import { useFeatureFlag } from "~/components/analytics/flags-provider";
@@ -12,10 +13,11 @@ import { pickKidCopy } from "~/config/kid-copy";
 export const EMPTY_LIBRARY_CTA_FLAG = "empty-library-cta";
 
 type EmptyLibraryCopy = { heading: string; body: string; cta: string };
+type EmptyLibraryCopyKey = { heading: string; body: string; cta: string };
 
 /**
  * Copy variants for the empty-library CTA A/B test. `control` reproduces the
- * previous static empty state verbatim; treatment variants are benefit-led. The
+ * previous static empty state verbatim. Treatment variants are benefit-led. The
  * flag is multivariate (string), so more variants can be added here without
  * touching call sites.
  */
@@ -27,8 +29,21 @@ const VARIANTS: Record<string, EmptyLibraryCopy> = {
   },
   benefit: {
     heading: "Save your family's first recipe",
-    body: "Keep the dishes everyone loves in one place — start with the one they always ask you to make.",
+    body: "Keep the dishes everyone loves in one place. Start with the one they always ask you to make.",
     cta: "Save your first recipe",
+  },
+};
+
+const VARIANT_KEYS: Record<string, EmptyLibraryCopyKey> = {
+  control: {
+    heading: "emptyLibrary.control.heading",
+    body: "emptyLibrary.control.body",
+    cta: "emptyLibrary.control.cta",
+  },
+  benefit: {
+    heading: "emptyLibrary.benefit.heading",
+    body: "emptyLibrary.benefit.body",
+    cta: "emptyLibrary.benefit.cta",
   },
 };
 
@@ -42,16 +57,25 @@ export function emptyLibraryCopy(variant: string | boolean): EmptyLibraryCopy {
 
 /**
  * Empty-state CTA for a brand-new (empty) recipe library, A/B tested behind the
- * `empty-library-cta` flag (issue #336). The variant is SSR-evaluated — the root
- * layout seeds every flag into the flags context — so the correct copy renders
+ * `empty-library-cta` flag (issue #336). The variant is SSR-evaluated. The root
+ * layout seeds every flag into the flags context. So the correct copy renders
  * on the first paint with no flicker or layout shift. `useFeatureFlag` records
- * the `$feature_flag_called` exposure on mount; the experiment's primary metric
+ * the `$feature_flag_called` exposure on mount. The experiment's primary metric
  * is `first_recipe_created`.
  */
 export function EmptyLibraryCta() {
+  const t = useTranslations("recipe");
   const variant = useFeatureFlag(EMPTY_LIBRARY_CTA_FLAG, "control");
   const { kidSafe } = useThemeBehavior();
-  const base = emptyLibraryCopy(variant);
+  const key =
+    typeof variant === "string" && variant in VARIANT_KEYS
+      ? VARIANT_KEYS[variant]!
+      : VARIANT_KEYS.control!;
+  const base = {
+    heading: t(key.heading),
+    body: t(key.body),
+    cta: t(key.cta),
+  };
   // Kids mode overrides the A/B copy with simpler words, regardless of variant.
   const copy = {
     heading: pickKidCopy(kidSafe, "empty.recipes.title", base.heading),

@@ -45,8 +45,8 @@ describe("detectPrepAheadCues", () => {
     expect(cues.map((c) => c.kind)).toEqual(["marinate", "overnight"]);
   });
 
-  it("is word-boundaried — no substring false positives", () => {
-    // "chilli"/"chilled-out" must not fire "chill"; "cloak" must not fire "soak"
+  it("is word-boundaried. No substring false positives", () => {
+    // "chilli"/"chilled-out" must not fire "chill". "cloak" must not fire "soak"
     expect(detectPrepAheadCues(["Add chilli flakes"])).toEqual([]);
     expect(detectPrepAheadCues(["Simmer the sauce"])).toEqual([]);
     expect(detectPrepAheadCues(["Serve immediately"])).toEqual([]);
@@ -67,12 +67,12 @@ describe("summarizePrepCues", () => {
       summarizePrepCues(
         detectPrepAheadCues(["Defrost then marinate the chicken"]),
       ),
-    ).toBe("defrost & marinate");
+    ).toBe("defrost and marinate");
     expect(
       summarizePrepCues(
         detectPrepAheadCues(["Defrost, marinate, and chill the chicken"]),
       ),
-    ).toBe("defrost, marinate & chill");
+    ).toBe("defrost, marinate and chill");
   });
 
   it("is empty when there are no cues", () => {
@@ -103,7 +103,7 @@ describe("buildPrepAheadReminders", () => {
       slug: "sunday-roast",
       title: "Sunday Roast",
       dayLabel: "Thursday",
-      summary: "defrost & bring to room temperature",
+      summary: "defrost and bring to room temperature",
     });
   });
 

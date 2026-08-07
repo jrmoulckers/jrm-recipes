@@ -8,10 +8,10 @@ export type TimerStatus = "idle" | "running" | "paused" | "complete";
 
 export type TimerRecord = {
   duration: number;
-  /** Best-known seconds left; recomputed from `endsAt` for running timers. */
+  /** Best-known seconds left. Recomputed from `endsAt` for running timers. */
   remaining: number;
   status: TimerStatus;
-  /** Absolute epoch-ms the timer finishes; only set while running. */
+  /** Absolute epoch-ms the timer finishes. Only set while running. */
   endsAt: number | null;
 };
 
@@ -28,10 +28,10 @@ export type CustomTimer = {
   label: string;
   stepPosition: number | null;
   duration: number;
-  /** Best-known seconds left; recomputed from `endsAt` for running timers. */
+  /** Best-known seconds left. Recomputed from `endsAt` for running timers. */
   remaining: number;
   status: TimerStatus;
-  /** Absolute epoch-ms the timer finishes; only set while running. */
+  /** Absolute epoch-ms the timer finishes. Only set while running. */
   endsAt: number | null;
 };
 
@@ -72,7 +72,7 @@ export function makeTimer(
 
 /**
  * Build a custom timer (#392). Starts running immediately by default (the cook
- * just entered a duration and expects it to count down); pass `start: false`
+ * just entered a duration and expects it to count down). Pass `start: false`
  * for an idle timer. `now` is injectable so callers stay testable.
  */
 export function makeCustomTimer(input: {

@@ -1,9 +1,9 @@
 /**
- * Theme registry — the single source of truth for Heirloom's theming.
+ * Theme registry. The single source of truth for Heirloom's theming.
  *
  * There are two ORTHOGONAL axes:
- *   1. UI mode   (data-theme)  — the five visual "personalities"
- *   2. Color scheme (.dark)    — light / dark / system
+ *   1. UI mode (data-theme). The five visual "personalities"
+ *   2. Color scheme (.dark). Light / dark / system
  *
  * Every component styles itself using the semantic tokens defined in
  * `src/styles/themes.css`. Adding a new UI mode = one new block of tokens in
@@ -15,27 +15,27 @@ export const UI_THEMES = [
     id: "kitchen",
     label: "Kitchen",
     description:
-      "Warm and cozy — creams, terracotta, and a little home-baked charm.",
+      "Warm and cozy. Creams, terracotta, and a little home-baked charm.",
   },
   {
     id: "whimsy",
     label: "Whimsy",
-    description: "Playful and colorful — bubbly shapes and joyful accents.",
+    description: "Playful and colorful. Bubbly shapes and joyful accents.",
   },
   {
     id: "professional",
     label: "Professional",
-    description: "Clean and editorial — quiet, confident, magazine-grade.",
+    description: "Clean and editorial. Quiet, confident, magazine-grade.",
   },
   {
     id: "kids",
     label: "Kids",
-    description: "Big, bright, and friendly — easy taps and cheerful colors.",
+    description: "Big, bright, and friendly. Easy taps and cheerful colors.",
   },
   {
     id: "barebones",
     label: "Simple",
-    description: "Ultra-simple and high-contrast — just the essentials.",
+    description: "Ultra-simple and high-contrast. Just the essentials.",
   },
 ] as const;
 
@@ -54,7 +54,7 @@ export const SCHEME_COOKIE = "heirloom-scheme";
  * Remembers the UI mode that was active before Kids mode was switched on, so
  * turning Kids mode back off restores it instead of always dropping the family
  * into the default theme. Persisted alongside `heirloom-theme` so it survives a
- * reload; never stores `kids` itself.
+ * reload. Never stores `kids` itself.
  */
 export const THEME_PREVIOUS_COOKIE = "heirloom-theme-prev";
 

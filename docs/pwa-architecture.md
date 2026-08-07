@@ -27,11 +27,11 @@ The explicit fallback precache is necessary because the root layout reads cookie
 
 [`src/app/manifest.ts`](../src/app/manifest.ts) serves `/manifest.webmanifest` from brand and default-locale config. The manifest declares:
 
-- standalone display with `display_override: ["standalone", "minimal-ui"]`;
-- `launch_handler.client_mode: "navigate-existing"` so app launches reuse an installed window;
-- `orientation: "any"` for landscape Cook Mode;
-- app icons, maskable icon, shortcuts for new recipe, plan, and shopping;
-- screenshots for richer install UI;
+- standalone display with `display_override: ["standalone", "minimal-ui"]`.
+- `launch_handler.client_mode: "navigate-existing"` so app launches reuse an installed window.
+- `orientation: "any"` for landscape Cook Mode.
+- app icons, maskable icon, shortcuts for new recipe, plan, and shopping.
+- screenshots for richer install UI.
 - a `share_target` that forwards shared links/text/photos to `/import`.
 
 The `/import` route handler in [`src/app/import/route.ts`](../src/app/import/route.ts) redirects shared text/links into the recipe editor and uploads shared photos to Cloudinary only after `getCurrentUser()` succeeds.
@@ -40,18 +40,18 @@ The `/import` route handler in [`src/app/import/route.ts`](../src/app/import/rou
 
 [`src/app/sw.ts`](../src/app/sw.ts) prepends two custom runtime caches before `...defaultCache`, so these routes win before Serwist's defaults.
 
-| Cache name               | Strategy         | What it holds                                                                                                                                       | Bound                                                                                                                   |
-| ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Serwist precache         | Precache         | Generated revisioned app-shell/build assets plus `/~offline` and `/img/recipe-image-placeholder.svg` from `additionalPrecacheEntries`.              | Revisioned by the Serwist manifest and `buildRevision`.                                                                 |
-| `heirloom-recipe-images` | `CacheFirst`     | Cloudinary-backed recipe and Cook Mode images, including direct `res.cloudinary.com` images and `/_next/image?url=<cloudinary>` optimizer requests. | `ExpirationPlugin`: 128 entries, 30 days, `purgeOnQuotaError`; `CacheableResponsePlugin` allows statuses `0` and `200`. |
-| `heirloom-recipes`       | `NetworkFirst`   | Same-origin recipe detail and Cook Mode documents plus their RSC payloads.                                                                          | `networkTimeoutSeconds: 3`; `ExpirationPlugin`: 64 entries, 30 days, `purgeOnQuotaError`; only status `200` is cached.  |
-| Serwist `defaultCache`   | Serwist defaults | Remaining Next.js/runtime requests not matched by the custom recipe caches.                                                                         | Defined by `@serwist/next/worker`.                                                                                      |
+| Cache name               | Strategy         | What it holds                                                                                                                                       | Bound                                                                                                                       |
+| ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Serwist precache         | Precache         | Generated revisioned app-shell/build assets plus `/~offline` and `/img/recipe-image-placeholder.svg` from `additionalPrecacheEntries`.              | Revisioned by the Serwist manifest and `buildRevision`.                                                                     |
+| `heirloom-recipe-images` | `CacheFirst`     | Cloudinary-backed recipe and Cook Mode images, including direct `res.cloudinary.com` images and `/_next/image?url=<cloudinary>` optimizer requests. | `ExpirationPlugin`: 128 entries, 30 days, `purgeOnQuotaError`, and `CacheableResponsePlugin` allows statuses `0` and `200`. |
+| `heirloom-recipes`       | `NetworkFirst`   | Same-origin recipe detail and Cook Mode documents plus their RSC payloads.                                                                          | `networkTimeoutSeconds: 3`, `ExpirationPlugin`: 64 entries, 30 days, `purgeOnQuotaError`, and only status `200` is cached.  |
+| Serwist `defaultCache`   | Serwist defaults | Remaining Next.js/runtime requests not matched by the custom recipe caches.                                                                         | Defined by `@serwist/next/worker`.                                                                                          |
 
 ### Recipe images
 
 [`src/lib/recipe-image-cache.ts`](../src/lib/recipe-image-cache.ts) restricts matches to `request.destination === "image"` and either:
 
-- the exact Cloudinary host `res.cloudinary.com`; or
+- the exact Cloudinary host `res.cloudinary.com`, or
 - the Next image optimizer path `/_next/image` whose decoded `url` parameter points at Cloudinary.
 
 The cache uses `CacheFirst` because recipe photos are effectively immutable and should load instantly once stored. It permits opaque status `0` responses for cross-origin Cloudinary responses and uses an expiration plugin to cap storage.
@@ -68,28 +68,28 @@ The offline page lives at [`src/app/~offline/page.tsx`](../src/app/~offline/page
 
 Fallback matching is shared by [`src/lib/offline-fallback.ts`](../src/lib/offline-fallback.ts):
 
-- hard navigations match `request.destination === "document"`;
+- hard navigations match `request.destination === "document"`.
 - App Router soft navigations match the `RSC: 1` header.
 
-[`src/app/sw.ts`](../src/app/sw.ts) configures Serwist fallback entries for `/~offline` and the recipe-image placeholder. It also adds a global `serwist.setCatchHandler`. That extra handler exists because Serwist's built-in fallback plugin attaches only when a route handler is an `instanceof` its own `Strategy`; the `@serwist/next` default routes can come from a duplicate installed `serwist` copy, so that `instanceof` check can fail. The global catch handler reliably serves the precached offline page for failed document/RSC navigations regardless of which Serwist copy created the matched route.
+[`src/app/sw.ts`](../src/app/sw.ts) configures Serwist fallback entries for `/~offline` and the recipe-image placeholder. It also adds a global `serwist.setCatchHandler`. That extra handler exists because Serwist's built-in fallback plugin attaches only when a route handler is an `instanceof` its own `Strategy`. The `@serwist/next` default routes can come from a duplicate installed `serwist` copy, so that `instanceof` check can fail. The global catch handler reliably serves the precached offline page for failed document/RSC navigations regardless of which Serwist copy created the matched route.
 
 ## Update flow
 
 The service worker is created with:
 
-- `skipWaiting: false`;
-- `clientsClaim: true`;
+- `skipWaiting: false`
+- `clientsClaim: true`
 - `navigationPreload: true`.
 
 With `skipWaiting: false`, a newly installed worker enters `waiting` instead of immediately taking over. Serwist listens for `{ type: "SKIP_WAITING" }` and calls `self.skipWaiting()` when it receives that message.
 
-The client side is in [`src/components/pwa/update-prompt.tsx`](../src/components/pwa/update-prompt.tsx), with the message constant in [`src/lib/sw-update.ts`](../src/lib/sw-update.ts). The prompt appears only when there is both an existing controller and a waiting worker, which means it is a real update, not first install. Accepting the prompt posts `SKIP_WAITING`; when `controllerchange` fires, the page reloads once. The prompt is mounted in [`src/app/(main)/layout.tsx`](<../src/app/(main)/layout.tsx>), not in immersive routes, and it defers while Cook Mode has running timers.
+The client side is in [`src/components/pwa/update-prompt.tsx`](../src/components/pwa/update-prompt.tsx), with the message constant in [`src/lib/sw-update.ts`](../src/lib/sw-update.ts). The prompt appears only when there is both an existing controller and a waiting worker, which means it is a real update, not first install. Accepting the prompt posts `SKIP_WAITING`. When `controllerchange` fires, the page reloads once. The prompt is mounted in [`src/app/(main)/layout.tsx`](<../src/app/(main)/layout.tsx>), not in immersive routes, and it defers while Cook Mode has running timers.
 
 ## Cook Mode warming and notifications
 
 [`src/components/cook/cook-bundle-warmer.tsx`](../src/components/cook/cook-bundle-warmer.tsx) is mounted on the recipe detail page. When the browser is idle it:
 
-1. calls `router.prefetch()` for the Cook Mode route; and
+1. calls `router.prefetch()` for the Cook Mode route, and
 2. posts a `WarmCookBundleMessage` from [`src/lib/cook-warm.ts`](../src/lib/cook-warm.ts) to the active service worker.
 
 The service worker handles that message with `warmCookBundle()` in [`src/app/sw.ts`](../src/app/sw.ts). It adds Cook page URLs to `heirloom-recipes` and exact Cloudinary image URLs to `heirloom-recipe-images`, reusing the existing bounded caches instead of creating separate warm caches. Failures are swallowed because warming is best-effort.

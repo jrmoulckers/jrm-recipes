@@ -92,7 +92,7 @@ function Section({
  * The single account/settings hub reached from the bottom bar's Profile tab. It
  * consolidates what used to be split between the header's "More" kebab (utility
  * toggles) and the bottom bar's "More" menu (secondary destinations), plus
- * account/auth actions — eliminating the confusing duplicate menus.
+ * account/auth actions. Eliminating the confusing duplicate menus.
  */
 export function ProfileHub({
   isConfigured,

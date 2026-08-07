@@ -3,8 +3,8 @@
  *
  * Where {@link estimateRecipeNutrition} in `food-nutrition.ts` resolves facts by
  * *text* against the static curated dataset, this module rolls up nutrition from
- * lines that have *already* been resolved against the live food graph — each
- * carries the canonical food's per-100 g {@link NutritionFacts} and its
+ * lines that have *already* been resolved against the live food graph, each
+ * carrying the canonical food's per-100 g {@link NutritionFacts} and its
  * `densityGPerMl`, looked up server-side via the `recipe_ingredients.foodId` FK.
  * That makes the recipe-detail estimate authoritative rather than best-guess.
  *
@@ -21,8 +21,8 @@ import type { Nutrition } from "~/lib/nutrition";
 
 /**
  * One ingredient line ready for the roll-up. `facts` and `densityGPerMl` come
- * from the canonical food the line's `foodId` resolves to; both are optional
- * because the link is best-effort — a `null`/absent value just means that piece
+ * from the canonical food the line's `foodId` resolves to. Both are optional
+ * because the link is best-effort. A `null`/absent value just means that piece
  * of information is unknown for this line.
  */
 export type ResolvedNutritionLine = {
@@ -36,8 +36,8 @@ export type ResolvedNutritionLine = {
 
 /**
  * Resolve the grams of a single ingredient line. Mass units convert straight to
- * grams; volume units need a positive `densityGPerMl` (g/mL) and return `null`
- * without one; count/temperature/unknown units return `null` because their
+ * grams. Volume units need a positive `densityGPerMl` (g/mL) and return `null`
+ * without one. Count/temperature/unknown units return `null` because their
  * weight isn't knowable from the token alone. A missing or non-finite/negative
  * quantity is `null`. Never throws.
  */
@@ -70,12 +70,12 @@ export function resolveLineGrams(
 /**
  * A recipe nutrition estimate rolled up from its ingredient lines. `perServing`
  * feeds {@link Nutrition}-shaped UI directly (empty `{}` when nothing sourced, so
- * it flows through `hasNutrition`/`NutritionPanel` and renders nothing); `whole`
+ * it flows through `hasNutrition`/`NutritionPanel` and renders nothing). `whole`
  * is the same figures before dividing by servings. The coverage numbers keep a
  * partial estimate honest, on two axes:
  *  - **lines**: `sourcedLines` of `totalLines` contributed (`lineCoverage`).
  *  - **mass**: `accountedGrams` of `weighableGrams` were actually costed
- *    (`massCoverage`) — i.e. of the mass we *could* weigh, how much also had
+ *    (`massCoverage`). I.e. Of the mass we *could* weigh, how much also had
  *    curated facts. A big unlinked ingredient drags this down even when most
  *    lines matched, which is exactly the honesty we want.
  */
@@ -100,7 +100,7 @@ export type RecipeNutritionEstimate = {
   massCoverage: number;
 };
 
-/** An estimate with no contributing lines — the honest "nothing to show" shape. */
+/** An estimate with no contributing lines. The honest "nothing to show" shape. */
 export function emptyRecipeNutrition(servings = 1): RecipeNutritionEstimate {
   const s = Number.isFinite(servings) && servings > 0 ? servings : 1;
   return {
@@ -119,10 +119,10 @@ export function emptyRecipeNutrition(servings = 1): RecipeNutritionEstimate {
 /**
  * Roll a list of pre-resolved ingredient lines up into a per-serving nutrition
  * estimate. A line contributes only when it can be both weighed (see
- * {@link resolveLineGrams}) *and* carries per-100 g facts; anything else is
+ * {@link resolveLineGrams}) *and* carries per-100 g facts. Anything else is
  * skipped but still counted toward `totalLines` (and, when weighable,
- * `weighableGrams`) so the coverage numbers stay honest. Pure and
- * order-independent; a non-positive/non-finite `servings` is treated as 1.
+ * `weighableGrams`) so the coverage numbers stay honest. The function is pure
+ * and order-independent. A non-positive/non-finite `servings` is treated as 1.
  */
 export function rollUpNutrition(
   lines: readonly ResolvedNutritionLine[],

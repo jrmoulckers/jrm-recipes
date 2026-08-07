@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,20 +27,11 @@ import {
 
 const VISIBILITY_OPTIONS: {
   value: CollectionVisibilityValue;
-  label: string;
-  hint: string;
+  labelKey: "private" | "unlisted" | "public";
 }[] = [
-  {
-    value: "private",
-    label: "Private",
-    hint: "Only you can see this cookbook.",
-  },
-  {
-    value: "unlisted",
-    label: "Unlisted",
-    hint: "Anyone with the link can view it.",
-  },
-  { value: "public", label: "Public", hint: "Anyone can find and view it." },
+  { value: "private", labelKey: "private" },
+  { value: "unlisted", labelKey: "unlisted" },
+  { value: "public", labelKey: "public" },
 ];
 
 /**
@@ -56,6 +48,7 @@ export function ShareCollectionControl({
   shareToken: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.share");
   const [visibility, setVisibility] = React.useState(initialVisibility);
   const [shareToken, setShareToken] = React.useState(initialShareToken);
   const [copied, setCopied] = React.useState(false);
@@ -87,10 +80,10 @@ export function ShareCollectionControl({
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast.success("Share link copied");
+      toast.success(t("toast.copied"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Couldn't copy the link.");
+      toast.error(t("toast.copyFailed"));
     }
   }
 
@@ -100,12 +93,12 @@ export function ShareCollectionControl({
     <Popover>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline">
-          <Share2 /> Share
+          <Share2 /> {t("trigger")}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-3">
         <div className="space-y-1.5">
-          <Label>Visibility</Label>
+          <Label>{t("visibility.label")}</Label>
           <Select
             value={visibility}
             onValueChange={(v) => change(v as CollectionVisibilityValue)}
@@ -117,19 +110,21 @@ export function ShareCollectionControl({
             <SelectContent>
               {VISIBILITY_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(`visibility.options.${option.labelKey}.label`)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {active ? (
-            <p className="text-xs text-muted-foreground">{active.hint}</p>
+            <p className="text-xs text-muted-foreground">
+              {t(`visibility.options.${active.labelKey}.hint`)}
+            </p>
           ) : null}
         </div>
 
         {visibility !== "private" && shareUrl ? (
           <div className="space-y-1.5">
-            <Label htmlFor="collection-share-url">Share link</Label>
+            <Label htmlFor="collection-share-url">{t("shareLink")}</Label>
             <div className="flex gap-2">
               <Input
                 id="collection-share-url"
@@ -143,7 +138,7 @@ export function ShareCollectionControl({
                 variant="outline"
                 size="icon"
                 onClick={copy}
-                aria-label="Copy share link"
+                aria-label={t("a11y.copyShareLink")}
               >
                 {copied ? <Check /> : <Copy />}
               </Button>

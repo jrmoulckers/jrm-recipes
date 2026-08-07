@@ -3,16 +3,16 @@ import { sendDueCookAlongReminders } from "~/server/cookalong/mutations";
 import { isDbConfigured } from "~/server/db";
 
 // Writes notifications + stamps reminderSentAt, so keep it on the Node runtime
-// and never cache — it's a scheduled side-effecting trigger.
+// and never cache. It's a scheduled side-effecting trigger.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Fire reminders for events starting within the next ~25 hours. Vercel Cron on
 // the Hobby plan runs at most once per day, so this job runs daily (see
-// vercel.json); a 25h window (a 1h overlap past the 24h cadence) guarantees
+// vercel.json). A 25h window (a 1h overlap past the 24h cadence) guarantees
 // every upcoming event is covered by at least one run before it starts, giving
-// attendees roughly a day's notice. `reminderSentAt` makes the overlap — and any
-// retry — a no-op, so each event is still reminded exactly once.
+// attendees roughly a day's notice. `reminderSentAt` makes the overlap and any
+// retry a no-op, so each event is still reminded exactly once.
 const WINDOW_MS = 25 * 60 * 60 * 1000;
 
 /**
@@ -21,7 +21,7 @@ const WINDOW_MS = 25 * 60 * 60 * 1000;
  * Delegates to {@link sendDueCookAlongReminders}, which finds cook-alongs
  * starting within the reminder window that haven't been reminded, notifies the
  * going/maybe RSVPs, and stamps `reminderSentAt` so each event fires exactly
- * once — the job is idempotent and safe to re-run. Returns how many events were
+ * once. The job is idempotent and safe to re-run. Returns how many events were
  * reminded.
  */
 async function handle(request: Request): Promise<Response> {

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { UserCheck, UserPlus } from "lucide-react";
 
 import { followUserAction, unfollowUserAction } from "~/server/follows/actions";
@@ -21,11 +22,12 @@ export function FollowButton({
   initialFollowing: boolean;
   className?: string;
 }) {
+  const t = useTranslations("follows.button");
   const [following, setFollowing] = React.useState(initialFollowing);
 
   const follow = useServerAction(followUserAction, {
     errorToast: true,
-    successToast: "You're now following this cook.",
+    successToast: t("toasts.following"),
     onError: () => setFollowing(false),
   });
   const unfollow = useServerAction(unfollowUserAction, {
@@ -56,11 +58,11 @@ export function FollowButton({
     >
       {following ? (
         <>
-          <UserCheck /> Following
+          <UserCheck /> {t("following")}
         </>
       ) : (
         <>
-          <UserPlus /> Follow
+          <UserPlus /> {t("follow")}
         </>
       )}
     </Button>

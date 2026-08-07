@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Users } from "lucide-react";
 
 import type { FollowPerson } from "~/server/follows/queries";
@@ -13,12 +14,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { useServerAction } from "~/lib/use-server-action";
 
-function personName(person: FollowPerson) {
-  return person.name ?? (person.handle ? `@${person.handle}` : "A family cook");
+function personName(person: FollowPerson, fallback: string) {
+  return person.name ?? (person.handle ? `@${person.handle}` : fallback);
 }
 
-function PersonRow({ person }: { person: FollowPerson }) {
-  const name = personName(person);
+function PersonRow({
+  person,
+  fallbackName,
+}: {
+  person: FollowPerson;
+  fallbackName: string;
+}) {
+  const name = personName(person, fallbackName);
   const row = (
     <div className="flex items-center gap-3">
       <Avatar className="size-10">
@@ -56,7 +63,7 @@ function PersonRow({ person }: { person: FollowPerson }) {
 
 /**
  * A followers / following list with cursor "load more". `direction` picks which
- * server action pages the next batch; both re-check the target's opt-in server
+ * server action pages the next batch. Both re-check the target's opt-in server
  * side so a non-opted-in cook's graph is never enumerable.
  */
 export function FollowPeopleList({
@@ -72,6 +79,7 @@ export function FollowPeopleList({
   initialCursor: string | null;
   emptyLabel: string;
 }) {
+  const t = useTranslations("follows.list");
   const [people, setPeople] = React.useState(initialPeople);
   const [cursor, setCursor] = React.useState(initialCursor);
 
@@ -100,7 +108,11 @@ export function FollowPeopleList({
     <div className="flex flex-col gap-3">
       <ul className="flex flex-col gap-2">
         {people.map((person) => (
-          <PersonRow key={person.id} person={person} />
+          <PersonRow
+            key={person.id}
+            person={person}
+            fallbackName={t("fallbackName")}
+          />
         ))}
       </ul>
       {cursor ? (
@@ -111,7 +123,7 @@ export function FollowPeopleList({
             disabled={load.pending}
             onClick={() => load.run({ userId, before: cursor })}
           >
-            {load.pending ? "Loading…" : "Load more"}
+            {load.pending ? t("loading") : t("loadMore")}
           </Button>
         </div>
       ) : null}

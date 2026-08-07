@@ -20,7 +20,7 @@ const ROOT_FOLDER = "heirloom";
 
 /**
  * Upper bound on the signing request body (issue #222). The allowlisted params
- * are a few short strings and a timestamp, so a few KB is generous; anything
+ * are a few short strings and a timestamp, so a few KB is generous. Anything
  * larger is refused before it is buffered into memory.
  */
 const MAX_SIGN_BODY_BYTES = 4_096;
@@ -40,7 +40,7 @@ const folderSchema = z
 /**
  * How stale a client `timestamp` may be before we refuse to sign it. The upload
  * widget generates the timestamp immediately before requesting a signature, so
- * anything old is a replay attempt — bounding it limits signature reuse.
+ * anything old is a replay attempt. Bounding it limits signature reuse.
  */
 const MAX_TIMESTAMP_AGE_SECONDS = 60 * 10;
 /** Small allowance for client/server clock skew. */
@@ -48,9 +48,9 @@ const MAX_TIMESTAMP_SKEW_SECONDS = 60;
 
 /**
  * Strict allowlist of the *only* parameters we will ever sign. `.strict()`
- * rejects any unexpected key — `public_id`, `notification_url`, `callback`,
- * `eager`, `transformation`, `upload_preset`, … — with a 400 so this endpoint
- * can't be abused as a general-purpose Cloudinary signing oracle.
+ * rejects any unexpected key. `public_id`, `notification_url`, `callback`,
+ * `eager`, `transformation`, `upload_preset`, …. Unexpected keys get a 400 so
+ * this endpoint can't be abused as a general-purpose Cloudinary signing oracle.
  */
 const paramsToSignSchema = z
   .object({
@@ -82,7 +82,7 @@ const requestSchema = z.object({
 /**
  * Same-site guard: the request `Origin` must match either the request's own
  * host or the configured canonical app URL. A missing or foreign `Origin` is
- * rejected as CSRF defense-in-depth — browsers always attach `Origin` to the
+ * rejected as CSRF defense-in-depth. Browsers always attach `Origin` to the
  * cross-site-capable `POST` the upload widget makes.
  */
 function hasTrustedOrigin(request: Request): boolean {
@@ -105,7 +105,7 @@ function hasTrustedOrigin(request: Request): boolean {
         return true;
       }
     } catch {
-      // Misconfigured app URL — fall through and reject.
+      // Misconfigured app URL. Fall through and reject.
     }
   }
 
@@ -163,13 +163,13 @@ export async function POST(request: Request) {
 
   // 2b. Soft storage cap (issue #318): refuse to sign *new* uploads once the
   //     account is at/over its plan's storage allowance. Existing assets are
-  //     never touched; an unconfigured DB or unlimited plan resolves to `ok`.
+  //     never touched. An unconfigured DB or unlimited plan resolves to `ok`.
   const storage = await getLimitStatus(user, "maxStorageMb", "storage_mb");
   if (storage.state === "blocked") {
     return Response.json(
       {
         error:
-          "You've reached your plan's photo storage limit. Upgrade to Family for more space — your existing photos stay safe and accessible.",
+          "You've reached your plan's photo storage limit. Upgrade to Family for more space. Your existing photos stay safe and accessible.",
         upgrade: true,
       },
       { status: 402 },
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
   }
 
   // 2c. Bound the request body (issue #222). The signed payload is a handful of
-  //     short fields; anything large is abuse, so refuse to buffer it. Guard on
+  //     short fields. Anything large is abuse, so refuse to buffer it. Guard on
   //     the declared length up front and hard-cap the bytes we actually read.
   const declaredLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > MAX_SIGN_BODY_BYTES) {

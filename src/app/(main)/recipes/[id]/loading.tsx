@@ -30,7 +30,7 @@ export default function RecipeDetailLoading() {
 
         <Skeleton className="h-px w-full" />
 
-        {/* Tabs (recipe / timeline / cooked / discussion) — matches the real
+        {/* Tabs (recipe / timeline / cooked / discussion). Matches the real
             page's TabsList so the grid below doesn't shift down on hydration. */}
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-1.5">

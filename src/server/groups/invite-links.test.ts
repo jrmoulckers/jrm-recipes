@@ -317,7 +317,7 @@ describe("acceptInviteLink (issue #343)", () => {
 
     // A different user redeeming concurrently still reads useCount 0 (READ
     // COMMITTED stale read), but the atomic bump now fails `useCount < maxUses`
-    // and returns no rows, so the loser is rejected and seats nobody — useCount
+    // and returns no rows, so the loser is rejected and seats nobody. UseCount
     // never exceeds maxUses.
     const second = fakeTx({
       memberships: [null],
@@ -415,7 +415,7 @@ describe("acceptInviteLink seat enforcement (#325)", () => {
       "SEAT_LIMIT_REACHED",
     );
     // The seat check runs after the atomic use-claim but before seating, and it
-    // throws inside the tx — so no member is inserted and the useCount bump is
+    // throws inside the tx, so no member is inserted and the useCount bump is
     // rolled back with the transaction.
     expect(tx.insert).not.toHaveBeenCalled();
   });

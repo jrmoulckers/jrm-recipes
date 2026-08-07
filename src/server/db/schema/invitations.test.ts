@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { groupInvitations } from "./groups";
 
 /**
- * Issue #181 — `group_invitations` is the new pending-invite brick on top of
+ * Issue #181. `Group_invitations` is the new pending-invite brick on top of
  * `group_members`. Assert its shape at the schema source of truth: columns,
  * the status enum, the single-use token, the partial "one pending invite per
  * email" index, FK cascade/set-null behaviour, and the contact CHECK.

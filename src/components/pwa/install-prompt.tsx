@@ -60,8 +60,8 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
 /**
  * Whether to surface the iOS "Add to Home Screen" tip. iOS Safari never fires
  * `beforeinstallprompt`, so it's the one platform where we must nudge manually.
- * Pure and UA-driven so it's unit-testable. We target only real iOS Safari — not
- * Chrome/Firefox iOS (CriOS/FxiOS), which lack the Share → Add flow — and never
+ * Pure and UA-driven so it's unit-testable. We target only real iOS Safari, not
+ * Chrome/Firefox iOS (CriOS/FxiOS), which lack the Share → Add flow, and never
  * when already installed / running standalone.
  */
 export function shouldShowIosInstallTip(
@@ -72,7 +72,7 @@ export function shouldShowIosInstallTip(
   const ua = userAgent.toLowerCase();
   const isIos = /iphone|ipod|ipad/.test(ua);
   if (!isIos) return false;
-  // Third-party iOS browsers can't offer Add-to-Home-Screen; only Safari can.
+  // Third-party iOS browsers can't offer Add-to-Home-Screen. Only Safari can.
   const isSafari =
     ua.includes("safari") && !/(crios|fxios|edgios|opios|mercury)/.test(ua);
   return isSafari;
@@ -82,12 +82,12 @@ export function shouldShowIosInstallTip(
  * Add-to-home-screen banner. Waits for the browser's `beforeinstallprompt`,
  * then offers a friendly install nudge. Dismissible (remembered for two weeks),
  * hidden once installed or running standalone. Mounted in the main app chrome
- * only — never in immersive cook/print views.
+ * only. Never in immersive cook/print views.
  *
  * Accessibility: it announces `role="dialog"` (`aria-modal="true"`) and honours
  * that contract. On open it captures the previously focused element and moves
  * focus to the primary action; `Tab`/`Shift+Tab` are trapped inside; `Escape`
- * dismisses from anywhere; and focus is restored to the prior element on close
+ * dismisses from anywhere, and focus is restored to the prior element on close
  * (WCAG 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 4.1.2).
  */
 export function InstallPrompt() {
@@ -139,7 +139,7 @@ export function InstallPrompt() {
     try {
       window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
     } catch {
-      // Storage unavailable (private mode) — fine, just hide for this session.
+      // Storage unavailable (private mode). Fine, just hide for this session.
     }
     window.setTimeout(() => setVariant(null), 200);
   }, []);
@@ -155,9 +155,9 @@ export function InstallPrompt() {
   }, []);
 
   // Full dialog focus management, active only while open. On open we remember
-  // the previously focused element and move focus to the primary action; Tab is
-  // trapped within the dialog; Escape (bound at the document, so it works from
-  // anywhere — not just after tabbing in) dismisses; and on close we restore
+  // the previously focused element and move focus to the primary action. Tab is
+  // trapped within the dialog. Escape (bound at the document, so it works from
+  // anywhere, not just after tabbing in) dismisses, and on close we restore
   // focus to where it was. The listener is added on open and removed on close,
   // so there's no leak, no double-registration, and Escape isn't swallowed when
   // the prompt is closed.

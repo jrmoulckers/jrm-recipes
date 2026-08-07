@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Check,
   CornerDownRight,
@@ -93,6 +93,7 @@ export function CommentsSection(props: CommentsSectionProps) {
     reactionsByComment = {},
   } = props;
   const router = useRouter();
+  const t = useTranslations("engagement.comments");
   const [pending, startTransition] = React.useTransition();
   const [comments, setComments] = React.useState(initialComments);
   const [kind, setKind] = React.useState<CommentKind>("comment");
@@ -110,7 +111,7 @@ export function CommentsSection(props: CommentsSectionProps) {
   ) => {
     const trimmed = nextBody.trim();
     if (!trimmed) {
-      toast.error("Write something before posting.");
+      toast.error(t("toast.writeBeforePosting"));
       return;
     }
 
@@ -126,10 +127,10 @@ export function CommentsSection(props: CommentsSectionProps) {
       if (result.ok) {
         toast.success(
           parentId
-            ? "Reply posted"
+            ? t("toast.replyPosted")
             : nextKind === "suggestion"
-              ? "Suggestion shared"
-              : "Comment posted",
+              ? t("toast.suggestionShared")
+              : t("toast.commentPosted"),
         );
         onSuccess?.();
         router.refresh();
@@ -143,7 +144,7 @@ export function CommentsSection(props: CommentsSectionProps) {
     startTransition(async () => {
       const result = await deleteCommentAction({ commentId, recipeSlug });
       if (result.ok) {
-        toast.success("Comment deleted");
+        toast.success(t("toast.commentDeleted"));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -159,7 +160,11 @@ export function CommentsSection(props: CommentsSectionProps) {
         resolved,
       });
       if (result.ok) {
-        toast.success(resolved ? "Suggestion resolved" : "Suggestion reopened");
+        toast.success(
+          resolved
+            ? t("toast.suggestionResolved")
+            : t("toast.suggestionReopened"),
+        );
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -175,7 +180,7 @@ export function CommentsSection(props: CommentsSectionProps) {
         suggestionId,
       });
       if (result.ok) {
-        toast.success("Suggestion applied");
+        toast.success(t("toast.suggestionApplied"));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -196,11 +201,9 @@ export function CommentsSection(props: CommentsSectionProps) {
         </span>
         <div>
           <h2 className="font-display text-xl font-semibold text-foreground">
-            Conversation
+            {t("heading")}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Ask questions, share how it turned out, or suggest a family tweak.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
       </div>
 
@@ -218,7 +221,7 @@ export function CommentsSection(props: CommentsSectionProps) {
                 aria-pressed={kind === "comment"}
                 onClick={() => setKind("comment")}
               >
-                <MessageCircle /> Comment
+                <MessageCircle /> {t("comment")}
               </Button>
               <Button
                 type="button"
@@ -231,12 +234,12 @@ export function CommentsSection(props: CommentsSectionProps) {
                     "bg-warning/20 text-warning-foreground hover:bg-warning/25",
                 )}
               >
-                <Lightbulb /> Suggestion
+                <Lightbulb /> {t("suggestion")}
               </Button>
             </div>
 
             <Label htmlFor="comment-body" className="sr-only">
-              Comment body
+              {t("commentBodyLabel")}
             </Label>
             <MentionTextarea
               id="comment-body"
@@ -245,8 +248,8 @@ export function CommentsSection(props: CommentsSectionProps) {
               candidates={mentionCandidates}
               placeholder={
                 kind === "suggestion"
-                  ? "Suggest a change the recipe owner can resolve…"
-                  : "Leave a note for the family table… use @ to mention someone"
+                  ? t("suggestionPlaceholder")
+                  : t("commentPlaceholder")
               }
               className="min-h-28 resize-y bg-background"
               disabled={pending}
@@ -254,8 +257,8 @@ export function CommentsSection(props: CommentsSectionProps) {
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
                 {kind === "suggestion"
-                  ? "Suggest a change the recipe owner can resolve."
-                  : "Share how it turned out or a tweak you'd make."}
+                  ? t("suggestionHelper")
+                  : t("commentHelper")}
               </p>
               <div className="flex items-center gap-3">
                 <CharacterCounter
@@ -268,14 +271,14 @@ export function CommentsSection(props: CommentsSectionProps) {
                   size="sm"
                   disabled={pending || !body.trim()}
                 >
-                  {pending ? "Posting…" : "Post"}
+                  {pending ? t("posting") : t("post")}
                 </Button>
               </div>
             </div>
           </form>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-            Sign in to add a comment, reply, or suggest a recipe change.
+            {t("signIn")}
           </div>
         )}
       </div>
@@ -286,11 +289,10 @@ export function CommentsSection(props: CommentsSectionProps) {
         <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
           <MessageCircle className="mx-auto mb-3 size-8 text-muted-foreground" />
           <h3 className="font-display text-lg font-semibold text-foreground">
-            Start the conversation
+            {t("empty.heading")}
           </h3>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Be the first to ask a question, celebrate a successful bake, or
-            leave a helpful suggestion for the recipe owner.
+            {t("empty.body")}
           </p>
         </div>
       ) : (
@@ -351,6 +353,7 @@ function CommentItem({
   const [replyOpen, setReplyOpen] = React.useState(false);
   const [replyBody, setReplyBody] = React.useState("");
   const locale = useLocale();
+  const t = useTranslations("engagement.comments");
   const authorName = displayName(comment.author);
   const isSuggestion = comment.kind === "suggestion";
   const isApplied = Boolean(comment.appliedAt);
@@ -407,27 +410,29 @@ function CommentItem({
                 className="bg-warning/25 text-warning-foreground"
               >
                 <Lightbulb className="size-3" />
-                Suggestion
+                {t("suggestion")}
               </Badge>
             ) : null}
             {isSuggestion && comment.anchorLabel ? (
               <Badge
                 variant="muted"
-                title={`Anchored to ${comment.anchorLabel}`}
+                title={t("anchor.title", { label: comment.anchorLabel })}
               >
-                {comment.anchorType === "ingredient" ? "Ingredient" : "Step"}:{" "}
-                {comment.anchorLabel}
+                {comment.anchorType === "ingredient"
+                  ? t("anchor.ingredient")
+                  : t("anchor.step")}
+                : {comment.anchorLabel}
               </Badge>
             ) : null}
             {isApplied ? (
               <Badge variant="default">
                 <Sparkles className="size-3" />
-                Applied
+                {t("applied")}
               </Badge>
             ) : isResolved ? (
               <Badge variant="success">
                 <Check className="size-3" />
-                Resolved
+                {t("resolved")}
               </Badge>
             ) : null}
           </div>
@@ -462,7 +467,7 @@ function CommentItem({
                 onClick={() => setReplyOpen((open) => !open)}
                 className="h-8 px-2 text-muted-foreground"
               >
-                <CornerDownRight /> Reply
+                <CornerDownRight /> {t("reply")}
               </Button>
             ) : null}
 
@@ -475,7 +480,7 @@ function CommentItem({
                 onClick={() => onApply(comment.id)}
                 className="h-8 px-2 text-primary hover:bg-primary/10 hover:text-primary"
               >
-                <Sparkles /> Accept &amp; apply
+                <Sparkles /> {t("acceptAndApply")}
               </Button>
             ) : null}
 
@@ -488,7 +493,7 @@ function CommentItem({
                 onClick={() => onResolve(comment.id, !isResolved)}
                 className="h-8 px-2 text-muted-foreground"
               >
-                <Check /> {isResolved ? "Reopen" : "Resolve"}
+                <Check /> {isResolved ? t("reopen") : t("resolve")}
               </Button>
             ) : null}
 
@@ -510,14 +515,14 @@ function CommentItem({
               className="mt-3 rounded-lg bg-muted/45 p-3"
             >
               <Label htmlFor={`reply-${comment.id}`} className="sr-only">
-                Reply
+                {t("replyLabel")}
               </Label>
               <MentionTextarea
                 id={`reply-${comment.id}`}
                 value={replyBody}
                 onChange={setReplyBody}
                 candidates={mentionCandidates}
-                placeholder="Write a reply… use @ to mention someone"
+                placeholder={t("replyPlaceholder")}
                 className="min-h-20 bg-background"
                 maxLength={4000}
                 disabled={pending}
@@ -532,14 +537,14 @@ function CommentItem({
                     setReplyOpen(false);
                   }}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                   disabled={pending || !replyBody.trim()}
                 >
-                  {pending ? "Replying…" : "Reply"}
+                  {pending ? t("replying") : t("reply")}
                 </Button>
               </div>
             </form>

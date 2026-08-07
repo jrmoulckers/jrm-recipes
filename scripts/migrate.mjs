@@ -4,7 +4,7 @@
  *
  * Runs the generated Drizzle SQL migrations (./drizzle) against DATABASE_URL.
  * Wired into the `vercel-build` script so a production deploy brings the
- * database schema up to date automatically — the human only has to paste
+ * database schema up to date automatically, so the human only has to paste
  * DATABASE_URL into Vercel once.
  *
  * Safe by design: if no database URL is set (e.g. a preview build with no DB),
@@ -29,7 +29,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  log.info("No database URL set — skipping migrations.");
+  log.info("No database URL set, skipping migrations.");
   process.exit(0);
 }
 
@@ -44,7 +44,7 @@ if (
   process.env.ALLOW_PREVIEW_MIGRATIONS !== "1"
 ) {
   log.warn(
-    "Preview deploy detected — skipping migrations to protect the " +
+    "Preview deploy detected, skipping migrations to protect the " +
       "production database. Provision a per-branch database and set " +
       "ALLOW_PREVIEW_MIGRATIONS=1 to run them against the isolated branch.",
   );

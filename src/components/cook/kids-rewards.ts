@@ -1,7 +1,7 @@
 /**
  * On-device "chef badges" rewards for Kids mode (issue #413). Entirely
  * client-side and offline-friendly: earned badges (and a lifetime cook counter)
- * live in localStorage, so a kid keeps a collection they can revisit — no
+ * live in localStorage, so a kid keeps a collection they can revisit. No
  * database or network involved.
  *
  * Awarding is idempotent by badge id: finishing the same recipe again never
@@ -152,7 +152,7 @@ export function awardForCompletion(
       ls.setItem(BADGES_KEY, JSON.stringify(badges));
       ls.setItem(COUNT_KEY, String(newCount));
     } catch {
-      /* storage full / unavailable — badges just won't persist this time */
+      /* storage full / unavailable. Badges just won't persist this time */
     }
   }
 

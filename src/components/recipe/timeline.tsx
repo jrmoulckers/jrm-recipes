@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Clock, History, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -36,21 +36,19 @@ export function RecipeTimeline({
 }) {
   const latestVersion = versions[0]?.versionNumber;
   const locale = useLocale();
+  const t = useTranslations("recipe");
 
   if (versions.length === 0) {
     return (
       <section
         className="rounded-xl border border-dashed border-border bg-card p-5 text-sm text-muted-foreground"
-        aria-label={`Version history for ${recipeSlug}`}
+        aria-label={t("timeline.aria", { title: recipeSlug })}
       >
         <div className="flex items-center gap-2 font-medium text-foreground">
           <History className="size-4" aria-hidden="true" />
-          No history yet
+          {t("timeline.emptyTitle")}
         </div>
-        <p className="mt-1">
-          Every time you save an edit, it&apos;ll show up here so you can look
-          back.
-        </p>
+        <p className="mt-1">{t("timeline.emptyBody")}</p>
       </section>
     );
   }
@@ -58,16 +56,18 @@ export function RecipeTimeline({
   return (
     <section
       className="rounded-xl border border-border bg-card p-5 shadow-token"
-      aria-label={`Version history for ${recipeSlug}`}
+      aria-label={t("timeline.aria", { title: recipeSlug })}
     >
       <div className="mb-5 flex items-center gap-2">
         <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
           <History className="size-4" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="font-display text-xl font-semibold">Recipe history</h2>
+          <h2 className="font-display text-xl font-semibold">
+            {t("timeline.title")}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Every save keeps the family trail intact.
+            {t("timeline.description")}
           </p>
         </div>
       </div>
@@ -77,11 +77,15 @@ export function RecipeTimeline({
           const isLatest = version.versionNumber === latestVersion;
           const canRestore = canRevert && !isLatest && versions.length > 1;
           const author =
-            version.author?.name ?? version.author?.handle ?? "A family cook";
+            version.author?.name ??
+            version.author?.handle ??
+            t("timeline.familyCook");
           const createdAt = new Date(version.createdAt);
           const label =
             version.label ??
-            (version.versionNumber === 1 ? "Created" : "Updated");
+            (version.versionNumber === 1
+              ? t("timeline.created")
+              : t("timeline.updated"));
 
           return (
             <li key={version.id} className="relative flex gap-4">
@@ -105,7 +109,9 @@ export function RecipeTimeline({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
-                      Version {version.versionNumber}
+                      {t("timeline.version", {
+                        version: version.versionNumber,
+                      })}
                     </p>
                     <h3 className="mt-1 font-display text-lg font-semibold leading-tight">
                       {label}
@@ -113,7 +119,7 @@ export function RecipeTimeline({
                     <p className="mt-1 text-sm text-muted-foreground">
                       {author} ·{" "}
                       {Number.isNaN(createdAt.getTime())
-                        ? "saved earlier"
+                        ? t("timeline.savedEarlier")
                         : formatRelativeTime(createdAt, locale)}
                     </p>
                     {version.summary && (
@@ -146,6 +152,7 @@ function RestoreVersionButton({
   recipeId: string;
   versionNumber: number;
 }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
@@ -154,7 +161,7 @@ function RestoreVersionButton({
     startTransition(async () => {
       const result = await revertRecipeAction(recipeId, versionNumber);
       if (result.ok) {
-        toast.success(`Restored version ${versionNumber}`);
+        toast.success(t("timeline.toast.restored", { version: versionNumber }));
         setOpen(false);
         router.refresh();
         return;
@@ -167,26 +174,27 @@ function RestoreVersionButton({
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
-          <RotateCcw /> Restore
+          <RotateCcw /> {t("timeline.restore")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Restore this version?</DialogTitle>
+          <DialogTitle>{t("timeline.restoreTitle")}</DialogTitle>
           <DialogDescription>
-            Your current recipe becomes a new version in the history, so nothing
-            is lost.
+            {t("timeline.restoreDescription")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="ghost" disabled={pending}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </DialogClose>
           <Button type="button" onClick={onRestore} disabled={pending}>
             {pending ? <Loader2 className="animate-spin" /> : <RotateCcw />}
-            {pending ? "Restoring…" : `Restore v${versionNumber}`}
+            {pending
+              ? t("timeline.restoring")
+              : t("timeline.restoreVersion", { version: versionNumber })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -8,14 +8,14 @@ import { type FlagMap, type FlagValue } from "~/lib/analytics/flags-shared";
  * Ergonomic server-side feature-flag helpers (issue #335) for Server Components
  * and server actions. They resolve the current user's distinct id automatically
  * and delegate to the analytics server client, which returns control ({}/fallback)
- * whenever analytics is unconfigured — so callers never block render or throw.
+ * whenever analytics is unconfigured, so callers never block render or throw.
  *
  * Flags are keyed by the same internal user id used for identify (#321), so an
- * SSR-evaluated variant matches what the identified browser session will see —
+ * SSR-evaluated variant matches what the identified browser session will see.
  * the basis for the no-flicker bootstrap.
  */
 
-/** The distinct id to evaluate flags against — the signed-in user, else anon. */
+/** The distinct id to evaluate flags against. The signed-in user, else anon. */
 async function flagDistinctId(): Promise<string> {
   const user = await getCurrentUser();
   return user?.id ?? "anonymous";

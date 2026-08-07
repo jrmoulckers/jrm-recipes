@@ -17,17 +17,17 @@ import { users } from "./users";
 import { groups } from "./groups";
 
 /**
- * Billing schema — who is paying, for which plan, and the live state of their
+ * Billing schema. Who is paying, for which plan, and the live state of their
  * Stripe subscription (issues #300/#301/#325/#326/#331).
  *
  * Per the batch's single-migration rule, ALL billing tables live here and are
  * covered by one consolidated, idempotent Drizzle migration:
- *   - `billing_customers` — maps an owner (user OR group) to a Stripe customer.
- *   - `subscriptions`     — a Stripe subscription's synced state + seats/trial.
- *   - `usage_counters`    — metered usage (recipes/storage/AI) per period (#301).
- *   - `gift_codes`        — one-time gift purchases + redemption (#331).
+ *   - `billing_customers`. Maps an owner (user OR group) to a Stripe customer.
+ *   - `subscriptions`    . A Stripe subscription's synced state + seats/trial.
+ *   - `usage_counters`   . Metered usage (recipes/storage/AI) per period (#301).
+ *   - `gift_codes`       . One-time gift purchases + redemption (#331).
  *
- * `planId` mirrors the ids in `src/config/plans.ts`; `status` mirrors Stripe's
+ * `planId` mirrors the ids in `src/config/plans.ts`. `status` mirrors Stripe's
  * subscription statuses. A schema test pins the plan-id enum to the config so
  * the two can never drift.
  */
@@ -76,7 +76,7 @@ export const billingCustomers = pgTable(
     unique("billing_customers_stripe_customer_uq").on(t.stripeCustomerId),
     // At most one billing customer per user and per group. Postgres treats NULLs
     // as distinct, so group-owned rows (userId NULL) don't collide, and vice
-    // versa — the unique indexes double as the FK cover indexes (#153).
+    // versa. The unique indexes double as the FK cover indexes (#153).
     uniqueIndex("billing_customers_user_uq").on(t.userId),
     uniqueIndex("billing_customers_group_uq").on(t.groupId),
     // Exactly one owner: a user XOR a group.
@@ -89,7 +89,7 @@ export const billingCustomers = pgTable(
 
 /**
  * A Stripe subscription's synced state. `seats` backs Family seat enforcement
- * (#325); `trialEnd` backs trial messaging (#326). Free is represented by the
+ * (#325). `trialEnd` backs trial messaging (#326). Free is represented by the
  * *absence* of an active row, never a stored row.
  */
 export const subscriptions = pgTable(
@@ -118,10 +118,10 @@ export const subscriptions = pgTable(
 
 /**
  * Usage meter rows keyed by `(ownerId, metric, periodStart)` (#301). Count
- * metrics (recipes) use a sentinel `periodStart` (lifetime); metered metrics
+ * metrics (recipes) use a sentinel `periodStart` (lifetime). Metered metrics
  * (aiCredits) use the current month so they roll over automatically. `ownerId`
- * is a user or group cuid — globally unique, so no cross-table FK is possible
- * (hence no `references`); `ownerType` records which it is.
+ * is a user or group cuid. Globally unique, so no cross-table FK is possible
+ * (hence no `references`). `ownerType` records which it is.
  */
 export const usageCounters = pgTable(
   "usage_counters",
@@ -146,7 +146,7 @@ export const usageCounters = pgTable(
 
 /**
  * A purchased gift of Family (#331). Created (status `issued`) by the webhook on
- * a one-time Checkout completion, keyed idempotently to its `stripeSessionId`;
+ * a one-time Checkout completion, keyed idempotently to its `stripeSessionId`.
  * redeemed exactly once, granting `durationMonths` of `planId` to the redeemer
  * (or their group).
  */

@@ -1,6 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { getGroupBySlug } from "~/server/groups/queries";
@@ -10,7 +11,10 @@ import { ModerationQueue } from "~/components/groups/moderation-queue";
 import { Button } from "~/components/ui/button";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
 
-export const metadata: Metadata = { title: "Moderation" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("moderation.title") };
+}
 
 export default async function GroupModerationPage({
   params,
@@ -26,27 +30,26 @@ export default async function GroupModerationPage({
   try {
     queue = await getModerationQueue(slug, viewer);
   } catch (error) {
-    // Members / kids get a FORBIDDEN — hide the page entirely rather than leak
+    // Members / kids get a FORBIDDEN. Hide the page entirely rather than leak
     // that a moderation queue exists.
     if (error instanceof DomainError && error.code === "FORBIDDEN") notFound();
     throw error;
   }
   if (!queue) notFound();
 
+  const t = await getTranslations("groups.moderationPage");
+
   return (
     <div className="container max-w-3xl py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Moderation
+            {t("title")}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Reports from members of this family — hide anything that crosses a
-            line, or dismiss reports that don&apos;t.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         <Button asChild variant="outline">
-          <Link href={`/groups/${group.slug}`}>Back to group</Link>
+          <Link href={`/groups/${group.slug}`}>{t("backToGroup")}</Link>
         </Button>
       </div>
       <ModerationQueue queue={queue} />

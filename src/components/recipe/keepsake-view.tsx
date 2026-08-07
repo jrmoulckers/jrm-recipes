@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Heart } from "lucide-react";
 
 import {
@@ -16,7 +17,7 @@ import { KeepsakePrintButton } from "~/components/recipe/keepsake-print-button";
 /**
  * A recipe presented as a warm keepsake (issue #407): a personal note "from"
  * someone, shown prominently above the recipe, so handing a recipe down feels
- * like a gift rather than a copied link. Presentational only — the calling
+ * like a gift rather than a copied link. Presentational only. The calling
  * route resolves the recipe through the normal visibility-checked loader, so
  * this never sees a recipe the viewer isn't allowed to read.
  */
@@ -29,6 +30,8 @@ export function KeepsakeView({
   from: string | null;
   note: string | null;
 }) {
+  const t = useTranslations("keepsake");
+  const td = useTranslations("recipeDetail");
   const meta = formatRecipeMeta(recipe);
   const provenance = provenanceLines(recipe);
   let stepNumber = 0;
@@ -40,7 +43,7 @@ export function KeepsakeView({
           href={`/recipes/${recipe.slug}`}
           className={buttonVariants({ variant: "ghost" })}
         >
-          View recipe
+          {t("viewRecipe")}
         </Link>
         <KeepsakePrintButton />
       </div>
@@ -52,7 +55,7 @@ export function KeepsakeView({
             <Heart className="size-6" aria-hidden="true" />
           </span>
           <p className="mt-4 font-display text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            A recipe handed down to you
+            {t("handedDown")}
           </p>
           {note ? (
             <p className="mx-auto mt-4 max-w-lg whitespace-pre-line font-display text-xl leading-relaxed text-foreground">
@@ -61,7 +64,7 @@ export function KeepsakeView({
           ) : null}
           {from ? (
             <p className="mt-4 font-display text-lg italic text-muted-foreground">
-              With love, {from}
+              {t("withLove", { from })}
             </p>
           ) : null}
         </header>
@@ -79,9 +82,13 @@ export function KeepsakeView({
         ) : null}
 
         <section className="mt-8">
-          <h2 className="font-display text-xl font-semibold">Ingredients</h2>
+          <h2 className="font-display text-xl font-semibold">
+            {td("ingredients.heading")}
+          </h2>
           {recipe.ingredients.length === 0 ? (
-            <p className="mt-2 text-muted-foreground">No ingredients listed.</p>
+            <p className="mt-2 text-muted-foreground">
+              {td("ingredients.empty")}
+            </p>
           ) : (
             groupIngredients(recipe.ingredients).map((group, groupIndex) => (
               <div key={group.section ?? `ing-${groupIndex}`} className="mt-3">
@@ -103,9 +110,11 @@ export function KeepsakeView({
         </section>
 
         <section className="mt-8">
-          <h2 className="font-display text-xl font-semibold">Method</h2>
+          <h2 className="font-display text-xl font-semibold">
+            {td("method.heading")}
+          </h2>
           {recipe.steps.length === 0 ? (
-            <p className="mt-2 text-muted-foreground">No steps listed.</p>
+            <p className="mt-2 text-muted-foreground">{t("noSteps")}</p>
           ) : (
             groupSteps(recipe.steps).map((group, groupIndex) => (
               <div key={group.section ?? `step-${groupIndex}`} className="mt-3">
@@ -134,7 +143,9 @@ export function KeepsakeView({
 
         {recipe.notes ? (
           <section className="mt-8">
-            <h2 className="font-display text-xl font-semibold">Notes</h2>
+            <h2 className="font-display text-xl font-semibold">
+              {td("notes")}
+            </h2>
             <p className="mt-2 whitespace-pre-line text-muted-foreground">
               {recipe.notes.trim()}
             </p>
@@ -143,7 +154,7 @@ export function KeepsakeView({
 
         {recipe.story || provenance.length > 0 ? (
           <section className="mt-8">
-            <h2 className="font-display text-xl font-semibold">Story</h2>
+            <h2 className="font-display text-xl font-semibold">{t("story")}</h2>
             {provenance.map((line) => (
               <p
                 key={line}

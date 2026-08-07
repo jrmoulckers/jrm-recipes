@@ -118,7 +118,7 @@ export async function generateMetadata({
           }
         : {}),
     },
-    // Keep private/group/unlisted recipes out of search indexes; only public
+    // Keep private/group/unlisted recipes out of search indexes. Only public
     // recipes should be crawlable.
     ...(recipe.visibility !== "public"
       ? { robots: { index: false, follow: false } }
@@ -152,7 +152,7 @@ export default async function RecipePage({
 }: {
   params: Promise<RecipeRouteParams>;
   // Set only when this render is reached through the `/r/<token>` share route
-  // (issue #204); it both grants access to the unlisted recipe and is echoed
+  // (issue #204). It both grants access to the unlisted recipe and is echoed
   // back to the share UI so "Copy link" hands out the token URL, not the slug.
   shareToken?: string;
 }) {
@@ -184,7 +184,7 @@ export default async function RecipePage({
       : null;
   const viewerIsKid = isKid(viewerRole);
   const dbEnabled = isDbConfigured();
-  // Two-week add-to-plan picker for signed-in viewers (#362); reuses the quick
+  // Two-week add-to-plan picker for signed-in viewers (#362), reusing the quick
   // planner action so a cook can plan a recipe the moment they decide to make it.
   const addToPlanContext = user && dbEnabled ? buildTwoWeekPlanContext() : null;
   // Exclude any owner self-rating so the shown average matches the JSON-LD
@@ -193,7 +193,7 @@ export default async function RecipePage({
     excludeOwnerRatings(recipe.ratings, recipe.authorId),
   );
 
-  // Fire the "recently viewed" write concurrently with the reads below; a
+  // Fire the "recently viewed" write concurrently with the reads below. A
   // signed-out viewer records nothing.
   const recordView = user
     ? recordRecipeView(user.id, recipe.id)
@@ -204,7 +204,7 @@ export default async function RecipePage({
   // "you might also like" rail, and member profiles feed the ingredient panel.
   // The heavier below-the-fold tab sections (timeline, cook log, discussion)
   // now stream in via <Suspense> instead of blocking here (#176).
-  // Prefer the cook's stored per-serving nutrition; when they entered none, roll
+  // Prefer the cook's stored per-serving nutrition. When they entered none, roll
   // an estimate up from the ingredient list via the food graph (resolved by each
   // line's foodId → curated per-100 g facts + density). Compute-on-read only.
   const manualNutrition = pickNutrition(recipe);
@@ -250,7 +250,7 @@ export default async function RecipePage({
   }
   const canSuggest = Boolean(user);
   // Family members drive the nutrition panel's calorie-goal indicator (#430)
-  // and the ingredient conflict flags (#429); narrow the stored string arrays
+  // and the ingredient conflict flags (#429). Narrow the stored string arrays
   // back to the canonical unions here so the client gets typed data.
   const calorieMembers = memberProfiles.map((m) => ({
     id: m.id,
@@ -279,7 +279,7 @@ export default async function RecipePage({
     ? toCustomUnitDefs(unitSettings?.customUnits)
     : undefined;
 
-  // schema.org structured data — public recipes only, so we never expose the
+  // schema.org structured data. Public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
   const isPublic = recipe.visibility === "public";
   const jsonLd = isPublic ? buildRecipeJsonLd(recipe) : null;
@@ -326,6 +326,7 @@ export default async function RecipePage({
       )}
       {/* Hero */}
       <div className="relative">
+        {/* Decorative: the hero cover sits directly above the recipe title. */}
         {recipe.coverImageUrl ? (
           <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
             <CloudinaryImage
@@ -445,7 +446,7 @@ export default async function RecipePage({
             )}
           </div>
 
-          {/* Action bar (#81): Cook is the single primary CTA; every secondary
+          {/* Action bar (#81): Cook is the single primary CTA. Every secondary
               action is tucked into the overflow "…" menu so the hierarchy stays
               unambiguous without dropping any action. */}
           <div className="flex flex-wrap gap-2 pt-1">
@@ -733,7 +734,9 @@ export default async function RecipePage({
                               {step.targetTempC != null && (
                                 <Badge variant="secondary" className="gap-1">
                                   <Thermometer className="size-3" />
-                                  {step.targetTempC}°C
+                                  {t("method.targetTemp", {
+                                    value: step.targetTempC,
+                                  })}
                                 </Badge>
                               )}
                               {step.doneness && (
@@ -793,7 +796,7 @@ export default async function RecipePage({
                           className="size-4 text-secondary"
                           aria-hidden="true"
                         />
-                        Story &amp; memories
+                        {t("storyMemories")}
                       </h3>
                       <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                         {recipe.story}

@@ -83,7 +83,7 @@ export type DomainMessages = Partial<Record<DomainCode, string>>;
 const GENERIC_FALLBACK = "Something went wrong. Please try again.";
 
 /**
- * Generic, exhaustive default copy for every code — the single source of truth.
+ * Generic, exhaustive default copy for every code. The single source of truth.
  * Because it's a `Record<DomainCode, string>`, adding a code to
  * {@link DOMAIN_CODES} without a default fails `tsc`.
  */
@@ -94,7 +94,7 @@ export const DEFAULT_MESSAGES: Record<DomainCode, string> = {
   INVALID: "That doesn't look right. Please check and try again.",
   UNAUTHENTICATED: "Please sign in to continue.",
   USER_NOT_FOUND:
-    "No cook found with that handle or email — ask them to sign up first.",
+    "No cook found with that handle or email. Ask them to sign up first.",
   ALREADY_MEMBER: "They're already in this group.",
   ALREADY_INVITED: "They've already been invited.",
   ALREADY_ACCEPTED: "That invitation was already accepted.",

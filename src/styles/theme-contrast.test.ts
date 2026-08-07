@@ -9,12 +9,12 @@ import { UI_THEME_IDS } from "~/config/themes";
  * WCAG contrast regression guard for the design tokens (issue #132).
  *
  * Parses the raw HSL channels from themes.css, resolves every semantic token for
- * all registered UI modes × light/dark (matching the real CSS cascade — kitchen
+ * all registered UI modes × light/dark (matching the real CSS cascade. Kitchen
  * is defined on :root and every other mode overrides it), and asserts the core
  * pairs meet AA. A new sub-AA mode (or a regressing nudge) fails here.
  *
  * Contrast matrix (verified green): every pair below meets its threshold across
- * all 10 theme×scheme combinations — text pairs ≥ 4.5:1 (1.4.3), UI pairs
+ * all 10 theme×scheme combinations. Text pairs ≥ 4.5:1 (1.4.3), UI pairs
  * ≥ 3:1 (1.4.11). See the pair lists for exactly what is guarded.
  */
 
@@ -134,7 +134,7 @@ const COMBOS = UI_THEME_IDS.flatMap((theme) =>
 
 describe("theme token contrast (issue #132)", () => {
   it.each(COMBOS)(
-    "$label — body text pairs meet AA 4.5:1",
+    "$label. Body text pairs meet AA 4.5:1",
     ({ theme, dark }) => {
       const tok = resolveTokens(theme, dark);
       for (const [fg, bg] of TEXT_PAIRS) {
@@ -153,7 +153,7 @@ describe("theme token contrast (issue #132)", () => {
   );
 
   it.each(COMBOS)(
-    "$label — control/focus pairs meet AA 3:1",
+    "$label. Control/focus pairs meet AA 3:1",
     ({ theme, dark }) => {
       const tok = resolveTokens(theme, dark);
       for (const [fg, bg] of NON_TEXT_PAIRS) {

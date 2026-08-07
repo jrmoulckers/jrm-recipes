@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
  * Typographic primitives backed by the tokenized type scale in
  * `tailwind.config.ts` (issue #98). Because the scale is defined in `rem`, every
  * step honours the per-mode `--text-scale` and the a11y text-size axis
- * (`--a11y-text-mult`) automatically — no per-component overrides required.
+ * (`--a11y-text-mult`) automatically. No per-component overrides required.
  */
 
 const HEADING_SIZE = {
@@ -22,7 +22,7 @@ type HeadingSize = keyof typeof HEADING_SIZE;
 type HeadingElement = "h1" | "h2" | "h3" | "h4" | "p" | "div" | "span";
 
 export interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  /** Semantic heading level; also drives the default visual size. */
+  /** Semantic heading level. Also drives the default visual size. */
   level?: HeadingLevel;
   /** Visual size override, decoupled from the semantic `level`. */
   size?: HeadingSize;

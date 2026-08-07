@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   EyeOff,
   ShieldCheck,
@@ -23,18 +24,24 @@ import { useServerAction } from "~/lib/use-server-action";
 
 const TARGET_META: Record<
   ModerationQueueItem["targetType"],
-  { label: string; icon: React.ComponentType<{ className?: string }> }
+  {
+    labelKey: "comment" | "review" | "cookLog";
+    icon: React.ComponentType<{ className?: string }>;
+  }
 > = {
-  comment: { label: "Comment", icon: MessageSquare },
-  review: { label: "Review", icon: NotebookPen },
-  cook_log: { label: "Cook post", icon: CookingPot },
+  comment: { labelKey: "comment", icon: MessageSquare },
+  review: { labelKey: "review", icon: NotebookPen },
+  cook_log: { labelKey: "cookLog", icon: CookingPot },
 };
 
-const REASON_LABEL: Record<string, string> = {
-  spam: "Spam",
-  harassment: "Harassment",
-  inappropriate: "Inappropriate",
-  other: "Other",
+const REASON_KEY: Record<
+  string,
+  "spam" | "harassment" | "inappropriate" | "other"
+> = {
+  spam: "spam",
+  harassment: "harassment",
+  inappropriate: "inappropriate",
+  other: "other",
 };
 
 function QueueRow({
@@ -44,13 +51,14 @@ function QueueRow({
   groupSlug: string;
   item: ModerationQueueItem;
 }) {
+  const t = useTranslations("groups.moderation");
   const hide = useServerAction(hideContentAction, {
-    successToast: "Hidden from members.",
+    successToast: t("toast.hidden"),
     errorToast: true,
     refresh: true,
   });
   const dismiss = useServerAction(dismissReportAction, {
-    successToast: "Reports dismissed.",
+    successToast: t("toast.dismissed"),
     errorToast: true,
     refresh: true,
   });
@@ -58,24 +66,27 @@ function QueueRow({
 
   const meta = TARGET_META[item.targetType];
   const Icon = meta.icon;
-  const authorName = item.author?.name ?? item.author?.handle ?? "A member";
+  const authorName =
+    item.author?.name ?? item.author?.handle ?? t("fallbackAuthor");
 
   return (
     <li className="rounded-xl border border-border bg-card p-4 shadow-token">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="muted" className="gap-1">
           <Icon className="size-3" />
-          {meta.label}
+          {t(`target.${meta.labelKey}`)}
         </Badge>
         <Badge variant="destructive">
-          {item.reportCount} {item.reportCount === 1 ? "report" : "reports"}
+          {t("reportCount", { count: item.reportCount })}
         </Badge>
         {item.hidden ? (
           <Badge variant="secondary" className="gap-1">
-            <EyeOff className="size-3" /> Hidden
+            <EyeOff className="size-3" /> {t("hidden")}
           </Badge>
         ) : null}
-        <span className="text-xs text-muted-foreground">by {authorName}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("byAuthor", { name: authorName })}
+        </span>
       </div>
 
       <p className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-muted/50 p-3 text-sm text-foreground">
@@ -85,7 +96,7 @@ function QueueRow({
       <div className="mt-2 flex flex-wrap gap-1.5">
         {item.reasons.map((reason) => (
           <Badge key={reason} variant="outline">
-            {REASON_LABEL[reason] ?? reason}
+            {REASON_KEY[reason] ? t(`reason.${REASON_KEY[reason]}`) : reason}
           </Badge>
         ))}
       </div>
@@ -105,7 +116,7 @@ function QueueRow({
               })
             }
           >
-            <EyeOff /> Hide from members
+            <EyeOff /> {t("actions.hide")}
           </Button>
         ) : null}
         <Button
@@ -121,7 +132,8 @@ function QueueRow({
             })
           }
         >
-          <ShieldCheck /> Dismiss {item.hidden ? "reports" : "— it's fine"}
+          <ShieldCheck />
+          {item.hidden ? t("actions.dismissReports") : t("actions.dismissFine")}
         </Button>
       </div>
     </li>
@@ -133,15 +145,13 @@ function QueueRow({
  * with Hide / Dismiss actions for owners and admins.
  */
 export function ModerationQueue({ queue }: { queue: ModerationQueue }) {
+  const t = useTranslations("groups.moderation");
   if (queue.items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-10 text-center text-muted-foreground">
         <ShieldCheck className="mx-auto mb-2 size-7" aria-hidden="true" />
-        <p className="font-medium text-foreground">Nothing to review</p>
-        <p className="mt-1 text-sm">
-          When a member reports a comment, review, or cook post, it shows up
-          here.
-        </p>
+        <p className="font-medium text-foreground">{t("empty.title")}</p>
+        <p className="mt-1 text-sm">{t("empty.description")}</p>
       </div>
     );
   }

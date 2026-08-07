@@ -8,7 +8,7 @@ import {
 describe("ingredientAllergens", () => {
   it("uses structured food-graph tokens when present (source of truth)", () => {
     // The free text ("butter") would text-detect dairy too, but the structured
-    // value wins even when it disagrees — proving structured is authoritative.
+    // value wins even when it disagrees. Proving structured is authoritative.
     expect(
       ingredientAllergens({ item: "butter", foodAllergens: ["soy"] }),
     ).toEqual(["soy"]);
@@ -45,7 +45,7 @@ describe("unionIngredientAllergens", () => {
       { item: "soy sauce", foodAllergens: ["soy", "wheat"] },
       { item: "more butter", foodAllergens: ["dairy"] },
     ]);
-    // canonical order: dairy, egg, soy, wheat — and dairy not duplicated.
+    // canonical order: dairy, egg, soy, wheat, with dairy not duplicated.
     expect(result).toEqual(["dairy", "egg", "soy", "wheat"]);
   });
 

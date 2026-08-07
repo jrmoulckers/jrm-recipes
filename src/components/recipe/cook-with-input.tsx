@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
@@ -11,10 +12,11 @@ import { MAX_PANTRY_ITEMS } from "~/server/recipes/search";
 
 /**
  * Chips input for "cook with what you have". Pantry items live in the URL
- * (`?have=chicken,rice`) so results are shareable and SSR-rendered; typing
+ * (`?have=chicken,rice`) so results are shareable and SSR-rendered. Typing
  * commits on Enter/comma/blur and each chip can be removed.
  */
 export function CookWithInput({ initial }: { initial: string[] }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const pathname = usePathname();
   const [items, setItems] = React.useState<string[]>(initial);
@@ -80,7 +82,7 @@ export function CookWithInput({ initial }: { initial: string[] }) {
             <CloseButton
               size="sm"
               onClick={() => remove(item)}
-              label={`Remove ${item}`}
+              label={t("cookWithInput.removeItem", { item })}
               className="-me-1 text-accent-foreground/70 hover:bg-accent-foreground/10 hover:text-accent-foreground"
             />
           </span>
@@ -91,10 +93,12 @@ export function CookWithInput({ initial }: { initial: string[] }) {
           onKeyDown={handleKeyDown}
           onBlur={() => addFrom(draft)}
           placeholder={
-            items.length === 0 ? "Add ingredients you have..." : "Add more..."
+            items.length === 0
+              ? t("cookWithInput.addIngredients")
+              : t("cookWithInput.addMore")
           }
           className="min-w-[10rem] flex-1 bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground"
-          aria-label="Add an ingredient you have"
+          aria-label={t("cookWithInput.addIngredientAria")}
         />
         {items.length > 0 && (
           <Button
@@ -103,14 +107,11 @@ export function CookWithInput({ initial }: { initial: string[] }) {
             size="sm"
             onClick={() => commit([])}
           >
-            Clear
+            {t("common.clear")}
           </Button>
         )}
       </div>
-      <p className="text-sm text-muted-foreground">
-        Enter what&apos;s in your pantry — we&apos;ll rank recipes by how much
-        you already have.
-      </p>
+      <p className="text-sm text-muted-foreground">{t("cookWithInput.help")}</p>
     </div>
   );
 }

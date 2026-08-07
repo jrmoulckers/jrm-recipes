@@ -6,7 +6,7 @@
  * before this feature have a NULL `dietary_tags`. This script reads each
  * recipe's ingredient item text, recomputes the three detectable "-free" tags
  * (dairy-free / gluten-free / egg-free), and writes them. vegan/vegetarian are
- * never touched here — they live in the author-declared `dietary_flags`.
+ * never touched here, since they live in the author-declared `dietary_flags`.
  *
  * Idempotent: re-running recomputes the same values (only writes when they
  * differ). Run with `pnpm db:backfill-dietary`.
@@ -24,7 +24,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[backfill-dietary] No database URL set — nothing to do.");
+  console.log("[backfill-dietary] No database URL set, nothing to do.");
   process.exit(0);
 }
 

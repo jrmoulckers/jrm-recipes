@@ -19,7 +19,7 @@ type Entry = { id: string; userId: string; groupId: string | null } | null;
 /**
  * Minimal transaction double mirroring the Drizzle query/builder surface the
  * planner mutations touch. `membership` is the row `isGroupMember` /
- * membership guards read; `entry` is the meal-plan row removeEntry loads.
+ * membership guards read. `entry` is the meal-plan row removeEntry loads.
  */
 function fakeTx(opts: {
   membership?: { id: string } | null;

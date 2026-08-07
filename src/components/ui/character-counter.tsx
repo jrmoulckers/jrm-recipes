@@ -9,14 +9,14 @@ import { cn } from "~/lib/utils";
  * Live character counter for length-limited fields (#144).
  *
  * Stays quiet until the value is within `threshold` (default 90%) of `max`, then
- * announces how much room is left — flipping to the destructive token and the
+ * announces how much room is left. Flipping to the destructive token and the
  * field's real validation message once over. `aria-live="polite"` means screen
  * readers hear the warning as the user types, without interrupting.
  *
  * `max` and `overMessage` are passed straight from the Zod schema so the wording
  * and limit never drift from what the server enforces. All visible/announced copy
  * is resolved through next-intl (`characterCounter` namespace) so it localizes and
- * reads correctly under RTL — the counter no longer hardcodes English.
+ * reads correctly under RTL. The counter no longer hardcodes English.
  */
 export function CharacterCounter({
   value,

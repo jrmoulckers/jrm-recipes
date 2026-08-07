@@ -7,13 +7,13 @@ import { toPrintRecipe } from "~/server/recipes/serialize";
 
 // Buffers the whole archive in memory and reads the DB, so keep it on Node.
 export const runtime = "nodejs";
-// Always reflects the user's live recipes; never cache the download.
+// Always reflects the user's live recipes. Never cache the download.
 export const dynamic = "force-dynamic";
 
 /**
  * "Download my whole cookbook" (issue #420).
  *
- * A long-time user's peace of mind is that their family's recipes are *theirs* —
+ * A long-time user's peace of mind is that their family's recipes are *theirs*.
  * this hands back a complete, self-contained ZIP (human-readable Markdown per
  * recipe plus a lossless `recipes.json`) with no third-party service involved.
  * Stories and provenance ride along so nothing about the family's history is

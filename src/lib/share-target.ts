@@ -11,7 +11,7 @@ function toHttpUrl(value: string): string | undefined {
       return url.toString();
     }
   } catch {
-    // Not a parseable URL — ignore.
+    // Not a parseable URL. Ignore.
   }
   return undefined;
 }
@@ -49,7 +49,7 @@ const CLOUDINARY_HOST = "res.cloudinary.com";
 
 /**
  * Cap on a shared photo we're willing to accept + upload (10 MB). Keeps a
- * hostile or accidental huge share from tying up the upload path; well above a
+ * hostile or accidental huge share from tying up the upload path. Well above a
  * phone camera JPEG/HEIC.
  */
 export const SHARED_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
@@ -71,7 +71,7 @@ export function isShareableImage(
 /**
  * Validate a cover-image URL handed to the New Recipe editor via `?cover=`.
  * We only ever set it to a Cloudinary `secure_url` we just uploaded, so we
- * accept *only* an https URL on the Cloudinary host — this prevents the query
+ * accept *only* an https URL on the Cloudinary host. This prevents the query
  * param from being abused to render an arbitrary attacker-chosen image.
  */
 export function safeSharedImageUrl(
@@ -84,7 +84,7 @@ export function safeSharedImageUrl(
       return url.toString();
     }
   } catch {
-    // Not a parseable URL — ignore.
+    // Not a parseable URL. Ignore.
   }
   return undefined;
 }

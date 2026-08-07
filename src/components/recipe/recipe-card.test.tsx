@@ -1,7 +1,13 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render as rtlRender } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RecipeCard, type CardRecipe } from "./recipe-card";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // RecipeCard imports FavoriteButton, which pulls in a server action + router;
 // stub the pieces so the card can render in jsdom.
@@ -20,7 +26,7 @@ vi.mock("sonner", () => ({
 afterEach(() => {
   cleanup();
   // A `priority` next/image injects a preload <link> into <head> via React's
-  // resource system; drop them between tests so each asserts a clean head.
+  // resource system. Drop them between tests so each asserts a clean head.
   document.head
     .querySelectorAll('link[rel="preload"][as="image"]')
     .forEach((el) => el.remove());

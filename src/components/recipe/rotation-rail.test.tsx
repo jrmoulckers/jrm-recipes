@@ -1,6 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ReactElement } from "react";
 
+import { IntlWrapper } from "~/test/intl";
+import esMessages from "~/messages/es.json";
 import { RotationRail } from "./rotation-rail";
 import { type CardRecipe } from "./recipe-card";
 
@@ -18,6 +21,16 @@ vi.mock("./quick-plan-button", () => ({
 }));
 
 afterEach(cleanup);
+
+/** Asserted against the Spanish catalog so a passing run proves the rail's
+ *  copy is resolved from the catalogs rather than hard-coded. */
+function render(ui: ReactElement) {
+  return rtlRender(
+    <IntlWrapper locale="es" messages={esMessages}>
+      {ui}
+    </IntlWrapper>,
+  );
+}
 
 const recipes = [
   { id: "r1", slug: "tacos", title: "Taco night" },
@@ -41,10 +54,10 @@ describe("RotationRail (#426)", () => {
     render(<RotationRail recipes={recipes} quickPlan={quickPlan} />);
 
     expect(
-      screen.getByRole("heading", { name: /back in the rotation/i }),
+      screen.getByRole("heading", { name: /de vuelta al menú/i }),
     ).toBeInTheDocument();
 
-    const cookLinks = screen.getAllByRole("link", { name: /cook/i });
+    const cookLinks = screen.getAllByRole("link", { name: /cocinar/i });
     expect(cookLinks.map((a) => a.getAttribute("href"))).toEqual([
       "/recipes/tacos/cook",
       "/recipes/pasta/cook",
@@ -60,6 +73,17 @@ describe("RotationRail (#426)", () => {
       screen.queryByRole("button", { name: /^plan / }),
     ).not.toBeInTheDocument();
     // Cook is still offered.
-    expect(screen.getAllByRole("link", { name: /cook/i })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: /cocinar/i })).toHaveLength(2);
+  });
+
+  it("resolves its copy from the English catalog too", () => {
+    rtlRender(
+      <IntlWrapper>
+        <RotationRail recipes={recipes} quickPlan={null} />
+      </IntlWrapper>,
+    );
+    expect(
+      screen.getByRole("heading", { name: /back in the rotation/i }),
+    ).toBeInTheDocument();
   });
 });

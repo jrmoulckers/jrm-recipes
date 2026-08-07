@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   afterEach,
@@ -24,6 +24,12 @@ import {
   THEME_PREVIOUS_COOKIE,
   type UITheme,
 } from "~/config/themes";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 // ThemeProvider + A11yProvider effects lean on matchMedia (not in jsdom).
 beforeAll(() => {
@@ -91,7 +97,7 @@ describe("Kids mode a11y coupling (issue #445)", () => {
 
     await user.click(screen.getByRole("button", { name: "Turn on Kids mode" }));
 
-    // Explicit XL is preserved; only the unset easy-reading default is enabled.
+    // Explicit XL is preserved. Only the unset easy-reading default is enabled.
     expect(html()).toHaveAttribute("data-text", "xl");
     expect(html()).toHaveAttribute("data-reading", "readable");
   });

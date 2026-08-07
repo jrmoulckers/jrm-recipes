@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Users } from "lucide-react";
 
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
@@ -15,7 +16,9 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function GroupCard({ group }: { group: MyGroup }) {
+export async function GroupCard({ group }: { group: MyGroup }) {
+  const t = await getTranslations("groups.card");
+
   return (
     <Link
       href={`/groups/${group.slug}`}
@@ -23,6 +26,7 @@ export function GroupCard({ group }: { group: MyGroup }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="bg-primary/12 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border font-display text-lg font-bold text-primary">
+          {/* Decorative: the avatar repeats the group name shown beside it. */}
           {group.avatarUrl ? (
             <CloudinaryImage
               src={group.avatarUrl}
@@ -35,7 +39,7 @@ export function GroupCard({ group }: { group: MyGroup }) {
             initials(group.name)
           )}
         </div>
-        <RoleBadge role={group.role} />
+        <RoleBadge role={group.role} label={t(`roles.${group.role}`)} />
       </div>
 
       <div className="mt-5 flex flex-1 flex-col gap-2">
@@ -43,19 +47,16 @@ export function GroupCard({ group }: { group: MyGroup }) {
           {group.name}
         </h2>
         <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
-          {group.description ??
-            "A shared kitchen table for the people who cook, taste, and remember together."}
+          {group.description ?? t("defaultDescription")}
         </p>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-4" aria-hidden="true" />
-          {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
+          {t("memberCount", { count: group.memberCount })}
         </span>
-        <span>
-          {group.recipeCount} {group.recipeCount === 1 ? "recipe" : "recipes"}
-        </span>
+        <span>{t("recipeCount", { count: group.recipeCount })}</span>
       </div>
     </Link>
   );

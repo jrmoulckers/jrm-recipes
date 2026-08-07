@@ -1,8 +1,10 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { Check, Gift } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { PLAN_LIST, GIFT_CONFIG, getPlan, type Plan } from "~/config/plans";
+import { brand } from "~/config/brand";
 import { getCurrentUser } from "~/server/auth";
 import { getEffectivePlanId } from "~/server/billing/entitlements";
 import { isBillingConfigured } from "~/server/billing/stripe";
@@ -19,44 +21,53 @@ import {
 import { CheckoutButton } from "~/components/billing/checkout-button";
 import { GiftButton } from "~/components/billing/gift-button";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Simple, honest pricing for Heirloom. Start free, upgrade to Family for unlimited recipes and AI help — cancel anytime.",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("pricing.title"),
+    description: t("pricing.description"),
+  };
+}
+
+/**
+ * Which bullet points each plan shows, in order. The ids are structural. Their
+ * text lives in `billing.plans.<planId>.highlights.<id>` so the pitch is
+ * translated like the rest of the page.
+ */
+const PLAN_HIGHLIGHTS: Record<Plan["id"], readonly string[]> = {
+  free: ["recipes", "group", "storage", "tools"],
+  family: ["recipes", "members", "storage", "ai", "video", "credits"],
 };
 
 /**
  * Public pricing page (issue #312).
  *
  * Renders every plan straight from `src/config/plans.ts` (the single source of
- * truth — no duplicated marketing copy), highlights the signed-in user's current
+ * truth for ids, prices, trials, and entitlements) with its display copy read
+ * from the `billing.plans` catalog, highlights the signed-in user's current
  * plan via the entitlements resolver, and routes each paid CTA through the
  * checkout action. When billing is unconfigured the page stays fully viewable:
- * the paid CTA is disabled with a friendly note. Warm, honest tone — no fake
+ * the paid CTA is disabled with a friendly note. Warm, honest tone. No fake
  * scarcity or countdowns.
  */
 export default async function PricingPage() {
   const user = await getCurrentUser();
   const currentPlanId = user ? await getEffectivePlanId(user) : null;
   const billingReady = isBillingConfigured();
+  const t = await getTranslations("billing.pricing");
 
   return (
     <div className="container flex flex-col gap-10 py-12">
       <header className="mx-auto max-w-2xl text-center">
         <h1 className="font-display text-4xl font-bold tracking-tight">
-          Simple pricing for every family
+          {t("heading")}
         </h1>
-        <p className="mt-3 text-muted-foreground">
-          Start free and keep everything you cook. Upgrade to Family when
-          you&apos;re ready for unlimited recipes and AI help — no fine print,
-          no countdowns, cancel anytime.
-        </p>
+        <p className="mt-3 text-muted-foreground">{t("subheading")}</p>
       </header>
 
       {!billingReady ? (
         <p className="mx-auto max-w-xl rounded-xl border border-dashed border-border bg-surface/50 px-4 py-3 text-center text-sm text-muted-foreground">
-          Checkout isn&apos;t enabled in this environment yet, so you can
-          compare the plans here but can&apos;t subscribe right now.
+          {t("checkoutDisabled")}
         </p>
       ) : null}
 
@@ -79,52 +90,58 @@ export default async function PricingPage() {
 /**
  * "Gift Heirloom" entry (issue #331). Gifting a year of Family is deeply
  * on-brand for a family recipe app, so it gets its own warm card rather than
- * hiding in a plan CTA. Buying routes through the one-time gift Checkout; a
+ * hiding in a plan CTA. Buying routes through the one-time gift Checkout. A
  * quiet link points recipients at `/redeem`. Degrades to a disabled note when
  * billing is unconfigured, exactly like the paid CTAs above.
  */
-function GiftSection({ billingReady }: { billingReady: boolean }) {
+async function GiftSection({ billingReady }: { billingReady: boolean }) {
+  const t = await getTranslations("billing.pricing.gift");
+  const tPlan = await getTranslations("billing.plans");
   const family = getPlan(GIFT_CONFIG.planId);
+  const label = t("cta", { months: GIFT_CONFIG.durationMonths });
 
   return (
     <Card className="mx-auto w-full max-w-4xl border-primary/30 bg-surface/40">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Gift className="size-5 text-primary" aria-hidden="true" />
-          <CardTitle>Gift Heirloom</CardTitle>
+          <CardTitle>{t("title", { brand: brand.name })}</CardTitle>
         </div>
         <CardDescription>
-          Give someone {GIFT_CONFIG.durationMonths} months of {family.name} — a
-          warm way to help a loved one keep every family recipe safe. One
-          payment, no subscription, delivered as a code they redeem.
+          {t("description", {
+            months: GIFT_CONFIG.durationMonths,
+            plan: tPlan(`${family.id}.name`),
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="sm:max-w-xs">
           {billingReady ? (
-            <GiftButton>Gift {GIFT_CONFIG.durationMonths} months</GiftButton>
+            <GiftButton>{label}</GiftButton>
           ) : (
             <Button className="w-full" disabled>
-              Gift {GIFT_CONFIG.durationMonths} months
+              {label}
             </Button>
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Have a code?{" "}
-          <Link
-            href="/redeem"
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            Redeem your gift
-          </Link>
-          .
+          {t.rich("haveCode", {
+            link: (chunks) => (
+              <Link
+                href="/redeem"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       </CardContent>
     </Card>
   );
 }
 
-function PlanCard({
+async function PlanCard({
   plan,
   isCurrent,
   billingReady,
@@ -133,6 +150,8 @@ function PlanCard({
   isCurrent: boolean;
   billingReady: boolean;
 }) {
+  const t = await getTranslations("billing.pricing");
+  const tPlan = await getTranslations("billing.plans");
   const isPaid = plan.monthlyPriceUsd > 0;
 
   return (
@@ -144,35 +163,38 @@ function PlanCard({
     >
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>{plan.name}</CardTitle>
+          <CardTitle>{tPlan(`${plan.id}.name`)}</CardTitle>
           {isCurrent ? (
-            <Badge variant="success">Current plan</Badge>
+            <Badge variant="success">{t("currentPlan")}</Badge>
           ) : isPaid ? (
-            <Badge>Most popular</Badge>
+            <Badge>{t("mostPopular")}</Badge>
           ) : null}
         </div>
-        <CardDescription>{plan.tagline}</CardDescription>
+        <CardDescription>{tPlan(`${plan.id}.tagline`)}</CardDescription>
         <p className="mt-2 flex items-baseline gap-1">
           <span className="font-display text-3xl font-bold">
             ${plan.monthlyPriceUsd}
           </span>
-          <span className="text-sm text-muted-foreground">/ month</span>
+          <span className="text-sm text-muted-foreground">{t("perMonth")}</span>
         </p>
         {plan.trialDays > 0 ? (
           <p className="text-sm text-muted-foreground">
-            {plan.trialDays}-day free trial, then ${plan.monthlyPriceUsd}/month
+            {t("trialNote", {
+              days: plan.trialDays,
+              price: plan.monthlyPriceUsd,
+            })}
           </p>
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-5">
         <ul className="flex flex-col gap-2 text-sm">
-          {plan.highlights.map((highlight) => (
+          {PLAN_HIGHLIGHTS[plan.id].map((highlight) => (
             <li key={highlight} className="flex items-start gap-2">
               <Check
                 className="mt-0.5 size-4 shrink-0 text-primary"
                 aria-hidden="true"
               />
-              <span>{highlight}</span>
+              <span>{tPlan(`${plan.id}.highlights.${highlight}`)}</span>
             </li>
           ))}
         </ul>
@@ -189,7 +211,7 @@ function PlanCard({
   );
 }
 
-function PlanCta({
+async function PlanCta({
   plan,
   isCurrent,
   isPaid,
@@ -200,10 +222,13 @@ function PlanCta({
   isPaid: boolean;
   billingReady: boolean;
 }) {
+  const t = await getTranslations("billing.pricing");
+  const tPlan = await getTranslations("billing.plans");
+
   if (isCurrent) {
     return (
       <Button variant="outline" className="w-full" disabled>
-        Current plan
+        {t("currentPlan")}
       </Button>
     );
   }
@@ -211,15 +236,18 @@ function PlanCta({
   if (!isPaid) {
     return (
       <Button asChild variant="outline" className="w-full">
-        <Link href="/recipes/new">Get started</Link>
+        <Link href="/recipes/new">{t("freeCta")}</Link>
       </Button>
     );
   }
 
   const label =
     plan.trialDays > 0
-      ? `Start ${plan.trialDays}-day free trial`
-      : `Upgrade to ${plan.name}`;
+      ? t("trialCta", {
+          days: plan.trialDays,
+          plan: tPlan(`${plan.id}.name`),
+        })
+      : t("upgradeCta", { plan: tPlan(`${plan.id}.name`) });
 
   if (!billingReady) {
     return (

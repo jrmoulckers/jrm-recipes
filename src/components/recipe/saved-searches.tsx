@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, BookmarkPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ import {
 
 /**
  * "Save this search" + a menu of saved searches. Saving stores the current
- * (already normalized) querystring under a name; applying just navigates back
+ * (already normalized) querystring under a name. Applying just navigates back
  * to those params. State lives on the server, so we `router.refresh()` after
  * mutations to pull the fresh list.
  */
@@ -44,6 +45,7 @@ export function SavedSearches({
   currentQuery: string;
   filtersActive: boolean;
 }) {
+  const t = useTranslations("recipe");
   const router = useRouter();
   const pathname = usePathname();
   const nameId = React.useId();
@@ -65,7 +67,7 @@ export function SavedSearches({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Saved search removed");
+        toast.success(t("savedSearches.toast.removed"));
         router.refresh();
       });
     });
@@ -82,7 +84,7 @@ export function SavedSearches({
             toast.error(friendlyError(result.error));
             return;
           }
-          toast.success("Search saved");
+          toast.success(t("savedSearches.toast.saved"));
           setSaveOpen(false);
           setName("");
           router.refresh();
@@ -97,12 +99,13 @@ export function SavedSearches({
         <Popover open={listOpen} onOpenChange={setListOpen}>
           <PopoverTrigger asChild>
             <Button type="button" variant="outline">
-              <Bookmark /> Saved ({savedSearches.length})
+              <Bookmark />{" "}
+              {t("savedSearches.saved", { count: savedSearches.length })}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-72 p-2">
             <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-              Saved searches
+              {t("savedSearches.listTitle")}
             </p>
             <ul className="grid gap-0.5">
               {savedSearches.map((saved) => (
@@ -118,7 +121,9 @@ export function SavedSearches({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={`Delete saved search ${saved.name}`}
+                    aria-label={t("savedSearches.deleteAria", {
+                      name: saved.name,
+                    })}
                     disabled={isPending}
                     onClick={() => onDelete(saved.id)}
                   >
@@ -136,30 +141,27 @@ export function SavedSearches({
           type="button"
           variant="outline"
           disabled={!filtersActive}
-          title={
-            filtersActive ? undefined : "Add a filter or search term to save"
-          }
+          title={filtersActive ? undefined : t("savedSearches.disabledTitle")}
           onClick={() => setSaveOpen(true)}
         >
-          <BookmarkPlus /> Save search
+          <BookmarkPlus /> {t("savedSearches.trigger")}
         </Button>
         <DialogContent>
           <form onSubmit={onSave} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>Save this search</DialogTitle>
+              <DialogTitle>{t("savedSearches.title")}</DialogTitle>
               <DialogDescription>
-                Name these filters to reapply them any time from the recipes
-                page.
+                {t("savedSearches.description")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={nameId}>Name</Label>
+              <Label htmlFor={nameId}>{t("savedSearches.nameLabel")}</Label>
               <Input
                 id={nameId}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="30-minute vegetarian"
+                placeholder={t("savedSearches.namePlaceholder")}
                 aria-invalid={Boolean(fieldError)}
                 aria-describedby={fieldError ? `${nameId}-error` : undefined}
                 autoFocus
@@ -178,10 +180,10 @@ export function SavedSearches({
                 onClick={() => setSaveOpen(false)}
                 disabled={isPending}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving…" : "Save search"}
+                {isPending ? t("common.saving") : t("savedSearches.save")}
               </Button>
             </DialogFooter>
           </form>

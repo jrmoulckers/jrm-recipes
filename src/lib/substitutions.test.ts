@@ -206,7 +206,7 @@ describe("getSubstitutions", () => {
     expect(
       eggFreeMayoSwaps.every((sub) => sub.dietaryTags?.includes("egg-free")),
     ).toBe(true);
-    // The egg-free "Vegan mayo" swap survives; the egg-based options do not.
+    // The egg-free "Vegan mayo" swap survives. The egg-based options do not.
     expect(eggFreeMayoSwaps.map((sub) => sub.substitute)).toContain(
       "Vegan mayo",
     );
@@ -357,8 +357,8 @@ describe("scalingNudge", () => {
   });
 
   it("nudges on other countable items with round guidance", () => {
-    expect(scalingNudge(2.5, null, "onions")).toContain("round to 2 or 3");
-    expect(scalingNudge(0.5, null, "lemon")).toContain("round up to 1");
+    expect(scalingNudge(2.5, null, "onions")).toContain("Round to 2 or 3");
+    expect(scalingNudge(0.5, null, "lemon")).toContain("Round up to 1");
   });
 
   it("stays quiet for whole counts", () => {

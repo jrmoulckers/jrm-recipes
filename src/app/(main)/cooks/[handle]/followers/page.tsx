@@ -2,6 +2,7 @@ import { type Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getPublicProfileByHandle } from "~/server/users/queries";
 import { listFollowers } from "~/server/follows/queries";
@@ -15,7 +16,16 @@ export async function generateMetadata({
   params: Promise<HandleRouteParams>;
 }): Promise<Metadata> {
   const { handle } = await parseHandleParams(params);
-  return { title: `Followers · @${handle}`, robots: { index: false } };
+  const profile = await getPublicProfileByHandle(handle);
+  const t = await getTranslations("metadata");
+  const displayName = profile
+    ? displayNameFrom(profile.user.name, `@${profile.user.handle}`)
+    : `@${handle}`;
+  return {
+    title: t("followers.title", { handle }),
+    description: t("followers.description", { name: displayName }),
+    robots: { index: false },
+  };
 }
 
 export default async function FollowersPage({
@@ -31,6 +41,7 @@ export default async function FollowersPage({
   const { user } = profile;
   const displayName = displayNameFrom(user.name, `@${user.handle}`);
   const first = await listFollowers(user.id);
+  const t = await getTranslations("cooks.followers");
 
   return (
     <div className="container flex max-w-2xl flex-col gap-6 py-10">
@@ -42,7 +53,7 @@ export default async function FollowersPage({
           <ArrowLeft className="size-4" /> {displayName}
         </Link>
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          Followers
+          {t("title")}
         </h1>
       </header>
       <FollowPeopleList
@@ -50,7 +61,7 @@ export default async function FollowersPage({
         direction="followers"
         initialPeople={first.people}
         initialCursor={first.nextCursor}
-        emptyLabel={`${displayName} doesn't have any followers yet.`}
+        emptyLabel={t("empty", { name: displayName })}
       />
     </div>
   );

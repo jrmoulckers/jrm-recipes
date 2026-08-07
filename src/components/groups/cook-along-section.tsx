@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -23,7 +24,7 @@ import type {
   UpcomingCookAlong,
 } from "~/server/cookalong/queries";
 import type { RsvpStatus } from "~/server/db/schema";
-import { formatDate, formatRelativeTime } from "~/lib/dates";
+import { formatEventDateTime, formatRelativeTime } from "~/lib/dates";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -64,16 +65,15 @@ export function CookAlongSection({
   upcoming: UpcomingCookAlong[];
   toLog: PastCookAlongPrompt[];
 }) {
+  const t = useTranslations("groups.cookAlong");
   return (
-    <section className="flex flex-col gap-4" aria-label="Cook-alongs">
+    <section className="flex flex-col gap-4" aria-label={t("a11y.section")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            Cook-alongs
+            {t("title")}
           </h2>
-          <p className="mt-1 text-muted-foreground">
-            Pick a night, make the same dish together — near or far.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         {isMember && recipes.length > 0 ? (
           <ScheduleCookAlongButton
@@ -97,17 +97,17 @@ export function CookAlongSection({
                   aria-hidden="true"
                 />
                 <p className="text-sm">
-                  How did{" "}
+                  {t("logPrompt.prefix")}{" "}
                   <span className="font-medium">
-                    {event.title ?? event.recipe?.title ?? "your cook-along"}
+                    {event.title ?? event.recipe?.title ?? t("fallbackTitle")}
                   </span>{" "}
-                  go? Log your cook and rate it.
+                  {t("logPrompt.suffix")}
                 </p>
               </div>
               {event.recipe ? (
                 <Button asChild size="sm" variant="outline">
                   <Link href={`/recipes/${event.recipe.slug}`}>
-                    Log my cook
+                    {t("logPrompt.action")}
                   </Link>
                 </Button>
               ) : null}
@@ -133,10 +133,8 @@ export function CookAlongSection({
             className="mx-auto mb-2 size-6 text-muted-foreground"
             aria-hidden="true"
           />
-          No cook-alongs on the calendar yet.
-          {isMember && recipes.length > 0
-            ? " Schedule one and rally the family."
-            : ""}
+          {t("empty.title")}
+          {isMember && recipes.length > 0 ? ` ${t("empty.memberAction")}` : ""}
         </div>
       )}
     </section>
@@ -158,7 +156,9 @@ function CookAlongCard({
   canRsvp: boolean;
 }) {
   const going = event.attendees.filter((a) => a.status === "going");
-  const hostName = event.host?.name ?? event.host?.handle ?? "A family cook";
+  const t = useTranslations("groups.cookAlong");
+  const locale = useLocale();
+  const hostName = event.host?.name ?? event.host?.handle ?? t("fallbackHost");
 
   return (
     <li className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-token">
@@ -166,24 +166,24 @@ function CookAlongCard({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-primary">
             <CalendarClock className="size-4" aria-hidden="true" />
-            {formatDate(event.scheduledFor, "EEE, MMM d · h:mm a")}
+            {formatEventDateTime(event.scheduledFor, locale)}
             <span className="text-muted-foreground">
-              ({formatRelativeTime(event.scheduledFor)})
+              ({formatRelativeTime(event.scheduledFor, locale)})
             </span>
           </div>
           <h3 className="mt-1 font-display text-lg font-semibold">
-            {event.title ?? event.recipe?.title ?? "Cook-along"}
+            {event.title ?? event.recipe?.title ?? t("fallbackTitleShort")}
           </h3>
           {event.recipe ? (
             <p className="text-sm text-muted-foreground">
-              Cooking{" "}
+              {t("cooking")}{" "}
               <Link
                 href={`/recipes/${event.recipe.slug}`}
                 className="font-medium text-foreground underline-offset-2 hover:underline"
               >
                 {event.recipe.title}
               </Link>{" "}
-              · hosted by {hostName}
+              {t("hostedBy", { host: hostName })}
             </p>
           ) : null}
           {event.note ? (
@@ -191,7 +191,7 @@ function CookAlongCard({
           ) : null}
         </div>
         <Badge variant="secondary" className="shrink-0">
-          {event.goingCount} going
+          {t("goingCount", { count: event.goingCount })}
         </Badge>
       </div>
 
@@ -220,7 +220,7 @@ function CookAlongCard({
           </div>
           {going.length > 6 ? (
             <span className="text-xs text-muted-foreground">
-              +{going.length - 6} more
+              {t("moreGoing", { count: going.length - 6 })}
             </span>
           ) : null}
         </div>
@@ -239,12 +239,12 @@ function CookAlongCard({
 
 const RSVP_OPTIONS: {
   status: RsvpStatus;
-  label: string;
+  labelKey: "going" | "maybe" | "declined";
   Icon: typeof Check;
 }[] = [
-  { status: "going", label: "Going", Icon: Check },
-  { status: "maybe", label: "Maybe", Icon: HelpCircle },
-  { status: "declined", label: "Can't make it", Icon: X },
+  { status: "going", labelKey: "going", Icon: Check },
+  { status: "maybe", labelKey: "maybe", Icon: HelpCircle },
+  { status: "declined", labelKey: "declined", Icon: X },
 ];
 
 function RsvpControls({
@@ -257,6 +257,7 @@ function RsvpControls({
   current: RsvpStatus | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.cookAlong");
   const [pending, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState<RsvpStatus | null>(
     current,
@@ -281,8 +282,8 @@ function RsvpControls({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-muted-foreground">Your RSVP:</span>
-      {RSVP_OPTIONS.map(({ status, label, Icon }) => {
+      <span className="text-sm text-muted-foreground">{t("rsvp.label")}</span>
+      {RSVP_OPTIONS.map(({ status, labelKey, Icon }) => {
         const active = optimistic === status;
         return (
           <Button
@@ -295,7 +296,7 @@ function RsvpControls({
             aria-pressed={active}
           >
             <Icon />
-            {label}
+            {t(`rsvp.options.${labelKey}`)}
           </Button>
         );
       })}
@@ -313,6 +314,7 @@ function ScheduleCookAlongButton({
   recipes: GroupRecipeOption[];
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.cookAlong.schedule");
   const [open, setOpen] = React.useState(false);
   const [recipeId, setRecipeId] = React.useState(recipes[0]?.id ?? "");
   const [title, setTitle] = React.useState("");
@@ -330,7 +332,7 @@ function ScheduleCookAlongButton({
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!recipeId || !scheduledFor) {
-      toast.error("Pick a recipe and a date.");
+      toast.error(t("toast.missingRecipeAndDate"));
       return;
     }
     startTransition(async () => {
@@ -343,7 +345,7 @@ function ScheduleCookAlongButton({
         scheduledFor: new Date(scheduledFor).toISOString(),
       });
       if (result.ok) {
-        toast.success("Cook-along scheduled — the family's invited");
+        toast.success(t("toast.scheduled"));
         reset();
         setOpen(false);
         router.refresh();
@@ -358,21 +360,18 @@ function ScheduleCookAlongButton({
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
           <CalendarPlus />
-          Schedule a cook-along
+          {t("trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={onSubmit} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>Schedule a cook-along</DialogTitle>
-            <DialogDescription>
-              Pick a recipe and a time, then invite the family to cook it
-              together.
-            </DialogDescription>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
-            <Label htmlFor="cookalong-recipe">Recipe</Label>
+            <Label htmlFor="cookalong-recipe">{t("fields.recipe")}</Label>
             <NativeSelect
               id="cookalong-recipe"
               value={recipeId}
@@ -388,7 +387,7 @@ function ScheduleCookAlongButton({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="cookalong-when">When</Label>
+            <Label htmlFor="cookalong-when">{t("fields.when")}</Label>
             <Input
               id="cookalong-when"
               type="datetime-local"
@@ -399,25 +398,25 @@ function ScheduleCookAlongButton({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="cookalong-title">Title (optional)</Label>
+            <Label htmlFor="cookalong-title">{t("fields.title")}</Label>
             <Input
               id="cookalong-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
-              placeholder="Sunday gnocchi night"
+              placeholder={t("placeholders.title")}
               disabled={pending}
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="cookalong-note">Note (optional)</Label>
+            <Label htmlFor="cookalong-note">{t("fields.note")}</Label>
             <Textarea
               id="cookalong-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={2000}
-              placeholder="We'll start at 5. Bring your aprons!"
+              placeholder={t("placeholders.note")}
               disabled={pending}
             />
           </div>
@@ -425,7 +424,7 @@ function ScheduleCookAlongButton({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost" disabled={pending}>
-                Cancel
+                {t("actions.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
@@ -434,7 +433,7 @@ function ScheduleCookAlongButton({
               ) : (
                 <CalendarPlus />
               )}
-              {pending ? "Scheduling…" : "Schedule"}
+              {pending ? t("actions.scheduling") : t("actions.schedule")}
             </Button>
           </DialogFooter>
         </form>

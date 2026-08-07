@@ -12,8 +12,8 @@
  *     we allow to be stored),
  * so what we render and what we persist can never drift apart.
  *
- * Kept in `.js` (not `.ts`) so `next.config.js` — plain Node ESM that cannot
- * import TypeScript — can consume it alongside the app code.
+ * Kept in `.js` (not `.ts`) so `next.config.js`. Plain Node ESM that cannot
+ * import TypeScript. Can consume it alongside the app code.
  */
 export const ALLOWED_MEDIA_HOSTS = ["res.cloudinary.com", "img.clerk.com"];
 

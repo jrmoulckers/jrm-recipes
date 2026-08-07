@@ -11,7 +11,7 @@ import type { ZodError } from "zod";
  *
  * Success payload `T` is merged at the **top level** (`{ ok: true } & T`) rather
  * than nested under a `data` key, so existing clients that read `res.slug` /
- * `res.id` keep compiling unchanged — the historical, backwards-compatible shape
+ * `res.id` keep compiling unchanged. The historical, backwards-compatible shape
  * the app already depends on. Use `ActionResult<void>` (the default) for the
  * bare `{ ok: true }` success case.
  */
@@ -19,7 +19,7 @@ import type { ZodError } from "zod";
 /** Field-level validation errors, keyed by form field name. */
 export type FieldErrors = Record<string, string[]>;
 
-/** The failure branch — identical across every action module. */
+/** The failure branch. Identical across every action module. */
 export type ActionFailure = {
   ok: false;
   error: string;
@@ -33,7 +33,7 @@ export type ActionFailure = {
 };
 
 /**
- * The success branch. `T` is spread onto `{ ok: true }`; a `void` payload
+ * The success branch. `T` is spread onto `{ ok: true }`. A `void` payload
  * collapses to a bare `{ ok: true }`. The tuple wrapper (`[T] extends [void]`)
  * stops the conditional from distributing over a union `T`.
  */

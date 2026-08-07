@@ -28,7 +28,7 @@ async function viewerGroupIds(tx: Tx, userId: string): Promise<string[]> {
   return rows.map((r) => r.groupId);
 }
 
-/** Mirror of the recipe visibility rules — can this user see this recipe? */
+/** Mirror of the recipe visibility rules. Can this user see this recipe? */
 function canView(
   recipe: { authorId: string; visibility: string; groupId: string | null },
   viewer: User,
@@ -255,7 +255,7 @@ async function requireGroupMembership(tx: Tx, groupId: string, user: User) {
 
 /**
  * Share a collection with a family group (issue #365). Only the collection
- * *owner* may share it, and only with a group they belong to. Idempotent — a
+ * *owner* may share it, and only with a group they belong to. Idempotent. A
  * repeat share of the same pair is a no-op.
  */
 export async function shareCollectionWithGroup(
@@ -279,7 +279,7 @@ export async function shareCollectionWithGroup(
 }
 
 /**
- * Stop sharing a collection with a group. Only the owner may unshare; deleting
+ * Stop sharing a collection with a group. Only the owner may unshare. Deleting
  * the link immediately revokes group members' access.
  */
 export async function unshareCollectionWithGroup(

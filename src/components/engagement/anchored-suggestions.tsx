@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Lightbulb, Check, Sparkles, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { addCommentAction } from "~/server/engagement/actions";
 import type { AnchoredSuggestion } from "~/server/engagement/queries";
+import { friendlyError } from "~/lib/error-copy";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -20,7 +22,7 @@ function authorName(author: AnchoredSuggestion["author"]) {
  * row or method step (issue #346). Filing a suggestion here persists an anchor
  * (type + id + a snapshot label) so the recipe owner can tell exactly what the
  * suggestion refers to. Existing anchored suggestions render inline at the
- * target; the owner resolves/applies them from the discussion suggestions list.
+ * target. The owner resolves/applies them from the discussion suggestions list.
  */
 export type AnchoredSuggestionsProps = {
   recipeId: string;
@@ -42,6 +44,7 @@ export function AnchoredSuggestions({
   suggestions,
 }: AnchoredSuggestionsProps) {
   const router = useRouter();
+  const t = useTranslations("engagement.anchoredSuggestions");
   const [open, setOpen] = React.useState(false);
   const [body, setBody] = React.useState("");
   const [pending, startTransition] = React.useTransition();
@@ -65,13 +68,13 @@ export function AnchoredSuggestions({
         anchorLabel,
       });
       if (result.ok) {
-        toast.success("Suggestion sent to the recipe owner");
+        toast.success(t("toast.sent"));
         setBody("");
         setOpen(false);
         router.refresh();
         return;
       }
-      toast.error(result.error);
+      toast.error(friendlyError(result.error));
     });
   };
 
@@ -93,15 +96,17 @@ export function AnchoredSuggestions({
                 <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
                   <Lightbulb className="size-3.5 shrink-0" aria-hidden />
                   <span className="font-medium">
-                    {authorName(suggestion.author)} suggests
+                    {t("authorSuggests", {
+                      name: authorName(suggestion.author),
+                    })}
                   </span>
                   {applied ? (
                     <span className="inline-flex items-center gap-0.5 text-success">
-                      <Sparkles className="size-3" aria-hidden /> applied
+                      <Sparkles className="size-3" aria-hidden /> {t("applied")}
                     </span>
                   ) : resolved ? (
                     <span className="inline-flex items-center gap-0.5 text-muted-foreground">
-                      <Check className="size-3" aria-hidden /> resolved
+                      <Check className="size-3" aria-hidden /> {t("resolved")}
                     </span>
                   ) : null}
                 </div>
@@ -123,7 +128,7 @@ export function AnchoredSuggestions({
               rows={2}
               maxLength={4000}
               autoFocus
-              placeholder={`Suggest an edit for ${anchorLabel}…`}
+              placeholder={t("placeholder", { label: anchorLabel })}
               disabled={pending}
             />
             <div className="flex items-center gap-2">
@@ -137,7 +142,7 @@ export function AnchoredSuggestions({
                 ) : (
                   <Lightbulb className="size-4" />
                 )}
-                Send suggestion
+                {t("send")}
               </Button>
               <Button
                 type="button"
@@ -149,7 +154,7 @@ export function AnchoredSuggestions({
                   setBody("");
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
             </div>
           </form>
@@ -163,7 +168,7 @@ export function AnchoredSuggestions({
             )}
           >
             <Lightbulb className="size-3.5" aria-hidden />
-            Suggest an edit
+            {t("trigger")}
           </button>
         )
       ) : null}

@@ -31,7 +31,7 @@ function paramsFromQueryString(queryString: string): SearchParams {
 /**
  * Fetch a further page of search results for the results "Load more" button
  * (#58). The active search is passed as its canonical query string and re-parsed
- * server-side; the viewer is re-derived (never trusted) so visibility scoping
+ * server-side. The viewer is re-derived (never trusted) so visibility scoping
  * and "safe for" filtering match the initial render. Allergen badges are only
  * rolled up when a family member with allergies is active.
  */

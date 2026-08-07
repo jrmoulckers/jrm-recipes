@@ -54,7 +54,7 @@ describe("buildContentSecurityPolicy", () => {
 
   it("allowlists the derived Clerk production FAPI host across directives", () => {
     // Regression: a pk_live instance serves FAPI from a custom domain reached by
-    // connect-src (no https: fallback) + a session iframe — must be allowlisted
+    // connect-src (no https: fallback) + a session iframe. Must be allowlisted
     // or sign-in/session hydration break in production (#212).
     const prod = buildContentSecurityPolicy("n", PK_LIVE);
     for (const directive of [
@@ -118,7 +118,7 @@ describe("clerkFrontendApiHost", () => {
 
   it("omits any Clerk prod host when no key is supplied", () => {
     const csp = buildContentSecurityPolicy("n");
-    // Only the dev wildcard is present; no bare derived host leaks in.
+    // Only the dev wildcard is present. No bare derived host leaks in.
     expect(csp).toContain("https://*.clerk.accounts.dev");
     expect(csp).not.toContain("https://clerk.example.com");
   });

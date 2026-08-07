@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Pencil, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import { useFriendlyError } from "~/lib/error-copy";
 
 import {
   createMemberProfileAction,
@@ -32,6 +33,7 @@ import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { NativeSelect } from "~/components/ui/native-select";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export type MemberProfileView = {
   id: string;
@@ -98,6 +100,9 @@ export function DietaryProfilesManager({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
+  const t = useTranslations("dietary");
+  const friendlyError = useFriendlyError();
 
   const groupName = React.useMemo(
     () => new Map(groups.map((g) => [g.id, g.name])),
@@ -139,17 +144,19 @@ export function DietaryProfilesManager({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(isAdd ? "Profile added" : "Profile updated");
+        toast.success(isAdd ? t("toasts.added") : t("toasts.updated"));
         setEditing(null);
         router.refresh();
       });
     });
   }
 
-  function onDelete(profile: MemberProfileView) {
-    const ok = window.confirm(
-      `Remove ${profile.name}'s dietary profile? This can't be undone.`,
-    );
+  async function onDelete(profile: MemberProfileView) {
+    const ok = await confirm({
+      title: t("confirm.remove.title", { name: profile.name }),
+      description: t("confirm.remove.description"),
+      confirmLabel: t("confirm.remove.confirmLabel"),
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteMemberProfileAction(profile.id).then((result) => {
@@ -157,7 +164,7 @@ export function DietaryProfilesManager({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Profile removed");
+        toast.success(t("toasts.removed"));
         router.refresh();
       });
     });
@@ -167,7 +174,7 @@ export function DietaryProfilesManager({
     <div className="flex flex-col gap-6">
       <div className="flex justify-end">
         <Button onClick={openAdd}>
-          <Plus /> Add family member
+          <Plus /> {t("actions.addFamilyMember")}
         </Button>
       </div>
 
@@ -178,15 +185,14 @@ export function DietaryProfilesManager({
           </span>
           <div>
             <h2 className="font-display text-xl font-semibold">
-              No profiles yet
+              {t("empty.title")}
             </h2>
             <p className="mt-1 max-w-md text-muted-foreground">
-              Record who you cook for — their allergies, diets, and calorie
-              goals — so Heirloom can help you cook safely for everyone.
+              {t("empty.description")}
             </p>
           </div>
           <Button onClick={openAdd}>
-            <Plus /> Add family member
+            <Plus /> {t("actions.addFamilyMember")}
           </Button>
         </div>
       ) : (
@@ -212,7 +218,7 @@ export function DietaryProfilesManager({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={`Edit ${profile.name}`}
+                    aria-label={t("profile.edit", { name: profile.name })}
                     onClick={() => openEdit(profile)}
                   >
                     <Pencil className="size-4" />
@@ -221,7 +227,7 @@ export function DietaryProfilesManager({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={`Remove ${profile.name}`}
+                    aria-label={t("profile.remove", { name: profile.name })}
                     onClick={() => onDelete(profile)}
                   >
                     <Trash2 className="size-4" />
@@ -251,7 +257,9 @@ export function DietaryProfilesManager({
 
               {profile.calorieGoal != null ? (
                 <p className="text-sm text-muted-foreground">
-                  {profile.calorieGoal.toLocaleString()} kcal/day goal
+                  {t("profile.calorieGoal", {
+                    calories: profile.calorieGoal.toLocaleString(),
+                  })}
                 </p>
               ) : null}
 
@@ -259,7 +267,7 @@ export function DietaryProfilesManager({
               profile.diets.length === 0 &&
               profile.calorieGoal == null ? (
                 <p className="text-sm text-muted-foreground">
-                  No restrictions recorded.
+                  {t("profile.noRestrictions")}
                 </p>
               ) : null}
             </li>
@@ -275,19 +283,21 @@ export function DietaryProfilesManager({
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
-                {editing?.kind === "add" ? "Add family member" : "Edit profile"}
+                {editing?.kind === "add"
+                  ? t("dialog.addTitle")
+                  : t("dialog.editTitle")}
               </DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={nameId}>Name</Label>
+              <Label htmlFor={nameId}>{t("fields.name")}</Label>
               <Input
                 id={nameId}
                 value={draft.name}
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, name: e.target.value }))
                 }
-                placeholder="e.g. Theo"
+                placeholder={t("fields.namePlaceholder")}
                 aria-invalid={Boolean(fieldErrors.name)}
                 autoFocus
               />
@@ -300,7 +310,7 @@ export function DietaryProfilesManager({
 
             <fieldset className="grid gap-2">
               <legend className="text-sm font-medium text-foreground">
-                Allergies
+                {t("fields.allergies")}
               </legend>
               <div className="flex flex-wrap gap-2">
                 {ALLERGENS.map((a) => {
@@ -333,7 +343,7 @@ export function DietaryProfilesManager({
 
             <fieldset className="grid gap-2">
               <legend className="text-sm font-medium text-foreground">
-                Diets
+                {t("fields.diets")}
               </legend>
               <div className="flex flex-wrap gap-2">
                 {DIETARY_TAGS.map((tag) => {
@@ -365,7 +375,7 @@ export function DietaryProfilesManager({
             </fieldset>
 
             <div className="grid gap-2">
-              <Label htmlFor={calorieId}>Daily calorie goal</Label>
+              <Label htmlFor={calorieId}>{t("fields.calorieGoal")}</Label>
               <Input
                 id={calorieId}
                 value={draft.calorieGoal}
@@ -373,7 +383,7 @@ export function DietaryProfilesManager({
                   setDraft((d) => ({ ...d, calorieGoal: e.target.value }))
                 }
                 inputMode="numeric"
-                placeholder="Optional — e.g. 2000"
+                placeholder={t("fields.caloriePlaceholder")}
                 aria-invalid={Boolean(fieldErrors.calorieGoal)}
               />
               {fieldErrors.calorieGoal?.[0] ? (
@@ -385,7 +395,7 @@ export function DietaryProfilesManager({
 
             {groups.length > 0 ? (
               <div className="grid gap-2">
-                <Label htmlFor={groupSelectId}>Family group (optional)</Label>
+                <Label htmlFor={groupSelectId}>{t("fields.familyGroup")}</Label>
                 <NativeSelect
                   id={groupSelectId}
                   value={draft.groupId}
@@ -393,7 +403,7 @@ export function DietaryProfilesManager({
                     setDraft((d) => ({ ...d, groupId: e.target.value }))
                   }
                 >
-                  <option value="">Just me</option>
+                  <option value="">{t("fields.justMe")}</option>
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -415,14 +425,14 @@ export function DietaryProfilesManager({
                 onClick={() => setEditing(null)}
                 disabled={isPending}
               >
-                Cancel
+                {t("actions.cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
-                  ? "Saving…"
+                  ? t("actions.saving")
                   : editing?.kind === "add"
-                    ? "Add member"
-                    : "Save changes"}
+                    ? t("actions.addMember")
+                    : t("actions.saveChanges")}
               </Button>
             </DialogFooter>
           </form>

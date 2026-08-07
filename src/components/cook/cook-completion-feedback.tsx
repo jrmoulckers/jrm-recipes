@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { CheckCircle2, Loader2, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { setRatingAction } from "~/server/engagement/actions";
 import { logCookAction } from "~/server/cooklog/actions";
@@ -19,8 +20,8 @@ import { Textarea } from "~/components/ui/textarea";
  *
  * Guardrails from the acceptance criteria:
  * - The recipe owner can't rate their own recipe, so the star row is hidden for
- *   them (no self-rating error card) — they can still log the cook.
- * - Everything is optional; leaving it untouched and tapping the outer
+ *   them (no self-rating error card). They can still log the cook.
+ * - Everything is optional, leaving it untouched and tapping the outer
  *   "Skip and finish" never blocks leaving Cook Mode.
  * - `reducedMotion` suppresses the celebratory transition.
  */
@@ -43,6 +44,7 @@ export function CookCompletionFeedback({
   const [pending, startTransition] = React.useTransition();
   const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const t = useTranslations("cook.feedback");
 
   const canShowStars = canRate && !isOwner;
   // Nothing actionable to offer a signed-out viewer who also can't log.
@@ -97,7 +99,7 @@ export function CookCompletionFeedback({
       >
         <p className="flex items-center justify-center gap-2 font-medium">
           <CheckCircle2 className="size-5" aria-hidden />
-          Thanks — saved to this recipe.
+          {t("saved")}
         </p>
       </div>
     );
@@ -106,20 +108,20 @@ export function CookCompletionFeedback({
   return (
     <div className="mt-6 rounded-2xl border border-border bg-muted/40 p-4 text-left">
       <p className="text-center font-display text-lg font-semibold text-foreground">
-        How did it turn out?
+        {t("heading")}
       </p>
 
       {canShowStars ? (
         <div
           className="mt-3 flex items-center justify-center gap-1"
           role="group"
-          aria-label="Your star rating"
+          aria-label={t("starGroupLabel")}
         >
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
-              aria-label={`Rate ${n} ${n === 1 ? "star" : "stars"}`}
+              aria-label={t("starLabel", { n })}
               aria-pressed={rating === n}
               onClick={() => setRating(n)}
               disabled={pending}
@@ -142,13 +144,13 @@ export function CookCompletionFeedback({
       ) : null}
 
       <div className="mt-4 grid gap-2">
-        <Label htmlFor="cook-tasting-note">Tasting note (optional)</Label>
+        <Label htmlFor="cook-tasting-note">{t("tastingNoteLabel")}</Label>
         <Textarea
           id="cook-tasting-note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
           maxLength={2000}
-          placeholder="Kids loved it, halve the salt next time…"
+          placeholder={t("tastingNotePlaceholder")}
           disabled={pending}
         />
       </div>
@@ -159,7 +161,7 @@ export function CookCompletionFeedback({
           onCheckedChange={(value) => setLogCook(value === true)}
           disabled={pending}
         />
-        Log that I made this
+        {t("logThisCook")}
       </label>
 
       {error ? (
@@ -176,7 +178,7 @@ export function CookCompletionFeedback({
         disabled={pending || nothingToSubmit}
       >
         {pending ? <Loader2 className="animate-spin" /> : null}
-        {pending ? "Saving…" : "Save"}
+        {pending ? t("saving") : t("save")}
       </Button>
     </div>
   );

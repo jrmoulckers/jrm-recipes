@@ -40,8 +40,8 @@ import { Providers } from "~/app/providers";
 import { ThemeScript } from "~/components/theme/theme-script";
 import { A11yScript } from "~/components/a11y/a11y-script";
 
-// Font loading is tuned for the multi-theme setup (#182). Only ONE family — the
-// shared body font (Nunito) — is preloaded, because it paints on the default and
+// Font loading is tuned for the multi-theme setup (#182). Only ONE family is
+// preloaded: the shared body font (Nunito), because it paints on the default and
 // most other themes. The four display/decorative families are `preload: false`:
 // their `@font-face` rules stay in the document (so a client-side theme switch
 // can still apply the right font with no flash), but the browser only downloads
@@ -92,11 +92,11 @@ const jetbrains = JetBrains_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   // Localize to the active locale (resolved from the NEXT_LOCALE cookie by the
-  // i18n request config). Title/description/OpenGraph read from the catalog; the
+  // i18n request config). Title/description/OpenGraph read from the catalog. The
   // brand wordmark, colors, and URLs stay in the single brand/env config.
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "metadata" });
-  const title = `${brand.name} — ${t("tagline")}`;
+  const title = `${brand.name} · ${t("tagline")}`;
   const description = t("description");
 
   return {

@@ -2,13 +2,13 @@ import { A11Y_COOKIE } from "~/config/a11y";
 
 /**
  * Blocking inline script that applies saved accessibility preferences to
- * <html> BEFORE first paint — no flash of un-adjusted text size / contrast.
+ * <html> BEFORE first paint. No flash of un-adjusted text size / contrast.
  * Mirrors ThemeScript. Runtime changes are handled by A11yProvider.
  *
  * contrast/motion are tri-state: "on" paints the enhancement, "off" writes an
  * explicit data-*="off" that gates the OS media queries (so an explicit opt-out
  * wins), and an absent/legacy value writes nothing so `prefers-contrast` /
- * `prefers-reduced-motion` govern automatically — no flash, no matchMedia needed.
+ * `prefers-reduced-motion` govern automatically. No flash, no matchMedia needed.
  */
 export function A11yScript({ nonce }: { nonce?: string }) {
   const script = `

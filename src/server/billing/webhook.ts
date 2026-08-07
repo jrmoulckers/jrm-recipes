@@ -16,12 +16,12 @@ import { mintGiftCode } from "./gifting";
 /**
  * Stripe → DB subscription sync (issue #304).
  *
- * Stripe is the source of truth for what a family has actually paid for; this
+ * Stripe is the source of truth for what a family has actually paid for. This
  * module keeps our `subscriptions` table in step so the entitlements resolver
- * (#302) can gate purely from the DB. It is deliberately idempotent — every
- * write is an upsert keyed to the Stripe id — so receiving the same event twice
+ * (#302) can gate purely from the DB. It is deliberately idempotent. Every
+ * write is an upsert keyed to the Stripe id, so receiving the same event twice
  * (Stripe retries, at-least-once delivery) is always safe. Signature
- * verification lives in the route; here we only trust already-verified events.
+ * verification lives in the route. Here we only trust already-verified events.
  */
 
 /** Map a Stripe subscription status onto our narrower enum. */
@@ -64,7 +64,7 @@ function customerIdOf(
 /**
  * Ensure a `billing_customers` row links this Stripe customer to an owner,
  * returning our internal id. Creates the link on first sight using the
- * `userId` we stamped into subscription/checkout metadata; returns null when we
+ * `userId` we stamped into subscription/checkout metadata. Returns null when we
  * can't attribute an owner (so the caller skips rather than violating the
  * one-owner constraint).
  */
@@ -95,7 +95,7 @@ async function ensureCustomerLink(
 
 /**
  * Upsert the DB row for a Stripe subscription (create/update/delete all flow
- * through here — a deleted subscription simply carries a `canceled` status).
+ * through here. A deleted subscription simply carries a `canceled` status).
  * No-op when the DB is unconfigured or we can't attribute an owner.
  */
 export async function syncSubscription(
@@ -115,10 +115,10 @@ export async function syncSubscription(
   const endSeconds = periodEndSeconds(sub);
   // Persist the trial end (#326) so /settings/billing can show an honest
   // "trial ends on <date>" without a Stripe round-trip. `trial_end` is a stable
-  // top-level field; null once the trial converts or when there was none.
+  // top-level field. Null once the trial converts or when there was none.
   const trialSeconds = sub.trial_end ?? null;
   // Only the Family plan is purchasable today, so any synced subscription is
-  // Family; `stripePriceId` records exactly which price for future catalogs.
+  // Family. `stripePriceId` records exactly which price for future catalogs.
   const planId: PlanId = "family";
 
   await db
@@ -197,9 +197,9 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
 }
 
 /**
- * Dispatch an already-verified Stripe event. Known lifecycle events are synced;
+ * Dispatch an already-verified Stripe event. Known lifecycle events are synced.
  * unknown types are intentionally ignored (the route still 200s them). Throwing
- * here signals the route to return 5xx so Stripe retries — safe because every
+ * here signals the route to return 5xx so Stripe retries. Safe because every
  * handler is idempotent.
  */
 export async function handleStripeEvent(event: Stripe.Event): Promise<void> {

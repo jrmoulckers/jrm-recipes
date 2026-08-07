@@ -11,7 +11,7 @@
  * ## How to use it
  *
  * The `db`/`auth` modules are captured by the code under test at import time,
- * *before* a test body runs — the classic hoisting trap. This harness sidesteps
+ * *before* a test body runs. The classic hoisting trap. This harness sidesteps
  * it with a stable Proxy: `dbModuleMock()` / `authModuleMock()` return module
  * shims backed by an "active" mock you install per-test with {@link useDbMock} /
  * {@link useAuthMock} (typically in `beforeEach`). Because the code under test
@@ -60,7 +60,7 @@ export interface Chainable {
 /**
  * A resolved-then-chainable drizzle builder stand-in. `await db.insert(t)
  * .values(v)` resolves to `rows`, while `.returning(...)` and
- * `.onConflictDoNothing(...)` are also awaitable — matching the fluent surface
+ * `.onConflictDoNothing(...)` are also awaitable. Matching the fluent surface
  * the mutation code walks.
  */
 export function chainable(rows: unknown[] = []): Chainable {
@@ -119,7 +119,7 @@ export interface TxMock extends StatementMocks {
   transaction: Mock<(cb: (tx: TxMock) => unknown) => unknown>;
 }
 
-/** Default tables exposed on `query`; extend per-test via {@link createDbMock}. */
+/** Default tables exposed on `query`. extend per-test via {@link createDbMock}. */
 const DEFAULT_TABLES = [
   "recipes",
   "recipeIngredients",
@@ -159,7 +159,7 @@ export interface DbMock extends StatementMocks {
  * Build a fake Drizzle `db`. The same statement fns back both `db` and the `tx`
  * handed to `transaction(cb)`, so a test can assert on `db.insert` regardless of
  * whether the write ran at top level or inside the transaction. Each statement
- * fn returns a {@link chainable} by default; override per-test for `.returning()`
+ * fn returns a {@link chainable} by default. override per-test for `.returning()`
  * results (e.g. `db.insert.mockReturnValue(chainable([{ id: "r1" }]))`).
  */
 export function createDbMock(extraTables: readonly string[] = []): DbMock {
@@ -250,7 +250,7 @@ export function useAuthMock(user: User | null): void {
 
 /**
  * Module shim for `vi.mock("~/server/auth", …)`. `requireUser` resolves to the
- * active user (throwing `UNAUTHENTICATED` when signed out); `getCurrentUser`
+ * active user (throwing `UNAUTHENTICATED` when signed out). `getCurrentUser`
  * resolves to the active user or `null`.
  */
 export function authModuleMock() {

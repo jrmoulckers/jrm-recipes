@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import * as React from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { IntlWrapper } from "~/test/intl";
+import esMessages from "~/messages/es.json";
 
 // Force the "Cloudinary not configured" branch deterministically, regardless of
 // the machine's real env, so the degraded URL-input path is what renders.
@@ -14,6 +18,19 @@ vi.mock("~/env", () => ({
 }));
 
 import { ImageUploadField } from "./image-upload";
+
+/**
+ * These render in Spanish on purpose. An English assertion would still pass if
+ * the field reverted to hardcoded strings, so it would not test the property
+ * that matters.
+ */
+function SpanishWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <IntlWrapper locale="es" messages={esMessages}>
+      {children}
+    </IntlWrapper>
+  );
+}
 
 afterEach(() => cleanup());
 
@@ -34,14 +51,13 @@ describe("image-upload lazy widget (#201)", () => {
   it("degrades to a plain URL input without mounting the widget when Cloudinary is unconfigured", () => {
     render(
       <ImageUploadField value="" onChange={vi.fn()} label="Cover photo" />,
+      { wrapper: SpanishWrapper },
     );
 
     // The URL fallback input is present…
-    expect(screen.getByLabelText("Cover photo URL")).toBeInTheDocument();
+    expect(screen.getByLabelText("URL de Cover photo")).toBeInTheDocument();
     // …and the upload dropzone (which is what mounts the dynamic widget) is not.
-    expect(
-      screen.queryByRole("button", { name: /upload a photo/i }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: /sube una foto/i })).toBeNull();
   });
 });
 
@@ -53,17 +69,20 @@ describe("broken image fallback", () => {
         onChange={vi.fn()}
         label="Cover photo"
       />,
+      { wrapper: SpanishWrapper },
     );
 
-    const img = screen.getByAltText("Selected photo preview");
+    const img = screen.getByAltText("Vista previa de la foto elegida");
     // While the image is (optimistically) loading, the URL input is hidden.
-    expect(screen.queryByLabelText("Cover photo URL")).toBeNull();
+    expect(screen.queryByLabelText("URL de Cover photo")).toBeNull();
 
     fireEvent.error(img);
 
     // A human-readable message replaces the browser's broken-image icon…
-    expect(screen.getByText(/couldn.t load image/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/no se pudo cargar la imagen/i),
+    ).toBeInTheDocument();
     // …and the URL input returns so the link can be corrected inline.
-    expect(screen.getByLabelText("Cover photo URL")).toBeInTheDocument();
+    expect(screen.getByLabelText("URL de Cover photo")).toBeInTheDocument();
   });
 });

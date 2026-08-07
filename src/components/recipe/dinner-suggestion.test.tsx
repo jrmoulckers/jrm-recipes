@@ -1,10 +1,21 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DinnerSuggestion } from "./dinner-suggestion";
 import { addEntryAction } from "~/server/planner/actions";
 import type { DinnerCandidate } from "~/server/recipes/queries";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 type ActionResult = { ok: boolean; error?: string };
 
@@ -56,10 +67,9 @@ describe("DinnerSuggestion (#375)", () => {
     expect(
       screen.queryByRole("button", { name: /pick my dinner/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /add a recipe/i })).toHaveAttribute(
-      "href",
-      "/recipes/new",
-    );
+    expect(
+      screen.getByRole("link", { name: /create a recipe/i }),
+    ).toHaveAttribute("href", "/recipes/new");
     expect(
       screen.getByRole("link", { name: /browse recipes/i }),
     ).toHaveAttribute("href", "/recipes");

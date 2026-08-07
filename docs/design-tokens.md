@@ -13,18 +13,18 @@ Heirloom has two orthogonal appearance axes:
 1. **UI mode** is the visual personality. It is stored on `<html>` as
    `data-theme` and registered in `src/config/themes.ts`.
 2. **Color scheme** is light, dark, or system. Dark mode is the `.dark` class on
-   `<html>`; light mode is the absence of that class. `system` follows
+   `<html>`. Light mode is the absence of that class. `system` follows
    `prefers-color-scheme`.
 
 The current UI modes are:
 
-| Id             | Label        | Character                                                                 |
-| -------------- | ------------ | ------------------------------------------------------------------------- |
-| `kitchen`      | Kitchen      | Warm and cozy; creams, terracotta, home-baked charm. This is the default. |
-| `whimsy`       | Whimsy       | Playful, colorful, bubbly.                                                |
-| `professional` | Professional | Clean, editorial, quiet, confident.                                       |
-| `kids`         | Kids         | Big, bright, friendly, with easier taps.                                  |
-| `barebones`    | Simple       | Ultra-simple, high-contrast, minimal chrome.                              |
+| Id             | Label        | Character                                                                          |
+| -------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `kitchen`      | Kitchen      | Warm and cozy, with creams, terracotta, and home-baked charm. This is the default. |
+| `whimsy`       | Whimsy       | Playful, colorful, bubbly.                                                         |
+| `professional` | Professional | Clean, editorial, quiet, confident.                                                |
+| `kids`         | Kids         | Big, bright, friendly, with easier taps.                                           |
+| `barebones`    | Simple       | Ultra-simple, high-contrast, minimal chrome.                                       |
 
 Defaults live in `src/config/themes.ts`:
 
@@ -33,7 +33,7 @@ Defaults live in `src/config/themes.ts`:
 
 Accessibility preferences are a separate axis, not a replacement for UI mode or
 scheme. `src/config/a11y.ts` stores text size, contrast, motion, and readable
-type preferences in `heirloom-a11y`; `src/styles/a11y.css` reacts with
+type preferences in `heirloom-a11y`. `src/styles/a11y.css` reacts with
 `data-text`, `data-contrast`, `data-motion`, and `data-reading` attributes.
 
 ## No-flash rendering
@@ -44,7 +44,7 @@ Theme state is rendered before the app hydrates:
   `SCHEME_COOKIE` (`heirloom-scheme`) with `cookies()`, validates them with
   `isUITheme` / `isColorScheme`, and places `data-theme` on `<html>` for the
   server render. It also adds `.dark` when the saved scheme is explicitly
-  `dark`; `system` is resolved by the inline script before paint.
+  `dark`. `system` is resolved by the inline script before paint.
 - `src/components/theme/theme-script.tsx` runs a tiny inline script before first
   paint. It reads the same cookies, falls back to `localStorage`, applies
   `data-theme`, resolves `system` with `window.matchMedia`, and toggles `.dark`.
@@ -135,14 +135,14 @@ What the flags mean in code:
 
 - `largeTargets` marks modes that should use bigger touch targets. The token
   contract is enforced in `src/styles/themes.control-tokens.test.ts`: Kitchen,
-  Whimsy, and Professional keep control tokens as no-ops; Kids and Simple raise
+  Whimsy, and Professional keep control tokens as no-ops. Kids and Simple raise
   `--control-scale`, `--control-min`, `--tap-min`, and `--ring-width`.
 - `reduceMotion` marks modes that should avoid motion. In current code, Simple
   enforces this through `--motion-scale: 0`, the barebones rules in
   `src/styles/globals.css`, and the `data-theme="barebones"` check in
   `src/lib/use-reduced-motion.ts`.
 - `simplifiedChrome` marks modes that should prefer less interface chrome. It is
-  exposed through `useThemeBehavior()` for component opt-in; it is not a global
+  exposed through `useThemeBehavior()` for component opt-in. It is not a global
   CSS switch.
 - `kidSafe` gates kid-friendly surfaces and copy. Examples include
   `src/config/kid-copy.ts`, `src/components/recipe/grown-up-controls.tsx`, and

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,7 +13,7 @@ import { Textarea } from "~/components/ui/textarea";
 
 /**
  * "Paste text" import tab (#370). Split into its own module so the recipe
- * editor can `next/dynamic` it — keeping the parser-adjacent UI out of the
+ * editor can `next/dynamic` it. Keeping the parser-adjacent UI out of the
  * /recipes/[id]/edit first-load JS budget.
  */
 export function PasteImportPanel({
@@ -20,6 +21,7 @@ export function PasteImportPanel({
 }: {
   onImported: (recipe: ImportedRecipe) => void;
 }) {
+  const t = useTranslations("recipe");
   const [pasteText, setPasteText] = React.useState("");
   const [importing, setImporting] = React.useState(false);
 
@@ -33,15 +35,15 @@ export function PasteImportPanel({
         onImported(res.recipe);
         toast.success(
           res.recipe.title
-            ? `Imported “${res.recipe.title}”. Review the details, then save.`
-            : "Imported the recipe. Review the details, then save.",
+            ? t("import.toast.importedNamed", { title: res.recipe.title })
+            : t("import.toast.imported"),
         );
         setPasteText("");
       } else {
         toast.error(friendlyError(res.error));
       }
     } catch {
-      toast.error("Something went wrong reading that text.");
+      toast.error(t("import.toast.textError"));
     } finally {
       setImporting(false);
     }
@@ -50,19 +52,16 @@ export function PasteImportPanel({
   return (
     <>
       <p className="mt-3 text-sm text-muted-foreground">
-        Paste any recipe as plain text and we&apos;ll structure it for you to
-        review.
+        {t("import.textHelp")}
       </p>
       <div className="mt-3 flex flex-col gap-2">
         <Textarea
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
-          placeholder={
-            "Grandma's Marinara\n\nIngredients\n2 cups crushed tomatoes\n1 clove garlic, minced\n\nInstructions\n1. Warm the oil.\n2. Add garlic and simmer."
-          }
+          placeholder={t("import.textPlaceholder")}
           rows={6}
           disabled={importing}
-          aria-label="Recipe text to import"
+          aria-label={t("import.textAria")}
         />
         <Button
           type="button"
@@ -71,7 +70,7 @@ export function PasteImportPanel({
           className="shrink-0 self-start"
         >
           {importing ? <Loader2 className="animate-spin" /> : <Download />}
-          {importing ? "Reading…" : "Use this text"}
+          {importing ? t("import.reading") : t("import.useText")}
         </Button>
       </div>
     </>

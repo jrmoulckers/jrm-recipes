@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BookMarked } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { RecipePrintBody } from "~/components/print/recipe-print-body";
 import { PrintNowButton } from "~/components/print/print-now-button";
@@ -18,8 +19,8 @@ export type CookbookPrintData = {
 /**
  * Lays a whole collection out as one printable booklet (issue #397): a cover
  * page, an optional dedication, a generated table of contents, then every
- * recipe — each starting on a fresh page via `break-before-page` so a browser
- * "Print → Save as PDF" produces a real family cookbook. Presentational only;
+ * recipe, each starting on a fresh page via `break-before-page` so a browser
+ * "Print → Save as PDF" produces a real family cookbook. Presentational only.
  * the route resolves recipes through the visibility-checked loaders.
  */
 export function CookbookPrintView({
@@ -29,6 +30,7 @@ export function CookbookPrintView({
   collection: CookbookPrintData;
   dedication: string | null;
 }) {
+  const t = useTranslations("print");
   const { recipes } = collection;
 
   if (recipes.length === 0) {
@@ -38,17 +40,16 @@ export function CookbookPrintView({
           <BookMarked className="size-7" aria-hidden="true" />
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight">
-          This cookbook is still empty
+          {t("cookbook.empty.heading")}
         </h1>
         <p className="text-muted-foreground">
-          Add a few recipes to “{collection.name}” and they’ll be bound together
-          here — cover, contents, and all — ready to print.
+          {t("cookbook.empty.body", { name: collection.name })}
         </p>
         <Link
           href={`/collections/${collection.id}`}
           className={buttonVariants({ variant: "outline" })}
         >
-          Back to collection
+          {t("cookbook.empty.back")}
         </Link>
       </div>
     );
@@ -61,9 +62,9 @@ export function CookbookPrintView({
           href={`/collections/${collection.id}`}
           className={buttonVariants({ variant: "ghost" })}
         >
-          Back to collection
+          {t("cookbook.empty.back")}
         </Link>
-        <PrintNowButton label="Print / Save as PDF" />
+        <PrintNowButton label={t("actions.print")} />
       </div>
 
       {/* Cover page */}
@@ -81,7 +82,7 @@ export function CookbookPrintView({
           </span>
         )}
         <p className="font-display text-sm uppercase tracking-[0.25em] text-muted-foreground">
-          A family cookbook
+          {t("cookbook.cover.subtitle")}
         </p>
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
           {collection.name}
@@ -98,18 +99,18 @@ export function CookbookPrintView({
         ) : null}
         {collection.ownerName ? (
           <p className="mt-8 text-sm text-muted-foreground">
-            Collected by {collection.ownerName}
+            {t("cookbook.cover.collectedBy", { name: collection.ownerName })}
           </p>
         ) : null}
         <p className="mt-2 text-sm text-muted-foreground">
-          {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"}
+          {t("cookbook.cover.recipeCount", { count: recipes.length })}
         </p>
       </section>
 
       {/* Table of contents */}
       <section className="break-after-page">
         <h2 className="font-display text-2xl font-bold tracking-tight">
-          Contents
+          {t("cookbook.toc")}
         </h2>
         <ol className="mt-4 divide-y divide-border">
           {recipes.map((recipe, index) => (

@@ -3,20 +3,20 @@
  *
  * Everything here is deterministic and DOM-free so it can be unit-tested and
  * reused by the client renderer. The renderer (canvas + MediaRecorder) consumes
- * the ordered {@link ReelScene} list this module produces; it never re-derives
+ * the ordered {@link ReelScene} list this module produces. It never re-derives
  * layout decisions itself.
  *
  * Visual language mirrors the share-card system in
  * `src/app/(main)/recipes/[id]/_assets/card.tsx` (same brand palette + fonts).
  */
 
-/** Output frame — vertical 1080x1920 (9:16), the Reels/TikTok/Stories standard. */
+/** Output frame. Vertical 1080x1920 (9:16), the Reels/TikTok/Stories standard. */
 export const REEL_SIZE = { width: 1080, height: 1920 } as const;
 
 /** Capture frame rate. 30fps is plenty for text/photo motion and keeps files small. */
 export const REEL_FPS = 30;
 
-/** Brand palette — kept in lockstep with the share card. */
+/** Brand palette. Kept in lockstep with the share card. */
 export const REEL_COLORS = {
   cream: "#fffaf3",
   ink: "#3d2817",
@@ -123,7 +123,7 @@ export const REEL_SITE_URL =
 
 /**
  * Browser capabilities relevant to exporting a reel. Kept as plain booleans so
- * the *decision* below stays pure and unit-testable; the renderer feeds in the
+ * the *decision* below stays pure and unit-testable. The renderer feeds in the
  * results of real feature detection.
  */
 export type ReelExportCapabilities = {
@@ -139,11 +139,11 @@ export type ReelExportCapabilities = {
 
 /**
  * What kind of export this browser can produce:
- * - `"video"` — full animated webm (Chromium / Firefox)
- * - `"image"` — a single branded still PNG (Safari/iOS, where webm won't encode)
- * - `"none"` — nothing exportable
+ * - `"video"`. Full animated webm (Chromium / Firefox)
+ * - `"image"`. A single branded still PNG (Safari/iOS, where webm won't encode)
+ * - `"none"`. Nothing exportable
  *
- * Video requires canvas capture + MediaRecorder + a real webm mime; the last is
+ * Video requires canvas capture + MediaRecorder + a real webm mime. The last is
  * the crucial check, because Safari exposes `MediaRecorder` but cannot encode
  * webm, so a naive "is MediaRecorder defined?" test dead-ends the user.
  */
@@ -257,7 +257,7 @@ export function selectKeyIngredients(recipe: ReelRecipe): ReelIngredient[] {
 
 /**
  * Return `count` indices spread across `[0, length)`, always including the
- * endpoints. e.g. length=10, count=5 -> [0, 2, 4, 7, 9].
+ * endpoints. E.g. Length=10, count=5 -> [0, 2, 4, 7, 9].
  */
 export function evenlySpacedIndices(length: number, count: number): number[] {
   if (length <= 0 || count <= 0) return [];
@@ -272,7 +272,7 @@ export function evenlySpacedIndices(length: number, count: number): number[] {
       out.push(idx);
     }
   }
-  // Rounding collisions can leave us short; backfill with the next free indices
+  // Rounding collisions can leave us short. Backfill with the next free indices
   // so we return exactly `count` distinct positions when possible.
   for (let i = 0; i < length && out.length < count; i++) {
     if (!seen.has(i)) {

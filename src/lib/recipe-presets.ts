@@ -4,7 +4,7 @@
  * A busy parent shouldn't have to set three separate controls to get a
  * weeknight-friendly view. Each preset is nothing more than a bundle of the
  * existing URL params (`maxTime`, `difficulty`, `sort`, `tag`) so results stay
- * shareable and SSR-friendly — there is deliberately no new filtering engine
+ * shareable and SSR-friendly. There is deliberately no new filtering engine
  * here. This module is pure (no React / no `server-only`) so it can drive the
  * client chips and be unit-tested exhaustively.
  */
@@ -72,7 +72,7 @@ export function isPresetActive(
 /**
  * Toggle a preset on/off against the current params, returning a fresh
  * `URLSearchParams`. When the preset is already fully active every param it
- * owns is cleared; otherwise each is applied (multi-value keys append the value
+ * owns is cleared. Otherwise each is applied (multi-value keys append the value
  * without disturbing the others already selected).
  */
 export function togglePreset(

@@ -4,12 +4,12 @@
  * Kids mode is a first-class experience (`THEME_BEHAVIOR.kids.kidSafe`), but the
  * words stay adult unless a surface opts in. This tiny map holds kid-friendly
  * variants for a handful of high-traffic strings, kept short and concrete
- * (aim ~grade-2 reading level). Non-Kids modes never see these — the pickers
+ * (aim ~grade-2 reading level). Non-Kids modes never see these. The pickers
  * return the caller's original copy untouched.
  *
  * Add a key here, then read it at the surface with {@link pickKidCopy} (paired
  * with `useThemeBehavior().kidSafe`) or {@link pickCopy} (when you only have the
- * theme id). This is intentionally NOT a full i18n layer — just the core flows.
+ * theme id). This is intentionally NOT a full i18n layer. Just the core flows.
  */
 
 import { THEME_BEHAVIOR, type UITheme } from "~/config/themes";
@@ -43,7 +43,7 @@ export function pickKidCopy(
 
 /**
  * Theme-id variant of {@link pickKidCopy} for callers that only have the active
- * UI mode (e.g. server-resolved theme) rather than the behavior flags.
+ * UI mode (e.g. Server-resolved theme) rather than the behavior flags.
  */
 export function pickCopy(
   theme: UITheme,

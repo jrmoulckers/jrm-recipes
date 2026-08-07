@@ -99,7 +99,7 @@ describe("generateShareToken", () => {
   it("produces a URL-safe, base64url token with no padding", () => {
     for (let i = 0; i < 50; i++) {
       const token = generateShareToken();
-      // Only base64url chars; never +, /, or = padding.
+      // Only base64url chars. Never +, /, or = padding.
       expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     }
   });

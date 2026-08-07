@@ -48,7 +48,7 @@ describe("CardDietaryBadge", () => {
     const { container } = render(
       <CardDietaryBadge members={MEMBERS} recipeAllergens={null} />,
     );
-    // null = "nothing to analyze" — must NOT render the reassuring safe badge.
+    // null = "nothing to analyze". Must NOT render the reassuring safe badge.
     expect(container).toBeEmptyDOMElement();
     expect(screen.queryByText(/looks safe/i)).not.toBeInTheDocument();
   });

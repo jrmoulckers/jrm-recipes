@@ -3,13 +3,13 @@
  *
  * A pure mapping from a user's app-internal facts to the person properties we
  * attach on `identify`. By construction it only ever emits counts, booleans and
- * a coarse timestamp — never an email, name, handle, or Clerk id — so PII can't
+ * a coarse timestamp, never an email, name, handle, or Clerk id, so PII can't
  * leak into the analytics tool even before the runtime scrub guard runs. Keeping
  * it dependency-free also makes it trivially unit-testable.
  */
 
 export interface IdentityTraitsInput {
-  /** `users.createdAt` — recorded coarsely (date only) as a cohort anchor. */
+  /** `users.createdAt`. Recorded coarsely (date only) as a cohort anchor. */
   createdAt?: Date | string | null;
   /** How many groups the user belongs to. */
   groupCount: number;

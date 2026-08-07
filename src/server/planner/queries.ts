@@ -54,7 +54,7 @@ export type PlannerEntry = Awaited<
 /**
  * Entries planned for a single date, each with enough recipe text (step
  * instructions + ingredient items/notes) to run the prep-ahead heuristic
- * (#388). Kept lean — no media, no scaling columns — since it only feeds a
+ * (#388). Kept lean, no media, no scaling columns, since it only feeds a
  * keyword scan. Guarded so the page renders with no database configured.
  */
 export async function listEntriesWithPrepText(userId: string, date: string) {
@@ -121,7 +121,7 @@ async function viewerGroupIds(userId: string): Promise<string[]> {
 
 /**
  * Recipes a viewer can add to their plan: everything in their library (their own
- * recipes plus their groups'). Lightweight columns only — enough for the picker.
+ * recipes plus their groups'). Lightweight columns only. Enough for the picker.
  */
 export async function listPlannableRecipes(viewer: User | null) {
   if (!isDbConfigured() || !viewer) return [];
@@ -165,7 +165,7 @@ export type ViewerGroup = Awaited<ReturnType<typeof listViewerGroups>>[number];
 /**
  * Every member's entries for a group's week (issue #363). Membership is enforced
  * server-side: a non-member gets `null`, which the page turns into a
- * not-found/redirect — the board is never rendered for someone outside the
+ * not-found/redirect. The board is never rendered for someone outside the
  * group. Each entry carries its author so cards can show who planned it.
  */
 export async function listGroupEntriesInRange(

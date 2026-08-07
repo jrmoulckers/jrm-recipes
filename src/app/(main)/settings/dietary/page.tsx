@@ -1,5 +1,7 @@
 import { type Metadata } from "next";
+import { type ReactNode } from "react";
 import { UtensilsCrossed } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -12,7 +14,10 @@ import {
   type MemberProfileView,
 } from "~/components/dietary/dietary-profiles-manager";
 
-export const metadata: Metadata = { title: "Dietary profiles" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("dietarySettings.title") };
+}
 
 const ALLERGEN_SET = new Set<string>(ALLERGENS);
 const DIET_SET = new Set<string>(DIETARY_TAGS);
@@ -21,6 +26,7 @@ export default async function DietaryProfilesPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
+  const t = await getTranslations("settings.dietaryPage");
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
@@ -45,13 +51,9 @@ export default async function DietaryProfilesPage() {
     <div className="container flex flex-col gap-8 py-10">
       <header className="max-w-2xl">
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          Dietary profiles
+          {t("title")}
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Your family isn&apos;t one diet. Record each person&apos;s allergies,
-          diets, and calorie goals once, and Heirloom can help you cook safely
-          for everyone.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("description")}</p>
       </header>
 
       {!dbConfigured ? (
@@ -63,7 +65,8 @@ export default async function DietaryProfilesPage() {
   );
 }
 
-function SignInNudge() {
+async function SignInNudge() {
+  const t = await getTranslations("settings.dietaryPage.signIn");
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -72,26 +75,27 @@ function SignInNudge() {
         </span>
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Dietary profiles are private
+            {t("title")}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Sign in from the header to record who you cook for.
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("body")}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
       <p className="mx-auto max-w-md">
-        Connect a database to start saving dietary profiles. Set{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-          DATABASE_URL
-        </code>{" "}
-        or start the local Postgres container.
+        {t.rich("dietary", {
+          code: (chunks: ReactNode) => (
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+              {chunks}
+            </code>
+          ),
+        })}
       </p>
     </div>
   );

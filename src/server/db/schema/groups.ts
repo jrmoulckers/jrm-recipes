@@ -71,7 +71,7 @@ export const invitationStatus = pgEnum("invitation_status", [
 
 /**
  * A pending (or resolved) invitation for someone to join a group (issue #181).
- * `group_members` only records people who are *already* in; this table carries
+ * `group_members` only records people who are *already* in. This table carries
  * the not-yet-accepted state: who was invited (by email and/or handle, plus a
  * `userId` once they have an account), who invited them, the role they'll get
  * on accept, an opaque `token` for the accept link, and an optional expiry.
@@ -83,10 +83,10 @@ export const groupInvitations = pgTable(
     groupId: fk()
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
-    // Who sent the invite; nulls out if that user is later removed so the
+    // Who sent the invite. Nulls out if that user is later removed so the
     // invitation record (and any membership it produced) survives.
     invitedById: fk().references(() => users.id, { onDelete: "set null" }),
-    // The invitee's account once known — set at invite time if the email/handle
+    // The invitee's account once known. Set at invite time if the email/handle
     // already maps to a user, otherwise stamped on accept.
     userId: fk().references(() => users.id, { onDelete: "set null" }),
     email: varchar({ length: 320 }),
@@ -121,7 +121,7 @@ export const groupInvitations = pgTable(
  * #343). Unlike `group_invitations` (a single-invitee record keyed to an
  * email/handle), a link carries no invitee: a manager generates one, shares the
  * URL, and anyone who opens it can join the group at `role`. Tokens are opaque
- * and unguessable; a link can be capped (`maxUses`), time-limited (`expiresAt`),
+ * and unguessable. A link can be capped (`maxUses`), time-limited (`expiresAt`),
  * or revoked (`revokedAt`). `useCount` tracks accepted joins for the cap.
  */
 export const groupInviteLinks = pgTable(
@@ -131,12 +131,12 @@ export const groupInviteLinks = pgTable(
     groupId: fk()
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
-    // Who created the link; nulls out if that user is later removed so the link
+    // Who created the link. Nulls out if that user is later removed so the link
     // (and memberships it produced) survive.
     createdById: fk().references(() => users.id, { onDelete: "set null" }),
     role: memberRole().notNull().default("member"),
     token: varchar({ length: 64 }).notNull().unique(),
-    // Null expiry = never expires; null maxUses = unlimited joins.
+    // Null expiry = never expires. Null maxUses = unlimited joins.
     expiresAt: timestamp({ withTimezone: true }),
     maxUses: integer(),
     useCount: integer().notNull().default(0),

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Printer } from "lucide-react";
 
@@ -21,7 +22,7 @@ import { KEEPSAKE_NOTE_MAX } from "~/lib/keepsake";
 /**
  * Opens the printable booklet for a collection (issue #397), optionally with a
  * dedication for the cover. The dedication rides in the print URL (no server
- * round-trip); the print page turns "Print → Save as PDF" into a real family
+ * round-trip). The print page turns "Print → Save as PDF" into a real family
  * cookbook.
  */
 export function PrintCookbookButton({
@@ -30,6 +31,7 @@ export function PrintCookbookButton({
   collectionId: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.print");
   const [dedication, setDedication] = React.useState("");
 
   function openPrint() {
@@ -46,25 +48,22 @@ export function PrintCookbookButton({
     <Dialog>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <Printer /> Print cookbook
+          <Printer /> {t("trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Print this cookbook</DialogTitle>
-          <DialogDescription>
-            Lay the whole collection out as one booklet — cover, contents, and
-            every recipe — ready for “Print → Save as PDF.”
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cookbook-dedication">Dedication (optional)</Label>
+          <Label htmlFor="cookbook-dedication">{t("dedication.label")}</Label>
           <Textarea
             id="cookbook-dedication"
             value={dedication}
             onChange={(event) => setDedication(event.target.value)}
-            placeholder="For my grandchildren — so our kitchen is always with you."
+            placeholder={t("dedication.placeholder")}
             rows={3}
             maxLength={KEEPSAKE_NOTE_MAX}
           />
@@ -72,7 +71,7 @@ export function PrintCookbookButton({
 
         <DialogFooter>
           <Button type="button" onClick={openPrint}>
-            <Printer /> Open print view
+            <Printer /> {t("openPrint")}
           </Button>
         </DialogFooter>
       </DialogContent>

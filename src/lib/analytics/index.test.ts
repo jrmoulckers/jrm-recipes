@@ -12,7 +12,7 @@ import {
 
 /**
  * Build a backend of standalone mock fns (not object methods) so assertions
- * reference the fns directly — avoids `unbound-method` and keeps each spy handy.
+ * reference the fns directly. Avoids `unbound-method` and keeps each spy handy.
  */
 function fakeBackend(overrides: Partial<AnalyticsBackend> = {}) {
   const mocks = {
@@ -36,7 +36,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("analytics client — no-op mode (unconfigured)", () => {
+describe("analytics client. No-op mode (unconfigured)", () => {
   it("falls back to the no-op backend when none is registered", () => {
     expect(hasClientBackend()).toBe(false);
     expect(getClientBackend()).toBe(noopBackend);
@@ -67,7 +67,7 @@ describe("analytics client — no-op mode (unconfigured)", () => {
   });
 });
 
-describe("analytics client — dispatch to a registered backend", () => {
+describe("analytics client. Dispatch to a registered backend", () => {
   it("forwards a typed event to the backend", () => {
     const { backend, mocks } = fakeBackend();
     setClientBackend(backend);

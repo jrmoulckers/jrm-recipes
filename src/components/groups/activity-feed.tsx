@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
   BookPlus,
   CookingPot,
@@ -34,14 +35,16 @@ const KIND_ICON: Record<
   member_joined: UserPlus,
 };
 
-function actorName(event: ActivityEvent) {
-  return event.actor?.name ?? event.actor?.handle ?? "A family cook";
+type ActivityT = ReturnType<typeof useTranslations>;
+
+function actorName(event: ActivityEvent, t: ActivityT) {
+  return event.actor?.name ?? event.actor?.handle ?? t("fallbackActor");
 }
 
 /** The lead sentence for an event, e.g. "Grandma cooked Sunday Ragù". */
-function headline(event: ActivityEvent): React.ReactNode {
+function headline(event: ActivityEvent, t: ActivityT): React.ReactNode {
   const who = (
-    <span className="font-medium text-foreground">{actorName(event)}</span>
+    <span className="font-medium text-foreground">{actorName(event, t)}</span>
   );
   const recipe = event.recipe ? (
     <Link
@@ -56,41 +59,47 @@ function headline(event: ActivityEvent): React.ReactNode {
     case "recipe_added":
       return (
         <>
-          {who} added {recipe}
+          {who} {t("headline.recipeAdded")} {recipe}
         </>
       );
     case "cook_shared":
       return (
         <>
-          {who} cooked {recipe}
+          {who} {t("headline.cookShared")} {recipe}
         </>
       );
     case "review":
       return (
         <>
-          {who} reviewed {recipe}
+          {who} {t("headline.reviewed")} {recipe}
         </>
       );
     case "comment":
       return (
         <>
-          {who} commented on {recipe}
+          {who} {t("headline.commented")} {recipe}
         </>
       );
     case "suggestion":
       return (
         <>
-          {who} suggested an edit to {recipe}
+          {who} {t("headline.suggested")} {recipe}
         </>
       );
     case "member_joined":
-      return <>{who} joined the family</>;
+      return (
+        <>
+          {who} {t("headline.memberJoined")}
+        </>
+      );
   }
 }
 
 function EventRow({ event }: { event: ActivityEvent }) {
+  const t = useTranslations("groups.activity");
+  const locale = useLocale();
   const Icon = KIND_ICON[event.kind];
-  const name = actorName(event);
+  const name = actorName(event, t);
   return (
     <li className="flex gap-3 py-4">
       <div className="relative">
@@ -106,7 +115,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm leading-6 text-muted-foreground">
-          {headline(event)}
+          {headline(event, t)}
         </p>
         {event.kind === "review" && event.rating != null ? (
           <span className="mt-0.5 inline-flex items-center gap-0.5 text-xs text-amber-500">
@@ -125,13 +134,13 @@ function EventRow({ event }: { event: ActivityEvent }) {
             {/* eslint-disable-next-line @next/next/no-img-element -- member-supplied URL can't be pre-allowlisted for next/image */}
             <img
               src={event.photoUrl}
-              alt={`${name}'s cook`}
+              alt={t("cookPhotoAlt", { name })}
               className="max-h-56 w-full object-cover"
             />
           </figure>
         ) : null}
         <time className="mt-1 block text-xs text-muted-foreground">
-          {formatRelativeTime(new Date(event.at))}
+          {formatRelativeTime(new Date(event.at), locale)}
         </time>
       </div>
     </li>
@@ -140,7 +149,7 @@ function EventRow({ event }: { event: ActivityEvent }) {
 
 /**
  * Where an {@link ActivityFeed} pages from. A `group` feed loads more from a
- * single group (membership re-checked server-side); a `personal` feed loads the
+ * single group (membership re-checked server-side). A `personal` feed loads the
  * viewer's cross-group home feed (their own memberships re-resolved each call).
  */
 export type ActivityFeedSource =
@@ -165,6 +174,7 @@ export function ActivityFeed({
   /** Overrides the default "No activity yet" empty state (e.g. personal feed). */
   emptyState?: React.ReactNode;
 }) {
+  const t = useTranslations("groups.activity");
   const [events, setEvents] = React.useState(initialEvents);
   const [cursor, setCursor] = React.useState(initialCursor);
 
@@ -211,11 +221,8 @@ export function ActivityFeed({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
         <CookingPot className="mx-auto mb-2 size-6" aria-hidden="true" />
-        <p className="font-medium text-foreground">No activity yet</p>
-        <p className="mt-1 text-sm">
-          Add a recipe, cook something, or leave a review — it&apos;ll show up
-          here for the family.
-        </p>
+        <p className="font-medium text-foreground">{t("empty.title")}</p>
+        <p className="mt-1 text-sm">{t("empty.description")}</p>
       </div>
     );
   }
@@ -235,7 +242,7 @@ export function ActivityFeed({
             onClick={loadMore}
             disabled={pending}
           >
-            {pending ? "Loading…" : "Load older"}
+            {pending ? t("loading") : t("loadOlder")}
           </Button>
         </div>
       ) : null}

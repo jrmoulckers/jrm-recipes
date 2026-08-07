@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import { useFriendlyError } from "~/lib/error-copy";
 
 import {
   addManualItemAction,
@@ -17,13 +18,14 @@ import {
 import { useActiveMemberStore } from "~/lib/active-member-store";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
 import { type ShoppingCategory } from "~/lib/shopping-list";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import {
   ShoppingListView,
   type ManualEntryDraft,
   type ShoppingViewItem,
 } from "./shopping-list-view";
 
-/** DB-backed shopping list. Check-off / remove are optimistic; adds refresh. */
+/** DB-backed shopping list. Check-off / remove are optimistic, with refresh. */
 export function DbShoppingList({
   items,
   members = [],
@@ -35,6 +37,9 @@ export function DbShoppingList({
   const router = useRouter();
   const [, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
+  const confirm = useConfirm();
+  const t = useTranslations("shopping");
+  const friendlyError = useFriendlyError();
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const avoidAllergens =
     members.find((m) => m.id === activeMemberId)?.allergens ?? [];
@@ -84,9 +89,14 @@ export function DbShoppingList({
     run(clearCheckedItemsAction);
   }
 
-  function onClearAll() {
+  async function onClearAll() {
     if (optimistic.length === 0) return;
-    if (!window.confirm("Clear the whole shopping list?")) return;
+    const ok = await confirm({
+      title: t("confirm.clearAllSynced.title"),
+      description: t("confirm.clearAllSynced.description"),
+      confirmLabel: t("confirm.clearAll.confirmLabel"),
+    });
+    if (!ok) return;
     setOptimistic([]);
     run(clearShoppingListAction);
   }
@@ -94,7 +104,7 @@ export function DbShoppingList({
   return (
     <ShoppingListView
       items={optimistic}
-      storageNote="synced to your account"
+      storageNote={t("storage.synced")}
       avoidAllergens={avoidAllergens}
       onAddManual={onAddManual}
       onToggle={onToggle}

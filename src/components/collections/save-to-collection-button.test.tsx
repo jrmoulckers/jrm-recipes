@@ -44,7 +44,7 @@ describe("SaveToCollectionButton toggle names (issue #122)", () => {
       screen.getByRole("button", { name: /save to collection/i }),
     );
 
-    // A non-member reads as "Add to …"; a member reads as "Remove from …".
+    // A non-member reads as "Add to …". A member reads as "Remove from …".
     const add = screen.getByRole("button", {
       name: "Add to collection Weeknight dinners",
     });

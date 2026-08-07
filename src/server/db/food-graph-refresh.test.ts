@@ -19,7 +19,7 @@ describe("createCoalescer", () => {
     const schedule = createCoalescer(run);
 
     schedule();
-    // schedule() returns synchronously; let the microtask run.
+    // schedule() returns synchronously. Let the microtask run.
     await Promise.resolve();
     await Promise.resolve();
 
@@ -32,7 +32,7 @@ describe("createCoalescer", () => {
     const run = vi.fn().mockImplementation(() => gates[call++]!.promise);
     const schedule = createCoalescer(run);
 
-    // Kick off the first run; it is now in flight (gate not resolved).
+    // Kick off the first run. It is now in flight (gate not resolved).
     schedule();
     await Promise.resolve();
     expect(run).toHaveBeenCalledTimes(1);
@@ -87,7 +87,7 @@ describe("createCoalescer", () => {
     expect(onError).toHaveBeenCalledTimes(1);
     expect((onError.mock.calls[0]![0] as Error).message).toBe("boom");
 
-    // A failure must not wedge the scheduler; the next trigger still runs.
+    // A failure must not wedge the scheduler. The next trigger still runs.
     schedule();
     await Promise.resolve();
     await Promise.resolve();

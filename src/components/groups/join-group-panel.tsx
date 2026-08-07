@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { LogIn, UserPlus, Users } from "lucide-react";
@@ -16,7 +17,7 @@ import { Button } from "~/components/ui/button";
  *
  * Signed in: a "Join" CTA that calls {@link acceptInviteLinkAction} and routes
  * into the group. If the visitor arrived with `?auto=1` (set on the post-auth
- * redirect) it fires that join automatically — so opening a link while signed
+ * redirect) it fires that join automatically. So opening a link while signed
  * out flows through sign-up/in and then lands straight in the group. Signed
  * out: Clerk sign-up / sign-in buttons whose redirect returns here with the
  * auto-join flag.
@@ -33,6 +34,7 @@ export function JoinGroupPanel({
   authConfigured: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.join");
   const searchParams = useSearchParams();
   const shouldAutoJoin = searchParams.get("auto") === "1";
   const [isPending, startTransition] = React.useTransition();
@@ -47,13 +49,13 @@ export function JoinGroupPanel({
         }
         toast.success(
           result.alreadyMember
-            ? `You're already in ${groupName}`
-            : `Welcome to ${groupName}!`,
+            ? t("toast.alreadyMember", { group: groupName })
+            : t("toast.joined", { group: groupName }),
         );
         router.push(`/groups/${result.slug}`);
       });
     });
-  }, [token, groupName, router]);
+  }, [token, groupName, router, t]);
 
   // Auto-join once when returning from auth with the intent flag set.
   React.useEffect(() => {
@@ -67,7 +69,7 @@ export function JoinGroupPanel({
     return (
       <Button size="lg" className="w-full" onClick={join} disabled={isPending}>
         <Users />
-        {isPending ? "Joining…" : `Join ${groupName}`}
+        {isPending ? t("joining") : t("join", { group: groupName })}
       </Button>
     );
   }
@@ -79,7 +81,7 @@ export function JoinGroupPanel({
   if (!authConfigured) {
     return (
       <p className="text-center text-sm text-muted-foreground">
-        Sign in to accept this invitation.
+        {t("signInRequired")}
       </p>
     );
   }
@@ -93,12 +95,13 @@ export function JoinGroupPanel({
           onClick={() => track("signup_started", {})}
         >
           <UserPlus />
-          Sign up &amp; join
+          {t("signUpAndJoin")}
         </Button>
       </SignUpButton>
       <SignInButton mode="modal" forceRedirectUrl={returnTo}>
         <Button size="lg" variant="outline" className="w-full">
-          <LogIn />I already have an account
+          <LogIn />
+          {t("alreadyHaveAccount")}
         </Button>
       </SignInButton>
     </div>

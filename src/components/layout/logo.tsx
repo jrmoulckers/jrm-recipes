@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
 
 /**
- * Heirloom mark — a cooking pot cradling a sprig, nodding to heritage + home
+ * Heirloom mark. A cooking pot cradling a sprig, nodding to heritage + home
  * cooking. Uses theme tokens so it recolors with every UI mode.
  */
 export function LogoMark({

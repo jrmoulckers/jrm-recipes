@@ -20,7 +20,7 @@ import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
  * Single header entry point that collapses the device-level utility controls
  * (appearance, Kids mode, language, accessibility, offline storage) behind one
  * icon button instead of a five-icon row. This keeps the top-right cluster to a
- * clean, scannable line — search, create, settings, notifications, account —
+ * clean, scannable line: search, create, settings, notifications, and account
  * rather than the dense wall of look-alike icons it had grown into.
  *
  * Each control already ships a `label` mode that renders it as a full-width,

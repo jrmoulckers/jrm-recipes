@@ -12,7 +12,7 @@ import { type ActionResult, fail, fromZodError } from "~/server/action-result";
  *
  * Every mutation used to repeat the same preamble: bail out with a
  * "needs a database" result, `safeParse` the input and translate Zod errors
- * into field errors, then `requireUser()` — before any real work. That
+ * into field errors, then `requireUser()` before any real work. That
  * boilerplate obscured the mutation and made it easy to forget a guard.
  *
  * {@link authedAction} folds those three steps into one typed factory. The
@@ -58,14 +58,14 @@ export function authedAction<
   const { input, handler, noDbMessage = NEEDS_DATABASE } = config;
   return async (...args: [...Ctx, TypeOf<S>]): Promise<ActionResult<T>> => {
     if (!isDbConfigured()) return fail(noDbMessage);
-    // The raw payload is always the final argument; anything before it is
+    // The raw payload is always the final argument. Anything before it is
     // context (e.g. a leading record id) forwarded to the handler.
     const raw = args[args.length - 1] as TypeOf<S>;
     const ctx = args.slice(0, -1) as Ctx;
     const parsed = input.safeParse(raw);
     if (!parsed.success) return fromZodError(parsed.error);
     const user = await requireUser();
-    // `safeParse` on the generic `ZodTypeAny` widens `data` to `any`; it is the
+    // `safeParse` on the generic `ZodTypeAny` widens `data` to `any`. It is the
     // schema's own output, so narrow it back to the handler's input type.
     return handler(parsed.data as TypeOf<S>, user, ...ctx);
   };

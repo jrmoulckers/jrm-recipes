@@ -182,7 +182,7 @@ export async function setRsvp(input: RsvpInput, user: User): Promise<void> {
 /**
  * Send reminder notifications for cook-alongs starting within `windowMs`
  * (issue #353). Idempotent: `reminderSentAt` is stamped so a reminder fires at
- * most once per event. Designed to be called from a scheduled job/route; it
+ * most once per event. Designed to be called from a scheduled job/route. It
  * only notifies members who RSVP'd going or maybe. Returns how many events were
  * reminded.
  */

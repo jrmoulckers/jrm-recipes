@@ -9,7 +9,7 @@ type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 /**
  * Stable machine keys for audited actions (issue #219). Keep these in sync with
- * anything that queries the audit log; new sensitive actions should add a key
+ * anything that queries the audit log. New sensitive actions should add a key
  * here rather than passing an ad-hoc string.
  */
 export const AuditAction = {
@@ -48,7 +48,7 @@ export type AuditEntry = {
  * design (mirroring `recordEvent`): a failure to write the audit trail must
  * never roll back or block the sensitive action it is describing. Pass the
  * surrounding transaction when one is available so the audit row commits
- * atomically with the change; otherwise the top-level `db` is used.
+ * atomically with the change. Otherwise the top-level `db` is used.
  */
 export async function recordAudit(
   exec: Db | Tx,

@@ -87,7 +87,7 @@ export async function unfollowUserAction(input: {
 }
 
 /**
- * Toggle the signed-in user's public-activity opt-in. Off by default; turning it
+ * Toggle the signed-in user's public-activity opt-in. Off by default. Turning it
  * on makes them discoverable/followable and lets their public activity surface
  * in followers' feeds. Turning it off is honored at read time immediately.
  */

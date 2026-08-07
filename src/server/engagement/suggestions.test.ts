@@ -5,7 +5,7 @@ import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
 describe("mergeSuggestionIntoNotes", () => {
   it("uses the suggestion alone when the recipe has no notes yet", () => {
     expect(mergeSuggestionIntoNotes(null, "Add a bay leaf", "Nonna")).toBe(
-      "Add a bay leaf — suggested by Nonna",
+      "Add a bay leaf. Suggested by Nonna",
     );
   });
 
@@ -16,7 +16,7 @@ describe("mergeSuggestionIntoNotes", () => {
         "Add a bay leaf",
         "Nonna",
       ),
-    ).toBe("Simmer low and slow.\n\nAdd a bay leaf — suggested by Nonna");
+    ).toBe("Simmer low and slow.\n\nAdd a bay leaf. Suggested by Nonna");
   });
 
   it("trims surrounding whitespace on both the notes and the suggestion", () => {
@@ -26,7 +26,7 @@ describe("mergeSuggestionIntoNotes", () => {
         "  Add a bay leaf  ",
         "Nonna",
       ),
-    ).toBe("Simmer low.\n\nAdd a bay leaf — suggested by Nonna");
+    ).toBe("Simmer low.\n\nAdd a bay leaf. Suggested by Nonna");
   });
 
   it("leaves the notes untouched when the suggestion is empty", () => {
@@ -37,7 +37,7 @@ describe("mergeSuggestionIntoNotes", () => {
 
   it("falls back to a friendly contributor when none is given", () => {
     expect(mergeSuggestionIntoNotes(null, "Add a bay leaf", "  ")).toBe(
-      "Add a bay leaf — suggested by a family cook",
+      "Add a bay leaf. Suggested by a family cook",
     );
   });
 });

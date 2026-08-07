@@ -6,7 +6,7 @@ import { getUnitInfo, type Dimension } from "~/lib/units";
  * Validation contract for a user's unit preferences and custom units
  * (interchangeable units). Shared by the settings UI and the server actions so
  * the shape is guaranteed end to end. Unit strings are validated against the
- * built-in catalog in `src/lib/units.ts`; per-dimension overrides may also name
+ * built-in catalog in `src/lib/units.ts`. Per-dimension overrides may also name
  * a user's custom unit (any non-empty ≤40-char string that isn't a built-in of
  * the wrong dimension).
  */

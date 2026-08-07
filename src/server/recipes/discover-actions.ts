@@ -25,7 +25,7 @@ const MAX_LOAD_MORE_PAGES = 20;
  * offset is clamped so a malformed value can't skip or repeat the whole feed.
  *
  * A prolific viewer can own an entire raw page, so filtering their own recipes
- * out *after* paging could leave an empty page while more feed remained — and
+ * out *after* paging could leave an empty page while more feed remained, and
  * because the old code returned the unfiltered page's `nextOffset`, the button
  * stayed even though it had just added zero cards (#67). We now keep pulling
  * pages until we have at least one card to show (or the feed is exhausted) and

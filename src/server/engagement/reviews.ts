@@ -36,7 +36,7 @@ function emptyToNull(value: string | undefined): string | null {
 
 /**
  * List a recipe's visible reviews (issue #341). Hidden reviews (moderation,
- * #357) are excluded here; the moderation queue reads them separately. Access to
+ * #357) are excluded here. The moderation queue reads them separately. Access to
  * the recipe itself is enforced by the page before this renders.
  */
 export async function listReviews(
@@ -169,7 +169,7 @@ export async function upsertReview(
 }
 
 /**
- * Delete a review. The author can delete their own; the recipe owner can delete
+ * Delete a review. The author can delete their own. The recipe owner can delete
  * any review on their recipe (lightweight moderation before #357).
  */
 export async function deleteReview(

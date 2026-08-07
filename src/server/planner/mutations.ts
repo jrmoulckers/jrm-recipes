@@ -144,7 +144,7 @@ export async function addEntry(input: AddEntryInput, user: User) {
 
   // Proactive allergen/diet gating (#: structured allergens on the food graph):
   // cross-check the added recipe against saved family profiles and return a
-  // warning at add-time. Best-effort — never blocks the entry that just saved.
+  // warning at add-time. Best-effort. Never blocks the entry that just saved.
   const warnings = recipeId
     ? await planWarningsForRecipe(user.id, recipeId)
     : [];
@@ -162,7 +162,7 @@ export type BatchCookResult = {
  * Batch cook (#380): insert the primary recipe entry and a linked leftovers
  * entry on `leftoversDate` in a single transaction. The leftovers entry reuses
  * the same `recipeId` and stores a structured note (see `~/lib/planner-batch`)
- * so the board can recognise and style it — no schema change required.
+ * so the board can recognise and style it. No schema change required.
  */
 export async function addBatchCook(
   input: BatchCookInput,
@@ -186,7 +186,7 @@ export async function addBatchCook(
       if (!canView(recipe, user, groupIds)) throw new Error("FORBIDDEN");
 
       // Group-scoped batch cook (issue #363): both nights land on the shared group
-      // board when a group is in scope; membership is enforced first.
+      // board when a group is in scope. Membership is enforced first.
       let entryGroupId: string | null = null;
       if (input.groupId) {
         if (!(await isGroupMember(tx, input.groupId, user.id)))
@@ -243,14 +243,14 @@ export async function addBatchCook(
   );
 
   // Proactive gating: warn if the batch-cooked recipe conflicts with a saved
-  // family profile. Best-effort — never blocks the entries that just saved.
+  // family profile. Best-effort. Never blocks the entries that just saved.
   const warnings = await planWarningsForRecipe(user.id, recipeId);
   return { primaryId, leftoversId, warnings };
 }
 
 export async function moveEntry(input: MoveEntryInput, user: User) {
   return db.transaction(async (tx) => {
-    // A personal entry moves only for its owner; a group entry moves for any
+    // A personal entry moves only for its owner. A group entry moves for any
     // member of that group (issue #363).
     const entry = await tx.query.mealPlanEntries.findFirst({
       where: eq(mealPlanEntries.id, input.entryId),
@@ -280,7 +280,7 @@ export async function moveEntry(input: MoveEntryInput, user: User) {
 
 export async function removeEntry(entryId: string, user: User) {
   return db.transaction(async (tx) => {
-    // Owner removes their personal entries; any member removes a group entry
+    // Owner removes their personal entries. Any member removes a group entry
     // (issue #363).
     const entry = await tx.query.mealPlanEntries.findFirst({
       where: eq(mealPlanEntries.id, entryId),

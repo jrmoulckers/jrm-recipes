@@ -6,7 +6,7 @@ const idInput = z.string().trim().min(1);
 
 /** Max length for a comment/suggestion body. Imported by the UI counter (#144). */
 export const COMMENT_MAX_LENGTH = 4000;
-/** Over-limit message — kept in sync with the field counter. */
+/** Over-limit message. Kept in sync with the field counter. */
 export const COMMENT_TOO_LONG_MESSAGE = "Keep comments under 4,000 characters";
 
 export const commentInput = z.object({
@@ -61,7 +61,7 @@ export const reviewInput = z.object({
   body: z
     .string()
     .trim()
-    .max(4000, "Keep reviews under 4,000 characters.")
+    .max(4000, "Keep reviews under 4,000 characters")
     .optional(),
   // A review photo must be an uploaded Cloudinary delivery URL (#341/#355):
   // require a real https URL on our image host so an arbitrary/off-host URL
@@ -71,7 +71,7 @@ export const reviewInput = z.object({
     .trim()
     .url()
     .max(2048)
-    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link.")
+    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link")
     .optional()
     .or(z.literal("").transform(() => undefined)),
 });

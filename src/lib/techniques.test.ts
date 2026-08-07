@@ -69,7 +69,7 @@ describe("lookupTechnique", () => {
   });
 
   it("leaves kidTip undefined for techniques without a kid version", () => {
-    // `temper` is intentionally unseeded — the popover falls back to shortTip.
+    // `temper` is intentionally unseeded. The popover falls back to shortTip.
     expect(lookupTechnique("temper").kidTip).toBeUndefined();
   });
 

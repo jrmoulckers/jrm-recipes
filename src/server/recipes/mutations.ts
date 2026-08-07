@@ -46,7 +46,7 @@ const MAX_VERSION_ATTEMPTS = 5;
 
 /**
  * True when `err` is a Postgres unique-violation on `constraint`. The `postgres`
- * driver exposes `.code` and `.constraint`; we fall back to the constraint name
+ * driver exposes `.code` and `.constraint`. We fall back to the constraint name
  * embedded in the message, and unwrap a single `cause` level in case an
  * intermediate layer rewraps the driver error.
  */
@@ -75,7 +75,7 @@ function matchesUniqueViolation(err: unknown, constraint: string): boolean {
  * True when `err` is a Postgres unique-violation on the `recipes.slug`
  * constraint. {@link uniqueSlug} pre-checks for a free slug, but two concurrent
  * transactions can both pass that check and only collide at COMMIT-time on the
- * DB constraint — that lost race surfaces here so callers can retry.
+ * DB constraint. That lost race surfaces here so callers can retry.
  */
 export function isSlugConflict(err: unknown): boolean {
   return matchesUniqueViolation(err, RECIPES_SLUG_CONSTRAINT);
@@ -94,7 +94,7 @@ export function isVersionConflict(err: unknown): boolean {
  * Run a write that may collide on the unique `recipes.slug` constraint,
  * retrying the whole operation on conflict. Because each attempt is a fresh
  * transaction, the retry re-runs {@link uniqueSlug} against newly-committed
- * rows, so the DB constraint — not the app-side loop — is the source of truth.
+ * rows, so the DB constraint, not the app-side loop, is the source of truth.
  */
 async function withSlugConflictRetry<T>(op: () => Promise<T>): Promise<T> {
   for (let attempt = 1; ; attempt++) {
@@ -171,7 +171,7 @@ export async function uniqueSlug(
  * A recipe must only ever carry a `groupId` its author actually belongs to.
  * This is the write-side guard for the group trust boundary: without it a
  * signed-in user could set `visibility: "group"` + an arbitrary `groupId` and
- * plant a recipe in a family cookbook they were never invited to — a broken
+ * plant a recipe in a family cookbook they were never invited to. A broken
  * access control / IDOR. Membership is checked against `group_members` inside
  * the caller's transaction so a rejection rolls back the whole write.
  *
@@ -230,7 +230,7 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
       (input.prepMinutes != null && input.cookMinutes != null
         ? input.prepMinutes + input.cookMinutes
         : null),
-    // Inactive/rest time + make-ahead callout (#409); equipment list (#410).
+    // Inactive/rest time + make-ahead callout (#409). Equipment list (#410).
     restMinutes: input.restMinutes ?? null,
     makeAheadNote: input.makeAheadNote ?? null,
     equipment: input.equipment.length > 0 ? input.equipment : null,
@@ -239,7 +239,7 @@ function scalarFields(input: RecipeInput, groupId: string | null) {
     // Persist declared dietary flags as a Postgres text[] (NULL when none) so
     // "safe for" filtering has a trustworthy, structured source (issue #404).
     dietaryFlags: input.dietaryFlags.length > 0 ? input.dietaryFlags : null,
-    // Derived "-free" tags (issue #273); union'd with dietaryFlags at search.
+    // Derived "-free" tags (issue #273). Union'd with dietaryFlags at search.
     dietaryTags: derivedDietaryTags.length > 0 ? derivedDietaryTags : null,
     sourceName: input.sourceName ?? null,
     sourceUrl: input.sourceUrl ?? null,
@@ -267,7 +267,7 @@ async function insertChildren(tx: Tx, recipeId: string, input: RecipeInput) {
   if (input.ingredients.length > 0) {
     // Best-effort write-time link to the canonical food graph (foodId is
     // nullable). We pass `tx` so the lookup runs on this transaction's own
-    // connection — in production the pool is `max: 1`, so resolving through the
+    // connection. In production the pool is `max: 1`, so resolving through the
     // global `db` here would deadlock the request against our own open
     // transaction and time the save out (504). `resolveFoodIds` still degrades
     // to nulls when the graph is unavailable, so it never blocks the save.
@@ -350,10 +350,10 @@ async function syncTags(tx: Tx, recipeId: string, names: string[]) {
  *
  * `version_number` is allocated as `max+1`, but under READ COMMITTED two
  * concurrent edits can read the same max and try to write the same number. The
- * `recipe_versions_recipe_version_uq` constraint (issue #151) rejects the loser;
+ * `recipe_versions_recipe_version_uq` constraint (issue #151) rejects the loser.
  * we retry inside a SAVEPOINT (`tx.transaction`) so the surrounding recipe
  * transaction survives the rolled-back attempt and the recomputed max reflects
- * the now-committed sibling — yielding sequential, gap-tolerant version numbers
+ * the now-committed sibling. Yielding sequential, gap-tolerant version numbers
  * without locking the whole table.
  */
 export async function journal(
@@ -660,18 +660,18 @@ export async function revertRecipe(
 
 /**
  * Soft-delete a recipe (issue #165). Tombstones the row via `deleted_at` instead
- * of physically deleting it, so its versions, events, ratings, and comments —
- * the family history the product exists to preserve — survive and can be
- * restored. Owner-guarded; the `deleted_at IS NULL` guard makes a repeat delete
+ * of physically deleting it, so its versions, events, ratings, and comments.
+ * the family history the product exists to preserve. Survive and can be
+ * restored. Owner-guarded. The `deleted_at IS NULL` guard makes a repeat delete
  * a no-op that reports NOT_FOUND rather than re-stamping the tombstone.
  *
  * Retention: tombstoned rows are kept indefinitely for now. A hard `purgeRecipe`
  * (permanent removal after a retention window, e.g. 30 days) is intentionally
- * deferred — when added it should be the only path that issues a real DELETE.
+ * deferred. When added it should be the only path that issues a real DELETE.
  */
 export async function deleteRecipe(id: string, author: User) {
   // Kid-safe (issue #367): a kid-role member of the recipe's group can browse,
-  // cook, and favorite, but must never delete a recipe — enforced here on the
+  // cook, and favorite, but must never delete a recipe. Enforced here on the
   // server, not just hidden in the UI. Resolved before the tombstone write so a
   // kid's delete is rejected with FORBIDDEN rather than silently allowed.
   const target = await db.query.recipes.findFirst({
@@ -778,7 +778,7 @@ export async function setShareLinkState(
       next.shareToken = generateShareToken();
       next.shareTokenRotatedAt = new Date();
     } else if (!current.shareToken && change.enabled !== false) {
-      // First enable of a recipe that never had a token — mint one to share.
+      // First enable of a recipe that never had a token. Mint one to share.
       next.shareToken = generateShareToken();
     }
     if (change.enabled !== undefined) next.shareLinkEnabled = change.enabled;

@@ -31,7 +31,7 @@ function matches(candidate: MentionCandidate, query: string): boolean {
 /**
  * Textarea with @mention autocomplete (issue #340). Detects an in-progress
  * `@handle` token at the caret and offers matching members (recipe group +
- * author); selecting one inserts `@handle `. Purely additive over the shared
+ * author). Selecting one inserts `@handle `. Purely additive over the shared
  * Textarea so comments and reviews can both use it.
  */
 export function MentionTextarea({

@@ -18,8 +18,8 @@ import { foodAliases, foodItems } from "~/server/db/schema";
  * against the live `food_aliases` index first (which also covers mined phrasings
  * and variety nodes), then the curated static dataset as a fallback.
  *
- * **Best-effort and resilient by contract**: this never throws. Any failure —
- * no database configured, a query error — resolves everything to `null` so a
+ * **Best-effort and resilient by contract**: this never throws. Any failure.
+ * no database configured, a query error. Resolves everything to `null` so a
  * recipe save is never blocked by graph resolution. Every returned non-null id
  * is verified to exist in `food_items`, so the FK can never be violated.
  */
@@ -27,7 +27,7 @@ import { foodAliases, foodItems } from "~/server/db/schema";
 const ALIAS_MAX = 160;
 
 /**
- * A Drizzle executor that can run the read queries — either the pooled {@link db}
+ * A Drizzle executor that can run the read queries. Either the pooled {@link db}
  * or an open transaction handle. Callers that are **inside a transaction must
  * pass their `tx`**: in production the connection pool is `max: 1`, so issuing
  * these reads through the global `db` while the caller's transaction holds that
@@ -70,10 +70,10 @@ export async function resolveFoodIds(
     const candidates = items.map((item) => pickFoodId(item, index));
 
     // Alias-sourced ids come from `food_aliases.foodId`, which is an FK onto
-    // `food_items` — so they are guaranteed to exist and need no verification.
+    // `food_items`, so they are guaranteed to exist and need no verification.
     // Only curated static-fallback ids (not necessarily seeded in this database)
     // must be checked, so the existence query is skipped entirely whenever every
-    // resolved id came from the live alias index — saving a serial round-trip on
+    // resolved id came from the live alias index. Saving a serial round-trip on
     // the hot save path (the `max: 1` pool serializes every query).
     const aliasFoodIds = new Set(index.values());
     const needVerify = [

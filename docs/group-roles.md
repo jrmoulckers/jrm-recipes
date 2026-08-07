@@ -23,16 +23,16 @@ collaborate in. Every membership carries exactly one role, stored on
 
 | Role       | Who they are                                                                                                |
 | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| **Owner**  | The person ultimately responsible for the group. The creator starts as owner; there is always at least one. |
+| **Owner**  | The person ultimately responsible for the group. The creator starts as owner. There is always at least one. |
 | **Admin**  | A trusted manager who helps run day-to-day membership and settings.                                         |
 | **Member** | A regular family member: reads the shared cookbook and adds recipes.                                        |
-| **Kid**    | A child account with the kid-safe experience. Rides free — never consumes a paid seat.                      |
+| **Kid**    | A child account with the kid-safe experience. Rides free, never consumes a paid seat.                       |
 
 Roles are ordered `owner → admin → member → kid` (see `ROLE_ORDER` in
 `queries.ts`), which is only used for sorting the member list.
 
 `owner` and `admin` are the **manager** roles (`MANAGER_ROLES` in
-`mutations.ts`); `canManage(role)` returns true for exactly these two and is what
+`mutations.ts`). `canManage(role)` returns true for exactly these two and is what
 the UI uses to decide whether to show management surfaces.
 
 ## Capability matrix
@@ -57,22 +57,22 @@ Legend: ✅ allowed · ⚠️ allowed with limits (see notes) · ❌ not allowed
 ## The enforcement rules (what the server guarantees)
 
 Every mutation runs inside a transaction and re-checks the actor's role from the
-database — the UI never gets to decide permissions. Failures raise a typed
+database. The UI never gets to decide permissions. Failures raise a typed
 `DomainError` (`FORBIDDEN`, `OWNER_CANT_LEAVE`, `SEAT_LIMIT_REACHED`, …).
 
 - **Managing settings** (`updateGroup`) requires a manager (owner or admin).
 - **Inviting** (`createInvitation`, `createInviteLink`) requires a manager. But:
-  - Only an **owner** may invite/add someone as an **admin**; an admin who tries
+  - Only an **owner** may invite/add someone as an **admin**. An admin who tries
     to mint a fellow admin is rejected (`addMember` / `createInvitation`).
   - **Shareable invite links** can only ever grant `member` or `kid`
-    (`inviteLinkRole` in `validation.ts`) — a forwardable link that mints admins
+    (`inviteLinkRole` in `validation.ts`). A forwardable link that mints admins
     is a footgun, so it's impossible.
 - **Changing a role** (`updateMemberRole`) is **owner-only**. You cannot set
   someone to `owner` this way (use ownership transfer), and you cannot change an
   existing owner's role.
 - **Removing a member** (`removeMember`) requires a manager, with guards:
   - An owner can never be removed.
-  - An admin cannot remove **another** admin — only an owner can. (An admin may
+  - An admin cannot remove **another** admin. Only an owner can. (An admin may
     remove themselves.)
 - **Leaving** (`leaveGroup`) is open to any member, except the **last owner**: a
   group must always have an owner, so the sole owner is blocked with
@@ -107,13 +107,13 @@ There are two ways to bring someone in, both manager-only:
 - **Targeted invitation** (`group_invitations`): keyed to an email and/or handle,
   carries the role the invitee will get on accept, an opaque accept-link `token`,
   and an optional expiry. At most one _pending_ invite per (group, email).
-- **Shareable invite link** (`group_invite_links`): carries no invitee — anyone
+- **Shareable invite link** (`group_invite_links`): carries no invitee. Anyone
   who opens the URL joins at the link's role. Capped to `member`/`kid`, and can be
   time-limited (`expiresAt`), use-limited (`maxUses`), or revoked (`revokedAt`).
 
 ## Recipe visibility inside a group
 
-Role governs _management_; recipe **visibility** governs what shows up in the
+Role governs _management_. Recipe **visibility** governs what shows up in the
 cookbook (`canListInGroupCookbook` in `queries.ts`):
 
 - Authors always see their own recipes.

@@ -3,7 +3,7 @@
 import * as React from "react";
 
 // global-error replaces the ROOT layout, so the app's global stylesheet is not
-// otherwise applied here — import it directly so design tokens + base styles
+// otherwise applied here. Import it directly so design tokens + base styles
 // are available for the themed fallback below.
 import "~/styles/globals.css";
 import { DEFAULT_UI_THEME } from "~/config/themes";

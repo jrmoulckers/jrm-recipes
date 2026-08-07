@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Clapperboard,
@@ -57,6 +58,7 @@ export function ReelStudio({
   reel: ReelRecipe;
   busyRef: React.RefObject<boolean>;
 }) {
+  const t = useTranslations("recipe");
   const reducedMotion = useReducedMotion();
   const scenes = React.useMemo(() => buildReelScenes(reel), [reel]);
 
@@ -140,7 +142,7 @@ export function ReelStudio({
     };
   }, [stopPreview]);
 
-  const noun = exportMode === "image" ? "image" : "video";
+  const noun = exportMode === "image" ? t("reel.image") : t("reel.video");
 
   function saveBlob(blob: Blob) {
     const href = URL.createObjectURL(blob);
@@ -189,11 +191,13 @@ export function ReelStudio({
         method: "download",
       });
       toast.success(
-        exportMode === "image" ? "Image downloaded" : "Reel downloaded",
+        exportMode === "image"
+          ? t("reel.toast.imageDownloaded")
+          : t("reel.toast.reelDownloaded"),
       );
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
-        toast.error(`Couldn't create the reel ${noun}`);
+        toast.error(t("reel.toast.createError", { type: noun }));
       }
     } finally {
       setBusy(null);
@@ -219,7 +223,7 @@ export function ReelStudio({
         await navigator.share({
           files: [file],
           title: reel.title,
-          text: `${reel.title} — a recipe on Heirloom`,
+          text: t("reel.shareText", { title: reel.title }),
         });
       } else {
         // Fall back to a download when file-sharing isn't available.
@@ -230,13 +234,13 @@ export function ReelStudio({
         });
         toast.success(
           exportMode === "image"
-            ? "Image saved — share it from your gallery"
-            : "Reel saved — share it from your gallery",
+            ? t("reel.toast.imageSaved")
+            : t("reel.toast.reelSaved"),
         );
       }
     } catch (error) {
       if ((error as { name?: string }).name !== "AbortError") {
-        toast.error(`Couldn't share the reel ${noun}`);
+        toast.error(t("reel.toast.shareError", { type: noun }));
       }
     } finally {
       setBusy(null);
@@ -250,11 +254,11 @@ export function ReelStudio({
         <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Clapperboard className="size-5" aria-hidden="true" />
         </div>
-        <DialogTitle>Share as a Reel</DialogTitle>
+        <DialogTitle>{t("reel.title")}</DialogTitle>
         <DialogDescription>
           {exportMode === "image"
-            ? `A 9:16 image of ${reel.title}, ready to share to Stories.`
-            : `A 9:16 video of ${reel.title}, ready for Reels, TikTok or Stories.`}
+            ? t("reel.imageDescription", { title: reel.title })
+            : t("reel.videoDescription", { title: reel.title })}
         </DialogDescription>
       </DialogHeader>
 
@@ -263,13 +267,13 @@ export function ReelStudio({
           {state === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-              <span className="text-sm">Preparing preview…</span>
+              <span className="text-sm">{t("reel.preparing")}</span>
             </div>
           )}
           {state === "error" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
               <AlertTriangle className="size-6" aria-hidden="true" />
-              <span className="text-sm">Couldn&apos;t build the preview.</span>
+              <span className="text-sm">{t("reel.previewError")}</span>
             </div>
           )}
           <canvas
@@ -282,7 +286,9 @@ export function ReelStudio({
           {busy && exportMode === "video" && (
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-foreground/70 p-3">
               <span className="text-center text-xs font-medium text-background">
-                Rendering video… {Math.round(progress * 100)}%
+                {t("reel.renderingVideo", {
+                  percent: Math.round(progress * 100),
+                })}
               </span>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-background/30">
                 <div
@@ -296,20 +302,17 @@ export function ReelStudio({
 
         {reducedMotion && exportMode === "video" && state === "ready" && (
           <p className="text-center text-xs text-muted-foreground">
-            Showing a still preview to respect your reduced-motion setting. The
-            exported video still animates.
+            {t("reel.reducedMotion")}
           </p>
         )}
         {exportMode === "image" && state === "ready" && (
           <p className="text-center text-xs text-muted-foreground">
-            Video export isn&apos;t supported in this browser — download a
-            shareable image instead.
+            {t("reel.imageFallback")}
           </p>
         )}
         {exportMode === "none" && state === "ready" && (
           <p className="text-center text-xs text-muted-foreground">
-            This browser can&apos;t export the reel. Try Chrome, Edge, Firefox
-            or Safari.
+            {t("reel.unsupported")}
           </p>
         )}
       </div>
@@ -317,7 +320,7 @@ export function ReelStudio({
       <DialogFooter className="sm:justify-center">
         <DialogClose asChild>
           <Button type="button" variant="ghost" disabled={Boolean(busy)}>
-            Close
+            {t("common.close")}
           </Button>
         </DialogClose>
         {nativeShare && (
@@ -334,7 +337,7 @@ export function ReelStudio({
             ) : (
               <Share />
             )}
-            Share
+            {t("share.trigger")}
           </Button>
         )}
         <Button
@@ -347,7 +350,9 @@ export function ReelStudio({
           ) : (
             <Download />
           )}
-          {exportMode === "image" ? "Download image" : "Download"}
+          {exportMode === "image"
+            ? t("reel.downloadImage")
+            : t("common.download")}
         </Button>
       </DialogFooter>
     </>

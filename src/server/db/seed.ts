@@ -13,8 +13,8 @@
  *   (ingredients, steps, tags, versions, events) are rebuilt from scratch each
  *   run, so row counts stay constant. Ratings/comments upsert on their keys.
  * - OWNER-PARAMETERISED. Recipes are authored by the user identified by
- *   `OWNER_USER_ID` (a Clerk user id). We resolve it the same way the app does —
- *   by `users.clerkId` — so when the site owner signs in with that Clerk account
+ *   `OWNER_USER_ID` (a Clerk user id). We resolve it the same way the app does.
+ *   by `users.clerkId`, so when the site owner signs in with that Clerk account
  *   they own the seeded recipes and can edit them. Unset -> the local dev user.
  * - PUBLIC. All seeded recipes are public + published so they render with no
  *   sign-in (the prod site can show them to anonymous visitors).
@@ -139,7 +139,7 @@ const GROUP = {
   id: "seed_grp_family",
   slug: "heirloom-family",
   name: "The Heirloom Family",
-  description: "Our family cookbook — the recipes worth passing down.",
+  description: "Our family cookbook. The recipes worth passing down.",
 };
 
 /** Extra family voices for ratings, comments, and suggestions. clerkId stays null. */
@@ -206,14 +206,14 @@ const GRAVY: SeedRecipe = {
   slug: "nonnas-sunday-gravy",
   title: "Nonna's Sunday Gravy",
   description:
-    "The slow-simmered meat sauce that anchored every Sunday at Nonna's table. Make a big pot — it only gets better, and it freezes beautifully.",
+    "The slow-simmered meat sauce that anchored every Sunday at Nonna's table. Make a big pot. It only gets better, and it freezes beautifully.",
   servings: 8,
   prepMinutes: 20,
   cookMinutes: 210,
   difficulty: "medium",
   cuisine: "Italian",
   notes:
-    "Nonna never measured the basil — 'a big handful, then one more.' The gravy is done when a wooden spoon leaves a clean trail across the pot.",
+    "Nonna never measured the basil. 'A big handful, then one more.' The gravy is done when a wooden spoon leaves a clean trail across the pot.",
   sourceName: "Nonna Lucia's handwritten card",
   createdDaysAgo: 90,
   tags: ["dinner", "sauce", "heirloom", "sunday"],
@@ -278,7 +278,7 @@ const MARINARA: SeedRecipe = {
   slug: "weeknight-garden-marinara",
   title: "Weeknight Garden Marinara",
   description:
-    "A lighter, meatless take on Nonna's gravy for busy nights — same soul, ready in well under an hour.",
+    "A lighter, meatless take on Nonna's gravy for busy nights. Same soul, ready in well under an hour.",
   servings: 4,
   prepMinutes: 10,
   cookMinutes: 25,
@@ -290,7 +290,7 @@ const MARINARA: SeedRecipe = {
   tags: ["dinner", "sauce", "weeknight", "vegetarian"],
   forkedFromId: GRAVY.id,
   forkNote:
-    "Adapted from Nonna's Sunday Gravy — meatless and quick for a Tuesday, but still simmered with basil and good tomatoes.",
+    "Adapted from Nonna's Sunday Gravy. Meatless and quick for a Tuesday, but still simmered with basil and good tomatoes.",
   ingredients: [
     { quantity: 2, unit: "tbsp", item: "olive oil" },
     { quantity: 4, item: "garlic cloves", note: "thinly sliced" },
@@ -338,7 +338,7 @@ const FOCACCIA: SeedRecipe = {
   difficulty: "medium",
   cuisine: "Italian",
   notes:
-    "The overnight cold ferment is what gives it that open, bubbly crumb — don't skip it.",
+    "The overnight cold ferment is what gives it that open, bubbly crumb. Don't skip it.",
   createdDaysAgo: 60,
   tags: ["bread", "baking", "vegetarian", "weekend"],
   ingredients: [
@@ -395,7 +395,7 @@ const RECIPE_IDS = SEED_RECIPES.map((r) => r.id);
 
 /**
  * Resolve the recipe owner. `OWNER_USER_ID` is treated as a Clerk user id and
- * matched against `users.clerkId` (the app's own mapping); we also accept a
+ * matched against `users.clerkId` (the app's own mapping). We also accept a
  * literal internal `users.id`. If neither exists we create a user carrying that
  * clerkId, so a later real sign-in reuses the same row and inherits ownership.
  */
@@ -547,7 +547,7 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
   };
 }
 
-/** Upsert a recipe row (scalars) — keeps the same id/createdAt across runs. */
+/** Upsert a recipe row (scalars). Keeps the same id/createdAt across runs. */
 async function upsertRecipe(
   tx: Tx,
   r: SeedRecipe,
@@ -680,8 +680,8 @@ async function rebuildRecipeVersion(
 
 /**
  * Rebuild every recipe's timeline events. Mirrors what mutations.ts records:
- * a `created` (or `adapted`, for a fork) origin, a `published` milestone, and —
- * on a source recipe — an `adapted` event pointing forward to each descendant
+ * a `created` (or `adapted`, for a fork) origin, a `published` milestone, and.
+ * on a source recipe. An `adapted` event pointing forward to each descendant
  * so the lineage shows on both sides.
  */
 async function rebuildEvents(tx: Tx, ownerId: string): Promise<void> {
@@ -828,7 +828,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
       userId: "seed_usr_rosa",
       kind: "comment",
       daysAgo: 80,
-      body: "This is exactly how Nonna made it — the smell took me straight back to her kitchen. The ribs are non-negotiable!",
+      body: "This is exactly how Nonna made it. The smell took me straight back to her kitchen. The ribs are non-negotiable!",
     },
     {
       id: "seed_cmt_gravy_reply",
@@ -845,7 +845,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
       userId: "seed_usr_mateo",
       kind: "suggestion",
       daysAgo: 70,
-      body: "Suggestion: drop a parmesan rind in while it simmers and pull it before serving — adds a lovely savory depth.",
+      body: "Suggestion: drop a parmesan rind in while it simmers and pull it before serving. Adds a lovely savory depth.",
     },
     {
       id: "seed_cmt_mar_praise",
@@ -870,7 +870,7 @@ async function seedEngagement(tx: Tx, ownerId: string): Promise<void> {
       userId: "seed_usr_mateo",
       kind: "comment",
       daysAgo: 50,
-      body: "The overnight cold ferment is absolutely worth it — biggest, bubbliest crumb I've gotten at home.",
+      body: "The overnight cold ferment is absolutely worth it. Biggest, bubbliest crumb I've gotten at home.",
     },
   ];
   for (const c of commentRows) {
@@ -930,7 +930,7 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
     },
   };
 
-  // Cook log — upsert each dated "I cooked this" entry on its stable id.
+  // Cook log. Upsert each dated "I cooked this" entry on its stable id.
   for (const row of buildCookLogRows(ids, daysAgo)) {
     await tx
       .insert(cookLogEntries)
@@ -947,7 +947,7 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
       });
   }
 
-  // Collections — upsert each cookbook, then rebuild its memberships in place.
+  // Collections. Upsert each cookbook, then rebuild its memberships in place.
   for (const row of buildCollectionRows(ids)) {
     await tx
       .insert(collections)
@@ -970,7 +970,7 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
     await tx.insert(collectionRecipes).values(collectionRecipeRows);
   }
 
-  // Favorites — one row per (user, recipe); the unique key makes this a no-op
+  // Favorites. One row per (user, recipe). The unique key makes this a no-op
   // on re-run.
   for (const row of buildFavoriteRows(ids)) {
     await tx
@@ -981,7 +981,7 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
       });
   }
 
-  // Shopping list — upsert the list, then rebuild its lines in place.
+  // Shopping list. Upsert the list, then rebuild its lines in place.
   const listRow = buildShoppingListRow(ids);
   await tx
     .insert(shoppingLists)
@@ -998,7 +998,7 @@ async function seedLibrary(tx: Tx, ownerId: string, groupId: string) {
     await tx.insert(shoppingListItems).values(itemRows);
   }
 
-  // Meal planner — upsert each day/slot assignment on its stable id.
+  // Meal planner. Upsert each day/slot assignment on its stable id.
   for (const row of buildMealPlanRows(ids, daysAgo)) {
     await tx
       .insert(mealPlanEntries)

@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
  * state + owner-only controls). The recipe-page runtime cache is keyed only by
  * URL, so a StaleWhileRevalidate (cache-then-network) strategy could serve one
  * user's authorized private page to another user on a shared browser profile.
- * It must stay NetworkFirst — fresh, correctly-authorized content whenever
+ * It must stay NetworkFirst. Fresh, correctly-authorized content whenever
  * there's a network, cache only as an offline fallback.
  */
 const swSource = readFileSync(

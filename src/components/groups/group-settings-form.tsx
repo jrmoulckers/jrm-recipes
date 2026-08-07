@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
@@ -24,6 +25,7 @@ export function GroupSettingsForm({
   };
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.settings");
   const nameId = React.useId();
   const descriptionId = React.useId();
   const avatarId = React.useId();
@@ -48,7 +50,7 @@ export function GroupSettingsForm({
           return;
         }
 
-        toast.success("Group settings saved");
+        toast.success(t("toast.saved"));
         router.refresh();
       });
     });
@@ -60,7 +62,7 @@ export function GroupSettingsForm({
       className="grid gap-5 rounded-2xl border border-border bg-card p-5 shadow-token"
     >
       <div className="grid gap-2">
-        <Label htmlFor={nameId}>Group name</Label>
+        <Label htmlFor={nameId}>{t("fields.name")}</Label>
         <Input
           id={nameId}
           value={name}
@@ -76,7 +78,7 @@ export function GroupSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={descriptionId}>Description</Label>
+        <Label htmlFor={descriptionId}>{t("fields.description")}</Label>
         <Textarea
           id={descriptionId}
           value={description}
@@ -94,7 +96,7 @@ export function GroupSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={avatarId}>Avatar image URL</Label>
+        <Label htmlFor={avatarId}>{t("fields.avatarUrl")}</Label>
         <Input
           id={avatarId}
           value={avatarUrl}
@@ -114,7 +116,7 @@ export function GroupSettingsForm({
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving…" : "Save settings"}
+          {isPending ? t("actions.saving") : t("actions.save")}
         </Button>
       </div>
     </form>

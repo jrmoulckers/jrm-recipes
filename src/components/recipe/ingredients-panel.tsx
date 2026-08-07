@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { AlertTriangle, Check, Info, Minus, Plus, Users } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 import { HAPTICS, vibrate } from "~/lib/haptics";
@@ -85,7 +85,7 @@ type PanelIngredient = {
   /**
    * Structured allergens from the canonical food graph (#: structured
    * allergens). When present (even `[]`) this is the source of truth for the
-   * ingredient; when `undefined`/`null` the panel falls back to text detection
+   * ingredient. When `undefined`/`null` the panel falls back to text detection
    * on {@link item}.
    */
   allergens?: Allergen[] | null;
@@ -104,10 +104,13 @@ export type DietaryMember = CalorieMember & {
 
 type System = UnitSystem;
 
+/** Toggle order for the measurement-system switch. */
+const SYSTEM_OPTIONS = ["original", "us", "metric", "grams"] as const;
+
 /**
  * Optional controlled-state hook-up. When provided (e.g. by cook mode) the panel
  * becomes controlled so scaling, units, and the checklist can be lifted and
- * persisted; when omitted it manages its own state exactly as before.
+ * persisted. When omitted it manages its own state exactly as before.
  */
 export type IngredientsPanelControls = {
   servings: number;
@@ -152,7 +155,7 @@ function measure(
     return grams != null ? { q: grams, unit: "g" } : { q, unit };
   }
   // us/metric: honor the viewer's per-dimension defaults + custom units when we
-  // have their prefs; otherwise fall back to the friendly-ladder default. The
+  // have their prefs. Otherwise fall back to the friendly-ladder default. The
   // ingredient's volume class routes it to the matching per-class preference.
   if (prefs) {
     const m = resolveDisplayMeasure(
@@ -174,7 +177,7 @@ function measure(
  * Convert a *ranged* amount (min…max) as a coherent whole so both ends land on
  * one shared unit and round together (#51). Converting the max independently via
  * {@link measure} could pick a different friendly unit or rounding for the high
- * end (e.g. "1 cup–1 quart"); routing us/metric through {@link toSystemRange}
+ * end (e.g. "1 cup–1 quart"). Routing us/metric through {@link toSystemRange}
  * keeps the range on the low end's unit. Original/grams pass-throughs stay
  * coherent because both ends share one unit already.
  */
@@ -225,6 +228,7 @@ function amountLabel(
   factor: number,
   system: System,
   locale: string,
+  formatRange: (low: string, high: string) => string,
   kid = false,
   prefs?: UnitPrefs,
   customs?: readonly CustomUnitDef[],
@@ -245,7 +249,7 @@ function amountLabel(
     if (mMax?.q != null) {
       const lo = formatKidAmount(m.q, undefined, locale).number;
       const hi = formatKidAmount(mMax.q, m.unit, locale);
-      return { number: `${lo} to ${hi.number}`, unit: hi.unit };
+      return { number: formatRange(lo, hi.number), unit: hi.unit };
     }
     return formatKidAmount(m.q, m.unit, locale);
   }
@@ -283,7 +287,7 @@ export function IngredientsPanel({
   baseServings: number | null;
   servingsNoun: string | null;
   controls?: IngredientsPanelControls;
-  /** Optional per-serving nutrition; renders a facts panel that scales with servings. */
+  /** Optional per-serving nutrition. Renders a facts panel that scales with servings. */
   nutrition?: Nutrition;
   /**
    * Optional server-computed per-serving estimate from the food graph (resolved
@@ -344,12 +348,13 @@ export function IngredientsPanel({
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
   const locale = useLocale();
+  const t = useTranslations("ingredientsPanel");
   // Kids mode: picture icons (#440) + spelled-out amounts (#447) for pre-readers.
   const { kidSafe } = useThemeBehavior();
 
   const memberList = members ?? [];
   // The active restriction is only in effect when the cook has explicitly
-  // chosen a member — so the list stays clean by default (issue #429).
+  // chosen a member. So the list stays clean by default (issue #429).
   const activeMember = memberList.find((m) => m.id === activeMemberId) ?? null;
   const memberNeeds: MemberNeeds | null =
     activeMember &&
@@ -364,17 +369,17 @@ export function IngredientsPanel({
 
   const factor = canScale ? servings / baseServings : 1;
 
-  // Nutrition Facts: prefer the cook's stored per-serving numbers; when a recipe
+  // Nutrition Facts: prefer the cook's stored per-serving numbers. When a recipe
   // carries none, auto-estimate them from the ingredient list via the food graph
   // (Phase 4 hub-wiring) so the panel still appears, clearly labelled as an
-  // estimate. Computed from the base (unscaled) quantities per base serving — the
+  // estimate. Computed from the base (unscaled) quantities per base serving. The
   // same per-serving basis the panel scales with.
   const nutritionView = React.useMemo(() => {
     if (nutrition && hasNutrition(nutrition)) {
       return { nutrition, estimated: false as const };
     }
     // Prefer the server's food-graph estimate (resolved via foodId → curated
-    // facts) when present; fall back to the pure client-side text-match estimate
+    // facts) when present. Fall back to the pure client-side text-match estimate
     // so recipes with no linked foods (or offline surfaces) still show something.
     if (estimatedNutrition && hasNutrition(estimatedNutrition.perServing)) {
       return {
@@ -423,14 +428,25 @@ export function IngredientsPanel({
   // set that changed since the last render so only recomputed rows flash.
   const amounts = React.useMemo(() => {
     const map = new Map<string, { number: string; unit: string }>();
+    const formatRange = (low: string, high: string) =>
+      t("rangeTo", { low, high });
     for (const ing of ingredients) {
       map.set(
         ing.id,
-        amountLabel(ing, factor, system, locale, kidSafe, prefs, customs),
+        amountLabel(
+          ing,
+          factor,
+          system,
+          locale,
+          formatRange,
+          kidSafe,
+          prefs,
+          customs,
+        ),
       );
     }
     return map;
-  }, [ingredients, factor, system, locale, kidSafe, prefs, customs]);
+  }, [ingredients, factor, system, locale, kidSafe, prefs, customs, t]);
 
   const prevAmountsRef = React.useRef<Map<string, string>>(new Map());
 
@@ -587,7 +603,7 @@ export function IngredientsPanel({
               type="button"
               size="icon"
               variant="outline"
-              aria-label="Fewer servings"
+              aria-label={t("fewerServings")}
               onClick={() => updateServings(Math.max(1, servings - 1))}
             >
               <Minus />
@@ -605,14 +621,14 @@ export function IngredientsPanel({
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
-                {servingsNoun ?? "servings"}
+                {servingsNoun ?? t("servingsNoun")}
               </div>
             </div>
             <Button
               type="button"
               size="icon"
               variant="outline"
-              aria-label="More servings"
+              aria-label={t("moreServings")}
               onClick={() => updateServings(Math.min(1000, servings + 1))}
             >
               <Plus />
@@ -624,7 +640,7 @@ export function IngredientsPanel({
                 variant="ghost"
                 onClick={() => updateServings(baseServings)}
               >
-                Reset
+                {t("reset")}
               </Button>
             )}
             {pinnable.length > 0 && (
@@ -637,7 +653,7 @@ export function IngredientsPanel({
                   scaleToOpen ? setScaleToOpen(false) : openScaleTo()
                 }
               >
-                Scale to…
+                {t("scaleTo")}
               </Button>
             )}
             {bakersFormula && (
@@ -648,27 +664,25 @@ export function IngredientsPanel({
                 aria-pressed={bakersView}
                 onClick={() => setBakersView((v) => !v)}
               >
-                Baker&apos;s %
+                {t("bakersPercent")}
               </Button>
             )}
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground">Ingredients</span>
+          <span className="text-sm text-muted-foreground">
+            {t("ingredients")}
+          </span>
         )}
 
         <ToggleGroup
-          aria-label="Measurement system"
+          aria-label={t("systemAria")}
           className="text-sm"
           value={system}
           onValueChange={(next) => updateSystem(next as System)}
         >
-          {(["original", "us", "metric", "grams"] as const).map((s) => (
-            <ToggleGroupItem
-              key={s}
-              value={s}
-              className="px-2.5 py-1 capitalize"
-            >
-              {s === "us" ? "US" : s}
+          {SYSTEM_OPTIONS.map((s) => (
+            <ToggleGroupItem key={s} value={s} className="px-2.5 py-1">
+              {t(`system.${s}`)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -683,7 +697,7 @@ export function IngredientsPanel({
           }}
         >
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            Ingredient
+            {t("ingredient")}
             <select
               value={pinIngredient.id}
               onChange={(e) => {
@@ -701,7 +715,7 @@ export function IngredientsPanel({
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            Target amount
+            {t("targetAmount")}
             <input
               type="number"
               inputMode="decimal"
@@ -719,7 +733,7 @@ export function IngredientsPanel({
           </label>
           {pinIngredient.unit && (
             <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-              Unit
+              {t("unit")}
               <input
                 type="text"
                 value={pinUnit}
@@ -729,31 +743,25 @@ export function IngredientsPanel({
             </label>
           )}
           <Button type="submit" size="sm" disabled={pinServings == null}>
-            Apply
+            {t("apply")}
           </Button>
           <p
             className="w-full text-xs text-muted-foreground"
             aria-live="polite"
           >
-            {pinAmount.trim() === "" ? (
-              <>
-                Pin one ingredient to what you have and rescale the whole
-                recipe.
-              </>
-            ) : pinFactor != null && pinServings != null ? (
-              <>
-                ≈ {formatQuantity(pinFactor, undefined, locale)}× the recipe
-                {servingsNoun ? (
-                  <>
-                    {" "}
-                    — {formatQuantity(pinServings, undefined, locale)}{" "}
-                    {servingsNoun}
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <>That amount can’t be converted to this ingredient’s unit.</>
-            )}
+            {pinAmount.trim() === ""
+              ? t("pinHint")
+              : pinFactor != null && pinServings != null
+                ? servingsNoun
+                  ? t("scaleFactorWithServings", {
+                      factor: formatQuantity(pinFactor, undefined, locale),
+                      servings: formatQuantity(pinServings, undefined, locale),
+                      noun: servingsNoun,
+                    })
+                  : t("scaleFactor", {
+                      factor: formatQuantity(pinFactor, undefined, locale),
+                    })
+                : t("cannotConvert")}
           </p>
         </form>
       )}
@@ -763,16 +771,16 @@ export function IngredientsPanel({
           {bakersView && bakersFormula && (
             <>
               <span className="font-medium">
-                Total flour{" "}
+                {t("totalFlour")}{" "}
                 <span className="tabular-nums">
                   {formatGrams(bakersFormula.totalFlour, locale)}
                 </span>
               </span>
               {bakersFormula.hydration != null && (
                 <span className="text-muted-foreground">
-                  Hydration{" "}
+                  {t("hydration")}{" "}
                   <span className="tabular-nums text-foreground">
-                    {Math.round(bakersFormula.hydration)}%
+                    {`${Math.round(bakersFormula.hydration)}%`}
                   </span>
                 </span>
               )}
@@ -781,13 +789,13 @@ export function IngredientsPanel({
           {batchYield && (
             <>
               <span className="text-muted-foreground">
-                Batch weight{" "}
+                {t("batchWeight")}{" "}
                 <span className="tabular-nums text-foreground">
                   {formatGrams(batchYield.totalWeight, locale)}
                 </span>
               </span>
               <label className="flex items-center gap-1.5 text-muted-foreground">
-                Divide into
+                {t("divideInto")}
                 <input
                   type="number"
                   inputMode="numeric"
@@ -798,12 +806,14 @@ export function IngredientsPanel({
                   placeholder={
                     countableYield != null ? String(countableYield) : "N"
                   }
-                  aria-label="Number of pieces"
+                  aria-label={t("pieceCountAria")}
                   className="w-16 rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium text-foreground"
                 />
                 {batchYield.perUnit != null && (
                   <span className="tabular-nums text-foreground">
-                    = {formatGrams(batchYield.perUnit, locale)} each
+                    {t("each", {
+                      weight: formatGrams(batchYield.perUnit, locale),
+                    })}
                   </span>
                 )}
               </label>
@@ -815,7 +825,7 @@ export function IngredientsPanel({
       {scaledToHousehold && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Users className="size-3.5 text-primary" aria-hidden="true" />
-          Scaled to your family of {householdSize}.
+          {t("scaledToHousehold", { count: householdSize })}
         </p>
       )}
 
@@ -825,7 +835,7 @@ export function IngredientsPanel({
             htmlFor={cookingForId}
             className="text-xs font-medium text-muted-foreground"
           >
-            Cooking for
+            {t("cookingFor")}
           </label>
           <select
             id={cookingForId}
@@ -833,7 +843,7 @@ export function IngredientsPanel({
             onChange={(e) => setActiveMemberId(e.target.value || null)}
             className="rounded-md border border-border bg-surface px-2 py-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <option value="">Everyone</option>
+            <option value="">{t("everyone")}</option>
             {memberList.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -843,11 +853,11 @@ export function IngredientsPanel({
           {activeMember &&
             (memberNeeds ? (
               <span className="text-xs text-muted-foreground">
-                Flagging ingredients {activeMember.name} should avoid.
+                {t("flagging", { name: activeMember.name })}
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">
-                No restrictions saved for {activeMember.name}.
+                {t("noRestrictions", { name: activeMember.name })}
               </span>
             ))}
         </div>
@@ -905,20 +915,24 @@ export function IngredientsPanel({
                 const reason = flagged
                   ? [
                       conflict.allergens.length > 0
-                        ? `contains ${formatList(
-                            conflict.allergens.map((a) =>
-                              ALLERGEN_LABELS[a].toLowerCase(),
+                        ? t("reasonContains", {
+                            list: formatList(
+                              conflict.allergens.map((a) =>
+                                ALLERGEN_LABELS[a].toLowerCase(),
+                              ),
+                              locale,
                             ),
-                            locale,
-                          )}`
+                          })
                         : null,
                       conflict.diets.length > 0
-                        ? `not ${formatList(
-                            conflict.diets.map((d) =>
-                              DIETARY_TAG_LABELS[d].toLowerCase(),
+                        ? t("reasonNot", {
+                            list: formatList(
+                              conflict.diets.map((d) =>
+                                DIETARY_TAG_LABELS[d].toLowerCase(),
+                              ),
+                              locale,
                             ),
-                            locale,
-                          )}`
+                          })
                         : null,
                     ]
                       .filter(Boolean)
@@ -1013,8 +1027,8 @@ export function IngredientsPanel({
                           )}
                           {ing.note && (
                             <span className="text-muted-foreground">
-                              {" "}
-                              — {ing.note}
+                              {", "}
+                              {ing.note}
                             </span>
                           )}
                           {ing.stepPosition != null && (
@@ -1022,7 +1036,7 @@ export function IngredientsPanel({
                               variant="muted"
                               className="ms-2 align-middle"
                             >
-                              Step {ing.stepPosition}
+                              {t("step", { position: ing.stepPosition })}
                             </Badge>
                           )}
                           {ing.optional && (
@@ -1030,7 +1044,7 @@ export function IngredientsPanel({
                               variant="muted"
                               className="ms-2 align-middle"
                             >
-                              optional
+                              {t("optional")}
                             </Badge>
                           )}
                           {bakersView && bakersPercentById.has(ing.id) && (
@@ -1048,9 +1062,12 @@ export function IngredientsPanel({
                               key={allergen}
                               variant="muted"
                               className="ms-2 align-middle"
-                              title={`Contains ${ALLERGEN_LABELS[allergen].toLowerCase()}`}
+                              title={t("containsTitle", {
+                                allergen:
+                                  ALLERGEN_LABELS[allergen].toLowerCase(),
+                              })}
                             >
-                              <span className="sr-only">Contains </span>
+                              <span className="sr-only">{t("containsSr")}</span>
                               {ALLERGEN_LABELS[allergen]}
                             </Badge>
                           ))}
@@ -1067,8 +1084,10 @@ export function IngredientsPanel({
                       <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-warning">
                         <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                         <span>
-                          <span className="sr-only">Dietary warning — </span>
-                          {activeMember?.name}: {reason}.
+                          <span className="sr-only">
+                            {t("dietaryWarningSr")}
+                          </span>
+                          {`${activeMember?.name}: ${reason}.`}
                         </span>
                       </p>
                     )}
@@ -1082,7 +1101,7 @@ export function IngredientsPanel({
                       <p className="mb-1 ms-9 flex items-start gap-1.5 text-xs text-muted-foreground">
                         <Info className="mt-0.5 size-3 shrink-0 text-primary" />
                         <span>
-                          <span className="sr-only">Measure as </span>≈{" "}
+                          <span className="sr-only">{t("measureAsSr")}</span>≈{" "}
                           {breakdown}
                         </span>
                       </p>

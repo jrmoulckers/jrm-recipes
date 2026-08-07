@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export function CollectionActions({
   collection,
@@ -42,6 +44,7 @@ export function CollectionActions({
   };
 }) {
   const router = useRouter();
+  const t = useTranslations("collections.actions");
   const nameId = React.useId();
   const descriptionId = React.useId();
   const [renameOpen, setRenameOpen] = React.useState(false);
@@ -53,6 +56,7 @@ export function CollectionActions({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   function onRename(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,17 +74,21 @@ export function CollectionActions({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Collection updated");
+        toast.success(t("toast.updated"));
         setRenameOpen(false);
         router.refresh();
       });
     });
   }
 
-  function onDelete() {
-    const ok = window.confirm(
-      `Delete “${collection.name}”? Your recipes stay in your library — only this collection is removed.`,
-    );
+  async function onDelete() {
+    // Yield a tick so the dropdown has finished closing and returned focus.
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    const ok = await confirm({
+      title: t("confirm.delete.title", { name: collection.name }),
+      description: t("confirm.delete.description"),
+      confirmLabel: t("confirm.delete.confirmLabel"),
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteCollectionAction(collection.id).then((result) => {
@@ -88,7 +96,7 @@ export function CollectionActions({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Collection deleted");
+        toast.success(t("toast.deleted"));
         router.push("/collections");
       });
     });
@@ -102,7 +110,7 @@ export function CollectionActions({
             type="button"
             variant="outline"
             size="icon"
-            aria-label="Collection options"
+            aria-label={t("a11y.options")}
           >
             <MoreHorizontal />
           </Button>
@@ -116,17 +124,19 @@ export function CollectionActions({
               setRenameOpen(true);
             }}
           >
-            <Pencil /> Rename
+            <Pencil /> {t("menu.rename")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              onDelete();
+            onSelect={() => {
+              // Let the menu close and hand focus back before the dialog traps
+              // it. The old window.confirm blocked synchronously, so this
+              // ordering did not matter.
+              void onDelete();
             }}
             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
           >
-            <Trash2 /> Delete
+            <Trash2 /> {t("menu.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -135,14 +145,12 @@ export function CollectionActions({
         <DialogContent>
           <form onSubmit={onRename} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>Edit collection</DialogTitle>
-              <DialogDescription>
-                Rename this collection or update its description.
-              </DialogDescription>
+              <DialogTitle>{t("edit.title")}</DialogTitle>
+              <DialogDescription>{t("edit.description")}</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={nameId}>Name</Label>
+              <Label htmlFor={nameId}>{t("edit.fields.name")}</Label>
               <Input
                 id={nameId}
                 value={name}
@@ -161,7 +169,9 @@ export function CollectionActions({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor={descriptionId}>Description</Label>
+              <Label htmlFor={descriptionId}>
+                {t("edit.fields.description")}
+              </Label>
               <Textarea
                 id={descriptionId}
                 value={description}
@@ -188,10 +198,10 @@ export function CollectionActions({
                 onClick={() => setRenameOpen(false)}
                 disabled={isPending}
               >
-                Cancel
+                {t("edit.actions.cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving…" : "Save changes"}
+                {isPending ? t("edit.actions.saving") : t("edit.actions.save")}
               </Button>
             </DialogFooter>
           </form>

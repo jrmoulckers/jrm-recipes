@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   GitCompare,
@@ -44,19 +45,21 @@ function toSelection(value: string): CompareSelection {
 /**
  * Timeline "Compare" affordance (#358): pick two points in a recipe's history
  * (a saved version or the live recipe) and see an inline diff of scalar fields,
- * ingredient lines, and steps. Read-only — Restore lives in the version list.
+ * ingredient lines, and steps. Read-only. Restore lives in the version list.
  */
 export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
+  const t = useTranslations("versionCompare");
+  const td = useTranslations("recipeDetail");
   // Need at least one saved version to have anything to compare against.
   const options = React.useMemo(
     () => [
-      { value: CURRENT, label: "Current recipe" },
+      { value: CURRENT, label: t("currentRecipe") },
       ...versions.map((v) => ({
         value: String(v.versionNumber),
         label: `v${v.versionNumber} · ${v.label}`,
       })),
     ],
-    [versions],
+    [versions, t],
   );
 
   // Default: the previous saved version → the current recipe.
@@ -86,28 +89,23 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
   return (
     <section
       className="rounded-xl border border-border bg-card p-5 shadow-token"
-      aria-label="Compare recipe versions"
+      aria-label={t("aria")}
     >
       <div className="mb-4 flex items-center gap-2">
         <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
           <GitCompare className="size-4" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-semibold">
-            Compare versions
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            See exactly what changed between two points in this recipe&apos;s
-            history.
-          </p>
+          <h3 className="font-display text-lg font-semibold">{t("heading")}</h3>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-muted-foreground">From</span>
+          <span className="font-medium text-muted-foreground">{t("from")}</span>
           <Select value={from} onValueChange={setFrom}>
-            <SelectTrigger className="w-52" aria-label="Compare from version">
+            <SelectTrigger className="w-52" aria-label={t("fromAria")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -126,9 +124,9 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
         />
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-muted-foreground">To</span>
+          <span className="font-medium text-muted-foreground">{t("to")}</span>
           <Select value={to} onValueChange={setTo}>
-            <SelectTrigger className="w-52" aria-label="Compare to version">
+            <SelectTrigger className="w-52" aria-label={t("toAria")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -147,38 +145,51 @@ export function VersionCompare({ recipeId, versions }: VersionCompareProps) {
           ) : (
             <GitCompare aria-hidden="true" />
           )}
-          Compare
+          {t("compare")}
         </Button>
       </div>
 
-      {diff && <DiffResult diff={diff} />}
+      {diff && (
+        <DiffResult
+          diff={diff}
+          ingredientsTitle={td("ingredients.heading")}
+          stepsTitle={td("method.heading")}
+        />
+      )}
     </section>
   );
 }
 
-function summaryText(diff: RecipeDiff): string {
+function DiffResult({
+  diff,
+  ingredientsTitle,
+  stepsTitle,
+}: {
+  diff: RecipeDiff;
+  ingredientsTitle: string;
+  stepsTitle: string;
+}) {
+  const t = useTranslations("versionCompare");
   const { changed, added, removed } = diff.summary;
   const parts: string[] = [];
-  if (changed > 0) parts.push(`${changed} changed`);
-  if (added > 0) parts.push(`${added} added`);
-  if (removed > 0) parts.push(`${removed} removed`);
-  return parts.length > 0 ? parts.join(" · ") : "No differences";
-}
+  if (changed > 0) parts.push(t("summaryChanged", { count: changed }));
+  if (added > 0) parts.push(t("summaryAdded", { count: added }));
+  if (removed > 0) parts.push(t("summaryRemoved", { count: removed }));
+  const summary = parts.length > 0 ? parts.join(" · ") : t("noDifferences");
 
-function DiffResult({ diff }: { diff: RecipeDiff }) {
   return (
     <div className="mt-5 flex flex-col gap-5" aria-live="polite">
-      <p className="text-sm font-medium">{summaryText(diff)}</p>
+      <p className="text-sm font-medium">{summary}</p>
 
       {diff.identical ? (
         <p className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">
-          These two versions are identical.
+          {t("identical")}
         </p>
       ) : (
         <>
           {diff.fields.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h4 className="text-sm font-semibold">Details</h4>
+              <h4 className="text-sm font-semibold">{t("details")}</h4>
               <ul className="flex flex-col gap-2">
                 {diff.fields.map((field) => (
                   <li
@@ -201,8 +212,8 @@ function DiffResult({ diff }: { diff: RecipeDiff }) {
             </div>
           )}
 
-          <DiffSection title="Ingredients" section={diff.ingredients} />
-          <DiffSection title="Steps" section={diff.steps} />
+          <DiffSection title={ingredientsTitle} section={diff.ingredients} />
+          <DiffSection title={stepsTitle} section={diff.steps} />
         </>
       )}
     </div>
@@ -216,6 +227,7 @@ function DiffSection({
   title: string;
   section: SectionDiff;
 }) {
+  const t = useTranslations("versionCompare");
   const [showUnchanged, setShowUnchanged] = React.useState(false);
   const changedLines = section.lines.filter((l) => l.kind !== "unchanged");
   const unchangedCount = section.lines.length - changedLines.length;
@@ -237,13 +249,13 @@ function DiffSection({
             aria-expanded={showUnchanged}
           >
             {showUnchanged
-              ? "Hide unchanged"
-              : `Show ${unchangedCount} unchanged`}
+              ? t("hideUnchanged")
+              : t("showUnchanged", { count: unchangedCount })}
           </Button>
         )}
       </div>
       {changedLines.length === 0 && !showUnchanged ? (
-        <p className="text-sm text-muted-foreground">No changes.</p>
+        <p className="text-sm text-muted-foreground">{t("noChanges")}</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {visible.map((line, i) => (
@@ -257,31 +269,28 @@ function DiffSection({
 
 const KIND_META: Record<
   LineDiff["kind"],
-  { icon: typeof Plus; className: string; label: string }
+  { icon: typeof Plus; className: string }
 > = {
   added: {
     icon: Plus,
     className: "border-primary/40 bg-primary/5 text-foreground",
-    label: "Added",
   },
   removed: {
     icon: Minus,
     className: "border-destructive/40 bg-destructive/5 text-muted-foreground",
-    label: "Removed",
   },
   changed: {
     icon: Pencil,
     className: "border-secondary/40 bg-secondary/10 text-foreground",
-    label: "Changed",
   },
   unchanged: {
     icon: Minus,
     className: "border-border/70 bg-background text-muted-foreground",
-    label: "Unchanged",
   },
 };
 
 function DiffLineRow({ line }: { line: LineDiff }) {
+  const t = useTranslations("versionCompare");
   const meta = KIND_META[line.kind];
   const Icon = meta.icon;
   return (
@@ -292,7 +301,7 @@ function DiffLineRow({ line }: { line: LineDiff }) {
       )}
     >
       <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-      <span className="sr-only">{meta.label}:</span>
+      <span className="sr-only">{t(`kind.${line.kind}`)}:</span>
       <span className="min-w-0">
         {line.kind === "changed" ? (
           <span className="flex flex-wrap items-center gap-1.5">

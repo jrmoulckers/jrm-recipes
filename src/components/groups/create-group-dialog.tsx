@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export function CreateGroupDialog({
   children?: React.ReactNode;
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.create");
   const nameId = React.useId();
   const descriptionId = React.useId();
   const [open, setOpen] = React.useState(false);
@@ -57,7 +59,7 @@ export function CreateGroupDialog({
           return;
         }
 
-        toast.success("Your group is ready for the family table");
+        toast.success(t("toast.created"));
         setOpen(false);
         resetForm();
         if (result.slug) router.push(`/groups/${result.slug}`);
@@ -71,21 +73,19 @@ export function CreateGroupDialog({
       <DialogTrigger asChild>
         {children ?? (
           <Button size="lg">
-            <Plus /> New group
+            <Plus /> {t("trigger")}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={onSubmit} className="grid gap-5">
           <DialogHeader>
-            <DialogTitle>Create a family group</DialogTitle>
-            <DialogDescription>
-              Make a shared space for the recipes your people pass around.
-            </DialogDescription>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
 
           <FormField
-            label="Group name"
+            label={t("fields.name.label")}
             htmlFor={nameId}
             error={fieldErrors.name}
           >
@@ -93,13 +93,13 @@ export function CreateGroupDialog({
               id={nameId}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Sunday Supper Club"
+              placeholder={t("fields.name.placeholder")}
               autoFocus
             />
           </FormField>
 
           <FormField
-            label="Description"
+            label={t("fields.description.label")}
             htmlFor={descriptionId}
             error={fieldErrors.description}
           >
@@ -107,7 +107,7 @@ export function CreateGroupDialog({
               id={descriptionId}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="For the recipes, notes, and weeknight saves we all share."
+              placeholder={t("fields.description.placeholder")}
             />
           </FormField>
 
@@ -118,10 +118,10 @@ export function CreateGroupDialog({
               onClick={() => setOpen(false)}
               disabled={isPending}
             >
-              Cancel
+              {t("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating…" : "Create group"}
+              {isPending ? t("actions.creating") : t("actions.create")}
             </Button>
           </DialogFooter>
         </form>

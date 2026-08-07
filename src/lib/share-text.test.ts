@@ -11,10 +11,10 @@ describe("shareText", () => {
 
   it("falls back gracefully when the author is missing", () => {
     expect(shareText({ title: "Apple Pie" })).toBe(
-      "Apple Pie — a family recipe on Heirloom.",
+      "Apple Pie. A family recipe on Heirloom.",
     );
     expect(shareText({ title: "Apple Pie", author: "   " })).toBe(
-      "Apple Pie — a family recipe on Heirloom.",
+      "Apple Pie. A family recipe on Heirloom.",
     );
   });
 
@@ -25,7 +25,7 @@ describe("shareText", () => {
         "https://heirloom.app/recipes/apple-pie",
       ),
     ).toBe(
-      "Apple Pie — a family recipe on Heirloom. https://heirloom.app/recipes/apple-pie",
+      "Apple Pie. A family recipe on Heirloom. https://heirloom.app/recipes/apple-pie",
     );
   });
 

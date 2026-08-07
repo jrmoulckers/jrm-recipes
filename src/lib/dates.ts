@@ -3,7 +3,7 @@
  *
  * App locales ({@link Locale}) are mapped to `date-fns` locale objects so every
  * formatted date, weekday, and relative-time phrase follows the active locale's
- * conventions — month/day order, translated names, and the "... ago" suffix —
+ * conventions. Month/day order, translated names, and the "... Ago" suffix.
  * instead of being hard-locked to US English. Week start is likewise derived
  * from the locale (`options.weekStartsOn`) rather than a hardcoded Sunday, so
  * the planner grid begins on the right day (Sunday for `en`, Monday for `es`/
@@ -93,8 +93,23 @@ export function formatMonthDay(
 }
 
 /**
- * Human-friendly week range, collapsing shared month/year — e.g.
- * "Jul 5 – 11, 2026" or "Jun 29 – Jul 5, 2026" — with localized month names.
+ * Scheduled date + time for an event, localized, e.g. "Sun, Jul 5 · 6:30 PM".
+ *
+ * Note: the clock is 12-hour here because the pattern is fixed. Locales that
+ * conventionally use a 24-hour clock will still read correctly but not
+ * idiomatically. Switching the whole module to `Intl.DateTimeFormat` styles
+ * would fix that globally and is tracked separately.
+ */
+export function formatEventDateTime(
+  date: Date,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  return formatDate(date, "EEE, MMM d · h:mm a", locale);
+}
+
+/**
+ * Human-friendly week range, collapsing shared month/year. E.g.
+ * "Jul 5 – 11, 2026" or "Jun 29 – Jul 5, 2026", with localized month names.
  */
 export function formatWeekRange(
   start: Date,

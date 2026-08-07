@@ -15,13 +15,17 @@
     "vercel-build": "node scripts/preflight-env.mjs && node scripts/migrate.mjs && next build",
     "start": "next start",
     "preview": "next build && next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings 3",
     "lint:fix": "next lint --fix",
     "typecheck": "tsc --noEmit",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,mdx}\" --cache",
     "check": "pnpm run lint && pnpm run typecheck",
     "i18n:validate": "node scripts/i18n-validate.mjs",
+    "i18n:english-leak": "node scripts/i18n-english-leak.mjs",
+    "i18n:rich-tags": "node scripts/i18n-rich-tags.mjs",
+    "a11y:alt-audit": "node scripts/alt-audit.mjs",
+    "copy:check": "pnpm run i18n:validate && pnpm run i18n:english-leak && pnpm run i18n:rich-tags && pnpm run a11y:alt-audit",
     "i18n:pseudo": "node scripts/i18n-pseudo.mjs",
     "audit:ci": "pnpm audit --audit-level=high",
     "test": "vitest run",
@@ -42,6 +46,7 @@
     "@hookform/resolvers": "^3.10.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@radix-ui/react-accordion": "^1.2.16",
+    "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-checkbox": "^1.3.7",
     "@radix-ui/react-dialog": "^1.1.19",
@@ -125,7 +130,10 @@
     "overrides": {
       "sharp": "^0.35.0",
       "next>postcss": "^8.5.18",
-      "brace-expansion": "^5.0.8"
+      "brace-expansion": "^5.0.9",
+      "ip-address": "^10.3.1",
+      "js-yaml@^3": "^3.15.1",
+      "js-yaml@^4": "^4.3.1"
     },
     "auditConfig": {
       "ignoreGhsas": [

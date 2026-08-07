@@ -114,7 +114,7 @@ describe("negotiateAcceptLanguage", () => {
   });
 
   it("honors quality weights, preferring the highest-weighted supported tag", () => {
-    // fr is most-preferred but unsupported; de outranks es by weight.
+    // fr is most-preferred but unsupported. de outranks es by weight.
     expect(negotiateAcceptLanguage("fr,de;q=0.8,es;q=0.7")).toBe("de");
     expect(negotiateAcceptLanguage("fr;q=1.0,es;q=0.9,de;q=0.8")).toBe("es");
   });

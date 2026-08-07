@@ -33,7 +33,7 @@ vi.mock("~/server/planner/actions", () => ({
 import { PlannerBoard, type BoardDay, type BoardEntry } from "./planner-board";
 import { formatLeftoversNote } from "~/lib/planner-batch";
 
-/** Render inside the intl provider — PlannerBoard reads the locale via next-intl. */
+/** Render inside the intl provider. PlannerBoard reads the locale via next-intl. */
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
 }
@@ -89,7 +89,7 @@ const noteEntry: BoardEntry = {
   recipe: null,
 };
 
-describe("PlannerBoard — Cooked it (#422)", () => {
+describe("PlannerBoard. Cooked it (#422)", () => {
   it("shows a Cooked it action for recipe entries", () => {
     render(<PlannerBoard days={days} entries={[recipeEntry()]} recipes={[]} />);
     expect(
@@ -125,7 +125,7 @@ describe("PlannerBoard — Cooked it (#422)", () => {
   });
 });
 
-describe("PlannerBoard — batch cook / leftovers (#380)", () => {
+describe("PlannerBoard. Batch cook / leftovers (#380)", () => {
   const primary = recipeEntry();
   const leftovers: BoardEntry = {
     id: "entry-left",

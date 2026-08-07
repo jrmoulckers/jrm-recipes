@@ -10,7 +10,7 @@ import { isShareableImage, pickSharedUrl } from "~/lib/share-target";
  * installed app can share EITHER a link/text (GET, or POST with no file) OR a
  * photo (POST multipart) into the recipe importer on the New Recipe page.
  *
- * For links we deliberately do NOT fetch anything here — the importer server
+ * For links we deliberately do NOT fetch anything here. The importer server
  * action owns fetching, with its own SSRF guards. This route only validates the
  * shared value and routes the user into the create flow. For a shared photo we
  * upload it to Cloudinary server-side and hand its URL to the editor as a
@@ -35,7 +35,7 @@ function asString(value: FormDataEntryValue | null): string | null {
 /**
  * Upload a shared photo to Cloudinary and return its `secure_url`, or `null`
  * when Cloudinary isn't configured or the upload fails. The secret is used
- * server-side only (never exposed); config is passed per call so we don't
+ * server-side only (never exposed). Config is passed per call so we don't
  * mutate global SDK state across concurrent requests.
  */
 async function uploadSharedImage(file: File): Promise<string | null> {
@@ -76,7 +76,7 @@ export function GET(request: NextRequest): NextResponse {
 
 /**
  * POST share target: a photo (multipart) and/or link/text. A valid photo is
- * uploaded and handed to the editor as a pre-filled cover; otherwise we fall
+ * uploaded and handed to the editor as a pre-filled cover. Otherwise we fall
  * back to the link/text path. Always answers with a 303 so the browser turns
  * the POST into a plain GET navigation to the editor.
  */
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         303,
       );
     }
-    // Upload unavailable/failed — fall through to any shared link/text.
+    // Upload unavailable/failed. Fall through to any shared link/text.
   }
 
   const shared = pickSharedUrl(

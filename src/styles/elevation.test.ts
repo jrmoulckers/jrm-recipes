@@ -32,7 +32,7 @@ describe("elevation tokens (issue #86)", () => {
   });
 
   it("tunes --shadow-sm per mode wherever --shadow is overridden", () => {
-    // Kitchen inherits the :root defaults; the other four modes tune shadows.
+    // Kitchen inherits the :root defaults. the other four modes tune shadows.
     for (const theme of UI_THEME_IDS) {
       const block = new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]*)\\}`);
       const match = block.exec(THEMES_CSS);

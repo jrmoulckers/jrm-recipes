@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FlagsProvider } from "~/components/analytics/flags-provider";
@@ -8,10 +8,16 @@ import {
   EMPTY_LIBRARY_CTA_FLAG,
   emptyLibraryCopy,
 } from "./empty-library-cta";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 const track = vi.hoisted(() => vi.fn());
 
-// The CTA and the flags provider both dispatch through the typed client; stub it
+// The CTA and the flags provider both dispatch through the typed client. Stub it
 // so we can assert the exposure event without a real backend.
 vi.mock("~/lib/analytics", () => ({ track }));
 

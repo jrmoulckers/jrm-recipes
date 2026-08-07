@@ -26,13 +26,13 @@ import { recipes } from "./recipes";
  * over time by mining the recipe corpus (`source = 'mined'`).
  *
  * Hanging off each node are the learned-affinity tables:
- * - {@link foodAliases}    — every phrasing that resolves to a node.
- * - {@link foodUnitStats}  — which units + typical quantities people use.
- * - {@link foodPrepStats}  — which prep methods (diced, minced, …) people use.
- * - {@link foodPairs}      — co-occurrence edges (the near-neighbour graph).
+ * - {@link foodAliases}   . Every phrasing that resolves to a node.
+ * - {@link foodUnitStats}: which units + typical quantities people use.
+ * - {@link foodPrepStats}: which prep methods (diced, minced, …) people use.
+ * - {@link foodPairs}     . Co-occurrence edges (the near-neighbour graph).
  *
  * The recipe editor's unit picker still reads the static `food-db.ts` module for
- * instant, offline, client-safe defaults; these tables let *server-side*
+ * instant, offline, client-safe defaults. These tables let *server-side*
  * features (smart ingredient entry, near-neighbour suggestions, shopping-list
  * categorization, analytics) enrich those defaults with live crowd data.
  */
@@ -40,7 +40,7 @@ export const foodItems = pgTable(
   "food_items",
   {
     id: pk(),
-    /** Stable, unique key derived from the food name; also the seed id source. */
+    /** Stable, unique key derived from the food name. Also the seed id source. */
     slug: varchar({ length: 80 }).notNull().unique(),
     name: varchar({ length: 120 }).notNull(),
     /** Canonical {@link FoodCategory} string from `food-db.ts`. */
@@ -49,7 +49,7 @@ export const foodItems = pgTable(
     densityGPerMl: real(),
     /**
      * Variety → canonical parent (yellow onion → onion). NULL for a canonical
-     * node. Self-referential FK using the `AnyPgColumn` pattern; deleting a
+     * node. Self-referential FK using the `AnyPgColumn` pattern. Deleting a
      * parent cascades to its varieties.
      */
     parentId: fk().references((): AnyPgColumn => foodItems.id, {
@@ -64,8 +64,8 @@ export const foodItems = pgTable(
      * of truth for `getRecipeAllergens`, which only falls back to the free-text
      * detector (`src/lib/allergens.ts`) for ingredient lines that don't resolve
      * to a food carrying curated allergen data. NULL means "not curated" (fall
-     * back to text); an empty array would mean "curated, carries none". Additive
-     * and nullable so the graph and old readers are untouched; validation in
+     * back to text). An empty array would mean "curated, carries none". Additive
+     * and nullable so the graph and old readers are untouched. Validation in
      * `food-allergens.ts` keeps the tokens aligned with the `Allergen` union.
      */
     allergens: text().array(),
@@ -82,9 +82,9 @@ export const foodItems = pgTable(
 
 /**
  * Every free-text phrasing that resolves to a food node. Curated aliases seed it
- * from `food-db.ts`; mined aliases accrue from the corpus. `useCount` powers
+ * from `food-db.ts`. Mined aliases accrue from the corpus. `useCount` powers
  * "did you mean" ranking and the promotion of a frequent alias to a real
- * variety node. Unique per (`foodId`, `alias`); `alias` is normalized (see
+ * variety node. Unique per (`foodId`, `alias`). `alias` is normalized (see
  * `normalizeFoodText`) and indexed for resolution lookups.
  */
 export const foodAliases = pgTable(
@@ -155,9 +155,9 @@ export const foodPrepStats = pgTable(
 );
 
 /**
- * Co-occurrence edges — the near-neighbour graph. Each undirected pair is stored
+ * Co-occurrence edges for the near-neighbour graph. Each undirected pair is stored
  * once with `foodAId < foodBId` (enforced by a check) so there are no duplicate
- * mirror rows. `coCount` is the number of recipes containing both foods; `lift`
+ * mirror rows. `coCount` is the number of recipes containing both foods. `lift`
  * = P(A,B) / (P(A)·P(B)) is precomputed so distinctive pairings (onion→tomato)
  * outrank ubiquitous ones (onion→salt). Indexed on each side for neighbour
  * lookups. Composite PK (`foodAId`, `foodBId`).
@@ -188,9 +188,9 @@ export const foodPairs = pgTable(
  * Per-user personalization (Phase 3, `docs/food-graph.md` §6.2). Derived from a
  * user's *own* recipes, it records the unit / variety / prep they most often use
  * for a given food, so the shared crowd suggestions can be re-ranked to float
- * "your usual" to the top. Composite PK (`userId`, `foodId`); rebuilt by the
+ * "your usual" to the top. Composite PK (`userId`, `foodId`). Rebuilt by the
  * ingestion job. `preferredVariantId` is reserved for when variety child nodes
- * are mined — the miner leaves it NULL until then.
+ * are mined. The miner leaves it NULL until then.
  */
 export const userFoodPrefs = pgTable(
   "user_food_prefs",
@@ -226,9 +226,9 @@ export const userFoodPrefs = pgTable(
  * appears in, with `useCount` = how many ingredient lines in that recipe
  * reference it. Powers `getRecipesUsingFood` ("recipes that use tomato") and, by
  * persisting the app-side canonicalization the miner computes, is the provenance
- * that a future *bounded* incremental ingestion can scope deltas by. Rebuilt by
- * the ingestion job; only live (non-tombstoned) recipes are linked. Composite PK
- * (`foodId`, `recipeId`), plus a `recipeId` index for the reverse lookup.
+ * that a future *bounded* incremental ingestion can scope deltas by. The ingestion
+ * job rebuilds it. Only live (non-tombstoned) recipes are linked. A composite PK
+ * (`foodId`, `recipeId`) plus a `recipeId` index support the reverse lookup.
  */
 export const foodRecipeLinks = pgTable(
   "food_recipe_links",
@@ -255,9 +255,9 @@ export const foodRecipeLinks = pgTable(
  * crowd-mined: it mirrors the curated, public-domain static dataset in
  * `src/lib/food-nutrition.ts` (USDA FoodData Central), seeded by
  * `seed-ingredients.ts`, and is left untouched by the graph-mining recompute.
- * `foodId` is the PK (one row per node); `sourceRef` carries the FDC id. Macros
- * are NOT NULL (a food always has energy/macros in the source); the finer
- * breakdowns are nullable because source coverage is uneven — NULL means
+ * `foodId` is the PK (one row per node). `sourceRef` carries the FDC id. Macros
+ * are NOT NULL (a food always has energy/macros in the source). The finer
+ * breakdowns are nullable because source coverage is uneven. NULL means
  * "unknown", not zero.
  */
 export const foodNutrition = pgTable(
@@ -280,7 +280,7 @@ export const foodNutrition = pgTable(
     sugarG: real(),
     /** Sodium (mg/100 g), or NULL when unknown. */
     sodiumMg: real(),
-    /** Provenance — the USDA FDC id (or other authoritative reference). */
+    /** Provenance. The USDA FDC id (or other authoritative reference). */
     sourceRef: varchar({ length: 64 }).notNull(),
     ...timestamps(),
   },

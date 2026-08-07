@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Ruler, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 
 export type UnitPreferencesView = {
   defaultSystem: MeasurementSystemValue;
@@ -82,25 +84,13 @@ const DEFAULT_PREFS: UnitPreferencesView = {
 /** Sentinel for "follow my system default" in a Radix Select (no empty value). */
 const FOLLOW = "__follow__";
 
-const DIMENSION_LABELS: Record<CustomUnitDimension, string> = {
-  volume: "Volume",
-  mass: "Weight",
-  count: "Count",
-};
-
-const SYSTEMS: {
-  value: MeasurementSystemValue;
-  label: string;
-  hint: string;
-}[] = [
-  { value: "metric", label: "Metric", hint: "grams, milliliters, °C" },
-  { value: "us", label: "US / Imperial", hint: "cups, ounces, °F" },
-];
+const SYSTEMS: MeasurementSystemValue[] = ["metric", "us"];
 
 /** Options for a per-dimension default: built-ins + the user's custom units. */
 function dimensionOptions(
   dimension: Dimension,
   customUnits: CustomUnitView[],
+  customLabel: (name: string) => string,
 ): { value: string; label: string }[] {
   const builtins = unitsForDimension(dimension).map((u) => ({
     value: u.id,
@@ -108,7 +98,7 @@ function dimensionOptions(
   }));
   const customs = customUnits
     .filter((c) => c.dimension === dimension)
-    .map((c) => ({ value: c.name, label: `${c.name} (custom)` }));
+    .map((c) => ({ value: c.name, label: customLabel(c.name) }));
   return [...builtins, ...customs];
 }
 
@@ -128,32 +118,6 @@ const EMPTY_CUSTOM: CustomDraft = {
   baseUnit: "",
   baseAmount: "",
   displayAsTrue: false,
-};
-
-/** Placeholder hints that adapt to the selected measure so the form teaches by
- *  example — a pinch is a volume, a knob is a weight, a bunch is a count. */
-const CUSTOM_UNIT_EXAMPLES: Record<
-  CustomUnitDimension,
-  { name: string; abbreviation: string; amount: string; equals: string }
-> = {
-  volume: {
-    name: "e.g. pinch",
-    abbreviation: "e.g. pn",
-    amount: "e.g. 0.0625",
-    equals: "a pinch ≈ 1/16 tsp",
-  },
-  mass: {
-    name: "e.g. knob",
-    abbreviation: "e.g. kn",
-    amount: "e.g. 0.5",
-    equals: "a knob ≈ 1/2 oz",
-  },
-  count: {
-    name: "e.g. bunch",
-    abbreviation: "e.g. bn",
-    amount: "",
-    equals: "",
-  },
 };
 
 function toCustomDraft(unit: CustomUnitView): CustomDraft {
@@ -176,6 +140,7 @@ export function UnitPreferencesManager({
   preferences: UnitPreferencesView | null;
   customUnits: CustomUnitView[];
 }) {
+  const t = useTranslations("settings.units");
   const router = useRouter();
   const [prefs, setPrefs] = React.useState<UnitPreferencesView>(
     preferences ?? DEFAULT_PREFS,
@@ -225,23 +190,20 @@ export function UnitPreferencesManager({
       {/* Batch default + auto-convert. */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
         <h2 className="font-display text-lg font-semibold tracking-tight">
-          Default measurement system
+          {t("defaultSystem.title")}
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Set everything at once. You can still fine-tune each measurement
-          below.
+          {t("defaultSystem.description")}
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {SYSTEMS.map((sys) => {
-            const active = prefs.defaultSystem === sys.value;
+            const active = prefs.defaultSystem === sys;
             return (
               <button
-                key={sys.value}
+                key={sys}
                 type="button"
                 aria-pressed={active}
-                onClick={() =>
-                  savePrefs({ ...prefs, defaultSystem: sys.value })
-                }
+                onClick={() => savePrefs({ ...prefs, defaultSystem: sys })}
                 className={cn(
                   "flex flex-col rounded-xl border p-4 text-start transition-colors",
                   active
@@ -249,9 +211,9 @@ export function UnitPreferencesManager({
                     : "border-border hover:bg-muted",
                 )}
               >
-                <span className="font-medium">{sys.label}</span>
+                <span className="font-medium">{t(`systems.${sys}.label`)}</span>
                 <span className="text-sm text-muted-foreground">
-                  {sys.hint}
+                  {t(`systems.${sys}.hint`)}
                 </span>
               </button>
             );
@@ -260,10 +222,9 @@ export function UnitPreferencesManager({
 
         <label className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <span>
-            <span className="block font-medium">Auto-convert recipes</span>
+            <span className="block font-medium">{t("autoConvert.label")}</span>
             <span className="block text-sm text-muted-foreground">
-              Re-express every recipe in your units. Turn off to always see the
-              amounts exactly as the author wrote them.
+              {t("autoConvert.description")}
             </span>
           </span>
           <Switch
@@ -271,7 +232,7 @@ export function UnitPreferencesManager({
             onCheckedChange={(checked) =>
               savePrefs({ ...prefs, autoConvert: checked })
             }
-            aria-label="Auto-convert recipes to my units"
+            aria-label={t("autoConvert.ariaLabel")}
           />
         </label>
       </section>
@@ -279,11 +240,10 @@ export function UnitPreferencesManager({
       {/* Per-dimension overrides. */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
         <h2 className="font-display text-lg font-semibold tracking-tight">
-          Preferred units
+          {t("preferred.title")}
         </h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Fine-tune each measurement. Volume splits by how you measure an
-          ingredient, so you can keep liquids in mL but scoop dry goods in cups.
+          {t("preferred.description")}
         </p>
         <div
           className={cn(
@@ -292,47 +252,57 @@ export function UnitPreferencesManager({
           )}
         >
           <DimensionPicker
-            label="Liquid volume"
-            hint="Water, milk, oil, sauces"
+            label={t("preferred.liquidVolume.label")}
+            hint={t("preferred.liquidVolume.hint")}
             value={prefs.liquidVolumeUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor(
               "volume",
               prefs.defaultSystem,
               "liquid",
             )}
-            options={dimensionOptions("volume", customUnits)}
+            options={dimensionOptions("volume", customUnits, (name) =>
+              t("custom.optionCustom", { name }),
+            )}
             onChange={(v) => setOverride("liquidVolumeUnit", v)}
           />
           <DimensionPicker
-            label="Dry volume"
-            hint="Flour, sugar, rice, oats"
+            label={t("preferred.dryVolume.label")}
+            hint={t("preferred.dryVolume.hint")}
             value={prefs.dryVolumeUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "dry")}
-            options={dimensionOptions("volume", customUnits)}
+            options={dimensionOptions("volume", customUnits, (name) =>
+              t("custom.optionCustom", { name }),
+            )}
             onChange={(v) => setOverride("dryVolumeUnit", v)}
           />
           <DimensionPicker
-            label="Small amounts"
-            hint="Spices, herbs, seasonings"
+            label={t("preferred.smallAmounts.label")}
+            hint={t("preferred.smallAmounts.hint")}
             value={prefs.smallVolumeUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "small")}
-            options={dimensionOptions("volume", customUnits)}
+            options={dimensionOptions("volume", customUnits, (name) =>
+              t("custom.optionCustom", { name }),
+            )}
             onChange={(v) => setOverride("smallVolumeUnit", v)}
           />
           <DimensionPicker
-            label="Weight"
-            hint="Meat, cheese, produce"
+            label={t("preferred.weight.label")}
+            hint={t("preferred.weight.hint")}
             value={prefs.massUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("mass", prefs.defaultSystem)}
-            options={dimensionOptions("mass", customUnits)}
+            options={dimensionOptions("mass", customUnits, (name) =>
+              t("custom.optionCustom", { name }),
+            )}
             onChange={(v) => setOverride("massUnit", v)}
           />
           <DimensionPicker
-            label="Temperature"
-            hint="Oven and cooking temps"
+            label={t("preferred.temperature.label")}
+            hint={t("preferred.temperature.hint")}
             value={prefs.temperatureUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("temperature", prefs.defaultSystem)}
-            options={dimensionOptions("temperature", customUnits)}
+            options={dimensionOptions("temperature", customUnits, (name) =>
+              t("custom.optionCustom", { name }),
+            )}
             onChange={(v) => setOverride("temperatureUnit", v)}
           />
         </div>
@@ -358,6 +328,7 @@ function DimensionPicker({
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }) {
+  const t = useTranslations("settings.units");
   const id = React.useId();
   return (
     <div className="grid gap-1.5">
@@ -371,7 +342,7 @@ function DimensionPicker({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={FOLLOW}>
-            Default: {unitLabel(defaultUnit)}
+            {t("preferred.defaultOption", { unit: unitLabel(defaultUnit) })}
           </SelectItem>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
@@ -389,6 +360,7 @@ function CustomUnitsSection({
 }: {
   customUnits: CustomUnitView[];
 }) {
+  const t = useTranslations("settings.units");
   const router = useRouter();
   const [editing, setEditing] = React.useState<Editing | null>(null);
   const [draft, setDraft] = React.useState<CustomDraft>(EMPTY_CUSTOM);
@@ -396,6 +368,7 @@ function CustomUnitsSection({
     Record<string, string[]>
   >({});
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   const nameId = React.useId();
   const abbrId = React.useId();
@@ -436,15 +409,21 @@ function CustomUnitsSection({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(isAdd ? "Unit added" : "Unit updated");
+        toast.success(
+          isAdd ? t("custom.toasts.added") : t("custom.toasts.updated"),
+        );
         setEditing(null);
         router.refresh();
       });
     });
   }
 
-  function onDelete(unit: CustomUnitView) {
-    const ok = window.confirm(`Delete the "${unit.name}" unit?`);
+  async function onDelete(unit: CustomUnitView) {
+    const ok = await confirm({
+      title: t("custom.deleteConfirm.title", { name: unit.name }),
+      description: t("custom.deleteConfirm.description"),
+      confirmLabel: t("custom.deleteConfirm.confirmLabel"),
+    });
     if (!ok) return;
     startTransition(() => {
       void deleteCustomUnitAction(unit.id).then((result) => {
@@ -452,7 +431,7 @@ function CustomUnitsSection({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success("Unit deleted");
+        toast.success(t("custom.toasts.deleted"));
         router.refresh();
       });
     });
@@ -470,30 +449,41 @@ function CustomUnitsSection({
     if (!draft.name.trim() || !draft.baseUnit || !Number.isFinite(amount)) {
       return null;
     }
-    return `1 ${draft.name.trim()} = ${formatQuantity(amount, draft.baseUnit)} ${draft.baseUnit}`;
-  }, [draft.name, draft.baseUnit, draft.baseAmount]);
+    return t("custom.preview", {
+      name: draft.name.trim(),
+      amount: formatQuantity(amount, draft.baseUnit),
+      unit: draft.baseUnit,
+    });
+  }, [draft.name, draft.baseUnit, draft.baseAmount, t]);
 
-  const example = CUSTOM_UNIT_EXAMPLES[draft.dimension];
-  const unitName = draft.name.trim() || "unit";
+  const example = {
+    name: t(`custom.examples.${draft.dimension}.name`),
+    abbreviation: t(`custom.examples.${draft.dimension}.abbreviation`),
+    amount: t(`custom.examples.${draft.dimension}.amount`),
+  };
+  const unitName = draft.name.trim() || t("custom.fallbackUnitName");
   const displayAsTrueHint =
     preview != null
-      ? `Recipes show “${formatQuantity(Number(draft.baseAmount), draft.baseUnit)} ${draft.baseUnit}” instead of “${unitName}”.`
-      : `Recipes show the amount it equals instead of the word “${unitName}”.`;
+      ? t("custom.displayAsTrue.hintWithPreview", {
+          amount: formatQuantity(Number(draft.baseAmount), draft.baseUnit),
+          unit: draft.baseUnit,
+          name: unitName,
+        })
+      : t("custom.displayAsTrue.hint", { name: unitName });
 
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold tracking-tight">
-            Custom units
+            {t("custom.title")}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Add the units your family cooks by — a pinch, a knob, a splash — and
-            optionally tie them to a real amount so recipes can convert.
+            {t("custom.description")}
           </p>
         </div>
         <Button onClick={openAdd} size="sm" className="shrink-0">
-          <Plus /> Add unit
+          <Plus /> {t("custom.addButton")}
         </Button>
       </div>
 
@@ -503,7 +493,7 @@ function CustomUnitsSection({
             <Ruler className="size-6" aria-hidden="true" />
           </span>
           <p className="max-w-sm text-sm text-muted-foreground">
-            No custom units yet. Add one like a “pinch” set to 1/16 teaspoon.
+            {t("custom.empty")}
           </p>
         </div>
       ) : (
@@ -520,13 +510,17 @@ function CustomUnitsSection({
                     <Badge variant="secondary">{unit.abbreviation}</Badge>
                   ) : null}
                   <Badge variant="outline">
-                    {DIMENSION_LABELS[unit.dimension]}
+                    {t(`custom.dimensions.${unit.dimension}`)}
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {unit.baseUnit && unit.baseAmount != null
-                    ? `1 ${unit.name} = ${formatQuantity(unit.baseAmount, unit.baseUnit)} ${unit.baseUnit}`
-                    : "Display only — no conversion"}
+                    ? t("custom.preview", {
+                        name: unit.name,
+                        amount: formatQuantity(unit.baseAmount, unit.baseUnit),
+                        unit: unit.baseUnit,
+                      })
+                    : t("custom.displayOnly")}
                 </p>
               </div>
               <div className="flex gap-1">
@@ -534,7 +528,7 @@ function CustomUnitsSection({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={`Edit ${unit.name}`}
+                  aria-label={t("custom.editAria", { name: unit.name })}
                   onClick={() => openEdit(unit)}
                 >
                   <Pencil className="size-4" />
@@ -543,7 +537,7 @@ function CustomUnitsSection({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={`Delete ${unit.name}`}
+                  aria-label={t("custom.deleteAria", { name: unit.name })}
                   onClick={() => onDelete(unit)}
                 >
                   <Trash2 className="size-4" />
@@ -562,13 +556,15 @@ function CustomUnitsSection({
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
-                {editing?.kind === "add" ? "Add custom unit" : "Edit unit"}
+                {editing?.kind === "add"
+                  ? t("custom.dialog.addTitle")
+                  : t("custom.dialog.editTitle")}
               </DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label htmlFor={nameId}>Name</Label>
+                <Label htmlFor={nameId}>{t("custom.fields.name")}</Label>
                 <Input
                   id={nameId}
                   value={draft.name}
@@ -586,7 +582,7 @@ function CustomUnitsSection({
                 ) : null}
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor={abbrId}>Short label (optional)</Label>
+                <Label htmlFor={abbrId}>{t("custom.fields.shortLabel")}</Label>
                 <Input
                   id={abbrId}
                   value={draft.abbreviation}
@@ -599,7 +595,7 @@ function CustomUnitsSection({
             </div>
 
             <div className="grid gap-1.5">
-              <Label>Measures</Label>
+              <Label>{t("custom.fields.measures")}</Label>
               <div className="flex flex-wrap gap-2">
                 {CUSTOM_UNIT_DIMENSIONS.map((dim) => {
                   const active = draft.dimension === dim;
@@ -612,7 +608,7 @@ function CustomUnitsSection({
                         setDraft((d) => ({
                           ...d,
                           dimension: dim,
-                          // Reset the base unit — it must match the new dimension.
+                          // Reset the base unit. It must match the new dimension.
                           baseUnit: "",
                         }))
                       }
@@ -623,7 +619,7 @@ function CustomUnitsSection({
                           : "border-border text-muted-foreground hover:bg-muted",
                       )}
                     >
-                      {DIMENSION_LABELS[dim]}
+                      {t(`custom.dimensions.${dim}`)}
                     </button>
                   );
                 })}
@@ -634,7 +630,9 @@ function CustomUnitsSection({
               <>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="grid gap-1.5">
-                    <Label htmlFor={amountId}>Equal to (amount)</Label>
+                    <Label htmlFor={amountId}>
+                      {t("custom.fields.equalTo")}
+                    </Label>
                     <Input
                       id={amountId}
                       value={draft.baseAmount}
@@ -652,7 +650,7 @@ function CustomUnitsSection({
                     ) : null}
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>Of unit</Label>
+                    <Label>{t("custom.fields.ofUnit")}</Label>
                     <Select
                       value={draft.baseUnit || FOLLOW}
                       onValueChange={(v) =>
@@ -665,11 +663,11 @@ function CustomUnitsSection({
                       <SelectTrigger
                         aria-invalid={Boolean(fieldErrors.baseUnit)}
                       >
-                        <SelectValue placeholder="Choose a unit" />
+                        <SelectValue placeholder={t("custom.chooseUnit")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={FOLLOW}>
-                          None (display only)
+                          {t("custom.noneDisplayOnly")}
                         </SelectItem>
                         {baseOptions.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
@@ -695,7 +693,7 @@ function CustomUnitsSection({
                 <label className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
                   <span className="space-y-0.5">
                     <span className="block text-sm font-medium">
-                      Show the real amount in recipes
+                      {t("custom.displayAsTrue.label")}
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {displayAsTrueHint}
@@ -706,14 +704,13 @@ function CustomUnitsSection({
                     onCheckedChange={(checked) =>
                       setDraft((d) => ({ ...d, displayAsTrue: checked }))
                     }
-                    aria-label="Show the real amount in recipes instead of the unit name"
+                    aria-label={t("custom.displayAsTrue.ariaLabel")}
                   />
                 </label>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Count units (like “bunch” or “clove”) are shown as written and
-                aren&apos;t converted.
+                {t("custom.countNote")}
               </p>
             )}
 
@@ -724,14 +721,14 @@ function CustomUnitsSection({
                 onClick={() => setEditing(null)}
                 disabled={isPending}
               >
-                Cancel
+                {t("custom.cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
-                  ? "Saving…"
+                  ? t("custom.saving")
                   : editing?.kind === "add"
-                    ? "Add unit"
-                    : "Save changes"}
+                    ? t("custom.addButton")
+                    : t("custom.saveChanges")}
               </Button>
             </DialogFooter>
           </form>

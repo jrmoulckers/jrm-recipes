@@ -1,8 +1,14 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render as rtlRender } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DiscoverFeed } from "./discover-feed";
 import { type CardRecipe } from "./recipe-card";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 vi.mock("~/server/recipes/discover-actions", () => ({
   loadMorePublicRecipesAction: vi.fn(),

@@ -99,7 +99,7 @@ describe("popular ordering ranks by cooks + saves in SQL (#276)", () => {
     // Leading term flags recipes with any cook/save so inert recipes sort last.
     expect(clauses[0]).toContain("exists");
     // The score term is descending, so a more-cooked/-saved recipe outranks a
-    // quieter one; the count sum lives in the second clause.
+    // quieter one. The count sum lives in the second clause.
     expect(clauses[1]).toContain("count(*)");
   });
 });

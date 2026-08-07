@@ -81,7 +81,7 @@ export function ShareButton({
   // Recipe slug, used to build the personalized "keepsake" link.
   slug: string;
   // Absolute URL to hand out when sharing. For unlisted recipes this is the
-  // unguessable `/r/<token>` link (issue #204); when omitted we fall back to the
+  // unguessable `/r/<token>` link (issue #204). When omitted, we fall back to the
   // current page URL (public/group recipes, where the address is shareable).
   shareUrl?: string;
   // Owner-only revoke/rotate controls (issue #207) are shown when this recipe is
@@ -146,7 +146,7 @@ export function ShareButton({
         toast.success(t("toast.linkEnabled"));
       }
     } catch {
-      toast.error("Couldn't update the share link");
+      toast.error(t("toast.linkUpdateError"));
     } finally {
       setPending(false);
     }
@@ -189,7 +189,7 @@ export function ShareButton({
         typeof navigator.canShare === "function" &&
         navigator.canShare({ files: [file] })
       ) {
-        // Track inside the gesture — never await before navigator.share (Safari).
+        // Track inside the gesture. Never await before navigator.share (Safari).
         track("recipe_shared", { method: "file" });
         await navigator.share({ files: [file], title, text, url });
         return;
@@ -201,7 +201,7 @@ export function ShareButton({
       }
       await copyLink();
     } catch {
-      // Share sheet dismissed — nothing to do.
+      // Share sheet dismissed. Nothing to do.
     }
   }
 

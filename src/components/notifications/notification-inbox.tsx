@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -24,6 +25,8 @@ type Props = {
 
 /** Full-page notification inbox (#348): the "View all" destination. */
 export function NotificationInbox({ initialItems, initialCursor }: Props) {
+  const t = useTranslations("notifications");
+  const locale = useLocale();
   const [items, setItems] = React.useState(initialItems);
   const [cursor, setCursor] = React.useState(initialCursor);
 
@@ -57,8 +60,8 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
     return (
       <EmptyState
         icon={<Bell />}
-        title="No notifications yet"
-        description="Mentions, replies, reviews, and cook-along invites will show up here."
+        title={t("empty.title")}
+        description={t("empty.description")}
       />
     );
   }
@@ -72,14 +75,14 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
           onClick={onMarkAll}
           disabled={!unread || markAll.pending}
         >
-          Mark all as read
+          {t("markAllRead")}
         </Button>
       </div>
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
         {items.map((item) => {
           const sentence = notificationSentence(
             item.type,
-            item.actor?.name ?? item.actor?.handle ?? "Someone",
+            item.actor?.name ?? item.actor?.handle ?? t("someone"),
             item.context,
           );
           const body = (
@@ -89,13 +92,13 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
                   {sentence}
                 </span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {formatRelativeTime(item.createdAt)}
+                  {formatRelativeTime(item.createdAt, locale)}
                 </span>
               </span>
               {!item.readAt ? (
                 <span
                   className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-                  aria-label="Unread"
+                  aria-label={t("unread")}
                 />
               ) : null}
             </>
@@ -134,7 +137,7 @@ export function NotificationInbox({ initialItems, initialCursor }: Props) {
             onClick={() => loadMore.run({ cursor })}
             disabled={loadMore.pending}
           >
-            {loadMore.pending ? "Loading…" : "Load older"}
+            {loadMore.pending ? t("loading") : t("loadOlder")}
           </Button>
         </div>
       ) : null}

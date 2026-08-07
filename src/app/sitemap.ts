@@ -8,9 +8,9 @@ import { listPublicCookHandles } from "~/server/users/queries";
  * Dynamic sitemap (issue #323): the static entry points plus every public,
  * published recipe with an accurate `lastModified`, and every public cook
  * profile (issue #327). Rendered per-request (`force-dynamic`) so newly
- * published recipes appear without a rebuild; when the DB is unconfigured the
+ * published recipes appear without a rebuild. When the DB is unconfigured the
  * queries return nothing and only the static routes are emitted.
- * Private/group/unlisted/draft recipes are never listed —
+ * Private/group/unlisted/draft recipes are never listed.
  * `listPublicRecipeSlugs` filters to `public` + `published` only.
  */
 export const dynamic = "force-dynamic";

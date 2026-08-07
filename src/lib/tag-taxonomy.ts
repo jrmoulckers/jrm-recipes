@@ -15,7 +15,7 @@ type TaxonomyEntry = CanonicalTag & { aliases: string[] };
 
 /**
  * Curated canonical tags plus the aliases that should resolve to them. Only
- * high-confidence synonyms are listed; ambiguous single words (e.g. "veg",
+ * high-confidence synonyms are listed. Ambiguous single words (e.g. "veg",
  * "side") are intentionally omitted so we never mis-merge a free-form tag.
  */
 const TAXONOMY: TaxonomyEntry[] = [
@@ -125,7 +125,7 @@ const LOOKUP: Map<string, CanonicalTag> = (() => {
 
 /**
  * Resolve a free-form tag name to its canonical form. Known aliases collapse to
- * the curated tag; unknown tags pass through with a normalized slug and their
+ * the curated tag. Unknown tags pass through with a normalized slug and their
  * original (trimmed) display name.
  */
 export function canonicalizeTag(name: string): CanonicalTag {
@@ -140,7 +140,7 @@ export function isCanonicalTag(name: string): boolean {
   return LOOKUP.has(tagKey(name));
 }
 
-/** The curated vocabulary, A–Z — surfaced as quick-add chips in the editor. */
+/** The curated vocabulary, A–Z. Surfaced as quick-add chips in the editor. */
 export const SUGGESTED_TAGS: CanonicalTag[] = TAXONOMY.map(
   ({ slug, name }) => ({
     slug,

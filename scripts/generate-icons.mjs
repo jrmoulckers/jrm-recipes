@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 
-// sharp may be pnpm-nested; try the normal resolve then the store path.
+// sharp may be pnpm-nested, try the normal resolve then the store path.
 let sharp;
 try {
   sharp = require("sharp");
@@ -62,7 +62,7 @@ async function emit(name, opts) {
 // Flat launch screen matching the app's initial paint (brand cream) with the
 // centered brand mark in amber, so an installed iOS app shows a branded splash
 // instead of a blank white flash. One image per device × orientation.
-const SPLASH_BG = "#fffaf3"; // brand.backgroundColor — matches manifest + body
+const SPLASH_BG = "#fffaf3"; // brand.backgroundColor, matches manifest + body
 const AMBER = "#b45309"; // brand.themeColor
 
 function splashSvg(width, height) {

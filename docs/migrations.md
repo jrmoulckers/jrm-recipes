@@ -22,8 +22,8 @@ schema are compatible.
 
 | Phase        | What ships                                                                | Safe because                                     |
 | ------------ | ------------------------------------------------------------------------- | ------------------------------------------------ |
-| **Expand**   | Additive DDL only: new nullable column / new table / new index.           | Old code ignores it; new code can start writing. |
-| **Backfill** | Data migration + code that dual-writes (writes both old and new shape).   | Both shapes stay valid; no reader sees a gap.    |
+| **Expand**   | Additive DDL only: new nullable column / new table / new index.           | Old code ignores it. New code can start writing. |
+| **Backfill** | Data migration + code that dual-writes (writes both old and new shape).   | Both shapes stay valid. No reader sees a gap.    |
 | **Contract** | Remove the old column/table/constraint _after_ no deployed code reads it. | Nothing references the old shape anymore.        |
 
 Ship each phase in its **own PR/deploy** and wait for the previous one to be
@@ -31,16 +31,16 @@ fully rolled out before the next.
 
 ### Worked example: rename `recipes.notes` → `recipes.cook_notes`
 
-1. **Expand** — add `cook_notes` as a nullable column (`ADD COLUMN IF NOT
+1. **Expand**: add `cook_notes` as a nullable column (`ADD COLUMN IF NOT
 EXISTS`). Deploy. Old code still reads/writes `notes`.
-2. **Backfill + dual-write** — copy `notes` → `cook_notes`
+2. **Backfill + dual-write**: copy `notes` → `cook_notes`
    (`UPDATE … WHERE cook_notes IS NULL`) and change the app to write **both**
    columns and read `cook_notes` (falling back to `notes`). Deploy.
-3. **Contract** — once that deploy is live and healthy and nothing reads
+3. **Contract**: once that deploy is live and healthy and nothing reads
    `notes`, drop `notes`. Deploy.
 
 A pure add (new table/column/index) is a single expand-only step and needs no
-contract. A pure drop is only ever a _contract_ step — it must follow a deploy
+contract. A pure drop is only ever a _contract_ step. It must follow a deploy
 that already stopped using the thing being dropped.
 
 ## Idempotency (required)
@@ -51,7 +51,7 @@ statement must be safe to apply twice:
 - `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`.
 - `ALTER TABLE IF EXISTS … ADD COLUMN IF NOT EXISTS`.
 - Wrap enum/constraint/FK creation in a `DO $$ … EXCEPTION WHEN
-duplicate_object THEN null; WHEN duplicate_table THEN null; END $$` block so a
+duplicate_object THEN null, WHEN duplicate_table THEN null, END $$` block so a
   re-apply doesn't error on `42710`/`42P07`.
 
 ## Destructive-change checklist (for any PR touching `drizzle/`)
@@ -75,12 +75,12 @@ Because migrations are forward-only, recovery is **forward-fix first**:
 
 1. **Assess.** Read the Vercel deploy/build logs. Did `scripts/migrate.mjs`
    fail before or after applying? Drizzle records each applied migration in the
-   `drizzle.__drizzle_migrations` table — check what actually landed.
+   `drizzle.__drizzle_migrations` table. Check what actually landed.
 2. **Partial failure (migration half-applied).**
    - Prefer a **forward fix**: write a new, idempotent migration that completes
      or corrects the state, then redeploy. Idempotent guards mean re-running the
      original set is safe.
-   - Do **not** hand-edit an already-committed migration file — add a new one.
+   - Do **not** hand-edit an already-committed migration file. Add a new one.
 3. **Bad-but-applied migration.**
    - If the app is broken but the schema is intact, **revert the code** (Vercel
      → Deployments → promote the previous good deployment) to restore service
@@ -91,7 +91,7 @@ Because migrations are forward-only, recovery is **forward-fix first**:
      history.
 4. **Data loss risk / restore.** Only when data is lost and cannot be
    reconstructed forward: restore from the provider's backup (Neon
-   point-in-time restore / branch) — this is the last resort, not the default.
+   point-in-time restore / branch). This is the last resort, not the default.
 5. **After recovery.** Add a regression note and, if the gap was catchable,
    strengthen the CI migration job or the checklist above.
 

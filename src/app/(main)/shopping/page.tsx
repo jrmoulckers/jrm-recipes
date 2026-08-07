@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import { ShoppingCart } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -12,11 +13,15 @@ import { DbShoppingList } from "~/components/shopping/db-shopping-list";
 import { LocalShoppingList } from "~/components/shopping/local-shopping-list";
 import { type ShoppingViewItem } from "~/components/shopping/shopping-list-view";
 
-export const metadata: Metadata = { title: "Shopping list" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return { title: t("shopping.title") };
+}
 
 export default async function ShoppingPage() {
   const dbEnabled = isDbConfigured();
   const user = dbEnabled ? await getCurrentUser() : null;
+  const t = await getTranslations("shopping.page");
   const [list, profiles] = await Promise.all([
     getShoppingList(user),
     user ? listMemberProfiles(user.id) : Promise.resolve([]),
@@ -49,13 +54,10 @@ export default async function ShoppingPage() {
             <ShoppingCart className="size-5" />
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Shopping list
+            {t("title")}
           </h1>
         </div>
-        <p className="text-muted-foreground">
-          Everything you need, combined and tallied across your recipes. Check
-          items off as you shop.
-        </p>
+        <p className="text-muted-foreground">{t("description")}</p>
       </header>
 
       {dbEnabled ? (

@@ -110,7 +110,7 @@ describe("estimateRecipeNutrition", () => {
     expect(roll.total).toBe(2);
     expect(roll.sourced).toBe(2);
     expect(roll.coverage).toBe(1);
-    // chicken: 165 kcal/100g * 2 = 330; oil: 1 tbsp ≈ 13.6g * 8.84 ≈ 120
+    // chicken: 165 kcal/100g * 2 = 330. Oil: 1 tbsp ≈ 13.6g * 8.84 ≈ 120
     expect(roll.kcal).toBeGreaterThan(400);
     expect(roll.proteinG).toBeGreaterThan(60); // ~62 from chicken
   });

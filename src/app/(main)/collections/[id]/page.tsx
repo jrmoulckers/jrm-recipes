@@ -11,6 +11,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import {
@@ -43,9 +44,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await parseCollectionParams(params);
   const { collection } = await load(id);
-  if (!collection) return { title: "Collection not found" };
+  const tMeta = await getTranslations("metadata");
+  if (!collection) return { title: tMeta("collection.notFound") };
   const description =
-    collection.description ?? `A recipe collection on ${brand.name}.`;
+    collection.description ??
+    tMeta("collection.description", { brand: brand.name });
   return {
     title: collection.name,
     description,
@@ -76,12 +79,16 @@ export default async function CollectionPage({
       ? await listShareTargetsForCollection(collection.id, user)
       : [];
 
+  const t = await getTranslations("collections.detail");
+  const tCard = await getTranslations("collections.card");
+  const tShare = await getTranslations("collections.share.visibility.options");
+
   const visibilityBadge =
     collection.visibility === "public"
-      ? { icon: Globe, label: "Public" }
+      ? { icon: Globe, label: tShare("public.label") }
       : collection.visibility === "unlisted"
-        ? { icon: Link2, label: "Unlisted" }
-        : { icon: Lock, label: "Private" };
+        ? { icon: Link2, label: tShare("unlisted.label") }
+        : { icon: Lock, label: tShare("private.label") };
   const VisibilityIcon = visibilityBadge.icon;
 
   return (
@@ -89,7 +96,7 @@ export default async function CollectionPage({
       <div>
         <Button asChild size="sm" variant="ghost" className="-ms-2">
           <Link href="/collections">
-            <ArrowLeft /> Saved
+            <ArrowLeft /> {t("backToSaved")}
           </Link>
         </Button>
       </div>
@@ -99,7 +106,7 @@ export default async function CollectionPage({
           <div className="flex items-center gap-2 text-primary">
             <BookMarked className="size-5" />
             <span className="text-sm font-semibold uppercase tracking-wide">
-              Collection
+              {t("kicker")}
             </span>
             {collection.isOwner && (
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -110,7 +117,9 @@ export default async function CollectionPage({
             {!collection.isOwner && collection.sharedWithGroups.length > 0 && (
               <span className="bg-primary/12 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-primary">
                 <Users className="size-3" />
-                Shared with {collection.sharedWithGroups[0]!.name}
+                {tCard("sharedWith", {
+                  group: collection.sharedWithGroups[0]!.name,
+                })}
               </span>
             )}
           </div>
@@ -123,11 +132,12 @@ export default async function CollectionPage({
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            {!collection.isOwner && collection.ownerName ? (
-              <>A collection by {collection.ownerName} · </>
-            ) : null}
-            {collection.recipes.length}{" "}
-            {collection.recipes.length === 1 ? "recipe" : "recipes"}
+            {!collection.isOwner && collection.ownerName
+              ? t("byOwnerWithCount", {
+                  name: collection.ownerName,
+                  count: collection.recipes.length,
+                })
+              : tCard("recipeCount", { count: collection.recipes.length })}
           </p>
         </div>
         {collection.isOwner && (
@@ -179,17 +189,17 @@ export default async function CollectionPage({
           <div>
             <h2 className="font-display text-xl font-semibold">
               {collection.isOwner
-                ? "Nothing saved here yet"
-                : "Nothing to see here yet"}
+                ? t("empty.ownerTitle")
+                : t("empty.viewerTitle")}
             </h2>
             <p className="mt-1 max-w-md text-muted-foreground">
               {collection.isOwner
-                ? "Open any recipe and choose “Save to collection” to start filling this shelf."
-                : "This collection doesn’t have any recipes you can view right now."}
+                ? t("empty.ownerBody")
+                : t("empty.viewerBody")}
             </p>
           </div>
           <Button asChild size="lg">
-            <Link href="/recipes">Browse recipes</Link>
+            <Link href="/recipes">{t("browseRecipes")}</Link>
           </Button>
         </div>
       )}

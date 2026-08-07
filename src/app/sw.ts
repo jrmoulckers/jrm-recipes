@@ -40,7 +40,7 @@ import {
  * runtime routes in order and Serwist's own `next-image` route only keeps them
  * StaleWhileRevalidate for a day, which doesn't guarantee they survive offline
  * or load instantly on repeat visits. CacheFirst serves straight from the cache
- * once stored (photos are effectively immutable); `CacheableResponsePlugin`
+ * once stored (photos are effectively immutable). `CacheableResponsePlugin`
  * permits opaque (status 0) cross-origin Cloudinary responses, and
  * `ExpirationPlugin` keeps the cache bounded by entries and age.
  */
@@ -66,16 +66,16 @@ const recipeImageCache: RuntimeCaching = {
  * named, bounded cache instead of Serwist's generic page handling.
  *
  * NetworkFirst (deliberately NOT StaleWhileRevalidate): these pages are
- * server-rendered PER VIEWER and access-controlled — `getRecipe()` returns a 404
+ * server-rendered PER VIEWER and access-controlled. `getRecipe()` returns a 404
  * for a viewer who can't see a private/group recipe, and the HTML embeds
  * personalized favorite/rating/cook-log state plus owner-only controls. This
  * cache is keyed only by URL (the auth cookie is not in `Vary`), so serving it
  * ahead of the network would, on a shared browser profile (a family kitchen
- * tablet — exactly this app's threat model), show one user another user's
+ * tablet. Exactly this app's threat model), show one user another user's
  * authorized private page, and even the same user would see stale personalized
  * state while online. NetworkFirst always fetches fresh, correctly-authorized
  * content whenever there's a network and only falls back to the cache when
- * offline (or after `networkTimeoutSeconds` on a stalled connection) — which is
+ * offline (or after `networkTimeoutSeconds` on a stalled connection). That is
  * all that #157's "reopen an already-opened recipe offline" needs.
  * `CacheableResponsePlugin` stores only successful (200) responses so we never
  * cache an error/redirect, and `ExpirationPlugin` bounds the cache.
@@ -91,7 +91,7 @@ const recipePageCache: RuntimeCaching = {
   handler: new NetworkFirst({
     cacheName: RECIPE_PAGE_CACHE_NAME,
     // Prefer a fresh, correctly-authorized render, but don't hang a slow
-    // connection forever — fall back to the cached copy after a short timeout.
+    // connection forever. Fall back to the cached copy after a short timeout.
     networkTimeoutSeconds: 3,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
@@ -125,7 +125,7 @@ const serwist = new Serwist({
   // offer a user-controlled "update available" prompt (issue #163) instead of
   // swapping precached chunks mid-recipe. With `skipWaiting: false` Serwist
   // registers a `message` listener that calls `self.skipWaiting()` when it
-  // receives `{ type: "SKIP_WAITING" }` — which the prompt posts on accept.
+  // receives `{ type: "SKIP_WAITING" }`, which the prompt posts on accept.
   skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
@@ -134,7 +134,7 @@ const serwist = new Serwist({
     entries: [
       {
         // Precached in next.config.js via `additionalPrecacheEntries`. Served
-        // whenever a navigation can't be fulfilled from network or cache —
+        // whenever a navigation can't be fulfilled from network or cache.
         // both hard document loads and soft (RSC) client-side navigations.
         url: "/~offline",
         matcher: ({ request }) => isOfflineFallbackRequest(request),
@@ -163,8 +163,8 @@ const serwist = new Serwist({
  *
  * Serwist only attaches its precache-fallback plugin to a runtime route whose
  * handler is an `instanceof` *its own* `Strategy` class. The routes provided by
- * `@serwist/next`'s `defaultCache` — including the catch-all `others`
- * navigation route — are constructed from a separate installed copy of
+ * `@serwist/next`'s `defaultCache`, including the catch-all `others`
+ * navigation route, are constructed from a separate installed copy of
  * `serwist` (a duplicate pulled in through a differing `browserslist` peer), so
  * that `instanceof` check fails and the `/~offline` fallback never attaches to
  * them. As a result a hard navigation to a route that was never visited online
@@ -191,8 +191,8 @@ serwist.addEventListeners();
  * (see `CookBundleWarmer`, issue #166). Best-effort: each entry is added
  * independently and failures (offline, cross-origin, already-evicted) are
  * swallowed so warming never surfaces an error. Reuses the existing named
- * caches — the Cook document lands in the recipe-pages cache and step images in
- * the recipe-images cache — so there are no duplicate caches.
+ * caches. The Cook document lands in the recipe-pages cache and step images in
+ * the recipe-images cache. So there are no duplicate caches.
  */
 async function warmCookBundle(message: WarmCookBundleMessage): Promise<void> {
   const warm = async (cacheName: string, urls: string[]): Promise<void> => {
@@ -235,7 +235,7 @@ async function focusOrOpenCook(targetUrl: string): Promise<void> {
 self.addEventListener("notificationclick", (event) => {
   const data = event.notification.data as
     { url?: string; type?: string } | undefined;
-  // Only handle our cook-timer notifications; leave any others to default.
+  // Only handle our cook-timer notifications. Leave any others to default.
   if (data?.type !== COOK_NOTIFICATION_TYPE) return;
   event.notification.close();
   const targetUrl = new URL(data.url ?? "/", self.location.origin).href;

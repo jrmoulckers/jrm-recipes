@@ -10,7 +10,7 @@
 ## Hypothesis
 
 New families who land on an empty recipe library often leave without creating
-their first recipe — the single most important activation step. We believe a
+their first recipe, the single most important activation step. We believe a
 **benefit-led** empty-state CTA (framing the value: "save your family's first
 recipe") will motivate more new users to create their first recipe than the
 current, task-led copy ("No recipes yet").
@@ -27,7 +27,7 @@ current, task-led copy ("No recipes yet").
 | Benefit | `benefit`  | Benefit-led heading + body + CTA label.                            |
 
 The flag is multivariate (string) so additional treatments (e.g. a "start from a
-sample recipe" shortcut) can be added later without touching call sites — add a
+sample recipe" shortcut) can be added later without touching call sites. Add a
 key to `VARIANTS` in `empty-library-cta.tsx`.
 
 Unassigned / unconfigured users always resolve to `control`, so the default,
@@ -35,7 +35,7 @@ no-analytics build is unchanged.
 
 ## Metrics
 
-- **Primary:** `first_recipe_created` conversion — the share of exposed users who
+- **Primary:** `first_recipe_created` conversion. The share of exposed users who
   fire `first_recipe_created` (see the activation funnel, #328). Exposure is the
   `$feature_flag_called` event emitted on render of the empty state.
 - **Secondary:** `recipe_create_started` (funnel entry), time-to-first-recipe.
@@ -43,7 +43,7 @@ no-analytics build is unchanged.
   not regress.
 
 Analysis is exposure-based: denominator = distinct users with a
-`$feature_flag_called` event for `empty-library-cta`; numerator = those who
+`$feature_flag_called` event for `empty-library-cta`. The numerator is those who
 later fire `first_recipe_created`.
 
 ## Design parameters
@@ -59,7 +59,7 @@ later fire `first_recipe_created`.
   MDE (≈ 2,000 total). Recompute with the observed baseline before calling a
   result.
 - **Duration:** run until each variant reaches the sample size **and** at least
-  two full weeks have elapsed (to cover weekly seasonality) — expected ~2–4
+  two full weeks have elapsed (to cover weekly seasonality). Expected ~2–4
   weeks. Do not stop early on a peek.
 
 ## Rollout & analysis plan
@@ -69,9 +69,9 @@ later fire `first_recipe_created`.
 2. Confirm exposures (`$feature_flag_called`) and the primary metric are flowing.
 3. At the end of the run, compare `first_recipe_created` conversion between
    variants (two-proportion z-test). Ship `benefit` if it wins on the primary
-   metric without tripping guardrails; otherwise keep `control`.
+   metric without tripping guardrails. Otherwise keep `control`.
 4. Record the outcome below.
 
 ## Result
 
-_Pending — to be filled in after the run._
+_Pending. To be filled in after the run._

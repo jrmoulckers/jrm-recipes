@@ -17,7 +17,7 @@ export const RECONNECT_DELAY_MS = 600;
  * this is unit-testable without a DOM.
  *
  * Centralizing this fixes the bug where a page that mounted already-online would
- * show "Back online — reloading…" forever: the reload used to be scheduled only
+ * show "Back online. Reloading…" forever: the reload used to be scheduled only
  * from the `online` event, which never fires when we're online from the start.
  */
 export function scheduleReconnect(
@@ -61,7 +61,7 @@ export function OfflineReconnect() {
     };
 
     // Already online at mount? The `online` event will never fire, so kick off
-    // the reload now — otherwise the badge promises a reload that never comes.
+    // the reload now. Otherwise the badge promises a reload that never comes.
     reconnect(isOnline);
 
     const handleOnline = () => {
@@ -70,7 +70,7 @@ export function OfflineReconnect() {
     };
     const handleOffline = () => {
       setOnline(false);
-      // Dropped again before the reload fired — cancel it and drop the promise.
+      // Dropped again before the reload fired. Cancel it and drop the promise.
       if (reloadTimer !== undefined) {
         window.clearTimeout(reloadTimer);
         reloadTimer = undefined;

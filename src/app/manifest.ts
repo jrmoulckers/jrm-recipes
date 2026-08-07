@@ -7,12 +7,12 @@ import en from "~/messages/en.json";
 /**
  * PWA manifest, served at /manifest.webmanifest. Manifest routes are statically
  * generated and can't read the locale cookie, so the installed app's strings use
- * the default-locale catalog ({@link DEFAULT_LOCALE}); the brand wordmark and
+ * the default-locale catalog ({@link DEFAULT_LOCALE}). The brand wordmark and
  * colors still come from the single brand config. The active-locale experience
  * is localized at runtime via `generateMetadata` in the root layout.
  */
 export default function manifest(): MetadataRoute.Manifest {
-  // Reuse the app icon for shortcut glyphs; launchers scale it as needed.
+  // Reuse the app icon for shortcut glyphs. Launchers scale it as needed.
   const shortcutIcons = [
     { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
   ];
@@ -32,7 +32,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     // Ordered fallback if a target can't honor "standalone": drop to the
     // slimmer "minimal-ui" chrome rather than a full browser tab. (No
-    // "window-controls-overlay" — the desktop chrome isn't designed to draw
+    // "window-controls-overlay". The desktop chrome isn't designed to draw
     // into the titlebar, so requesting it would just leave an empty drag strip.)
     display_override: ["standalone", "minimal-ui"],
     // Re-launching the app or opening a shared link focuses/navigates the
@@ -112,7 +112,7 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     // Receive a link/text OR a shared photo from another app and forward it
-    // into the recipe importer. POST + multipart is required to accept files;
+    // into the recipe importer. POST + multipart is required to accept files.
     // the /import route uploads a shared image and routes text/url shares.
     share_target: {
       action: "/import",

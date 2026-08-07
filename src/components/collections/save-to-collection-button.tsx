@@ -48,7 +48,7 @@ export function SaveToCollectionButton({
 
   function onOpenChange(next: boolean) {
     if (!canSave) {
-      toast("Sign in to save recipes to your collections.");
+      toast(t("signInToSave"));
       return;
     }
     setOpen(next);
@@ -105,7 +105,7 @@ export function SaveToCollectionButton({
       setItems((prev) => [{ id: created.id, name, contains: true }, ...prev]);
       setNewName("");
       setCreating(false);
-      toast.success(`Saved to “${name}”`);
+      toast.success(t("toast.savedTo", { name }));
       router.refresh();
     })();
   }
@@ -114,15 +114,13 @@ export function SaveToCollectionButton({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <BookmarkPlus /> Save to collection
+          <BookmarkPlus /> {t("trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save to a collection</DialogTitle>
-          <DialogDescription>
-            Add this recipe to one of your cookbooks, or start a new one.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         {items.length > 0 && (
@@ -171,7 +169,7 @@ export function SaveToCollectionButton({
           <Input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder="New collection name"
+            placeholder={t("newNameField")}
             maxLength={120}
             disabled={creating}
             aria-label={t("newNameField")}
@@ -182,7 +180,7 @@ export function SaveToCollectionButton({
             disabled={creating || newName.trim().length === 0}
           >
             {creating ? <Loader2 className="animate-spin" /> : <Plus />}
-            Create
+            {t("create")}
           </Button>
         </form>
       </DialogContent>

@@ -7,7 +7,7 @@ import { recipeEvents, recipeIngredients, recipeVersions } from "./recipes";
 import { shoppingListItems } from "./shopping";
 
 /**
- * Issue #153 — every foreign-key column that reverse-lookups or cascades on it
+ * Issue #153. Every foreign-key column that reverse-lookups or cascades on it
  * must have a covering index, or Postgres falls back to a sequential scan and
  * escalates locks as the tables grow. We assert the invariant at its source of
  * truth: the Drizzle table config that `db:generate` compiles into DDL.

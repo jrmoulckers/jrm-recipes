@@ -1,7 +1,7 @@
 /**
  * A small, curated ingredient/term synonym dictionary for recipe search.
  *
- * Families write recipes with regional and heirloom names — "coriander" vs
+ * Families write recipes with regional and heirloom names. "coriander" vs
  * "cilantro", "aubergine" vs "eggplant", "prawns" vs "shrimp". Because
  * `searchRecipes` matches the raw query string, those dishes never find each
  * other. {@link expandQueryTerms} widens a query to its known synonyms so the
@@ -9,12 +9,12 @@
  *
  * This module is intentionally pure (no DB / `server-only` import), mirroring
  * `~/server/recipes/search.ts`, so it can be shared and unit-tested freely. The
- * list is deliberately food-focused and small — quality over coverage.
+ * list is deliberately food-focused and small. Quality over coverage.
  */
 
 /**
  * Bidirectional synonym groups: every term in a group is treated as equivalent
- * to the others. Keep entries lowercase; {@link normalizeTerm} lowercases and
+ * to the others. Keep entries lowercase. {@link normalizeTerm} lowercases and
  * collapses whitespace on lookup so callers don't have to.
  */
 const SYNONYM_GROUPS: readonly (readonly string[])[] = [

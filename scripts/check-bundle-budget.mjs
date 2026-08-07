@@ -3,7 +3,7 @@
  *
  * Parses the route table that `next build` prints and fails when the reported
  * "First Load JS" for a tracked route exceeds the budget in bundle-budgets.json.
- * This guards against silent regressions — e.g. a new static import of a heavy
+ * This guards against silent regressions, e.g. a new static import of a heavy
  * client component landing in a route's initial payload.
  *
  * Usage:
@@ -14,7 +14,7 @@
  *       locally via `pnpm check:bundle`).
  *
  * The pure helpers (parseFirstLoadJs, evaluateBudgets, toKb) are exported and
- * unit-tested in scripts/bundle-budget.test.mjs; the CLI only runs when this
+ * unit-tested in scripts/bundle-budget.test.mjs. The CLI only runs when this
  * file is executed directly.
  */
 import { spawnSync } from "node:child_process";
@@ -33,7 +33,7 @@ export function toKb(value, unit) {
 
 /**
  * Extract `route -> firstLoadKb` from `next build` output. The last size column
- * on a route row is its First Load JS; ANSI colour codes are stripped first so
+ * on a route row is its First Load JS, and ANSI colour codes are stripped first so
  * the parse works with or without a TTY.
  */
 export function parseFirstLoadJs(output) {
@@ -97,7 +97,7 @@ function getBuildOutput() {
   const output = `${res.stdout ?? ""}\n${res.stderr ?? ""}`;
   console.log(output);
   if (res.status !== 0) {
-    console.error("`next build` failed; cannot check bundle budget.");
+    console.error("`next build` failed. Cannot check bundle budget.");
     process.exit(res.status ?? 1);
   }
   return output;
@@ -115,7 +115,7 @@ function main() {
   console.log("─".repeat(64));
   for (const r of rows) {
     const flag = r.status === "ok" ? "✓" : "✗";
-    const actual = r.actual === undefined ? "—" : `${r.actual.toFixed(1)} kB`;
+    const actual = r.actual === undefined ? "n/a" : `${r.actual.toFixed(1)} kB`;
     const budgetLabel = `${r.budget} kB`;
     console.log(
       `${flag} ${r.route.padEnd(28)} ${actual.padStart(10)} / ${budgetLabel.padStart(

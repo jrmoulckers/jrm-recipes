@@ -12,7 +12,7 @@ import { RECIPE_PAGE_CACHE_NAME } from "./recipe-page-cache";
 /**
  * Runtime caches this app fills that a user can safely clear to reclaim space.
  * The precached app shell is deliberately excluded so the app still loads
- * offline after a clear — these just rebuild as the user browses again.
+ * offline after a clear. These just rebuild as the user browses again.
  */
 export const APP_RUNTIME_CACHE_NAMES: readonly string[] = [
   RECIPE_PAGE_CACHE_NAME,

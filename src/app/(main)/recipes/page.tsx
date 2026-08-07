@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import { type ReactNode } from "react";
 import Link from "next/link";
 import {
   ChefHat,
@@ -9,6 +10,7 @@ import {
   Tags as TagIcon,
   UtensilsCrossed,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -53,16 +55,18 @@ import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
 
-export const metadata: Metadata = {
-  title: "Your recipes",
-  description:
-    "Every recipe you've saved and created, together in one library.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("library.title"),
+    description: t("library.description"),
+  };
+}
 
 /**
  * Number of leading cards treated as above-the-fold for LCP: the first row of
  * the widest grid layout (`lg:grid-cols-3`). These render their cover image
- * with `priority` so the LCP image is preloaded instead of lazy-loaded; every
+ * with `priority` so the LCP image is preloaded instead of lazy-loaded. Every
  * card after the first row stays lazy.
  */
 const LCP_PRIORITY_COUNT = 3;
@@ -95,28 +99,27 @@ export default async function RecipesPage({
           allergens: (m.allergens ?? []).filter(isAllergen),
         }))
       : [];
+  const t = await getTranslations("recipe.library");
 
   return (
     <div className="container flex flex-col gap-8 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Your cookbook
+            {t("title")}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Everything you and your family have saved.
-          </p>
+          <p className="mt-1 text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild size="lg" variant="outline">
             <Link href="/recipes/cook-with">
-              <UtensilsCrossed /> Cook with what you have
+              <UtensilsCrossed /> {t("cookWith")}
             </Link>
           </Button>
           {dbReady && user ? <QuickCaptureDialog /> : null}
           <Button asChild size="lg">
             <Link href="/recipes/new">
-              <ChefHat /> New recipe
+              <ChefHat /> {t("newRecipe")}
             </Link>
           </Button>
         </div>
@@ -187,6 +190,7 @@ async function BrowseSections({
   const libraryCards = showBadges
     ? await attachCardAllergens(library.items)
     : library.items;
+  const t = await getTranslations("recipe.library");
 
   return (
     <>
@@ -195,7 +199,7 @@ async function BrowseSections({
           <div className="flex items-center gap-2">
             <Clock3 className="size-5 text-primary" />
             <h2 className="font-display text-xl font-bold tracking-tight">
-              Recently viewed
+              {t("recentlyViewed")}
             </h2>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -218,11 +222,11 @@ async function BrowseSections({
             <div className="flex items-center gap-2">
               <TagIcon className="size-5 text-primary" />
               <h2 className="font-display text-lg font-bold tracking-tight">
-                Browse by tag
+                {t("browseByTag")}
               </h2>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/recipes/tags">All tags</Link>
+              <Link href="/recipes/tags">{t("allTags")}</Link>
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -268,7 +272,7 @@ async function BrowseSections({
           <div className="flex items-center gap-2">
             <Compass className="size-5 text-primary" />
             <h2 className="font-display text-2xl font-bold tracking-tight">
-              Discover
+              {t("discover")}
             </h2>
           </div>
           <DiscoverFeed
@@ -381,18 +385,19 @@ async function ResultsView({
   );
 }
 
-function NoResults({ search }: { search: RecipeSearch }) {
+async function NoResults({ search }: { search: RecipeSearch }) {
+  const t = await getTranslations("recipe.library.noResults");
   const query = search.q?.trim();
   return (
     <EmptyState
       icon={<SearchX />}
-      title={query ? `No matches for “${query}”` : "No matches"}
-      description="Try fewer filters or a different search — your next favorite might be hiding under another name."
+      title={query ? t("titleWithQuery", { query }) : t("title")}
+      description={t("body")}
       action={
         <>
           <Button asChild>
             <Link href="/recipes">
-              <Compass /> Clear all filters
+              <Compass /> {t("clearFilters")}
             </Link>
           </Button>
           <Button asChild variant="outline">
@@ -405,7 +410,8 @@ function NoResults({ search }: { search: RecipeSearch }) {
                 query: query ? { title: query } : undefined,
               }}
             >
-              <ChefHat /> {query ? `Create “${query}”` : "Create a recipe"}
+              <ChefHat />{" "}
+              {query ? t("createWithQuery", { query }) : t("create")}
             </Link>
           </Button>
         </>
@@ -414,24 +420,22 @@ function NoResults({ search }: { search: RecipeSearch }) {
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <EmptyState
       icon={<Database />}
-      title="Connect a database to start"
-      description={
-        <>
-          Set{" "}
+      title={t("title")}
+      description={t.rich("recipes", {
+        code: (chunks: ReactNode) => (
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            DATABASE_URL
-          </code>{" "}
-          (see <code className="font-mono text-sm">.env.example</code>) or run{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            docker compose up -d
+            {chunks}
           </code>
-          .
-        </>
-      }
+        ),
+        file: (chunks: ReactNode) => (
+          <code className="font-mono text-sm">{chunks}</code>
+        ),
+      })}
     />
   );
 }

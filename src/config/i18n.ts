@@ -1,9 +1,9 @@
 /**
- * Internationalization config — the single source of truth for the app's
+ * Internationalization config. The single source of truth for the app's
  * supported locales, the active default, and each locale's writing direction.
  *
  * Locale resolution is cookie/`Accept-Language`-driven at the edge of the i18n
- * runtime (`src/i18n/request.ts`); this module stays framework-free so it can be
+ * runtime (`src/i18n/request.ts`). This module stays framework-free so it can be
  * imported from the layout, server helpers, formatters, and unit tests alike.
  * It mirrors the shape/conventions of `src/config/themes.ts`.
  */
@@ -14,7 +14,7 @@ export type Direction = "ltr" | "rtl";
 /**
  * Primary language subtags that are written right-to-left. Direction is a
  * property of the language (and occasionally its script), so we key off the
- * primary subtag of a BCP-47 tag (e.g. the `ar` in `ar-EG`). Legacy ISO 639
+ * primary subtag of a BCP-47 tag (e.g. The `ar` in `ar-EG`). Legacy ISO 639
  * codes browsers may still emit (`iw`, `ji`) are included for safety.
  */
 const RTL_LANGUAGES: ReadonlySet<string> = new Set([
@@ -54,7 +54,7 @@ export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_COOKIE = "NEXT_LOCALE";
 
 /**
- * Native language names (endonyms) for the locale switcher — a language menu
+ * Native language names (endonyms) for the locale switcher. A language menu
  * should read in each language's own script, not the current UI language.
  */
 export const LOCALE_ENDONYMS: Record<Locale, string> = {

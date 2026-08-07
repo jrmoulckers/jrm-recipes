@@ -48,7 +48,7 @@ describe("MainNav", () => {
     expect(screen.getByRole("link", { name: "Recipes" })).not.toHaveAttribute(
       "aria-current",
     );
-    // "Create" is no longer a horizontal nav link — it's represented by the
+    // "Create" is no longer a horizontal nav link. It is represented by the
     // prominent "New recipe" header CTA, so it must not appear in the bar.
     expect(screen.queryByRole("link", { name: "Create" })).toBeNull();
   });

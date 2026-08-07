@@ -8,7 +8,7 @@ describe("buildQrCode", () => {
   it("encodes data into a square module matrix with a quiet-zone margin", () => {
     const qr = buildQrCode(URL);
 
-    // Smallest QR (version 1) is 21×21; anything real is at least that.
+    // Smallest QR (version 1) is 21×21. Anything real is at least that.
     expect(qr.count).toBeGreaterThanOrEqual(21);
     // Default margin is 4 modules on every side.
     expect(qr.size).toBe(qr.count + 8);
@@ -49,7 +49,7 @@ describe("buildQrCode", () => {
   it("draws every dark module as a unit square", () => {
     const qr = buildQrCode(URL);
     const squares = qr.path.match(/h1v1h-1z/g) ?? [];
-    // One closed unit square per dark module; there is always more than one.
+    // One closed unit square per dark module. There is always more than one.
     expect(squares.length).toBeGreaterThan(1);
   });
 });

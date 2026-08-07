@@ -23,7 +23,7 @@ export default function ImmersiveSegmentError({
 
   return (
     <ErrorState
-      description="A hiccup in the kitchen — we couldn't finish loading this view. You can try again, or head back home."
+      description="A hiccup in the kitchen. We couldn't finish loading this view. You can try again, or head back home."
       digest={error.digest}
       onReset={reset}
     />

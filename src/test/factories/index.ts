@@ -6,7 +6,7 @@
  * drifts from the real Drizzle/Zod types and breaks noisily when the schema
  * changes. These factories produce valid domain objects with sensible defaults
  * and shallow per-call overrides, and their return types reference the *real*
- * exported types — so a schema change fails the build here instead of silently
+ * exported types. So a schema change fails the build here instead of silently
  * rotting every test.
  *
  * Determinism: ids/slugs are stable by default (`user_1`, `recipe_1`, …) so
@@ -89,7 +89,7 @@ export function makeStepInput(overrides: Partial<StepInput> = {}): StepInput {
 
 /**
  * A valid {@link RecipeInput}. Defaults to a private draft with no children so
- * it parses cleanly through `recipeInput`; pass overrides (e.g. `ingredients`,
+ * it parses cleanly through `recipeInput`. pass overrides (e.g. `ingredients`,
  * `visibility`) for richer cases.
  */
 export function makeRecipeInput(

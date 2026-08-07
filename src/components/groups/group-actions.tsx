@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { friendlyError } from "~/lib/error-copy";
 
 import { deleteGroupAction, leaveGroupAction } from "~/server/groups/actions";
 import { Button } from "~/components/ui/button";
+import { useConfirm } from "~/components/ui/confirm-dialog";
 import { type DisplayRole } from "./role-badge";
 
 export function GroupActions({
@@ -22,13 +24,14 @@ export function GroupActions({
   isSoleOwner?: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("groups.actions");
   const [pending, setPending] = React.useState<"leave" | "delete" | null>(null);
   const [isPending, startTransition] = React.useTransition();
+  const confirm = useConfirm();
 
   if (!viewerRole) return null;
 
-  const soleOwnerNote =
-    "As the group's only owner, you can't leave. Transfer ownership to another member, or delete the group instead.";
+  const soleOwnerNote = t("soleOwnerNote");
 
   function run(
     kind: "leave" | "delete",
@@ -59,45 +62,40 @@ export function GroupActions({
         <Button
           type="button"
           variant="outline"
-          onClick={() => {
+          onClick={async () => {
             if (isSoleOwner) return;
-            if (
-              !window.confirm(
-                `Leave ${groupName}? You'll lose access to its shared recipes. You can re-join with an invite.`,
-              )
-            )
-              return;
-            run("leave", () => leaveGroupAction(slug), "You left the group");
+            const ok = await confirm({
+              title: t("confirm.leave.title", { group: groupName }),
+              description: t("confirm.leave.description"),
+              confirmLabel: t("confirm.leave.confirmLabel"),
+            });
+            if (!ok) return;
+            run("leave", () => leaveGroupAction(slug), t("toast.left"));
           }}
           disabled={isPending || isSoleOwner}
           title={isSoleOwner ? soleOwnerNote : undefined}
           aria-disabled={isSoleOwner}
         >
           <LogOut />
-          {pending === "leave" ? "Leaving…" : "Leave group"}
+          {pending === "leave" ? t("leaving") : t("leave")}
         </Button>
         {viewerRole === "owner" ? (
           <Button
             type="button"
             variant="destructive"
-            onClick={() => {
-              if (
-                !window.confirm(
-                  `Delete “${groupName}”? Everyone's recipes stay saved — only the shared group space is removed.`,
-                )
-              ) {
-                return;
-              }
-              run(
-                "delete",
-                () => deleteGroupAction(slug),
-                "The group was deleted",
-              );
+            onClick={async () => {
+              const ok = await confirm({
+                title: t("confirm.delete.title", { group: groupName }),
+                description: t("confirm.delete.description"),
+                confirmLabel: t("confirm.delete.confirmLabel"),
+              });
+              if (!ok) return;
+              run("delete", () => deleteGroupAction(slug), t("toast.deleted"));
             }}
             disabled={isPending}
           >
             <Trash2 />
-            {pending === "delete" ? "Deleting…" : "Delete group"}
+            {pending === "delete" ? t("deleting") : t("delete")}
           </Button>
         ) : null}
       </div>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Check,
@@ -22,11 +22,7 @@ import {
   removeEntryAction,
 } from "~/server/planner/actions";
 import { logCookAction } from "~/server/cooklog/actions";
-import {
-  MEAL_SLOTS,
-  MEAL_SLOT_LABELS,
-  type MealSlotValue,
-} from "~/server/planner/validation";
+import { MEAL_SLOTS, type MealSlotValue } from "~/server/planner/validation";
 import { cn } from "~/lib/utils";
 import {
   BATCH_MULTIPLES,
@@ -69,7 +65,7 @@ export type BoardEntry = {
   dateParam: string;
   slot: MealSlotValue;
   note: string | null;
-  /** Who planned this entry — shown on the shared group board (#363). */
+  /** Who planned this entry. It is shown on the shared group board (#363). */
   author?: { id: string; name: string } | null;
   recipe: {
     id: string;
@@ -114,6 +110,7 @@ export function PlannerBoard({
    * this group and cards show their author (#363). */
   groupId?: string | null;
 }) {
+  const t = useTranslations("planner.board");
   const [activeCell, setActiveCell] = React.useState<Cell | null>(null);
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const avoidAllergens =
@@ -190,7 +187,7 @@ export function PlannerBoard({
               </div>
               {day.isToday && (
                 <span className="bg-primary/12 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                  Today
+                  {t("today")}
                 </span>
               )}
             </header>
@@ -202,7 +199,7 @@ export function PlannerBoard({
                 return (
                   <div key={slot} className="flex flex-col gap-1.5">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {MEAL_SLOT_LABELS[slot]}
+                      {t(`mealSlot.${slot}`)}
                     </p>
 
                     {cellEntries.map((entry) => (
@@ -228,10 +225,13 @@ export function PlannerBoard({
                         })
                       }
                       className="flex items-center gap-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={`Add to ${MEAL_SLOT_LABELS[slot]} on ${day.fullLabel}`}
+                      aria-label={t("a11y.addToSlot", {
+                        slot: t(`mealSlot.${slot}`),
+                        day: day.fullLabel,
+                      })}
                     >
                       <Plus className="size-3.5" />
-                      Add
+                      {t("add")}
                     </button>
                   </div>
                 );
@@ -265,6 +265,7 @@ function EntryChip({
 }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("planner.board");
   const [isPending, startTransition] = React.useTransition();
   const [isCooking, startCooking] = React.useTransition();
   const [cooked, setCooked] = React.useState(false);
@@ -285,8 +286,8 @@ function EntryChip({
       } else {
         toast.success(
           alsoLeftovers && batch
-            ? "Removed the meal and its leftovers"
-            : "Removed from your plan",
+            ? t("toast.removedMealAndLeftovers")
+            : t("toast.removedFromPlan"),
         );
         router.refresh();
       }
@@ -310,24 +311,26 @@ function EntryChip({
       });
       if (result.ok) {
         setCooked(true);
-        toast.success("Logged to your journal");
+        toast.success(t("toast.loggedToJournal"));
       } else {
         toast.error(friendlyError(result.error));
       }
     });
   }
 
-  const title = entry.recipe?.title ?? entry.note ?? "Untitled";
+  const title = entry.recipe?.title ?? entry.note ?? t("untitled");
   const alerts = allergenConflicts(
     avoidAllergens,
     entry.recipe?.allergens ?? [],
   );
   const alertText =
     alerts.length > 0
-      ? `Contains ${formatList(
-          alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
-          locale,
-        )}`
+      ? t("allergenContains", {
+          allergens: formatList(
+            alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
+            locale,
+          ),
+        })
       : null;
 
   return (
@@ -347,7 +350,7 @@ function EntryChip({
             {leftovers && (
               <span className="mb-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 <Repeat className="size-3 shrink-0" aria-hidden />
-                Leftovers
+                {t("leftovers")}
               </span>
             )}
             <span
@@ -369,7 +372,7 @@ function EntryChip({
             {alertText && (
               <span
                 className="mt-1 flex items-center gap-1 font-medium text-warning-foreground"
-                title="Best-effort from ingredient names — double-check labels and brands."
+                title={t("allergenTitle")}
               >
                 <AlertTriangle className="size-3 shrink-0" aria-hidden />
                 {alertText}
@@ -380,7 +383,7 @@ function EntryChip({
             type="button"
             onClick={onRemoveClick}
             disabled={isPending}
-            aria-label={`Remove ${title} from plan`}
+            aria-label={t("a11y.removeFromPlan", { title })}
             className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
           >
             <Trash2 className="size-3.5" />
@@ -394,19 +397,24 @@ function EntryChip({
                 className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
                 title={
                   batch.dayLabel
-                    ? `Cook ${batch.multiple}× — leftovers on ${batch.dayLabel}`
-                    : `Cook ${batch.multiple}× — extra for leftovers`
+                    ? t("batch.titleWithDay", {
+                        multiple: batch.multiple,
+                        day: batch.dayLabel,
+                      })
+                    : t("batch.titleWithoutDay", {
+                        multiple: batch.multiple,
+                      })
                 }
               >
                 <Repeat className="size-3.5" aria-hidden />
-                Batch ×{batch.multiple}
+                {t("batch.badge", { multiple: batch.multiple })}
                 {batch.dayLabel ? ` · ${batch.dayLabel}` : ""}
               </span>
             )}
             {cooked ? (
               <span className="inline-flex w-fit items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                 <CheckCircle2 className="size-3.5" aria-hidden />
-                Cooked
+                {t("cooked")}
               </span>
             ) : (
               <button
@@ -416,7 +424,7 @@ function EntryChip({
                 className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-70 group-hover:opacity-100 motion-reduce:opacity-100"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden />
-                {isCooking ? "Logging…" : "Cooked it"}
+                {isCooking ? t("logging") : t("cookedIt")}
               </button>
             )}
           </div>
@@ -430,11 +438,11 @@ function EntryChip({
         >
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Remove this meal?</DialogTitle>
+              <DialogTitle>{t("removeBatch.title")}</DialogTitle>
               <DialogDescription>
-                You batch-cooked this with a leftovers night
-                {batch.dayLabel ? ` on ${batch.dayLabel}` : ""}. Remove that
-                too, or just this meal?
+                {batch.dayLabel
+                  ? t("removeBatch.descriptionWithDay", { day: batch.dayLabel })
+                  : t("removeBatch.descriptionWithoutDay")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -444,7 +452,7 @@ function EntryChip({
                 onClick={() => removeEntries(false)}
                 disabled={isPending}
               >
-                Just this one
+                {t("removeBatch.justThis")}
               </Button>
               <Button
                 type="button"
@@ -452,7 +460,7 @@ function EntryChip({
                 onClick={() => removeEntries(true)}
                 disabled={isPending}
               >
-                Remove both
+                {t("removeBatch.removeBoth")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -477,6 +485,7 @@ function AddEntryDialog({
 }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("planner.board");
   const noteId = React.useId();
   const searchId = React.useId();
   const leftoversId = React.useId();
@@ -532,13 +541,13 @@ function AddEntryDialog({
 
     const trimmedNote = note.trim();
     if (!selectedId && trimmedNote.length === 0) {
-      setError("Pick a recipe or add a note.");
+      setError(t("validation.pickRecipeOrNote"));
       return;
     }
 
     const batching = batchOn && canBatch;
     if (batching && !leftoversDate) {
-      setError("Pick a night for the leftovers.");
+      setError(t("validation.pickLeftoversNight"));
       return;
     }
     setError(null);
@@ -565,9 +574,7 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          batching
-            ? "Added — leftovers night booked too"
-            : "Added to your plan",
+          batching ? t("toast.addedWithLeftovers") : t("toast.addedToPlan"),
         );
         const warning = formatPlanWarnings(result.warnings ?? [], locale);
         if (warning) {
@@ -588,19 +595,21 @@ function AddEntryDialog({
         {cell && (
           <form onSubmit={submit} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>Add to {MEAL_SLOT_LABELS[cell.slot]}</DialogTitle>
+              <DialogTitle>
+                {t("dialog.title", { slot: t(`mealSlot.${cell.slot}`) })}
+              </DialogTitle>
               <DialogDescription>{cell.dayLabel}</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={searchId}>Recipe</Label>
+              <Label htmlFor={searchId}>{t("dialog.recipeLabel")}</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={searchId}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search your recipes…"
+                  placeholder={t("dialog.searchPlaceholder")}
                   className="ps-9"
                   autoComplete="off"
                 />
@@ -609,11 +618,11 @@ function AddEntryDialog({
               <div className="max-h-56 overflow-y-auto rounded-lg border border-border">
                 {recipes.length === 0 ? (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                    No recipes in your library yet. Add a note below instead.
+                    {t("empty.noRecipes")}
                   </p>
                 ) : filtered.length === 0 ? (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                    No recipes match “{query}”.
+                    {t("empty.noRecipeMatches", { query })}
                   </p>
                 ) : (
                   <ul className="divide-y divide-border/70">
@@ -656,16 +665,16 @@ function AddEntryDialog({
 
             <div className="grid gap-2">
               <Label htmlFor={noteId}>
-                Note{" "}
+                {t("dialog.noteLabel")}{" "}
                 <span className="font-normal text-muted-foreground">
-                  (optional)
+                  {t("optional")}
                 </span>
               </Label>
               <Textarea
                 id={noteId}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Leftovers, eat out, prep ahead…"
+                placeholder={t("dialog.notePlaceholder")}
                 rows={2}
                 maxLength={300}
               />
@@ -680,14 +689,14 @@ function AddEntryDialog({
                   />
                   <span className="inline-flex items-center gap-1.5">
                     <Repeat className="size-4 text-primary" aria-hidden />
-                    Batch cook — eat again another night
+                    {t("batch.toggle")}
                   </span>
                 </label>
 
                 {batchOn && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-1.5">
-                      <Label>Make</Label>
+                      <Label>{t("batch.makeLabel")}</Label>
                       <div className="flex gap-1.5">
                         {BATCH_MULTIPLES.map((value) => (
                           <button
@@ -702,14 +711,16 @@ function AddEntryDialog({
                                 : "border-border text-muted-foreground hover:bg-muted",
                             )}
                           >
-                            {value}× batch
+                            {t("batch.option", { multiple: value })}
                           </button>
                         ))}
                       </div>
                     </div>
 
                     <div className="grid gap-1.5">
-                      <Label htmlFor={leftoversId}>Leftovers night</Label>
+                      <Label htmlFor={leftoversId}>
+                        {t("batch.leftoversNightLabel")}
+                      </Label>
                       <NativeSelect
                         id={leftoversId}
                         value={leftoversDate}
@@ -738,10 +749,10 @@ function AddEntryDialog({
                 onClick={onClose}
                 disabled={isPending}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Adding…" : "Add to plan"}
+                {isPending ? t("adding") : t("addToPlan")}
               </Button>
             </DialogFooter>
           </form>
@@ -756,6 +767,7 @@ export function PlannerEmptyState({
 }: {
   groupName?: string | null;
 }) {
+  const t = useTranslations("planner.board");
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 py-14 text-center">
       <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
@@ -764,17 +776,17 @@ export function PlannerEmptyState({
       <p className="max-w-sm text-sm text-muted-foreground">
         {groupName ? (
           <>
-            Nothing planned for{" "}
+            {t("empty.groupPrefix")}{" "}
             <span className="font-medium text-foreground">{groupName}</span>{" "}
-            this week yet. Tap{" "}
-            <span className="font-medium text-foreground">Add</span> on any day
-            — everyone in the group can see and edit this plan.
+            {t("empty.groupMiddle")}{" "}
+            <span className="font-medium text-foreground">{t("add")}</span>{" "}
+            {t("empty.groupSuffix")}
           </>
         ) : (
           <>
-            Nothing planned this week yet. Tap{" "}
-            <span className="font-medium text-foreground">Add</span> on any day
-            to drop in a recipe or a quick note.
+            {t("empty.soloPrefix")}{" "}
+            <span className="font-medium text-foreground">{t("add")}</span>{" "}
+            {t("empty.soloSuffix")}
           </>
         )}
       </p>

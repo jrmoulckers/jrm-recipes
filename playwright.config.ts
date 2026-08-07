@@ -23,7 +23,7 @@ export default defineConfig({
   },
   webServer: {
     // In CI the production build is produced once by the `build` job and
-    // downloaded as an artifact (#244), so just start it — no second compile.
+    // downloaded as an artifact (#244), so just start it with no second compile.
     // Locally there's no artifact, so build first, then start.
     command: process.env.CI ? "pnpm start" : "pnpm build && pnpm start",
     url: "http://localhost:3000",

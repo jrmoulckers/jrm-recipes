@@ -78,14 +78,14 @@ const runCreateRecipe = authedAction({
       return fail(RATE_LIMITED_MESSAGE);
     // Soft-limit (issue #318): free tiers cap the number of saved recipes. Refuse
     // only *new* creates once at/over the cap and hand the UI an upgrade-flagged
-    // result — existing recipes stay fully editable/viewable, and an unlimited plan
+    // result. Existing recipes stay fully editable/viewable, and an unlimited plan
     // (or unconfigured billing) resolves to `ok`, so nothing is ever hard-blocked.
     const limit = await getLimitStatus(user, "maxRecipes", "recipes");
     if (limit.state === "blocked") {
       return {
         ok: false,
         upgrade: true,
-        error: `You've reached the free plan's limit of ${limit.limit} saved recipes. Upgrade to Family for unlimited recipes — everything you've already saved stays exactly where it is.`,
+        error: `You've reached the free plan's limit of ${limit.limit} saved recipes. Upgrade to Family for unlimited recipes. Everything you've already saved stays exactly where it is.`,
       };
     }
     try {
@@ -101,7 +101,7 @@ const runCreateRecipe = authedAction({
       // Activation funnel (#328): emit first_recipe_created exactly once, when
       // the author's recipe count first reaches 1. Gated on analytics being
       // configured so the default path skips the extra count query, and kept off
-      // the response's critical path — the count is only needed for a
+      // the response's critical path. The count is only needed for a
       // fire-and-forget analytics event, so awaiting it would just add a serial
       // DB round-trip to every save's latency for no user-visible benefit.
       if (isAnalyticsConfigured()) {
@@ -117,7 +117,7 @@ const runCreateRecipe = authedAction({
               });
             }
           } catch {
-            // Best-effort analytics; a count failure must never affect the save.
+            // Best-effort analytics. A count failure must never affect the save.
           }
         })();
       }
@@ -243,7 +243,7 @@ export type CompareVersionsResult =
  * Diff two points in a recipe's history for the Timeline "Compare" view (#358).
  * Each side is either a saved `versionNumber` or `"current"` (the live recipe).
  * Access is gated by {@link getRecipeForViewer} so only viewers who can see the
- * recipe can read its snapshots; a missing/legacy snapshot diffs as an empty
+ * recipe can read its snapshots. A missing/legacy snapshot diffs as an empty
  * recipe rather than failing.
  */
 export async function compareRecipeVersionsAction(
@@ -318,7 +318,7 @@ export async function deleteRecipeAction(id: string): Promise<void> {
     await deleteRecipe(id, user);
     void captureServer(user.id, "recipe_deleted", { recipeId: id });
   } catch {
-    // Already gone — fall through to the library.
+    // Already gone. Fall through to the library.
   }
   revalidatePath("/recipes");
   revalidateRecipeTags(id);
@@ -327,7 +327,7 @@ export async function deleteRecipeAction(id: string): Promise<void> {
 
 /**
  * Restore a soft-deleted recipe (issue #165). Owner-guarded via
- * {@link restoreRecipe}; on success the recipe and its preserved history return,
+ * {@link restoreRecipe}. On success the recipe and its preserved history return,
  * so we revalidate the library and the recipe's detail page and send the owner
  * back to it. A failed restore (not found / not owner) resolves to `false`.
  */
@@ -355,7 +355,7 @@ export type ShareLinkActionResult = BaseActionResult<{
 /**
  * Owner-only: disable/enable or rotate an unlisted recipe's share link (#207).
  * Authorization is enforced in {@link setShareLinkState} (row scoped to the
- * author); a non-owner resolves to a generic failure. On success we bust the
+ * author). A non-owner resolves to a generic failure. On success we bust the
  * recipe's cache tags and hand back the fresh token URL (or null when revoked).
  */
 export async function setShareLinkStateAction(

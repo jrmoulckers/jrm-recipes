@@ -13,7 +13,7 @@ import {
   type Allergen,
 } from "./allergens";
 
-describe("detectAllergens — direct positives", () => {
+describe("detectAllergens. Direct positives", () => {
   it("detects the major allergen groups from common ingredients", () => {
     expect(detectAllergens("peanuts")).toEqual(["peanut"]);
     expect(detectAllergens("chopped almonds")).toEqual(["tree-nut"]);
@@ -50,7 +50,7 @@ describe("detectAllergens — direct positives", () => {
   });
 });
 
-describe("detectAllergens — whole-word matching avoids false positives", () => {
+describe("detectAllergens. Whole-word matching avoids false positives", () => {
   it("does not match allergen substrings inside longer words", () => {
     expect(detectAllergens("eggplant")).toEqual([]); // not egg
     expect(detectAllergens("shellfish stock")).toEqual(["shellfish"]); // not fish
@@ -59,7 +59,7 @@ describe("detectAllergens — whole-word matching avoids false positives", () =>
     expect(detectAllergens("nutmeg")).toEqual([]); // not tree-nut
   });
 
-  it("treats peanut butter as peanut only — never dairy", () => {
+  it("treats peanut butter as peanut only. Never dairy", () => {
     expect(detectAllergens("peanut butter")).toEqual(["peanut"]);
     expect(detectAllergens("creamy peanut butter")).toEqual(["peanut"]);
   });
@@ -102,7 +102,7 @@ describe("detectAllergens — whole-word matching avoids false positives", () =>
   });
 });
 
-describe("detectAllergens — multi-allergen ingredients", () => {
+describe("detectAllergens. Multi-allergen ingredients", () => {
   it("returns every distinct allergen for a compound ingredient", () => {
     // egg noodles carry both egg and wheat
     expect(detectAllergens("egg noodles")).toEqual(["egg", "wheat"]);
@@ -154,7 +154,7 @@ describe("metadata", () => {
   });
 });
 
-describe("detectHiddenAllergens — derived / hidden sources", () => {
+describe("detectHiddenAllergens. Derived / hidden sources", () => {
   it("flags wheat hidden inside soy sauce", () => {
     const warnings = detectHiddenAllergens("soy sauce");
     const wheat = warnings.find((w) => w.allergen === "wheat");
@@ -215,10 +215,10 @@ describe("summarizeHiddenAllergens", () => {
   });
 });
 
-describe("detectAllergensForSafety — conservative direct+hidden union (#383/#405)", () => {
+describe("detectAllergensForSafety. Conservative direct+hidden union (#383/#405)", () => {
   it("counts a hidden source against personal safety (soy sauce → wheat)", () => {
-    // The neutral "Contains" detector hides the derived wheat; the personal
-    // safety detector must NOT — a wheat-allergic member is unsafe with it.
+    // The neutral "Contains" detector hides the derived wheat. The personal
+    // safety detector must NOT. A wheat-allergic member is unsafe with it.
     expect(detectAllergens("soy sauce")).not.toContain("wheat");
     expect(detectAllergensForSafety("soy sauce")).toContain("wheat");
     // Soy is still there directly.
@@ -235,7 +235,7 @@ describe("detectAllergensForSafety — conservative direct+hidden union (#383/#4
   });
 });
 
-describe("summarizeAllergensForSafety — recipe-level union for 'safe for'", () => {
+describe("summarizeAllergensForSafety. Recipe-level union for 'safe for'", () => {
   it("makes a soy-sauce recipe unsafe for a wheat-allergic member", () => {
     const recipe = summarizeAllergensForSafety([
       "chicken thighs",

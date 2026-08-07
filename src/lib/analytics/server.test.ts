@@ -208,7 +208,7 @@ describe("feature flags", () => {
     });
   });
 
-  it("returns control ({}) when unconfigured — never blocks render", async () => {
+  it("returns control ({}) when unconfigured. Never blocks render", async () => {
     configMock.isAnalyticsConfigured.mockReturnValue(false);
     const fetchFn = mockFetch({ ok: true, json: async () => ({}) });
 

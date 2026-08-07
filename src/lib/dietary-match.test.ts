@@ -40,7 +40,7 @@ describe("memberPlanWarnings", () => {
   });
 
   it("warns a member whose diet the recipe's allergens violate", () => {
-    // vegan forbids dairy — a dairy recipe conflicts even with no allergen set.
+    // vegan forbids dairy. A dairy recipe conflicts even with no allergen set.
     const warnings = memberPlanWarnings(["dairy"], [veganKid]);
     expect(warnings).toEqual([
       {
@@ -160,7 +160,7 @@ describe("detectIngredientConflict", () => {
   };
 
   it("flags a diet violation and suggests the neutralizing tag", () => {
-    // "butter" → dairy; conflicts with both dairy-free and vegan.
+    // "butter" → dairy. Conflicts with both dairy-free and vegan.
     const conflict = detectIngredientConflict(["dairy"], dairyFreeVegan);
     expect(conflict.allergens).toEqual([]);
     expect(conflict.diets).toEqual(["dairy-free", "vegan"]);
@@ -196,7 +196,7 @@ describe("detectIngredientConflict", () => {
 });
 
 describe("safeSubstitutions (#429 safe-swap safety)", () => {
-  // A dairy-free swap list that includes nut-based options — realistic for
+  // A dairy-free swap list that includes nut-based options. Realistic for
   // "butter" or "cream". A dairy-allergic member who is ALSO nut-allergic must
   // not be shown the cashew/almond swaps as "safe".
   const dairySwaps: Substitution[] = [

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Check, Copy, Link2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
@@ -28,20 +29,21 @@ import {
 type LinkRole = "member" | "kid";
 
 const EXPIRY_OPTIONS = [
-  { value: "never", label: "Never expires" },
-  { value: "7", label: "7 days" },
-  { value: "30", label: "30 days" },
-  { value: "90", label: "90 days" },
+  { value: "never", labelKey: "never" },
+  { value: "7", labelKey: "days7" },
+  { value: "30", labelKey: "days30" },
+  { value: "90", labelKey: "days90" },
 ] as const;
 
 /**
  * Manager-only "share an invite link" affordance (issue #343). Generates a
- * tokenized `/join/<token>` URL — role-scoped (member/kid) and optionally
- * expiring — that a non-user can open, sign up, and land straight into the
+ * tokenized `/join/<token>` URL, role-scoped (member/kid) and optionally
+ * expiring, that a non-user can open, sign up, and land straight into the
  * group. This is the acquisition loop `AddMemberForm` can't cover (that form
  * needs the invitee to already have an account).
  */
 export function InviteLinkManager({ slug }: { slug: string }) {
+  const t = useTranslations("groups.inviteLink");
   const [role, setRole] = React.useState<LinkRole>("member");
   const [expiry, setExpiry] = React.useState<string>("never");
   const [url, setUrl] = React.useState<string | null>(null);
@@ -62,7 +64,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
           setUrl(result.url);
           setToken(result.token);
           setCopied(false);
-          toast.success("Invite link ready to share");
+          toast.success(t("toast.ready"));
         },
       );
     });
@@ -79,7 +81,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
         setUrl(null);
         setToken(null);
         setCopied(false);
-        toast.success("Invite link revoked");
+        toast.success(t("toast.revoked"));
       });
     });
   }
@@ -89,10 +91,10 @@ export function InviteLinkManager({ slug }: { slug: string }) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Invite link copied");
+      toast.success(t("toast.copied"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Couldn't copy the link.");
+      toast.error(t("toast.copyFailed"));
     }
   }
 
@@ -100,21 +102,18 @@ export function InviteLinkManager({ slug }: { slug: string }) {
     <Popover>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline">
-          <Link2 /> Invite link
+          <Link2 /> {t("trigger")}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-3">
         <div className="space-y-1">
-          <p className="text-sm font-medium">Share a join link</p>
-          <p className="text-xs text-muted-foreground">
-            Anyone with the link can join — perfect for relatives who
-            aren&apos;t on Heirloom yet.
-          </p>
+          <p className="text-sm font-medium">{t("title")}</p>
+          <p className="text-xs text-muted-foreground">{t("description")}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <Label htmlFor="invite-link-role">Role</Label>
+            <Label htmlFor="invite-link-role">{t("role.label")}</Label>
             <Select
               value={role}
               onValueChange={(v) => setRole(v as LinkRole)}
@@ -124,13 +123,13 @@ export function InviteLinkManager({ slug }: { slug: string }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="kid">Kid</SelectItem>
+                <SelectItem value="member">{t("role.member")}</SelectItem>
+                <SelectItem value="kid">{t("role.kid")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="invite-link-expiry">Expires</Label>
+            <Label htmlFor="invite-link-expiry">{t("expires")}</Label>
             <Select
               value={expiry}
               onValueChange={setExpiry}
@@ -142,7 +141,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
               <SelectContent>
                 {EXPIRY_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(`expiry.${option.labelKey}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -152,7 +151,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
 
         {url ? (
           <div className="space-y-1.5">
-            <Label htmlFor="invite-link-url">Invite link</Label>
+            <Label htmlFor="invite-link-url">{t("linkLabel")}</Label>
             <div className="flex gap-2">
               <Input
                 id="invite-link-url"
@@ -166,7 +165,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
                 variant="outline"
                 size="icon"
                 onClick={copy}
-                aria-label="Copy invite link"
+                aria-label={t("a11y.copyInviteLink")}
               >
                 {copied ? <Check /> : <Copy />}
               </Button>
@@ -180,7 +179,7 @@ export function InviteLinkManager({ slug }: { slug: string }) {
               disabled={isRevoking}
             >
               <Trash2 />
-              {isRevoking ? "Revoking…" : "Revoke this link"}
+              {isRevoking ? t("actions.revoking") : t("actions.revoke")}
             </Button>
           </div>
         ) : null}
@@ -193,10 +192,10 @@ export function InviteLinkManager({ slug }: { slug: string }) {
         >
           {url ? <RefreshCw /> : <Link2 />}
           {isPending
-            ? "Generating…"
+            ? t("actions.generating")
             : url
-              ? "Generate a new link"
-              : "Generate invite link"}
+              ? t("actions.generateNew")
+              : t("actions.generate")}
         </Button>
       </PopoverContent>
     </Popover>

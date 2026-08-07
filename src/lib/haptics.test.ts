@@ -19,7 +19,7 @@ afterEach(() => {
   if (originalDescriptor) {
     Object.defineProperty(window.navigator, "vibrate", originalDescriptor);
   } else {
-    // jsdom has no vibrate by default — remove whatever a test installed.
+    // jsdom has no vibrate by default. Remove whatever a test installed.
     delete (window.navigator as { vibrate?: unknown }).vibrate;
   }
   vi.restoreAllMocks();

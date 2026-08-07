@@ -19,10 +19,10 @@ import { Label } from "./label";
  * label, threads `aria-invalid` / `aria-required` / `aria-describedby` onto the
  * single child control, and renders the hint (only while valid) and the error.
  * The error is a polite live region so assistive tech announces server-side
- * validation results that appear after submit — not just on focus.
+ * validation results that appear after submit, not just on focus.
  *
  * All copy is passed in by the caller (so it stays in the caller's next-intl
- * namespace); this primitive contributes no hardcoded strings. Styling is
+ * namespace). This primitive contributes no hardcoded strings. Styling is
  * token-only and layout uses logical spacing so it mirrors correctly under RTL.
  */
 
@@ -81,11 +81,11 @@ export interface FormFieldProps {
   label: React.ReactNode;
   /** Optional helper text shown below the control while it is valid. */
   hint?: React.ReactNode;
-  /** Validation message(s); the first non-empty entry is shown. */
+  /** Validation message(s). The first non-empty entry is shown. */
   error?: string | readonly string[] | null;
   /** Marks the field required (renders `*` and sets `aria-required`). */
   required?: boolean;
-  /** Optional explicit control id; otherwise one is generated. */
+  /** Optional explicit control id. Otherwise one is generated. */
   htmlFor?: string;
   className?: string;
   /** A single form control (input, textarea, select, …). */

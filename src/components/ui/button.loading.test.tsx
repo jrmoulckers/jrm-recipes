@@ -21,12 +21,12 @@ describe("Button loading state", () => {
     render(<Button loading>Save</Button>);
     const button = screen.getByRole("button", { name: "Save" });
 
-    // Label text stays in the DOM so the box width holds AND — crucially — the
+    // Label text stays in the DOM so the box width holds AND. Crucially. The
     // accessible name survives. We use `opacity-0`, not `invisible`
     // (visibility:hidden), because visibility:hidden removes the subtree from
     // the accessible-name computation, leaving an unnamed aria-busy button.
     // NOTE: jsdom applies no stylesheet, so it can't actually enforce the
-    // visibility-vs-opacity distinction — the class choice below is what
+    // visibility-vs-opacity distinction. The class choice below is what
     // guarantees the accessible name in real browsers, so we assert on it.
     expect(button.textContent).toContain("Save");
     const label = button.querySelector("span.opacity-0");

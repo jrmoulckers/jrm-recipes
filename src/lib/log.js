@@ -9,7 +9,7 @@
  *
  * Design goals:
  * - **Levels**: debug < info < warn < error < silent, gated by `LOG_LEVEL`.
- *   Defaults to `info` in production (quiet — no debug spam) and `debug`
+ *   Defaults to `info` in production (quiet. No debug spam) and `debug`
  *   elsewhere, so local/dev/test stay chatty and prod stays lean.
  * - **Redaction**: secret- and PII-looking keys (token, password, DATABASE_URL,
  *   authorization, cookie, …) and secret-shaped values (Postgres URLs, bearer
@@ -20,7 +20,7 @@
  * - **Zero config**: reads only `process.env` (never `~/env`), so importing it
  *   from a deploy-time script can't trigger env validation.
  *
- * Import from server-only code paths — it writes to `process.stdout` /
+ * Import from server-only code paths. It writes to `process.stdout` /
  * `process.stderr` and must never be pulled into a client bundle.
  */
 
@@ -44,7 +44,7 @@ function resolveLevel() {
 /**
  * Key names whose *value* is always redacted regardless of shape. Matched
  * case-insensitively as a substring so `clerkSecretKey`, `DATABASE_URL`,
- * `x-api-key`, etc. are all caught.
+ * `x-api-key`, etc. Are all caught.
  */
 const SENSITIVE_KEY =
   /secret|token|password|passwd|pwd|authorization|api[-_]?key|cookie|session|credential|connection|database_url|dsn|clerk|stripe|webhook|signature|bearer/i;

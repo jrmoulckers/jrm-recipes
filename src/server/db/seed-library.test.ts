@@ -62,7 +62,7 @@ describe("seed-library builders (#185)", () => {
   });
 
   it("keeps every id within the varchar(24) pk/fk bound", () => {
-    // pk()/fk() columns are varchar(24) (cuid2 length); a hard-coded seed id
+    // pk()/fk() columns are varchar(24) (cuid2 length). A hard-coded seed id
     // longer than 24 chars fails the insert with Postgres 22001 at db:seed.
     for (const id of allIds()) {
       expect(id.length).toBeLessThanOrEqual(24);

@@ -9,7 +9,7 @@ import { Button, type ButtonProps } from "~/components/ui/button";
 /**
  * Client entry point for buying a gift (issue #331). Mirrors `CheckoutButton`:
  * kicks off the one-time gift Checkout action and, on success, sends the buyer
- * to the Stripe-hosted URL; on failure it shows the action's own friendly note
+ * to the Stripe-hosted URL. On failure it shows the action's own friendly note
  * inline so an unconfigured environment degrades to a readable message rather
  * than a dead end.
  */

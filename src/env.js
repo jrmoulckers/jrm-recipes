@@ -6,7 +6,7 @@ import { z } from "zod";
  *
  * Design goal: the app must *boot and build* with zero configuration so a
  * contributor (or CI) can run it immediately. Anything that would otherwise
- * be required is optional here; the auth/db/storage modules degrade to a
+ * be required is optional here, and the auth/db/storage modules degrade to a
  * local "dev-bypass" mode when their vars are missing. Fill these in for
  * real data and production.
  *
@@ -66,7 +66,7 @@ export function findProductionAuthIssues(vars) {
   const issues = [];
   if (vars.NEXT_PUBLIC_DEV_AUTH_BYPASS === "1") {
     issues.push(
-      'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production — dev-bypass ' +
+      'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production: dev-bypass ' +
         "auth is a local/test-only affordance.",
     );
   }
@@ -93,35 +93,35 @@ export const env = createEnv({
     CLOUDINARY_API_SECRET: z.string().optional(),
     // Shared secret guarding the weekly-digest trigger endpoint (#354). When
     // unset the endpoint is disabled (503) so it can never be triggered
-    // anonymously; Vercel Cron sends it as `Authorization: Bearer <secret>`.
+    // anonymously. Vercel Cron sends it as `Authorization: Bearer <secret>`.
     CRON_SECRET: z.string().optional(),
-    // Transactional email (Resend) — optional. With `RESEND_API_KEY` unset the
+    // Transactional email (Resend), optional. With `RESEND_API_KEY` unset the
     // email layer degrades to a log/no-op provider (see ~/server/digest/email
     // `getEmailProvider`), so the digest cron builds + "sends" with zero config
     // and never throws on a missing provider. Set it to actually deliver.
     RESEND_API_KEY: z.string().optional(),
     // From-address for outgoing email (e.g. `Heirloom <hello@example.com>`).
-    // Optional — defaults to a safe placeholder; only meaningful once
+    // Optional: defaults to a safe placeholder, and is only meaningful once
     // `RESEND_API_KEY` is set. A real, verified sender is required to deliver.
     EMAIL_FROM: z.string().optional(),
-    // Billing (Stripe) — optional (#299). Like every other external service,
+    // Billing (Stripe), optional (#299). Like every other external service,
     // billing degrades gracefully: with these unset the app boots, builds, and
     // stays fully clickable, and all billing code paths no-op (see
     // ~/server/billing/stripe `isBillingConfigured`).
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     // Stripe Price IDs (e.g. `price_123…`) for purchasable plans (#303). Optional
-    // — with these unset checkout reports a friendly "not available" instead of
+    // With these unset, checkout reports a friendly "not available" instead of
     // failing, so the app still builds and runs with no billing config.
     STRIPE_PRICE_FAMILY: z.string().optional(),
-    // Stripe one-time Price ID for a gift purchase (#331). Optional — with it
+    // Stripe one-time Price ID for a gift purchase (#331). Optional: with it
     // unset the "Gift Heirloom" flow reports a friendly "not available" and the
     // app still builds and runs. Redeeming an already-issued code needs only the
     // database, never this key.
     STRIPE_PRICE_GIFT_FAMILY: z.string().optional(),
     // Structured-logger verbosity (#268): one of debug|info|warn|error|silent.
     // Read directly by ~/lib/log (never imported here) so a deploy-time script
-    // can log without triggering env validation; declared here only so it's a
+    // can log without triggering env validation. It is declared here only so it's a
     // documented, validated part of the schema. Unset ⇒ `info` in production,
     // `debug` elsewhere.
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).optional(),
@@ -135,15 +135,15 @@ export const env = createEnv({
     NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().optional(),
     NEXT_PUBLIC_CLOUDINARY_API_KEY: z.string().optional(),
-    // Product analytics (PostHog) — optional. When unset the whole analytics
+    // Product analytics (PostHog), optional. When unset the whole analytics
     // layer no-ops (see ~/lib/analytics) so the app boots + builds with no key.
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
     // Consent model for analytics. Set to "1" to require explicit opt-in
-    // consent before any capture (GDPR-style); unset/other = opt-out model.
+    // consent before any capture (GDPR-style). Unset/other = opt-out model.
     NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: z.string().optional(),
-    // Stripe publishable key (client-safe) — optional (#299). Used only by the
-    // billing UI; absent by default so the app runs with zero billing config.
+    // Stripe publishable key (client-safe), optional (#299). Used only by the
+    // billing UI. It is absent by default so the app runs with zero billing config.
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   },
 
@@ -192,7 +192,7 @@ export const env = createEnv({
  * build keep working with dev-bypass. Preview deploys skip *this* build-time
  * check but are still fail-closed at request time by the runtime guard in
  * `~/server/auth` (Vercel sets `NODE_ENV=production` on preview too), so any
- * deployed environment — preview or production — requires real Clerk keys.
+ * deployed environment, preview or production, requires real Clerk keys.
  */
 if (isProductionDeploy() && typeof window === "undefined") {
   const result = z

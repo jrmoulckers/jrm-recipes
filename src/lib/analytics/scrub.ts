@@ -31,7 +31,7 @@ const PII_KEY_PATTERNS = [
 
 /** Keys that are explicitly allowed even though they contain a flagged substring. */
 const ALLOWLIST = new Set<string>([
-  // PostHog's own reserved property; not user PII.
+  // PostHog's own reserved property, not user PII.
   "$feature_flag_response",
 ]);
 
@@ -60,7 +60,7 @@ function scrubValue(value: unknown): unknown {
 
 /**
  * Return a copy of `properties` with identifying keys removed and email/phone
- * values redacted. Pure and total — safe to call on any input, including nested
+ * values redacted. Pure and total. Safe to call on any input, including nested
  * objects. Returns `undefined` when there's nothing to send.
  */
 export function scrubProperties(

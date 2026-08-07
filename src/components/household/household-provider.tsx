@@ -43,7 +43,7 @@ function persist(size: number | null) {
     localStorage.setItem(HOUSEHOLD_COOKIE, value);
     document.cookie = `${HOUSEHOLD_COOKIE}=${encodeURIComponent(value)};path=/;max-age=${ONE_YEAR};samesite=lax`;
   } catch {
-    /* storage unavailable (private mode) — the choice still applies this session */
+    /* storage unavailable (private mode). The choice still applies this session */
   }
 }
 

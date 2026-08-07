@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   SignedIn,
   SignedOut,
@@ -31,6 +32,8 @@ export function AuthControls({
   isConfigured: boolean;
   user: SafeUser | null;
 }) {
+  const t = useTranslations("auth");
+
   if (!isConfigured) {
     const initials =
       user?.name
@@ -42,11 +45,14 @@ export function AuthControls({
     return (
       <div className="flex items-center gap-2">
         <Badge variant="muted" className="hidden sm:inline-flex">
-          Local mode
+          {t("localMode")}
         </Badge>
         <Avatar className="size-9">
           {user?.avatarUrl ? (
-            <AvatarImage src={user.avatarUrl} alt={user.name ?? "You"} />
+            <AvatarImage
+              src={user.avatarUrl}
+              alt={user.name ?? t("avatarAlt")}
+            />
           ) : null}
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
@@ -60,12 +66,12 @@ export function AuthControls({
         <div className="flex items-center gap-2">
           <SignInButton mode="modal">
             <Button variant="ghost" size="sm">
-              Sign in
+              {t("signIn")}
             </Button>
           </SignInButton>
           <SignUpButton mode="modal">
             <Button size="sm" onClick={() => track("signup_started", {})}>
-              Start your cookbook
+              {t("startCookbook")}
             </Button>
           </SignUpButton>
         </div>
@@ -85,6 +91,8 @@ export function StartCookingButton({
   isConfigured: boolean;
   className?: string;
 }) {
+  const t = useTranslations("auth");
+
   if (isConfigured) {
     return (
       <SignedOut>
@@ -94,7 +102,7 @@ export function StartCookingButton({
             className={className}
             onClick={() => track("signup_started", {})}
           >
-            Start your cookbook
+            {t("startCookbook")}
           </Button>
         </SignUpButton>
       </SignedOut>
@@ -102,7 +110,7 @@ export function StartCookingButton({
   }
   return (
     <Button size="lg" className={className} asChild>
-      <Link href="/recipes/new">Start your cookbook</Link>
+      <Link href="/recipes/new">{t("startCookbook")}</Link>
     </Button>
   );
 }

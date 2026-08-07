@@ -7,7 +7,7 @@ import { customUnits, userUnitPreferences } from "~/server/db/schema";
 
 /**
  * A user's saved unit preferences, or null when they've never set any (callers
- * then fall back to a locale default). Owner-scoped by construction — the unique
+ * then fall back to a locale default). Owner-scoped by construction. The unique
  * `user_id` means at most one row per user.
  */
 export async function getUnitPreferences(userId: string) {

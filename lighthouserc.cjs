@@ -3,7 +3,7 @@
  *
  * A runtime performance gate that complements the static bundle-size budget
  * (#206). CI builds the app, seeds an ephemeral throwaway Postgres (public
- * credentials — no repo secrets), starts the production server in dev-bypass
+ * credentials, no repo secrets), starts the production server in dev-bypass
  * mode, and runs Lighthouse against the key routes, reporting Core Web Vitals
  * lab budgets as warnings so regressions stay visible without blocking the PR
  * until real baselines are calibrated on shared CI hardware. (The static
@@ -16,10 +16,10 @@
  *
  * Budgets (lab, warn-level): LCP <= 2.5s, CLS <= 0.1, TBT <= 200ms, perf >= 0.8.
  * The desktop preset (1x CPU, no mobile throttling) keeps the lab metrics
- * stable on shared CI hardware; bump a budget deliberately with justification.
+ * stable on shared CI hardware. Bump a budget deliberately with justification.
  *
  * `.cjs` (not `.js`) because this package is ESM ("type":"module") and LHCI
- * loads the config with `require()`; CI passes `--config=./lighthouserc.cjs`.
+ * loads the config with `require()`. CI passes `--config=./lighthouserc.cjs`.
  */
 module.exports = {
   ci: {
@@ -49,7 +49,7 @@ module.exports = {
       },
     },
     upload: {
-      // Write HTML/JSON reports locally; CI publishes them as build artifacts.
+      // Write HTML/JSON reports locally. CI publishes them as build artifacts.
       target: "filesystem",
       outputDir: ".lighthouseci",
       reportFilenamePattern: "%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%",

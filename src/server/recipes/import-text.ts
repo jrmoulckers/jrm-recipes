@@ -2,12 +2,12 @@
  * Deterministic, offline plain-text recipe parser (#370).
  *
  * URL import needs a site to publish schema.org JSON-LD, but most heirloom
- * recipes arrive as freeform text — a relative's message, a typed note, an
+ * recipes arrive as freeform text. A relative's message, a typed note, an
  * OCR'd index card. This parser splits that text into the editor's row shapes
  * ({@link ImportedRecipe}) using only heuristics: a title, an ingredients
  * block, and a steps block. Ingredient lines reuse {@link parseIngredientLine}
- * (and thus the shared unit normalization); anything it can't structure still
- * imports as item text. Pure and unit-tested — no network, no AI.
+ * (and thus the shared unit normalization). Anything it can't structure still
+ * imports as item text. Pure and unit-tested. No network, no AI.
  */
 import {
   parseIngredientLine,
@@ -113,7 +113,7 @@ function buildIngredients(lines: string[]): ImportedIngredient[] {
 }
 
 /**
- * Parse freeform recipe text into the editor's row shapes. Never throws; an
+ * Parse freeform recipe text into the editor's row shapes. Never throws. An
  * unrecognizable blob still yields a title (first line) so the user lands in the
  * editor with something to edit.
  */

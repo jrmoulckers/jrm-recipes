@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // A public, published recipe from the seed (src/server/db/seed.ts) whose first
-// step carries a timer — so the offline Cook Mode assertions have a "Start"
-// button to exercise. The e2e CI job seeds Postgres so this route has content;
-// without a database the recipe/Cook Mode routes 404, so those steps are guarded.
+// step carries a timer, so the offline Cook Mode assertions have a "Start"
+// button to exercise. The e2e CI job seeds Postgres so this route has content.
+// Without a database the recipe/Cook Mode routes 404, so those steps are guarded.
 const RECIPE_SLUG = "nonnas-sunday-gravy";
 const RECIPE_PATH = `/recipes/${RECIPE_SLUG}`;
 const COOK_PATH = `${RECIPE_PATH}/cook`;
@@ -11,7 +11,7 @@ const COOK_PATH = `${RECIPE_PATH}/cook`;
 /**
  * Load the app and wait until the Serwist service worker is active AND controls
  * the page. Only a controlling worker intercepts fetches and fills the runtime
- * caches, which every offline assertion below depends on — so racing ahead of
+ * caches, which every offline assertion below depends on, so racing ahead of
  * `controller` is the main source of flakiness this guards against.
  */
 async function bootServiceWorker(page: Page): Promise<void> {
@@ -33,10 +33,14 @@ async function bootServiceWorker(page: Page): Promise<void> {
  * `#current-step-title` heading is present. Mirrors tests/e2e/cook-journey.spec.ts.
  */
 async function startCooking(page: Page): Promise<void> {
-  const startCooking = page.getByRole("button", { name: /start cooking/i });
-  if (await startCooking.count()) {
+  const startCooking = page.getByTestId("cook-mode-start");
+  const currentStep = page.locator("#current-step-title");
+
+  await expect(startCooking.first().or(currentStep).first()).toBeVisible();
+  if (await startCooking.first().isVisible()) {
     await startCooking.first().click();
   }
+  await expect(currentStep).toBeVisible();
 }
 
 test("serves the offline fallback for an uncached navigation", async ({
@@ -78,8 +82,8 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   await startCooking(page);
   await expect(page.locator("#current-step-title")).toBeVisible();
 
-  // Drop the connection and confirm both still load — from the SW cache, not
-  // the network.
+  // Drop the connection and confirm both still load from the SW cache, not the
+  // network.
   await context.setOffline(true);
 
   await page.goto(RECIPE_PATH);

@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  * schema. Asserted against the generated SQL text (no Postgres in unit tests).
  */
 
-// Vitest runs with the repo root as cwd; the migrations live in ./drizzle.
+// Vitest runs with the repo root as cwd. The migrations live in ./drizzle.
 const drizzleDir = join(process.cwd(), "drizzle");
 const migration = readdirSync(drizzleDir)
   .filter((f) => f.endsWith(".sql"))

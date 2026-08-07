@@ -1,12 +1,12 @@
 import { env } from "~/env";
 
 /**
- * Analytics configuration — the single place that reads the (optional) product
+ * Analytics configuration. The single place that reads the (optional) product
  * analytics env vars. Heirloom's zero-config principle holds: with no key set,
  * {@link isAnalyticsConfigured} is false and every analytics call degrades to a
  * safe no-op (see `./backend` + `./index`), so the app still boots and builds.
  *
- * We never wire a real vendor key into the source; the backend (PostHog) is only
+ * We never wire a real vendor key into the source. The backend (PostHog) is only
  * loaded when a deploy supplies `NEXT_PUBLIC_POSTHOG_KEY`.
  */
 
@@ -34,7 +34,7 @@ export function analyticsHost(): string {
   return env.NEXT_PUBLIC_POSTHOG_HOST ?? DEFAULT_POSTHOG_HOST;
 }
 
-/** True once a project key is present; gates all real capture. */
+/** True once a project key is present. Gates all real capture. */
 export function isAnalyticsConfigured(): boolean {
   return Boolean(analyticsKey());
 }
@@ -42,7 +42,7 @@ export function isAnalyticsConfigured(): boolean {
 /**
  * True when analytics requires explicit opt-in consent (GDPR-style) before any
  * capture. When false (the default), the app uses an opt-out model but still
- * honors DNT/GPC and an explicit opt-out — see `~/lib/analytics/consent`.
+ * honors DNT/GPC and an explicit opt-out. See `~/lib/analytics/consent`.
  */
 export function analyticsRequiresConsent(): boolean {
   return env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT === "1";

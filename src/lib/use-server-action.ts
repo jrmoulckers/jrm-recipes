@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import type {
@@ -10,8 +11,8 @@ import type {
   ActionSuccess,
   FieldErrors,
 } from "~/server/action-result";
-import { friendlyError } from "~/lib/error-copy";
-import { CONNECTIVITY_COPY, isOffline } from "~/lib/connectivity-copy";
+import { useFriendlyError } from "~/lib/error-copy";
+import { isOffline } from "~/lib/connectivity-copy";
 
 type SuccessToast<T, Args extends unknown[]> =
   string | ((result: ActionSuccess<T>, ...args: Args) => string);
@@ -22,12 +23,12 @@ type ErrorToast<Args extends unknown[]> =
 export type UseServerActionOptions<T, Args extends unknown[]> = {
   /** Runs after a successful result, before the optional `router.refresh()`. */
   onSuccess?: (result: ActionSuccess<T>, ...args: Args) => void;
-  /** Runs after a failed result — e.g. to roll back an optimistic update. */
+  /** Runs after a failed result. E.g. To roll back an optimistic update. */
   onError?: (failure: ActionFailure, ...args: Args) => void;
   /** Success toast: a fixed string, or one derived from the result and args. */
   successToast?: SuccessToast<T, Args>;
   /**
-   * Error toast. `true` toasts `failure.error`; a string or function overrides
+   * Error toast. `true` toasts `failure.error`. A string or function overrides
    * the message. Omit to stay silent (handle it via `onError` / the returned
    * `error`).
    */
@@ -54,7 +55,7 @@ export type UseServerActionReturn<Args extends unknown[]> = {
  *
  * Client components used to re-implement the same steps for every action: open a
  * `useTransition`, `await` the action, branch on `res.ok`, toast success/error,
- * and sometimes `router.refresh()` — each copy slightly different. This hook owns
+ * and sometimes `router.refresh()`, each copy slightly different. This hook owns
  * that plumbing against the shared {@link ActionResult} contract and exposes
  * `error` / `fieldErrors` so form callers get server validation without a bespoke
  * `setErrors` map.
@@ -69,6 +70,8 @@ export function useServerAction<T, Args extends unknown[]>(
   options: UseServerActionOptions<T, Args> = {},
 ): UseServerActionReturn<Args> {
   const router = useRouter();
+  const t = useTranslations("pwa.connectivity");
+  const friendlyError = useFriendlyError();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors | null>(
@@ -76,9 +79,13 @@ export function useServerAction<T, Args extends unknown[]>(
   );
 
   // Keep the latest options without forcing `run` to change identity so callers
-  // can safely pass inline option objects each render.
+  // can safely pass inline option objects each render. The translators are held
+  // the same way: they are not guaranteed to be referentially stable, and `run`
+  // is documented as stable.
   const optionsRef = React.useRef(options);
   optionsRef.current = options;
+  const copyRef = React.useRef({ t, friendlyError });
+  copyRef.current = { t, friendlyError };
 
   const reset = React.useCallback(() => {
     setError(null);
@@ -109,14 +116,15 @@ export function useServerAction<T, Args extends unknown[]>(
         setError(result.error);
         setFieldErrors(result.fieldErrors ?? null);
         if (opts.errorToast) {
+          const { t: translate, friendlyError: toFriendly } = copyRef.current;
           toast.error(
             typeof opts.errorToast === "function"
               ? opts.errorToast(result, ...args)
               : typeof opts.errorToast === "string"
                 ? opts.errorToast
                 : isOffline()
-                  ? CONNECTIVITY_COPY.actionBlocked
-                  : friendlyError(result.error),
+                  ? translate("actionBlocked")
+                  : toFriendly(result.error),
           );
         }
         opts.onError?.(result, ...args);

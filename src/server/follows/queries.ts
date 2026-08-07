@@ -159,11 +159,11 @@ export async function listFollowing(
 
 /**
  * The following feed: a reverse-chronological union of the *public* activity of
- * everyone `userId` follows. This is the privacy firewall of the whole feature —
+ * everyone `userId` follows. This is the privacy firewall of the whole feature.
  * it can ONLY ever surface public content:
  *
- * - public + published (non-deleted) recipes authored by a followee;
- * - reviews by a followee on a public + published recipe;
+ * - public + published (non-deleted) recipes authored by a followee.
+ * - reviews by a followee on a public + published recipe.
  * - cook-log entries by a followee that are NOT shared to any group
  *   (`sharedToGroupId IS NULL`) and whose recipe is public + published.
  *
@@ -226,7 +226,7 @@ function isPublicRecipe(
 
 /**
  * Collect the public activity of `authorIds`, newest-first, with cursor
- * pagination. Every branch filters strictly to public content — this function
+ * pagination. Every branch filters strictly to public content. This function
  * is deliberately the only place the following feed reads activity, so there is
  * a single, auditable public boundary.
  */
@@ -285,7 +285,7 @@ async function collectPublicActivity(
     });
   }
 
-  // 2) Reviews by a followee — kept only when the reviewed recipe is public.
+  // 2) Reviews by a followee. Kept only when the reviewed recipe is public.
   const reviewRows = await db.query.reviews.findMany({
     where: and(
       inArray(reviews.userId, authorIds),
@@ -337,7 +337,7 @@ async function collectPublicActivity(
     });
   }
 
-  // 3) Cook-log entries by a followee — only NON-group-shared cooks on a public
+  // 3) Cook-log entries by a followee. Only NON-group-shared cooks on a public
   //    recipe. Any cook shared to a group is family-private and excluded here.
   const cookRows = await db.query.cookLogEntries.findMany({
     where: and(

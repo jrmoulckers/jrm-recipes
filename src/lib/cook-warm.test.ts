@@ -26,7 +26,7 @@ describe("cookImageWidths", () => {
   });
 
   it("covers a desktop viewport", () => {
-    // 1440 * 1 → 1440 → rung 1920 (already the top; next-up clamps to itself).
+    // 1440 * 1 → 1440 → rung 1920 (already the top. Next-up clamps to itself).
     expect(cookImageWidths(1440, 1)).toEqual([1920]);
   });
 

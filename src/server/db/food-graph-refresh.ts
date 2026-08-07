@@ -8,7 +8,7 @@ import "server-only";
  * every recipe write. That per-save trigger opened a large, table-locking
  * transaction inside the user's request and timed saves out (504) on
  * serverless, so the recompute now runs on a scheduled cron
- * (`/api/cron/food-graph`) instead — see that route and `mutations.ts`.
+ * (`/api/cron/food-graph`) instead. See that route and `mutations.ts`.
  *
  * The coalescer stays here as a reusable, timer-free primitive: overlapping
  * calls collapse into at most one in-flight run plus one queued pass, so a
@@ -17,7 +17,7 @@ import "server-only";
  */
 
 type CoalescerOptions = {
-  /** Invoked when a run rejects; defaults to `console.error`. Never rethrows. */
+  /** Invoked when a run rejects. Defaults to `console.error`. Never rethrows. */
   onError?: (error: unknown) => void;
 };
 

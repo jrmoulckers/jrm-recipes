@@ -31,8 +31,8 @@ function isRemoteHttpUrl(src: string): boolean {
  * through Vercel's `/_next/image`.
  *
  * When `src` is some *other* remote `http(s)` host that is NOT on the media-host
- * allowlist — e.g. a cover/step image imported straight from a recipe's source
- * website via the zero-config paste/import flow — we render `<Image unoptimized>`.
+ * allowlist, e.g. a cover/step image imported straight from a recipe's source
+ * website via the zero-config paste/import flow, we render `<Image unoptimized>`.
  * `unoptimized` makes next/image skip both the optimizer and its `remotePatterns`
  * validation, so the pasted image *displays* instead of throwing at render time
  * and toppling the recipe page into its `error.tsx` boundary (issue: imported
@@ -40,11 +40,11 @@ function isRemoteHttpUrl(src: string): boolean {
  *
  * For any remaining source (relative asset, allowlisted host like Clerk avatars,
  * or a static import) we render a plain optimized `<Image>` so it keeps using the
- * built-in optimizer exactly as before — no behavior change and no "loader does
+ * built-in optimizer exactly as before. No behavior change and no "loader does
  * not implement width" warning for the pass-through case.
  *
  * It's a thin Client Component because next/image needs the function `loader`
- * prop bound on the client; the underlying `<img>` still server-renders and still
+ * prop bound on the client. The underlying `<img>` still server-renders and still
  * emits the LCP preload when `priority` is set.
  */
 export function CloudinaryImage({ src, alt, ...rest }: ImageProps) {

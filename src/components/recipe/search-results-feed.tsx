@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { loadMoreSearchAction } from "~/server/recipes/search-actions";
 import { type RecipeSearchResult } from "~/server/recipes/queries";
@@ -42,6 +43,7 @@ export function SearchResultsFeed({
   quickPlan?: QuickPlanContext;
   correction?: { from: string; to: string };
 }) {
+  const t = useTranslations("recipe");
   const [items, setItems] = React.useState<RecipeSearchResult[]>(initialItems);
   const [nextOffset, setNextOffset] = React.useState<number | null>(
     initialNextOffset,
@@ -72,25 +74,25 @@ export function SearchResultsFeed({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            Results
+            {t("searchResults.title")}
           </h2>
           {correction && (
             <p className="text-sm text-muted-foreground">
-              No exact matches for{" "}
-              <span className="font-medium text-foreground">
-                &ldquo;{correction.from}&rdquo;
-              </span>
-              . Showing results for{" "}
-              <span className="font-medium text-foreground">
-                &ldquo;{correction.to}&rdquo;
-              </span>
-              .
+              {t.rich("searchResults.correction", {
+                from: correction.from,
+                to: correction.to,
+                strong: (chunks) => (
+                  <span className="font-medium text-foreground">{chunks}</span>
+                ),
+              })}
             </p>
           )}
         </div>
         <span className="text-sm text-muted-foreground">
-          {items.length}
-          {hasMore ? "+" : ""} recipe{items.length === 1 && !hasMore ? "" : "s"}
+          {t("searchResults.count", {
+            count: items.length,
+            plus: hasMore ? "+" : "",
+          })}
         </span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,7 +118,7 @@ export function SearchResultsFeed({
             onClick={onLoadMore}
             disabled={pending}
           >
-            {pending ? "Loading…" : "Load more recipes"}
+            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
           </Button>
         </div>
       )}

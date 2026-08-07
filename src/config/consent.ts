@@ -1,9 +1,9 @@
 /**
- * Analytics consent — persisted like the app's other per-device preferences
+ * Analytics consent. Persisted like the app's other per-device preferences
  * (a11y/theme) so the server can render the correct state with no flash.
  *
  * Consent is intentionally simple: a single cookie holding one of three states.
- * "unset" means the user hasn't chosen yet; whether that permits capture depends
+ * "unset" means the user hasn't chosen yet. Whether that permits capture depends
  * on `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` (opt-in vs opt-out), enforced by the
  * runtime gate in `~/lib/analytics/consent`.
  */

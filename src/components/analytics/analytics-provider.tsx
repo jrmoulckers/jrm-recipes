@@ -12,7 +12,7 @@ import { createPostHogBackend } from "~/lib/analytics/posthog-client";
  * Mounts the analytics backend once for the whole app (issue #306) and keeps the
  * browser identity in sync with the signed-in user (issue #321).
  *
- * When no key is configured this renders its children and does nothing else —
+ * When no key is configured this renders its children and does nothing else.
  * the app boots, builds, and runs with zero analytics config. When a key is
  * present it lazily loads the PostHog adapter and registers it as the client
  * backend so the typed `track`/`identify` API (`~/lib/analytics`) starts
@@ -31,7 +31,7 @@ export function AnalyticsProvider({
   userId?: string | null;
 }) {
   // `ready` gates identity on the async backend mount: when analytics is
-  // unconfigured we're immediately "ready" (identify is a harmless no-op);
+  // When unconfigured, we are immediately "ready" because identify is a harmless no-op.
   // when configured we wait for the real backend so the identify isn't lost.
   const [ready, setReady] = React.useState(() => !isAnalyticsConfigured());
 

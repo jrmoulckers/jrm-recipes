@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
  *
  * Sizing note: the global `button` rule in globals.css floors real buttons to
  * `--tap-min` (44px). That is what we want for the standalone `md`/`lg` corner
- * buttons. The inline `sm` size — used inside chips and pills — instead pins its
+ * buttons. The inline `sm` size, used inside chips and pills, instead pins its
  * own 24px box (still ≥ WCAG 2.5.8 AA target size) so it never stretches the row
  * it sits in.
  */
@@ -24,11 +24,11 @@ const closeButtonVariants = cva(
   {
     variants: {
       variant: {
-        // Transparent until hovered — for use on plain surfaces.
+        // Transparent until hovered for use on plain surfaces.
         ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
-        // A subtle filled chip — for use inside pills/badges and busy rows.
+        // A subtle filled chip for use inside pills, badges, and busy rows.
         soft: "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
-        // A raised, legible button — for corners floating over imagery/content.
+        // A raised, legible button for corners floating over imagery or content.
         overlay:
           "border border-border bg-card/85 text-muted-foreground shadow-token backdrop-blur hover:bg-card hover:text-foreground",
       },
@@ -52,14 +52,14 @@ export interface CloseButtonProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof closeButtonVariants> {
   /**
-   * Accessible name for the control (e.g. "Remove photo", "Dismiss"). Required —
-   * an icon-only button is invisible to screen readers without it.
+   * Accessible name for the control (e.g. "Remove photo", "Dismiss"). Required
+   * because an icon-only button is invisible to screen readers without it.
    */
   label: string;
 }
 
 /**
- * Icon-only dismiss button. Renders an X by default; pass `children` to use a
+ * Icon-only dismiss button. Renders an X by default. Pass `children` to use a
  * different icon (e.g. a spinner while a remove is pending).
  */
 const CloseButton = React.forwardRef<HTMLButtonElement, CloseButtonProps>(

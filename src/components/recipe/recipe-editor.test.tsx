@@ -110,7 +110,7 @@ describe("RecipeEditor native selects (iOS zoom guard)", () => {
     await openVisibilityPopdown(user);
 
     // Group visibility reveals the conditional Group select inside the popdown
-    // alongside Visibility and Status; Difficulty stays in the main form. Every
+    // alongside Visibility and Status. Difficulty stays in the main form. Every
     // one of them is guarded.
     const selects = Array.from(document.querySelectorAll("select"));
     expect(selects.length).toBeGreaterThanOrEqual(4);

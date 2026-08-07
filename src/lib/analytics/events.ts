@@ -1,5 +1,5 @@
 /**
- * The Heirloom analytics **taxonomy** — the single source of truth for every
+ * The Heirloom analytics **taxonomy**. The single source of truth for every
  * event name and its property shape (issue #305).
  *
  * `track`/`captureServer` are typed against {@link EventProperties} so a misnamed
@@ -7,8 +7,8 @@
  * `recipe_created` vs `create_recipe` drift that plagues ad-hoc instrumentation.
  *
  * Rules for properties:
- * - **No PII, ever** — no emails, names, handles, or raw ids of people. Recipe
- *   and group ids are opaque cuids and are fine; user identity is attached only
+ * - **No PII, ever**. No emails, names, handles, or raw ids of people. Recipe
+ *   and group ids are opaque cuids and are fine. User identity is attached only
  *   via server-side `identify` (issue #321), never as an event property.
  * - Values are constrained to enums/counts/flags wherever possible so insights
  *   stay low-cardinality and safe.
@@ -36,7 +36,7 @@ export type InviteRole = "admin" | "member" | "kid";
 /** Where a waitlist email was captured (mirrors the waitlist source enum). */
 export type WaitlistSource = "landing" | "hero" | "closing";
 
-/** Coarse group-size buckets — keeps household size low-cardinality + non-identifying. */
+/** Coarse group-size buckets, keeping household size low-cardinality + non-identifying. */
 export type GroupSizeBucket = "1" | "2-5" | "6-10" | "11+";
 
 /**
@@ -73,7 +73,7 @@ export interface EventProperties {
 
   // --- Cook Mode lifecycle (#313) ---
   // householdId (#338): the recipe's owning group, or null for a personal
-  // recipe — lets returning-cook retention roll up per family/household.
+  // recipe. Lets returning-cook retention roll up per family/household.
   cook_started: {
     recipeId: string;
     totalSteps: number;
@@ -111,7 +111,7 @@ export interface EventProperties {
     sizeBucket: GroupSizeBucket;
   };
   invite_accepted: { groupId: string; role: string };
-  // Shareable invite links (#343): a manager minted a link; joins reuse
+  // Shareable invite links (#343): a manager minted a link. Joins reuse
   // `invite_accepted`. Role is the (non-privileged) role the link grants.
   invite_link_created: { groupId: string; role: InviteRole };
   // Invite-link revocation (#366): a manager killed a shareable link so it can
@@ -130,7 +130,7 @@ export interface EventProperties {
 
   // --- Top-of-funnel waitlist capture (#351) ---
   // `duplicate` flags a resubmission of an already-captured email so the
-  // conversion funnel can dedupe. No PII — the email is never an event property.
+  // conversion funnel can dedupe. No PII. The email is never an event property.
   waitlist_joined: { source: WaitlistSource; duplicate: boolean };
 
   // --- Weekly digest retention loop (#354) ---

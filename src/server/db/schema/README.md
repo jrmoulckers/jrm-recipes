@@ -1,4 +1,4 @@
-# `src/server/db/schema/` — schema source of truth
+# `src/server/db/schema/`. Schema source of truth
 
 Drizzle table definitions. This is the **source of truth** for the database
 schema; the SQL in [`../../../../drizzle/`](../../../../drizzle/) is generated

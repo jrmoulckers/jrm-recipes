@@ -190,7 +190,7 @@ describe("getPersonalActivity (cross-group home feed)", () => {
       { groupId: "g1" },
       { groupId: "g2" },
     ]);
-    // Recipes live in both groups; unioned by the aggregation.
+    // Recipes live in both groups. Unioned by the aggregation.
     findManyMocks.recipes.mockResolvedValue([
       {
         id: "r1",
@@ -230,7 +230,7 @@ describe("getPersonalActivity (cross-group home feed)", () => {
       "cook:c1", // Jan 3
       "recipe:r1", // Jan 1
     ]);
-    // A single aggregated recipe query — not one per group (no leakage loop).
+    // A single aggregated recipe query, not one per group (no leakage loop).
     expect(findManyMocks.recipes).toHaveBeenCalledTimes(1);
     expect(page.nextCursor).toBeNull();
   });
@@ -300,7 +300,7 @@ describe("getPersonalActivity (cross-group home feed)", () => {
   });
 
   it("dedupes group ids resolved from memberships", async () => {
-    // A viewer could have duplicate membership rows across queries; the scope
+    // A viewer could have duplicate membership rows across queries. The scope
     // should collapse to a single group so activity isn't double-counted.
     findManyMocks.groupMembers.mockResolvedValueOnce([
       { groupId: "g1" },

@@ -40,11 +40,11 @@ import {
  * units + typical quantities people use for it, its common prep methods, and its
  * near-neighbours in the co-occurrence graph.
  *
- * The pure ranking lives in `food-mining.ts` (unit-tested); each function here
- * just fetches rows and delegates. All functions degrade gracefully — with no
+ * The pure ranking lives in `food-mining.ts` (unit-tested). Each function here
+ * just fetches rows and delegates. All functions degrade gracefully: with no
  * database configured they return empty/fallback data, so the editor keeps its
  * synchronous static suggestions offline. `getSuggestedUnitsForFood` itself is
- * intentionally *not* re-exported here; it stays pure/synchronous in
+ * intentionally *not* re-exported here. It stays pure/synchronous in
  * `food-units.ts` for the client picker (ADR-5, additive API).
  */
 
@@ -91,7 +91,7 @@ export type FoodSuggestion = {
 
 /**
  * Resolve free text to a canonical node id. Tries the static canonicalizer first
- * (fast, offline, covers the curated backbone); falls back to the mined
+ * (fast, offline, covers the curated backbone). Falls back to the mined
  * `food_aliases` table for foods that exist only in the corpus.
  */
 async function resolveNodeId(
@@ -232,7 +232,7 @@ export async function getPrepsForFood(
 }
 
 /**
- * Near-neighbour foods for one or more ingredients already in a recipe — the
+ * Near-neighbour foods for one or more ingredients already in a recipe. The
  * "you might also add…" signal. Ranks the co-occurrence graph by lift, excludes
  * the query foods themselves, and returns the strongest partners.
  */
@@ -386,7 +386,7 @@ export async function getPersonalizedPrepsForFood(
 }
 
 /**
- * Reverse index: the live recipes that use a food, most-referencing first — the
+ * Reverse index: the live recipes that use a food, most-referencing first. The
  * "what can I make with tomatoes / recipes using this food" signal. Tombstoned
  * recipes are excluded (the link table only holds live rows, but we join and
  * re-check defensively). Empty when the food is unknown or no DB is configured.
@@ -418,7 +418,7 @@ export async function getRecipesUsingFood(
  * the seeded `food_nutrition` table (which a future USDA sync could refresh
  * independently of the curated static module), and falls back to the pure
  * static dataset in `food-nutrition.ts` when the DB isn't configured or has no
- * row — so nutrition is available offline just like the unit suggestions.
+ * row, so nutrition is available offline just like the unit suggestions.
  * Returns `null` when the food doesn't resolve or has no curated facts.
  */
 export async function getNutritionForFood(

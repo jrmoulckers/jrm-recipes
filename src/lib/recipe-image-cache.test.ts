@@ -8,7 +8,7 @@ import {
   type RecipeImageRequest,
 } from "./recipe-image-cache";
 
-/** Build a minimal request shape; a real `Request` can't set `destination`. */
+/** Build a minimal request shape. A real `Request` can't set `destination`. */
 const makeRequest = (
   url: string,
   destination: Request["destination"] = "image",
@@ -64,7 +64,7 @@ describe("isRecipeImageRequest", () => {
   });
 
   it("leaves non-Cloudinary optimized images on the default next-image route", () => {
-    // e.g. Clerk avatars — still optimized, but not recipe images.
+    // e.g. Clerk avatars. Still optimized, but not recipe images.
     expect(
       isRecipeImageRequest(
         makeRequest(optimizerUrl("https://img.clerk.com/avatar.png")),

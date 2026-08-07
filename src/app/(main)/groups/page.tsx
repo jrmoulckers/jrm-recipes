@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import { type ReactNode } from "react";
 import Link from "next/link";
 import {
   Database,
@@ -7,6 +8,7 @@ import {
   UtensilsCrossed,
   Users,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -16,16 +18,20 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { CreateGroupDialog } from "~/components/groups/create-group-dialog";
 import { GroupCard } from "~/components/groups/group-card";
 
-export const metadata: Metadata = {
-  title: "Family",
-  description: "Shared cookbooks for the people you cook with.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("groups.title"),
+    description: t("groups.description"),
+  };
+}
 
 export default async function GroupsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
   const groups = user ? await listMyGroups(user.id) : [];
+  const t = await getTranslations("groups.page");
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
@@ -34,35 +40,34 @@ export default async function GroupsPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Your families &amp; groups
+            {t("title")}
           </h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            Gather the cooks, tasters, and story-keepers who make your recipes
-            feel like home.
+            {t("description")}
           </p>
         </div>
         {user && dbConfigured ? (
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" asChild>
               <Link href="/settings/dietary">
-                <UtensilsCrossed /> Dietary profiles
+                <UtensilsCrossed /> {t("links.dietary")}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/settings/blocked">
-                <UserX /> Blocked people
+                <UserX /> {t("links.blocked")}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/settings/data">
-                <Download /> Download cookbook
+                <Download /> {t("links.download")}
               </Link>
             </Button>
             <CreateGroupDialog />
           </div>
         ) : (
           <Button size="lg" disabled>
-            New group
+            {t("newGroup")}
           </Button>
         )}
       </header>
@@ -82,18 +87,20 @@ export default async function GroupsPage() {
   );
 }
 
-function EmptyGroups() {
+async function EmptyGroups() {
+  const t = await getTranslations("groups.page.empty");
   return (
     <EmptyState
       icon={<Users />}
-      title="Start a family table"
-      description="Create a space for the people who share weeknight wins, holiday classics, and the little notes that make a dish yours."
+      title={t("title")}
+      description={t("body")}
       action={<CreateGroupDialog />}
     />
   );
 }
 
-function SignInNudge() {
+async function SignInNudge() {
+  const t = await getTranslations("groups.page.signIn");
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -102,31 +109,28 @@ function SignInNudge() {
         </span>
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Family groups are private
+            {t("title")}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Sign in from the header to create a group and cook together.
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("body")}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ConnectDbNotice() {
+async function ConnectDbNotice() {
+  const t = await getTranslations("dbNotice");
   return (
     <EmptyState
       icon={<Database />}
-      title="Connect a database to start"
-      description={
-        <>
-          Set{" "}
+      title={t("title")}
+      description={t.rich("groups", {
+        code: (chunks: ReactNode) => (
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            DATABASE_URL
-          </code>{" "}
-          or start the local Postgres container.
-        </>
-      }
+            {chunks}
+          </code>
+        ),
+      })}
     />
   );
 }

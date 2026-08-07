@@ -88,7 +88,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   const storedPinned = useBottomNavStore((s) => s.pinned);
 
   // Hide chrome in immersive / focused routes (cook mode, print, and the
-  // recipe editor — its sticky mobile Save/Cancel bar owns the bottom edge,
+  // recipe editor. Its sticky mobile Save/Cancel bar owns the bottom edge,
   // issue #294).
   if (
     pathname.includes("/cook") ||
@@ -108,7 +108,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   // The Profile slot is always the fixed last tab.
   const count = tabs.length + 1;
   // First matching tab drives the sliding indicator. Computed from the pathname
-  // so it's correct on SSR, initial load, and back/forward — no flash.
+  // so it's correct on SSR, initial load, and back/forward. No flash.
   const activeIndex = tabs.findIndex((item) => isActive(pathname, item));
   const indicatorIndex =
     activeIndex >= 0 ? activeIndex : profileActive ? count - 1 : -1;
@@ -162,7 +162,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
             </li>
           );
         })}
-        {/* Fixed Profile / account slot — the single hub for utilities, the
+        {/* Fixed Profile / account slot. The single hub for utilities, the
             non-pinned destinations, and account actions. */}
         <li className="flex-1">
           <Link
@@ -183,6 +183,7 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
                     "-translate-y-0.5 scale-110 ring-2 ring-primary",
                 )}
               >
+                {/* Decorative: the avatar repeats the name rendered beside it. */}
                 {user.avatarUrl ? (
                   <AvatarImage src={user.avatarUrl} alt="" />
                 ) : null}

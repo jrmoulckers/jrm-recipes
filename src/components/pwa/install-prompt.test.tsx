@@ -13,7 +13,7 @@ import { InstallPrompt, shouldShowIosInstallTip } from "./install-prompt";
 
 /**
  * Render inside the i18n provider so the component's `useTranslations` resolves
- * against the real English catalog — the copy is unchanged, so every assertion
+ * against the real English catalog. The copy is unchanged, so every assertion
  * below still matches.
  */
 const render = (ui: Parameters<typeof rtlRender>[0]) =>
@@ -56,7 +56,7 @@ describe("shouldShowIosInstallTip", () => {
 
 const DISMISS_KEY = "heirloom:pwa-install-dismissed";
 
-/** jsdom lacks `matchMedia`; the component probes it via `isStandalone()`. */
+/** jsdom lacks `matchMedia`. The component probes it via `isStandalone()`. */
 function stubMatchMedia(matches = false) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches,
@@ -160,13 +160,13 @@ describe("InstallPrompt modal dialog semantics", () => {
     fireBeforeInstallPrompt();
     await screen.findByRole("dialog", { name: /install heirloom/i });
 
-    // Blur into the page body to prove Escape isn't bound to the banner div —
+    // Blur into the page body to prove Escape isn't bound to the banner div.
     // it works even before the user has tabbed into the dialog.
     act(() => (document.activeElement as HTMLElement | null)?.blur());
     fireEvent.keyDown(document, { key: "Escape" });
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    // Escape is a real dismissal — remembered like clicking the X.
+    // Escape is a real dismissal. Remembered like clicking the X.
     expect(window.localStorage.getItem(DISMISS_KEY)).not.toBeNull();
   });
 
@@ -196,7 +196,7 @@ describe("InstallPrompt modal dialog semantics", () => {
     const removeSpy = vi.spyOn(document, "removeEventListener");
 
     render(<InstallPrompt />);
-    // Nothing bound while the prompt is closed — Escape isn't swallowed.
+    // Nothing bound while the prompt is closed. Escape isn't swallowed.
     expect(addSpy.mock.calls.filter((c) => c[0] === "keydown")).toHaveLength(0);
 
     fireBeforeInstallPrompt();
@@ -204,13 +204,13 @@ describe("InstallPrompt modal dialog semantics", () => {
 
     // The keydown listener is bound by an effect that runs after the dialog
     // commits (it needs the container ref), so poll until it registers rather
-    // than asserting synchronously — otherwise the check races the effect flush.
+    // than asserting synchronously. Otherwise the check races the effect flush.
     await waitFor(() =>
       expect(addSpy.mock.calls.filter((c) => c[0] === "keydown")).toHaveLength(
         1,
       ),
     );
-    // Exactly one registration — no double-binding.
+    // Exactly one registration. No double-binding.
     const added = addSpy.mock.calls.filter((c) => c[0] === "keydown");
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -234,7 +234,7 @@ describe("InstallPrompt modal dialog semantics", () => {
         name: /install heirloom/i,
       });
       expect(dialog).toHaveAttribute("aria-modal", "true");
-      // iOS has no programmatic install, so no Install button — only the tip…
+      // iOS has no programmatic install, so no Install button. Only the tip…
       expect(screen.queryByRole("button", { name: /^install$/i })).toBeNull();
       const dismiss = screen.getByRole("button", {
         name: /dismiss install prompt/i,

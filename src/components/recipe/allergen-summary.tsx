@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, Eye, ShieldCheck } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -13,7 +14,7 @@ import {
  * A compact, server-rendered "Contains" allergen summary for a recipe. Rolls
  * the ingredient list up with {@link summarizeAllergens} and renders the result
  * as high-contrast caution badges so a cook can see the allergen picture before
- * committing to a recipe — without scanning every line.
+ * committing to a recipe, without scanning every line.
  *
  * Detection is best-effort (it can't see brand formulations or unusual
  * phrasings), so the copy always pairs the badges with a "double-check"
@@ -30,6 +31,7 @@ export function AllergenSummary({
   /** Optional id so an outer heading can label the region. */
   headingId?: string;
 }) {
+  const t = useTranslations("allergenSummary");
   const allergens = summarizeAllergens(items);
   const hidden = summarizeHiddenAllergens(items);
   const hiddenNotes = [...new Set(hidden.map((warning) => warning.note))];
@@ -46,9 +48,7 @@ export function AllergenSummary({
           className="mt-0.5 size-4 shrink-0 text-success"
           aria-hidden
         />
-        <p>
-          No common allergens detected — always double-check the ingredients.
-        </p>
+        <p>{t("none")}</p>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function AllergenSummary({
   return (
     <section
       aria-labelledby={headingId}
-      aria-label={headingId ? undefined : "Allergen summary"}
+      aria-label={headingId ? undefined : t("aria")}
       className={cn(
         "rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5",
         className,
@@ -69,12 +69,9 @@ export function AllergenSummary({
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-warning-foreground"
           >
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
-            Contains
+            {t("contains")}
           </span>
-          <ul
-            className="flex flex-wrap gap-1.5"
-            aria-label="Contains allergens"
-          >
+          <ul className="flex flex-wrap gap-1.5" aria-label={t("containsList")}>
             {allergens.map((allergen) => (
               <li key={allergen}>
                 <Badge variant="warning">{ALLERGEN_LABELS[allergen]}</Badge>
@@ -93,12 +90,9 @@ export function AllergenSummary({
         >
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
             <Eye className="size-4 shrink-0" aria-hidden />
-            Often hides
+            {t("oftenHides")}
           </span>
-          <ul
-            className="flex flex-wrap gap-1.5"
-            aria-label="Possibly hidden allergens"
-          >
+          <ul className="flex flex-wrap gap-1.5" aria-label={t("hiddenList")}>
             {hidden.map((warning) => (
               <li key={warning.allergen}>
                 <Badge variant="outline">
@@ -118,10 +112,7 @@ export function AllergenSummary({
         </ul>
       )}
 
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        Best-effort detection — always double-check the ingredients for
-        allergies.
-      </p>
+      <p className="mt-1.5 text-xs text-muted-foreground">{t("disclaimer")}</p>
     </section>
   );
 }

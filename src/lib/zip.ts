@@ -5,7 +5,7 @@
  * third party involved (a wary user's whole reason for wanting a backup), so we
  * assemble the archive ourselves instead of pulling in a zip dependency. Entries
  * are STORED (no compression) which keeps the format trivial and 100%
- * interoperable — recipe Markdown/JSON is small, so the size cost is negligible
+ * interoperable. Recipe Markdown/JSON is small, so the size cost is negligible
  * and every OS (Windows Explorer, macOS, `unzip`) opens it.
  *
  * Implements just the subset of the ZIP spec (APPNOTE) we need: a local file
@@ -50,7 +50,7 @@ function toBytes(data: string | Uint8Array): Uint8Array {
 /**
  * Build a STORED (uncompressed) ZIP archive from the given entries.
  *
- * Fixed DOS timestamp (1980-01-01) keeps output deterministic; the spec forbids
+ * Fixed DOS timestamp (1980-01-01) keeps output deterministic. The spec forbids
  * a zero date, so the minimum valid value is used.
  */
 export function createZip(entries: ZipEntry[]): Uint8Array {

@@ -16,7 +16,7 @@ export function resolveFlag(
   return flags[key]!;
 }
 
-/** True when a flag is on — any value other than `false`/absent (covers variants). */
+/** True when a flag is on. Any value other than `false`/absent (covers variants). */
 export function isFlagEnabled(value: FlagValue | undefined): boolean {
   return value !== undefined && value !== false;
 }

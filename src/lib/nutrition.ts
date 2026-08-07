@@ -1,6 +1,6 @@
 /**
  * Per-serving nutrition math. Recipes store nutrition *per serving* (issue
- * #414); this module turns those stored numbers into the rows a facts panel
+ * #414). This module turns those stored numbers into the rows a facts panel
  * renders and scales them to a whole-recipe total when asked.
  *
  * Everything here is pure and framework-free so the scaling is exhaustively
@@ -62,7 +62,7 @@ export function hasNutrition(n: Nutrition): boolean {
 
 /**
  * Scale a per-serving record by `factor`. Used to derive whole-recipe totals
- * (`factor` = the current serving count). Absent nutrients stay absent; present
+ * (`factor` = the current serving count). Absent nutrients stay absent. Present
  * ones are multiplied. A non-finite or negative factor is treated as 1 so the
  * panel can never show nonsense from a bad serving count.
  */
@@ -119,13 +119,13 @@ export function formatNutrient(value: number, decimals: number): string {
  * Daily Value and surface a low/moderate/high band the UI can badge.
  *
  * Note: the schema stores total sugars, which we treat as the added-sugar proxy
- * against the 50 g DV — honest labelling ("Sugars") keeps that explicit.
+ * against the 50 g DV. Honest labelling ("Sugars") keeps that explicit.
  */
 export type NutrientLevel = "low" | "moderate" | "high";
 
 /**
  * FDA Daily Values used for %DV, kept in one place so thresholds are easy to
- * audit and adjust. Sodium 2300 mg; added sugars 50 g (2000 kcal reference).
+ * audit and adjust. Sodium 2300 mg. Added sugars 50 g (2000 kcal reference).
  */
 export const DAILY_VALUES = [
   { key: "sodiumMg", label: "Sodium", unit: "mg", dailyValue: 2300 },
@@ -196,9 +196,9 @@ export function nutritionFlags(perServing: Nutrition): DailyValueFlag[] {
 
 /**
  * How a serving's calories fit a family member's daily calorie goal (issue
- * #430). A bare calorie count doesn't answer the question a cook actually asks
- * — "how much of today's budget is this?" — so we frame it against the goal set
- * on a dietary profile.
+ * #430). A bare calorie count doesn't answer the question a cook actually asks,
+ * "how much of today's budget is this?", so we frame it against the goal set on
+ * a dietary profile.
  *
  * Returns a rounded percentage, or null when either input is missing or the
  * goal is nonpositive, so the UI hides the indicator rather than rendering

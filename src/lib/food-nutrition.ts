@@ -4,14 +4,14 @@
  * **not** mined from user recipes: it is per canonical food, per 100 g, sourced
  * from the public-domain USDA FoodData Central "Foundation" / "SR Legacy"
  * datasets (`sourceRef` carries the FDC id). Coverage matters more than
- * three-decimal precision — these values let the app estimate a recipe's
+ * three-decimal precision. These values let the app estimate a recipe's
  * per-serving nutrition and roll a meal plan up into a weekly total.
  *
  * Like `food-db.ts` and `food-units.ts`, this module is pure and
  * dependency-free (no `units.ts`, no `db`, no `server-only`), so it stays
  * client-safe, offline, and trivially unit-testable, and can never become a
  * merge hotspot with the units-conversion library. The `food_nutrition` Drizzle
- * table mirrors this dataset and is seeded from it; server features may read the
+ * table mirrors this dataset and is seeded from it. Server features may read the
  * table, but this module is the single source of truth.
  */
 import { canonicalFood, densityForFood, foodSlug } from "./food-db";
@@ -19,8 +19,8 @@ import type { Nutrition } from "./nutrition";
 
 /**
  * Nutrition per 100 g of the edible portion of a food. Macros are always
- * present; the finer breakdowns (`fiberG`, `sugarG`, `sodiumMg`) are optional
- * because coverage is uneven in the source data — treat a missing value as
+ * present. The finer breakdowns (`fiberG`, `sugarG`, `sodiumMg`) are optional
+ * because coverage is uneven in the source data. Treat a missing value as
  * "unknown", not zero.
  */
 export type NutritionFacts = {
@@ -38,7 +38,7 @@ export type NutritionFacts = {
   sugarG?: number;
   /** Sodium in milligrams per 100 g, when known. */
   sodiumMg?: number;
-  /** Provenance — the USDA FDC id (or other authoritative reference). */
+  /** Provenance. The USDA FDC id (or other authoritative reference). */
   sourceRef: string;
 };
 
@@ -47,10 +47,10 @@ type NutritionSeed = { name: string } & NutritionFacts;
 
 /**
  * The curated nutrition table. Values are per 100 g from USDA FoodData Central
- * (public domain); `sourceRef` is the FDC id of the generic Foundation/SR Legacy
+ * (public domain). `sourceRef` is the FDC id of the generic Foundation/SR Legacy
  * item. Names must correspond to a canonical food in `food-db.ts` so the two key
  * onto the same node via {@link foodSlug}. Ordered loosely by category for
- * readability; lookup is by slug and order-independent.
+ * readability. Lookup is by slug and order-independent.
  */
 const NUTRITION_SEEDS: NutritionSeed[] = [
   // --- Liquids -----------------------------------------------------------
@@ -1126,7 +1126,7 @@ const NUTRITION_SEEDS: NutritionSeed[] = [
 
 /**
  * Nutrition facts keyed by canonical food slug. Built once at module load from
- * {@link NUTRITION_SEEDS}; the slug is derived with {@link foodSlug} so this map
+ * {@link NUTRITION_SEEDS}. The slug is derived with {@link foodSlug} so this map
  * and `food-db.ts` / `food_items` all agree on the key.
  */
 export const NUTRITION_BY_SLUG: ReadonlyMap<string, NutritionFacts> = new Map(
@@ -1211,8 +1211,8 @@ function canonicalUnit(unit: string): string {
 }
 
 /**
- * Convert a `quantity` of `unit` into grams. Mass units convert directly; volume
- * units need a `densityGPerMl` (grams per mL) and return `null` without one;
+ * Convert a `quantity` of `unit` into grams. Mass units convert directly. Volume
+ * units need a `densityGPerMl` (grams per mL) and return `null` without one.
  * count/unknown units (each, pinch, clove, …) return `null` because their weight
  * isn't knowable from the token alone. A non-finite/negative quantity is `null`.
  */
@@ -1280,7 +1280,7 @@ export type NutritionRollup = {
 /**
  * Roll a list of ingredient lines up into total nutrition. An ingredient
  * contributes only when it both resolves to curated facts *and* can be converted
- * to grams; everything else is skipped but still counted toward `total`, so
+ * to grams. Everything else is skipped but still counted toward `total`, so
  * `coverage` honestly reflects how complete the estimate is. Pure and
  * order-independent.
  */
@@ -1325,7 +1325,7 @@ export function estimateRecipeNutrition(
  * list, in the app's `Nutrition` shape (per serving) plus the provenance of the
  * estimate. `perServing` is empty (`{}`) when nothing could be sourced, so it
  * flows straight into `hasNutrition` / `NutritionPanel` and simply renders
- * nothing. `saturatedFatGrams` is always absent — the USDA generic items this is
+ * nothing. `saturatedFatGrams` is always absent. The USDA generic items this is
  * built from don't break fat out that far.
  */
 export type EstimatedNutrition = {
@@ -1343,7 +1343,7 @@ export type EstimatedNutrition = {
  * Estimate a recipe's **per-serving** nutrition from its ingredient list by
  * rolling the whole-recipe totals up (via {@link estimateRecipeNutrition}) and
  * dividing by the serving count. This is the bridge the recipe view uses to
- * auto-fill a Nutrition Facts panel when the cook hasn't entered any numbers —
+ * auto-fill a Nutrition Facts panel when the cook hasn't entered any numbers.
  * the same per-serving basis the panel already scales with. A non-positive or
  * non-finite `servings` is treated as 1. Pure and framework-free.
  */

@@ -33,7 +33,7 @@ const BILLING_OFF =
 const NO_DB =
   "Billing needs a database. Set DATABASE_URL (see .env.example) to continue.";
 const NO_CUSTOMER =
-  "You don't have a billing account yet — start a plan from the pricing page first.";
+  "You don't have a billing account yet. Start a plan from the pricing page first.";
 const GENERIC =
   "We couldn't reach Stripe just now. Please try again in a moment.";
 const GIFT_OFF = "Gifting isn't available in this environment yet.";
@@ -60,7 +60,7 @@ function resolvePriceId(envKey: string | null): string | undefined {
 /**
  * Find the caller's existing personal Stripe customer id, or create one (in
  * Stripe and in `billing_customers`) on first use. Personal billing is keyed to
- * the user; group/family billing is handled separately.
+ * the user. Group/family billing is handled separately.
  */
 async function ensureStripeCustomerId(userId: string): Promise<string> {
   const existing = await db.query.billingCustomers.findFirst({
@@ -86,7 +86,7 @@ async function ensureStripeCustomerId(userId: string): Promise<string> {
     .values({ userId, stripeCustomerId: customer.id })
     .onConflictDoNothing();
 
-  // Re-read in case a concurrent request created the row first; either way we
+  // Re-read in case a concurrent request created the row first. Either way we
   // return the canonical stored customer id.
   const stored = await db.query.billingCustomers.findFirst({
     where: eq(billingCustomers.userId, userId),
@@ -128,7 +128,7 @@ export async function createCheckoutSessionAction(
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: user.id,
       // Let customers enter Stripe-managed promotion codes at checkout (#326):
-      // launch offers, community discounts, win-back — all owned in Stripe, no
+      // launch offers, community discounts, win-back. All owned in Stripe, no
       // coupon logic of our own.
       allow_promotion_codes: true,
       subscription_data: {
@@ -151,7 +151,7 @@ export async function createCheckoutSessionAction(
 
 /**
  * Create a Stripe Customer Portal session for the caller's existing customer so
- * they can update payment methods, view invoices, or cancel — self-serve, with
+ * they can update payment methods, view invoices, or cancel. Self-serve, with
  * no billing UI of our own. Friendly error when they have no customer yet.
  */
 export async function createBillingPortalSessionAction(): Promise<BillingActionResult> {
@@ -180,7 +180,7 @@ export async function createBillingPortalSessionAction(): Promise<BillingActionR
 /**
  * Create a one-time Stripe Checkout to *buy a gift* of Family (issue #331).
  * Unlike the subscription flow this is `mode: "payment"` with no customer of our
- * own — the buyer is purchasing for someone else. We stamp gift metadata so the
+ * own. The buyer is purchasing for someone else. We stamp gift metadata so the
  * webhook can mint a single-use redemption code on completion, and enable promo
  * codes so seasonal gift offers work. Redeeming the resulting code needs only
  * the DB, so gifts keep working even where checkout later goes offline.
@@ -221,9 +221,9 @@ export type RedeemGiftResult =
   | { ok: false; error: string };
 
 /**
- * Redeem a gift code for the signed-in user (issue #331). DB-only — no Stripe
- * round-trip — so a recipient can redeem anywhere the database is reachable.
- * The heavy lifting (atomic single-use claim, expiry) lives in `gifting.ts`;
+ * Redeem a gift code for the signed-in user (issue #331). DB-only. No Stripe
+ * round-trip, so a recipient can redeem anywhere the database is reachable.
+ * The heavy lifting (atomic single-use claim, expiry) lives in `gifting.ts`.
  * here we translate its typed errors into friendly, actionable copy. The grant
  * then flows through the normal entitlements resolver.
  */

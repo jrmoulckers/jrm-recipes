@@ -23,7 +23,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[backfill-food-links] No database URL set — nothing to do.");
+  console.log("[backfill-food-links] No database URL set, nothing to do.");
   process.exit(0);
 }
 

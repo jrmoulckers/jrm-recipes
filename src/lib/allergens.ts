@@ -15,7 +15,7 @@ import { normalizeIngredient } from "./substitutions";
 
 /**
  * The major allergen groups (aligned with the FDA "big 9"). `wheat` doubles as
- * the gluten group and aligns with substitutions' `gluten-free` `DietaryTag`;
+ * the gluten group and aligns with substitutions' `gluten-free` `DietaryTag`.
  * `dairy`/`egg` align with `dairy-free`/`egg-free`.
  */
 export type Allergen =
@@ -29,7 +29,7 @@ export type Allergen =
   | "shellfish"
   | "sesame";
 
-/** Canonical display order — also the stable sort order for summaries. */
+/** Canonical display order. Also the stable sort order for summaries. */
 export const ALLERGENS = [
   "peanut",
   "tree-nut",
@@ -71,7 +71,7 @@ export function isAllergen(value: string): value is Allergen {
  * more allergens. `unless` phrases suppress the rule when present (handling
  * plant-based / non-wheat qualifiers such as "almond milk" or "rice flour").
  * `hidden` marks derived allergens that aren't obvious from the name (populated
- * by the hidden-allergen feature); `note` carries a "check the label" caution.
+ * by the hidden-allergen feature). `note` carries a "check the label" caution.
  */
 export type AllergenRule = {
   allergens: Allergen[];
@@ -151,12 +151,12 @@ const NON_WHEAT_QUALIFIERS = [
 ];
 
 /**
- * The curated knowledge base. Aliases are normalized whole-word phrases; the
+ * The curated knowledge base. Aliases are normalized whole-word phrases. The
  * matcher lower-cases, strips accents, and matches on word boundaries (via
  * `normalizeIngredient`), so "egg" never matches inside "eggplant" and "fish"
  * never matches inside "shellfish".
  *
- * Design choice — coconut: the FDA classifies coconut as a tree nut for
+ * Design choice. Coconut: the FDA classifies coconut as a tree nut for
  * labeling, but the vast majority of tree-nut-allergic people tolerate it, so
  * we deliberately do NOT flag "coconut" as tree-nut (and it also vetoes the
  * generic dairy terms). Cooks with a true coconut allergy should rely on the
@@ -403,7 +403,7 @@ export const ALLERGEN_RULES: AllergenRule[] = [
   // --- Hidden / derived allergens ---------------------------------------
   // Allergens that a busy cook won't read off the ingredient's name. Each is
   // marked `hidden` and carries a "check the label" note. Sources are the FDA
-  // major-allergen guidance plus standard culinary composition; formulations
+  // major-allergen guidance plus standard culinary composition. Formulations
   // vary by brand, so the copy always defers to the label.
   {
     // Soy sauce is brewed with wheat (the soy itself is caught directly).
@@ -411,10 +411,10 @@ export const ALLERGEN_RULES: AllergenRule[] = [
     aliases: ["soy sauce", "shoyu"],
     unless: ["tamari", "gluten free", "gluten-free"],
     hidden: true,
-    note: "Soy sauce is usually brewed with wheat — check for a gluten-free tamari.",
+    note: "Soy sauce is usually brewed with wheat. Check for a gluten-free tamari.",
   },
   {
-    // Teriyaki and hoisin are soy-sauce based; hoisin also commonly has sesame.
+    // Teriyaki and hoisin are soy-sauce based. Hoisin also commonly has sesame.
     allergens: ["soy", "wheat"],
     aliases: ["teriyaki"],
     unless: ["gluten free", "gluten-free"],
@@ -502,7 +502,7 @@ export const ALLERGEN_RULES: AllergenRule[] = [
     hidden: true,
     note: "Udon are wheat noodles.",
   },
-  // Note: "natural flavors" is deliberately NOT mapped — it can hide soy, dairy,
+  // Note: "natural flavors" is deliberately NOT mapped. It can hide soy, dairy,
   // or nuts, but which one is unknowable from the text, so asserting a specific
   // allergen would be misleading. The best-effort disclaimer covers it.
 ];
@@ -586,7 +586,7 @@ export function detectAllergenHits(
 /**
  * The allergens an ingredient directly carries (obvious from its name),
  * de-duplicated and sorted in canonical order. Hidden/derived allergens are
- * excluded here — use {@link detectHiddenAllergens} for those.
+ * excluded here. Use {@link detectHiddenAllergens} for those.
  */
 export function detectAllergens(item: string | null | undefined): Allergen[] {
   return sortAllergens(
@@ -626,7 +626,7 @@ export function detectHiddenAllergens(
 /**
  * Recipe-level hidden allergens: derived allergens across all ingredients that
  * are NOT already surfaced as direct "Contains" allergens (so the two lists
- * stay distinct — an allergen that's obvious from one ingredient isn't repeated
+ * stay distinct. An allergen that's obvious from one ingredient isn't repeated
  * as "hidden" just because another ingredient hides it).
  */
 export function summarizeHiddenAllergens(
@@ -651,13 +651,13 @@ export function summarizeHiddenAllergens(
 /**
  * The conservative allergen set for a *personalized* "safe for {member}"
  * determination on a single ingredient: the union of directly-carried AND
- * hidden/derived allergens. Personal safety must fail conservative — if the
+ * hidden/derived allergens. Personal safety must fail conservative. If the
  * only wheat in an item is the wheat brewed into "soy sauce" (a hidden source),
- * a wheat-allergic member is NOT safe with it — so both detection paths are
- * combined here. De-duplicated and sorted in canonical order.
+ * a wheat-allergic member is NOT safe with it, so both detection paths are
+ * combined here, de-duplicated and sorted in canonical order.
  *
  * Use this (not {@link detectAllergens}) wherever the result decides whether a
- * recipe or ingredient is safe *for a specific person*; keep {@link
+ * recipe or ingredient is safe *for a specific person*. Keep {@link
  * detectAllergens} for the neutral "Contains" display, which pairs with a
  * separate hidden-allergen list.
  */
@@ -670,7 +670,7 @@ export function detectAllergensForSafety(
 /**
  * Recipe-level counterpart of {@link detectAllergensForSafety}: roll a whole
  * ingredient list up to the union of every direct and hidden/derived allergen,
- * for "safe for {member}" filters and badges. Fail conservative — a hidden
+ * for "safe for {member}" filters and badges. Fail conservative. A hidden
  * source anywhere in the recipe still counts against the member.
  */
 export function summarizeAllergensForSafety(items: string[]): Allergen[] {

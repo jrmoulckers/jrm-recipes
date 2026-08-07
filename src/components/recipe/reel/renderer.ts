@@ -3,11 +3,11 @@
  *
  * Draws the ordered {@link ReelScene} list produced by `~/lib/reel/scenes` onto
  * a 1080x1920 canvas and (optionally) captures it to a downloadable webm via
- * MediaRecorder. All layout decisions live in the pure scene module; this file
+ * MediaRecorder. All layout decisions live in the pure scene module. This file
  * only paints and animates.
  *
  * Accessibility: when `reducedMotion` is set, scenes render as a single static
- * frame with no movement — no Ken Burns, no entrance animation, no flashing.
+ * frame with no movement. No Ken Burns, no entrance animation, no flashing.
  */
 
 import {
@@ -148,7 +148,7 @@ function wrapText(
   return lines;
 }
 
-/** Draw wrapped, optionally line-clamped text; returns the y past the block. */
+/** Draw wrapped, optionally line-clamped text. Returns the y past the block. */
 function drawParagraph(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -599,7 +599,7 @@ export function drawFrame(
   }
 }
 
-/** Draw a single representative still (the cover) — used for the reduced-motion poster. */
+/** Draw a single representative still (the cover). Used for the reduced-motion poster. */
 export function drawPoster(
   ctx: CanvasRenderingContext2D,
   scenes: ReelScene[],
@@ -693,7 +693,7 @@ export function canRecordReel(): boolean {
 
 /**
  * True only when a webm mime type is genuinely encodable *and* the canvas can be
- * captured — i.e. an animated reel video can actually be produced. Safari/iOS
+ * captured, i.e. an animated reel video can actually be produced. Safari/iOS
  * expose `MediaRecorder` but fail this check, so callers should fall back to the
  * poster image instead of dead-ending on an error.
  */

@@ -16,7 +16,7 @@ import { groups } from "./groups";
 
 /**
  * A scheduled "let's all cook this together" event for a family group
- * (issue #353). A host picks a recipe + time and invites the group; members
+ * (issue #353). A host picks a recipe + time and invites the group. Members
  * RSVP. `reminderSentAt` is stamped once the pre-event notification fires so a
  * reminder is never sent twice.
  */
@@ -30,7 +30,7 @@ export const cookAlongs = pgTable(
     recipeId: fk()
       .notNull()
       .references(() => recipes.id, { onDelete: "cascade" }),
-    // Who scheduled it; nulls out if that user is removed so the event survives.
+    // Who scheduled it. Nulls out if that user is removed so the event survives.
     hostId: fk().references(() => users.id, { onDelete: "set null" }),
     title: varchar({ length: 200 }),
     note: text(),
@@ -39,7 +39,7 @@ export const cookAlongs = pgTable(
     ...timestamps(),
   },
   (t) => [
-    // "Upcoming cook-alongs for this group" — the group-page read.
+    // "Upcoming cook-alongs for this group". The group-page read.
     index("cook_alongs_group_scheduled_idx").on(t.groupId, t.scheduledFor),
     index("cook_alongs_recipe_idx").on(t.recipeId),
     index("cook_alongs_host_idx").on(t.hostId),

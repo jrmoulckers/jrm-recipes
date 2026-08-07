@@ -7,7 +7,7 @@
 # at instead of a raw commit SHA.
 #
 # CI gating: the version bump and the tag both flow through a pull request (the
-# release PR), which runs the full CI workflow like any other PR — so a release
+# release PR), which runs the full CI workflow like any other PR, so a release
 # can only land on green CI. See DEPLOY.md → "Automated releases".
 name: Release
 
@@ -15,12 +15,12 @@ on:
   push:
     branches: [main]
 
-# Serialize releases; never cancel an in-flight one mid-tag.
+# Serialize releases, never cancel an in-flight one mid-tag.
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-# Read-only by default; the single job below opts into exactly what
+# Read-only by default. The single job below opts into exactly what
 # release-please needs to open its PR and cut the release.
 permissions:
   contents: read

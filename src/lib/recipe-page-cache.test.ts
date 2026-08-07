@@ -8,7 +8,7 @@ import {
   type RecipePageRequest,
 } from "./recipe-page-cache";
 
-/** Build a minimal request shape; a real `Request` can't set `destination`. */
+/** Build a minimal request shape. A real `Request` can't set `destination`. */
 const makeRequest = (
   url: string,
   destination: Request["destination"] = "document",

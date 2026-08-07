@@ -1,12 +1,24 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DeleteRecipeButton } from "./delete-recipe-button";
+import { ConfirmProvider } from "~/components/ui/confirm-dialog";
 import {
   deleteRecipeAction,
   restoreRecipeAction,
 } from "~/server/recipes/actions";
+import type { ReactElement } from "react";
+import { IntlWrapper } from "~/test/intl";
+
+function render(ui: ReactElement) {
+  return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
 
 vi.mock("~/server/recipes/actions", () => ({
   deleteRecipeAction: vi.fn<(id: string) => Promise<void>>(),
@@ -51,17 +63,19 @@ afterEach(() => {
 
 function renderButton() {
   return render(
-    <DeleteRecipeButton id="r1" slug="nanas-pie" title="Nana's pie" />,
+    <ConfirmProvider>
+      <DeleteRecipeButton id="r1" slug="nanas-pie" title="Nana's pie" />
+    </ConfirmProvider>,
   );
 }
 
 describe("DeleteRecipeButton (#427)", () => {
   it("does nothing when the confirm is dismissed", async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     renderButton();
 
     await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(mockedDelete).not.toHaveBeenCalled();
     expect(toastFn).not.toHaveBeenCalled();
@@ -69,11 +83,11 @@ describe("DeleteRecipeButton (#427)", () => {
 
   it("soft-deletes and offers an undo toast on confirm", async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     mockedDelete.mockResolvedValue(undefined);
     renderButton();
 
     await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: "Delete recipe" }));
 
     await waitFor(() => expect(mockedDelete).toHaveBeenCalledWith("r1"));
     // The undo affordance is offered optimistically.
@@ -86,12 +100,12 @@ describe("DeleteRecipeButton (#427)", () => {
 
   it("restores the recipe and navigates back when Undo is invoked", async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     mockedDelete.mockResolvedValue(undefined);
     mockedRestore.mockResolvedValue(true);
     renderButton();
 
     await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: "Delete recipe" }));
     await waitFor(() => expect(toastFn).toHaveBeenCalled());
 
     const opts = toastFn.mock.calls[0]![1] as {
@@ -108,11 +122,11 @@ describe("DeleteRecipeButton (#427)", () => {
 
   it("surfaces an error and dismisses the toast when delete fails", async () => {
     const user = userEvent.setup();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     mockedDelete.mockRejectedValue(new Error("boom"));
     renderButton();
 
     await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: "Delete recipe" }));
 
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastDismiss).toHaveBeenCalledWith("toast-1");

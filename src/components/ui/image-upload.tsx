@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { ImageOff, ImagePlus } from "lucide-react";
 import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
@@ -47,6 +48,7 @@ export function ImageUploadField({
   folder?: string;
   size?: "default" | "compact";
 }) {
+  const t = useTranslations("imageUpload");
   const compact = size === "compact";
 
   // A pasted URL can be a typo, a hotlink-blocked host, or a since-deleted
@@ -71,7 +73,7 @@ export function ImageUploadField({
           {/* eslint-disable-next-line @next/next/no-img-element -- editor preview accepts arbitrary user-pasted URLs that can't be pre-allowlisted for next/image */}
           <img
             src={value}
-            alt="Selected photo preview"
+            alt={t("previewAlt")}
             loading="lazy"
             decoding="async"
             onError={() => setErrored(true)}
@@ -87,17 +89,17 @@ export function ImageUploadField({
               <span
                 className={cn("font-medium", compact ? "text-xs" : "text-sm")}
               >
-                Couldn&apos;t load image
+                {t("errorTitle")}
               </span>
               {compact ? null : (
-                <span className="text-xs">Check the link, then try again</span>
+                <span className="text-xs">{t("errorHint")}</span>
               )}
             </div>
           ) : null}
           <CloseButton
             variant="overlay"
             onClick={() => onChange("")}
-            label="Remove photo"
+            label={t("remove")}
             className="absolute end-2 top-2"
           />
         </figure>
@@ -146,11 +148,11 @@ export function ImageUploadField({
                 <span
                   className={cn("font-medium", compact ? "text-xs" : "text-sm")}
                 >
-                  {compact ? "Add photo" : "Upload a photo"}
+                  {compact ? t("addPhoto") : t("uploadPhoto")}
                 </span>
                 {compact ? null : (
                   <span className="text-xs text-muted-foreground">
-                    Drag &amp; drop, take a photo, or paste a URL below
+                    {t("dropHint")}
                   </span>
                 )}
               </button>
@@ -167,10 +169,10 @@ export function ImageUploadField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={
             cloudinaryConfigured
-              ? "…or paste an image URL"
-              : "Paste an image URL"
+              ? t("urlPlaceholderWithUpload")
+              : t("urlPlaceholder")
           }
-          aria-label={label ? `${label} URL` : "Image URL"}
+          aria-label={label ? t("urlLabelFor", { label }) : t("urlLabel")}
         />
       )}
 

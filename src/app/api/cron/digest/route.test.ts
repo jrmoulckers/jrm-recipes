@@ -74,7 +74,7 @@ beforeEach(() => {
   state.sendThrowsFor = null;
 });
 
-describe("GET /api/cron/digest — auth", () => {
+describe("GET /api/cron/digest. Auth", () => {
   it("returns 503 when CRON_SECRET is unconfigured", async () => {
     state.configured = false;
     const res = await GET(get());
@@ -98,7 +98,7 @@ describe("GET /api/cron/digest — auth", () => {
   });
 });
 
-describe("GET /api/cron/digest — recipient iteration", () => {
+describe("GET /api/cron/digest. Recipient iteration", () => {
   it("sends to opted-in recipients with activity and skips the rest", async () => {
     listDigestRecipients.mockResolvedValue([
       { id: "u1", email: "a@example.com", name: "A" },
@@ -136,7 +136,7 @@ describe("GET /api/cron/digest — recipient iteration", () => {
   });
 
   it("degrades to the log/no-op provider without throwing when no ESP is set", async () => {
-    // getEmailProvider returns the log provider (name "log"); send never throws.
+    // getEmailProvider returns the log provider (name "log"). Calling send() never throws.
     listDigestRecipients.mockResolvedValue([
       { id: "u1", email: "a@example.com", name: "A" },
     ]);

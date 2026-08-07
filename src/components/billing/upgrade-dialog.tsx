@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Check, Sparkles } from "lucide-react";
 
 import { getPlan, type FeatureFlagKey } from "~/config/plans";
@@ -25,23 +26,10 @@ import {
  * dark patterns: it is fully dismissible (a "Not now" button, the ✕, Escape, and
  * an overlay click all close it), never blocks content the user already made,
  * and carries no countdowns, scarcity, or guilt copy. Plan name, tagline, and
- * benefits all come from `src/config/plans.ts` — nothing here hard-codes a price.
+ * benefits all come from `src/config/plans.ts`. Nothing here hard-codes a price.
  */
 
 const FAMILY = getPlan("family");
-
-/** Reader-friendly names for each premium feature, used only for dialog copy. */
-const FEATURE_LABELS: Record<FeatureFlagKey, string> = {
-  aiGeneration: "AI recipe generation",
-  aiTutor: "the AI cooking tutor",
-  aiSubstitutions: "AI ingredient substitutions",
-  videoExport: "video & reel exports",
-  advancedCollaboration: "advanced family collaboration",
-};
-
-function sentenceCase(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
 
 export type UpgradeDialogProps = {
   /** The gated feature, used to tailor the explanatory copy. */
@@ -64,11 +52,16 @@ export function UpgradeDialog({
   title,
   description,
 }: UpgradeDialogProps) {
-  const featureLabel = feature ? FEATURE_LABELS[feature] : "This feature";
-  const heading = title ?? `Unlock ${FAMILY.name}`;
+  const t = useTranslations("billing.upgrade");
+  const featureLabel = feature ? t(`features.${feature}`) : t("thisFeature");
+  const heading = title ?? t("title", { plan: FAMILY.name });
   const body =
     description ??
-    `${sentenceCase(featureLabel)} is part of ${FAMILY.name}. ${FAMILY.tagline}`;
+    t("description", {
+      feature: featureLabel,
+      plan: FAMILY.name,
+      tagline: FAMILY.tagline,
+    });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,10 +87,10 @@ export function UpgradeDialog({
         </ul>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost">Not now</Button>
+            <Button variant="ghost">{t("notNow")}</Button>
           </DialogClose>
           <Button asChild>
-            <Link href="/pricing">See plans</Link>
+            <Link href="/pricing">{t("seePlans")}</Link>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -107,7 +100,7 @@ export function UpgradeDialog({
 
 /**
  * Imperative helper for locked actions (issue #311). Returns a ready-to-render
- * `dialog` node plus `promptUpgrade()` to open it — e.g. call it from a locked
+ * `dialog` node plus `promptUpgrade()` to open it. For example, call it from a locked
  * button's `onClick`. The prompt is always dismissible and never auto-opens.
  *
  * ```tsx

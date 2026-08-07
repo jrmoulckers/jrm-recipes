@@ -21,7 +21,7 @@ export async function SiteHeader() {
       <div className="container flex min-h-16 items-center gap-2 sm:gap-4">
         <Link href="/" className="shrink-0" aria-label={t("homeLink")}>
           {/* Drop the wordmark on the very narrowest phones (<360px) so the
-              action row stays a single clean line; the mark keeps brand
+              action row stays a single clean line. The mark keeps brand
               presence (issue #536 follow-up). */}
           <Logo wordmarkClassName="hidden min-[360px]:inline" />
         </Link>
@@ -39,14 +39,14 @@ export async function SiteHeader() {
               accessibility, offline storage) collapse into one Settings popover
               on desktop so the top-right stays a single clean row. Below xl the
               full horizontal nav gives way to the app bottom bar, and these
-              utilities live in its Profile hub — so the header never grows a
+              utilities live in its Profile hub, so the header never grows a
               duplicate row of look-alike icons. */}
           <div className="hidden xl:block">
             <HeaderSettingsMenu />
           </div>
           <NotificationBellServer />
           {/* Account avatar / sign-in stays visible on every breakpoint as a
-              lightweight account entry point; on mobile it complements the
+              lightweight account entry point. On mobile it complements the
               bottom bar's Profile tab. */}
           <AuthControls
             isConfigured={isConfigured}

@@ -151,7 +151,7 @@ function main() {
     }
     if (current !== generated) {
       console.error(
-        `i18n: pseudolocale at ${outPath} is stale \u2014 run \`pnpm i18n:pseudo\`.`,
+        `i18n: pseudolocale at ${outPath} is stale. Run \`pnpm i18n:pseudo\`.`,
       );
       process.exit(1);
     }

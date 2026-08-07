@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 
 /**
  * Generic "print this page" trigger (issues #397/#407). Kept as a tiny client
- * island so the surrounding print layouts stay server components; hide it on
+ * island so the surrounding print layouts stay server components. Hide it on
  * paper with `print:hidden` at the call site.
  */
 export function PrintNowButton({

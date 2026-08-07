@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowUpRight, ChefHat, Clock3, Flame, Users } from "lucide-react";
 
 import { brand } from "~/config/brand";
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const recipe = await getPublicRecipeCard(id);
   return {
     title: recipe ? `${recipe.title} · Embed` : "Recipe",
-    // The canonical recipe page carries the indexable metadata; the embed is a
+    // The canonical recipe page carries the indexable metadata. The embed is a
     // widget, so keep it out of search results.
     robots: { index: false, follow: false },
   };
@@ -30,7 +31,7 @@ export async function generateMetadata({
 /**
  * Compact, iframe-safe recipe card (issue #347). Rendered outside the `(main)`
  * app chrome so it embeds cleanly on foreign sites, and served *only* for
- * `public` + `published` recipes — anything else 404s, never leaking private
+ * `public` + `published` recipes. Anything else 404s, never leaking private
  * data. Every embed carries the brand mark + a "View full recipe" backlink.
  */
 export default async function EmbedRecipePage({
@@ -42,6 +43,8 @@ export default async function EmbedRecipePage({
   const recipe = await getPublicRecipeCard(id);
   if (!recipe) notFound();
 
+  const t = await getTranslations("embed");
+  const tRecipe = await getTranslations("recipeDetail");
   const href = absoluteUrl(`/recipes/${recipe.slug}`);
   const authorName = recipe.author?.name?.trim();
   const facts = [
@@ -51,7 +54,7 @@ export default async function EmbedRecipePage({
     recipe.servings != null
       ? {
           icon: Users,
-          label: `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`,
+          label: `${recipe.servings} ${recipe.servingsNoun ?? tRecipe("servingsNoun")}`,
         }
       : null,
     recipe.difficulty ? { icon: Flame, label: recipe.difficulty } : null,
@@ -66,6 +69,8 @@ export default async function EmbedRecipePage({
         className="group flex w-full overflow-hidden rounded-2xl border border-border bg-card shadow-token transition-shadow hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative hidden w-2/5 shrink-0 bg-primary/10 sm:block">
+          {/* Decorative: the cover sits directly above the recipe title, which
+              names the enclosing link. */}
           {recipe.coverImageUrl ? (
             <CloudinaryImage
               src={recipe.coverImageUrl}
@@ -92,7 +97,7 @@ export default async function EmbedRecipePage({
             </h1>
             {authorName ? (
               <p className="mt-1 truncate text-sm text-muted-foreground">
-                by {authorName}
+                {t("byAuthor", { name: authorName })}
               </p>
             ) : null}
             {recipe.description ? (
@@ -114,7 +119,7 @@ export default async function EmbedRecipePage({
               </ul>
             ) : null}
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
-              View full recipe
+              {t("viewFullRecipe")}
               <ArrowUpRight
                 className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
                 aria-hidden="true"

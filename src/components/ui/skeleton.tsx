@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "~/lib/utils";
 
@@ -19,8 +20,8 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   decorative?: boolean;
   /**
    * Accessible loading label announced to assistive tech (ignored when
-   * `decorative`). Keeps the "this is loading" state from being purely visual —
-   * important because under reduced motion the shimmer is intentionally still.
+   * `decorative`), keeping the "this is loading" state from being purely visual,
+   * which is important because under reduced motion the shimmer is intentionally still.
    */
   label?: string;
 }
@@ -28,7 +29,7 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Shared loading semantics: a polite status marked `aria-busy` so non-visual
  * users learn the state even when the shimmer is frozen under reduced motion.
- * The region has no changing text, so it never chatters — it only carries a
+ * The region has no changing text, so it never chatters. It only carries a
  * name and the busy flag.
  */
 function loadingSemantics(decorative: boolean, label: string) {
@@ -68,11 +69,12 @@ function Skeleton({
  * status on its root and marks its inner blocks decorative.
  */
 function RecipeCardSkeleton() {
+  const t = useTranslations("common");
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading recipe…"
+      aria-label={t("loadingRecipe")}
       className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token"
     >
       <Skeleton decorative className="aspect-[16/10] w-full rounded-none" />
@@ -91,11 +93,12 @@ function RecipeCardSkeleton() {
 }
 
 function ListRowSkeleton() {
+  const t = useTranslations("common");
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading…"
+      aria-label={t("loading")}
       className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-token"
     >
       <Skeleton decorative className="size-20 shrink-0 rounded-lg" />

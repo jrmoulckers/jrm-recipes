@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Check, Loader2, Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { track } from "~/lib/analytics";
 import { cn } from "~/lib/utils";
@@ -13,7 +14,7 @@ import { Label } from "~/components/ui/label";
 
 /**
  * Landing-page email/waitlist capture (issue #351). A single accessible email
- * field with inline validation and success/error states — the lighter-weight
+ * field with inline validation and success/error states. The lighter-weight
  * conversion step for cold visitors who aren't ready to sign up. On success it
  * emits `waitlist_joined` client-side (browser distinct id, no PII) and shows a
  * friendly confirmation.
@@ -27,6 +28,7 @@ export function WaitlistForm({
 }) {
   const emailId = React.useId();
   const errorId = React.useId();
+  const t = useTranslations("marketing.waitlist");
   const [email, setEmail] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
@@ -59,8 +61,7 @@ export function WaitlistForm({
         )}
       >
         <Check className="size-4 text-primary" aria-hidden />
-        You&apos;re on the list — we&apos;ll be in touch with early access and
-        cooking tips.
+        {t("success")}
       </div>
     );
   }
@@ -70,14 +71,14 @@ export function WaitlistForm({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="flex-1">
           <Label htmlFor={emailId} className="sr-only">
-            Email address
+            {t("emailLabel")}
           </Label>
           <Input
             id={emailId}
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={t("emailPlaceholder")}
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
@@ -95,7 +96,7 @@ export function WaitlistForm({
           className="shrink-0"
         >
           {isPending ? <Loader2 className="animate-spin" /> : <Mail />}
-          {isPending ? "Joining…" : "Get early access"}
+          {isPending ? t("joining") : t("submit")}
         </Button>
       </div>
       {error ? (

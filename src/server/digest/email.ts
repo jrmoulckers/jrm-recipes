@@ -9,9 +9,9 @@ import { type WeeklyDigest } from "./builder";
  *
  * `renderDigestEmail` is a pure function (brand-styled, inline-CSS HTML for
  * email clients + a plain-text fallback) so it can be unit-tested without a
- * network. Sending goes through a tiny `EmailProvider` interface; with no ESP
- * wired up the default is a log/no-op provider, exactly how analytics + storage
- * degrade when unconfigured — so the trigger endpoint never fails on a missing
+ * network. Sending goes through a tiny `EmailProvider` interface. When no ESP
+ * is wired up, the default is a log/no-op provider, exactly how analytics + storage
+ * degrade when unconfigured, so the trigger endpoint never fails on a missing
  * provider. Swapping in a real ESP later is a one-function change.
  */
 
@@ -40,7 +40,7 @@ function digestSubject(digest: WeeklyDigest): string {
   return `${plural(digest.totalUpdated, "recipe update", "recipe updates")} in your ${brand.name} cookbooks this week`;
 }
 
-/** Render a digest into an email payload. Pure — safe to unit test. */
+/** Render a digest into an email payload. Pure. Safe to unit test. */
 export function renderDigestEmail(digest: WeeklyDigest): RenderedEmail {
   const subject = digestSubject(digest);
 
@@ -56,7 +56,7 @@ export function renderDigestEmail(digest: WeeklyDigest): RenderedEmail {
     for (const recipe of group.newRecipes) {
       const url = absoluteUrl(`/recipes/${recipe.slug}`);
       const by = recipe.authorName ? ` by ${recipe.authorName}` : "";
-      textLines.push(`  • ${recipe.title}${by} — ${url}`);
+      textLines.push(`  • ${recipe.title}${by}. ${url}`);
       items.push(
         `<li style="margin:0 0 8px"><a href="${url}" style="color:${brand.themeColor};text-decoration:none;font-weight:600">${escapeHtml(
           recipe.title,
@@ -122,7 +122,7 @@ function redactEmail(email: string): string {
 export const logEmailProvider: EmailProvider = {
   name: "log",
   async send(message) {
-    log.info("digest: no email provider configured — would send", {
+    log.info("digest: no email provider configured. Would send", {
       subject: message.subject,
       to: redactEmail(message.to),
     });
@@ -134,11 +134,11 @@ const DEFAULT_FROM = `${brand.name} <onboarding@resend.dev>`;
 
 /**
  * Resend-backed provider. Kept provider-agnostic behind {@link EmailProvider}
- * and dependency-free — it POSTs to the Resend REST API with `fetch`, so no SDK
- * or build step is added. Constructed only when `RESEND_API_KEY` is present; a
+ * and dependency-free. It POSTs to the Resend REST API with `fetch`, so no SDK
+ * or build step is added. Constructed only when `RESEND_API_KEY` is present. A
  * non-2xx response throws so the caller can count/log the failure per recipient
  * (the digest route isolates each send), but an *unconfigured* provider never
- * reaches here — {@link getEmailProvider} returns the log no-op instead.
+ * reaches here. {@link getEmailProvider} returns the log no-op instead.
  */
 export function createResendProvider(
   apiKey: string,
@@ -178,7 +178,7 @@ export function isEmailConfigured(): boolean {
 
 /**
  * Resolve the active email provider. With `RESEND_API_KEY` set we send for real
- * via Resend; otherwise we degrade to the log/no-op default — exactly how auth,
+ * via Resend. Otherwise we degrade to the log/no-op default. Exactly how auth,
  * the DB, storage, and billing degrade when unconfigured, so the digest cron
  * never fails on a missing provider.
  */

@@ -14,7 +14,7 @@ const DEFAULT_SWIPE_THRESHOLD = 48;
 
 /**
  * Classify a horizontal swipe from its total delta. A right-to-left swipe
- * (negative dx) means "next"; left-to-right (positive dx) means "previous".
+ * (negative dx) means "next". Left-to-right (positive dx) means "previous".
  * Returns null when the gesture is too short or more vertical than horizontal,
  * so scrolling the step never flips to another one.
  */
@@ -25,7 +25,7 @@ export function resolveSwipe(
 ): NavDirection | null {
   const threshold = options.threshold ?? DEFAULT_SWIPE_THRESHOLD;
   if (Math.abs(dx) < threshold) return null;
-  // Must be clearly horizontal — a diagonal scroll shouldn't navigate.
+  // Must be clearly horizontal. A diagonal scroll shouldn't navigate.
   if (Math.abs(dx) <= Math.abs(dy)) return null;
   return dx < 0 ? "next" : "previous";
 }

@@ -25,7 +25,7 @@ export const memberProfileInput = z.object({
     .default([])
     .transform(dedupe),
   // A sensible daily-energy range: high enough for athletes, low enough to
-  // reject typos. Optional — many members won't track calories.
+  // reject typos. Optional. Many members won't track calories.
   calorieGoal: z
     .union([z.string(), z.number()])
     .optional()
@@ -44,5 +44,5 @@ export const memberProfileInput = z.object({
 });
 
 export type MemberProfileInput = z.infer<typeof memberProfileInput>;
-/** Pre-transform shape accepted by the schema — what the client/UI sends. */
+/** Pre-transform shape accepted by the schema. What the client/UI sends. */
 export type MemberProfileInputRaw = z.input<typeof memberProfileInput>;

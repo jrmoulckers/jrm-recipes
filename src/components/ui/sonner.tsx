@@ -15,7 +15,7 @@ export function Toaster(props: ToasterProps) {
       // A keyboard-reachable dismiss affordance on every toast so error messages
       // (which should linger) can be closed on demand instead of only timing out.
       closeButton
-      // Give feedback long enough to read; errors typically linger longer than
+      // Give feedback long enough to read. Errors typically linger longer than
       // this default and callers can still override per-toast.
       duration={5000}
       toastOptions={{

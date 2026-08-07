@@ -34,7 +34,7 @@ export function todayParam(): string {
   return toDateParam(new Date());
 }
 
-/** Tomorrow as a `yyyy-MM-dd` string — used by the prep-ahead nudge (#388). */
+/** Tomorrow as a `yyyy-MM-dd` string. Used by the prep-ahead nudge (#388). */
 export function tomorrowParam(): string {
   return toDateParam(addDays(new Date(), 1));
 }
@@ -55,7 +55,7 @@ export function parseDateParam(param?: string | null): Date {
 }
 
 /**
- * The first day of the planner week containing `date`. Which weekday that is
+ * The first day of the planner week containing `date`. The weekday is
  * comes from the locale (Sunday for `en`, Monday for `es`/`de`, …), defaulting
  * to English so existing callers keep their Sunday-start grid.
  */
@@ -120,7 +120,7 @@ export function isToday(date: Date): boolean {
 }
 
 /**
- * Locale-aware display formatters live in {@link ~/lib/dates}; re-exported here
+ * Locale-aware display formatters live in {@link ~/lib/dates}. Re-exported here
  * so planner callers have one import. Each defaults to English, so existing
  * (locale-less) call sites and snapshots are unaffected. `formatWeekdayLong`
  * and `formatMonthDay` back the printable week menu (#438).

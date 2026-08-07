@@ -1,7 +1,7 @@
 /**
  * Recipe importer: fetch a public web page and pull a structured recipe out of
  * its schema.org JSON-LD (`<script type="application/ld+json">`). This is the
- * free, no-API-key path — the overwhelming majority of recipe sites publish
+ * free, no-API-key path. The overwhelming majority of recipe sites publish
  * this data for Google, so we can reuse it to pre-fill the editor.
  *
  * Everything below the fetch layer is pure and unit-tested: the mapping from
@@ -357,7 +357,7 @@ function splitLeadingQuantity(line: string): {
   const t = line.trim();
   const token = `\\d+\\s+\\d+/\\d+|\\d+/\\d+|\\d+(?:\\.\\d+)?\\s*[${GLYPHS}]|\\d+(?:\\.\\d+)?|[${GLYPHS}]`;
   const re = new RegExp(
-    `^(${token})(?:\\s*(?:-|–|—|to)\\s*(${token}))?\\s+(.*)$`,
+    `^(${token})(?:\\s*(?:-|–||to)\\s*(${token}))?\\s+(.*)$`,
   );
   const m = re.exec(t);
   if (!m) return { rest: t };
@@ -726,7 +726,7 @@ const MAX_IMPORT_REDIRECTS = 5;
 
 /**
  * Hard cap on bytes read from an imported page (issue #222). A malicious or
- * misbehaving server could stream an unbounded response; buffering it whole
+ * misbehaving server could stream an unbounded response. Buffering it whole
  * before slicing would exhaust memory. We reject on an over-large
  * `Content-Length` up front and otherwise stop reading once the cap is hit.
  */
@@ -754,14 +754,14 @@ const defaultHostLookup: HostLookup = (host) =>
  * whose `A`/`AAAA` record points at loopback, an RFC-1918 address, or the cloud
  * metadata IP (`169.254.169.254`) sails through and `fetch` dials the internal
  * target. Here we resolve the name ourselves and reject if *any* returned
- * address is non-public — using the same {@link isPublicHost} predicate, which
- * already understands IPv4, IPv6, and IPv4-mapped-IPv6 literals — before a
+ * address is non-public, using the same {@link isPublicHost} predicate, which
+ * already understands IPv4, IPv6, and IPv4-mapped-IPv6 literals, before a
  * single byte is fetched. Applied on the initial URL and every redirect hop so
  * the address family can't change between check and connect.
  *
  * A resolution *failure* is not itself a forgery risk (there is no IP to reach,
  * so the subsequent fetch simply fails), so we let it fall through rather than
- * masking a genuine "site not found"; only a *successful* resolution to an
+ * masking a genuine "site not found". Only a *successful* resolution to an
  * internal address is blocked here.
  */
 async function assertResolvedHostIsPublic(
@@ -795,8 +795,8 @@ function isHttpRedirect(status: number): boolean {
  * Fetch `startUrl`, following redirects manually so every hop's host is
  * re-validated with {@link isPublicHost} *and* re-resolved with
  * {@link assertResolvedHostIsPublic}. A public URL that 3xx-redirects to an
- * internal address (loopback, link-local, cloud metadata) — literally or via a
- * crafted DNS record — is rejected instead of being silently followed. Bounded
+ * internal address (loopback, link-local, cloud metadata). Literally or via a
+ * crafted DNS record is rejected instead of being silently followed. Bounded
  * to {@link MAX_IMPORT_REDIRECTS} hops.
  */
 async function fetchGuardingRedirects(
@@ -926,7 +926,7 @@ export async function importRecipeFromUrl(
     return {
       ok: false,
       error:
-        "We couldn't find a recipe on that page — it may not publish structured recipe data. You can still add it by hand.",
+        "We couldn't find a recipe on that page. It may not publish structured recipe data. You can still add it by hand.",
     };
   return { ok: true, recipe };
 }

@@ -3,9 +3,9 @@
  *
  * This is the seam that keeps the rest of the app from ever importing a vendor
  * SDK directly (issue #305/#306): the concrete PostHog adapter (`./posthog-client`)
- * is created by `<AnalyticsProvider>` and registered here; call sites only ever
+ * is created by `<AnalyticsProvider>` and registered here. Call sites only ever
  * touch the typed `track`/`identify`/`reset` API in `./index`, which dispatches
- * to whatever backend is registered — or the built-in {@link noopBackend} when
+ * to whatever backend is registered, or the built-in {@link noopBackend} when
  * analytics is unconfigured. Swapping/self-hosting the vendor is a one-file change.
  *
  * Every method is intentionally fire-and-forget and must never throw.
@@ -25,7 +25,7 @@ export interface AnalyticsBackend {
 
 /**
  * The default backend used everywhere analytics is unconfigured (no key), on the
- * server, and in tests. Does nothing and never throws — the core of the app's
+ * server, and in tests. Does nothing and never throws. The core of the app's
  * graceful-degradation guarantee for instrumentation.
  */
 export const noopBackend: AnalyticsBackend = {

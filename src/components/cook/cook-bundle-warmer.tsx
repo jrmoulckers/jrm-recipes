@@ -12,8 +12,8 @@ import {
 
 /**
  * The Cook route as a typed `Route` for `router.prefetch` (#483 enabled Next
- * `typedRoutes`). Built as a template literal and asserted here — the same idiom
- * as `recipe-path.ts` — so the SW-shared `cook-warm` module stays free of
+ * `typedRoutes`), built as a template literal and asserted here. The same idiom
+ * as `recipe-path.ts`, so the SW-shared `cook-warm` module stays free of
  * `next/*` imports. Asserting a template-literal type (not `cookPagePath`'s
  * plain `string`) is what keeps `no-unnecessary-type-assertion` happy during
  * lint, where the typed-routes augmentation isn't generated. Kept in step with
@@ -56,7 +56,7 @@ export function CookBundleWarmer({
       try {
         router.prefetch(cookRoute(slug));
       } catch {
-        // Prefetch is a bonus; ignore failures.
+        // Prefetch is a bonus. Ignore failures.
       }
 
       try {
@@ -70,7 +70,7 @@ export function CookBundleWarmer({
         );
         controller.postMessage(buildWarmCookBundleMessage({ slug, imageUrls }));
       } catch {
-        // Warming is best-effort; never surface an error to the cook.
+        // Warming is best-effort. Never surface an error to the cook.
       }
     };
 
