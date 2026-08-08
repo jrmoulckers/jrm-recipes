@@ -26,8 +26,6 @@ import {
   CardDietaryBadge,
   type CardDietaryMember,
 } from "~/components/recipe/card-dietary-badge";
-import { groupRecipeClassifications } from "~/lib/recipe-classifications";
-import { RecipeClassificationBadges } from "./recipe-classification-badges";
 
 /**
  * Context for the card-level "add to this week's plan" control (#379). Supplied
@@ -50,7 +48,6 @@ export type CardRecipe = {
   servings: number | null;
   difficulty: "easy" | "medium" | "hard" | null;
   visibility: string;
-  cuisine?: string | null;
   author?: { name: string | null } | null;
   tags?: {
     tag: {
@@ -111,6 +108,7 @@ export function RecipeCard({
   members?: CardDietaryMember[];
 }) {
   const t = useTranslations("recipe");
+  const tNames = useTranslations("classificationNames");
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
       ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
@@ -119,14 +117,11 @@ export function RecipeCard({
   const titleSegments = matchReason
     ? splitHighlight(recipe.title, matchReason.term)
     : null;
-  const classifications = groupRecipeClassifications(
-    recipe.tags ?? [],
-    recipe.cuisine,
-  );
+  const classificationTags = (recipe.tags ?? []).map(({ tag }) => tag);
   const cardClassifications = [
-    ...classifications.meal,
-    ...classifications.cuisine,
-  ];
+    ...classificationTags.filter((tag) => tag.category === "meal"),
+    ...classificationTags.filter((tag) => tag.category === "cuisine"),
+  ].slice(0, 2);
 
   return (
     <div className="group/card relative">
@@ -228,11 +223,20 @@ export function RecipeCard({
               {recipe.description}
             </p>
           )}
-          <RecipeClassificationBadges
-            items={cardClassifications}
-            linked={false}
-            limit={2}
-          />
+          {cardClassifications.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {cardClassifications.map((item) => (
+                <Badge
+                  key={`${item.category}:${item.slug ?? item.name}`}
+                  variant={item.category === "meal" ? "default" : "secondary"}
+                >
+                  {item.slug && tNames.has(item.slug)
+                    ? tNames(item.slug)
+                    : item.name}
+                </Badge>
+              ))}
+            </div>
+          )}
           {members && members.length > 0 && (
             <CardDietaryBadge
               members={members}

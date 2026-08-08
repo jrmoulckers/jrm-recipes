@@ -10,23 +10,23 @@ SET
     WHEN "slug" IN ('vegan', 'vegetarian', 'dairy-free', 'gluten-free', 'egg-free', 'nut-free', 'soy-free', 'shellfish-free', 'fish-free', 'sesame-free') THEN 'dietary'::"tag_category"
     ELSE 'general'::"tag_category"
   END,
-  "name" = CASE "slug"
-    WHEN 'main-course' THEN 'Main Course'
-    WHEN 'side-dish' THEN 'Side Dish'
-    WHEN 'drink' THEN 'Drinks'
-    WHEN 'cajun-creole' THEN 'Cajun & Creole'
-    WHEN 'eastern-european' THEN 'Eastern European'
-    WHEN 'latin-american' THEN 'Latin American'
-    WHEN 'middle-eastern' THEN 'Middle Eastern'
-    WHEN 'tex-mex' THEN 'Tex-Mex'
-    WHEN 'gluten-free' THEN 'Gluten-Free'
-    WHEN 'dairy-free' THEN 'Dairy-Free'
-    WHEN 'egg-free' THEN 'Egg-Free'
-    WHEN 'nut-free' THEN 'Nut-Free'
-    WHEN 'soy-free' THEN 'Soy-Free'
-    WHEN 'shellfish-free' THEN 'Shellfish-Free'
-    WHEN 'fish-free' THEN 'Fish-Free'
-    WHEN 'sesame-free' THEN 'Sesame-Free'
+  "name" = CASE
+    WHEN "slug" = 'main-course' THEN 'Main Course'
+    WHEN "slug" = 'side-dish' THEN 'Side Dish'
+    WHEN "slug" = 'drink' THEN 'Drinks'
+    WHEN "slug" = 'cajun-creole' THEN 'Cajun & Creole'
+    WHEN "slug" = 'eastern-european' THEN 'Eastern European'
+    WHEN "slug" = 'latin-american' THEN 'Latin American'
+    WHEN "slug" = 'middle-eastern' THEN 'Middle Eastern'
+    WHEN "slug" = 'tex-mex' THEN 'Tex-Mex'
+    WHEN "slug" = 'gluten-free' THEN 'Gluten-Free'
+    WHEN "slug" = 'dairy-free' THEN 'Dairy-Free'
+    WHEN "slug" = 'egg-free' THEN 'Egg-Free'
+    WHEN "slug" = 'nut-free' THEN 'Nut-Free'
+    WHEN "slug" = 'soy-free' THEN 'Soy-Free'
+    WHEN "slug" = 'shellfish-free' THEN 'Shellfish-Free'
+    WHEN "slug" = 'fish-free' THEN 'Fish-Free'
+    WHEN "slug" = 'sesame-free' THEN 'Sesame-Free'
     WHEN "slug" IN (
       'breakfast', 'brunch', 'lunch', 'dinner', 'appetizer', 'soup', 'salad',
       'dessert', 'snack', 'bread', 'sauce', 'american', 'british', 'caribbean',
@@ -37,13 +37,13 @@ SET
       'vietnamese', 'vegan', 'vegetarian', 'weeknight', 'quick', 'barbecue',
       'healthy', 'holiday'
     ) THEN initcap(lower("name"))
-    WHEN 'slow-cooker' THEN 'Slow Cooker'
-    WHEN 'instant-pot' THEN 'Instant Pot'
-    WHEN 'one-pot' THEN 'One-Pot'
-    WHEN 'kid-friendly' THEN 'Kid-Friendly'
-    WHEN 'comfort-food' THEN 'Comfort Food'
-    WHEN 'low-carb' THEN 'Low-Carb'
-    WHEN 'meal-prep' THEN 'Meal Prep'
+    WHEN "slug" = 'slow-cooker' THEN 'Slow Cooker'
+    WHEN "slug" = 'instant-pot' THEN 'Instant Pot'
+    WHEN "slug" = 'one-pot' THEN 'One-Pot'
+    WHEN "slug" = 'kid-friendly' THEN 'Kid-Friendly'
+    WHEN "slug" = 'comfort-food' THEN 'Comfort Food'
+    WHEN "slug" = 'low-carb' THEN 'Low-Carb'
+    WHEN "slug" = 'meal-prep' THEN 'Meal Prep'
     ELSE "name"
   END;--> statement-breakpoint
 CREATE TEMP TABLE "_classification_aliases" (
@@ -131,12 +131,13 @@ INSERT INTO "_classification_aliases" ("alias_slug", "canonical_slug", "canonica
   ('mealprep', 'meal-prep', 'Meal Prep', 'general'),
   ('holidays', 'holiday', 'Holiday', 'general');--> statement-breakpoint
 INSERT INTO "tags" ("id", "slug", "name", "category")
-SELECT
+SELECT DISTINCT ON ("canonical_slug")
   'ta_' || left(md5("canonical_slug"), 21),
   "canonical_slug",
   "canonical_name",
   "category"
 FROM "_classification_aliases"
+ORDER BY "canonical_slug"
 ON CONFLICT ("slug") DO UPDATE
 SET
   "name" = EXCLUDED."name",
@@ -166,7 +167,7 @@ WITH legacy_cuisines AS (
       cuisine,
       left(
         COALESCE(
-          NULLIF(btrim(both '-' from regexp_replace(lower(btrim(cuisine)), '[^a-z0-9]+', '-', 'g')), ''),
+          NULLIF(btrim(regexp_replace(lower(btrim(cuisine)), '[^a-z0-9]+', '-', 'g'), '-'), ''),
           lower(btrim(cuisine))
         ),
         80
@@ -186,7 +187,7 @@ SELECT recipes.id, tags.id
 FROM recipes
 JOIN tags ON tags.slug = left(
   COALESCE(
-    NULLIF(btrim(both '-' from regexp_replace(lower(btrim(recipes.cuisine)), '[^a-z0-9]+', '-', 'g')), ''),
+    NULLIF(btrim(regexp_replace(lower(btrim(recipes.cuisine)), '[^a-z0-9]+', '-', 'g'), '-'), ''),
     lower(btrim(recipes.cuisine))
   ),
   80

@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 
-import { cn } from "~/lib/utils";
+import { cn, slugify } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
@@ -48,7 +48,6 @@ import {
 } from "~/server/recipes/search";
 import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { type SavedSearch } from "~/server/searches/queries";
-import { canonicalizeTag } from "~/lib/tag-taxonomy";
 
 /** Sentinel for "no filter". Radix Select forbids empty-string item values. */
 const ANY = "any";
@@ -255,7 +254,7 @@ export function RecipeSearchControls({
     const name =
       facets.meals.find((item) => item.slug === meal.toLowerCase())?.name ??
       meal;
-    const slug = canonicalizeTag(name, "meal").slug;
+    const slug = meal.toLowerCase();
     activeChips.push({
       key: `meal:${meal}`,
       label: t("chip.meal", {
@@ -271,7 +270,7 @@ export function RecipeSearchControls({
     });
   }
   for (const cuisine of search.cuisines) {
-    const slug = canonicalizeTag(cuisine, "cuisine").slug;
+    const slug = slugify(cuisine);
     activeChips.push({
       key: `cuisine:${cuisine}`,
       label: t("chip.cuisine", {
@@ -480,14 +479,15 @@ export function RecipeSearchControls({
                       (s) => s.toLowerCase() === c.value.toLowerCase(),
                     ),
                 )
-                .map((c) => ({
-                  value: c.value,
-                  label: `${
-                    tNames.has(canonicalizeTag(c.value, "cuisine").slug)
-                      ? tNames(canonicalizeTag(c.value, "cuisine").slug)
-                      : c.value
-                  } (${c.count})`,
-                }))}
+                .map((c) => {
+                  const slug = slugify(c.value);
+                  return {
+                    value: c.value,
+                    label: `${
+                      tNames.has(slug) ? tNames(slug) : c.value
+                    } (${c.count})`,
+                  };
+                })}
               onToggle={(value, on) =>
                 toggleListValue("cuisine", search.cuisines, value, on)
               }
