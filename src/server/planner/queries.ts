@@ -104,11 +104,29 @@ export async function listWeekDinners(
   userId: string,
   startDate: string,
   endDate: string,
+  groupId: string | null = null,
 ) {
   if (!isDbConfigured()) return [];
+  if (groupId != null) {
+    const membership = await db.query.groupMembers.findFirst({
+      where: and(
+        eq(groupMembers.groupId, groupId),
+        eq(groupMembers.userId, userId),
+      ),
+      columns: { id: true },
+    });
+    if (!membership) return [];
+  }
+  const scope =
+    groupId != null
+      ? eq(mealPlanEntries.groupId, groupId)
+      : and(
+          eq(mealPlanEntries.userId, userId),
+          isNull(mealPlanEntries.groupId),
+        );
   return db.query.mealPlanEntries.findMany({
     where: and(
-      eq(mealPlanEntries.userId, userId),
+      scope,
       eq(mealPlanEntries.slot, "dinner"),
       gte(mealPlanEntries.date, startDate),
       lte(mealPlanEntries.date, endDate),

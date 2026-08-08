@@ -15,14 +15,20 @@ import { Button } from "~/components/ui/button";
  * days/slots of the week being viewed, filling only empty cells (#434). Most
  * weeks are ~80% the same, so this turns Sunday's re-planning into one tap.
  */
-export function CopyLastWeekButton({ week }: { week: string }) {
+export function CopyLastWeekButton({
+  week,
+  groupId,
+}: {
+  week: string;
+  groupId?: string;
+}) {
   const router = useRouter();
   const t = useTranslations("planner.copyLastWeek");
   const [isPending, startTransition] = React.useTransition();
 
   function copy() {
     startTransition(async () => {
-      const result = await copyPreviousWeekAction({ week });
+      const result = await copyPreviousWeekAction({ week, groupId });
       if (!result.ok) {
         toast.error(friendlyError(result.error));
         return;

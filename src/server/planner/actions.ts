@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
@@ -164,7 +165,13 @@ export async function copyPreviousWeekAction(
 
   const user = await requireUser();
   try {
-    const result = await copyPreviousWeek(user, parsed.data.week);
+    const locale = await getLocale();
+    const result = await copyPreviousWeek(
+      user,
+      parsed.data.week,
+      parsed.data.groupId,
+      locale,
+    );
     revalidatePath("/plan");
     return { ok: true, ...result };
   } catch (error) {

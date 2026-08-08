@@ -4,6 +4,7 @@ import {
   MEAL_SLOTS,
   MEAL_SLOT_LABELS,
   addEntryInput,
+  copyWeekInput,
   mealWithLeftoversInput,
   moveEntryInput,
   removeEntryInput,
@@ -92,6 +93,14 @@ describe("addEntryInput", () => {
       addEntryInput.safeParse({ date: "2026-13-01", slot: "dinner", note: "x" })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("copyWeekInput", () => {
+  it("accepts an optional family-plan scope", () => {
+    expect(
+      copyWeekInput.parse({ week: "2026-07-06", groupId: "group_1" }),
+    ).toEqual({ week: "2026-07-06", groupId: "group_1" });
   });
 });
 

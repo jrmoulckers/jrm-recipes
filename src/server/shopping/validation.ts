@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SHOPPING_CATEGORIES } from "~/lib/shopping-list";
+import { dateParam } from "~/server/planner/validation";
 
 /**
  * Validation contract for shopping-list input, shared by the client UI and the
@@ -45,6 +46,12 @@ export const addRecipeToListInput = z.object({
   includeStaples: z.boolean().optional(),
 });
 
+/** Build a personal shopping list from a personal or shared planner week. */
+export const buildFromPlanInput = z.object({
+  week: dateParam,
+  groupId: z.string().trim().min(1).max(24).optional(),
+});
+
 /** Override the aisle (category) an item is filed under (#360). */
 export const setItemCategoryInput = z.object({
   itemId: z.string().trim().min(1).max(24),
@@ -53,4 +60,5 @@ export const setItemCategoryInput = z.object({
 
 export type ManualItemInput = z.infer<typeof manualItemInput>;
 export type AddRecipeToListInput = z.infer<typeof addRecipeToListInput>;
+export type BuildFromPlanInput = z.infer<typeof buildFromPlanInput>;
 export type SetItemCategoryInput = z.infer<typeof setItemCategoryInput>;

@@ -17,7 +17,13 @@ import { Button } from "~/components/ui/button";
  * merge into the existing list rather than duplicating, and reports what was
  * added vs. merged so the shopper knows the list grew.
  */
-export function BuildShoppingListButton({ week }: { week: string }) {
+export function BuildShoppingListButton({
+  week,
+  groupId,
+}: {
+  week: string;
+  groupId?: string;
+}) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("planner.shoppingList");
@@ -25,7 +31,7 @@ export function BuildShoppingListButton({ week }: { week: string }) {
 
   function build() {
     startTransition(async () => {
-      const result = await buildListFromPlanAction(week);
+      const result = await buildListFromPlanAction({ week, groupId });
       if (!result.ok) {
         toast.error(friendlyError(result.error));
         return;
