@@ -267,6 +267,51 @@ describe("PlannerBoard. Batch cook / leftovers (#380)", () => {
     );
   });
 
+  it("only offers leftover meals after the source meal", async () => {
+    render(
+      <PlannerBoard
+        days={weekDays}
+        entries={[]}
+        recipes={[
+          {
+            id: "recipe-1",
+            title: "Weeknight Chili",
+            slug: "chili",
+            defaultServings: 4,
+            lastServings: null,
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /add to dinner on wednesday, jul 8/i,
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /weeknight chili/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /add leftover meal/i }));
+
+    const date = screen.getByLabelText(/^date$/i);
+    expect(date).toHaveValue("2026-07-09");
+    expect(screen.queryByRole("option", { name: /monday, jul 6/i })).toBeNull();
+    expect(
+      screen.queryByRole("option", { name: /tuesday, jul 7/i }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("option", { name: /thursday, jul 9/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(date, { target: { value: "2026-07-08" } });
+    const meal = screen.getByLabelText(/^meal$/i);
+    expect(meal).toHaveValue("snack");
+    expect(screen.queryByRole("option", { name: /^breakfast$/i })).toBeNull();
+    expect(screen.queryByRole("option", { name: /^lunch$/i })).toBeNull();
+    expect(screen.queryByRole("option", { name: /^dinner$/i })).toBeNull();
+  });
+
   it("prefills the latest serving count ahead of the recipe default", async () => {
     render(
       <PlannerBoard

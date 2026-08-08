@@ -176,17 +176,32 @@ describe("mealWithLeftoversInput", () => {
     });
   });
 
-  it("allows leftovers before the source date and later the same day", () => {
+  it("rejects leftovers before the source meal and allows later the same day", () => {
     expect(
       mealWithLeftoversInput.safeParse({
         date: "2026-07-06",
         slot: "dinner",
         recipeId: "recipe123",
         mealServings: 2,
-        leftovers: [
-          { date: "2026-07-05", slot: "breakfast", servings: 1 },
-          { date: "2026-07-06", slot: "snack", servings: 1 },
-        ],
+        leftovers: [{ date: "2026-07-05", slot: "breakfast", servings: 1 }],
+      }).success,
+    ).toBe(false);
+    expect(
+      mealWithLeftoversInput.safeParse({
+        date: "2026-07-06",
+        slot: "dinner",
+        recipeId: "recipe123",
+        mealServings: 2,
+        leftovers: [{ date: "2026-07-06", slot: "breakfast", servings: 1 }],
+      }).success,
+    ).toBe(false);
+    expect(
+      mealWithLeftoversInput.safeParse({
+        date: "2026-07-06",
+        slot: "dinner",
+        recipeId: "recipe123",
+        mealServings: 2,
+        leftovers: [{ date: "2026-07-06", slot: "snack", servings: 1 }],
       }).success,
     ).toBe(true);
   });
