@@ -59,6 +59,17 @@ describe("motion tokens (issue #95)", () => {
     expect(TAILWIND).toContain("translateX(-100%)");
   });
 
+  it("keeps translated overlays positioned while they pop (issue #620)", () => {
+    const popKeyframes = TAILWIND.slice(
+      TAILWIND.indexOf('"pop-in": {'),
+      TAILWIND.indexOf('"slide-in-from-right": {'),
+    );
+
+    expect(popKeyframes).toContain('scale: "0.96"');
+    expect(popKeyframes).toContain('scale: "1"');
+    expect(popKeyframes).not.toContain("transform:");
+  });
+
   it("adopts the tokens in the primitives instead of literal durations", () => {
     const button = read("src", "components", "ui", "button.tsx");
     const card = read("src", "components", "ui", "card.tsx");
