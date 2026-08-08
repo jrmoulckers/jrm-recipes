@@ -1,10 +1,21 @@
 import "server-only";
 
-import { and, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
   mealPlanEntries,
+  groupMembers,
   shoppingListItems,
   shoppingLists,
   type User,
@@ -166,11 +177,29 @@ export async function buildListFromPlan(
   user: User,
   startDate: string,
   endDate: string,
+  groupId: string | null = null,
   includeStaples = false,
 ): Promise<BuildFromPlanResult> {
+  if (groupId != null) {
+    const membership = await db.query.groupMembers.findFirst({
+      where: and(
+        eq(groupMembers.groupId, groupId),
+        eq(groupMembers.userId, user.id),
+      ),
+      columns: { id: true },
+    });
+    if (!membership) throw new Error("FORBIDDEN");
+  }
+  const scope =
+    groupId != null
+      ? eq(mealPlanEntries.groupId, groupId)
+      : and(
+          eq(mealPlanEntries.userId, user.id),
+          isNull(mealPlanEntries.groupId),
+        );
   const entries = await db.query.mealPlanEntries.findMany({
     where: and(
-      eq(mealPlanEntries.userId, user.id),
+      scope,
       isNotNull(mealPlanEntries.recipeId),
       gte(mealPlanEntries.date, startDate),
       lte(mealPlanEntries.date, endDate),

@@ -352,18 +352,29 @@ export type CopyWeekResult = { copied: number; previousEmpty: boolean };
 export async function copyPreviousWeek(
   user: User,
   weekParam: string,
+  groupId: string | null = null,
+  locale?: string,
 ): Promise<CopyWeekResult> {
-  const target = getPlannerWeek(parseDateParam(weekParam));
+  const target = getPlannerWeek(parseDateParam(weekParam), locale);
   const startParam = toDateParam(target.start);
   const endParam = toDateParam(target.end);
   const prevStart = addDaysToParam(startParam, -7);
   const prevEnd = addDaysToParam(endParam, -7);
 
   return db.transaction(async (tx) => {
+    if (groupId != null && !(await isGroupMember(tx, groupId, user.id))) {
+      throw new Error("FORBIDDEN");
+    }
+    const scope =
+      groupId != null
+        ? eq(mealPlanEntries.groupId, groupId)
+        : and(
+            eq(mealPlanEntries.userId, user.id),
+            isNull(mealPlanEntries.groupId),
+          );
     const previous = await tx.query.mealPlanEntries.findMany({
       where: and(
-        eq(mealPlanEntries.userId, user.id),
-        isNull(mealPlanEntries.groupId),
+        scope,
         gte(mealPlanEntries.date, prevStart),
         lte(mealPlanEntries.date, prevEnd),
       ),
@@ -386,8 +397,7 @@ export async function copyPreviousWeek(
 
     const current = await tx.query.mealPlanEntries.findMany({
       where: and(
-        eq(mealPlanEntries.userId, user.id),
-        isNull(mealPlanEntries.groupId),
+        scope,
         gte(mealPlanEntries.date, startParam),
         lte(mealPlanEntries.date, endParam),
       ),
@@ -411,7 +421,7 @@ export async function copyPreviousWeek(
         .insert(mealPlanEntries)
         .values({
           userId: user.id,
-          groupId: entry.groupId,
+          groupId,
           date: addDaysToParam(entry.date, 7),
           slot: entry.slot,
           recipeId: entry.recipeId,
@@ -434,7 +444,7 @@ export async function copyPreviousWeek(
       const sourceId = copiedIds.get(entry.leftoverSourceId!);
       await tx.insert(mealPlanEntries).values({
         userId: user.id,
-        groupId: entry.groupId,
+        groupId,
         date: addDaysToParam(entry.date, 7),
         slot: entry.slot,
         recipeId: entry.recipeId,

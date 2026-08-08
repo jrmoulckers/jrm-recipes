@@ -210,15 +210,24 @@ export default async function PlanPage({
             className="flex flex-wrap items-center gap-2"
             aria-label={t("a11y.weekNavigation")}
           >
-            {dbConfigured && user && !isGroupScope && (
-              <CopyLastWeekButton week={startParam} />
+            {dbConfigured && user && (
+              <CopyLastWeekButton week={startParam} groupId={activeGroup?.id} />
             )}
-            {dbConfigured && user && !isGroupScope && (
-              <BuildShoppingListButton week={startParam} />
+            {dbConfigured && user && (
+              <BuildShoppingListButton
+                week={startParam}
+                groupId={activeGroup?.id}
+              />
             )}
-            {dbConfigured && user && !isGroupScope && (
+            {dbConfigured && user && (
               <Button asChild variant="outline">
-                <Link href={`/plan/print?week=${startParam}`}>
+                <Link
+                  href={
+                    activeGroup
+                      ? `/plan/print?week=${startParam}&scope=${activeGroup.slug}`
+                      : `/plan/print?week=${startParam}`
+                  }
+                >
                   <Printer /> {t("printWeek")}
                 </Link>
               </Button>

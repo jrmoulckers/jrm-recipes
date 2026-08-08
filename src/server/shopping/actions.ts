@@ -20,9 +20,11 @@ import {
 } from "./mutations";
 import {
   addRecipeToListInput,
+  buildFromPlanInput,
   manualItemInput,
   setItemCategoryInput,
   type AddRecipeToListInput,
+  type BuildFromPlanInput,
   type ManualItemInput,
 } from "./validation";
 import { type ShoppingCategory } from "~/lib/shopping-list";
@@ -103,17 +105,25 @@ export type BuildFromPlanActionResult =
  * exactly the visible week.
  */
 export async function buildListFromPlanAction(
-  week: string,
+  input: BuildFromPlanInput,
 ): Promise<BuildFromPlanActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = buildFromPlanInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please choose a valid planner week." };
+  }
   const user = await requireUser();
   try {
     const locale = await getLocale();
-    const { start, end } = getPlannerWeek(parseDateParam(week), locale);
+    const { start, end } = getPlannerWeek(
+      parseDateParam(parsed.data.week),
+      locale,
+    );
     const result = await buildListFromPlan(
       user,
       toDateParam(start),
       toDateParam(end),
+      parsed.data.groupId,
     );
     revalidatePath("/shopping");
     return { ok: true, ...result };

@@ -207,6 +207,53 @@ describe("addMealWithLeftovers serving allocations (#611)", () => {
 });
 
 describe("copyPreviousWeek serving allocations (#611)", () => {
+  it("copies a shared week when the caller belongs to the family", async () => {
+    const tx = fakeTx({
+      membership: { id: "m1" },
+      previousEntries: [
+        {
+          id: "family-meal",
+          date: "2026-07-06",
+          slot: "dinner",
+          recipeId: "recipe_1",
+          groupId: "group_1",
+          plannedServings: 4,
+          servingsMade: 4,
+          leftoverSourceId: null,
+          note: null,
+          position: 0,
+        },
+      ],
+      currentEntries: [],
+      created: { id: "copied-meal" },
+    });
+    runWith(tx);
+
+    await expect(
+      copyPreviousWeek(member, "2026-07-13", "group_1"),
+    ).resolves.toEqual({
+      copied: 1,
+      previousEmpty: false,
+    });
+    expect(tx.chain.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: member.id,
+        groupId: "group_1",
+        date: "2026-07-13",
+      }),
+    );
+  });
+
+  it("rejects a non-member copying a shared week", async () => {
+    const tx = fakeTx({ membership: null });
+    runWith(tx);
+
+    await expect(
+      copyPreviousWeek(outsider, "2026-07-13", "group_1"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.query.mealPlanEntries.findMany).not.toHaveBeenCalled();
+  });
+
   it("keeps an eligible leftover as a standalone meal when its source cell is occupied", async () => {
     const tx = fakeTx({
       previousEntries: [

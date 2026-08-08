@@ -76,6 +76,7 @@ export const removeEntryInput = z.object({
 
 export const copyWeekInput = z.object({
   week: dateParam,
+  groupId: idInput.optional(),
 });
 
 export const leftoverAllocationInput = z.object({
