@@ -135,7 +135,72 @@ then leave a clear `## Needs Human Action` note.
 Scope-specific rules live alongside the code — read the relevant one before working in that area:
 
 - Each product repo's root `AGENTS.md` — stack, paths, and product-specific rules.
-- `agents/*.agent.md` — role definitions and boundaries.
+- `agents/*.agent.md` in this backbone, materialized as `.github/agents/*.agent.md` in consumers —
+  role definitions and boundaries. Consumer copies are generated; product-specific stack/path/risk
+  overlays belong in the product's root `AGENTS.md` or scoped instructions.
 - `skills/<name>/SKILL.md` — reusable task playbooks; read the relevant one before acting.
 - `instructions/*.instructions.md` — path-scoped coding standards.
 <!-- studio:base:end -->
+
+# Recipes product overlay
+
+This locally authored section overrides generic canonical path, platform, and release-tool
+assumptions for this repository. The generated agent personas and safety boundaries still apply.
+
+## Product stack and paths
+
+Recipes is a web/PWA product built with Next.js 15 App Router, React 19, and TypeScript. Product
+source lives under `src/**`; there are no native application modules in this repository.
+
+| Surface | Recipes authority |
+| --- | --- |
+| Web and App Router | `src/app/**`, `src/components/**`, `src/styles/**`, `src/middleware.ts`, `next.config.js` |
+| API and server behavior | `src/app/api/**`, `src/app/import/route.ts`, `src/server/**`, `src/env.js` |
+| PostgreSQL and Drizzle | `src/server/db/**`, `src/server/db/schema/**`, `drizzle/**`, `drizzle.config.ts` |
+| Localization | `src/messages/*.json`, `src/i18n/**`, `src/config/i18n.ts`, `scripts/i18n-*.mjs` |
+| Analytics and flags | `src/lib/analytics/**`, `src/components/analytics/**`, `src/server/flags/**`, `docs/analytics/**` |
+| Architecture | `docs/app-router-architecture.md`, `docs/pwa-architecture.md`, `docs/data-model.md`, `docs/migrations.md`, `docs/db-backup-and-recovery.md`, `docs/secrets-management.md` |
+| Performance budgets | `bundle-budgets.json`, `scripts/check-bundle-budget.mjs`, `lighthouserc.cjs` |
+| Releases | `.github/workflows/release.yml`, `release-please-config.json`, `.release-please-manifest.json`, `CHANGELOG.md` |
+
+These paths replace generic examples such as `api/**`, `db/**`, `migrations/**`,
+`config/feature-flags/**`, and `docs/architecture/**`. Release management uses Release Please, not
+Changesets. The native-app agent has no product-owned write path unless native modules are
+deliberately introduced in a future issue.
+
+## Trust boundaries
+
+- Clerk identity must flow through `src/middleware.ts` and `src/server/auth/**`. Protected route
+  handlers, server actions, queries, and mutations must enforce authorization for the target
+  resource; authentication alone is not authorization.
+- Treat route parameters, forms, imports, webhook bodies, and provider responses as untrusted.
+  Validate inputs and verify Clerk, Stripe, and other webhook signatures at their route boundary
+  before mutating state.
+- `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` and `SKIP_ENV_VALIDATION=1` are local/CI-only controls. Production
+  must fail closed when Clerk is unavailable. Never commit credentials or expose server-only values
+  to client modules.
+- Analytics and feature flags use PostHog through the mapped analytics modules. Preserve consent
+  checks, scrub event properties, and use internal non-PII identifiers; flags must fail safely to
+  control behavior.
+
+## Package manager and validation
+
+Use Node.js 20 or newer and the repository-pinned `pnpm@10.6.1`. Do not generate npm or Yarn
+lockfiles. Before every push, run the complete local gate:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm copy:check
+pnpm audit:ci
+pnpm test
+pnpm db:generate
+git diff --exit-code -- drizzle
+pnpm check:bundle
+```
+
+`pnpm check:bundle` performs the production Next.js build and enforces `bundle-budgets.json`.
+GitHub CI additionally runs fresh-Postgres migration idempotence, Playwright E2E, and Lighthouse
+against `lighthouserc.cjs`.
