@@ -15,6 +15,8 @@ describe("parseRecipeSearch", () => {
   it("returns defaults for empty params", () => {
     expect(parseRecipeSearch({})).toEqual({
       q: undefined,
+      ingredient: undefined,
+      meals: [],
       cuisines: [],
       difficulty: undefined,
       maxTime: undefined,
@@ -41,13 +43,30 @@ describe("parseRecipeSearch", () => {
     expect(
       parseRecipeSearch({ cuisine: "Mexican, Thai , mexican" }).cuisines,
     ).toEqual(["Mexican", "Thai"]);
+    expect(
+      parseRecipeSearch({ meal: ["Breakfast", "brunch,breakfast"] }).meals,
+    ).toEqual(["Breakfast", "brunch"]);
   });
 
   it("keeps a single facet value back-compatible (#271)", () => {
+    expect(parseRecipeSearch({ meal: "Dinner" }).meals).toEqual(["Dinner"]);
     expect(parseRecipeSearch({ tag: "quick" }).tags).toEqual(["quick"]);
     expect(parseRecipeSearch({ cuisine: "Italian" }).cuisines).toEqual([
       "Italian",
     ]);
+  });
+
+  it("keeps classifications up to the schema's 80-character limit", () => {
+    const value = "x".repeat(80);
+    const parsed = parseRecipeSearch({
+      meal: value,
+      cuisine: value,
+      tag: value,
+    });
+    expect(parsed.meals).toEqual([value]);
+    expect(parsed.cuisines).toEqual([value]);
+    expect(parsed.tags).toEqual([value]);
+    expect(tagFilterSlug(value)).toHaveLength(80);
   });
 
   it("takes the first value when a param repeats", () => {

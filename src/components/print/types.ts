@@ -20,6 +20,8 @@ export type PrintRecipeStep = {
 export type PrintRecipeTag = {
   tag: {
     name: string;
+    slug: string;
+    category: "meal" | "cuisine" | "dietary" | "general";
   };
 };
 
@@ -37,6 +39,7 @@ export type PrintRecipe = {
   totalMinutes: number | null;
   difficulty: string | null;
   cuisine: string | null;
+  cuisines: string[];
   sourceName: string | null;
   sourceUrl: string | null;
   notes: string | null;

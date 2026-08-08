@@ -61,6 +61,13 @@ describe("searchFilterConditions (scoped facet counts, #274)", () => {
     expect(sql).toContain(" or ");
     expect((sql.match(/cuisine/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
+
+  it("ORs selected meals within a category-aware tag predicate", () => {
+    const sql = render(parseRecipeSearch({ meal: ["Breakfast", "Brunch"] }));
+    expect(sql).toContain("exists");
+    expect(sql).toContain("category");
+    expect(sql).toContain(" in ");
+  });
 });
 
 describe("searchFilterConditions. Dietary filter (#273)", () => {

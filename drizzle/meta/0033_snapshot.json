@@ -1,6 +1,6 @@
 {
-  "id": "14057513-d014-403c-bbfc-74f2d6685024",
-  "prevId": "239a3a6d-0d7f-4ef7-9f7c-6c6aa86bef86",
+  "id": "bfac3118-5c2d-4cc9-b571-23dcbd70b83a",
+  "prevId": "14057513-d014-403c-bbfc-74f2d6685024",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2074,7 +2074,29 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "recipe_tags_tag_idx": {
+          "name": "recipe_tags_tag_idx",
+          "columns": [
+            {
+              "expression": "tag_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "recipe_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "recipe_tags_recipe_id_recipes_id_fk": {
           "name": "recipe_tags_recipe_id_recipes_id_fk",
@@ -2129,18 +2151,48 @@
         },
         "slug": {
           "name": "slug",
-          "type": "varchar(60)",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": true
         },
         "name": {
           "name": "name",
-          "type": "varchar(60)",
+          "type": "varchar(80)",
           "primaryKey": false,
           "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "tag_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'general'"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "tags_category_name_idx": {
+          "name": "tags_category_name_idx",
+          "columns": [
+            {
+              "expression": "category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -6912,6 +6964,16 @@
       "values": [
         "comment",
         "suggestion"
+      ]
+    },
+    "public.tag_category": {
+      "name": "tag_category",
+      "schema": "public",
+      "values": [
+        "meal",
+        "cuisine",
+        "dietary",
+        "general"
       ]
     },
     "public.reaction_emoji": {

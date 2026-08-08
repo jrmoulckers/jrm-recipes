@@ -42,7 +42,11 @@ import { cn, formatMinutes } from "~/lib/utils";
 import { recipeDetailPath } from "~/lib/recipe-path";
 import { useAutosaveDraft } from "~/lib/use-autosave-draft";
 import { track } from "~/lib/analytics";
-import { SUGGESTED_TAGS } from "~/lib/tag-taxonomy";
+import {
+  parseClassificationList,
+  SUGGESTED_TAGS_BY_CATEGORY,
+  type CanonicalTag,
+} from "~/lib/tag-taxonomy";
 import { type RecipeInput } from "~/server/recipes/validation";
 import {
   DIETARY_TAGS,
@@ -155,7 +159,10 @@ export type RecipeEditorValue = {
   sugarGrams: string;
   fiberGrams: string;
   difficulty: "" | "easy" | "medium" | "hard";
-  cuisine: string;
+  /** @deprecated Use the comma-separated `cuisines` editor value. */
+  cuisine?: string;
+  cuisines?: string;
+  mealTypes?: string;
   sourceName: string;
   sourceUrl: string;
   notes: string;
@@ -667,7 +674,8 @@ export function RecipeEditor({
     sugarGrams: initial?.sugarGrams ?? "",
     fiberGrams: initial?.fiberGrams ?? "",
     difficulty: initial?.difficulty ?? "",
-    cuisine: initial?.cuisine ?? "",
+    cuisines: initial?.cuisines ?? initial?.cuisine ?? "",
+    mealTypes: initial?.mealTypes ?? "",
     sourceName: initial?.sourceName ?? "",
     sourceUrl: initial?.sourceUrl ?? "",
     notes: initial?.notes ?? "",
@@ -860,18 +868,23 @@ export function RecipeEditor({
     );
   }
 
-  // Parsed view of the comma-separated tags field, used by the quick-add chips.
-  const tagList = form.tags
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const commaList = parseClassificationList;
+  const tagList = commaList(form.tags);
+  const cuisineList = commaList(form.cuisines);
+  const mealTypeList = commaList(form.mealTypes);
 
-  function toggleTag(name: string) {
-    const has = tagList.some((t) => t.toLowerCase() === name.toLowerCase());
+  function toggleClassification(
+    key: "tags" | "cuisines" | "mealTypes",
+    values: string[],
+    name: string,
+  ) {
+    const has = values.some(
+      (value) => value.toLowerCase() === name.toLowerCase(),
+    );
     const next = has
-      ? tagList.filter((t) => t.toLowerCase() !== name.toLowerCase())
-      : [...tagList, name];
-    set("tags", next.join(", "));
+      ? values.filter((value) => value.toLowerCase() !== name.toLowerCase())
+      : [...values, name];
+    set(key, next.join(", "));
   }
 
   function toggleDietaryFlag(tag: DietaryTag) {
@@ -911,7 +924,8 @@ export function RecipeEditor({
       servingsNoun: v.servingsNoun || f.servingsNoun,
       prepMinutes: v.prepMinutes || f.prepMinutes,
       cookMinutes: v.cookMinutes || f.cookMinutes,
-      cuisine: v.cuisine || f.cuisine,
+      cuisines: v.cuisines || v.cuisine || f.cuisines,
+      mealTypes: v.mealTypes || f.mealTypes,
       sourceName: v.sourceName || f.sourceName,
       sourceUrl: v.sourceUrl || f.sourceUrl,
       tags: v.tags || f.tags,
@@ -1270,7 +1284,9 @@ export function RecipeEditor({
       sugarGrams: numOrUndef(form.sugarGrams),
       fiberGrams: numOrUndef(form.fiberGrams),
       difficulty: form.difficulty || undefined,
-      cuisine: form.cuisine.trim() || undefined,
+      cuisine: commaList(form.cuisines)[0],
+      cuisines: commaList(form.cuisines),
+      mealTypes: commaList(form.mealTypes),
       sourceName: form.sourceName.trim() || undefined,
       sourceUrl: form.sourceUrl.trim() || undefined,
       notes: form.notes.trim() || undefined,
@@ -1282,10 +1298,7 @@ export function RecipeEditor({
       status: form.status,
       groupId:
         form.visibility === "group" && form.groupId ? form.groupId : undefined,
-      tags: form.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: commaList(form.tags),
       dietaryFlags: form.dietaryFlags,
       ingredients: ingredients
         .filter((r) => r.item.trim() !== "")
@@ -1401,7 +1414,8 @@ export function RecipeEditor({
       complete:
         form.coverImageUrl.trim() !== "" ||
         form.difficulty !== "" ||
-        form.cuisine.trim() !== "",
+        form.cuisines.trim() !== "" ||
+        form.mealTypes.trim() !== "",
     },
     {
       id: "editor-story",
@@ -1472,7 +1486,7 @@ export function RecipeEditor({
       text: t(`difficulty.${difficulty}`),
     });
   }
-  const trimmedCuisine = form.cuisine.trim();
+  const trimmedCuisine = commaList(form.cuisines)[0] ?? "";
   if (trimmedCuisine !== "") {
     summaryVitals.push({
       key: "cuisine",
@@ -2623,17 +2637,38 @@ export function RecipeEditor({
               </NativeSelect>
             </Field>
 
-            <Field
-              label={t("fields.cuisine")}
-              name="cuisine"
-              error={errors.cuisine}
-            >
-              <Input
-                value={form.cuisine}
-                onChange={(e) => set("cuisine", e.target.value)}
-                placeholder={t("placeholders.cuisine")}
-              />
-            </Field>
+            <ClassificationField
+              label={t("fields.mealTypes")}
+              name="mealTypes"
+              value={form.mealTypes}
+              selected={mealTypeList}
+              suggestions={SUGGESTED_TAGS_BY_CATEGORY.meal}
+              hint={t("hints.mealTypes")}
+              placeholder={t("placeholders.mealTypes")}
+              error={errors.mealTypes}
+              onChange={(value) => set("mealTypes", value)}
+              onToggle={(name) =>
+                toggleClassification("mealTypes", mealTypeList, name)
+              }
+            />
+
+            <ClassificationField
+              label={t("fields.cuisines")}
+              name="cuisines"
+              value={form.cuisines}
+              selected={cuisineList}
+              suggestions={SUGGESTED_TAGS_BY_CATEGORY.cuisine}
+              hint={t("hints.cuisines")}
+              placeholder={t("placeholders.cuisines")}
+              error={errors.cuisines}
+              onChange={(value) => set("cuisines", value)}
+              onToggle={(name) =>
+                toggleClassification("cuisines", cuisineList, name)
+              }
+              collapsible
+              expandLabel={t("moreCuisines")}
+              collapseLabel={t("fewerOptions")}
+            />
 
             <div className="h-px bg-border" />
 
@@ -2725,42 +2760,18 @@ export function RecipeEditor({
 
             <div className="h-px bg-border" />
 
-            <Field
+            <ClassificationField
               label={t("fields.tags")}
               name="tags"
+              value={form.tags}
+              selected={tagList}
+              suggestions={SUGGESTED_TAGS_BY_CATEGORY.general}
               hint={t("hints.tags")}
+              placeholder={t("placeholders.tags")}
               error={errors.tags}
-            >
-              <Input
-                id="recipe-field-tags"
-                value={form.tags}
-                onChange={(e) => set("tags", e.target.value)}
-                placeholder={t("placeholders.tags")}
-              />
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {SUGGESTED_TAGS.map((tag) => {
-                  const active = tagList.some(
-                    (t) => t.toLowerCase() === tag.name.toLowerCase(),
-                  );
-                  return (
-                    <button
-                      key={tag.slug}
-                      type="button"
-                      onClick={() => toggleTag(tag.name.toLowerCase())}
-                      aria-pressed={active}
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                        active
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted",
-                      )}
-                    >
-                      {tag.name.toLowerCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
+              onChange={(value) => set("tags", value)}
+              onToggle={(name) => toggleClassification("tags", tagList, name)}
+            />
 
             <ImageUploadField
               label={t("fields.coverImageUrl")}
@@ -3014,7 +3025,8 @@ const LABELLED_FIELDS = new Set([
   "makeAheadNote",
   "equipment",
   "difficulty",
-  "cuisine",
+  "mealTypes",
+  "cuisines",
   "notes",
   "story",
   "handedDownFrom",
@@ -3048,7 +3060,8 @@ const ANCHORABLE_FIELDS = new Set([
   "prepMinutes",
   "cookMinutes",
   "difficulty",
-  "cuisine",
+  "mealTypes",
+  "cuisines",
   "notes",
   "story",
   "handedDownFrom",
@@ -3073,6 +3086,95 @@ function prettifyFieldKey(key: string) {
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (c) => c.toUpperCase())
     .trim();
+}
+
+function ClassificationField({
+  label,
+  name,
+  value,
+  selected,
+  suggestions,
+  hint,
+  placeholder,
+  error,
+  onChange,
+  onToggle,
+  collapsible = false,
+  expandLabel,
+  collapseLabel,
+}: {
+  label: string;
+  name: "mealTypes" | "cuisines" | "tags";
+  value: string;
+  selected: string[];
+  suggestions: CanonicalTag[];
+  hint?: string;
+  placeholder: string;
+  error?: string[];
+  onChange: (value: string) => void;
+  onToggle: (name: string) => void;
+  collapsible?: boolean;
+  expandLabel?: string;
+  collapseLabel?: string;
+}) {
+  const tNames = useTranslations("classificationNames");
+  const [expanded, setExpanded] = React.useState(false);
+  const visibleSuggestions =
+    collapsible && !expanded ? suggestions.slice(0, 16) : suggestions;
+  return (
+    <div className="flex flex-col gap-2">
+      <Field label={label} name={name} hint={hint} error={error}>
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+        />
+      </Field>
+      <div className="flex flex-wrap gap-1.5">
+        {visibleSuggestions.map((suggestion) => {
+          const active = selected.some(
+            (item) => item.toLowerCase() === suggestion.name.toLowerCase(),
+          );
+          return (
+            <button
+              key={suggestion.slug}
+              type="button"
+              onClick={() => onToggle(suggestion.name)}
+              aria-pressed={active}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                active
+                  ? "bg-primary/12 border-primary/30 text-[color:var(--badge-ink-primary)]"
+                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {tNames.has(suggestion.slug)
+                ? tNames(suggestion.slug)
+                : suggestion.name}
+            </button>
+          );
+        })}
+      </div>
+      {collapsible &&
+        suggestions.length > 16 &&
+        expandLabel &&
+        collapseLabel && (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            className="inline-flex items-center gap-1 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {expanded ? (
+              <ChevronUp className="size-3.5" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="size-3.5" aria-hidden="true" />
+            )}
+            {expanded ? collapseLabel : expandLabel}
+          </button>
+        )}
+    </div>
+  );
 }
 
 function Field({

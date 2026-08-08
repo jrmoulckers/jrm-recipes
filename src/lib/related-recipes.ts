@@ -9,6 +9,7 @@
 export type RecipeSignals = {
   tagSlugs: string[];
   cuisine: string | null;
+  cuisines?: string[];
   ingredientTokens: string[];
 };
 
@@ -45,11 +46,16 @@ export function similarityScore(
   const sourceTags = new Set(source.tagSlugs);
   const sharedTags = candidate.tagSlugs.filter((s) => sourceTags.has(s)).length;
 
-  const sameCuisine =
-    source.cuisine != null &&
-    source.cuisine.toLowerCase() === candidate.cuisine?.toLowerCase()
-      ? 1
-      : 0;
+  const sourceCuisines = new Set(
+    [source.cuisine, ...(source.cuisines ?? [])]
+      .filter((value): value is string => value != null)
+      .map((value) => value.toLowerCase()),
+  );
+  const sameCuisine = [candidate.cuisine, ...(candidate.cuisines ?? [])].some(
+    (value) => value != null && sourceCuisines.has(value.toLowerCase()),
+  )
+    ? 1
+    : 0;
 
   const sourceTokens = new Set(source.ingredientTokens);
   const overlap = Math.min(

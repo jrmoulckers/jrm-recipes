@@ -17,12 +17,25 @@ import { fk, pk, timestamps } from "./_shared";
 import { users } from "./users";
 import { recipes } from "./recipes";
 
-/** Free-form, shared tags (e.g. "weeknight", "vegan", "grandma's"). */
-export const tags = pgTable("tags", {
-  id: pk(),
-  slug: varchar({ length: 60 }).notNull().unique(),
-  name: varchar({ length: 60 }).notNull(),
-});
+/** Functional classification used by recipe discovery and presentation. */
+export const tagCategory = pgEnum("tag_category", [
+  "meal",
+  "cuisine",
+  "dietary",
+  "general",
+]);
+
+/** Shared recipe classifications with a stable, case-insensitive slug identity. */
+export const tags = pgTable(
+  "tags",
+  {
+    id: pk(),
+    slug: varchar({ length: 80 }).notNull().unique(),
+    name: varchar({ length: 80 }).notNull(),
+    category: tagCategory().notNull().default("general"),
+  },
+  (t) => [index("tags_category_name_idx").on(t.category, t.name)],
+);
 
 export const recipeTags = pgTable(
   "recipe_tags",
@@ -34,7 +47,10 @@ export const recipeTags = pgTable(
       .notNull()
       .references(() => tags.id, { onDelete: "cascade" }),
   },
-  (t) => [primaryKey({ columns: [t.recipeId, t.tagId] })],
+  (t) => [
+    primaryKey({ columns: [t.recipeId, t.tagId] }),
+    index("recipe_tags_tag_idx").on(t.tagId, t.recipeId),
+  ],
 );
 
 /** A 1–5 star rating. One per user per recipe. */

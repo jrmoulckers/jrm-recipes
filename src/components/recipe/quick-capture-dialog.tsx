@@ -74,6 +74,8 @@ export function QuickCaptureDialog() {
       ingredients: [],
       steps: [],
       tags: [],
+      cuisines: [],
+      mealTypes: [],
       equipment: [],
       dietaryFlags: [],
     };

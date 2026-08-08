@@ -9,7 +9,7 @@
  */
 import { absoluteUrl } from "~/lib/utils";
 import { displayUnit, formatQuantity } from "~/lib/units";
-import { recipeCategoryForTag } from "~/lib/tag-taxonomy";
+import { canonicalizeTag, type TagCategory } from "~/lib/tag-taxonomy";
 
 export type SeoIngredient = {
   quantity: number | null;
@@ -63,7 +63,9 @@ export type SeoRecipe = {
   author: { name: string | null } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
-  tags: { tag: { name: string } | null }[];
+  tags: {
+    tag: { name: string; category?: TagCategory } | null;
+  }[];
   ratings: { value: number; userId: string }[];
   publishedAt: Date | null;
 } & SeoNutrition;
@@ -233,15 +235,6 @@ function cleanTagNames(recipe: SeoRecipe): string[] {
   return out;
 }
 
-/** First tag matching the meal-course vocabulary, as a canonical label. */
-function resolveCategory(tagNames: string[]): string | undefined {
-  for (const name of tagNames) {
-    const canonical = recipeCategoryForTag(name);
-    if (canonical) return canonical;
-  }
-  return undefined;
-}
-
 /**
  * Build a schema.org `Recipe` object for a publicly viewable recipe. Only ever
  * called for `public` recipes. Optional fields are omitted when absent so the
@@ -256,7 +249,6 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   };
 
   if (recipe.description) jsonLd.description = recipe.description;
-  if (recipe.cuisine?.trim()) jsonLd.recipeCuisine = recipe.cuisine.trim();
   const images = recipeImages(recipe);
   if (images.length > 0) jsonLd.image = images;
   if (recipe.author?.name) {
@@ -296,8 +288,35 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
 
   const tagNames = cleanTagNames(recipe);
   if (tagNames.length > 0) jsonLd.keywords = tagNames.join(", ");
-  const category = resolveCategory(tagNames);
-  if (category) jsonLd.recipeCategory = category;
+  const classified = recipe.tags
+    .map((entry) =>
+      entry.tag
+        ? canonicalizeTag(entry.tag.name, entry.tag.category ?? "general")
+        : null,
+    )
+    .filter((tag): tag is NonNullable<typeof tag> => tag != null);
+  const cuisines = [
+    ...new Map(
+      classified
+        .filter((tag) => tag.category === "cuisine")
+        .map((tag) => [tag.slug, tag.name]),
+    ).values(),
+  ];
+  if (cuisines.length === 0 && recipe.cuisine?.trim())
+    cuisines.push(recipe.cuisine.trim());
+  if (cuisines.length > 0)
+    jsonLd.recipeCuisine = cuisines.length === 1 ? cuisines[0] : cuisines;
+
+  const categories = [
+    ...new Map(
+      classified
+        .filter((tag) => tag.category === "meal")
+        .map((tag) => [tag.slug, tag.name]),
+    ).values(),
+  ];
+  if (categories.length > 0)
+    jsonLd.recipeCategory =
+      categories.length === 1 ? categories[0] : categories;
 
   const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {

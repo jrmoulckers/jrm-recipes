@@ -38,11 +38,12 @@ import {
   getFavoriteRecipeIds,
   isFavorited,
 } from "~/server/collections/queries";
-import { absoluteUrl, cn, formatMinutes } from "~/lib/utils";
+import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { pickNutrition, hasNutrition } from "~/lib/nutrition";
 import { isAllergen, type Allergen } from "~/lib/allergens";
 import { isDietaryTag } from "~/lib/substitutions";
+import { groupRecipeClassifications } from "~/lib/recipe-classifications";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { getUnitSettings } from "~/server/units/queries";
 import { toUnitPrefs, toCustomUnitDefs } from "~/lib/unit-prefs";
@@ -52,9 +53,10 @@ import {
   serializeJsonLd,
 } from "~/lib/recipe-seo";
 import { Button } from "~/components/ui/button";
-import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Badge } from "~/components/ui/badge";
 import { Breadcrumbs } from "~/components/layout/breadcrumbs";
 import { RecipeImage } from "~/components/recipe/recipe-image";
+import { RecipeClassificationBadges } from "~/components/recipe/recipe-classification-badges";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
@@ -162,6 +164,11 @@ export default async function RecipePage({
 
   const t = await getTranslations("recipeDetail");
   const tNav = await getTranslations("nav");
+  const classifications = groupRecipeClassifications(
+    recipe.tags,
+    recipe.cuisine,
+  );
+  const declaredDietary = (recipe.dietaryFlags ?? []).filter(isDietaryTag);
 
   // Unlisted recipes are shared by token, never by their guessable slug, so the
   // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
@@ -361,17 +368,10 @@ export default async function RecipePage({
                 {t(`visibility.${recipe.visibility}`)}
               </Badge>
             )}
-            {recipe.cuisine && (
-              <Link
-                href={`/recipes?cuisine=${encodeURIComponent(recipe.cuisine)}`}
-                className={cn(
-                  badgeVariants({ variant: "outline" }),
-                  "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                )}
-              >
-                {recipe.cuisine}
-              </Link>
-            )}
+            <RecipeClassificationBadges
+              items={[...classifications.meal, ...classifications.cuisine]}
+              dietary={declaredDietary}
+            />
             {recipe.group && (
               <Link
                 href={`/groups/${recipe.group.slug}`}
@@ -851,22 +851,13 @@ export default async function RecipePage({
                   </>
                 )}
 
-                {recipe.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {recipe.tags.map(({ tag }) => (
-                      <Link
-                        key={tag.id}
-                        href={`/recipes?tag=${encodeURIComponent(tag.name)}`}
-                        className={cn(
-                          badgeVariants({ variant: "muted" }),
-                          "hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        )}
-                      >
-                        #{tag.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <RecipeClassificationBadges
+                  items={[
+                    ...classifications.general,
+                    ...classifications.dietary,
+                  ]}
+                  className="pt-2"
+                />
               </div>
             </div>
           </TabsContent>

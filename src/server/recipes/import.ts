@@ -12,6 +12,7 @@
 import { promises as dns } from "node:dns";
 
 import { normalizeUnit, roundNice, unitDimension } from "~/lib/units";
+import { parseClassificationList } from "~/lib/tag-taxonomy";
 
 export type ImportedIngredient = {
   section: string;
@@ -41,7 +42,10 @@ export type ImportedRecipe = {
   servingsNoun: string;
   prepMinutes: string;
   cookMinutes: string;
+  /** Legacy first-cuisine projection retained for compatibility. */
   cuisine: string;
+  cuisines: string;
+  mealTypes: string;
   sourceName: string;
   sourceUrl: string;
   tags: string;
@@ -236,18 +240,10 @@ function mainEntityUrl(v: unknown): string {
 function normalizeTags(v: unknown): string {
   const joined = joinList(v);
   if (!joined) return "";
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const part of joined.split(",")) {
-    const tag = htmlToText(part).trim();
-    const key = tag.toLowerCase();
-    if (tag && tag.length <= 60 && !seen.has(key)) {
-      seen.add(key);
-      out.push(tag);
-      if (out.length >= 30) break;
-    }
-  }
-  return out.join(", ");
+  return parseClassificationList(htmlToText(joined))
+    .filter((tag) => tag.length <= 80)
+    .slice(0, 30)
+    .join(", ");
 }
 
 // --- ingredient line parsing -------------------------------------------
@@ -545,6 +541,7 @@ function mapRecipe(
     (typeof node.url === "string" && /^https?:/i.test(node.url) && node.url) ||
     mainEntityUrl(node.mainEntityOfPage) ||
     sourceUrl;
+  const cuisines = normalizeTags(node.recipeCuisine);
   return {
     title: textFrom(node.name).slice(0, 200),
     description: htmlToText(node.description).slice(0, 2000),
@@ -553,9 +550,9 @@ function mapRecipe(
     servingsNoun: noun,
     prepMinutes: prep ? String(prep) : "",
     cookMinutes: cook ? String(cook) : "",
-    cuisine: (joinList(node.recipeCuisine).split(",")[0] ?? "")
-      .trim()
-      .slice(0, 80),
+    cuisine: (cuisines.split(",")[0] ?? "").trim().slice(0, 80),
+    cuisines,
+    mealTypes: normalizeTags(node.recipeCategory),
     sourceName: textFrom(node.author).slice(0, 200),
     sourceUrl: canonical.slice(0, 2048),
     tags: normalizeTags(node.keywords),

@@ -523,6 +523,8 @@ function versionSnapshot(r: SeedRecipe): RecipeInput {
     totalMinutes: r.prepMinutes + r.cookMinutes,
     difficulty: r.difficulty,
     cuisine: r.cuisine,
+    cuisines: [r.cuisine],
+    mealTypes: [],
     notes: r.notes,
     visibility: "public",
     status: "published",

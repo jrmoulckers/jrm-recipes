@@ -6,6 +6,7 @@
 import type { RecipeEventType } from "~/server/db/schema";
 import type { RecipeInput } from "./validation";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
+import type { TagCategory } from "~/lib/tag-taxonomy";
 
 /** A source recipe with the related rows needed to deep-clone it into a fork. */
 export type AdaptationSource = {
@@ -47,7 +48,7 @@ export type AdaptationSource = {
     doneness?: string | null;
     techniques?: string[] | null;
   }[];
-  tags: { tag: { name: string } }[];
+  tags: { tag: { name: string; category?: TagCategory } }[];
 };
 
 const ADAPTATION_MARKER = "(Adaptation)";
@@ -73,6 +74,21 @@ export function adaptationTitle(sourceTitle: string): string {
  * fork always starts as a private draft owned by whoever forks it.
  */
 export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
+  const cuisines = source.tags
+    .filter(({ tag }) => tag.category === "cuisine")
+    .map(({ tag }) => tag.name);
+  const mealTypes = source.tags
+    .filter(({ tag }) => tag.category === "meal")
+    .map(({ tag }) => tag.name);
+  const generalTags = source.tags
+    .filter(
+      ({ tag }) =>
+        tag.category == null ||
+        tag.category === "general" ||
+        tag.category === "dietary",
+    )
+    .map(({ tag }) => tag.name);
+
   return {
     title: adaptationTitle(source.title),
     description: source.description ?? undefined,
@@ -87,6 +103,9 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
     equipment: source.equipment ?? [],
     difficulty: source.difficulty ?? undefined,
     cuisine: source.cuisine ?? undefined,
+    cuisines:
+      cuisines.length > 0 ? cuisines : source.cuisine ? [source.cuisine] : [],
+    mealTypes,
     sourceName: source.sourceName ?? undefined,
     sourceUrl: source.sourceUrl ?? undefined,
     notes: source.notes ?? undefined,
@@ -117,7 +136,7 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
       doneness: step.doneness ?? undefined,
       techniques: step.techniques ?? [],
     })),
-    tags: source.tags.map((recipeTag) => recipeTag.tag.name),
+    tags: generalTags,
   };
 }
 

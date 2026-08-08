@@ -54,6 +54,7 @@ import { WelcomeChecklist } from "~/components/onboarding/welcome-checklist";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
+import { recipeClassificationHref } from "~/lib/recipe-classifications";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -86,7 +87,7 @@ export default async function RecipesPage({
   const [facets, savedSearches, quickPlan, groups] = await Promise.all([
     dbReady
       ? listRecipeFacets(user, search)
-      : Promise.resolve({ cuisines: [], tags: [] }),
+      : Promise.resolve({ cuisines: [], meals: [], tags: [] }),
     listMySavedSearches(user?.id),
     dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
     dbReady && user ? listUserGroups(user.id) : Promise.resolve([]),
@@ -191,6 +192,7 @@ async function BrowseSections({
     ? await attachCardAllergens(library.items)
     : library.items;
   const t = await getTranslations("recipe.library");
+  const tNames = await getTranslations("classificationNames");
 
   return (
     <>
@@ -233,11 +235,15 @@ async function BrowseSections({
             {popularTags.map((tag) => (
               <Link
                 key={tag.slug}
-                href={`/recipes?tag=${encodeURIComponent(tag.slug)}`}
+                href={recipeClassificationHref(tag)}
                 className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:border-primary/40 hover:bg-accent"
               >
                 <span className="text-foreground group-hover:text-primary">
-                  #{tag.name}
+                  {tag.category === "general"
+                    ? `#${tNames.has(tag.slug) ? tNames(tag.slug) : tag.name}`
+                    : tNames.has(tag.slug)
+                      ? tNames(tag.slug)
+                      : tag.name}
                 </span>
                 <span className="text-xs tabular-nums text-muted-foreground">
                   {tag.count}

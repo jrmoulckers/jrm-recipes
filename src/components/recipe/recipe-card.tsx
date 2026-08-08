@@ -49,7 +49,13 @@ export type CardRecipe = {
   difficulty: "easy" | "medium" | "hard" | null;
   visibility: string;
   author?: { name: string | null } | null;
-  tags?: { tag: { name: string } }[];
+  tags?: {
+    tag: {
+      name: string;
+      slug?: string;
+      category?: "meal" | "cuisine" | "dietary" | "general";
+    };
+  }[];
   /** Denormalized, owner-excluded rating aggregates (issue #154). Preferred. */
   ratingCount?: number;
   ratingSum?: number;
@@ -102,6 +108,7 @@ export function RecipeCard({
   members?: CardDietaryMember[];
 }) {
   const t = useTranslations("recipe");
+  const tNames = useTranslations("classificationNames");
   const summary =
     recipe.ratingCount != null && recipe.ratingSum != null
       ? summaryFromAggregates(recipe.ratingCount, recipe.ratingSum)
@@ -110,6 +117,11 @@ export function RecipeCard({
   const titleSegments = matchReason
     ? splitHighlight(recipe.title, matchReason.term)
     : null;
+  const classificationTags = (recipe.tags ?? []).map(({ tag }) => tag);
+  const cardClassifications = [
+    ...classificationTags.filter((tag) => tag.category === "meal"),
+    ...classificationTags.filter((tag) => tag.category === "cuisine"),
+  ].slice(0, 2);
 
   return (
     <div className="group/card relative">
@@ -210,6 +222,20 @@ export function RecipeCard({
             <p className="line-clamp-2 break-words text-sm text-muted-foreground">
               {recipe.description}
             </p>
+          )}
+          {cardClassifications.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {cardClassifications.map((item) => (
+                <Badge
+                  key={`${item.category}:${item.slug ?? item.name}`}
+                  variant={item.category === "meal" ? "default" : "secondary"}
+                >
+                  {item.slug && tNames.has(item.slug)
+                    ? tNames(item.slug)
+                    : item.name}
+                </Badge>
+              ))}
+            </div>
           )}
           {members && members.length > 0 && (
             <CardDietaryBadge

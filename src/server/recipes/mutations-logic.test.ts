@@ -42,6 +42,7 @@ function chainable(result: unknown) {
   return {
     returning: vi.fn(() => Promise.resolve(result)),
     onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
+    onConflictDoUpdate: vi.fn(() => Promise.resolve(undefined)),
     then: (
       onFulfilled: (value: unknown) => unknown,
       onRejected?: (reason: unknown) => unknown,
@@ -192,6 +193,28 @@ describe("syncTags (canonical de-duplication)", () => {
 
     expect(inserts.tags?.[0]).toHaveLength(1);
     expect(inserts.recipeTags?.[0]).toHaveLength(1);
+  });
+
+  it("canonicalizes each classification and mirrors the first cuisine", async () => {
+    const { promise, inserts } = runCreate({
+      tags: ["QUICK", "quick"],
+      mealTypes: [" brunch ", "Brunch"],
+      cuisines: ["italian", "Italian", "Mediterranean"],
+    });
+    await promise;
+
+    expect(inserts.recipes?.[0]).toMatchObject({ cuisine: "Italian" });
+    expect(inserts.tags?.[0]).toEqual([
+      { slug: "quick", name: "Quick", category: "general" },
+      { slug: "brunch", name: "Brunch", category: "meal" },
+      { slug: "italian", name: "Italian", category: "cuisine" },
+      {
+        slug: "mediterranean",
+        name: "Mediterranean",
+        category: "cuisine",
+      },
+    ]);
+    expect(inserts.recipeTags?.[0]).toHaveLength(4);
   });
 
   it("writes no tag rows when there are no tags", async () => {

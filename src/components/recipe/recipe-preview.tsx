@@ -13,9 +13,10 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { formatMinutes } from "~/lib/utils";
 import { formatQuantity } from "~/lib/units";
-import { DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { Badge } from "~/components/ui/badge";
 import { RecipeImage } from "~/components/recipe/recipe-image";
+import { RecipeClassificationBadges } from "./recipe-classification-badges";
+import { canonicalizeTag } from "~/lib/tag-taxonomy";
 import type {
   IngredientInput,
   RecipeInput,
@@ -101,6 +102,17 @@ export function RecipePreview({
   const ingredientGroups = groupBySection(recipe.ingredients);
   const dietary = recipe.dietaryFlags ?? [];
   const tags = recipe.tags ?? [];
+  const cuisines =
+    recipe.cuisines.length > 0
+      ? recipe.cuisines
+      : recipe.cuisine
+        ? [recipe.cuisine]
+        : [];
+  const classifications = [
+    ...recipe.mealTypes.map((name) => canonicalizeTag(name, "meal")),
+    ...cuisines.map((name) => canonicalizeTag(name, "cuisine")),
+    ...tags.map((name) => canonicalizeTag(name, "general")),
+  ];
   const equipment = recipe.equipment ?? [];
 
   const origin = [
@@ -150,7 +162,7 @@ export function RecipePreview({
 
       <header className="flex flex-col gap-4">
         {(recipe.visibility !== "public" ||
-          Boolean(recipe.cuisine) ||
+          classifications.length > 0 ||
           dietary.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
             {recipe.visibility !== "public" && (
@@ -158,14 +170,13 @@ export function RecipePreview({
                 {recipe.visibility}
               </Badge>
             )}
-            {recipe.cuisine && (
-              <Badge variant="outline">{recipe.cuisine}</Badge>
-            )}
-            {dietary.map((flag) => (
-              <Badge key={flag} variant="secondary">
-                {DIETARY_TAG_LABELS[flag]}
-              </Badge>
-            ))}
+            <RecipeClassificationBadges
+              items={classifications.filter(
+                (item) => item.category !== "general",
+              )}
+              dietary={dietary}
+              linked={false}
+            />
           </div>
         )}
 
@@ -203,18 +214,10 @@ export function RecipePreview({
           </div>
         )}
 
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <RecipeClassificationBadges
+          items={classifications.filter((item) => item.category === "general")}
+          linked={false}
+        />
       </header>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">

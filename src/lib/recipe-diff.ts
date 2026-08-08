@@ -207,6 +207,8 @@ const SCALAR_FIELDS: Array<{
   { key: "restMinutes", label: "Rest time" },
   { key: "difficulty", label: "Difficulty" },
   { key: "cuisine", label: "Cuisine" },
+  { key: "cuisines", label: "Cuisines" },
+  { key: "mealTypes", label: "Meals & courses" },
   { key: "notes", label: "Notes" },
 ];
 
@@ -225,6 +227,13 @@ function fieldValue(
   if (typeof value === "string") return value.trim();
   if (typeof value === "number" || typeof value === "boolean") {
     return String(value).trim();
+  }
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(", ");
   }
   return "";
 }

@@ -79,7 +79,8 @@ export function formatRecipeMeta(recipe: PrintRecipe): string[] {
     meta.push(`Cook ${formatMinutes(recipe.cookMinutes)}`);
   }
   if (recipe.difficulty) meta.push(capitalize(recipe.difficulty));
-  if (recipe.cuisine) meta.push(recipe.cuisine);
+  if (recipe.cuisines.length > 0) meta.push(recipe.cuisines.join(", "));
+  else if (recipe.cuisine) meta.push(recipe.cuisine);
 
   return meta;
 }

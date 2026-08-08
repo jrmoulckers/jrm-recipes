@@ -134,7 +134,8 @@ const SAMPLE_HTML = `
       "recipeYield": "6 servings",
       "prepTime": "PT15M",
       "cookTime": "PT1H30M",
-      "recipeCuisine": "Italian",
+      "recipeCuisine": ["Italian", "Mediterranean", "italian"],
+      "recipeCategory": ["Dinner", "Main Course", "dinner"],
       "keywords": "sauce, italian, sauce",
       "recipeIngredient": [
         "2 cups crushed tomatoes",
@@ -172,6 +173,8 @@ describe("parseRecipeFromHtml", () => {
     expect(recipe?.prepMinutes).toBe("15");
     expect(recipe?.cookMinutes).toBe("90");
     expect(recipe?.cuisine).toBe("Italian");
+    expect(recipe?.cuisines).toBe("Italian, Mediterranean");
+    expect(recipe?.mealTypes).toBe("Dinner, Main Course");
   });
   it("dedupes keywords into tags", () => {
     expect(recipe?.tags).toBe("sauce, italian");
