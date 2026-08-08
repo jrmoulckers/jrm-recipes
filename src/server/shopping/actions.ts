@@ -11,21 +11,38 @@ import { HOUSEHOLD_COOKIE, parseHousehold } from "~/config/household";
 import {
   addManualItem,
   addRecipeToList,
+  archiveShoppingList,
   buildListFromPlan,
   clearChecked,
   clearList,
+  createShoppingList,
+  deleteShoppingList,
+  makeShoppingListDefault,
+  moveShoppingItem,
   removeItem,
+  renameShoppingList,
+  restoreShoppingList,
   setItemCategory,
   setItemChecked,
 } from "./mutations";
 import {
   addRecipeToListInput,
   buildFromPlanInput,
+  createShoppingListInput,
+  itemIdInput,
+  listIdInput,
   manualItemInput,
+  moveShoppingItemInput,
+  renameShoppingListInput,
   setItemCategoryInput,
+  setItemCheckedInput,
   type AddRecipeToListInput,
   type BuildFromPlanInput,
+  type CreateShoppingListInput,
+  type ListIdInput,
   type ManualItemInput,
+  type MoveShoppingItemInput,
+  type RenameShoppingListInput,
 } from "./validation";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
@@ -37,6 +54,15 @@ import {
 export type ActionResult =
   | { ok: true }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+type ActionFailure = Extract<ActionResult, { ok: false }>;
+export type CreateShoppingListActionResult =
+  { ok: true; id: string; listId: string } | ActionFailure;
+export type MakeShoppingListDefaultActionResult =
+  { ok: true; defaultListId: string } | ActionFailure;
+export type UnavailableShoppingListActionResult =
+  { ok: true; fallbackListId: string } | ActionFailure;
+export type RestoreShoppingListActionResult =
+  { ok: true; listId: string } | ActionFailure;
 
 const NO_DB =
   "Set DATABASE_URL (see .env.example) to sync your shopping list across devices. Until then it lives in this browser.";
@@ -159,9 +185,13 @@ export async function setItemCheckedAction(
   checked: boolean,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = setItemCheckedInput.safeParse({ itemId, checked });
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
   const user = await requireUser();
   try {
-    await setItemChecked(user, itemId, checked);
+    await setItemChecked(user, parsed.data.itemId, parsed.data.checked);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {
@@ -196,9 +226,13 @@ export async function removeShoppingItemAction(
   itemId: string,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = itemIdInput.safeParse({ itemId });
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
   const user = await requireUser();
   try {
-    await removeItem(user, itemId);
+    await removeItem(user, parsed.data.itemId);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {
@@ -206,11 +240,17 @@ export async function removeShoppingItemAction(
   }
 }
 
-export async function clearCheckedItemsAction(): Promise<ActionResult> {
+export async function clearCheckedItemsAction(
+  input: ListIdInput,
+): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = listIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
   const user = await requireUser();
   try {
-    await clearChecked(user);
+    await clearChecked(user, parsed.data.listId);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {
@@ -218,11 +258,142 @@ export async function clearCheckedItemsAction(): Promise<ActionResult> {
   }
 }
 
-export async function clearShoppingListAction(): Promise<ActionResult> {
+export async function clearShoppingListAction(
+  input: ListIdInput,
+): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = listIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
   const user = await requireUser();
   try {
-    await clearList(user);
+    await clearList(user, parsed.data.listId);
+    revalidatePath("/shopping");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function createShoppingListAction(
+  input: CreateShoppingListInput,
+): Promise<CreateShoppingListActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = createShoppingListInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    const created = await createShoppingList(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true, id: created.id, listId: created.id };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function renameShoppingListAction(
+  input: RenameShoppingListInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = renameShoppingListInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    await renameShoppingList(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+async function runListAction<TResult, TSuccess extends { ok: true }>(
+  input: ListIdInput,
+  mutation: (
+    user: Awaited<ReturnType<typeof requireUser>>,
+    listId: string,
+  ) => Promise<TResult>,
+  success: (result: TResult) => TSuccess,
+): Promise<TSuccess | ActionFailure> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = listIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
+  const user = await requireUser();
+  try {
+    const result = await mutation(user, parsed.data.listId);
+    revalidatePath("/shopping");
+    return success(result);
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function makeShoppingListDefaultAction(
+  input: ListIdInput,
+): Promise<MakeShoppingListDefaultActionResult> {
+  return runListAction(input, makeShoppingListDefault, (result) => ({
+    ok: true,
+    defaultListId: result.defaultListId,
+  }));
+}
+
+export async function archiveShoppingListAction(
+  input: ListIdInput,
+): Promise<UnavailableShoppingListActionResult> {
+  return runListAction(input, archiveShoppingList, (result) => ({
+    ok: true,
+    fallbackListId: result.fallbackListId,
+  }));
+}
+
+export async function restoreShoppingListAction(
+  input: ListIdInput,
+): Promise<RestoreShoppingListActionResult> {
+  return runListAction(input, restoreShoppingList, (result) => ({
+    ok: true,
+    listId: result.listId,
+  }));
+}
+
+export async function deleteShoppingListAction(
+  input: ListIdInput,
+): Promise<UnavailableShoppingListActionResult> {
+  return runListAction(input, deleteShoppingList, (result) => ({
+    ok: true,
+    fallbackListId: result.fallbackListId,
+  }));
+}
+
+export async function moveShoppingItemAction(
+  input: MoveShoppingItemInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = moveShoppingItemInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    await moveShoppingItem(user, parsed.data);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {

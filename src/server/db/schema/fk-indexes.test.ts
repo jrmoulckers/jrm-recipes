@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { comments, ratings } from "./engagement";
 import { follows } from "./follows";
 import { recipeEvents, recipeIngredients, recipeVersions } from "./recipes";
-import { shoppingListItems } from "./shopping";
+import {
+  shoppingIngredientRouteAlternatives,
+  shoppingIngredientRoutes,
+  shoppingListItems,
+  shoppingLists,
+} from "./shopping";
 
 /**
  * Issue #153. Every foreign-key column that reverse-lookups or cascades on it
@@ -57,6 +62,48 @@ const expectations: Expectation[] = [
     table: shoppingListItems,
     index: "shopping_list_items_recipe_idx",
     columns: ["recipeId"],
+  },
+  {
+    label: "shoppingListItems.foodId",
+    table: shoppingListItems,
+    index: "shopping_list_items_food_idx",
+    columns: ["foodId"],
+  },
+  {
+    label: "shoppingLists.userId",
+    table: shoppingLists,
+    index: "shopping_lists_user_idx",
+    columns: ["userId"],
+  },
+  {
+    label: "shoppingIngredientRoutes.userId",
+    table: shoppingIngredientRoutes,
+    index: "shopping_ingredient_routes_user_idx",
+    columns: ["userId"],
+  },
+  {
+    label: "shoppingIngredientRoutes.foodId",
+    table: shoppingIngredientRoutes,
+    index: "shopping_ingredient_routes_food_idx",
+    columns: ["foodId"],
+  },
+  {
+    label: "shoppingIngredientRoutes.preferredListId",
+    table: shoppingIngredientRoutes,
+    index: "shopping_ingredient_routes_preferred_list_idx",
+    columns: ["preferredListId"],
+  },
+  {
+    label: "shoppingIngredientRouteAlternatives.routeId",
+    table: shoppingIngredientRouteAlternatives,
+    index: "shopping_ingredient_route_alternatives_route_position_idx",
+    columns: ["routeId", "position"],
+  },
+  {
+    label: "shoppingIngredientRouteAlternatives.listId",
+    table: shoppingIngredientRouteAlternatives,
+    index: "shopping_ingredient_route_alternatives_list_idx",
+    columns: ["listId"],
   },
   {
     label: "recipeIngredients.foodId",

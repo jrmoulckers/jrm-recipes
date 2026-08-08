@@ -1489,6 +1489,71 @@
       "changeAisle": "Gang ändern",
       "remove": "{item} entfernen"
     },
+    "lists": {
+      "heading": "Einkaufslisten",
+      "current": "Aktuelle Liste",
+      "new": "Neue Liste",
+      "manage": "Verwalten",
+      "defaultBadge": "Standard",
+      "storeListOption": "{name} bei {store}",
+      "storeCaption": "Geschäft: {store}",
+      "create": {
+        "title": "Einkaufsliste erstellen",
+        "description": "Benenne die Liste und ordne sie optional einem Geschäft zu.",
+        "confirm": "Liste erstellen"
+      },
+      "manageTitle": "{name} verwalten",
+      "manageDescription": "Benenne diese Liste um, ändere ihr Geschäft oder aktualisiere ihren Status.",
+      "fields": {
+        "name": "Name der Liste",
+        "store": "Geschäft (optional)",
+        "storePlaceholder": "z. B. Supermarkt um die Ecke",
+        "storeHint": "Damit werden Zutaten der richtigen Einkaufsliste zugeordnet."
+      },
+      "makeDefault": "Als Standard festlegen",
+      "archive": "Archivieren",
+      "delete": "Löschen",
+      "archived": "Archivierte Listen",
+      "restore": "Wiederherstellen",
+      "restoreNamed": "{name} wiederherstellen",
+      "save": "Änderungen speichern",
+      "cancel": "Abbrechen",
+      "toasts": {
+        "created": "Liste {name} erstellt.",
+        "renamed": "Liste in {name} umbenannt.",
+        "madeDefault": "{name} ist jetzt deine Standardliste.",
+        "archived": "Liste {name} archiviert.",
+        "restored": "Liste {name} wiederhergestellt.",
+        "deleted": "Liste {name} gelöscht."
+      },
+      "confirm": {
+        "archive": {
+          "title": "„{name}“ archivieren?",
+          "description": "Die Liste wird aus den aktiven Einkaufslisten ausgeblendet, kann aber später wiederhergestellt werden."
+        },
+        "delete": {
+          "title": "„{name}“ löschen?",
+          "description": "Diese Liste und alle ihre Artikel werden endgültig gelöscht. Das kann nicht rückgängig gemacht werden."
+        }
+      }
+    },
+    "routing": {
+      "moveItem": "{item} in eine andere Liste verschieben",
+      "move": "In eine andere Liste verschieben",
+      "title": "{item} verschieben",
+      "description": "Wähle die Einkaufsliste, zu der dieser Artikel gehört.",
+      "preferred": "Bevorzugte Liste",
+      "remember": "Diese Zuordnung merken",
+      "rememberHint": "Diese Zutat wird beim nächsten Mal der ausgewählten Liste zugeordnet.",
+      "alternatives": "Auch erhältlich bei",
+      "alsoAt": "Auch bei {stores}",
+      "cancel": "Abbrechen",
+      "confirm": "Artikel verschieben",
+      "toasts": {
+        "moved": "{item} wurde nach {list} verschoben.",
+        "routeSaved": "Zuordnung gespeichert. {item} wird künftig {list} zugeordnet."
+      }
+    },
     "manual": {
       "itemLabel": "Artikel hinzufügen",
       "itemPlaceholder": "z. B. Küchenpapier",

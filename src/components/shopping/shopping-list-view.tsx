@@ -16,14 +16,27 @@ import { allergenConflicts } from "~/lib/dietary-match";
 import { toast } from "sonner";
 import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { CloseButton } from "~/components/ui/close-button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { NativeSelect } from "~/components/ui/native-select";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import {
   AlertTriangle,
   Check,
   Plus,
+  Route,
   Share2,
   ShoppingCart,
   Trash2,
@@ -41,6 +54,15 @@ export type ShoppingViewItem = {
   checked: boolean;
   /** Best-effort allergens detected in the item name (issue #432). */
   allergens?: Allergen[];
+  routePreferredListId?: string | null;
+  routeAlternativeListIds?: string[];
+};
+
+export type ShoppingListOption = {
+  id: string;
+  name: string;
+  storeName: string | null;
+  isDefault: boolean;
 };
 
 export type ManualEntryDraft = {
@@ -133,6 +155,9 @@ function ItemRow({
   onToggle,
   onRemove,
   onSetCategory,
+  listOptions,
+  currentListId,
+  onMove,
 }: {
   item: ShoppingViewItem;
   disabled: boolean;
@@ -140,6 +165,14 @@ function ItemRow({
   onToggle: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
   onSetCategory: (id: string, category: ShoppingCategory) => void;
+  listOptions: ShoppingListOption[];
+  currentListId?: string;
+  onMove?: (
+    itemId: string,
+    targetListId: string,
+    rememberRoute: boolean,
+    alternativeListIds: string[],
+  ) => void;
 }) {
   const amount = describeQuantity(item);
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
@@ -152,7 +185,8 @@ function ItemRow({
         type="button"
         disabled={disabled}
         onClick={() => onToggle(item.id, !item.checked)}
-        aria-pressed={item.checked}
+        role="checkbox"
+        aria-checked={item.checked}
         className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted disabled:opacity-50"
       >
         <span
@@ -204,8 +238,32 @@ function ItemRow({
               )}
             </Badge>
           )}
+          {(item.routeAlternativeListIds?.length ?? 0) > 0 && (
+            <span className="ms-2 block text-xs text-muted-foreground sm:inline">
+              {t("routing.alsoAt", {
+                stores: formatList(
+                  item.routeAlternativeListIds!.map(
+                    (id) =>
+                      listOptions.find((list) => list.id === id)?.storeName ??
+                      listOptions.find((list) => list.id === id)?.name ??
+                      id,
+                  ),
+                  locale,
+                ),
+              })}
+            </span>
+          )}
         </span>
       </button>
+      {onMove && currentListId && listOptions.length > 1 && (
+        <MoveRouteDialog
+          item={item}
+          listOptions={listOptions}
+          currentListId={currentListId}
+          disabled={disabled}
+          onMove={onMove}
+        />
+      )}
       <label className="sr-only" htmlFor={`aisle-${item.id}`}>
         {t("item.aisleFor", { item: item.item })}
       </label>
@@ -216,9 +274,8 @@ function ItemRow({
         onChange={(e) =>
           onSetCategory(item.id, e.target.value as ShoppingCategory)
         }
-        aria-label={t("item.aisleFor", { item: item.item })}
         title={t("item.changeAisle")}
-        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        className="shrink-0 rounded-md border border-transparent bg-transparent px-1 py-1 text-xs text-muted-foreground opacity-0 transition-opacity hover:border-border hover:text-foreground focus:border-border focus:opacity-100 focus-visible:border-border focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
@@ -237,6 +294,149 @@ function ItemRow({
   );
 }
 
+function MoveRouteDialog({
+  item,
+  listOptions,
+  currentListId,
+  disabled,
+  onMove,
+}: {
+  item: ShoppingViewItem;
+  listOptions: ShoppingListOption[];
+  currentListId: string;
+  disabled: boolean;
+  onMove: (
+    itemId: string,
+    targetListId: string,
+    rememberRoute: boolean,
+    alternativeListIds: string[],
+  ) => void;
+}) {
+  const t = useTranslations("shopping");
+  const [open, setOpen] = React.useState(false);
+  const firstDestination =
+    listOptions.find((list) => list.id !== currentListId)?.id ?? currentListId;
+  const [targetListId, setTargetListId] = React.useState(firstDestination);
+  const [rememberRoute, setRememberRoute] = React.useState(false);
+  const [alternativeListIds, setAlternativeListIds] = React.useState<string[]>(
+    item.routeAlternativeListIds ?? [],
+  );
+
+  React.useEffect(() => {
+    if (!open) return;
+    setTargetListId(firstDestination);
+    setRememberRoute(false);
+    setAlternativeListIds(
+      (item.routeAlternativeListIds ?? []).filter(
+        (id) => id !== firstDestination,
+      ),
+    );
+  }, [firstDestination, item.routeAlternativeListIds, open]);
+
+  const alternatives = listOptions.filter((list) => list.id !== targetListId);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          disabled={disabled}
+          aria-label={t("routing.moveItem", { item: item.item })}
+          title={t("routing.move")}
+          className="opacity-0 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          <Route aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>{t("routing.title", { item: item.item })}</DialogTitle>
+          <DialogDescription>{t("routing.description")}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2">
+          <label
+            htmlFor={`route-target-${item.id}`}
+            className="text-sm font-medium"
+          >
+            {t("routing.preferred")}
+          </label>
+          <NativeSelect
+            id={`route-target-${item.id}`}
+            value={targetListId}
+            onChange={(event) => {
+              const next = event.target.value;
+              setTargetListId(next);
+              setAlternativeListIds((ids) => ids.filter((id) => id !== next));
+            }}
+          >
+            {listOptions.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.storeName ?? list.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border p-3 text-sm">
+          <Checkbox
+            checked={rememberRoute}
+            onCheckedChange={(value) => setRememberRoute(value === true)}
+          />
+          <span>
+            <span className="block font-medium">{t("routing.remember")}</span>
+            <span className="block text-xs text-muted-foreground">
+              {t("routing.rememberHint")}
+            </span>
+          </span>
+        </label>
+        {rememberRoute && alternatives.length > 0 && (
+          <fieldset className="grid gap-2">
+            <legend className="text-sm font-medium">
+              {t("routing.alternatives")}
+            </legend>
+            {alternatives.map((list) => (
+              <label
+                key={list.id}
+                className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm hover:bg-muted"
+              >
+                <Checkbox
+                  checked={alternativeListIds.includes(list.id)}
+                  onCheckedChange={(value) =>
+                    setAlternativeListIds((ids) =>
+                      value === true
+                        ? [...ids, list.id]
+                        : ids.filter((id) => id !== list.id),
+                    )
+                  }
+                />
+                {list.storeName ?? list.name}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="ghost">
+              {t("routing.cancel")}
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            disabled={targetListId === currentListId}
+            onClick={() => {
+              onMove(item.id, targetListId, rememberRoute, alternativeListIds);
+              setOpen(false);
+            }}
+          >
+            {t("routing.confirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ShoppingListView({
   items,
   disabled = false,
@@ -248,6 +448,9 @@ export function ShoppingListView({
   onSetCategory,
   onClearChecked,
   onClearAll,
+  listOptions = [],
+  currentListId,
+  onMove,
 }: {
   items: ShoppingViewItem[];
   disabled?: boolean;
@@ -264,6 +467,14 @@ export function ShoppingListView({
   onSetCategory: (id: string, category: ShoppingCategory) => void;
   onClearChecked: () => void;
   onClearAll: () => void;
+  listOptions?: ShoppingListOption[];
+  currentListId?: string;
+  onMove?: (
+    itemId: string,
+    targetListId: string,
+    rememberRoute: boolean,
+    alternativeListIds: string[],
+  ) => void;
 }) {
   const [name, setName] = React.useState("");
   const [qty, setQty] = React.useState("");
@@ -401,6 +612,9 @@ export function ShoppingListView({
                       onToggle={onToggle}
                       onRemove={onRemove}
                       onSetCategory={onSetCategory}
+                      listOptions={listOptions}
+                      currentListId={currentListId}
+                      onMove={onMove}
                     />
                   ))}
                 </ul>
@@ -423,6 +637,9 @@ export function ShoppingListView({
                     onToggle={onToggle}
                     onRemove={onRemove}
                     onSetCategory={onSetCategory}
+                    listOptions={listOptions}
+                    currentListId={currentListId}
+                    onMove={onMove}
                   />
                 ))}
               </ul>

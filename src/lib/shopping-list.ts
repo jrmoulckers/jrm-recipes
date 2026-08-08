@@ -27,6 +27,8 @@ import { detectAllergensForSafety, type Allergen } from "./allergens";
 /** A single ingredient contribution (from a recipe or a manual entry). */
 export type ShoppingItemInput = {
   item: string;
+  /** Canonical food-graph identity when the source ingredient resolved. */
+  foodId?: string | null;
   quantity?: number | null;
   quantityMax?: number | null;
   unit?: string | null;
@@ -49,6 +51,8 @@ export type AggregatedItem = {
   /** Stable dedupe / React key (normalized item + unit bucket). */
   key: string;
   item: string;
+  /** Preserved only when all merged contributions agree on one food identity. */
+  foodId: string | null;
   quantity: number | null;
   quantityMax: number | null;
   unit: string | null;
@@ -620,6 +624,7 @@ function bucketFor(rawUnit: string | null | undefined): Bucket {
 type Accumulator = {
   key: string;
   item: string;
+  foodIds: string[];
   dimension: Dimension | null;
   unit: string | null;
   min: number;
@@ -646,13 +651,17 @@ export function mergeShoppingItems(
     if (!item) continue;
 
     const bucket = bucketFor(input.unit);
-    const key = `${normalizeItemName(item)}\u0000${bucket.id}`;
+    const identity = input.foodId
+      ? `food:${input.foodId}`
+      : `text:${normalizeItemName(item)}`;
+    const key = `${identity}\u0000${bucket.id}`;
 
     let acc = map.get(key);
     if (!acc) {
       acc = {
         key,
         item,
+        foodIds: [],
         dimension: bucket.dimension,
         unit: bucket.unit,
         min: 0,
@@ -684,6 +693,9 @@ export function mergeShoppingItems(
 
     if (!input.optional) acc.allOptional = false;
     if (input.optional) acc.anyOptional = true;
+    if (input.foodId && !acc.foodIds.includes(input.foodId)) {
+      acc.foodIds.push(input.foodId);
+    }
     if (input.recipeId && !acc.recipeIds.includes(input.recipeId)) {
       acc.recipeIds.push(input.recipeId);
     }
@@ -723,6 +735,7 @@ function finalize(acc: Accumulator): AggregatedItem {
   return {
     key: acc.key,
     item: acc.item,
+    foodId: acc.foodIds.length === 1 ? acc.foodIds[0]! : null,
     quantity,
     quantityMax,
     unit,
@@ -771,6 +784,7 @@ export function toShoppingItems(
   const factor = scaleFactor(recipe.servings, recipe.desiredServings);
   return recipe.ingredients.map((ing) => ({
     item: ing.item,
+    foodId: ing.foodId ?? null,
     quantity: scaleQuantity(ing.quantity, factor),
     quantityMax: scaleQuantity(ing.quantityMax, factor),
     unit: ing.unit ?? null,

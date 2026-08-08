@@ -33,6 +33,7 @@ export type ShoppingRecipe = {
   servingsNoun: string | null;
   ingredients: {
     item: string;
+    foodId: string | null;
     quantity: number | null;
     quantityMax: number | null;
     unit: string | null;

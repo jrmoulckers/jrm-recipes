@@ -1489,6 +1489,71 @@
       "changeAisle": "Cambiar pasillo",
       "remove": "Eliminar {item}"
     },
+    "lists": {
+      "heading": "Listas de compras",
+      "current": "Lista actual",
+      "new": "Nueva lista",
+      "manage": "Administrar",
+      "defaultBadge": "Predeterminada",
+      "storeListOption": "{name} en {store}",
+      "storeCaption": "Tienda: {store}",
+      "create": {
+        "title": "Crear una lista de compras",
+        "description": "Ponle un nombre a la lista y, si quieres, asígnala a una tienda.",
+        "confirm": "Crear lista"
+      },
+      "manageTitle": "Administrar {name}",
+      "manageDescription": "Cambia el nombre o la tienda de esta lista, o actualiza su estado.",
+      "fields": {
+        "name": "Nombre de la lista",
+        "store": "Tienda (opcional)",
+        "storePlaceholder": "p. ej., mercado del barrio",
+        "storeHint": "Se usa para dirigir los ingredientes a la lista de compras correcta."
+      },
+      "makeDefault": "Establecer como predeterminada",
+      "archive": "Archivar",
+      "delete": "Eliminar",
+      "archived": "Listas archivadas",
+      "restore": "Restaurar",
+      "restoreNamed": "Restaurar {name}",
+      "save": "Guardar cambios",
+      "cancel": "Cancelar",
+      "toasts": {
+        "created": "Se creó la lista {name}.",
+        "renamed": "La lista ahora se llama {name}.",
+        "madeDefault": "{name} es ahora tu lista predeterminada.",
+        "archived": "Se archivó la lista {name}.",
+        "restored": "Se restauró la lista {name}.",
+        "deleted": "Se eliminó la lista {name}."
+      },
+      "confirm": {
+        "archive": {
+          "title": "¿Archivar {name}?",
+          "description": "La lista se ocultará de las listas de compras activas, pero podrás restaurarla más adelante."
+        },
+        "delete": {
+          "title": "¿Eliminar {name}?",
+          "description": "Esta lista y todos sus artículos se eliminarán permanentemente. Esto no se puede deshacer."
+        }
+      }
+    },
+    "routing": {
+      "moveItem": "Mover {item} a otra lista",
+      "move": "Mover a otra lista",
+      "title": "Mover {item}",
+      "description": "Elige la lista de compras a la que pertenece este artículo.",
+      "preferred": "Lista preferida",
+      "remember": "Recordar esta asignación",
+      "rememberHint": "La próxima vez, este ingrediente se enviará a la lista seleccionada.",
+      "alternatives": "También disponible en",
+      "alsoAt": "También en {stores}",
+      "cancel": "Cancelar",
+      "confirm": "Mover artículo",
+      "toasts": {
+        "moved": "Se movió {item} a {list}.",
+        "routeSaved": "Asignación guardada. La próxima vez, {item} irá a {list}."
+      }
+    },
     "manual": {
       "itemLabel": "Agregar un artículo",
       "itemPlaceholder": "p. ej., papel de cocina",

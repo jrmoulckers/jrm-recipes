@@ -1489,6 +1489,71 @@
       "changeAisle": "تغيير الممر",
       "remove": "إزالة {item}"
     },
+    "lists": {
+      "heading": "قوائم التسوق",
+      "current": "القائمة الحالية",
+      "new": "قائمة جديدة",
+      "manage": "إدارة",
+      "defaultBadge": "افتراضية",
+      "storeListOption": "{name} في {store}",
+      "storeCaption": "المتجر: {store}",
+      "create": {
+        "title": "إنشاء قائمة تسوق",
+        "description": "سمِّ القائمة واربطها بمتجر إن أردت.",
+        "confirm": "إنشاء القائمة"
+      },
+      "manageTitle": "إدارة {name}",
+      "manageDescription": "غيّر اسم هذه القائمة أو متجرها أو حالتها.",
+      "fields": {
+        "name": "اسم القائمة",
+        "store": "المتجر (اختياري)",
+        "storePlaceholder": "مثال: متجر الحي",
+        "storeHint": "يُستخدم لتوجيه المكونات إلى قائمة التسوق المناسبة."
+      },
+      "makeDefault": "تعيين كافتراضية",
+      "archive": "أرشفة",
+      "delete": "حذف",
+      "archived": "القوائم المؤرشفة",
+      "restore": "استعادة",
+      "restoreNamed": "استعادة {name}",
+      "save": "حفظ التغييرات",
+      "cancel": "إلغاء",
+      "toasts": {
+        "created": "تم إنشاء القائمة {name}.",
+        "renamed": "تم تغيير اسم القائمة إلى {name}.",
+        "madeDefault": "أصبحت {name} قائمتك الافتراضية.",
+        "archived": "تمت أرشفة القائمة {name}.",
+        "restored": "تمت استعادة القائمة {name}.",
+        "deleted": "تم حذف القائمة {name}."
+      },
+      "confirm": {
+        "archive": {
+          "title": "أرشفة {name}؟",
+          "description": "ستُخفى القائمة من قوائم التسوق النشطة، ويمكنك استعادتها لاحقًا."
+        },
+        "delete": {
+          "title": "حذف {name}؟",
+          "description": "ستُحذف هذه القائمة وجميع عناصرها نهائيًا. لا يمكن التراجع عن ذلك."
+        }
+      }
+    },
+    "routing": {
+      "moveItem": "نقل {item} إلى قائمة أخرى",
+      "move": "نقل إلى قائمة أخرى",
+      "title": "نقل {item}",
+      "description": "اختر قائمة التسوق التي ينتمي إليها هذا العنصر.",
+      "preferred": "القائمة المفضلة",
+      "remember": "تذكّر هذا التوجيه",
+      "rememberHint": "سيُرسَل هذا المكوّن إلى القائمة المحددة في المرة القادمة.",
+      "alternatives": "متوفر أيضًا في",
+      "alsoAt": "متوفر أيضًا في {stores}",
+      "cancel": "إلغاء",
+      "confirm": "نقل العنصر",
+      "toasts": {
+        "moved": "تم نقل {item} إلى {list}.",
+        "routeSaved": "تم حفظ التوجيه. سيُرسَل {item} إلى {list} في المرة القادمة."
+      }
+    },
     "manual": {
       "itemLabel": "إضافة عنصر",
       "itemPlaceholder": "مثال: مناشف ورقية",
