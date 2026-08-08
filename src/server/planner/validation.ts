@@ -98,12 +98,17 @@ export const mealWithLeftoversInput = z
   })
   .superRefine((value, context) => {
     const destinations = new Set<string>();
+    const sourceSlotIndex = MEAL_SLOTS.indexOf(value.slot);
     value.leftovers.forEach((allocation, index) => {
       const destination = `${allocation.date}|${allocation.slot}`;
-      if (destination === `${value.date}|${value.slot}`) {
+      const isAfterSource =
+        allocation.date > value.date ||
+        (allocation.date === value.date &&
+          MEAL_SLOTS.indexOf(allocation.slot) > sourceSlotIndex);
+      if (!isAfterSource) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Pick a different meal for the leftovers",
+          message: "Schedule leftovers after the source meal",
           path: ["leftovers", index, "date"],
         });
       }

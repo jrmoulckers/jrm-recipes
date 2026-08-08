@@ -578,11 +578,21 @@ function AddEntryDialog({
       cell
         ? days.flatMap((day) =>
             MEAL_SLOTS.filter(
-              (slot) => day.dateParam !== cell.dateParam || slot !== cell.slot,
+              (slot) =>
+                day.dateParam > cell.dateParam ||
+                (day.dateParam === cell.dateParam &&
+                  MEAL_SLOTS.indexOf(slot) > MEAL_SLOTS.indexOf(cell.slot)),
             ).map((slot) => ({ date: day.dateParam, slot })),
           )
         : [],
     [cell, days],
+  );
+  const allocationDates = React.useMemo(
+    () =>
+      days.filter((day) =>
+        allocationCells.some((option) => option.date === day.dateParam),
+      ),
+    [allocationCells, days],
   );
 
   React.useEffect(() => {
@@ -645,6 +655,25 @@ function AddEntryDialog({
     setAllocations((current) =>
       current.map((allocation) =>
         allocation.id === id ? { ...allocation, ...update } : allocation,
+      ),
+    );
+  }
+
+  function updateAllocationDate(id: number, date: string) {
+    const slots = allocationCells
+      .filter((option) => option.date === date)
+      .map((option) => option.slot);
+    setAllocations((current) =>
+      current.map((allocation) =>
+        allocation.id === id
+          ? {
+              ...allocation,
+              date,
+              slot: slots.includes(allocation.slot)
+                ? allocation.slot
+                : (slots[0] ?? allocation.slot),
+            }
+          : allocation,
       ),
     );
   }
@@ -885,6 +914,9 @@ function AddEntryDialog({
                   const dateId = `${allocationBaseId}-date-${allocation.id}`;
                   const slotId = `${allocationBaseId}-slot-${allocation.id}`;
                   const servingsId = `${allocationBaseId}-servings-${allocation.id}`;
+                  const allocationSlots = allocationCells
+                    .filter((option) => option.date === allocation.date)
+                    .map((option) => option.slot);
                   return (
                     <fieldset
                       key={allocation.id}
@@ -901,12 +933,13 @@ function AddEntryDialog({
                           id={dateId}
                           value={allocation.date}
                           onChange={(event) =>
-                            updateAllocation(allocation.id, {
-                              date: event.target.value,
-                            })
+                            updateAllocationDate(
+                              allocation.id,
+                              event.target.value,
+                            )
                           }
                         >
-                          {days.map((day) => (
+                          {allocationDates.map((day) => (
                             <option key={day.dateParam} value={day.dateParam}>
                               {day.fullLabel}
                             </option>
@@ -926,7 +959,7 @@ function AddEntryDialog({
                             })
                           }
                         >
-                          {MEAL_SLOTS.map((slot) => (
+                          {allocationSlots.map((slot) => (
                             <option key={slot} value={slot}>
                               {t(`mealSlot.${slot}`)}
                             </option>
