@@ -494,6 +494,7 @@ export default async function RecipePage({
                   servingsNoun: recipe.servingsNoun,
                   ingredients: recipe.ingredients.map((ing) => ({
                     item: ing.item,
+                    foodId: ing.foodId,
                     quantity: ing.quantity,
                     quantityMax: ing.quantityMax,
                     unit: ing.unit,

@@ -4,72 +4,111 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { useFriendlyError } from "~/lib/error-copy";
 
+import { useActiveMemberStore } from "~/lib/active-member-store";
+import { type ActiveMemberOption } from "~/lib/dietary-match";
+import { useFriendlyError } from "~/lib/error-copy";
+import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
   addManualItemAction,
+  archiveShoppingListAction,
   clearCheckedItemsAction,
   clearShoppingListAction,
+  createShoppingListAction,
+  deleteShoppingListAction,
+  makeShoppingListDefaultAction,
+  moveShoppingItemAction,
   removeShoppingItemAction,
+  renameShoppingListAction,
+  restoreShoppingListAction,
   setItemCategoryAction,
   setItemCheckedAction,
   type ActionResult,
 } from "~/server/shopping/actions";
-import { useActiveMemberStore } from "~/lib/active-member-store";
-import { type ActiveMemberOption } from "~/lib/dietary-match";
-import { type ShoppingCategory } from "~/lib/shopping-list";
 import { useConfirm } from "~/components/ui/confirm-dialog";
+import {
+  ShoppingListNavigation,
+  type ShoppingListSummary,
+} from "./shopping-list-navigation";
 import {
   ShoppingListView,
   type ManualEntryDraft,
   type ShoppingViewItem,
 } from "./shopping-list-view";
 
-/** DB-backed shopping list. Check-off / remove are optimistic, with refresh. */
+type ServerActionResult =
+  ActionResult | ({ ok: true } & Record<string, unknown>);
+
+/** DB-backed shopping workspace with optimistic item updates and URL-backed list selection. */
 export function DbShoppingList({
   items,
+  lists,
+  selectedListId,
+  defaultListId,
   members = [],
 }: {
   items: ShoppingViewItem[];
+  lists: ShoppingListSummary[];
+  selectedListId: string;
+  defaultListId: string;
   /** Family profiles, to warn on the active member's allergens (#432). */
   members?: ActiveMemberOption[];
 }) {
   const router = useRouter();
-  const [, startTransition] = React.useTransition();
+  const [pending, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
   const confirm = useConfirm();
   const t = useTranslations("shopping");
   const friendlyError = useFriendlyError();
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const avoidAllergens =
-    members.find((m) => m.id === activeMemberId)?.allergens ?? [];
+    members.find((member) => member.id === activeMemberId)?.allergens ?? [];
 
-  // Re-sync whenever the server sends fresh data (after revalidate/refresh).
   React.useEffect(() => setOptimistic(items), [items]);
 
-  function run(action: () => Promise<ActionResult>) {
+  const activeLists = lists.filter((list) => !list.archived);
+  const listOptions = activeLists.map((list) => ({
+    id: list.id,
+    name: list.name,
+    storeName: list.storeName,
+    isDefault: list.id === defaultListId,
+  }));
+
+  function navigateToList(listId: string) {
+    router.push(`/shopping?list=${encodeURIComponent(listId)}`);
+  }
+
+  function run<TResult extends ServerActionResult>(
+    action: () => Promise<TResult>,
+    onSuccess?: (result: Extract<TResult, { ok: true }>) => void,
+  ) {
     startTransition(async () => {
       const result = await action();
-      if (!result.ok) toast.error(friendlyError(result.error));
+      if (!result.ok) {
+        toast.error(friendlyError(result.error));
+        router.refresh();
+        return;
+      }
+      onSuccess?.(result as Extract<TResult, { ok: true }>);
       router.refresh();
     });
   }
 
   function onToggle(id: string, checked: boolean) {
-    setOptimistic((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, checked } : i)),
+    setOptimistic((previous) =>
+      previous.map((item) => (item.id === id ? { ...item, checked } : item)),
     );
     run(() => setItemCheckedAction(id, checked));
   }
 
   function onRemove(id: string) {
-    setOptimistic((prev) => prev.filter((i) => i.id !== id));
+    setOptimistic((previous) => previous.filter((item) => item.id !== id));
     run(() => removeShoppingItemAction(id));
   }
 
   function onSetCategory(id: string, category: ShoppingCategory) {
-    setOptimistic((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, category } : i)),
+    setOptimistic((previous) =>
+      previous.map((item) => (item.id === id ? { ...item, category } : item)),
     );
     run(() => setItemCategoryAction(id, category));
   }
@@ -77,6 +116,7 @@ export function DbShoppingList({
   function onAddManual(entry: ManualEntryDraft) {
     run(() =>
       addManualItemAction({
+        listId: selectedListId,
         item: entry.item,
         quantity: entry.quantity ?? undefined,
         unit: entry.unit ?? undefined,
@@ -84,34 +124,173 @@ export function DbShoppingList({
     );
   }
 
+  function onCreate(name: string, storeName: string | null) {
+    run(
+      () =>
+        createShoppingListAction({ name, storeName: storeName ?? undefined }),
+      (result) => {
+        toast.success(t("lists.toasts.created", { name }));
+        navigateToList(result.listId);
+      },
+    );
+  }
+
+  function onRename(listId: string, name: string, storeName: string | null) {
+    run(
+      () =>
+        renameShoppingListAction({
+          listId,
+          name,
+          storeName: storeName ?? undefined,
+        }),
+      () => toast.success(t("lists.toasts.renamed", { name })),
+    );
+  }
+
+  function onMakeDefault(listId: string) {
+    const list = lists.find((candidate) => candidate.id === listId);
+    if (!list) return;
+    run(
+      () => makeShoppingListDefaultAction({ listId }),
+      () => toast.success(t("lists.toasts.madeDefault", { name: list.name })),
+    );
+  }
+
+  async function onArchive(listId: string) {
+    const list = lists.find((candidate) => candidate.id === listId);
+    if (!list) return false;
+    const accepted = await confirm({
+      title: t("lists.confirm.archive.title", { name: list.name }),
+      description: t("lists.confirm.archive.description"),
+      confirmLabel: t("lists.archive"),
+    });
+    if (!accepted) return false;
+    run(
+      () => archiveShoppingListAction({ listId }),
+      (result) => {
+        toast.success(t("lists.toasts.archived", { name: list.name }));
+        if (listId === selectedListId) {
+          navigateToList(result.fallbackListId);
+        }
+      },
+    );
+    return true;
+  }
+
+  function onRestore(listId: string) {
+    const list = lists.find((candidate) => candidate.id === listId);
+    if (!list) return;
+    run(
+      () => restoreShoppingListAction({ listId }),
+      () => toast.success(t("lists.toasts.restored", { name: list.name })),
+    );
+  }
+
+  async function onDelete(listId: string) {
+    const list = lists.find((candidate) => candidate.id === listId);
+    if (!list) return false;
+    const accepted = await confirm({
+      title: t("lists.confirm.delete.title", { name: list.name }),
+      description: t("lists.confirm.delete.description"),
+      confirmLabel: t("lists.delete"),
+    });
+    if (!accepted) return false;
+    run(
+      () => deleteShoppingListAction({ listId }),
+      (result) => {
+        toast.success(t("lists.toasts.deleted", { name: list.name }));
+        if (listId === selectedListId) {
+          navigateToList(result.fallbackListId);
+        }
+      },
+    );
+    return true;
+  }
+
+  function onMove(
+    itemId: string,
+    targetListId: string,
+    rememberRoute: boolean,
+    alternativeListIds: string[],
+  ) {
+    const item = optimistic.find((candidate) => candidate.id === itemId);
+    const target = lists.find((candidate) => candidate.id === targetListId);
+    if (!item || !target) return;
+    setOptimistic((previous) =>
+      previous.filter((candidate) => candidate.id !== itemId),
+    );
+    run(
+      () =>
+        moveShoppingItemAction({
+          itemId,
+          targetListId,
+          rememberRoute,
+          alternativeListIds,
+        }),
+      () =>
+        toast.success(
+          t(
+            rememberRoute
+              ? "routing.toasts.routeSaved"
+              : "routing.toasts.moved",
+            {
+              item: item.item,
+              list: target.storeName ?? target.name,
+            },
+          ),
+        ),
+    );
+  }
+
   function onClearChecked() {
-    setOptimistic((prev) => prev.filter((i) => !i.checked));
-    run(clearCheckedItemsAction);
+    setOptimistic((previous) => previous.filter((item) => !item.checked));
+    run(() => clearCheckedItemsAction({ listId: selectedListId }));
   }
 
   async function onClearAll() {
     if (optimistic.length === 0) return;
-    const ok = await confirm({
+    const accepted = await confirm({
       title: t("confirm.clearAllSynced.title"),
       description: t("confirm.clearAllSynced.description"),
       confirmLabel: t("confirm.clearAll.confirmLabel"),
     });
-    if (!ok) return;
+    if (!accepted) return;
     setOptimistic([]);
-    run(clearShoppingListAction);
+    run(
+      () => clearShoppingListAction({ listId: selectedListId }),
+      () => toast.success(t("toasts.cleared")),
+    );
   }
 
   return (
-    <ShoppingListView
-      items={optimistic}
-      storageNote={t("storage.synced")}
-      avoidAllergens={avoidAllergens}
-      onAddManual={onAddManual}
-      onToggle={onToggle}
-      onRemove={onRemove}
-      onSetCategory={onSetCategory}
-      onClearChecked={onClearChecked}
-      onClearAll={onClearAll}
-    />
+    <div className="flex flex-col gap-6">
+      <ShoppingListNavigation
+        lists={lists}
+        selectedListId={selectedListId}
+        disabled={pending}
+        onSelect={navigateToList}
+        onCreate={onCreate}
+        onRename={onRename}
+        onMakeDefault={onMakeDefault}
+        onArchive={onArchive}
+        onRestore={onRestore}
+        onDelete={onDelete}
+      />
+      <ShoppingListView
+        items={optimistic}
+        storageNote={t("storage.synced")}
+        avoidAllergens={avoidAllergens}
+        disabled={pending}
+        listOptions={listOptions}
+        currentListId={selectedListId}
+        onAddManual={onAddManual}
+        onToggle={onToggle}
+        onRemove={onRemove}
+        onSetCategory={onSetCategory}
+        onMove={onMove}
+        onClearChecked={onClearChecked}
+        onClearAll={onClearAll}
+      />
+    </div>
   );
 }

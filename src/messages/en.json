@@ -1489,6 +1489,71 @@
       "changeAisle": "Change aisle",
       "remove": "Remove {item}"
     },
+    "lists": {
+      "heading": "Shopping lists",
+      "current": "Current list",
+      "new": "New list",
+      "manage": "Manage",
+      "defaultBadge": "Default",
+      "storeListOption": "{name} at {store}",
+      "storeCaption": "Store: {store}",
+      "create": {
+        "title": "Create a shopping list",
+        "description": "Name the list and optionally match it to a store.",
+        "confirm": "Create list"
+      },
+      "manageTitle": "Manage {name}",
+      "manageDescription": "Rename this list, change its store, or update its status.",
+      "fields": {
+        "name": "List name",
+        "store": "Store (optional)",
+        "storePlaceholder": "e.g. Neighborhood market",
+        "storeHint": "Used to route ingredients to the right shopping list."
+      },
+      "makeDefault": "Make default",
+      "archive": "Archive",
+      "delete": "Delete",
+      "archived": "Archived lists",
+      "restore": "Restore",
+      "restoreNamed": "Restore {name}",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "toasts": {
+        "created": "List {name} created.",
+        "renamed": "List renamed to {name}.",
+        "madeDefault": "{name} is now your default list.",
+        "archived": "List {name} archived.",
+        "restored": "List {name} restored.",
+        "deleted": "List {name} deleted."
+      },
+      "confirm": {
+        "archive": {
+          "title": "Archive {name}?",
+          "description": "The list will be hidden from active shopping lists, but you can restore it later."
+        },
+        "delete": {
+          "title": "Delete {name}?",
+          "description": "This list and all its items will be permanently deleted. This can't be undone."
+        }
+      }
+    },
+    "routing": {
+      "moveItem": "Move {item} to another list",
+      "move": "Move to another list",
+      "title": "Move {item}",
+      "description": "Choose the shopping list where this item belongs.",
+      "preferred": "Preferred list",
+      "remember": "Remember this route",
+      "rememberHint": "Send this ingredient to the selected list next time.",
+      "alternatives": "Also available at",
+      "alsoAt": "Also at {stores}",
+      "cancel": "Cancel",
+      "confirm": "Move item",
+      "toasts": {
+        "moved": "{item} moved to {list}.",
+        "routeSaved": "Route saved. {item} will go to {list} next time."
+      }
+    },
     "manual": {
       "itemLabel": "Add an item",
       "itemPlaceholder": "e.g. Paper towels",

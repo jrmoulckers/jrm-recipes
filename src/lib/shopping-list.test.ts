@@ -26,6 +26,7 @@ function makeItem(item: string, category: ShoppingCategory): AggregatedItem {
   return {
     key: item.toLowerCase(),
     item,
+    foodId: null,
     quantity: 1,
     quantityMax: null,
     unit: null,
