@@ -245,6 +245,21 @@ describe("routing and list lifecycle", () => {
     expect(store().currentListId).toBe(costco);
     expect(list(costco).isDefault).toBe(true);
   });
+
+  it.each(["archiveList", "deleteList"] as const)(
+    "falls back to the explicit default when the viewed list is removed by %s",
+    (operation) => {
+      const costco = store().createList("Warehouse", "Costco");
+      store().makeDefault(costco);
+      const temporary = store().createList("Temporary", null);
+
+      store()[operation](temporary);
+
+      expect(store().currentListId).toBe(costco);
+      expect(store().defaultListId).toBe(costco);
+      expect(list(costco).isDefault).toBe(true);
+    },
+  );
 });
 
 describe("per-list item mutations", () => {

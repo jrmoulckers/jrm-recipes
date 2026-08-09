@@ -536,9 +536,10 @@ function ensureActiveFallback(
   lists: LocalShoppingList[],
   unavailableListId: string,
 ): { lists: LocalShoppingList[]; fallbackListId: string } {
-  const fallback = activeLists(lists).find(
+  const available = activeLists(lists).filter(
     (list) => list.id !== unavailableListId,
   );
+  const fallback = available.find((list) => list.isDefault) ?? available[0];
   if (fallback) return { lists, fallbackListId: fallback.id };
   const created: LocalShoppingList = {
     ...defaultList(),

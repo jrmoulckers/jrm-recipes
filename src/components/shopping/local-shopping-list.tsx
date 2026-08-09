@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -22,9 +23,14 @@ import {
 import type { ShoppingHistoryEntry } from "./shopping-history";
 
 /** DB-off shopping list, backed by the persisted zustand store. */
-export function LocalShoppingList() {
+export function LocalShoppingList({
+  selectedListId,
+}: {
+  selectedListId?: string;
+}) {
+  const router = useRouter();
   const lists = useShoppingStore((s) => s.lists);
-  const currentListId = useShoppingStore((s) => s.currentListId);
+  const defaultListId = useShoppingStore((s) => s.defaultListId);
   const routes = useShoppingStore((s) => s.routes);
   const restorePoints = useShoppingStore((s) => s.restorePoints);
   const addManual = useShoppingStore((s) => s.addManual);
@@ -58,6 +64,24 @@ export function LocalShoppingList() {
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
 
+  const activeLists = lists.filter((list) => !list.archived);
+  const urlList = activeLists.find((list) => list.id === selectedListId);
+  const fallbackList =
+    activeLists.find((list) => list.id === defaultListId) ?? activeLists[0];
+  const routedList = urlList ?? fallbackList;
+
+  React.useEffect(() => {
+    if (!hydrated || !routedList) return;
+    if (useShoppingStore.getState().currentListId !== routedList.id) {
+      setCurrentList(routedList.id);
+    }
+    if (selectedListId !== routedList.id) {
+      router.replace(`/shopping?list=${encodeURIComponent(routedList.id)}`, {
+        scroll: false,
+      });
+    }
+  }, [hydrated, routedList, router, selectedListId, setCurrentList]);
+
   if (!hydrated) {
     return (
       <div className="flex flex-col gap-3">
@@ -69,14 +93,10 @@ export function LocalShoppingList() {
     );
   }
 
-  const current =
-    lists.find((list) => list.id === currentListId && !list.archived) ??
-    lists.find((list) => list.isDefault && !list.archived) ??
-    lists.find((list) => !list.archived);
+  const current = routedList ?? fallbackList;
   if (!current) return null;
   const currentList = current;
 
-  const activeLists = lists.filter((list) => !list.archived);
   const listOptions = activeLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -150,8 +170,15 @@ export function LocalShoppingList() {
   }
 
   function onCreate(name: string, storeName: string | null) {
-    createList(name, storeName);
+    navigateToList(createList(name, storeName));
     toast.success(t("lists.toasts.created", { name }));
+  }
+
+  function navigateToList(listId: string) {
+    setCurrentList(listId);
+    router.push(`/shopping?list=${encodeURIComponent(listId)}`, {
+      scroll: false,
+    });
   }
 
   function onRename(listId: string, name: string, storeName: string | null) {
@@ -343,7 +370,7 @@ export function LocalShoppingList() {
       <ShoppingListNavigation
         lists={summaries}
         selectedListId={currentList.id}
-        onSelect={setCurrentList}
+        onSelect={navigateToList}
         onCreate={onCreate}
         onRename={onRename}
         onMakeDefault={onMakeDefault}

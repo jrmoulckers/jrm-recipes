@@ -144,7 +144,7 @@ export default async function ShoppingPage({
           members={members}
         />
       ) : (
-        <LocalShoppingList />
+        <LocalShoppingList selectedListId={selectedListId} />
       )}
     </div>
   );
