@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Spinner } from "~/components/ui/spinner";
 import { Switch } from "~/components/ui/switch";
 import { SavedSearches } from "~/components/recipe/saved-searches";
 import { pathnameWithQuery } from "~/lib/routes";
@@ -37,15 +38,24 @@ import {
   RECIPE_PRESETS,
   isPresetActive,
   togglePreset,
+  type RecipePreset,
 } from "~/lib/recipe-presets";
+import {
+  type ClassificationOption,
+  isClassificationActive,
+  pickBrowseClassifications,
+  toggleClassification,
+} from "~/lib/recipe-classification-filters";
 import {
   defaultSortFor,
   hasActiveRecipeFilters,
+  parseRecipeSearch,
   recipeDifficultyValues,
   recipeSortLabels,
   recipeSortValues,
   type RecipeSearch,
 } from "~/server/recipes/search";
+import { type SearchParams } from "~/lib/route-params";
 import { DIETARY_TAGS, DIETARY_TAG_LABELS } from "~/lib/substitutions";
 import { type SavedSearch } from "~/server/searches/queries";
 
@@ -53,6 +63,15 @@ import { type SavedSearch } from "~/server/searches/queries";
 const ANY = "any";
 
 const TIME_OPTIONS = [15, 30, 45, 60, 90, 120] as const;
+
+/** How many classification chips the always-visible browse row offers. */
+const BROWSE_CLASSIFICATION_COUNT = 12;
+
+/** How many saved family members become their own "Safe for" quick pick. */
+const SAFE_FOR_QUICK_PICKS = 2;
+
+/** Milliseconds of typing pause before a free-text filter navigates. */
+const TEXT_DEBOUNCE_MS = 250;
 
 type Facets = {
   cuisines: { value: string; count: number }[];
@@ -80,9 +99,37 @@ type ParamKey =
   | "ingredient"
   | "sort";
 
+/** Re-shape live `URLSearchParams` into the record `parseRecipeSearch` reads. */
+function toSearchParamsRecord(params: URLSearchParams): SearchParams {
+  const record: SearchParams = {};
+  for (const key of new Set(params.keys())) {
+    const values = params.getAll(key);
+    record[key] = values.length > 1 ? values : values[0];
+  }
+  return record;
+}
+
+/**
+ * Filters that only exist inside the "More filters" panel. Meals, cuisines and
+ * tags are excluded because the always-visible classification row already shows
+ * them, so selecting "Dinner" must not force the advanced panel open.
+ */
+function advancedFilterCount(search: RecipeSearch): number {
+  return (
+    (search.difficulty != null ? 1 : 0) +
+    (search.maxTime != null ? 1 : 0) +
+    search.diets.length +
+    (search.safeFor != null ? 1 : 0) +
+    (search.group != null ? 1 : 0) +
+    (search.ingredient != null ? 1 : 0) +
+    (search.mine ? 1 : 0)
+  );
+}
+
 export function RecipeSearchControls({
   search,
   facets,
+  classifications = [],
   savedSearches = [],
   members = [],
   groups = [],
@@ -90,6 +137,7 @@ export function RecipeSearchControls({
 }: {
   search: RecipeSearch;
   facets: Facets;
+  classifications?: ClassificationOption[];
   savedSearches?: SavedSearch[];
   members?: SafeForMember[];
   groups?: GroupOption[];
@@ -97,6 +145,7 @@ export function RecipeSearchControls({
 }) {
   const router = useRouter();
   const t = useTranslations("recipeSearch");
+  const tLibrary = useTranslations("recipe.library");
   const tDifficulty = useTranslations("recipeDetail.difficulty");
   const tNames = useTranslations("classificationNames");
   const pathname = usePathname();
@@ -105,10 +154,37 @@ export function RecipeSearchControls({
   const filtersId = React.useId();
   const [query, setQuery] = React.useState(search.q ?? "");
   const [ingredient, setIngredient] = React.useState(search.ingredient ?? "");
-  // On phones the filter row collapses behind a "Filters" disclosure so the
-  // recipes stay near the top. Desktop keeps the inline row (#90).
-  const [filtersOpen, setFiltersOpen] = React.useState(false);
-  const [, startTransition] = React.useTransition();
+  // Progressive disclosure (#661): the long facet grid stays folded away at
+  // every breakpoint until asked for, so the card leads with search. It starts
+  // open only when the incoming URL already carries one of its filters, so a
+  // shared link never hides the reason the results look narrow.
+  const [filtersOpen, setFiltersOpen] = React.useState(
+    () => advancedFilterCount(search) > 0,
+  );
+  const [isPending, startTransition] = React.useTransition();
+
+  // Optimistic querystring (#661). Every control renders from this instead of
+  // the committed URL, so a chip lights up on the click that requested it
+  // rather than when the server navigation lands. React discards the optimistic
+  // value once the transition settles, at which point the committed params say
+  // the same thing.
+  const committedQuery = currentParams.toString();
+  const [optimisticQuery, setOptimisticQuery] =
+    React.useOptimistic(committedQuery);
+  const activeParams = React.useMemo(
+    () => new URLSearchParams(optimisticQuery),
+    [optimisticQuery],
+  );
+  // The optimistic params are always ones we built, so parsing them cannot
+  // realistically fail; falling back to the server's search keeps a malformed
+  // hand-typed URL from blanking the controls.
+  const activeSearch = React.useMemo(() => {
+    try {
+      return parseRecipeSearch(toSearchParamsRecord(activeParams));
+    } catch {
+      return search;
+    }
+  }, [activeParams, search]);
 
   // Reflect URL changes driven elsewhere (back/forward, Clear) into the input.
   React.useEffect(() => {
@@ -120,9 +196,26 @@ export function RecipeSearchControls({
     setIngredient(search.ingredient ?? "");
   }, [search.ingredient]);
 
+  const navigate = React.useCallback(
+    (params: URLSearchParams) => {
+      // Keep the contextual default sort out of the URL so shared links stay
+      // clean: `relevance` when a query is present, `newest` otherwise.
+      const effectiveDefault = defaultSortFor(params.get("q"));
+      if (params.get("sort") === effectiveDefault) params.delete("sort");
+      const qs = params.toString();
+      startTransition(() => {
+        setOptimisticQuery(qs);
+        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
+      });
+    },
+    [pathname, router, setOptimisticQuery],
+  );
+
+  // Every mutation composes onto the *optimistic* params, so two quick taps
+  // stack instead of the second one racing the first back to the old URL.
   const pushParams = React.useCallback(
     (updates: Partial<Record<ParamKey, string | undefined>>) => {
-      const params = new URLSearchParams(currentParams.toString());
+      const params = new URLSearchParams(activeParams.toString());
       for (const [key, value] of Object.entries(updates)) {
         if (value == null || value.length === 0 || value === ANY) {
           params.delete(key);
@@ -130,33 +223,21 @@ export function RecipeSearchControls({
           params.set(key, value);
         }
       }
-      // Keep the contextual default sort out of the URL so shared links stay
-      // clean: `relevance` when a query is present, `newest` otherwise.
-      const effectiveDefault = defaultSortFor(params.get("q"));
-      if (params.get("sort") === effectiveDefault) params.delete("sort");
-      const qs = params.toString();
-      startTransition(() => {
-        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
-      });
+      navigate(params);
     },
-    [currentParams, pathname, router],
+    [activeParams, navigate],
   );
 
   // Multi-select facets carry several repeated params. Replace the
   // whole set atomically so toggling one value never drops the others.
   const pushListParam = React.useCallback(
     (key: "meal" | "cuisine" | "tag" | "diet", values: string[]) => {
-      const params = new URLSearchParams(currentParams.toString());
+      const params = new URLSearchParams(activeParams.toString());
       params.delete(key);
       for (const value of values) params.append(key, value);
-      const effectiveDefault = defaultSortFor(params.get("q"));
-      if (params.get("sort") === effectiveDefault) params.delete("sort");
-      const qs = params.toString();
-      startTransition(() => {
-        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
-      });
+      navigate(params);
     },
-    [currentParams, pathname, router],
+    [activeParams, navigate],
   );
 
   const toggleListValue = React.useCallback(
@@ -178,21 +259,10 @@ export function RecipeSearchControls({
   // Preset chips (#378): compose several existing params in one tap. Reuses the
   // pure toggle from recipe-presets so the result stays a shareable URL.
   const pushPreset = React.useCallback(
-    (presetId: string) => {
-      const preset = RECIPE_PRESETS.find((p) => p.id === presetId);
-      if (!preset) return;
-      const params = togglePreset(
-        new URLSearchParams(currentParams.toString()),
-        preset,
-      );
-      const effectiveDefault = defaultSortFor(params.get("q"));
-      if (params.get("sort") === effectiveDefault) params.delete("sort");
-      const qs = params.toString();
-      startTransition(() => {
-        router.push(pathnameWithQuery(pathname, qs), { scroll: false });
-      });
+    (preset: RecipePreset) => {
+      navigate(togglePreset(activeParams, preset));
     },
-    [currentParams, pathname, router],
+    [activeParams, navigate],
   );
 
   // Debounce the free-text query so we navigate once the user pauses.
@@ -201,7 +271,7 @@ export function RecipeSearchControls({
     if (next === (search.q ?? "")) return;
     const id = window.setTimeout(
       () => pushParams({ q: next || undefined }),
-      300,
+      TEXT_DEBOUNCE_MS,
     );
     return () => window.clearTimeout(id);
   }, [query, search.q, pushParams]);
@@ -213,12 +283,61 @@ export function RecipeSearchControls({
     if (next === (search.ingredient ?? "")) return;
     const id = window.setTimeout(
       () => pushParams({ ingredient: next || undefined }),
-      300,
+      TEXT_DEBOUNCE_MS,
     );
     return () => window.clearTimeout(id);
   }, [ingredient, search.ingredient, pushParams]);
 
-  const filtersActive = hasActiveRecipeFilters(search);
+  const filtersActive = hasActiveRecipeFilters(activeSearch);
+
+  /**
+   * Quick picks (#661) lead with the viewer's own context — their recipes, the
+   * family members they saved a dietary profile for — before the generic
+   * presets, so the first row of the card is about them.
+   */
+  const quickPicks = React.useMemo<RecipePreset[]>(() => {
+    const personalized: RecipePreset[] = [];
+    if (signedIn) {
+      personalized.push({
+        id: "mine",
+        label: t("myRecipes"),
+        description: t("onlyMyRecipes"),
+        params: [{ key: "mine", value: "1" }],
+      });
+    }
+    for (const member of members.slice(0, SAFE_FOR_QUICK_PICKS)) {
+      personalized.push({
+        id: `safe-for:${member.id}`,
+        label: t("quickPick.safeFor", { name: member.name }),
+        description: t("safeForNote"),
+        params: [{ key: "safeFor", value: member.id }],
+      });
+    }
+    return [...personalized, ...RECIPE_PRESETS];
+  }, [members, signedIn, t]);
+
+  /**
+   * The always-visible classification row. It used to live in the browse-only
+   * section, so choosing "Dinner" deleted it; keeping it here means the row
+   * survives the switch to results and simply highlights what is applied.
+   */
+  const browseClassifications = React.useMemo(
+    () =>
+      pickBrowseClassifications(
+        classifications,
+        activeParams,
+        BROWSE_CLASSIFICATION_COUNT,
+      ),
+    [classifications, activeParams],
+  );
+
+  const classificationLabel = React.useCallback(
+    (item: ClassificationOption) => {
+      const name = tNames.has(item.slug) ? tNames(item.slug) : item.name;
+      return item.category === "general" ? `#${name}` : name;
+    },
+    [tNames],
+  );
 
   // Human-readable, individually removable chips for every active filter (#87).
   // Each knows how to clear only its own param while preserving the rest.
@@ -240,17 +359,17 @@ export function RecipeSearchControls({
 
   const activeChips: { key: string; label: string; onRemove: () => void }[] =
     [];
-  if (search.q) {
+  if (activeSearch.q) {
     activeChips.push({
       key: "q",
-      label: t("chip.query", { q: search.q }),
+      label: t("chip.query", { q: activeSearch.q }),
       onRemove: () => {
         setQuery("");
         pushParams({ q: undefined });
       },
     });
   }
-  for (const meal of search.meals) {
+  for (const meal of activeSearch.meals) {
     const name =
       facets.meals.find((item) => item.slug === meal.toLowerCase())?.name ??
       meal;
@@ -263,13 +382,13 @@ export function RecipeSearchControls({
       onRemove: () =>
         pushListParam(
           "meal",
-          search.meals.filter(
+          activeSearch.meals.filter(
             (value) => value.toLowerCase() !== meal.toLowerCase(),
           ),
         ),
     });
   }
-  for (const cuisine of search.cuisines) {
+  for (const cuisine of activeSearch.cuisines) {
     const slug = slugify(cuisine);
     activeChips.push({
       key: `cuisine:${cuisine}`,
@@ -279,76 +398,81 @@ export function RecipeSearchControls({
       onRemove: () =>
         pushListParam(
           "cuisine",
-          search.cuisines.filter(
+          activeSearch.cuisines.filter(
             (c) => c.toLowerCase() !== cuisine.toLowerCase(),
           ),
         ),
     });
   }
-  if (search.difficulty) {
+  if (activeSearch.difficulty) {
     activeChips.push({
       key: "difficulty",
-      label: t("chip.difficulty", { value: tDifficulty(search.difficulty) }),
+      label: t("chip.difficulty", {
+        value: tDifficulty(activeSearch.difficulty),
+      }),
       onRemove: () => pushParams({ difficulty: undefined }),
     });
   }
-  if (search.maxTime != null) {
+  if (activeSearch.maxTime != null) {
     activeChips.push({
       key: "maxTime",
-      label: t("chip.maxTime", { minutes: search.maxTime }),
+      label: t("chip.maxTime", { minutes: activeSearch.maxTime }),
       onRemove: () => pushParams({ maxTime: undefined }),
     });
   }
-  for (const tag of search.tags) {
-    const name = tagNameBySlug.get(tag.toLowerCase()) ?? tag;
+  for (const tag of activeSearch.tags) {
+    const slug = tag.toLowerCase();
+    const name = tagNameBySlug.get(slug) ?? tag;
     activeChips.push({
       key: `tag:${tag}`,
-      label: t("chip.tag", { value: name }),
+      label: t("chip.tag", {
+        value: tNames.has(slug) ? tNames(slug) : name,
+      }),
       onRemove: () =>
         pushListParam(
           "tag",
-          search.tags.filter((v) => v.toLowerCase() !== tag.toLowerCase()),
+          activeSearch.tags.filter((v) => v.toLowerCase() !== slug),
         ),
     });
   }
-  for (const diet of search.diets) {
+  for (const diet of activeSearch.diets) {
     activeChips.push({
       key: `diet:${diet}`,
       label: t("chip.diet", { value: DIETARY_TAG_LABELS[diet] }),
       onRemove: () =>
         pushListParam(
           "diet",
-          search.diets.filter((d) => d !== diet),
+          activeSearch.diets.filter((d) => d !== diet),
         ),
     });
   }
-  if (search.safeFor) {
-    const name = memberNameById.get(search.safeFor);
+  if (activeSearch.safeFor) {
+    const name = memberNameById.get(activeSearch.safeFor);
     activeChips.push({
       key: "safeFor",
       label: name ? t("chip.safeForNamed", { name }) : t("field.safeFor"),
       onRemove: () => pushParams({ safeFor: undefined }),
     });
   }
-  if (search.group) {
-    const name = groupNameById.get(search.group);
+  if (activeSearch.group) {
+    const name = groupNameById.get(activeSearch.group);
     activeChips.push({
       key: "group",
       label: name ? t("chip.familyNamed", { name }) : t("field.family"),
       onRemove: () => pushParams({ group: undefined }),
     });
   }
-  if (search.ingredient) {
+  if (activeSearch.ingredient) {
     activeChips.push({
       key: "ingredient",
-      label: t("chip.ingredient", { value: search.ingredient }),
+      label: t("chip.ingredient", { value: activeSearch.ingredient }),
       onRemove: () => {
         setIngredient("");
         pushParams({ ingredient: undefined });
       },
     });
   }
-  if (search.mine) {
+  if (activeSearch.mine) {
     activeChips.push({
       key: "mine",
       label: t("field.onlyMine"),
@@ -356,41 +480,19 @@ export function RecipeSearchControls({
     });
   }
 
-  // Active filters excluding the free-text query, for the mobile trigger badge.
-  const filterCount = activeChips.length - (search.q ? 1 : 0);
+  const advancedCount = advancedFilterCount(activeSearch);
+
+  const clearAll = () => {
+    setQuery("");
+    setIngredient("");
+    navigate(new URLSearchParams());
+  };
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4">
-      <div
-        className="flex flex-wrap items-center gap-2"
-        aria-label={t("quickFiltersAria")}
-      >
-        <span className="text-xs font-medium text-muted-foreground">
-          {t("quickPicks")}
-        </span>
-        {RECIPE_PRESETS.map((preset) => {
-          const active = isPresetActive(currentParams, preset);
-          return (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => pushPreset(preset.id)}
-              aria-pressed={active}
-              title={preset.description}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent",
-              )}
-            >
-              {active && <Check className="size-3.5" aria-hidden />}
-              {preset.label}
-            </button>
-          );
-        })}
-      </div>
-
+    <div
+      aria-busy={isPending}
+      className="flex flex-col gap-4 rounded-xl border border-border bg-surface/50 p-4"
+    >
       <div className="relative">
         <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Label htmlFor={searchId} className="sr-only">
@@ -402,29 +504,88 @@ export function RecipeSearchControls({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t("searchPlaceholder")}
-          className="ps-10"
+          className="pe-10 ps-10"
         />
+        <span className="absolute end-3 top-1/2 -translate-y-1/2">
+          {isPending ? (
+            <Spinner label={t("updating")} className="text-muted-foreground" />
+          ) : query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label={t("clearSearch")}
+              className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+        </span>
       </div>
 
+      <div
+        className="flex flex-wrap items-center gap-2"
+        role="group"
+        aria-label={t("quickFiltersAria")}
+      >
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("quickPicks")}
+        </span>
+        {quickPicks.map((preset) => (
+          <ChipButton
+            key={preset.id}
+            active={isPresetActive(activeParams, preset)}
+            title={preset.description}
+            onClick={() => pushPreset(preset)}
+          >
+            {preset.label}
+          </ChipButton>
+        ))}
+      </div>
+
+      {browseClassifications.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label={tLibrary("browseByTag")}
+        >
+          <span className="text-xs font-medium text-muted-foreground">
+            {tLibrary("browseByTag")}
+          </span>
+          {browseClassifications.map((item) => (
+            <ChipButton
+              key={`${item.category}:${item.slug}`}
+              active={isClassificationActive(activeParams, item)}
+              onClick={() => navigate(toggleClassification(activeParams, item))}
+            >
+              {classificationLabel(item)}
+              <span className="text-xs tabular-nums opacity-70">
+                {item.count}
+              </span>
+            </ChipButton>
+          ))}
+          <Button asChild variant="ghost" size="sm" className="ms-auto">
+            <Link href="/recipes/tags">{tLibrary("allTags")}</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
-        <div className="md:hidden">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => setFiltersOpen((open) => !open)}
             aria-expanded={filtersOpen}
             aria-controls={filtersId}
-            className="w-full justify-between font-normal"
+            className="font-normal"
           >
-            <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="size-4" />
-              {t("filters")}
-              {filterCount > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
-                  {filterCount}
-                </span>
-              )}
-            </span>
+            <SlidersHorizontal className="size-4" />
+            {t("filters")}
+            {advancedCount > 0 && (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
+                {advancedCount}
+              </span>
+            )}
             <ChevronDown
               className={cn(
                 "size-4 shrink-0 opacity-60 transition-transform",
@@ -432,12 +593,39 @@ export function RecipeSearchControls({
               )}
             />
           </Button>
+
+          <Select
+            value={activeSearch.sort}
+            onValueChange={(value) => pushParams({ sort: value })}
+          >
+            <SelectTrigger
+              className="min-w-[8rem]"
+              aria-label={t("field.sort")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {recipeSortValues.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {recipeSortLabels[option]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="ms-auto">
+            <SavedSearches
+              savedSearches={savedSearches}
+              currentQuery={optimisticQuery}
+              filtersActive={filtersActive}
+            />
+          </div>
         </div>
 
         <div
           id={filtersId}
           className={cn(
-            "flex-wrap items-end gap-3 md:flex",
+            "flex-wrap items-end gap-3 border-t border-border pt-3",
             filtersOpen ? "flex" : "hidden",
           )}
         >
@@ -445,12 +633,12 @@ export function RecipeSearchControls({
             <FacetMultiSelect
               label={t("field.meal")}
               placeholder={t("anyMeal")}
-              selected={search.meals}
+              selected={activeSearch.meals}
               options={facets.meals
                 .filter(
                   (meal) =>
                     meal.count > 0 ||
-                    search.meals.some(
+                    activeSearch.meals.some(
                       (selected) => selected.toLowerCase() === meal.slug,
                     ),
                 )
@@ -461,7 +649,7 @@ export function RecipeSearchControls({
                   } (${meal.count})`,
                 }))}
               onToggle={(value, on) =>
-                toggleListValue("meal", search.meals, value, on)
+                toggleListValue("meal", activeSearch.meals, value, on)
               }
             />
           )}
@@ -470,12 +658,12 @@ export function RecipeSearchControls({
             <FacetMultiSelect
               label={t("field.cuisine")}
               placeholder={t("anyCuisine")}
-              selected={search.cuisines}
+              selected={activeSearch.cuisines}
               options={facets.cuisines
                 .filter(
                   (c) =>
                     c.count > 0 ||
-                    search.cuisines.some(
+                    activeSearch.cuisines.some(
                       (s) => s.toLowerCase() === c.value.toLowerCase(),
                     ),
                 )
@@ -489,14 +677,14 @@ export function RecipeSearchControls({
                   };
                 })}
               onToggle={(value, on) =>
-                toggleListValue("cuisine", search.cuisines, value, on)
+                toggleListValue("cuisine", activeSearch.cuisines, value, on)
               }
             />
           )}
 
           <FilterField label={t("field.difficulty")}>
             <Select
-              value={search.difficulty ?? ANY}
+              value={activeSearch.difficulty ?? ANY}
               onValueChange={(value) => pushParams({ difficulty: value })}
             >
               <SelectTrigger className="min-w-[8rem]">
@@ -515,7 +703,11 @@ export function RecipeSearchControls({
 
           <FilterField label={t("field.maxTime")}>
             <Select
-              value={search.maxTime != null ? String(search.maxTime) : ANY}
+              value={
+                activeSearch.maxTime != null
+                  ? String(activeSearch.maxTime)
+                  : ANY
+              }
               onValueChange={(value) => pushParams({ maxTime: value })}
             >
               <SelectTrigger className="min-w-[8rem]">
@@ -536,12 +728,12 @@ export function RecipeSearchControls({
             <FacetMultiSelect
               label={t("field.tag")}
               placeholder={t("anyTag")}
-              selected={search.tags}
+              selected={activeSearch.tags}
               options={facets.tags
                 .filter(
                   (t) =>
                     t.count > 0 ||
-                    search.tags.some((s) => s.toLowerCase() === t.slug),
+                    activeSearch.tags.some((s) => s.toLowerCase() === t.slug),
                 )
                 .map((t) => ({
                   value: t.slug,
@@ -550,7 +742,7 @@ export function RecipeSearchControls({
                   } (${t.count})`,
                 }))}
               onToggle={(value, on) =>
-                toggleListValue("tag", search.tags, value, on)
+                toggleListValue("tag", activeSearch.tags, value, on)
               }
             />
           )}
@@ -558,13 +750,13 @@ export function RecipeSearchControls({
           <FacetMultiSelect
             label={t("field.dietary")}
             placeholder={t("anyDiet")}
-            selected={search.diets}
+            selected={activeSearch.diets}
             options={DIETARY_TAGS.map((tag) => ({
               value: tag,
               label: tNames.has(tag) ? tNames(tag) : DIETARY_TAG_LABELS[tag],
             }))}
             onToggle={(value, on) =>
-              toggleListValue("diet", search.diets, value, on)
+              toggleListValue("diet", activeSearch.diets, value, on)
             }
           />
 
@@ -582,7 +774,7 @@ export function RecipeSearchControls({
           <FilterField label={t("field.safeFor")}>
             {members.length > 0 ? (
               <Select
-                value={search.safeFor ?? ANY}
+                value={activeSearch.safeFor ?? ANY}
                 onValueChange={(value) => pushParams({ safeFor: value })}
               >
                 <SelectTrigger className="min-w-[9rem]">
@@ -614,7 +806,7 @@ export function RecipeSearchControls({
           {groups.length > 0 && (
             <FilterField label={t("field.family")}>
               <Select
-                value={search.group ?? ANY}
+                value={activeSearch.group ?? ANY}
                 onValueChange={(value) => pushParams({ group: value })}
               >
                 <SelectTrigger className="min-w-[9rem]">
@@ -636,7 +828,7 @@ export function RecipeSearchControls({
             <FilterField label={t("field.onlyMine")}>
               <label className="inline-flex h-10 items-center gap-2">
                 <Switch
-                  checked={search.mine}
+                  checked={activeSearch.mine}
                   onCheckedChange={(on) =>
                     pushParams({ mine: on ? "1" : undefined })
                   }
@@ -648,85 +840,90 @@ export function RecipeSearchControls({
               </label>
             </FilterField>
           )}
-
-          <FilterField label={t("field.sort")}>
-            <Select
-              value={search.sort}
-              onValueChange={(value) => pushParams({ sort: value })}
-            >
-              <SelectTrigger className="min-w-[8rem]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {recipeSortValues.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {recipeSortLabels[option]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FilterField>
-
-          {filtersActive && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setQuery("");
-                setIngredient("");
-                startTransition(() =>
-                  router.push(pathnameWithQuery(pathname), { scroll: false }),
-                );
-              }}
-              className={cn("text-muted-foreground")}
-            >
-              <X /> {t("clear")}
-            </Button>
-          )}
-
-          <div className="ms-auto">
-            <SavedSearches
-              savedSearches={savedSearches}
-              currentQuery={currentParams.toString()}
-              filtersActive={filtersActive}
-            />
-          </div>
         </div>
       </div>
 
       {activeChips.length > 0 && (
-        <ul
-          aria-label={t("activeFiltersAria")}
-          className="flex flex-wrap items-center gap-2"
-        >
-          {activeChips.map((chip) => (
-            <li key={chip.key}>
-              <button
-                type="button"
-                onClick={chip.onRemove}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 pe-1.5 ps-3 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="max-w-[14rem] truncate">{chip.label}</span>
-                <span
-                  aria-hidden
-                  className="inline-flex size-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
+        <div className="flex flex-wrap items-center gap-2">
+          <ul
+            aria-label={t("activeFiltersAria")}
+            className="flex flex-wrap items-center gap-2"
+          >
+            {activeChips.map((chip) => (
+              <li key={chip.key}>
+                <button
+                  type="button"
+                  onClick={chip.onRemove}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1 pe-1.5 ps-3 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <X className="size-3" />
-                </span>
-                <span className="sr-only">{t("removeFilter")}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <span className="max-w-[14rem] truncate">{chip.label}</span>
+                  <span
+                    aria-hidden
+                    className="inline-flex size-4 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                  >
+                    <X className="size-3" />
+                  </span>
+                  <span className="sr-only">{t("removeFilter")}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {filtersActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-muted-foreground"
+            >
+              <X /> {t("clear")}
+            </Button>
+          )}
+        </div>
       )}
 
-      {search.safeFor != null && (
+      {activeSearch.safeFor != null && (
         <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-primary" />
           {t("safeForNote")}
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * The shared pill for both one-tap rows (quick picks and classifications).
+ * `aria-pressed` is what makes "selected" audible: the row stays put and the
+ * chip reports its own state instead of the page changing underneath.
+ */
+function ChipButton({
+  active,
+  title,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  title?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={title}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent",
+      )}
+    >
+      {active && <Check className="size-3.5" aria-hidden />}
+      {children}
+    </button>
   );
 }
 

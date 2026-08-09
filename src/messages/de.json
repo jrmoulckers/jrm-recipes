@@ -3349,6 +3349,11 @@
     "clear": "Leeren",
     "activeFiltersAria": "Aktive Filter",
     "removeFilter": "Filter entfernen",
+    "clearSearch": "Suche löschen",
+    "updating": "Ergebnisse werden aktualisiert…",
+    "quickPick": {
+      "safeFor": "Geeignet für {name}"
+    },
     "safeForNote": "Filterung nach bestem Wissen anhand von Zutatennamen und angegebenen Ernährungsweisen. Prüfe Etiketten bei Allergien immer selbst.",
     "field": {
       "meal": "Mahlzeit oder Gang",

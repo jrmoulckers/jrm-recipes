@@ -3349,6 +3349,11 @@
     "clear": "Limpiar",
     "activeFiltersAria": "Filtros activos",
     "removeFilter": "Quitar el filtro",
+    "clearSearch": "Borrar la búsqueda",
+    "updating": "Actualizando resultados…",
+    "quickPick": {
+      "safeFor": "Apto para {name}"
+    },
     "safeForNote": "Filtrado aproximado a partir de los nombres de los ingredientes y las dietas declaradas. Revisa siempre las etiquetas si hay alergias.",
     "field": {
       "meal": "Comida o plato",

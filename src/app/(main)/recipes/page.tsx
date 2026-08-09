@@ -7,7 +7,6 @@ import {
   Compass,
   Database,
   SearchX,
-  Tags as TagIcon,
   UtensilsCrossed,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -54,7 +53,6 @@ import { WelcomeChecklist } from "~/components/onboarding/welcome-checklist";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
-import { recipeClassificationHref } from "~/lib/recipe-classifications";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -72,9 +70,6 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 const LCP_PRIORITY_COUNT = 3;
 
-/** How many popular tags to show in the browse-view "Browse by tag" strip. */
-const POPULAR_BROWSE_TAG_COUNT = 10;
-
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -84,14 +79,18 @@ export default async function RecipesPage({
   const search = parseRecipeSearch(await searchParams);
   const browsing = isDefaultRecipeView(search);
   const dbReady = isDbConfigured();
-  const [facets, savedSearches, quickPlan, groups] = await Promise.all([
-    dbReady
-      ? listRecipeFacets(user, search)
-      : Promise.resolve({ cuisines: [], meals: [], tags: [] }),
-    listMySavedSearches(user?.id),
-    dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
-    dbReady && user ? listUserGroups(user.id) : Promise.resolve([]),
-  ]);
+  const [facets, classifications, savedSearches, quickPlan, groups] =
+    await Promise.all([
+      dbReady
+        ? listRecipeFacets(user, search)
+        : Promise.resolve({ cuisines: [], meals: [], tags: [] }),
+      // Hoisted out of the browse-only section (#661) so the classification row
+      // in the filter card survives the switch to a filtered results view.
+      dbReady ? listTagsWithCounts(user) : Promise.resolve([]),
+      listMySavedSearches(user?.id),
+      dbReady && user ? buildQuickPlanContext(user.id) : Promise.resolve(null),
+      dbReady && user ? listUserGroups(user.id) : Promise.resolve([]),
+    ]);
   const members: CardDietaryMember[] =
     dbReady && user
       ? (await listMemberProfiles(user.id)).map((m) => ({
@@ -133,6 +132,7 @@ export default async function RecipesPage({
           <RecipeSearchControls
             search={search}
             facets={facets}
+            classifications={classifications}
             savedSearches={savedSearches}
             members={members}
             groups={groups}
@@ -168,12 +168,11 @@ async function BrowseSections({
   members: CardDietaryMember[];
   quickPlan: QuickPlanContext | null;
 }) {
-  const [library, discover, favoriteIds, tags, recentlyViewed, libraryIds] =
+  const [library, discover, favoriteIds, recentlyViewed, libraryIds] =
     await Promise.all([
       listLibrary(user),
       listPublicRecipes(),
       getFavoriteRecipeIds(user?.id),
-      listTagsWithCounts(user),
       listRecentlyViewed(user),
       listLibraryRecipeIds(user),
     ]);
@@ -183,16 +182,12 @@ async function BrowseSections({
   const discoverOnly = discover.items.filter((r) => !mineIds.has(r.id));
   const hasLibrary = library.items.length > 0;
   const canFavorite = Boolean(user);
-  const popularTags = [...tags]
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, POPULAR_BROWSE_TAG_COUNT);
   // Only pay for allergen roll-up when a family member with allergies is active.
   const showBadges = members.some((m) => m.allergens.length > 0);
   const libraryCards = showBadges
     ? await attachCardAllergens(library.items)
     : library.items;
   const t = await getTranslations("recipe.library");
-  const tNames = await getTranslations("classificationNames");
 
   return (
     <>
@@ -213,42 +208,6 @@ async function BrowseSections({
                 favorited={favoriteIds.has(recipe.id)}
                 quickPlan={quickPlan ?? undefined}
               />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {popularTags.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <TagIcon className="size-5 text-primary" />
-              <h2 className="font-display text-lg font-bold tracking-tight">
-                {t("browseByTag")}
-              </h2>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/recipes/tags">{t("allTags")}</Link>
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <Link
-                key={tag.slug}
-                href={recipeClassificationHref(tag)}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm transition-colors hover:border-primary/40 hover:bg-accent"
-              >
-                <span className="text-foreground group-hover:text-primary">
-                  {tag.category === "general"
-                    ? `#${tNames.has(tag.slug) ? tNames(tag.slug) : tag.name}`
-                    : tNames.has(tag.slug)
-                      ? tNames(tag.slug)
-                      : tag.name}
-                </span>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {tag.count}
-                </span>
-              </Link>
             ))}
           </div>
         </section>
