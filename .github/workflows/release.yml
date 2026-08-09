@@ -6,9 +6,11 @@
 # Release. This gives every production deploy a human-readable version to point
 # at instead of a raw commit SHA.
 #
-# CI gating: the version bump and the tag both flow through a pull request (the
-# release PR), which runs the full CI workflow like any other PR, so a release
-# can only land on green CI. See DEPLOY.md → "Automated releases".
+# CI gating: PRs created with GITHUB_TOKEN do not emit a normal pull_request
+# workflow event. After Release Please creates or updates its PR, this workflow
+# explicitly dispatches CI at the supported `pr` output's branch. Both sides
+# verify the open, same-repository bot PR before allowing CI to run. See
+# DEPLOY.md -> "Automated releases".
 name: Release
 
 on:
@@ -29,14 +31,63 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       # Create the release commit/tag/GitHub Release and open/maintain the
-      # release PR. Scoped to this job only (least privilege).
+      # release PR, then dispatch the existing CI workflow for that PR branch.
+      # Scoped to this job only (least privilege).
+      actions: write
       contents: write
       pull-requests: write
     steps:
       - name: Run release-please
+        id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Release Please's default `chore(main): release ...` title is
+      # Conventional Commits compliant. It is the deliberate automation-only
+      # exception to the local human-PR issue-number suffix policy.
+      - name: Dispatch CI for the release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          set -euo pipefail
+
+          release_pr_number="$(jq -r '.number // empty' <<<"$RELEASE_PR")"
+          release_branch="$(jq -r '.headBranchName // empty' <<<"$RELEASE_PR")"
+
+          if [[ ! "$release_pr_number" =~ ^[0-9]+$ ]]; then
+            echo "::error::Release Please did not return a valid PR number."
+            exit 1
+          fi
+
+          if [[ "$release_branch" != "release-please--branches--main" &&
+                ! "$release_branch" =~ ^release-please--branches--main--components--[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Release Please returned an unexpected branch."
+            exit 1
+          fi
+
+          pr="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${release_pr_number}")"
+          if ! jq -e \
+            --arg branch "$release_branch" \
+            --argjson number "$release_pr_number" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            '.number == $number
+              and .state == "open"
+              and .base.ref == "main"
+              and .base.repo.full_name == $repo
+              and .head.ref == $branch
+              and .head.repo.full_name == $repo
+              and .user.login == "github-actions[bot]"
+              and (.title | startswith("chore(main): release"))' \
+            <<<"$pr" >/dev/null; then
+            echo "::error::Release Please output does not identify its verified open PR."
+            exit 1
+          fi
+
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$release_branch"

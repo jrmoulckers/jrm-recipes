@@ -221,15 +221,28 @@ connect the repo, and deploy.
 Before pushing, run the same gate CI runs:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
-pnpm test:e2e   # Playwright smoke test, runs in CI, optional locally
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm copy:check
+pnpm audit:ci
+pnpm test
+pnpm db:generate
+git diff --exit-code -- drizzle
+pnpm check:bundle
 ```
 
 On every PR and push to `main`, GitHub Actions runs:
 
-- **CI** (`.github/workflows/ci.yml`): lint, typecheck, unit tests, a production
-  build, and a Playwright **e2e** smoke test. No secrets: it builds with
-  `SKIP_ENV_VALIDATION` and dev-bypass auth, exactly like a zero-config local run.
+- **CI** (`.github/workflows/ci.yml`): security, semantic PR-title, format,
+  lint, typecheck, copy/i18n, unit, migration drift/idempotence, production
+  build/bundle budget, Playwright **e2e**, and Lighthouse checks. Database jobs
+  use ephemeral Postgres; builds use `SKIP_ENV_VALIDATION` and dev-bypass auth,
+  so no application secrets are required.
+- **Release PR CI**: Release Please PRs created with `GITHUB_TOKEN` do not emit
+  the usual PR event. The release workflow explicitly dispatches the same CI at
+  its verified in-repository bot branch; arbitrary manual refs fail closed.
 
 **Dependabot** (`.github/dependabot.yml`) opens weekly PRs to keep npm packages
 and GitHub Actions current, each one gated by CI.

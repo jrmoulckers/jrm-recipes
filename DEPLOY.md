@@ -269,8 +269,20 @@ human-readable version instead of a raw commit SHA:
 2. As those commits land on `main`, release-please maintains a standing **release
    PR** that bumps `version` in `package.json` + `.release-please-manifest.json`
    and updates `CHANGELOG.md`.
-3. That release PR runs the **same CI gate** as any other PR, so a release can
-   only land on green CI. Merging it tags `vX.Y.Z` and cuts a GitHub Release.
+3. GitHub suppresses normal `pull_request` events for PRs created with
+   `GITHUB_TOKEN`, so the release workflow explicitly dispatches the existing
+   CI workflow at Release Please's supported PR-branch output. The release and
+   CI workflows independently verify that the ref belongs to the open,
+   same-repository, `github-actions[bot]` PR targeting `main`; arbitrary manual
+   dispatch refs fail closed.
+4. The verified release PR therefore runs the **same CI gate** as application
+   PRs before it can land. Merging it tags `vX.Y.Z` and cuts a GitHub Release.
+
+Release Please uses its Conventional Commits-compatible
+`chore(main): release ...` title. This automation-generated PR is the sole
+exception to the local policy requiring human PR titles and closing references
+to include an issue number; the canonical semantic-title check still applies to
+normal PR events.
 
 The deployed version and commit SHA are exposed at **`GET /api/health`**
 (`version` + `sha`) for support and debugging.
@@ -308,9 +320,13 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 
 - **Merge to `main` → Vercel deploys automatically.** The `vercel-build` script
   applies any new migrations first, then builds.
-- **CI** (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, a build,
-  and a Playwright **e2e** smoke test on every PR and push to `main`. No secrets
-  needed (it builds with `SKIP_ENV_VALIDATION` + dev-bypass auth).
+- **CI** (`.github/workflows/ci.yml`) runs security, semantic PR-title, format,
+  lint, typecheck, copy/i18n, unit, migration drift/idempotence, build/bundle,
+  Playwright **e2e**, and Lighthouse gates on every PR and push to `main`.
+  Release Please dispatches that same workflow for its verified release PR
+  because GitHub suppresses the usual token-created PR event. No application
+  secrets are needed; database jobs use ephemeral Postgres, and app builds use
+  `SKIP_ENV_VALIDATION` + dev-bypass auth.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly dependency + Actions
   update PRs, each gated by CI.
 - **Schema changes:** edit the Drizzle schema in `src/server/db/schema/`, run

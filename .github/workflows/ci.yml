@@ -7,11 +7,15 @@ name: CI
 
 on:
   # Run the full gate on pushes to main and to the long-lived staging branch
-  # (#266), and on every PR targeting main.
+  # (#266), on every PR targeting main, and when Release Please explicitly
+  # dispatches CI for its GITHUB_TOKEN-created release PR.
   push:
     branches: [main, staging]
   pull_request:
     branches: [main]
+  # No user-supplied ref input: callers select a repository ref, and the
+  # dispatch-guard job below accepts only the verified Release Please PR branch.
+  workflow_dispatch:
 
 # Cancel superseded runs on the same ref (e.g. a new push to a PR) to save CI time.
 concurrency:
@@ -24,12 +28,84 @@ permissions:
   contents: read
 
 jobs:
+  # A workflow_dispatch can be initiated from the Actions UI, so fail closed
+  # unless the selected ref is the open, same-repository release PR created by
+  # github-actions[bot]. Event-driven push/pull_request runs need no extra API
+  # validation but still pass through this fast gate.
+  dispatch-guard:
+    name: Verify dispatch source
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Accept event-driven CI
+        if: github.event_name != 'workflow_dispatch'
+        run: echo "CI was started by ${GITHUB_EVENT_NAME}."
+
+      - name: Verify Release Please PR
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF_TYPE" != "branch" ]]; then
+            echo "::error::Release CI must target a repository branch."
+            exit 1
+          fi
+
+          if [[ "$GITHUB_REF_NAME" != "release-please--branches--main" &&
+                ! "$GITHUB_REF_NAME" =~ ^release-please--branches--main--components--[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Ref is not a Release Please branch for main."
+            exit 1
+          fi
+
+          prs="$(gh api --method GET "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f state=open \
+            -f base=main \
+            -f "head=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REF_NAME}")"
+
+          if ! jq -e \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            'length == 1
+              and .[0].state == "open"
+              and .[0].base.ref == "main"
+              and .[0].base.repo.full_name == $repo
+              and .[0].head.ref == $branch
+              and .[0].head.repo.full_name == $repo
+              and .[0].user.login == "github-actions[bot]"
+              and (.[0].title | startswith("chore(main): release"))' \
+            <<<"$prs" >/dev/null; then
+            echo "::error::Dispatch ref is not the verified open Release Please PR."
+            exit 1
+          fi
+
+  # Keep product-specific lint and format jobs below; reuse the canonical
+  # workflow only for its Conventional Commits PR-title policy.
+  semantic-pr-title:
+    name: Semantic PR title
+    if: github.event_name == 'pull_request'
+    needs: dispatch-guard
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      lint-command: ""
+      format-check-command: ""
+      semantic-pr-title: true
+
   # Supply-chain + secret controls (#218). Fails the build on a high/critical
   # dependency advisory and on any committed secret, keeping these cheap checks
   # separate from the heavier quality/e2e jobs.
   security:
     name: Security
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       # gitleaks-action lists the PR's commits via the API to scope its scan to
@@ -69,7 +145,9 @@ jobs:
 
   lint:
     name: Lint
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -92,7 +170,9 @@ jobs:
   # Prettier formatting gate, previously not run in CI (#244).
   format:
     name: Format
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -119,7 +199,9 @@ jobs:
   # dependency install entirely and stays fast.
   i18n:
     name: Copy and i18n guards
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -145,7 +227,9 @@ jobs:
 
   typecheck:
     name: Typecheck
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -167,7 +251,9 @@ jobs:
 
   unit:
     name: Unit tests
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -194,7 +280,9 @@ jobs:
   # running `pnpm db:generate`, so the migration for their change is missing.
   migration-drift:
     name: Migration drift
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -227,13 +315,15 @@ jobs:
   # twice to confirm it is idempotent (the second run must be a clean no-op).
   migrations:
     name: Migrations
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -271,7 +361,9 @@ jobs:
 
   build:
     name: Build
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     env:
@@ -350,12 +442,13 @@ jobs:
     name: E2E
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -435,13 +528,15 @@ jobs:
   # artifacts for inspection.
   lighthouse:
     name: Lighthouse
+    needs: dispatch-guard
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
