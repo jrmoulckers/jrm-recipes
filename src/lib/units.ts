@@ -1063,6 +1063,50 @@ function reduceToCanonical(
   return null;
 }
 
+function convertBuiltInExact(
+  quantity: number,
+  from: string,
+  to: string,
+): number | null {
+  const source = UNIT_INDEX.get(from.trim().toLowerCase());
+  const target = UNIT_INDEX.get(to.trim().toLowerCase());
+  if (!source || source.dimension !== target?.dimension) return null;
+  if (source.dimension === "temperature") {
+    return convertTemperature(quantity, source.canonical, target.canonical);
+  }
+  return (quantity * source.base) / target.base;
+}
+
+/**
+ * Convert without display rounding. Aggregators use this for persisted base
+ * measures and package ceilings so an amount infinitesimally over a boundary
+ * can never be rounded back down before `Math.ceil`.
+ */
+export function convertAmountExact(
+  quantity: number,
+  from: string,
+  to: string,
+  customs?: readonly CustomUnitDef[],
+): number | null {
+  if (from.trim().toLowerCase() === to.trim().toLowerCase()) return quantity;
+  const reduced = reduceToCanonical(quantity, from, customs);
+  if (!reduced) return null;
+
+  if (isKnownUnit(to)) {
+    return convertBuiltInExact(reduced.quantity, reduced.unit, to);
+  }
+  const target = findCustom(to, customs);
+  if (target?.baseUnit != null && target.baseAmount != null) {
+    const inBase = convertBuiltInExact(
+      reduced.quantity,
+      reduced.unit,
+      target.baseUnit,
+    );
+    return inBase == null ? null : inBase / target.baseAmount;
+  }
+  return null;
+}
+
 /**
  * Convert a quantity between any two units. Built-in or custom. Returning null
  * when the units share no dimension or a custom unit has no equivalence. Built-in
@@ -1075,22 +1119,8 @@ export function convertAmount(
   to: string,
   customs?: readonly CustomUnitDef[],
 ): number | null {
-  if (from.trim().toLowerCase() === to.trim().toLowerCase()) {
-    return roundNice(quantity);
-  }
-  const reduced = reduceToCanonical(quantity, from, customs);
-  if (!reduced) return null;
-
-  if (isKnownUnit(to)) {
-    return convertUnit(reduced.quantity, reduced.unit, to);
-  }
-  const target = findCustom(to, customs);
-  if (target?.baseUnit != null && target.baseAmount != null) {
-    const inBase = convertUnit(reduced.quantity, reduced.unit, target.baseUnit);
-    if (inBase == null) return null;
-    return roundNice(inBase / target.baseAmount);
-  }
-  return null;
+  const converted = convertAmountExact(quantity, from, to, customs);
+  return converted == null ? null : roundNice(converted);
 }
 
 /**

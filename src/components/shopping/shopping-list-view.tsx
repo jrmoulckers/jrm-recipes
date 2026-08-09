@@ -13,6 +13,7 @@ import {
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts } from "~/lib/dietary-match";
 import { formatList } from "~/lib/i18n-format";
+import { parseAmount } from "~/lib/units";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { CloseButton } from "~/components/ui/close-button";
@@ -35,12 +36,17 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   Check,
+  Package,
   Plus,
   Route,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
 import { ShoppingListExportMenu } from "./shopping-list-export-menu";
+import {
+  saveIngredientPackageDraftInput,
+  type SaveIngredientPackageInput,
+} from "~/server/shopping/validation";
 
 export type ShoppingViewItem = {
   id: string;
@@ -48,6 +54,12 @@ export type ShoppingViewItem = {
   quantity: number | null;
   quantityMax: number | null;
   unit: string | null;
+  purchaseQuantity?: number | null;
+  purchaseUnit?: string | null;
+  packageCount?: number | null;
+  packageAmount?: number | null;
+  packageUnit?: string | null;
+  packageLabel?: string | null;
   note: string | null;
   category: ShoppingCategory;
   optional?: boolean;
@@ -56,6 +68,7 @@ export type ShoppingViewItem = {
   allergens?: Allergen[];
   routePreferredListId?: string | null;
   routeAlternativeListIds?: string[];
+  packageRoundBehavior?: "inherit" | "enable" | "disable";
 };
 
 export type ShoppingListOption = {
@@ -70,6 +83,16 @@ export type ManualEntryDraft = {
   quantity?: number | null;
   unit?: string | null;
 };
+
+export type PackagePreferenceDraft = Omit<SaveIngredientPackageInput, "itemId">;
+
+export type PackagePreferenceResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error?: string;
+      fieldErrors?: Record<string, string[]>;
+    };
 
 function groupUnchecked(items: ShoppingViewItem[]) {
   const map = new Map<ShoppingCategory, ShoppingViewItem[]>();
@@ -97,6 +120,7 @@ function ItemRow({
   listOptions,
   currentListId,
   onMove,
+  onSavePackage,
 }: {
   item: ShoppingViewItem;
   disabled: boolean;
@@ -112,8 +136,20 @@ function ItemRow({
     rememberRoute: boolean,
     alternativeListIds: string[],
   ) => void;
+  onSavePackage?: (
+    itemId: string,
+    draft: PackagePreferenceDraft,
+  ) => Promise<PackagePreferenceResult>;
 }) {
   const amount = describeQuantity(item);
+  const purchaseAmount =
+    item.purchaseQuantity != null && item.purchaseUnit
+      ? describeQuantity({
+          quantity: item.purchaseQuantity,
+          quantityMax: null,
+          unit: item.purchaseUnit,
+        })
+      : "";
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
   const locale = useLocale();
   const t = useTranslations("shopping");
@@ -126,7 +162,7 @@ function ItemRow({
         onClick={() => onToggle(item.id, !item.checked)}
         role="checkbox"
         aria-checked={item.checked}
-        className="flex flex-1 items-baseline gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted disabled:opacity-50"
+        className="flex min-h-11 flex-1 items-start gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted disabled:opacity-50"
       >
         <span
           className={cn(
@@ -145,12 +181,37 @@ function ItemRow({
             item.checked && "text-muted-foreground line-through",
           )}
         >
-          {amount && (
-            <span className="font-semibold tabular-nums">{amount} </span>
-          )}
-          {item.item}
+          <span className="font-medium">{item.item}</span>
           {item.note && (
             <span className="text-muted-foreground">, {item.note}</span>
+          )}
+          {item.packageLabel && item.packageCount == null ? (
+            <span className="text-muted-foreground">
+              {", "}
+              {item.packageLabel}
+            </span>
+          ) : null}
+          {amount && (
+            <span className="mt-0.5 flex flex-wrap gap-x-1 text-sm text-muted-foreground">
+              <span>{t("item.required", { quantity: amount })}</span>
+              {item.packageCount != null && purchaseAmount ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-medium text-foreground">
+                    {item.packageLabel
+                      ? t("package.guidance.withLabel", {
+                          count: item.packageCount,
+                          label: item.packageLabel,
+                          quantity: purchaseAmount,
+                        })
+                      : t("package.guidance.packages", {
+                          count: item.packageCount,
+                          quantity: purchaseAmount,
+                        })}
+                  </span>
+                </>
+              ) : null}
+            </span>
           )}
           {item.optional && (
             <Badge variant="muted" className="ms-2 align-middle">
@@ -203,6 +264,15 @@ function ItemRow({
           onMove={onMove}
         />
       )}
+      {onSavePackage && currentListId && listOptions.length > 0 && (
+        <PackagePreferenceDialog
+          item={item}
+          listOptions={listOptions}
+          currentListId={currentListId}
+          disabled={disabled}
+          onSave={onSavePackage}
+        />
+      )}
       <label className="sr-only" htmlFor={`aisle-${item.id}`}>
         {t("item.aisleFor", { item: item.item })}
       </label>
@@ -233,6 +303,265 @@ function ItemRow({
   );
 }
 
+function PackagePreferenceDialog({
+  item,
+  listOptions,
+  currentListId,
+  disabled,
+  onSave,
+}: {
+  item: ShoppingViewItem;
+  listOptions: ShoppingListOption[];
+  currentListId: string;
+  disabled: boolean;
+  onSave: (
+    itemId: string,
+    draft: PackagePreferenceDraft,
+  ) => Promise<PackagePreferenceResult>;
+}) {
+  const t = useTranslations("shopping");
+  const [open, setOpen] = React.useState(false);
+  const [amount, setAmount] = React.useState("");
+  const [unit, setUnit] = React.useState("");
+  const [label, setLabel] = React.useState("");
+  const [preferredListId, setPreferredListId] = React.useState(currentListId);
+  const [roundBehavior, setRoundBehavior] =
+    React.useState<PackagePreferenceDraft["packageRoundBehavior"]>("inherit");
+  const [fieldErrors, setFieldErrors] = React.useState<
+    Record<string, string[]>
+  >({});
+  const [error, setError] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const fieldHintId = React.useId();
+
+  React.useEffect(() => {
+    if (!open) return;
+    setAmount(item.packageAmount != null ? String(item.packageAmount) : "");
+    setUnit(item.packageUnit ?? "");
+    setLabel(item.packageLabel ?? "");
+    setPreferredListId(item.routePreferredListId ?? currentListId);
+    setRoundBehavior(item.packageRoundBehavior ?? "inherit");
+    setFieldErrors({});
+    setError("");
+  }, [currentListId, item, open]);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedAmount = amount.trim();
+    const normalizedAmount = parseAmount(trimmedAmount);
+    if (trimmedAmount && (normalizedAmount == null || normalizedAmount <= 0)) {
+      setFieldErrors({ packageAmount: [t("package.errors.amount")] });
+      return;
+    }
+    const parsed = saveIngredientPackageDraftInput.safeParse({
+      packageAmount: normalizedAmount ?? undefined,
+      packageUnit: unit.trim() || undefined,
+      packageLabel: label.trim() || undefined,
+      packageRoundBehavior: roundBehavior,
+    });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      const localized: Record<string, string[]> = {};
+      if (errors.packageAmount) {
+        localized.packageAmount = [t("package.errors.sizePair")];
+      }
+      if (errors.packageUnit) {
+        localized.packageUnit = [t("package.errors.sizePair")];
+      }
+      if (errors.packageLabel) {
+        localized.packageLabel = [t("package.errors.labelNeedsSize")];
+      }
+      setFieldErrors(localized);
+      return;
+    }
+    setFieldErrors({});
+    setError("");
+    setSaving(true);
+    try {
+      const result = await onSave(item.id, {
+        listId: currentListId,
+        preferredListId,
+        packageAmount: parsed.data.packageAmount,
+        packageUnit: parsed.data.packageUnit,
+        packageLabel: parsed.data.packageLabel,
+        packageRoundBehavior: parsed.data.packageRoundBehavior,
+      });
+      if (!result.ok) {
+        setError(result.error ?? t("package.errors.save"));
+        if (result.fieldErrors) setFieldErrors(result.fieldErrors);
+        return;
+      }
+      setOpen(false);
+    } catch {
+      setError(t("package.errors.save"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          disabled={disabled}
+          aria-label={t("package.editAria", { item: item.item })}
+          title={t("package.edit")}
+          className="opacity-0 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          <Package aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent size="md">
+        <form onSubmit={submit} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{t("package.title", { item: item.item })}</DialogTitle>
+            <DialogDescription>{t("package.description")}</DialogDescription>
+          </DialogHeader>
+          <p id={fieldHintId} className="sr-only">
+            {t("package.description")}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <label htmlFor={`package-amount-${item.id}`}>
+                {t("package.amount")}
+              </label>
+              <Input
+                id={`package-amount-${item.id}`}
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                inputMode="decimal"
+                disabled={saving}
+                aria-invalid={Boolean(fieldErrors.packageAmount)}
+                aria-describedby={
+                  fieldErrors.packageAmount
+                    ? `package-amount-error-${item.id}`
+                    : fieldHintId
+                }
+                autoFocus
+              />
+              {fieldErrors.packageAmount?.[0] ? (
+                <p
+                  id={`package-amount-error-${item.id}`}
+                  className="text-sm text-destructive"
+                >
+                  {fieldErrors.packageAmount[0]}
+                </p>
+              ) : null}
+            </div>
+            <div className="grid gap-1.5">
+              <label htmlFor={`package-unit-${item.id}`}>
+                {t("package.unit")}
+              </label>
+              <Input
+                id={`package-unit-${item.id}`}
+                value={unit}
+                onChange={(event) => setUnit(event.target.value)}
+                maxLength={40}
+                disabled={saving}
+                aria-invalid={Boolean(fieldErrors.packageUnit)}
+                aria-describedby={
+                  fieldErrors.packageUnit
+                    ? `package-unit-error-${item.id}`
+                    : fieldHintId
+                }
+              />
+              {fieldErrors.packageUnit?.[0] ? (
+                <p
+                  id={`package-unit-error-${item.id}`}
+                  className="text-sm text-destructive"
+                >
+                  {fieldErrors.packageUnit[0]}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor={`package-label-${item.id}`}>
+              {t("package.label")}
+            </label>
+            <Input
+              id={`package-label-${item.id}`}
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+              maxLength={120}
+              placeholder={t("package.labelPlaceholder")}
+              disabled={saving}
+              aria-invalid={Boolean(fieldErrors.packageLabel)}
+              aria-describedby={
+                fieldErrors.packageLabel
+                  ? `package-label-error-${item.id}`
+                  : fieldHintId
+              }
+            />
+            {fieldErrors.packageLabel?.[0] ? (
+              <p
+                id={`package-label-error-${item.id}`}
+                className="text-sm text-destructive"
+              >
+                {fieldErrors.packageLabel[0]}
+              </p>
+            ) : null}
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor={`package-store-${item.id}`}>
+              {t("package.preferredStore")}
+            </label>
+            <NativeSelect
+              id={`package-store-${item.id}`}
+              value={preferredListId}
+              onChange={(event) => setPreferredListId(event.target.value)}
+              disabled={saving}
+            >
+              {listOptions.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.storeName ?? list.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor={`package-round-${item.id}`}>
+              {t("package.rounding.label")}
+            </label>
+            <NativeSelect
+              id={`package-round-${item.id}`}
+              value={roundBehavior}
+              onChange={(event) =>
+                setRoundBehavior(
+                  event.target
+                    .value as PackagePreferenceDraft["packageRoundBehavior"],
+                )
+              }
+              disabled={saving || !amount.trim() || !unit.trim()}
+            >
+              <option value="inherit">{t("package.rounding.inherit")}</option>
+              <option value="enable">{t("package.rounding.enable")}</option>
+              <option value="disable">{t("package.rounding.disable")}</option>
+            </NativeSelect>
+          </div>
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" disabled={saving}>
+                {t("package.cancel")}
+              </Button>
+            </DialogClose>
+            <Button type="submit" loading={saving}>
+              {t("package.save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 function MoveRouteDialog({
   item,
   listOptions,
@@ -479,6 +808,7 @@ export function ShoppingListView({
   currentListId,
   onMove,
   onBulkMove,
+  onSavePackage,
 }: {
   items: ShoppingViewItem[];
   disabled?: boolean;
@@ -507,6 +837,10 @@ export function ShoppingListView({
     alternativeListIds: string[],
   ) => void;
   onBulkMove?: (itemIds: string[], targetListId: string) => void;
+  onSavePackage?: (
+    itemId: string,
+    draft: PackagePreferenceDraft,
+  ) => Promise<PackagePreferenceResult>;
 }) {
   const [name, setName] = React.useState("");
   const [qty, setQty] = React.useState("");
@@ -678,6 +1012,7 @@ export function ShoppingListView({
                       listOptions={listOptions}
                       currentListId={currentListId}
                       onMove={onMove}
+                      onSavePackage={onSavePackage}
                     />
                   ))}
                 </ul>
@@ -703,6 +1038,7 @@ export function ShoppingListView({
                     listOptions={listOptions}
                     currentListId={currentListId}
                     onMove={onMove}
+                    onSavePackage={onSavePackage}
                   />
                 ))}
               </ul>

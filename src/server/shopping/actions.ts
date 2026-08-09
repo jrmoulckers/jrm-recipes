@@ -25,6 +25,7 @@ import {
   restoreShoppingList,
   restoreShoppingListPoint,
   restoreShoppingListPoints,
+  saveIngredientPackage,
   setItemCategory,
   setItemChecked,
   uncheckAll,
@@ -47,6 +48,7 @@ import {
   renameShoppingListInput,
   restoreShoppingListPointInput,
   restoreShoppingListPointsInput,
+  saveIngredientPackageInput,
   setItemCategoryInput,
   setItemCheckedInput,
   type AddRecipeToListInput,
@@ -59,6 +61,7 @@ import {
   type RenameShoppingListInput,
   type RestoreShoppingListPointInput,
   type RestoreShoppingListPointsInput,
+  type SaveIngredientPackageInput,
 } from "./validation";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
@@ -477,6 +480,28 @@ export async function bulkMoveShoppingItemsAction(
       restorePoints: result.restorePoints,
       undoToken: result.undoToken,
     };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function saveIngredientPackageAction(
+  input: SaveIngredientPackageInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = saveIngredientPackageInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    await saveIngredientPackage(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

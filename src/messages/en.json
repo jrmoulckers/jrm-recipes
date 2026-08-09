@@ -1539,7 +1539,8 @@
       "optional": "Optional",
       "aisleFor": "Aisle for {item}",
       "changeAisle": "Change aisle",
-      "remove": "Remove {item}"
+      "remove": "Remove {item}",
+      "required": "Need {quantity}"
     },
     "lists": {
       "heading": "Shopping lists",
@@ -1616,6 +1617,36 @@
           "moved": "{count, plural, one {# item moved to {list}.} other {# items moved to {list}.}}"
         }
       }
+    },
+    "package": {
+      "edit": "Purchase settings",
+      "editAria": "Edit purchase settings for {item}",
+      "title": "Purchase settings for {item}",
+      "description": "Save the package sold at your preferred store. Leave the size blank to keep the exact required quantity.",
+      "amount": "Package amount",
+      "unit": "Package unit",
+      "label": "Brand or package label (optional)",
+      "labelPlaceholder": "e.g. store-brand carton",
+      "preferredStore": "Preferred store",
+      "rounding": {
+        "label": "Package rounding",
+        "inherit": "Use my global setting",
+        "enable": "Always round up",
+        "disable": "Never round"
+      },
+      "guidance": {
+        "withLabel": "Buy {count} {label} ({quantity})",
+        "packages": "{count, plural, one {Buy # package ({quantity})} other {Buy # packages ({quantity})}}"
+      },
+      "errors": {
+        "amount": "Enter a package amount greater than zero.",
+        "sizePair": "Add both a package amount and unit.",
+        "labelNeedsSize": "Add a package size before its label.",
+        "save": "We couldn't save these purchase settings."
+      },
+      "cancel": "Cancel",
+      "save": "Save purchase settings",
+      "saved": "Purchase settings saved."
     },
     "manual": {
       "itemLabel": "Add an item",
@@ -2640,6 +2671,12 @@
         "description": "Re-express every recipe in your units. Turn off to always see the amounts exactly as the author wrote them.",
         "ariaLabel": "Auto-convert recipes to my units"
       },
+      "packageRounding": {
+        "label": "Round up to package sizes",
+        "description": "When an ingredient has a saved package size, show how many whole packages to buy. This is off by default and can be overridden per ingredient.",
+        "ariaLabel": "Round shopping quantities up to saved package sizes"
+      },
+      "offlineNote": "These preferences and custom units are saved in this browser while database sync is unavailable.",
       "preferred": {
         "title": "Preferred units",
         "description": "Fine-tune each measurement. Volume splits by how you measure an ingredient, so you can keep liquids in mL but scoop dry goods in cups.",
@@ -2678,6 +2715,9 @@
           "added": "Unit added",
           "updated": "Unit updated",
           "deleted": "Unit deleted"
+        },
+        "validation": {
+          "duplicate": "You already have a unit with that name."
         },
         "deleteConfirm": {
           "title": "Delete the “{name}” unit?",

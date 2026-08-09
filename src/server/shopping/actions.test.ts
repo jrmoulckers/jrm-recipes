@@ -13,6 +13,7 @@ const {
   historyMock,
   bulkMoveMock,
   multiRestoreMock,
+  savePackageMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   requireUserMock: vi.fn(),
@@ -26,6 +27,7 @@ const {
   historyMock: vi.fn(),
   bulkMoveMock: vi.fn(),
   multiRestoreMock: vi.fn(),
+  savePackageMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
@@ -50,6 +52,7 @@ vi.mock("./mutations", () => ({
   restoreShoppingList: vi.fn(),
   restoreShoppingListPoint: restorePointMock,
   restoreShoppingListPoints: multiRestoreMock,
+  saveIngredientPackage: savePackageMock,
   setItemCategory: vi.fn(),
   setItemChecked: vi.fn(),
   uncheckAll: uncheckAllMock,
@@ -69,6 +72,7 @@ import {
   restoreShoppingListPointAction,
   restoreShoppingListPointsAction,
   uncheckAllShoppingItemsAction,
+  saveIngredientPackageAction,
 } from "./actions";
 
 const id = (suffix: string) => `${"a".repeat(23)}${suffix}`;
@@ -225,5 +229,28 @@ describe("shopping list actions", () => {
       getShoppingListHistoryAction({ listId: id("1") }),
     ).resolves.toEqual({ ok: true, history: [] });
     expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("validates and forwards package preferences for the authenticated user", async () => {
+    await expect(
+      saveIngredientPackageAction({
+        itemId: id("1"),
+        listId: id("2"),
+        preferredListId: id("3"),
+        packageAmount: 4.5,
+        packageUnit: "cup",
+        packageLabel: "Carton",
+        packageRoundBehavior: "enable",
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(savePackageMock).toHaveBeenCalledWith(
+      { id: "user_1" },
+      expect.objectContaining({
+        itemId: id("1"),
+        listId: id("2"),
+        preferredListId: id("3"),
+        packageRoundBehavior: "enable",
+      }),
+    );
   });
 });

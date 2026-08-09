@@ -2,10 +2,10 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   pgEnum,
   pgTable,
-  real,
   unique,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -63,6 +63,8 @@ export const userUnitPreferences = pgTable(
     massUnit: varchar({ length: 40 }),
     temperatureUnit: varchar({ length: 40 }),
     autoConvert: boolean().notNull().default(true),
+    /** Global package ceiling default; ingredient routes may override it. */
+    packageRounding: boolean().notNull().default(false),
     ...timestamps(),
   },
   (t) => [
@@ -96,7 +98,7 @@ export const customUnits = pgTable(
     baseUnit: varchar({ length: 40 }),
     // How much of `baseUnit` equals one of this custom unit. NULL = no
     // conversion (display-only unit). Must be > 0 when present.
-    baseAmount: real(),
+    baseAmount: doublePrecision(),
     displayAsTrue: boolean().notNull().default(false),
     ...timestamps(),
   },

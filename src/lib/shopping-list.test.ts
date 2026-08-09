@@ -30,6 +30,15 @@ function makeItem(item: string, category: ShoppingCategory): AggregatedItem {
     quantity: 1,
     quantityMax: null,
     unit: null,
+    requiredBaseQuantity: 1,
+    requiredBaseQuantityMax: null,
+    requiredBaseUnit: null,
+    purchaseQuantity: null,
+    purchaseUnit: null,
+    packageCount: null,
+    packageAmount: null,
+    packageUnit: null,
+    packageLabel: null,
     dimension: null,
     category,
     optional: false,
@@ -226,6 +235,391 @@ describe("mergeShoppingItems", () => {
 
   it("ignores blank item names", () => {
     expect(mergeShoppingItems([{ item: "   " }])).toHaveLength(0);
+  });
+});
+
+describe("saved-unit aggregation and package ceilings (#629)", () => {
+  it("combines mixed US/metric inputs before applying the saved metric system", () => {
+    const [item] = mergeShoppingItems(
+      [
+        { item: "Milk", quantity: 1, unit: "cup" },
+        { item: "Milk", quantity: 250, unit: "ml" },
+      ],
+      {
+        unitPreferences: { defaultSystem: "metric", autoConvert: true },
+      },
+    );
+
+    expect(item).toMatchObject({
+      quantity: 486.588,
+      quantityMax: null,
+      unit: "ml",
+    });
+  });
+
+  it("uses the saved US system instead of the recipe unit", () => {
+    const [item] = mergeShoppingItems(
+      [{ item: "Milk", quantity: 1000, unit: "ml" }],
+      {
+        unitPreferences: { defaultSystem: "us", autoConvert: true },
+      },
+    );
+
+    expect(item).toMatchObject({ quantity: 1.057, unit: "quart" });
+  });
+
+  it("honors per-volume-class overrides and preserves converted ranges", () => {
+    const preferences = {
+      defaultSystem: "metric" as const,
+      liquidVolumeUnit: "cup",
+      dryVolumeUnit: "tbsp",
+      autoConvert: true,
+    };
+    const [milk] = mergeShoppingItems(
+      [{ item: "Milk", quantity: 473.176, quantityMax: 946.352, unit: "ml" }],
+      { unitPreferences: preferences },
+    );
+    const [flour] = mergeShoppingItems(
+      [{ item: "Flour", quantity: 1, unit: "cup" }],
+      { unitPreferences: preferences },
+    );
+
+    expect(milk).toMatchObject({ quantity: 2, quantityMax: 4, unit: "cup" });
+    expect(flour).toMatchObject({ quantity: 16, unit: "tbsp" });
+  });
+
+  it("honors a saved per-dimension mass unit", () => {
+    const [item] = mergeShoppingItems(
+      [
+        { item: "Chicken", quantity: 1, unit: "lb" },
+        { item: "Chicken", quantity: 100, unit: "g" },
+      ],
+      {
+        unitPreferences: {
+          defaultSystem: "metric",
+          massUnit: "oz",
+          autoConvert: true,
+        },
+      },
+    );
+
+    expect(item).toMatchObject({ quantity: 19.527, unit: "oz" });
+  });
+
+  it("merges convertible custom units and can select one as the saved output", () => {
+    const customUnits = [
+      {
+        name: "scoop",
+        dimension: "volume" as const,
+        baseUnit: "cup",
+        baseAmount: 0.5,
+        abbreviation: null,
+        displayAsTrue: false,
+      },
+    ];
+    const [item] = mergeShoppingItems(
+      [
+        { item: "Flour", quantity: 1, unit: "scoop" },
+        { item: "Flour", quantity: 1, unit: "cup" },
+      ],
+      {
+        customUnits,
+        unitPreferences: {
+          defaultSystem: "metric",
+          dryVolumeUnit: "scoop",
+          autoConvert: true,
+        },
+      },
+    );
+
+    expect(item).toMatchObject({ quantity: 3, unit: "scoop" });
+  });
+
+  it("ceilings against package size without replacing the exact requirement", () => {
+    const [item] = mergeShoppingItems(
+      [{ item: "Milk", quantity: 3, unit: "cup" }],
+      {
+        packageRounding: true,
+        packageRules: [
+          {
+            foodId: null,
+            normalizedItem: "milk",
+            packageAmount: 4.5,
+            packageUnit: "cup",
+            packageLabel: "Carton",
+            packageRoundBehavior: "inherit",
+          },
+        ],
+      },
+    );
+
+    expect(item).toMatchObject({
+      quantity: 3,
+      quantityMax: null,
+      unit: "cup",
+      packageCount: 1,
+      purchaseQuantity: 4.5,
+      purchaseUnit: "cup",
+      packageLabel: "Carton",
+    });
+  });
+
+  it("uses the upper range bound and never rounds down", () => {
+    const [item] = mergeShoppingItems(
+      [{ item: "Milk", quantity: 2, quantityMax: 5, unit: "cup" }],
+      {
+        packageRounding: true,
+        packageRules: [
+          {
+            foodId: null,
+            normalizedItem: "milk",
+            packageAmount: 4,
+            packageUnit: "cup",
+            packageLabel: null,
+            packageRoundBehavior: "inherit",
+          },
+        ],
+      },
+    );
+
+    expect(item).toMatchObject({
+      quantity: 2,
+      quantityMax: 5,
+      packageCount: 2,
+      purchaseQuantity: 8,
+    });
+  });
+
+  it("ceilings from the canonical amount just above a package boundary", () => {
+    const [item] = mergeShoppingItems(
+      [{ item: "Milk", quantity: 4.0000001, unit: "cup" }],
+      {
+        packageRounding: true,
+        packageRules: [
+          {
+            foodId: null,
+            normalizedItem: "milk",
+            packageAmount: 4,
+            packageUnit: "cup",
+            packageRoundBehavior: "inherit",
+          },
+        ],
+      },
+    );
+
+    expect(item).toMatchObject({
+      quantity: 1,
+      unit: "quart",
+      requiredBaseUnit: "ml",
+      packageCount: 2,
+      purchaseQuantity: 8,
+    });
+    expect(item?.requiredBaseQuantity).toBeCloseTo(946.3520236588, 8);
+  });
+
+  it("ceilings from a canonical range upper bound just above a package boundary", () => {
+    const [item] = mergeShoppingItems(
+      [
+        {
+          item: "Milk",
+          quantity: 3,
+          quantityMax: 4.0000001,
+          unit: "cup",
+        },
+      ],
+      {
+        packageRounding: true,
+        packageRules: [
+          {
+            foodId: null,
+            normalizedItem: "milk",
+            packageAmount: 4,
+            packageUnit: "cup",
+            packageRoundBehavior: "inherit",
+          },
+        ],
+      },
+    );
+
+    expect(item).toMatchObject({
+      packageCount: 2,
+      purchaseQuantity: 8,
+    });
+    expect(item?.requiredBaseQuantityMax).toBeCloseTo(946.3520236588, 8);
+  });
+
+  it("supports ingredient overrides while the global default remains off", () => {
+    const packageRule = {
+      foodId: null,
+      normalizedItem: "milk",
+      packageAmount: 1,
+      packageUnit: "l",
+      packageLabel: null,
+    };
+    const input = [{ item: "Milk", quantity: 1200, unit: "ml" }];
+
+    expect(
+      mergeShoppingItems(input, {
+        packageRounding: false,
+        packageRules: [
+          { ...packageRule, packageRoundBehavior: "inherit" as const },
+        ],
+      })[0]?.packageCount,
+    ).toBeNull();
+    expect(
+      mergeShoppingItems(input, {
+        packageRounding: false,
+        packageRules: [
+          { ...packageRule, packageRoundBehavior: "enable" as const },
+        ],
+      })[0],
+    ).toMatchObject({
+      packageCount: 2,
+      purchaseQuantity: 2,
+      purchaseUnit: "l",
+    });
+    expect(
+      mergeShoppingItems(input, {
+        packageRounding: true,
+        packageRules: [
+          { ...packageRule, packageRoundBehavior: "disable" as const },
+        ],
+      })[0]?.packageCount,
+    ).toBeNull();
+  });
+
+  it("leaves invalid and non-convertible package rules exact", () => {
+    const input = [{ item: "Milk", quantity: 3, unit: "cup" }];
+    const invalid = mergeShoppingItems(input, {
+      packageRounding: true,
+      packageRules: [
+        {
+          foodId: null,
+          normalizedItem: "milk",
+          packageAmount: -1,
+          packageUnit: "cup",
+          packageLabel: null,
+          packageRoundBehavior: "inherit",
+        },
+      ],
+    })[0];
+    const incompatible = mergeShoppingItems(input, {
+      packageRounding: true,
+      packageRules: [
+        {
+          foodId: null,
+          normalizedItem: "milk",
+          packageAmount: 1,
+          packageUnit: "kg",
+          packageLabel: null,
+          packageRoundBehavior: "inherit",
+        },
+      ],
+    })[0];
+
+    expect(invalid).toMatchObject({ quantity: 3, packageCount: null });
+    expect(incompatible).toMatchObject({
+      quantity: 3,
+      purchaseQuantity: null,
+      packageCount: null,
+    });
+  });
+
+  it("preserves non-convertible custom quantities", () => {
+    const [item] = mergeShoppingItems(
+      [{ item: "Herbs", quantity: 2, unit: "handful" }],
+      {
+        customUnits: [
+          {
+            name: "handful",
+            dimension: "volume",
+            baseUnit: null,
+            baseAmount: null,
+          },
+        ],
+        unitPreferences: { defaultSystem: "metric", autoConvert: true },
+      },
+    );
+    expect(item).toMatchObject({
+      quantity: 2,
+      unit: "handful",
+      requiredBaseQuantity: 2,
+      requiredBaseUnit: "handful",
+      packageCount: null,
+    });
+    const [restored] = mergeShoppingItems([
+      {
+        item: item!.item,
+        quantity: item!.quantity,
+        unit: item!.unit,
+        requiredBaseQuantity: item!.requiredBaseQuantity,
+        requiredBaseQuantityMax: item!.requiredBaseQuantityMax,
+        requiredBaseUnit: item!.requiredBaseUnit,
+      },
+    ]);
+    expect(restored).toMatchObject({
+      quantity: 2,
+      unit: "handful",
+      requiredBaseQuantity: 2,
+      requiredBaseUnit: "handful",
+    });
+  });
+
+  it("reaggregates from a stable base when a custom unit changes or disappears", () => {
+    const originalCustomUnits = [
+      {
+        name: "scoop",
+        dimension: "volume" as const,
+        baseUnit: "cup",
+        baseAmount: 0.5,
+      },
+    ];
+    const [persisted] = mergeShoppingItems(
+      [{ item: "Flour", quantity: 1, unit: "scoop" }],
+      { customUnits: originalCustomUnits },
+    );
+    expect(persisted).toMatchObject({
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
+
+    const stableInput = {
+      item: persisted!.item,
+      quantity: persisted!.quantity,
+      quantityMax: persisted!.quantityMax,
+      unit: persisted!.unit,
+      requiredBaseQuantity: persisted!.requiredBaseQuantity,
+      requiredBaseQuantityMax: persisted!.requiredBaseQuantityMax,
+      requiredBaseUnit: persisted!.requiredBaseUnit,
+    };
+    const [afterEdit] = mergeShoppingItems([stableInput], {
+      customUnits: [{ ...originalCustomUnits[0]!, baseAmount: 1 }],
+      unitPreferences: {
+        defaultSystem: "metric",
+        dryVolumeUnit: "scoop",
+        autoConvert: true,
+      },
+    });
+    const [afterDelete] = mergeShoppingItems([stableInput], {
+      unitPreferences: {
+        defaultSystem: "metric",
+        dryVolumeUnit: "scoop",
+        autoConvert: true,
+      },
+    });
+
+    expect(afterEdit).toMatchObject({
+      quantity: 0.5,
+      unit: "scoop",
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
+    expect(afterDelete).toMatchObject({
+      quantity: 118.294,
+      unit: "ml",
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
   });
 });
 

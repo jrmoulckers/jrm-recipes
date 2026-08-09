@@ -7,6 +7,7 @@ import {
   resolveIngredientDestination,
   type ShoppingIngredientRoute,
 } from "./shopping-routing";
+import { mergeShoppingItems } from "./shopping-list";
 
 const routes: ShoppingIngredientRoute[] = [
   {
@@ -110,5 +111,38 @@ describe("partitionShoppingItemsByDestination", () => {
     expect(partitioned.get("default")).toEqual([items[1]]);
     expect([...partitioned.values()].flat()).toHaveLength(items.length);
     expect(partitioned.has("costco")).toBe(false);
+  });
+
+  it("uses one route for both preferred-store routing and package rounding", () => {
+    const packageRoute: ShoppingIngredientRoute = {
+      ...routes[0]!,
+      packageAmount: 3,
+      packageUnit: "lb",
+      packageLabel: "Warehouse bag",
+      packageRoundBehavior: "enable",
+    };
+    const input = {
+      item: "Onion",
+      foodId: "food-onion",
+      quantity: 4,
+      unit: "lb",
+    };
+    const partitioned = partitionShoppingItemsByDestination(
+      [input],
+      [packageRoute],
+      new Set(["default", "qfc"]),
+      "default",
+    );
+    const [rounded] = mergeShoppingItems(partitioned.get("qfc") ?? [], {
+      packageRounding: false,
+      packageRules: [packageRoute],
+    });
+
+    expect(rounded).toMatchObject({
+      packageCount: 2,
+      purchaseQuantity: 6,
+      purchaseUnit: "lb",
+      packageLabel: "Warehouse bag",
+    });
   });
 });

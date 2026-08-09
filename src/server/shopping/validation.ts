@@ -158,6 +158,56 @@ export const restoreShoppingListPointsInput = z
     }
   });
 
+const packagePreferenceFields = {
+  packageAmount: optionalNumber.pipe(
+    z.number().positive().max(1_000_000).optional(),
+  ),
+  packageUnit: optionalString(40),
+  packageLabel: optionalString(120),
+  packageRoundBehavior: z
+    .enum(["inherit", "enable", "disable"])
+    .default("inherit"),
+};
+
+function validatePackagePreference(
+  value: {
+    packageAmount?: number;
+    packageUnit?: string;
+    packageLabel?: string;
+  },
+  ctx: z.RefinementCtx,
+) {
+  const hasAmount = value.packageAmount != null;
+  const hasUnit = value.packageUnit != null;
+  if (hasAmount !== hasUnit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: hasAmount ? ["packageUnit"] : ["packageAmount"],
+      message: "Add both a package amount and unit.",
+    });
+  }
+  if (!hasAmount && value.packageLabel != null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["packageLabel"],
+      message: "Add a package size before its label.",
+    });
+  }
+}
+
+export const saveIngredientPackageDraftInput = z
+  .object(packagePreferenceFields)
+  .superRefine(validatePackagePreference);
+
+export const saveIngredientPackageInput = z
+  .object({
+    itemId: entityId,
+    listId: entityId,
+    preferredListId: entityId,
+    ...packagePreferenceFields,
+  })
+  .superRefine(validatePackagePreference);
+
 export type ManualItemInput = z.infer<typeof manualItemInput>;
 export type AddRecipeToListInput = z.infer<typeof addRecipeToListInput>;
 export type BuildFromPlanInput = z.infer<typeof buildFromPlanInput>;
@@ -175,4 +225,7 @@ export type RestoreShoppingListPointInput = z.infer<
 >;
 export type RestoreShoppingListPointsInput = z.infer<
   typeof restoreShoppingListPointsInput
+>;
+export type SaveIngredientPackageInput = z.infer<
+  typeof saveIngredientPackageInput
 >;

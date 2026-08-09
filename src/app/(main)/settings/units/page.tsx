@@ -1,5 +1,4 @@
 import { type Metadata } from "next";
-import { type ReactNode } from "react";
 import { Ruler } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
@@ -41,6 +40,7 @@ export default async function UnitsSettingsPage() {
         massUnit: settings.preferences.massUnit,
         temperatureUnit: settings.preferences.temperatureUnit,
         autoConvert: settings.preferences.autoConvert,
+        packageRounding: settings.preferences.packageRounding,
       }
     : null;
 
@@ -63,14 +63,11 @@ export default async function UnitsSettingsPage() {
         <p className="mt-1 text-muted-foreground">{t("description")}</p>
       </header>
 
-      {!dbConfigured ? (
-        <ConnectDbNotice />
-      ) : (
-        <UnitPreferencesManager
-          preferences={preferences}
-          customUnits={customUnits}
-        />
-      )}
+      <UnitPreferencesManager
+        preferences={preferences}
+        customUnits={customUnits}
+        offline={!dbConfigured}
+      />
     </div>
   );
 }
@@ -90,23 +87,6 @@ async function SignInNudge() {
           <p className="mt-2 text-muted-foreground">{t("body")}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-async function ConnectDbNotice() {
-  const t = await getTranslations("dbNotice");
-  return (
-    <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center text-muted-foreground">
-      <p className="mx-auto max-w-md">
-        {t.rich("units", {
-          code: (chunks: ReactNode) => (
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-              {chunks}
-            </code>
-          ),
-        })}
-      </p>
     </div>
   );
 }

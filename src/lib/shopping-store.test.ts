@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   migrateShoppingState,
   SHOPPING_HISTORY_LIMIT,
+  mergeShoppingState,
   useShoppingStore,
   type LocalShoppingItem,
   type LocalShoppingList,
 } from "./shopping-store";
 import type { ShoppingRecipeInput } from "./shopping-list";
+import { DEFAULT_UNIT_PREFS } from "./units";
 
 const defaultList = (): LocalShoppingList => ({
   id: "default",
@@ -25,6 +27,9 @@ function reset() {
     currentListId: "default",
     routes: [],
     restorePoints: [],
+    unitPreferences: { ...DEFAULT_UNIT_PREFS },
+    customUnits: [],
+    packageRounding: false,
   });
   localStorage.clear();
 }
@@ -63,7 +68,8 @@ describe("persisted migration", () => {
 
     expect(migrated.defaultListId).toBe("local-default");
     expect(migrated.currentListId).toBe("local-default");
-    expect(migrated.lists?.[0]?.items).toEqual([legacyItem]);
+    expect(migrated.lists?.[0]?.items[0]).toMatchObject(legacyItem);
+    expect(typeof migrated.lists?.[0]?.items[0]?.aggregationKey).toBe("string");
     expect(migrated.routes).toEqual([]);
   });
 
@@ -84,6 +90,81 @@ describe("persisted migration", () => {
     );
 
     expect(migrated.restorePoints).toEqual([]);
+  });
+
+  it("preserves duplicate legacy entities while assigning globally unique ids", () => {
+    const duplicate = {
+      id: "same-key",
+      item: "Milk",
+      foodId: "food-milk",
+      quantity: 1,
+      quantityMax: null,
+      unit: "l",
+      note: null,
+      category: "Dairy & Eggs",
+      optional: false,
+      checked: false,
+      recipeId: null,
+    } as LocalShoppingItem;
+    const oldState = {
+      lists: [
+        { ...defaultList(), items: [duplicate] },
+        {
+          ...defaultList(),
+          id: "second",
+          isDefault: false,
+          items: [{ ...duplicate, checked: true }],
+        },
+      ],
+    };
+
+    const migrated = migrateShoppingState(oldState, 3);
+    const items = migrated.lists!.flatMap((candidate) => candidate.items);
+
+    expect(items).toHaveLength(2);
+    expect(new Set(items.map((candidate) => candidate.id)).size).toBe(2);
+    expect(
+      new Set(items.map((candidate) => candidate.aggregationKey)).size,
+    ).toBe(1);
+  });
+
+  it("hydrates version-one lists and routes with safe package defaults", () => {
+    const oldItem = {
+      id: "milk",
+      item: "Milk",
+      foodId: null,
+      quantity: 3,
+      quantityMax: null,
+      unit: "cup",
+      note: null,
+      category: "Dairy & Eggs",
+      optional: false,
+      checked: false,
+      recipeId: null,
+    } as LocalShoppingItem;
+    const oldState = {
+      lists: [{ ...defaultList(), items: [oldItem] }],
+      defaultListId: "default",
+      currentListId: "default",
+      routes: [],
+    };
+
+    const hydrated = mergeShoppingState(
+      migrateShoppingState(oldState, 1),
+      store(),
+    );
+
+    expect(hydrated.packageRounding).toBe(false);
+    expect(hydrated.customUnits).toEqual([]);
+    expect(hydrated.unitPreferences).toEqual(DEFAULT_UNIT_PREFS);
+    expect(hydrated.lists[0]?.items[0]).toMatchObject({
+      requiredBaseQuantity: 709.764,
+      requiredBaseQuantityMax: null,
+      requiredBaseUnit: "ml",
+      purchaseQuantity: null,
+      packageCount: null,
+      packageLabel: null,
+    });
   });
 });
 
@@ -116,7 +197,7 @@ describe("routing and list lifecycle", () => {
     const costco = store().createList("Warehouse", "Costco");
     store().addManual("default", { item: "Onion", foodId: "food-onion" });
     const onion = list("default").items[0]!;
-    store().moveItem(onion.id, costco, true, ["default"]);
+    store().moveItem("default", onion.id, costco, true, ["default"]);
     store().addRecipe(
       recipe([{ item: "Yellow onion", foodId: "food-onion", quantity: 2 }]),
     );
@@ -129,7 +210,9 @@ describe("routing and list lifecycle", () => {
   it("promotes an active alternative when a preferred list is archived", () => {
     const costco = store().createList("Warehouse", "Costco");
     store().addManual("default", { item: "Onion" });
-    store().moveItem(list("default").items[0]!.id, costco, true, ["default"]);
+    store().moveItem("default", list("default").items[0]!.id, costco, true, [
+      "default",
+    ]);
 
     store().archiveList(costco);
 
@@ -142,7 +225,9 @@ describe("routing and list lifecycle", () => {
     const costco = store().createList("Warehouse", "Costco");
     const source = store().createList("Temporary", null);
     store().addManual(source, { item: "Onion" });
-    store().moveItem(list(source).items[0]!.id, "default", true, [costco]);
+    store().moveItem(source, list(source).items[0]!.id, "default", true, [
+      costco,
+    ]);
 
     store().archiveList(costco);
     expect(store().routes[0]?.alternativeListIds).toEqual([costco]);
@@ -164,10 +249,15 @@ describe("routing and list lifecycle", () => {
 
 describe("per-list item mutations", () => {
   it("consolidates duplicate recipe ingredients inside their destination", () => {
+    store().setUnitPreferences(
+      { ...DEFAULT_UNIT_PREFS, defaultSystem: "us" },
+      false,
+    );
     store().addRecipe(recipe([{ item: "Flour", quantity: 1, unit: "cup" }]));
+    const originalId = list("default").items[0]!.id;
     store().addRecipe(recipe([{ item: "Flour", quantity: 2, unit: "cup" }]));
     expect(list("default").items).toMatchObject([
-      { item: "Flour", quantity: 3, unit: "cup" },
+      { id: originalId, item: "Flour", quantity: 3, unit: "cup" },
     ]);
   });
 
@@ -188,13 +278,539 @@ describe("per-list item mutations", () => {
     const ids = list("default").items.map((item) => item.id);
     expect(new Set(ids).size).toBe(2);
   });
+
+  it("keeps aggregate identity separate from unique entities and scopes mutations", () => {
+    const warehouse = store().createList("Warehouse");
+    store().addRecipe(recipe([{ item: "Milk", foodId: "milk", quantity: 1 }]));
+    const checked = list("default").items[0]!;
+    store().setChecked("default", checked.id, true);
+    store().addRecipe(recipe([{ item: "Milk", foodId: "milk", quantity: 2 }]));
+    store().addManual(warehouse, {
+      item: "Milk",
+      foodId: "milk",
+      quantity: 3,
+    });
+
+    const defaultItems = list("default").items;
+    const warehouseItem = list(warehouse).items[0]!;
+    expect(defaultItems).toHaveLength(2);
+    expect(
+      new Set([...defaultItems, warehouseItem].map((candidate) => candidate.id))
+        .size,
+    ).toBe(3);
+    expect(defaultItems[0]?.aggregationKey).toBe(
+      defaultItems[1]?.aggregationKey,
+    );
+    expect(defaultItems[0]?.aggregationKey).toBe(warehouseItem.aggregationKey);
+
+    store().setChecked("default", defaultItems[1]!.id, true);
+    expect(list("default").items.map((candidate) => candidate.checked)).toEqual(
+      [true, true],
+    );
+    expect(list(warehouse).items[0]?.checked).toBe(false);
+    store().setCategory(warehouse, warehouseItem.id, "Bakery");
+    expect(list(warehouse).items[0]?.category).toBe("Bakery");
+    expect(list("default").items[0]?.category).not.toBe("Bakery");
+
+    store().remove("default", defaultItems[1]!.id);
+    expect(list("default").items.map((candidate) => candidate.id)).toEqual([
+      checked.id,
+    ]);
+    expect(list(warehouse).items).toHaveLength(1);
+  });
+});
+
+describe("offline quantity and package preferences", () => {
+  it("uses the same aggregation options for preferences and custom units", () => {
+    store().setUnitPreferences(
+      { ...DEFAULT_UNIT_PREFS, defaultSystem: "metric" },
+      false,
+    );
+    store().createCustomUnit({
+      name: "bottle",
+      abbreviation: "btl",
+      dimension: "volume",
+      baseUnit: "ml",
+      baseAmount: 750,
+      displayAsTrue: true,
+    });
+    store().addRecipe(
+      recipe([{ item: "Juice", quantity: 1, unit: "l", foodId: "juice" }]),
+    );
+    const juice = list("default").items[0]!;
+
+    store().saveIngredientPackage({
+      itemId: juice.id,
+      listId: "default",
+      preferredListId: "default",
+      packageAmount: 1,
+      packageUnit: "bottle",
+      packageLabel: "glass bottle",
+      packageRoundBehavior: "enable",
+    });
+
+    expect(list("default").items[0]).toMatchObject({
+      quantity: 1,
+      unit: "l",
+      packageCount: 2,
+      purchaseQuantity: 2,
+      purchaseUnit: "bottle",
+      packageLabel: "glass bottle",
+    });
+  });
+
+  it("canonicalizes package routes through create, rename, and delete", () => {
+    store().addManual("default", {
+      item: "Juice",
+      foodId: "juice",
+      quantity: 1,
+      unit: "l",
+    });
+    const juice = list("default").items[0]!;
+    store().saveIngredientPackage({
+      itemId: juice.id,
+      listId: "default",
+      preferredListId: "default",
+      packageAmount: 1,
+      packageUnit: "btl",
+      packageLabel: "glass bottle",
+      packageRoundBehavior: "enable",
+    });
+
+    const customId = store().createCustomUnit({
+      name: "bottle",
+      abbreviation: "btl",
+      dimension: "volume",
+      baseUnit: "ml",
+      baseAmount: 750,
+      displayAsTrue: true,
+    });
+    expect(store().routes[0]).toMatchObject({
+      packageAmount: 750,
+      packageUnit: "ml",
+      packageLabel: "glass bottle",
+      packageRoundBehavior: "enable",
+      preferredListId: "default",
+    });
+    expect(list("default").items[0]?.packageCount).toBe(2);
+
+    store().updateCustomUnit(customId, {
+      name: "flask",
+      abbreviation: "fl",
+      dimension: "volume",
+      baseUnit: "l",
+      baseAmount: 1,
+      displayAsTrue: false,
+    });
+    expect(store().routes[0]).toMatchObject({
+      packageAmount: 750,
+      packageUnit: "ml",
+    });
+    expect(list("default").items[0]?.packageCount).toBe(2);
+
+    store().deleteCustomUnit(customId);
+    expect(store().routes[0]).toMatchObject({
+      packageAmount: 750,
+      packageUnit: "ml",
+    });
+    expect(list("default").items[0]?.packageCount).toBe(2);
+  });
+
+  it("inherits the off-by-default global setting and never rounds below a range", () => {
+    store().setUnitPreferences(
+      { ...DEFAULT_UNIT_PREFS, defaultSystem: "us" },
+      false,
+    );
+    store().addManual("default", {
+      item: "Milk",
+      quantity: 3,
+      quantityMax: 5,
+      unit: "cup",
+    });
+    const milk = list("default").items[0]!;
+    store().saveIngredientPackage({
+      itemId: milk.id,
+      listId: "default",
+      preferredListId: "default",
+      packageAmount: 4,
+      packageUnit: "cup",
+      packageLabel: "carton",
+      packageRoundBehavior: "inherit",
+    });
+    expect(list("default").items[0]?.packageCount).toBeNull();
+
+    store().setUnitPreferences(store().unitPreferences, true);
+
+    expect(list("default").items[0]).toMatchObject({
+      quantity: 1.5,
+      quantityMax: 2.5,
+      unit: "pint",
+      packageCount: 2,
+      purchaseQuantity: 8,
+      purchaseUnit: "cup",
+    });
+  });
+
+  it("saves package metadata on the existing preferred-store route", () => {
+    const warehouse = store().createList("Warehouse", "Costco");
+    store().addManual("default", { item: "Rice", foodId: "food-rice" });
+    const rice = list("default").items[0]!;
+
+    store().saveIngredientPackage({
+      itemId: rice.id,
+      listId: "default",
+      preferredListId: warehouse,
+      packageAmount: 5,
+      packageUnit: "lb",
+      packageRoundBehavior: "disable",
+    });
+
+    expect(store().routes).toHaveLength(1);
+    expect(store().routes[0]).toMatchObject({
+      foodId: "food-rice",
+      preferredListId: warehouse,
+      packageAmount: 5,
+      packageUnit: "lb",
+      packageRoundBehavior: "disable",
+    });
+  });
+
+  it("scopes a package edit by list even if legacy entity ids collide", () => {
+    const warehouse = store().createList("Warehouse", "Costco");
+    store().addManual("default", {
+      item: "Milk",
+      foodId: "food-milk",
+      quantity: 1,
+      unit: "l",
+    });
+    store().addManual(warehouse, {
+      item: "Flour",
+      foodId: "food-flour",
+      quantity: 1,
+      unit: "kg",
+    });
+    const sharedId = list("default").items[0]!.id;
+    useShoppingStore.setState((state) => ({
+      lists: state.lists.map((candidate) =>
+        candidate.id === warehouse
+          ? {
+              ...candidate,
+              items: candidate.items.map((candidateItem) => ({
+                ...candidateItem,
+                id: sharedId,
+              })),
+            }
+          : candidate,
+      ),
+    }));
+
+    store().saveIngredientPackage({
+      itemId: sharedId,
+      listId: warehouse,
+      preferredListId: warehouse,
+      packageAmount: 500,
+      packageUnit: "g",
+      packageRoundBehavior: "enable",
+    });
+
+    expect(store().routes).toMatchObject([
+      { foodId: "food-flour", packageAmount: 500, packageUnit: "g" },
+    ]);
+    expect(list("default").items[0]?.packageCount).toBeNull();
+    expect(list(warehouse).items[0]?.packageCount).toBe(2);
+  });
+
+  it("reaggregates identical items in separate lists from their own requirements", () => {
+    const archived = store().createList("Archived market");
+    store().addManual("default", {
+      item: "Milk",
+      foodId: "food-milk",
+      quantity: 1,
+      unit: "cup",
+    });
+    store().addManual(archived, {
+      item: "Milk",
+      foodId: "food-milk",
+      quantity: 3,
+      unit: "cup",
+    });
+    store().archiveList(archived);
+    const source = list("default").items[0]!;
+    useShoppingStore.setState((state) => ({
+      lists: state.lists.map((candidate) =>
+        candidate.id === archived
+          ? {
+              ...candidate,
+              items: candidate.items.map((item) => ({
+                ...item,
+                id: source.id,
+              })),
+            }
+          : candidate,
+      ),
+    }));
+    expect(list(archived).items[0]?.id).toBe(source.id);
+
+    store().saveIngredientPackage({
+      itemId: source.id,
+      listId: "default",
+      preferredListId: "default",
+      packageAmount: 1,
+      packageUnit: "cup",
+      packageRoundBehavior: "enable",
+    });
+
+    expect(list("default").items[0]).toMatchObject({
+      requiredBaseQuantity: 236.588,
+      packageCount: 1,
+      purchaseQuantity: 1,
+    });
+    expect(list(archived).items[0]).toMatchObject({
+      requiredBaseQuantity: 709.764,
+      packageCount: 3,
+      purchaseQuantity: 3,
+    });
+  });
+
+  it("keeps the canonical requirement when a custom unit is edited or deleted", () => {
+    const customId = store().createCustomUnit({
+      name: "scoop",
+      abbreviation: null,
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 0.5,
+      displayAsTrue: false,
+    });
+    store().setUnitPreferences(
+      {
+        ...DEFAULT_UNIT_PREFS,
+        defaultSystem: "metric",
+        dryVolumeUnit: "scoop",
+      },
+      false,
+    );
+    store().addManual("default", {
+      item: "Flour",
+      quantity: 1,
+      unit: "scoop",
+    });
+
+    expect(list("default").items[0]).toMatchObject({
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
+
+    store().updateCustomUnit(customId, {
+      name: "scoop",
+      abbreviation: null,
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 1,
+      displayAsTrue: false,
+    });
+    expect(list("default").items[0]).toMatchObject({
+      quantity: 0.5,
+      unit: "scoop",
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
+
+    store().deleteCustomUnit(customId);
+    expect(list("default").items[0]).toMatchObject({
+      quantity: 118.294,
+      unit: "ml",
+      requiredBaseQuantity: 118.294,
+      requiredBaseUnit: "ml",
+    });
+  });
+
+  it("canonicalizes persisted unknown units when a definition is created", () => {
+    useShoppingStore.setState((state) => ({
+      lists: state.lists.map((candidate) => ({
+        ...candidate,
+        items: [
+          {
+            id: "legacy-scoop",
+            aggregationKey: "legacy-scoop",
+            item: "Flour",
+            foodId: null,
+            quantity: 2,
+            quantityMax: null,
+            unit: "scoop",
+            requiredBaseQuantity: 2,
+            requiredBaseQuantityMax: null,
+            requiredBaseUnit: "scoop",
+            purchaseQuantity: null,
+            purchaseUnit: null,
+            packageCount: null,
+            packageAmount: null,
+            packageUnit: null,
+            packageLabel: null,
+            note: null,
+            category: "Pantry",
+            optional: false,
+            checked: false,
+            recipeId: null,
+          },
+        ],
+      })),
+    }));
+
+    store().createCustomUnit({
+      name: "scoop",
+      abbreviation: "scp",
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 0.5,
+      displayAsTrue: false,
+    });
+
+    expect(list("default").items[0]).toMatchObject({
+      requiredBaseQuantity: 236.588,
+      requiredBaseUnit: "ml",
+    });
+  });
+
+  it("uses the old definition for persisted name and abbreviation matches", () => {
+    const customId = store().createCustomUnit({
+      name: "scoop",
+      abbreviation: "scp",
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 0.5,
+      displayAsTrue: false,
+    });
+    useShoppingStore.setState((state) => ({
+      lists: state.lists.map((candidate) => ({
+        ...candidate,
+        items: [
+          {
+            id: "persisted-name",
+            aggregationKey: "persisted-name",
+            item: "Flour",
+            foodId: null,
+            quantity: 2,
+            quantityMax: null,
+            unit: "scoop",
+            requiredBaseQuantity: 2,
+            requiredBaseQuantityMax: null,
+            requiredBaseUnit: "scoop",
+            purchaseQuantity: null,
+            purchaseUnit: null,
+            packageCount: null,
+            packageAmount: null,
+            packageUnit: null,
+            packageLabel: null,
+            note: null,
+            category: "Pantry",
+            optional: false,
+            checked: false,
+            recipeId: null,
+          },
+          {
+            id: "persisted-abbreviation",
+            aggregationKey: "persisted-abbreviation",
+            item: "Sugar",
+            foodId: null,
+            quantity: 3,
+            quantityMax: null,
+            unit: "SCP",
+            requiredBaseQuantity: 3,
+            requiredBaseQuantityMax: null,
+            requiredBaseUnit: "SCP",
+            purchaseQuantity: null,
+            purchaseUnit: null,
+            packageCount: null,
+            packageAmount: null,
+            packageUnit: null,
+            packageLabel: null,
+            note: null,
+            category: "Pantry",
+            optional: false,
+            checked: false,
+            recipeId: null,
+          },
+        ],
+      })),
+    }));
+
+    store().updateCustomUnit(customId, {
+      name: "measure",
+      abbreviation: "msr",
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 1,
+      displayAsTrue: false,
+    });
+
+    expect(list("default").items).toMatchObject([
+      { requiredBaseQuantity: 236.588, requiredBaseUnit: "ml" },
+      { requiredBaseQuantity: 354.882, requiredBaseUnit: "ml" },
+    ]);
+
+    store().deleteCustomUnit(customId);
+    expect(list("default").items).toMatchObject([
+      { requiredBaseQuantity: 236.588, requiredBaseUnit: "ml" },
+      { requiredBaseQuantity: 354.882, requiredBaseUnit: "ml" },
+    ]);
+  });
+
+  it("canonicalizes an abbreviation-backed requirement before offline deletion", () => {
+    const customId = store().createCustomUnit({
+      name: "scoop",
+      abbreviation: "scp",
+      dimension: "volume",
+      baseUnit: "cup",
+      baseAmount: 0.5,
+      displayAsTrue: false,
+    });
+    useShoppingStore.setState((state) => ({
+      lists: state.lists.map((candidate) => ({
+        ...candidate,
+        items: [
+          {
+            id: "persisted-abbreviation",
+            aggregationKey: "persisted-abbreviation",
+            item: "Sugar",
+            foodId: null,
+            quantity: 3,
+            quantityMax: null,
+            unit: "SCP",
+            requiredBaseQuantity: 3,
+            requiredBaseQuantityMax: null,
+            requiredBaseUnit: "SCP",
+            purchaseQuantity: null,
+            purchaseUnit: null,
+            packageCount: null,
+            packageAmount: null,
+            packageUnit: null,
+            packageLabel: null,
+            note: null,
+            category: "Pantry",
+            optional: false,
+            checked: false,
+            recipeId: null,
+          },
+        ],
+      })),
+    }));
+
+    store().deleteCustomUnit(customId);
+
+    expect(list("default").items[0]).toMatchObject({
+      quantity: 354.882,
+      unit: "ml",
+      requiredBaseQuantity: 354.882,
+      requiredBaseUnit: "ml",
+    });
+  });
 });
 
 describe("bounded per-list recovery history", () => {
   it("separates removing completed items from unchecking them", () => {
     store().addManual("default", { item: "Eggs" });
     const itemId = list("default").items[0]!.id;
-    store().setChecked(itemId, true);
+    store().setChecked("default", itemId, true);
 
     store().uncheckAll("default");
     expect(list("default").items).toMatchObject([
@@ -202,7 +818,7 @@ describe("bounded per-list recovery history", () => {
     ]);
     expect(store().restorePoints).toEqual([]);
 
-    store().setChecked(itemId, true);
+    store().setChecked("default", itemId, true);
     const restorePointId = store().removeCompleted("default");
     expect(restorePointId).toBeTruthy();
     expect(list("default").items).toEqual([]);
@@ -317,7 +933,7 @@ describe("bounded per-list recovery history", () => {
   it("captures list replacement without recording normal checkbox toggles", () => {
     store().addManual("default", { item: "Old item" });
     const old = list("default").items[0]!;
-    store().setChecked(old.id, true);
+    store().setChecked("default", old.id, true);
     expect(store().restorePoints).toEqual([]);
 
     const replacement: LocalShoppingItem = {
