@@ -108,7 +108,9 @@ jobs:
       audit-command: pnpm audit:ci
       run-package-audit: true
       run-secret-scan: true
-      run-dependency-review: true
+      # Dependency graph is not enabled for this repository. Keep the canonical
+      # package audit and verified-secret scan without an unavailable API gate.
+      run-dependency-review: false
       dependency-fail-severity: high
 
   # Copy guards: catalog parity, ICU placeholders, untranslated and

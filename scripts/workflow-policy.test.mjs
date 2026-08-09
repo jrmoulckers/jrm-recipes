@@ -43,6 +43,7 @@ describe("workflow integrity policy", () => {
     expect(ci).toContain("lint-command: pnpm lint");
     expect(ci).toContain("format-check-command: pnpm format:check");
     expect(ci).toContain("audit-command: pnpm audit:ci");
+    expect(ci).toContain("run-dependency-review: false");
     expect(ci).not.toContain("secrets: inherit");
     expect(ci).not.toContain("gitleaks/gitleaks-action");
   });
