@@ -1,8 +1,7 @@
-# Vercel deploys from main, and this workflow is the lightweight quality gate before
-# code lands. The single sequential `quality` job was split into independent,
-# parallel jobs (#244) so a lint failure no longer blocks typecheck/unit/build
-# feedback, and the production build is produced ONCE (the `build` job) and
-# reused by E2E instead of being compiled a second time.
+# Vercel deploys from main, and this workflow is the quality gate before code
+# lands. Generic lint, security, web, and performance behavior comes from the
+# reviewed studio workflows pinned below. Recipes keeps its database, generated
+# asset, E2E, and seeded Lighthouse behavior local.
 name: CI
 
 on:
@@ -83,114 +82,34 @@ jobs:
             exit 1
           fi
 
-  # Keep product-specific lint and format jobs below; reuse the canonical
-  # workflow only for its Conventional Commits PR-title policy.
-  semantic-pr-title:
-    name: Semantic PR title
-    if: github.event_name == 'pull_request'
+  quality:
+    name: Quality
     needs: dispatch-guard
     uses: jrmoulckers/.github/.github/workflows/reusable-ci-lint.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
     permissions:
       contents: read
       pull-requests: read
     with:
-      lint-command: ""
-      format-check-command: ""
+      node-version: "20"
+      package-manager: pnpm
+      lint-command: pnpm lint
+      format-check-command: pnpm format:check
       semantic-pr-title: true
 
-  # Supply-chain + secret controls (#218). Fails the build on a high/critical
-  # dependency advisory and on any committed secret, keeping these cheap checks
-  # separate from the heavier quality/e2e jobs.
   security:
     name: Security
     needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    uses: jrmoulckers/.github/.github/workflows/reusable-security-ci.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
     permissions:
       contents: read
-      # gitleaks-action lists the PR's commits via the API to scope its scan to
-      # the diff. Without this it 403s ("Resource not accessible by
-      # integration"). Read-only, so it never needs to write comments here.
-      pull-requests: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          # gitleaks needs full history to scan every commit on a PR.
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Fail on known high/critical advisories in the (transitive) dependency
-      # tree. Dependabot opens update PRs, and this makes a vulnerable dep block CI.
-      - name: Dependency audit
-        run: pnpm run audit:ci
-
-      - name: Secret scan
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  lint:
-    name: Lint
-    needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Lint
-        run: pnpm lint
-
-  # Prettier formatting gate, previously not run in CI (#244).
-  format:
-    name: Format
-    needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Format check
-        run: pnpm format:check
+    with:
+      node-version: "20"
+      package-manager: pnpm
+      audit-command: pnpm audit:ci
+      run-package-audit: true
+      run-secret-scan: true
+      run-dependency-review: true
+      dependency-fail-severity: high
 
   # Copy guards: catalog parity, ICU placeholders, untranslated and
   # English-leaking values, rich-text tag handlers, and alt-text justification.
@@ -225,53 +144,43 @@ jobs:
       - name: Audit alt text
         run: node scripts/alt-audit.mjs
 
-  typecheck:
-    name: Typecheck
+  # Typecheck, unit tests, and the single production build share one canonical
+  # install. The build command preserves Recipes' route budgets, then packages
+  # hidden Next/Serwist output into a non-hidden artifact for downstream jobs.
+  web:
+    name: Web
     needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    uses: jrmoulckers/.github/.github/workflows/reusable-ci-web.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
     permissions:
       contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Typecheck
-        run: pnpm typecheck
+    with:
+      node-version: "20"
+      package-manager: pnpm
+      typecheck-command: pnpm typecheck
+      test-command: pnpm test
+      build-command: pnpm ci:build
+      build-env-json: '{"SKIP_ENV_VALIDATION":"1","NEXT_PUBLIC_APP_URL":"http://localhost:3000","NEXT_PUBLIC_DEV_AUTH_BYPASS":"1"}'
+      artifact-name: next-build
+      artifact-path: ci-artifact
+      artifact-retention-days: 1
 
-  unit:
-    name: Unit tests
-    needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  # The canonical aggregate budget complements the stricter route-by-route
+  # budget enforced during `ci:build`. Lighthouse public upload remains
+  # explicitly disabled; the seeded product Lighthouse job below keeps reports
+  # in private GitHub artifacts.
+  performance:
+    name: Performance
+    needs: web
+    uses: jrmoulckers/.github/.github/workflows/reusable-perf-budget.yml@97ff60ec21321563fa0fc7ba80015261e7dcd6fa
     permissions:
       contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Unit tests
-        run: pnpm test
+    with:
+      node-version: "20"
+      package-manager: pnpm
+      artifact-name: ${{ needs.web.outputs.artifact-name }}
+      output-dir: ci-artifact
+      bundle-budget-kb: 32768
+      lighthouse-public-upload: false
 
   # Fail if the committed Drizzle migrations don't match the schema (#242).
   # `drizzle-kit generate` is deterministic and needs no database, so we
@@ -359,88 +268,18 @@ jobs:
       - name: Re-run migrations (must be a no-op)
         run: node scripts/migrate.mjs
 
-  build:
-    name: Build
-    needs: dispatch-guard
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    env:
-      SKIP_ENV_VALIDATION: "1"
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: 10.6.1
-      - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Cache Next.js's compiler cache so builds reuse work across runs (#243).
-      # Keyed on the lockfile + source so it invalidates when deps or code
-      # change, and restore-keys allow a partial (still-useful) hit.
-      - name: Cache Next.js build
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
-        with:
-          path: .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
-            ${{ runner.os }}-nextjs-
-
-      - name: Build
-        run: pnpm build | tee bundle-build.log
-
-      # Fail the build if a tracked route's first-load JS exceeds its budget
-      # (bundle-budgets.json). Reuses the log captured above so we build once.
-      - name: Bundle size budget
-        run: node scripts/check-bundle-budget.mjs bundle-build.log
-
-      # Publish the production build so E2E can start it directly instead of
-      # rebuilding (#244). Exclude the local build cache because E2E only needs the
-      # compiled output to `next start`. The Serwist service worker is emitted
-      # to `public/sw.js` at build time (gitignored), so it must ride along in
-      # the artifact because otherwise `pnpm start` in the E2E job serves no `/sw.js`
-      # and the offline specs hang waiting for the worker to activate.
-      - name: Upload build output
-        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
-        with:
-          name: next-build
-          path: |
-            .next
-            !.next/cache
-            public/sw.js
-            public/sw.js.map
-            public/swe-worker-*.js
-          # `.next` is a dotfile directory, so upload-artifact v4 (which excludes
-          # hidden files by default) would skip its entire contents and fail with
-          # "No files were found". Opt in so the production build is actually
-          # published for the E2E job to consume.
-          include-hidden-files: true
-          retention-days: 1
-          if-no-files-found: error
-
   # End-to-end tests, including offline PWA coverage (issue #171). Playwright
   # starts the app in production mode (see playwright.config.ts) so the Serwist
   # service worker is ACTIVE during the run, since `next dev` disables it, so offline
   # behavior can only be verified against a production build. It reuses the
-  # `build` job's artifact and runs `pnpm start` (no second compile, #244). A
+  # canonical `web` artifact and runs `pnpm start` (no second compile, #244). A
   # throwaway Postgres (a local service container with hard-coded credentials,
   # NOT a repo secret, mirroring the lighthouse job) is migrated + seeded so the
   # offline spec can open a real recipe and enter Cook Mode. The smoke spec is
   # database-agnostic.
   e2e:
     name: E2E
-    needs: build
+    needs: web
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -485,16 +324,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Reuse the production build from the `build` job instead of compiling
-      # again, since playwright.config.ts runs `pnpm start` (not build) under CI.
-      # The artifact is rooted at the repo (it carries both `.next` and the
-      # generated `public/sw.js`), so extract it at the repo root to restore
-      # each file to its original path.
+      # Reuse the canonical web build instead of compiling again, since
+      # playwright.config.ts runs `pnpm start` (not build) under CI. The archive
+      # carries both `.next` and generated `public/sw.js`; extract it at the repo
+      # root to restore each file to its original path.
       - name: Download build output
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: next-build
-          path: .
+          name: ${{ needs.web.outputs.artifact-name }}
+          path: ci-artifact
+
+      - name: Restore and verify build output
+        run: |
+          set -euo pipefail
+          tar -xzf ci-artifact/next-build.tar.gz
+          test -f .next/BUILD_ID
+          test -f public/sw.js
 
       - name: Run migrations
         run: node scripts/migrate.mjs
@@ -522,13 +367,12 @@ jobs:
   # real content on the recipe detail route, so it seeds an ephemeral, throwaway
   # Postgres whose credentials are hard-coded here (a local service container,
   # NOT a repo secret), keeping the "no secrets" property of the rest of CI. It
-  # builds, migrates + seeds, starts the app in dev-bypass mode, and runs
-  # Lighthouse against the key routes with the Core Web Vitals budgets in
-  # lighthouserc.cjs. Assertions fail the job on regression. Reports upload as
-  # artifacts for inspection.
+  # consumes the canonical production build, migrates + seeds, starts the app in
+  # dev-bypass mode, and runs Lighthouse against the key routes with the Core
+  # Web Vitals budgets in lighthouserc.cjs. Reports stay in private artifacts.
   lighthouse:
     name: Lighthouse
-    needs: dispatch-guard
+    needs: web
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -573,14 +417,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Download build output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.web.outputs.artifact-name }}
+          path: ci-artifact
+
+      - name: Restore and verify build output
+        run: |
+          set -euo pipefail
+          tar -xzf ci-artifact/next-build.tar.gz
+          test -f .next/BUILD_ID
+          test -f public/sw.js
+
       - name: Run migrations
         run: node scripts/migrate.mjs
 
       - name: Seed demo data
         run: pnpm db:seed
-
-      - name: Build
-        run: pnpm build
 
       - name: Lighthouse CI
         run: pnpm exec lhci autorun --config=./lighthouserc.cjs

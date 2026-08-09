@@ -320,12 +320,15 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 
 - **Merge to `main` → Vercel deploys automatically.** The `vercel-build` script
   applies any new migrations first, then builds.
-- **CI** (`.github/workflows/ci.yml`) runs security, semantic PR-title, format,
-  lint, typecheck, copy/i18n, unit, migration drift/idempotence, build/bundle,
-  Playwright **e2e**, and Lighthouse gates on every PR and push to `main`.
-  Release Please dispatches that same workflow for its verified release PR
-  because GitHub suppresses the usual token-created PR event. No application
-  secrets are needed; database jobs use ephemeral Postgres, and app builds use
+- **CI** (`.github/workflows/ci.yml`) pins canonical security, lint, web-build,
+  artifact, and performance workflows to a reviewed immutable backbone commit.
+  Recipes keeps copy/i18n, migration drift/idempotence, Playwright **e2e**,
+  route bundle budgets, generated Next/Serwist asset verification, and seeded
+  Lighthouse coverage local. E2E and Lighthouse reuse the same canonical build
+  archive, and Lighthouse reports stay in private GitHub artifacts. Release
+  Please dispatches this gate for its verified release PR because GitHub
+  suppresses the usual token-created PR event. No application secrets are
+  needed; database jobs use ephemeral Postgres and app builds use
   `SKIP_ENV_VALIDATION` + dev-bypass auth.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly dependency + Actions
   update PRs, each gated by CI.
