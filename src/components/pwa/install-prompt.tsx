@@ -8,6 +8,12 @@ import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { Button } from "~/components/ui/button";
 import { CloseButton } from "~/components/ui/close-button";
+import {
+  notificationDescription,
+  notificationIcon,
+  notificationSurface,
+  notificationTitle,
+} from "~/components/ui/notification";
 import { LogoMark } from "~/components/layout/logo";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -224,25 +230,23 @@ export function InstallPrompt() {
     >
       <div
         className={cn(
-          "flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 pe-2 shadow-lg backdrop-blur",
+          notificationSurface(),
+          "pe-2",
           "transition-all duration-300 ease-out motion-reduce:transition-none",
           entered
             ? "translate-y-0 opacity-100"
             : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
         )}
       >
-        <span className="bg-primary/12 inline-flex size-11 shrink-0 items-center justify-center rounded-xl">
+        <span className={notificationIcon({ tone: "brand", size: "md" })}>
           <LogoMark className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p id={labelId} className="text-sm font-semibold leading-tight">
+          <p id={labelId} className={notificationTitle}>
             {t("title", { brand: brand.name })}
           </p>
           {isIos ? (
-            <p
-              id={descriptionId}
-              className="text-xs leading-snug text-muted-foreground"
-            >
+            <p id={descriptionId} className={notificationDescription}>
               {t.rich("iosTip", {
                 share: () => (
                   <>
@@ -258,7 +262,7 @@ export function InstallPrompt() {
           ) : (
             <p
               id={descriptionId}
-              className="truncate text-xs text-muted-foreground"
+              className={cn(notificationDescription, "truncate")}
             >
               {t("body")}
             </p>

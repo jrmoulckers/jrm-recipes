@@ -57,7 +57,7 @@ export function Providers({
                     {children}
                     <ConsentNotice />
                     <ConnectivityStatus />
-                    <Toaster position="top-center" richColors closeButton />
+                    <Toaster />
                   </ConfirmProvider>
                 </TooltipProvider>
               </FlagsProvider>
