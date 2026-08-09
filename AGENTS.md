@@ -153,6 +153,19 @@ Scope-specific rules live alongside the code — read the relevant one before wo
 This locally authored section overrides generic canonical path, platform, and release-tool
 assumptions for this repository. The generated agent personas and safety boundaries still apply.
 
+## Product authority
+
+Product obligations and outcomes live in
+[jrmoulckers/product](https://github.com/jrmoulckers/product) and are consumed by reference, never
+by copy. Cite an obligation by its stable id (for example `PROD-REL-001`), and pin to a commit SHA
+when the exact wording matters. Heirloom's roadmap, metrics, experiments, and compliance evidence
+stay in this repository and cite the obligation they satisfy.
+
+Engineering mechanisms live in
+[jrmoulckers/engineering](https://github.com/jrmoulckers/engineering), design and interface in
+[jrmoulckers/studio](https://github.com/jrmoulckers/studio), and automation plus shared agent assets
+in [jrmoulckers/.github](https://github.com/jrmoulckers/.github).
+
 ## Product stack and paths
 
 Recipes is a web/PWA product built with Next.js 15 App Router, React 19, and TypeScript. Product
