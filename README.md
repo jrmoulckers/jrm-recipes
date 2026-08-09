@@ -235,11 +235,15 @@ pnpm check:bundle
 
 On every PR and push to `main`, GitHub Actions runs:
 
-- **CI** (`.github/workflows/ci.yml`): security, semantic PR-title, format,
-  lint, typecheck, copy/i18n, unit, migration drift/idempotence, production
-  build/bundle budget, Playwright **e2e**, and Lighthouse checks. Database jobs
-  use ephemeral Postgres; builds use `SKIP_ENV_VALIDATION` and dev-bypass auth,
-  so no application secrets are required.
+- **Canonical CI callers** (`.github/workflows/ci.yml`): reviewed shared
+  workflows provide security, semantic PR-title, format, lint, typecheck, unit,
+  production build, artifact, and aggregate performance gates at an immutable
+  backbone commit.
+- **Recipes gates**: local jobs preserve copy/i18n, migration
+  drift/idempotence, Playwright **e2e**, route bundle budgets, generated
+  Next/Serwist asset checks, and seeded Lighthouse coverage. E2E and Lighthouse
+  reuse the canonical build archive; database jobs use ephemeral Postgres and
+  Lighthouse reports remain private. No application secrets are required.
 - **Release PR CI**: Release Please PRs created with `GITHUB_TOKEN` do not emit
   the usual PR event. The release workflow explicitly dispatches the same CI at
   its verified in-repository bot branch; arbitrary manual refs fail closed.
