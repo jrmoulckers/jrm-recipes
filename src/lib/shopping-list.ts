@@ -834,9 +834,15 @@ export type FormatShoppingListOptions = {
   includeChecked?: boolean;
   /** Optional heading placed at the top of the text. */
   title?: string;
+  /** Optional secondary heading, such as the selected store. */
+  subtitle?: string;
+  /** Localized aisle labels. Defaults to the canonical English labels. */
+  categoryLabels?: Readonly<Record<ShoppingCategory, string>>;
+  /** Locale used when alphabetizing item names. */
+  locale?: string;
 };
 
-function shareLine(item: ShoppingTextItem): string {
+export function formatShoppingListItemLine(item: ShoppingTextItem): string {
   const amount = describeQuantity(item);
   const base = amount ? `${amount} ${item.item}` : item.item;
   return item.note ? `${base}, ${item.note}` : base;
@@ -852,7 +858,13 @@ export function formatShoppingListText(
   items: ShoppingTextItem[],
   options: FormatShoppingListOptions = {},
 ): string {
-  const { includeChecked = false, title } = options;
+  const {
+    includeChecked = false,
+    title,
+    subtitle,
+    categoryLabels = SHOPPING_CATEGORY_LABELS,
+    locale,
+  } = options;
   const visible = items.filter((item) => includeChecked || !item.checked);
   if (visible.length === 0) return "";
 
@@ -867,16 +879,20 @@ export function formatShoppingListText(
   }
 
   const lines: string[] = [];
-  if (title?.trim()) lines.push(title.trim(), "");
+  if (title?.trim()) lines.push(title.trim());
+  if (subtitle?.trim()) lines.push(subtitle.trim());
+  if (lines.length > 0) lines.push("");
 
   for (const category of SHOPPING_CATEGORIES) {
     const group = byCategory.get(category);
     if (!group || group.length === 0) continue;
-    lines.push(`${SHOPPING_CATEGORY_LABELS[category]}:`);
+    lines.push(`${categoryLabels[category]}:`);
     for (const item of group
       .slice()
-      .sort((a, b) => a.item.localeCompare(b.item))) {
-      lines.push(`- [${item.checked ? "x" : " "}] ${shareLine(item)}`);
+      .sort((a, b) => a.item.localeCompare(b.item, locale))) {
+      lines.push(
+        `- [${item.checked ? "x" : " "}] ${formatShoppingListItemLine(item)}`,
+      );
     }
     lines.push("");
   }

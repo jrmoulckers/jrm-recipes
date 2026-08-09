@@ -1479,6 +1479,56 @@
       "titleText": "Einkaufsliste",
       "send": "Liste senden"
     },
+    "export": {
+      "trigger": "Exportieren",
+      "menuLabel": "Diese Liste exportieren",
+      "storeLabel": "Geschäft",
+      "completed": "erledigt",
+      "includeCompleted": "Erledigte Artikel einschließen",
+      "includeCompletedHint": "{count, plural, one {# erledigter Artikel} other {# erledigte Artikel}}",
+      "emailSubject": "Einkaufsliste: {listName}",
+      "actions": {
+        "copyText": "Text kopieren",
+        "downloadText": "Text herunterladen",
+        "email": "Per E-Mail senden",
+        "print": "Drucken / Als PDF speichern",
+        "closePrint": "Schließen",
+        "downloadImage": "Bild herunterladen",
+        "nativeShare": "Systemfreigabe",
+        "preparingImage": "Bild wird vorbereitet…"
+      },
+      "categories": {
+        "produce": "Obst und Gemüse",
+        "pantry": "Vorratsschrank",
+        "dairy": "Milchprodukte und Eier",
+        "meat": "Fleisch und Meeresfrüchte",
+        "bakery": "Bäckerei",
+        "spices": "Gewürze",
+        "frozen": "Tiefkühlkost",
+        "beverages": "Getränke",
+        "other": "Sonstiges"
+      },
+      "toasts": {
+        "nothingToExport": "Nichts zu exportieren. Schließe erledigte Artikel ein oder füge etwas zu dieser Liste hinzu.",
+        "copied": "Liste kopiert. Füge sie dort ein, wo du sie brauchst.",
+        "downloaded": "{filename} wurde heruntergeladen.",
+        "imageDownloaded": "Das Bild der Einkaufsliste wurde heruntergeladen."
+      },
+      "errors": {
+        "clipboardUnavailable": "Die Zwischenablage ist nicht verfügbar. Verwende Text herunterladen.",
+        "downloadUnavailable": "Downloads sind in diesem Browser nicht verfügbar. Probiere Text kopieren.",
+        "imageUnavailable": "Dieser Browser kann das Bild nicht erstellen. Verwende Text herunterladen oder Drucken.",
+        "imageTooLarge": "Diese Liste ist zu lang für ein einzelnes Bild. Verwende Drucken oder Text herunterladen.",
+        "popupBlocked": "Die Druckansicht wurde blockiert. Erlaube Pop-ups für diese Website und versuche es erneut.",
+        "copyFailed": "Die Liste konnte nicht kopiert werden. Prüfe die Berechtigung für die Zwischenablage und versuche es erneut.",
+        "downloadFailed": "Die Textdatei konnte nicht heruntergeladen werden. Probiere Text kopieren.",
+        "emailTooLong": "Diese Liste ist zu lang für einen E-Mail-Link. Kopiere den Text und füge ihn in deine E-Mail ein.",
+        "emailFailed": "Die E-Mail-App konnte nicht geöffnet werden. Kopiere den Text und füge ihn in deine E-Mail ein.",
+        "printFailed": "Die Druckansicht konnte nicht geöffnet werden. Prüfe die Pop-up-Einstellungen und versuche es erneut.",
+        "imageFailed": "Das Bild konnte nicht erstellt werden. Probiere Drucken oder Text herunterladen.",
+        "nativeShareFailed": "Das Systemmenü konnte diese Liste nicht teilen. Wähle eine andere Exportoption."
+      }
+    },
     "allergens": {
       "disclaimer": "Schätzung anhand der Zutatennamen. Prüfe Etiketten und Marken.",
       "warning": "Allergenwarnung: enthält {allergens}. {disclaimer}"

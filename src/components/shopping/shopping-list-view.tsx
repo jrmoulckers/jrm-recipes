@@ -6,14 +6,12 @@ import { cn } from "~/lib/utils";
 import { useLocale, useTranslations } from "next-intl";
 import {
   describeQuantity,
-  formatShoppingListText,
   SHOPPING_CATEGORIES,
   SHOPPING_CATEGORY_LABELS,
   type ShoppingCategory,
 } from "~/lib/shopping-list";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
 import { allergenConflicts } from "~/lib/dietary-match";
-import { toast } from "sonner";
 import { formatList } from "~/lib/i18n-format";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -37,10 +35,10 @@ import {
   Check,
   Plus,
   Route,
-  Share2,
   ShoppingCart,
   Trash2,
 } from "lucide-react";
+import { ShoppingListExportMenu } from "./shopping-list-export-menu";
 
 export type ShoppingViewItem = {
   id: string;
@@ -85,67 +83,6 @@ function groupUnchecked(items: ShoppingViewItem[]) {
       .slice()
       .sort((a, b) => a.item.localeCompare(b.item)),
   }));
-}
-
-/**
- * "Send list". Hand the active list to a partner via the native share sheet,
- * falling back to copy-to-clipboard as tidy grouped text (issue #408). Checked
- * items are excluded so the recipient only sees what's left to buy.
- */
-function ShareListButton({
-  items,
-  disabled,
-}: {
-  items: ShoppingViewItem[];
-  disabled: boolean;
-}) {
-  const [busy, setBusy] = React.useState(false);
-  const t = useTranslations("shopping");
-  const remaining = items.filter((item) => !item.checked).length;
-
-  async function onSend() {
-    const text = formatShoppingListText(items, { title: t("share.title") });
-    if (!text) {
-      toast.info(t("toasts.nothingToSend"));
-      return;
-    }
-    setBusy(true);
-    try {
-      if (
-        typeof navigator !== "undefined" &&
-        typeof navigator.share === "function"
-      ) {
-        try {
-          await navigator.share({ title: t("share.titleText"), text });
-          return;
-        } catch (error) {
-          // User dismissed the sheet. Stop. Any other failure falls through
-          // to the clipboard so the list still gets out.
-          if (error instanceof DOMException && error.name === "AbortError") {
-            return;
-          }
-        }
-      }
-      await navigator.clipboard.writeText(text);
-      toast.success(t("toasts.listCopied"));
-    } catch {
-      toast.error(t("toasts.shareFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant="outline"
-      disabled={disabled || busy || remaining === 0}
-      onClick={() => void onSend()}
-    >
-      <Share2 /> {t("share.send")}
-    </Button>
-  );
 }
 
 function ItemRow({
@@ -484,6 +421,14 @@ export function ShoppingListView({
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
   const groups = React.useMemo(() => groupUnchecked(unchecked), [unchecked]);
+  const currentList =
+    listOptions.find((list) => list.id === currentListId) ??
+    ({
+      id: currentListId ?? "current",
+      name: t("page.title"),
+      storeName: null,
+      isDefault: true,
+    } satisfies ShoppingListOption);
 
   function submitManual(event: React.FormEvent) {
     event.preventDefault();
@@ -572,8 +517,12 @@ export function ShoppingListView({
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            <div className="flex gap-2">
-              <ShareListButton items={items} disabled={disabled} />
+            <div className="flex flex-wrap justify-end gap-2">
+              <ShoppingListExportMenu
+                items={items}
+                list={currentList}
+                disabled={disabled}
+              />
               <Button
                 type="button"
                 size="sm"

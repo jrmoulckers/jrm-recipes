@@ -1479,6 +1479,56 @@
       "titleText": "Lista de compras",
       "send": "Enviar lista"
     },
+    "export": {
+      "trigger": "Exportar",
+      "menuLabel": "Exportar esta lista",
+      "storeLabel": "Tienda",
+      "completed": "completado",
+      "includeCompleted": "Incluir artículos completados",
+      "includeCompletedHint": "{count, plural, one {# artículo completado} other {# artículos completados}}",
+      "emailSubject": "Lista de compras: {listName}",
+      "actions": {
+        "copyText": "Copiar texto",
+        "downloadText": "Descargar texto",
+        "email": "Enviar por correo",
+        "print": "Imprimir / Guardar como PDF",
+        "closePrint": "Cerrar",
+        "downloadImage": "Descargar imagen",
+        "nativeShare": "Compartir con el sistema",
+        "preparingImage": "Preparando imagen…"
+      },
+      "categories": {
+        "produce": "Frutas y verduras",
+        "pantry": "Despensa",
+        "dairy": "Lácteos y huevos",
+        "meat": "Carne y marisco",
+        "bakery": "Panadería",
+        "spices": "Especias y condimentos",
+        "frozen": "Congelados",
+        "beverages": "Bebidas",
+        "other": "Otros"
+      },
+      "toasts": {
+        "nothingToExport": "No hay nada que exportar. Incluye los artículos completados o añade algo a esta lista.",
+        "copied": "Lista copiada. Pégala donde la necesites.",
+        "downloaded": "Se descargó {filename}.",
+        "imageDownloaded": "Se descargó la imagen de la lista de compras."
+      },
+      "errors": {
+        "clipboardUnavailable": "El portapapeles no está disponible. Usa Descargar texto.",
+        "downloadUnavailable": "Las descargas no están disponibles en este navegador. Prueba Copiar texto.",
+        "imageUnavailable": "Este navegador no puede crear la imagen. Usa Descargar texto o Imprimir.",
+        "imageTooLarge": "Esta lista es demasiado larga para una sola imagen. Usa Imprimir o Descargar texto.",
+        "popupBlocked": "Se bloqueó la vista de impresión. Permite las ventanas emergentes de este sitio e inténtalo de nuevo.",
+        "copyFailed": "No se pudo copiar la lista. Comprueba el permiso del portapapeles e inténtalo de nuevo.",
+        "downloadFailed": "No se pudo descargar el archivo de texto. Prueba Copiar texto.",
+        "emailTooLong": "Esta lista es demasiado larga para un enlace de correo. Copia el texto y pégalo en tu correo.",
+        "emailFailed": "No se pudo abrir la aplicación de correo. Copia el texto y pégalo en tu correo.",
+        "printFailed": "No se pudo abrir la vista de impresión. Comprueba las ventanas emergentes e inténtalo de nuevo.",
+        "imageFailed": "No se pudo crear la imagen. Prueba Imprimir o Descargar texto.",
+        "nativeShareFailed": "El menú del sistema no pudo compartir esta lista. Elige otra opción de exportación."
+      }
+    },
     "allergens": {
       "disclaimer": "Estimación a partir de nombres de ingredientes. Revisa etiquetas y marcas.",
       "warning": "Advertencia de alérgenos: contiene {allergens}. {disclaimer}"

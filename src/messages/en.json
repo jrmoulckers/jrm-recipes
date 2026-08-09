@@ -1479,6 +1479,56 @@
       "titleText": "Shopping list",
       "send": "Send list"
     },
+    "export": {
+      "trigger": "Export",
+      "menuLabel": "Export this list",
+      "storeLabel": "Store",
+      "completed": "completed",
+      "includeCompleted": "Include completed items",
+      "includeCompletedHint": "{count, plural, one {# completed item} other {# completed items}}",
+      "emailSubject": "{listName} shopping list",
+      "actions": {
+        "copyText": "Copy text",
+        "downloadText": "Download text",
+        "email": "Email",
+        "print": "Print / Save as PDF",
+        "closePrint": "Close",
+        "downloadImage": "Download image",
+        "nativeShare": "Native share",
+        "preparingImage": "Preparing image…"
+      },
+      "categories": {
+        "produce": "Produce",
+        "pantry": "Pantry",
+        "dairy": "Dairy & eggs",
+        "meat": "Meat & seafood",
+        "bakery": "Bakery",
+        "spices": "Spices & seasonings",
+        "frozen": "Frozen",
+        "beverages": "Beverages",
+        "other": "Other"
+      },
+      "toasts": {
+        "nothingToExport": "Nothing to export. Include completed items or add something to this list.",
+        "copied": "List copied. Paste it wherever you need it.",
+        "downloaded": "Downloaded {filename}.",
+        "imageDownloaded": "Shopping list image downloaded."
+      },
+      "errors": {
+        "clipboardUnavailable": "Clipboard access is unavailable. Use Download text instead.",
+        "downloadUnavailable": "Downloads are unavailable in this browser. Try Copy text.",
+        "imageUnavailable": "This browser cannot create the image. Use Download text or Print instead.",
+        "imageTooLarge": "This list is too long for one image. Use Print or Download text instead.",
+        "popupBlocked": "The print view was blocked. Allow pop-ups for this site, then try again.",
+        "copyFailed": "The list could not be copied. Check clipboard permission and try again.",
+        "downloadFailed": "The text file could not be downloaded. Try Copy text instead.",
+        "emailTooLong": "This list is too long for an email link. Copy the text and paste it into your email instead.",
+        "emailFailed": "The email app could not be opened. Copy the text and paste it into your email instead.",
+        "printFailed": "The print view could not be opened. Check pop-up settings and try again.",
+        "imageFailed": "The image could not be created. Try Print or Download text instead.",
+        "nativeShareFailed": "The system share menu could not share this list. Choose another export option."
+      }
+    },
     "allergens": {
       "disclaimer": "Best-effort from ingredient names. Double-check labels and brands.",
       "warning": "Allergen warning: contains {allergens}. {disclaimer}"
