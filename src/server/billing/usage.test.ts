@@ -9,6 +9,7 @@ const { state, db } = vi.hoisted(() => {
     counterRow: undefined as { value: number } | undefined,
     lastInsertValues: null as Record<string, unknown> | null,
     lastConflict: null as { targetLen: number } | null,
+    lastUpdateValues: null as Record<string, unknown> | null,
   };
   const insertChain = {
     values: vi.fn((v: Record<string, unknown>) => {
@@ -19,6 +20,13 @@ const { state, db } = vi.hoisted(() => {
       state.lastConflict = { targetLen: cfg.target.length };
     }),
   };
+  const updateChain = {
+    set: vi.fn((v: Record<string, unknown>) => {
+      state.lastUpdateValues = v;
+      return updateChain;
+    }),
+    where: vi.fn(async () => undefined),
+  };
   const db = {
     $count: vi.fn(async () => state.recipeCount),
     query: {
@@ -27,6 +35,7 @@ const { state, db } = vi.hoisted(() => {
       },
     },
     insert: vi.fn(() => insertChain),
+    update: vi.fn(() => updateChain),
   };
   return { state, db };
 });
@@ -38,6 +47,7 @@ vi.mock("~/server/db", () => ({
 
 import {
   currentPeriodStart,
+  decrementUsage,
   getUsage,
   incrementUsage,
   recomputeRecipeCount,
@@ -51,6 +61,7 @@ beforeEach(() => {
   state.counterRow = undefined;
   state.lastInsertValues = null;
   state.lastConflict = null;
+  state.lastUpdateValues = null;
   vi.clearAllMocks();
 });
 
@@ -149,5 +160,37 @@ describe("incrementUsage", () => {
     state.configured = false;
     await incrementUsage(user, "storage_mb", 10);
     expect(db.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("decrementUsage", () => {
+  it("subtracts from the counter, flooring at zero in SQL", async () => {
+    await decrementUsage(user, "storage_mb", 3);
+    expect(db.update).toHaveBeenCalledTimes(1);
+    // The floor is expressed as GREATEST(0, value - amount) in a single
+    // statement so concurrent deletes can't race into a negative counter.
+    const chunks = (
+      state.lastUpdateValues?.value as { queryChunks?: unknown[] }
+    )?.queryChunks;
+    const literals = (chunks ?? [])
+      .flatMap((chunk) =>
+        typeof chunk === "object" && chunk !== null && "value" in chunk
+          ? (chunk as { value: unknown[] }).value
+          : [],
+      )
+      .join(" ");
+    expect(literals.toLowerCase()).toContain("greatest");
+  });
+
+  it("is a no-op for a zero or negative amount", async () => {
+    await decrementUsage(user, "storage_mb", 0);
+    await decrementUsage(user, "storage_mb", -4);
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when unconfigured", async () => {
+    state.configured = false;
+    await decrementUsage(user, "storage_mb", 10);
+    expect(db.update).not.toHaveBeenCalled();
   });
 });

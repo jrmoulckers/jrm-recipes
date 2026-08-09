@@ -16,6 +16,7 @@ export * from "./moderation";
 export * from "./shopping";
 export * from "./planner";
 export * from "./collections";
+export * from "./media";
 export * from "./views";
 export * from "./searches";
 export * from "./dietary";
