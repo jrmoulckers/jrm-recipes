@@ -13,6 +13,8 @@ import {
   isToday as dateFnsIsToday,
   isValid,
   parse,
+  setHours,
+  startOfDay,
   startOfWeek,
   subWeeks,
 } from "date-fns";
@@ -52,6 +54,30 @@ export function parseDateParam(param?: string | null): Date {
   if (!param) return new Date();
   const parsed = parse(param, DATE_PARAM_FORMAT, new Date());
   return isValid(parsed) ? parsed : new Date();
+}
+
+/**
+ * The instant to record when a planned meal on `param` is marked "Cooked it".
+ *
+ * A `yyyy-MM-dd` param names a calendar day, not a moment, so it must never be
+ * sent as-is to a timestamp field: `new Date("2026-08-09")` resolves to UTC
+ * midnight, which reads as hours *before* the cook in any western timezone —
+ * the journal showed "about 21 hours ago" for a cook logged just now.
+ *
+ * Cooking today records `now`, the truth the user expects. A backdated day
+ * records local noon, far enough from either midnight that the stored instant
+ * still renders on the intended calendar day wherever it is formatted. A future
+ * day (the planner lets you tick ahead) clamps to `now`, matching the
+ * server-side upper bound on cook dates.
+ */
+export function cookTimestampForParam(
+  param: string,
+  now: Date = new Date(),
+): Date {
+  const day = parseDateParam(param);
+  if (isSameDay(day, now)) return now;
+  const noon = setHours(startOfDay(day), 12);
+  return noon.getTime() > now.getTime() ? now : noon;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { deleteCookLogInput, logCookInput } from "./validation";
+import { toDateParam } from "~/server/planner/week";
 
 describe("logCookInput", () => {
   it("keeps a bare entry and defaults optionals to undefined", () => {
@@ -53,6 +54,36 @@ describe("logCookInput", () => {
     });
     expect(parsed.cookedAt).toBeInstanceOf(Date);
     expect(parsed.cookedAt?.toISOString()).toBe("2024-01-02T10:00:00.000Z");
+  });
+
+  it("anchors a bare yyyy-MM-dd cook date to local noon, not UTC midnight", () => {
+    const parsed = logCookInput.parse({
+      recipeId: "recipe_1",
+      recipeSlug: "sunday-sauce",
+      cookedAt: "2024-01-02",
+    });
+    expect(parsed.cookedAt).toBeInstanceOf(Date);
+    expect(parsed.cookedAt?.getFullYear()).toBe(2024);
+    expect(parsed.cookedAt?.getMonth()).toBe(0);
+    expect(parsed.cookedAt?.getDate()).toBe(2);
+    expect(parsed.cookedAt?.getHours()).toBe(12);
+  });
+
+  it("clamps today's bare date to now when it is still before noon", () => {
+    const before = Date.now();
+    const parsed = logCookInput.parse({
+      recipeId: "recipe_1",
+      recipeSlug: "sunday-sauce",
+      cookedAt: toDateParam(new Date()),
+    });
+    const cookedAt = parsed.cookedAt;
+    expect(cookedAt).toBeInstanceOf(Date);
+    expect(cookedAt!.getTime()).toBeLessThanOrEqual(Date.now());
+    const noonToday = new Date();
+    noonToday.setHours(12, 0, 0, 0);
+    expect(cookedAt!.getTime()).toBeGreaterThanOrEqual(
+      Math.min(before, noonToday.getTime()),
+    );
   });
 
   it("drops an unparseable cookedAt instead of throwing", () => {
