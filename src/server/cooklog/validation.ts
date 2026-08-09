@@ -50,17 +50,32 @@ const COOK_DATE_MIN_MS = Date.UTC(2000, 0, 1);
 export const COOK_DATE_OUT_OF_RANGE_MESSAGE =
   "Enter a cook date between 2000 and today";
 
+/** A bare calendar date with no time or zone, e.g. `2026-08-09`. */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Optional cook date. Accepts a Date or parseable string, else `undefined`.
  * Clamped to `[2000-01-01, now]` so a client can't store a cook dated in the
  * future (which would jump to the top of the journal) or absurdly far in the
  * past. `now` is read per-parse via `Date.now()`, not frozen at module load.
+ *
+ * A bare `yyyy-MM-dd` string names a calendar day, not an instant, and `new
+ * Date()` would resolve it to UTC midnight — which reads as hours before the
+ * cook itself in western timezones. Such values are anchored to noon instead,
+ * far enough from either midnight to render on the intended day everywhere.
+ * Callers that know the real moment should send a full ISO timestamp.
  */
 const optionalCookedAt = z
   .union([z.string(), z.date()])
   .optional()
   .transform((v) => {
     if (v == null || v === "") return undefined;
+    if (typeof v === "string" && DATE_ONLY_PATTERN.test(v.trim())) {
+      const noon = new Date(`${v.trim()}T12:00:00`);
+      if (Number.isNaN(noon.getTime())) return undefined;
+      // Today before noon would otherwise fail the "not in the future" bound.
+      return noon.getTime() > Date.now() ? new Date() : noon;
+    }
     const d = v instanceof Date ? v : new Date(v);
     return Number.isNaN(d.getTime()) ? undefined : d;
   })

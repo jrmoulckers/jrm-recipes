@@ -34,6 +34,7 @@ vi.mock("~/server/planner/actions", () => ({
 
 import { PlannerBoard, type BoardDay, type BoardEntry } from "./planner-board";
 import { formatLeftoversNote } from "~/lib/planner-batch";
+import { toDateParam } from "~/server/planner/week";
 
 /** Render inside the intl provider. PlannerBoard reads the locale via next-intl. */
 function render(ui: ReactElement) {
@@ -126,24 +127,41 @@ describe("PlannerBoard. Cooked it (#422)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("logs the cook dated to the entry's day and marks it cooked", async () => {
-    logCookAction.mockResolvedValue({ ok: true });
-    render(<PlannerBoard days={days} entries={[recipeEntry()]} recipes={[]} />);
+  it("logs the cook as a full instant on the entry's day, not a bare date", async () => {
+    // Pin the clock past the planned day so the helper's future-day clamp
+    // doesn't make this assertion depend on when the suite runs.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 6, 9, 13, 36, 44));
+    try {
+      logCookAction.mockResolvedValue({ ok: true });
+      render(
+        <PlannerBoard days={days} entries={[recipeEntry()]} recipes={[]} />,
+      );
 
-    fireEvent.click(screen.getByRole("button", { name: /cooked it/i }));
+      fireEvent.click(screen.getByRole("button", { name: /cooked it/i }));
 
-    await waitFor(() =>
-      expect(logCookAction).toHaveBeenCalledWith({
-        recipeId: "recipe-1",
-        recipeSlug: "chili",
-        cookedAt: "2026-07-06",
-      }),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("button", { name: /cooked it/i }),
-      ).not.toBeInTheDocument(),
-    );
+      await waitFor(() => expect(logCookAction).toHaveBeenCalled());
+      const input = logCookAction.mock.calls[0]![0] as {
+        recipeId: string;
+        recipeSlug: string;
+        cookedAt: string;
+      };
+      expect(input.recipeId).toBe("recipe-1");
+      expect(input.recipeSlug).toBe("chili");
+      // A bare "2026-07-06" would be read as UTC midnight, hours before the cook.
+      expect(input.cookedAt).not.toBe("2026-07-06");
+      const cookedAt = new Date(input.cookedAt);
+      expect(toDateParam(cookedAt)).toBe("2026-07-06");
+      expect(cookedAt.getHours()).toBe(12);
+
+      await waitFor(() =>
+        expect(
+          screen.queryByRole("button", { name: /cooked it/i }),
+        ).not.toBeInTheDocument(),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

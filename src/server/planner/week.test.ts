@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   DAYS_IN_WEEK,
   addDaysToParam,
+  cookTimestampForParam,
   formatDayName,
   formatDayNumber,
   formatFullDay,
@@ -53,6 +54,46 @@ describe("startOfPlannerWeek", () => {
     expect(startOfPlannerWeek(MON_JUL_6, "es").getDay()).toBe(1);
     expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "es"))).toBe("2026-07-06");
     expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "de"))).toBe("2026-07-06");
+  });
+});
+
+describe("cookTimestampForParam", () => {
+  it("records the exact moment when the planned day is today", () => {
+    const now = new Date(2026, 6, 9, 13, 36, 44);
+    expect(cookTimestampForParam(toDateParam(now), now).getTime()).toBe(
+      now.getTime(),
+    );
+  });
+
+  it("never resolves to UTC midnight of the planned day", () => {
+    // The bug: `new Date("2026-07-09")` is UTC midnight, which lands on the
+    // previous evening (and reads as "21 hours ago") west of Greenwich.
+    const now = new Date(2026, 6, 9, 13, 36, 44);
+    const stamp = cookTimestampForParam("2026-07-09", now);
+    expect(stamp.toISOString()).not.toBe("2026-07-09T00:00:00.000Z");
+    expect(now.getTime() - stamp.getTime()).toBeLessThan(60_000);
+  });
+
+  it("anchors a backdated day to local noon", () => {
+    const now = new Date(2026, 6, 9, 13, 36, 44);
+    const stamp = cookTimestampForParam("2026-07-06", now);
+    expect(toDateParam(stamp)).toBe("2026-07-06");
+    expect(stamp.getHours()).toBe(12);
+    expect(stamp.getMinutes()).toBe(0);
+  });
+
+  it("clamps a future planned day to now", () => {
+    const now = new Date(2026, 6, 9, 13, 36, 44);
+    expect(cookTimestampForParam("2026-07-11", now).getTime()).toBe(
+      now.getTime(),
+    );
+  });
+
+  it("clamps today's noon back to now when logged before midday", () => {
+    const now = new Date(2026, 6, 9, 8, 15, 0);
+    expect(cookTimestampForParam("2026-07-09", now).getTime()).toBe(
+      now.getTime(),
+    );
   });
 });
 

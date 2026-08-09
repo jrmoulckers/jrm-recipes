@@ -23,6 +23,7 @@ import {
 } from "~/server/planner/actions";
 import { logCookAction } from "~/server/cooklog/actions";
 import { MEAL_SLOTS, type MealSlotValue } from "~/server/planner/validation";
+import { cookTimestampForParam } from "~/server/planner/week";
 import { cn } from "~/lib/utils";
 import { parseLeftoversNote } from "~/lib/planner-batch";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
@@ -341,7 +342,7 @@ function EntryChip({
       const result = await logCookAction({
         recipeId: recipe.id,
         recipeSlug: recipe.slug,
-        cookedAt: entry.dateParam,
+        cookedAt: cookTimestampForParam(entry.dateParam).toISOString(),
         ...(entry.servingsMade != null
           ? { servingsMade: entry.servingsMade }
           : {}),
