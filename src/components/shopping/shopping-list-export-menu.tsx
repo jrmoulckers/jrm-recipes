@@ -37,11 +37,12 @@ import {
   visibleShoppingExportItems,
   type ShoppingExportCapabilities,
 } from "~/lib/shopping-export";
-import { describeQuantity, type ShoppingCategory } from "~/lib/shopping-list";
+import { describeQuantity } from "~/lib/shopping-list";
 import type {
   ShoppingListOption,
   ShoppingViewItem,
 } from "./shopping-list-view";
+import { useShoppingCategoryLabels } from "./shopping-localization";
 
 const NO_CAPABILITIES: ShoppingExportCapabilities = {
   clipboard: false,
@@ -66,6 +67,7 @@ export function ShoppingListExportMenu({
 }) {
   const locale = useLocale();
   const t = useTranslations("shopping");
+  const categoryLabels = useShoppingCategoryLabels();
   const [includeChecked, setIncludeChecked] = React.useState(false);
   const [busy, setBusy] = React.useState<"image" | "native" | null>(null);
   const [capabilities, setCapabilities] =
@@ -75,17 +77,6 @@ export function ShoppingListExportMenu({
     setCapabilities(detectShoppingExportCapabilities());
   }, []);
 
-  const categoryLabels: Record<ShoppingCategory, string> = {
-    Produce: t("export.categories.produce"),
-    Pantry: t("export.categories.pantry"),
-    "Dairy & Eggs": t("export.categories.dairy"),
-    "Meat & Seafood": t("export.categories.meat"),
-    Bakery: t("export.categories.bakery"),
-    "Spices & Seasonings": t("export.categories.spices"),
-    Frozen: t("export.categories.frozen"),
-    Beverages: t("export.categories.beverages"),
-    Other: t("export.categories.other"),
-  };
   const exportItems = items.map((item) => {
     if (
       item.packageCount == null ||
@@ -94,11 +85,14 @@ export function ShoppingListExportMenu({
     ) {
       return item;
     }
-    const purchaseQuantity = describeQuantity({
-      quantity: item.purchaseQuantity,
-      quantityMax: null,
-      unit: item.purchaseUnit,
-    });
+    const purchaseQuantity = describeQuantity(
+      {
+        quantity: item.purchaseQuantity,
+        quantityMax: null,
+        unit: item.purchaseUnit,
+      },
+      locale,
+    );
     const guidance = item.packageLabel
       ? t("package.guidance.withLabel", {
           count: item.packageCount,

@@ -1040,13 +1040,18 @@ export function aggregateShoppingList(
 /** Human-friendly quantity label for a line, e.g. "1½ cups" or "2–3 tbsp". */
 export function describeQuantity(
   item: Pick<AggregatedItem, "quantity" | "quantityMax" | "unit">,
+  locale?: string,
 ): string {
   if (item.quantity == null) return "";
   const number =
     item.quantityMax != null
-      ? `${formatQuantity(item.quantity, item.unit)}–${formatQuantity(item.quantityMax, item.unit)}`
-      : formatQuantity(item.quantity, item.unit);
-  const unit = displayUnit(item.unit, item.quantityMax ?? item.quantity);
+      ? `${formatQuantity(item.quantity, item.unit, locale)}–${formatQuantity(item.quantityMax, item.unit, locale)}`
+      : formatQuantity(item.quantity, item.unit, locale);
+  const unit = displayUnit(
+    item.unit,
+    item.quantityMax ?? item.quantity,
+    locale,
+  );
   return unit ? `${number} ${unit}` : number;
 }
 
@@ -1073,8 +1078,11 @@ export type FormatShoppingListOptions = {
   locale?: string;
 };
 
-export function formatShoppingListItemLine(item: ShoppingTextItem): string {
-  const amount = describeQuantity(item);
+export function formatShoppingListItemLine(
+  item: ShoppingTextItem,
+  locale?: string,
+): string {
+  const amount = describeQuantity(item, locale);
   const base = amount ? `${amount} ${item.item}` : item.item;
   return item.note ? `${base}, ${item.note}` : base;
 }
@@ -1122,7 +1130,7 @@ export function formatShoppingListText(
       .slice()
       .sort((a, b) => a.item.localeCompare(b.item, locale))) {
       lines.push(
-        `- [${item.checked ? "x" : " "}] ${formatShoppingListItemLine(item)}`,
+        `- [${item.checked ? "x" : " "}] ${formatShoppingListItemLine(item, locale)}`,
       );
     }
     lines.push("");

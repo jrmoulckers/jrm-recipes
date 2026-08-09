@@ -1544,6 +1544,7 @@
     },
     "lists": {
       "heading": "قوائم التسوق",
+      "generatedName": "قائمة التسوق",
       "current": "القائمة الحالية",
       "new": "قائمة جديدة",
       "manage": "إدارة",
@@ -1652,6 +1653,7 @@
       "itemLabel": "إضافة عنصر",
       "itemPlaceholder": "مثال: مناشف ورقية",
       "quantityLabel": "الكمية",
+      "quantityError": "أدخل كمية أكبر من صفر باستخدام رقم أو كسر صالح.",
       "unitLabel": "الوحدة",
       "add": "إضافة",
       "unitPlaceholder": "أكواب"

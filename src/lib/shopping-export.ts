@@ -248,7 +248,7 @@ export function buildShoppingListPrintHtml(
         <ul>${group.items
           .map(
             (item) =>
-              `<li${item.checked ? ' class="completed"' : ""}><span class="box" aria-hidden="true">${item.checked ? "✓" : ""}</span><span>${escapeHtml(formatShoppingListItemLine(item))}${item.checked ? ` <span class="status">(${escapeHtml(labels.completed)})</span>` : ""}</span></li>`,
+              `<li${item.checked ? ' class="completed"' : ""}><span class="box" aria-hidden="true">${item.checked ? "✓" : ""}</span><span>${escapeHtml(formatShoppingListItemLine(item, document.locale))}${item.checked ? ` <span class="status">(${escapeHtml(labels.completed)})</span>` : ""}</span></li>`,
           )
           .join("")}</ul>
       </section>`,
@@ -428,7 +428,7 @@ export async function renderShoppingListImage(
     for (const item of group.items) {
       const wrapped = wrapCanvasText(
         context,
-        formatShoppingListItemLine(item),
+        formatShoppingListItemLine(item, exportDocument.locale),
         textWidth,
       );
       wrapped.forEach((text, index) =>

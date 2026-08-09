@@ -1544,6 +1544,7 @@
     },
     "lists": {
       "heading": "Einkaufslisten",
+      "generatedName": "Einkaufsliste",
       "current": "Aktuelle Liste",
       "new": "Neue Liste",
       "manage": "Verwalten",
@@ -1652,6 +1653,7 @@
       "itemLabel": "Artikel hinzufügen",
       "itemPlaceholder": "z. B. Küchenpapier",
       "quantityLabel": "Menge",
+      "quantityError": "Gib eine Menge größer als null als gültige Zahl oder Bruchzahl ein.",
       "unitLabel": "Einheit",
       "add": "Hinzufügen",
       "unitPlaceholder": "Tassen"

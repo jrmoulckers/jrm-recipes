@@ -739,11 +739,32 @@ describe("parseAmount", () => {
     expect(parseAmount("1,5")).toBe(1.5);
   });
 
+  it.each([
+    ["en", "1.5"],
+    ["es", "1,5"],
+    ["de", "1,5"],
+    ["ar", "١٫٥"],
+  ])("parses decimal input for the %s locale", (locale, input) => {
+    expect(parseAmount(input, locale)).toBe(1.5);
+  });
+
+  it("distinguishes locale grouping from decimal separators", () => {
+    expect(parseAmount("1,500", "en")).toBe(1500);
+    expect(parseAmount("1.500", "de")).toBe(1500);
+    expect(parseAmount("1,5", "en")).toBe(1.5);
+    expect(parseAmount("1.5", "de")).toBe(1.5);
+  });
+
+  it("parses localized digits in fractions without changing their value", () => {
+    expect(parseAmount("١ ١/٢", "ar")).toBe(1.5);
+  });
+
   it("returns null for blank or unparseable input", () => {
     expect(parseAmount("")).toBeNull();
     expect(parseAmount("   ")).toBeNull();
     expect(parseAmount(null)).toBeNull();
     expect(parseAmount("abc")).toBeNull();
     expect(parseAmount("1/0")).toBeNull();
+    expect(parseAmount("1,2,3", "es")).toBeNull();
   });
 });

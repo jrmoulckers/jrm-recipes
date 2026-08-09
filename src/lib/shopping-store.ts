@@ -60,6 +60,8 @@ export type LocalShoppingItem = {
 export type LocalShoppingList = {
   id: string;
   name: string;
+  /** Product-generated names are localized only when rendered, never persisted. */
+  generatedName?: boolean;
   storeName: string | null;
   isDefault: boolean;
   archived: boolean;
@@ -168,7 +170,18 @@ type ShoppingStore = {
   remove: (listId: string, id: string) => void;
 };
 
-const LOCAL_DEFAULT_LIST_ID = "local-default";
+export const LOCAL_DEFAULT_LIST_ID = "local-default";
+export const LOCAL_DEFAULT_LIST_NAME = "Shopping list";
+
+export function displayLocalShoppingListName(
+  list: Pick<LocalShoppingList, "id" | "name" | "generatedName">,
+  generatedName: string,
+): string {
+  return list.generatedName === true ||
+    (list.id === LOCAL_DEFAULT_LIST_ID && list.name === LOCAL_DEFAULT_LIST_NAME)
+    ? generatedName
+    : list.name;
+}
 
 function uid(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -180,7 +193,8 @@ function uid(): string {
 function defaultList(items: LocalShoppingItem[] = []): LocalShoppingList {
   return {
     id: LOCAL_DEFAULT_LIST_ID,
-    name: "Shopping list",
+    name: LOCAL_DEFAULT_LIST_NAME,
+    generatedName: true,
     storeName: null,
     isDefault: true,
     archived: false,
@@ -952,6 +966,7 @@ export const useShoppingStore = create<ShoppingStore>()(
               ? {
                   ...list,
                   name: name.trim(),
+                  generatedName: false,
                   storeName: optionalStoreName(storeName),
                 }
               : list,
