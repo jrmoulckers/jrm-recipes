@@ -148,18 +148,21 @@ const DEMO_USERS = [
     id: "seed_usr_gran",
     name: "Gran (Lucia)",
     handle: "gran-lucia",
+    slug: "gran-lucia",
     email: "lucia@heirloom.local",
   },
   {
     id: "seed_usr_rosa",
     name: "Aunt Rosa",
     handle: "aunt-rosa",
+    slug: "aunt-rosa",
     email: "rosa@heirloom.local",
   },
   {
     id: "seed_usr_mateo",
     name: "Cousin Mateo",
     handle: "cousin-mateo",
+    slug: "cousin-mateo",
     email: "mateo@heirloom.local",
   },
 ] as const;
@@ -410,6 +413,7 @@ async function resolveOwner(tx: Tx): Promise<User> {
         email: DEV_USER.email,
         name: DEV_USER.name,
         handle: DEV_USER.handle,
+        slug: DEV_USER.slug,
       })
       .onConflictDoUpdate({
         target: users.id,
@@ -440,12 +444,14 @@ async function resolveOwner(tx: Tx): Promise<User> {
     return byId;
   }
 
+  const ownerId = createId();
   const [created] = await tx
     .insert(users)
     .values({
-      id: createId(),
+      id: ownerId,
       clerkId: ownerEnv,
       name: "Heirloom Cook",
+      slug: `cook-${ownerId.slice(0, 8)}`,
     })
     .returning();
   console.log(
@@ -483,7 +489,13 @@ async function ensureDemoUsers(tx: Tx): Promise<void> {
   for (const u of DEMO_USERS) {
     await tx
       .insert(users)
-      .values({ id: u.id, name: u.name, handle: u.handle, email: u.email })
+      .values({
+        id: u.id,
+        name: u.name,
+        handle: u.handle,
+        slug: u.slug,
+        email: u.email,
+      })
       .onConflictDoUpdate({
         target: users.id,
         set: { name: u.name, handle: u.handle, email: u.email },

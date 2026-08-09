@@ -55,6 +55,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     email: "cook@example.com",
     name: "Test Cook",
     handle: "test-cook",
+    slug: "test-cook",
     avatarUrl: null,
     weeklyDigestOptIn: false,
     publicActivityOptIn: false,

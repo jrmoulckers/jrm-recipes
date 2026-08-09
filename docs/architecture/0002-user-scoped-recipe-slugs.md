@@ -1,0 +1,101 @@
+# ADR 0002: User-Scoped Recipe Slugs
+
+- **Status:** Accepted
+- **Date:** 2026-08-09
+- **Issue:** [#666](https://github.com/jrmoulckers/jrm-recipes/issues/666)
+
+## Context
+
+Recipe URLs were `/recipes/<slug>` with a globally unique slug enforced by `recipes_slug_uq`. Two
+problems followed from that single global namespace.
+
+Only one account in the entire product could hold a given slug. The second person to save a recipe
+called "Blueberry Muffins" received a perturbed slug such as `blueberry-muffins-2k9x`, which is
+neither memorable nor shareable, and the collision rate grows with the user base.
+
+Slugs were also immutable. `applyRecipeInput` deliberately returned the existing slug, so renaming a
+recipe left a URL that no longer described its contents. That immutability was itself a workaround:
+because the slug was the only public lookup key, changing it would have killed every link anyone had
+ever shared.
+
+## Decision
+
+Recipe URLs become `/recipes/<userSlug>/<recipeSlug>`. Uniqueness moves from a global constraint to
+`unique(author_id, slug)`, so each user gets an independent namespace and two cooks can both hold
+`blueberry-muffins`. Renaming a recipe now regenerates its slug, and every retired slug is retained
+so old links keep working.
+
+### The namespace key is a new app-owned `users.slug`
+
+`users.handle` mirrors Clerk's `username`: it is nullable, is overwritten on every `user.updated`
+webhook, and is nulled on account deletion. A value the identity provider can change or remove
+underneath us cannot be the first segment of every canonical URL.
+
+`users.slug` is therefore introduced as `NOT NULL`, unique, and owned by the application. It is
+backfilled from `handle`, else a slugified `name`, else an opaque `cook-<id>`. It remains
+user-changeable, because a public namespace people are asked to share should be theirs to choose.
+
+The existing `/cooks/[handle]` profile route continues to resolve by `handle` for now. Unifying the
+two namespaces is deliberately deferred rather than bundled into a URL migration.
+
+### Old links are retained forever
+
+Two alias tables record history: `user_slug_aliases` for renamed user slugs and `recipe_slug_aliases`
+for renamed recipe slugs. Both are seeded so that no URL that worked before the migration stops
+working after it — in particular, `recipe_slug_aliases` is backfilled with every recipe's current
+global slug, and the flat `/recipes/<slug>` form keeps resolving via a 308 redirect indefinitely.
+
+### Aliases count as occupied
+
+Slug allocation refuses any candidate held by a live row **or** by an alias in the same namespace.
+The alternative — letting a released slug be re-claimed and having the live slug win — means an old
+link silently starts resolving to a different recipe, possibly one belonging to someone else. Treating
+aliases as occupied costs a slightly higher perturbation rate and buys the guarantee that a URL
+always refers to the thing it originally referred to.
+
+### Redirects are issued only after an access check
+
+An alias lookup happens before authorization, but the redirect is emitted only once the viewer has
+passed the same `canView` check the canonical route applies. An unauthorized viewer receives the
+existing `notFound()`. Without this ordering, a redirect would confirm that a recipe exists and leak
+its current owner and title to someone who has lost access to it.
+
+### Account deletion rotates the namespace
+
+`applyClerkUserDeletion` anonymizes personal data. A user-chosen public slug is personal data, so
+deletion rotates `users.slug` to an opaque `cook-<random>` and drops that user's retained aliases.
+This is the one place where link retention loses: keeping the old namespace resolving would defeat the
+deletion request. Recipes remain reachable under the rotated namespace, so nothing that a viewer
+could still legitimately see disappears.
+
+## Consequences
+
+Reserved slugs move up a level. `new`, `tags`, and `cook-with` are static siblings under `/recipes/*`,
+so they now constrain **user** slugs rather than recipe slugs. Because `edit`, `cook`, `print`, and
+`keepsake` move to the third path segment, they stop shadowing recipe slugs entirely.
+
+The App Router tree must be restructured. Next.js forbids two different dynamic segment names at the
+same position, and `/recipes/[id]/edit` already occupied depth 2, so `[id]` is renamed and re-nested
+to `[cook]/[recipe]` in both the `(main)` and `(immersive)` route groups, which must agree on segment
+names.
+
+Cache revalidation must fan out. Mutations previously revalidated a single path built from
+`recipeDetailPath()`. A recipe now answers on its canonical path plus its legacy flat path plus any
+alias paths, and every one of them must be revalidated or an edit will leave a stale page served.
+
+Unlisted recipes are unaffected. `/r/<shareToken>` resolves through `getRecipeByShareToken` and never
+depended on the slug, so the confidentiality boundary for unlisted recipes is unchanged.
+
+## Alternatives considered
+
+**Keep the global namespace and simply allow duplicates with longer suffixes.** Rejected: it does not
+give users a namespace they control, and the suffixes get uglier as the product grows.
+
+**Use Clerk's `handle` as the namespace.** Rejected for the nullability and external-mutability
+reasons above.
+
+**Expire aliases after a fixed window.** Rejected: the product's premise is that these recipes are
+heirlooms shared within families over years. A link in a fifteen-year-old email should still work.
+
+**Let a new recipe reclaim a freed slug, with the live slug winning over the alias.** Rejected on
+security grounds: it silently redirects historical links to unrelated content.
