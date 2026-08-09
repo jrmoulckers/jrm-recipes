@@ -4,7 +4,10 @@ import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
-import { getShoppingWorkspace } from "~/server/shopping/queries";
+import {
+  getShoppingListHistory,
+  getShoppingWorkspace,
+} from "~/server/shopping/queries";
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { detectAllergensForSafety, isAllergen } from "~/lib/allergens";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
@@ -14,6 +17,7 @@ import { DbShoppingList } from "~/components/shopping/db-shopping-list";
 import { LocalShoppingList } from "~/components/shopping/local-shopping-list";
 import { type ShoppingViewItem } from "~/components/shopping/shopping-list-view";
 import { type ShoppingListSummary } from "~/components/shopping/shopping-list-navigation";
+import { type ShoppingHistoryEntry } from "~/components/shopping/shopping-history";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -34,6 +38,10 @@ export default async function ShoppingPage({
     getShoppingWorkspace(user, selectedListId),
     user ? listMemberProfiles(user.id) : Promise.resolve([]),
   ]);
+  const history =
+    user && workspace?.selectedListId
+      ? ((await getShoppingListHistory(user, workspace.selectedListId)) ?? [])
+      : [];
 
   const items: ShoppingViewItem[] = (workspace?.selectedList?.items ?? []).map(
     (row) => {
@@ -67,6 +75,23 @@ export default async function ShoppingPage({
     archived: list.archivedAt != null,
     itemCount: list.items.length,
   }));
+  const historyEntries: ShoppingHistoryEntry[] = history.map((point) => ({
+    id: point.id,
+    operation: point.operation,
+    createdAt: point.createdAt,
+    restorePoints: point.restorePoints,
+    items: point.items.map((item) => ({
+      id: item.id,
+      item: item.item,
+      quantity: item.quantity,
+      quantityMax: item.quantityMax,
+      unit: item.unit,
+      note: item.note,
+      category: (item.category as ShoppingCategory | null) ?? "Other",
+      optional: item.optional,
+      checked: item.checked,
+    })),
+  }));
 
   const members: ActiveMemberOption[] = profiles.map((m) => ({
     id: m.id,
@@ -94,6 +119,7 @@ export default async function ShoppingPage({
           lists={lists}
           selectedListId={workspace?.selectedListId ?? ""}
           defaultListId={workspace?.defaultListId ?? ""}
+          historyEntries={historyEntries}
           members={members}
         />
       ) : (

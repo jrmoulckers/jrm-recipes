@@ -12,6 +12,7 @@ import {
   addManualItem,
   addRecipeToList,
   archiveShoppingList,
+  bulkMoveShoppingItems,
   buildListFromPlan,
   clearChecked,
   clearList,
@@ -22,11 +23,21 @@ import {
   removeItem,
   renameShoppingList,
   restoreShoppingList,
+  restoreShoppingListPoint,
+  restoreShoppingListPoints,
   setItemCategory,
   setItemChecked,
+  uncheckAll,
+  type BulkMoveUndoToken,
+  type RestorePointReference,
 } from "./mutations";
 import {
+  getShoppingListHistory,
+  type ShoppingListHistoryPoint,
+} from "./queries";
+import {
   addRecipeToListInput,
+  bulkMoveShoppingItemsInput,
   buildFromPlanInput,
   createShoppingListInput,
   itemIdInput,
@@ -34,15 +45,20 @@ import {
   manualItemInput,
   moveShoppingItemInput,
   renameShoppingListInput,
+  restoreShoppingListPointInput,
+  restoreShoppingListPointsInput,
   setItemCategoryInput,
   setItemCheckedInput,
   type AddRecipeToListInput,
   type BuildFromPlanInput,
+  type BulkMoveShoppingItemsInput,
   type CreateShoppingListInput,
   type ListIdInput,
   type ManualItemInput,
   type MoveShoppingItemInput,
   type RenameShoppingListInput,
+  type RestoreShoppingListPointInput,
+  type RestoreShoppingListPointsInput,
 } from "./validation";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
@@ -50,6 +66,8 @@ import {
   parseDateParam,
   toDateParam,
 } from "~/server/planner/week";
+
+export type { BulkMoveUndoToken, RestorePointReference };
 
 export type ActionResult =
   | { ok: true }
@@ -63,6 +81,24 @@ export type UnavailableShoppingListActionResult =
   { ok: true; fallbackListId: string } | ActionFailure;
 export type RestoreShoppingListActionResult =
   { ok: true; listId: string } | ActionFailure;
+export type RestorePointActionResult =
+  { ok: true; restorePointId: string } | ActionFailure;
+export type BulkMoveShoppingItemsActionResult =
+  | {
+      ok: true;
+      restorePoints: RestorePointReference[];
+      undoToken: BulkMoveUndoToken | null;
+    }
+  | ActionFailure;
+export type RestoreShoppingListPointsActionResult =
+  | {
+      ok: true;
+      restorePoints: RestorePointReference[];
+      undoToken: BulkMoveUndoToken;
+    }
+  | ActionFailure;
+export type ShoppingListHistoryActionResult =
+  { ok: true; history: ShoppingListHistoryPoint[] } | ActionFailure;
 
 const NO_DB =
   "Set DATABASE_URL (see .env.example) to sync your shopping list across devices. Until then it lives in this browser.";
@@ -122,6 +158,7 @@ export type BuildFromPlanActionResult =
       merged: number;
       empty: boolean;
       warnings: PlanSafetyWarning[];
+      restorePoints: RestorePointReference[];
     }
   | { ok: false; error: string };
 
@@ -242,7 +279,7 @@ export async function removeShoppingItemAction(
 
 export async function clearCheckedItemsAction(
   input: ListIdInput,
-): Promise<ActionResult> {
+): Promise<RestorePointActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
   const parsed = listIdInput.safeParse(input);
   if (!parsed.success) {
@@ -250,15 +287,33 @@ export async function clearCheckedItemsAction(
   }
   const user = await requireUser();
   try {
-    await clearChecked(user, parsed.data.listId);
+    const result = await clearChecked(user, parsed.data.listId);
     revalidatePath("/shopping");
-    return { ok: true };
+    return { ok: true, restorePointId: result.restorePointId };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }
 }
 
 export async function clearShoppingListAction(
+  input: ListIdInput,
+): Promise<RestorePointActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = listIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
+  const user = await requireUser();
+  try {
+    const result = await clearList(user, parsed.data.listId);
+    revalidatePath("/shopping");
+    return { ok: true, restorePointId: result.restorePointId };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function uncheckAllShoppingItemsAction(
   input: ListIdInput,
 ): Promise<ActionResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
@@ -268,7 +323,7 @@ export async function clearShoppingListAction(
   }
   const user = await requireUser();
   try {
-    await clearList(user, parsed.data.listId);
+    await uncheckAll(user, parsed.data.listId);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {
@@ -396,6 +451,97 @@ export async function moveShoppingItemAction(
     await moveShoppingItem(user, parsed.data);
     revalidatePath("/shopping");
     return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function bulkMoveShoppingItemsAction(
+  input: BulkMoveShoppingItemsInput,
+): Promise<BulkMoveShoppingItemsActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = bulkMoveShoppingItemsInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    const result = await bulkMoveShoppingItems(user, parsed.data);
+    revalidatePath("/shopping");
+    return {
+      ok: true,
+      restorePoints: result.restorePoints,
+      undoToken: result.undoToken,
+    };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function restoreShoppingListPointsAction(
+  input: RestoreShoppingListPointsInput,
+): Promise<RestoreShoppingListPointsActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = restoreShoppingListPointsInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    const result = await restoreShoppingListPoints(user, parsed.data);
+    revalidatePath("/shopping");
+    return {
+      ok: true,
+      restorePoints: result.restorePoints,
+      undoToken: result.undoToken,
+    };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function restoreShoppingListPointAction(
+  input: RestoreShoppingListPointInput,
+): Promise<RestorePointActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = restoreShoppingListPointInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
+  const user = await requireUser();
+  try {
+    const result = await restoreShoppingListPoint(
+      user,
+      parsed.data.listId,
+      parsed.data.restorePointId,
+    );
+    revalidatePath("/shopping");
+    return { ok: true, restorePointId: result.restorePointId };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function getShoppingListHistoryAction(
+  input: ListIdInput,
+): Promise<ShoppingListHistoryActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = listIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
+  const user = await requireUser();
+  try {
+    const history = await getShoppingListHistory(user, parsed.data.listId);
+    return { ok: true, history: history ?? [] };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

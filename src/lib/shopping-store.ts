@@ -51,6 +51,20 @@ export type LocalShoppingRoute = ShoppingIngredientRoute & {
   displayItem: string;
 };
 
+export const SHOPPING_HISTORY_LIMIT = 20;
+
+export type ShoppingHistoryOperation =
+  "remove-completed" | "clear-all" | "bulk-move" | "list-rebuild" | "restore";
+
+export type LocalShoppingRestorePoint = {
+  id: string;
+  listId: string;
+  operation: ShoppingHistoryOperation;
+  operationGroupId: string | null;
+  createdAt: number;
+  items: LocalShoppingItem[];
+};
+
 export type ManualEntry = {
   item: string;
   foodId?: string | null;
@@ -65,6 +79,7 @@ type ShoppingStore = {
   defaultListId: string;
   currentListId: string;
   routes: LocalShoppingRoute[];
+  restorePoints: LocalShoppingRestorePoint[];
   addRecipe: (recipe: ShoppingRecipeInput) => void;
   addManual: (listId: string, entry: ManualEntry) => void;
   createList: (name: string, storeName?: string | null) => string;
@@ -83,8 +98,25 @@ type ShoppingStore = {
   setChecked: (id: string, checked: boolean) => void;
   setCategory: (id: string, category: ShoppingCategory) => void;
   remove: (id: string) => void;
-  clearChecked: (listId: string) => void;
-  clearAll: (listId: string) => void;
+  removeCompleted: (listId: string) => string | null;
+  uncheckAll: (listId: string) => void;
+  clearAll: (listId: string) => string | null;
+  bulkMoveItems: (
+    sourceListId: string,
+    itemIds: string[],
+    targetListId: string,
+  ) => {
+    sourceRestorePointId: string;
+    targetRestorePointId: string;
+  } | null;
+  replaceListItems: (
+    listId: string,
+    items: LocalShoppingItem[],
+  ) => string | null;
+  restoreFromHistory: (listId: string, restorePointId: string) => string | null;
+  restoreMultipleFromHistory: (
+    restores: { listId: string; restorePointId: string }[],
+  ) => { listId: string; restorePointId: string }[] | null;
 };
 
 const LOCAL_DEFAULT_LIST_ID = "local-default";
@@ -155,6 +187,66 @@ function activeLists(lists: LocalShoppingList[]) {
 function optionalStoreName(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed?.length ? trimmed : null;
+}
+
+function cloneItems(items: readonly LocalShoppingItem[]): LocalShoppingItem[] {
+  return items.map((item) => ({ ...item }));
+}
+
+function createRestorePoint(
+  list: LocalShoppingList,
+  operation: ShoppingHistoryOperation,
+  existing: readonly LocalShoppingRestorePoint[],
+  operationGroupId: string | null = null,
+): LocalShoppingRestorePoint {
+  const newestForList = existing.reduce(
+    (newest, point) =>
+      point.listId === list.id ? Math.max(newest, point.createdAt) : newest,
+    0,
+  );
+  return {
+    id: uid(),
+    listId: list.id,
+    operation,
+    operationGroupId,
+    createdAt: Math.max(Date.now(), newestForList + 1),
+    items: cloneItems(list.items),
+  };
+}
+
+/**
+ * Keep the newest 20 points for each list. Timestamp ties are resolved by the
+ * stable restore-point id so persisted migrations and pruning stay deterministic.
+ */
+function boundedRestorePoints(
+  restorePoints: readonly LocalShoppingRestorePoint[],
+): LocalShoppingRestorePoint[] {
+  const ordered = [...restorePoints].sort(
+    (a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id),
+  );
+  const counts = new Map<string, number>();
+  const retained: LocalShoppingRestorePoint[] = [];
+  const prunedGroupIds = new Set<string>();
+  for (const point of ordered) {
+    const count = counts.get(point.listId) ?? 0;
+    if (count >= SHOPPING_HISTORY_LIMIT) {
+      if (point.operationGroupId) prunedGroupIds.add(point.operationGroupId);
+      continue;
+    }
+    counts.set(point.listId, count + 1);
+    retained.push(point);
+  }
+  return retained.filter(
+    (point) =>
+      !point.operationGroupId || !prunedGroupIds.has(point.operationGroupId),
+  );
+}
+
+function addRestorePoints(
+  existing: readonly LocalShoppingRestorePoint[],
+  ...points: LocalShoppingRestorePoint[]
+) {
+  return boundedRestorePoints([...points, ...existing]);
 }
 
 function normalizedAlternatives(
@@ -247,7 +339,10 @@ function ensureActiveFallback(
 }
 
 type PersistedShoppingState = Partial<
-  Pick<ShoppingStore, "lists" | "defaultListId" | "currentListId" | "routes">
+  Pick<
+    ShoppingStore,
+    "lists" | "defaultListId" | "currentListId" | "routes" | "restorePoints"
+  >
 > & {
   items?: LocalShoppingItem[];
 };
@@ -278,6 +373,30 @@ function isPersistedRoute(value: unknown): value is LocalShoppingRoute {
   );
 }
 
+function isPersistedRestorePoint(
+  value: unknown,
+): value is LocalShoppingRestorePoint {
+  if (!value || typeof value !== "object") return false;
+  const point = value as Partial<LocalShoppingRestorePoint>;
+  return (
+    typeof point.id === "string" &&
+    typeof point.listId === "string" &&
+    typeof point.operation === "string" &&
+    [
+      "remove-completed",
+      "clear-all",
+      "bulk-move",
+      "list-rebuild",
+      "restore",
+    ].includes(point.operation) &&
+    (point.operationGroupId == null ||
+      typeof point.operationGroupId === "string") &&
+    typeof point.createdAt === "number" &&
+    Number.isFinite(point.createdAt) &&
+    Array.isArray(point.items)
+  );
+}
+
 export function migrateShoppingState(
   persisted: unknown,
   version: number,
@@ -293,7 +412,11 @@ export function migrateShoppingState(
       defaultListId: LOCAL_DEFAULT_LIST_ID,
       currentListId: LOCAL_DEFAULT_LIST_ID,
       routes: [],
+      restorePoints: [],
     };
+  }
+  if (version < 2) {
+    return { ...saved, restorePoints: [] };
   }
   return saved;
 }
@@ -349,12 +472,26 @@ function mergeShoppingState(
       ),
     };
   });
+  const listIds = new Set(normalizedLists.map((list) => list.id));
+  const restorePoints = boundedRestorePoints(
+    (Array.isArray(saved.restorePoints)
+      ? saved.restorePoints.filter(isPersistedRestorePoint)
+      : []
+    ).filter((point) => listIds.has(point.listId)),
+  ).map((point) => ({
+    ...point,
+    operationGroupId:
+      typeof point.operationGroupId === "string"
+        ? point.operationGroupId
+        : null,
+  }));
   return {
     ...current,
     lists: normalizedLists,
     defaultListId: selectedDefault.id,
     currentListId,
     routes,
+    restorePoints,
   };
 }
 
@@ -365,6 +502,7 @@ export const useShoppingStore = create<ShoppingStore>()(
       defaultListId: LOCAL_DEFAULT_LIST_ID,
       currentListId: LOCAL_DEFAULT_LIST_ID,
       routes: [],
+      restorePoints: [],
       addRecipe: (recipe) =>
         set((state) => {
           const active = activeLists(state.lists);
@@ -521,6 +659,9 @@ export const useShoppingStore = create<ShoppingStore>()(
                 ? ensured.fallbackListId
                 : state.currentListId,
             routes: promoteRoutes(state.routes, id, fallbackListId, lists),
+            restorePoints: state.restorePoints.filter(
+              (point) => point.listId !== id,
+            ),
           };
         }),
       moveItem: (
@@ -595,27 +736,241 @@ export const useShoppingStore = create<ShoppingStore>()(
             items: list.items.filter((item) => item.id !== id),
           })),
         })),
-      clearChecked: (listId) =>
+      removeCompleted: (listId) => {
+        let restorePointId: string | null = null;
+        set((state) => {
+          const target = state.lists.find((list) => list.id === listId);
+          if (!target?.items.some((item) => item.checked)) return state;
+          const point = createRestorePoint(
+            target,
+            "remove-completed",
+            state.restorePoints,
+          );
+          restorePointId = point.id;
+          return {
+            lists: state.lists.map((list) =>
+              list.id === listId
+                ? {
+                    ...list,
+                    items: list.items.filter((item) => !item.checked),
+                  }
+                : list,
+            ),
+            restorePoints: addRestorePoints(state.restorePoints, point),
+          };
+        });
+        return restorePointId;
+      },
+      uncheckAll: (listId) =>
         set((state) => ({
           lists: state.lists.map((list) =>
             list.id === listId
               ? {
                   ...list,
-                  items: list.items.filter((item) => !item.checked),
+                  items: list.items.map((item) => ({
+                    ...item,
+                    checked: false,
+                  })),
                 }
               : list,
           ),
         })),
-      clearAll: (listId) =>
-        set((state) => ({
-          lists: state.lists.map((list) =>
-            list.id === listId ? { ...list, items: [] } : list,
-          ),
-        })),
+      clearAll: (listId) => {
+        let restorePointId: string | null = null;
+        set((state) => {
+          const target = state.lists.find((list) => list.id === listId);
+          if (!target || target.items.length === 0) return state;
+          const point = createRestorePoint(
+            target,
+            "clear-all",
+            state.restorePoints,
+          );
+          restorePointId = point.id;
+          return {
+            lists: state.lists.map((list) =>
+              list.id === listId ? { ...list, items: [] } : list,
+            ),
+            restorePoints: addRestorePoints(state.restorePoints, point),
+          };
+        });
+        return restorePointId;
+      },
+      bulkMoveItems: (sourceListId, itemIds, targetListId) => {
+        let result: {
+          sourceRestorePointId: string;
+          targetRestorePointId: string;
+        } | null = null;
+        set((state) => {
+          const source = state.lists.find(
+            (list) => list.id === sourceListId && !list.archived,
+          );
+          const target = state.lists.find(
+            (list) => list.id === targetListId && !list.archived,
+          );
+          const selected = new Set(itemIds);
+          const moving = source?.items.filter((item) => selected.has(item.id));
+          if (
+            !source ||
+            !target ||
+            source.id === target.id ||
+            !moving?.length
+          ) {
+            return state;
+          }
+          const operationGroupId = uid();
+          const sourcePoint = createRestorePoint(
+            source,
+            "bulk-move",
+            state.restorePoints,
+            operationGroupId,
+          );
+          const targetPoint = createRestorePoint(
+            target,
+            "bulk-move",
+            state.restorePoints,
+            operationGroupId,
+          );
+          result = {
+            sourceRestorePointId: sourcePoint.id,
+            targetRestorePointId: targetPoint.id,
+          };
+          return {
+            lists: state.lists.map((list) => {
+              if (list.id === source.id) {
+                return {
+                  ...list,
+                  items: list.items.filter((item) => !selected.has(item.id)),
+                };
+              }
+              if (list.id === target.id) {
+                return {
+                  ...list,
+                  items: moving.reduce(
+                    (items, item) =>
+                      item.checked || (item.note ?? "").length > 0
+                        ? [...items, item]
+                        : consolidate(items, [item]),
+                    list.items,
+                  ),
+                };
+              }
+              return list;
+            }),
+            restorePoints: addRestorePoints(
+              state.restorePoints,
+              sourcePoint,
+              targetPoint,
+            ),
+          };
+        });
+        return result;
+      },
+      replaceListItems: (listId, items) => {
+        let restorePointId: string | null = null;
+        set((state) => {
+          const target = state.lists.find(
+            (list) => list.id === listId && !list.archived,
+          );
+          if (!target) return state;
+          const point = createRestorePoint(
+            target,
+            "list-rebuild",
+            state.restorePoints,
+          );
+          restorePointId = point.id;
+          return {
+            lists: state.lists.map((list) =>
+              list.id === listId ? { ...list, items: cloneItems(items) } : list,
+            ),
+            restorePoints: addRestorePoints(state.restorePoints, point),
+          };
+        });
+        return restorePointId;
+      },
+      restoreFromHistory: (listId, restorePointId) => {
+        let undoPointId: string | null = null;
+        set((state) => {
+          const target = state.lists.find(
+            (list) => list.id === listId && !list.archived,
+          );
+          const selected = state.restorePoints.find(
+            (point) => point.id === restorePointId && point.listId === listId,
+          );
+          if (!target || !selected) return state;
+          const current = createRestorePoint(
+            target,
+            "restore",
+            state.restorePoints,
+          );
+          undoPointId = current.id;
+          return {
+            lists: state.lists.map((list) =>
+              list.id === listId
+                ? { ...list, items: cloneItems(selected.items) }
+                : list,
+            ),
+            restorePoints: addRestorePoints(state.restorePoints, current),
+          };
+        });
+        return undoPointId;
+      },
+      restoreMultipleFromHistory: (restores) => {
+        let undoPoints: { listId: string; restorePointId: string }[] | null =
+          null;
+        set((state) => {
+          const listIds = restores.map((restore) => restore.listId);
+          if (new Set(listIds).size !== listIds.length) return state;
+          const resolved = restores.map((restore) => {
+            const list = state.lists.find(
+              (candidate) =>
+                candidate.id === restore.listId && !candidate.archived,
+            );
+            const point = state.restorePoints.find(
+              (candidate) =>
+                candidate.id === restore.restorePointId &&
+                candidate.listId === restore.listId,
+            );
+            return list && point ? { list, point } : null;
+          });
+          if (resolved.some((entry) => entry == null)) return state;
+          const entries = resolved.filter(
+            (
+              entry,
+            ): entry is {
+              list: LocalShoppingList;
+              point: LocalShoppingRestorePoint;
+            } => entry != null,
+          );
+          const operationGroupId = uid();
+          const current = entries.map(({ list }) =>
+            createRestorePoint(
+              list,
+              "restore",
+              state.restorePoints,
+              operationGroupId,
+            ),
+          );
+          undoPoints = current.map((point) => ({
+            listId: point.listId,
+            restorePointId: point.id,
+          }));
+          const snapshots = new Map(
+            entries.map(({ list, point }) => [list.id, point.items]),
+          );
+          return {
+            lists: state.lists.map((list) => {
+              const items = snapshots.get(list.id);
+              return items ? { ...list, items: cloneItems(items) } : list;
+            }),
+            restorePoints: addRestorePoints(state.restorePoints, ...current),
+          };
+        });
+        return undoPoints;
+      },
     }),
     {
       name: "heirloom-shopping-list",
-      version: 1,
+      version: 2,
       migrate: migrateShoppingState,
       merge: mergeShoppingState,
       partialize: (state) => ({
@@ -623,6 +978,7 @@ export const useShoppingStore = create<ShoppingStore>()(
         defaultListId: state.defaultListId,
         currentListId: state.currentListId,
         routes: state.routes,
+        restorePoints: state.restorePoints,
       }),
     },
   ),

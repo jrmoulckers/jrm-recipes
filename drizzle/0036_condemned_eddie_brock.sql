@@ -1,0 +1,2 @@
+-- Metadata-only alignment. Migration 0035 creates this constraint with the
+-- final literal expression, so no follow-up DDL is required.

@@ -1472,7 +1472,9 @@
       "nothingToSend": "Nichts zu senden. Alles ist abgehakt.",
       "listCopied": "Liste kopiert. Füge sie in eine Nachricht ein",
       "shareFailed": "Wir konnten die Liste nicht teilen.",
-      "cleared": "Einkaufsliste gelöscht"
+      "cleared": "Einkaufsliste geleert.",
+      "removedCompleted": "Erledigte Artikel entfernt.",
+      "uncheckedAll": "Alle Artikel sind wieder offen."
     },
     "share": {
       "title": "🛒 Einkaufsliste",
@@ -1602,6 +1604,17 @@
       "toasts": {
         "moved": "{item} wurde nach {list} verschoben.",
         "routeSaved": "Zuordnung gespeichert. {item} wird künftig {list} zugeordnet."
+      },
+      "bulk": {
+        "trigger": "Offene verschieben",
+        "title": "{count, plural, one {# offenen Artikel verschieben} other {# offene Artikel verschieben}}",
+        "description": "Verschiebe alle nicht abgehakten Artikel dieser Liste in eine andere Einkaufsliste.",
+        "destination": "Zielliste",
+        "cancel": "Abbrechen",
+        "confirm": "{count, plural, one {# Artikel verschieben} other {# Artikel verschieben}}",
+        "toasts": {
+          "moved": "{count, plural, one {# Artikel nach {list} verschoben.} other {# Artikel nach {list} verschoben.}}"
+        }
       }
     },
     "manual": {
@@ -1621,8 +1634,34 @@
       "inCart": "{count, plural, one {# im Einkaufswagen} other {# im Einkaufswagen}}"
     },
     "actions": {
-      "clearChecked": "Abgehakte löschen",
+      "removeCompleted": "Erledigte entfernen",
+      "uncheckAll": "Alle Haken entfernen",
       "clearAll": "Alles löschen"
+    },
+    "history": {
+      "title": "Letzte Änderungen",
+      "count": "{count, plural, one {# gespeicherter Stand} other {# gespeicherte Stände}}",
+      "retention": "Pro Liste werden bis zu 20 Änderungen gespeichert. Die ältesten werden automatisch entfernt.",
+      "empty": "Massenänderungen und Löschaktionen erscheinen hier.",
+      "items": "{count, plural, one {# Artikel} other {# Artikel}}",
+      "preview": "Vorschau des Stands",
+      "emptySnapshot": "Dieser gespeicherte Stand enthält keine Artikel.",
+      "completed": "(erledigt)",
+      "restore": "Diesen Stand wiederherstellen",
+      "restoreNamed": "{operation} vom {date} wiederherstellen",
+      "undo": "Rückgängig",
+      "restoring": "Wird wiederhergestellt…",
+      "operations": {
+        "remove-completed": "Erledigte Artikel entfernt",
+        "clear-all": "Liste geleert",
+        "bulk-move": "Mehrere Artikel verschoben",
+        "list-rebuild": "Liste neu aufgebaut",
+        "restore": "Früheren Stand wiederhergestellt"
+      },
+      "toasts": {
+        "restored": "Früherer Listenstand wiederhergestellt.",
+        "undoComplete": "Vorheriger Listenstand wiederhergestellt."
+      }
     },
     "sections": {
       "inCart": "Im Einkaufswagen"
@@ -1637,11 +1676,11 @@
       },
       "clearAllSynced": {
         "title": "Die ganze Einkaufsliste löschen?",
-        "description": "Alle synchronisierten Einkaufsartikel werden entfernt. Das kann nicht rückgängig gemacht werden."
+        "description": "Alle synchronisierten Einkaufsartikel werden entfernt. Du kannst dies sofort rückgängig machen oder den Stand unter Letzte Änderungen wiederherstellen."
       },
       "clearAllLocal": {
         "title": "Die ganze Einkaufsliste löschen?",
-        "description": "Alle auf diesem Gerät gespeicherten Artikel werden entfernt. Das kann nicht rückgängig gemacht werden."
+        "description": "Alle auf diesem Gerät gespeicherten Artikel werden entfernt. Du kannst dies sofort rückgängig machen oder den Stand unter Letzte Änderungen wiederherstellen."
       }
     },
     "add": {

@@ -246,6 +246,27 @@
       "when": 1786230340682,
       "tag": "0034_nostalgic_human_fly",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786234316388,
+      "tag": "0035_sloppy_hercules",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786234386584,
+      "tag": "0036_condemned_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786235890248,
+      "tag": "0037_last_slayback",
+      "breakpoints": true
     }
   ]
 }

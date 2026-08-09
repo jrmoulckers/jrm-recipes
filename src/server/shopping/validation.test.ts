@@ -1,16 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  bulkMoveShoppingItemsInput,
   createShoppingListInput,
   manualItemInput,
   moveShoppingItemInput,
+  restoreShoppingListPointInput,
+  restoreShoppingListPointsInput,
 } from "./validation";
+
+const id = (suffix: string) => `${"a".repeat(23)}${suffix}`;
 
 describe("shopping list validation", () => {
   it("requires an explicit list for manual items", () => {
     expect(manualItemInput.safeParse({ item: "Milk" }).success).toBe(false);
     expect(
-      manualItemInput.safeParse({ listId: "list_1", item: "Milk" }).success,
+      manualItemInput.safeParse({ listId: id("1"), item: "Milk" }).success,
     ).toBe(true);
   });
 
@@ -26,19 +31,59 @@ describe("shopping list validation", () => {
   it("rejects duplicate alternatives and the preferred list as an alternative", () => {
     expect(
       moveShoppingItemInput.safeParse({
-        itemId: "item_1",
-        targetListId: "list_2",
+        itemId: id("1"),
+        targetListId: id("2"),
         rememberRoute: true,
-        alternativeListIds: ["list_1", "list_1"],
+        alternativeListIds: [id("3"), id("3")],
       }).success,
     ).toBe(false);
     expect(
       moveShoppingItemInput.safeParse({
-        itemId: "item_1",
-        targetListId: "list_2",
+        itemId: id("1"),
+        targetListId: id("2"),
         rememberRoute: true,
-        alternativeListIds: ["list_2"],
+        alternativeListIds: [id("2")],
       }).success,
     ).toBe(false);
+  });
+
+  it("requires strict database ids for history and rejects duplicate bulk items", () => {
+    expect(
+      restoreShoppingListPointInput.safeParse({
+        listId: "list_1",
+        restorePointId: id("2"),
+      }).success,
+    ).toBe(false);
+    expect(
+      restoreShoppingListPointInput.safeParse({
+        listId: id("1"),
+        restorePointId: id("2"),
+      }).success,
+    ).toBe(true);
+    expect(
+      bulkMoveShoppingItemsInput.safeParse({
+        itemIds: [id("1"), id("1")],
+        targetListId: id("2"),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires distinct lists and points for an atomic multi-restore", () => {
+    expect(
+      restoreShoppingListPointsInput.safeParse({
+        restorePoints: [
+          { listId: id("1"), restorePointId: id("3") },
+          { listId: id("1"), restorePointId: id("4") },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      restoreShoppingListPointsInput.safeParse({
+        restorePoints: [
+          { listId: id("1"), restorePointId: id("3") },
+          { listId: id("2"), restorePointId: id("4") },
+        ],
+      }).success,
+    ).toBe(true);
   });
 });

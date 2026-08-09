@@ -1472,7 +1472,9 @@
       "nothingToSend": "Nothing to send. Everything is checked off.",
       "listCopied": "List copied. Paste it into a message",
       "shareFailed": "We couldn't share the list.",
-      "cleared": "Shopping list cleared"
+      "cleared": "Shopping list cleared.",
+      "removedCompleted": "Completed items removed.",
+      "uncheckedAll": "All items are unchecked."
     },
     "share": {
       "title": "🛒 Shopping list",
@@ -1602,6 +1604,17 @@
       "toasts": {
         "moved": "{item} moved to {list}.",
         "routeSaved": "Route saved. {item} will go to {list} next time."
+      },
+      "bulk": {
+        "trigger": "Move remaining",
+        "title": "{count, plural, one {Move # remaining item} other {Move # remaining items}}",
+        "description": "Move every unchecked item on this list to another shopping list.",
+        "destination": "Destination list",
+        "cancel": "Cancel",
+        "confirm": "{count, plural, one {Move # item} other {Move # items}}",
+        "toasts": {
+          "moved": "{count, plural, one {# item moved to {list}.} other {# items moved to {list}.}}"
+        }
       }
     },
     "manual": {
@@ -1621,8 +1634,34 @@
       "inCart": "{count, plural, one {# in cart} other {# in cart}}"
     },
     "actions": {
-      "clearChecked": "Clear checked",
+      "removeCompleted": "Remove completed",
+      "uncheckAll": "Uncheck all",
       "clearAll": "Clear all"
+    },
+    "history": {
+      "title": "Recent changes",
+      "count": "{count, plural, one {# saved state} other {# saved states}}",
+      "retention": "Up to 20 changes are saved for each list. The oldest are removed automatically.",
+      "empty": "Bulk and destructive changes will appear here.",
+      "items": "{count, plural, one {# item} other {# items}}",
+      "preview": "State preview",
+      "emptySnapshot": "This saved state has no items.",
+      "completed": "(completed)",
+      "restore": "Restore this state",
+      "restoreNamed": "Restore {operation} from {date}",
+      "undo": "Undo",
+      "restoring": "Restoring…",
+      "operations": {
+        "remove-completed": "Removed completed items",
+        "clear-all": "Cleared list",
+        "bulk-move": "Moved multiple items",
+        "list-rebuild": "Rebuilt list",
+        "restore": "Restored an earlier state"
+      },
+      "toasts": {
+        "restored": "Earlier list state restored.",
+        "undoComplete": "Previous list state restored."
+      }
     },
     "sections": {
       "inCart": "In cart"
@@ -1637,11 +1676,11 @@
       },
       "clearAllSynced": {
         "title": "Clear the whole shopping list?",
-        "description": "All synced shopping items are removed. This can't be undone."
+        "description": "All synced shopping items are removed. You can undo this right away or restore it from Recent changes."
       },
       "clearAllLocal": {
         "title": "Clear the whole shopping list?",
-        "description": "All items saved on this device are removed. This can't be undone."
+        "description": "All items saved on this device are removed. You can undo this right away or restore it from Recent changes."
       }
     },
     "add": {

@@ -30,8 +30,10 @@ import { Input } from "~/components/ui/input";
 import { NativeSelect } from "~/components/ui/native-select";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
+import { ShoppingHistory, type ShoppingHistoryEntry } from "./shopping-history";
 import {
   AlertTriangle,
+  ArrowRightLeft,
   Check,
   Plus,
   Route,
@@ -374,6 +376,91 @@ function MoveRouteDialog({
   );
 }
 
+function BulkMoveDialog({
+  itemIds,
+  listOptions,
+  currentListId,
+  disabled,
+  onMove,
+}: {
+  itemIds: string[];
+  listOptions: ShoppingListOption[];
+  currentListId: string;
+  disabled: boolean;
+  onMove: (itemIds: string[], targetListId: string) => void;
+}) {
+  const t = useTranslations("shopping.routing.bulk");
+  const destinations = listOptions.filter((list) => list.id !== currentListId);
+  const firstDestinationId = destinations[0]?.id ?? "";
+  const [open, setOpen] = React.useState(false);
+  const [targetListId, setTargetListId] = React.useState(firstDestinationId);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setTargetListId(firstDestinationId);
+  }, [firstDestinationId, open]);
+
+  if (destinations.length === 0) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={disabled || itemIds.length === 0}
+        >
+          <ArrowRightLeft aria-hidden="true" />
+          {t("trigger")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>{t("title", { count: itemIds.length })}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2">
+          <label htmlFor="bulk-move-target" className="text-sm font-medium">
+            {t("destination")}
+          </label>
+          <NativeSelect
+            id="bulk-move-target"
+            value={targetListId}
+            onChange={(event) => setTargetListId(event.target.value)}
+          >
+            {destinations.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.storeName ?? list.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="ghost">
+              {t("cancel")}
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            disabled={!targetListId}
+            onClick={() => {
+              onMove(itemIds, targetListId);
+              setOpen(false);
+              requestAnimationFrame(() =>
+                document.getElementById("shopping-history-summary")?.focus(),
+              );
+            }}
+          >
+            {t("confirm", { count: itemIds.length })}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ShoppingListView({
   items,
   disabled = false,
@@ -384,10 +471,14 @@ export function ShoppingListView({
   onRemove,
   onSetCategory,
   onClearChecked,
+  onUncheckAll,
   onClearAll,
+  historyEntries = [],
+  onRestoreHistory,
   listOptions = [],
   currentListId,
   onMove,
+  onBulkMove,
 }: {
   items: ShoppingViewItem[];
   disabled?: boolean;
@@ -403,7 +494,10 @@ export function ShoppingListView({
   onRemove: (id: string) => void;
   onSetCategory: (id: string, category: ShoppingCategory) => void;
   onClearChecked: () => void;
+  onUncheckAll: () => void;
   onClearAll: () => void;
+  historyEntries?: ShoppingHistoryEntry[];
+  onRestoreHistory?: (entry: ShoppingHistoryEntry) => void;
   listOptions?: ShoppingListOption[];
   currentListId?: string;
   onMove?: (
@@ -412,6 +506,7 @@ export function ShoppingListView({
     rememberRoute: boolean,
     alternativeListIds: string[],
   ) => void;
+  onBulkMove?: (itemIds: string[], targetListId: string) => void;
 }) {
   const [name, setName] = React.useState("");
   const [qty, setQty] = React.useState("");
@@ -523,14 +618,33 @@ export function ShoppingListView({
                 list={currentList}
                 disabled={disabled}
               />
+              {onBulkMove && currentListId ? (
+                <BulkMoveDialog
+                  itemIds={unchecked.map((item) => item.id)}
+                  listOptions={listOptions}
+                  currentListId={currentListId}
+                  disabled={disabled}
+                  onMove={onBulkMove}
+                />
+              ) : null}
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
                 disabled={disabled || checked.length === 0}
+                onClick={onUncheckAll}
+              >
+                {t("actions.uncheckAll")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={disabled || checked.length === 0}
                 onClick={onClearChecked}
               >
-                {t("actions.clearChecked")}
+                <Trash2 aria-hidden="true" />
+                {t("actions.removeCompleted")}
               </Button>
               <Button
                 type="button"
@@ -596,6 +710,13 @@ export function ShoppingListView({
           )}
         </>
       )}
+      {onRestoreHistory ? (
+        <ShoppingHistory
+          entries={historyEntries}
+          disabled={disabled}
+          onRestore={onRestoreHistory}
+        />
+      ) : null}
     </div>
   );
 }
