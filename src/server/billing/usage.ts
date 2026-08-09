@@ -92,6 +92,43 @@ export async function getUsage(
 }
 
 /**
+ * Subtract `amount` from a metric's counter for the active period, flooring at
+ * zero so a counter can never go negative (issue #657). Used to reclaim
+ * `storage_mb` when a media asset is deleted: without this, deleting a photo
+ * would free the bytes at Cloudinary but leave the user permanently charged for
+ * them against their plan cap. No-op when the DB is unconfigured or when no
+ * counter row exists — there is nothing to give back.
+ */
+export async function decrementUsage(
+  user: User,
+  metric: UsageMetric,
+  amount: number,
+  now: Date = new Date(),
+): Promise<void> {
+  if (!isDbConfigured()) return;
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const { ownerId } = ownerOf(user);
+  const periodStart = currentPeriodStart(metric, now);
+
+  await db
+    .update(usageCounters)
+    .set({
+      // GREATEST floors the result at zero in the same statement, so concurrent
+      // deletes can't race a read-modify-write into a negative value.
+      value: sql`greatest(0, ${usageCounters.value} - ${amount})`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(usageCounters.ownerId, ownerId),
+        eq(usageCounters.metric, metric),
+        eq(usageCounters.periodStart, periodStart),
+      ),
+    );
+}
+
+/**
  * Add `amount` to a metric's counter for the active period, creating the row on
  * first write. Idempotent per `(ownerId, metric, periodStart)` via upsert, so
  * concurrent uploads accumulate rather than clobber. No-op (and no throw) when
