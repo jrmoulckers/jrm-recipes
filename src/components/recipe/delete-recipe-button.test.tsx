@@ -8,16 +8,45 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DeleteRecipeButton } from "./delete-recipe-button";
+import { redirect } from "next/navigation";
 import { ConfirmProvider } from "~/components/ui/confirm-dialog";
 import {
   deleteRecipeAction,
   restoreRecipeAction,
 } from "~/server/recipes/actions";
-import type { ReactElement } from "react";
+import React, { Component, type ReactElement, type ReactNode } from "react";
 import { IntlWrapper } from "~/test/intl";
 
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
+}
+
+/**
+ * Build the `NEXT_REDIRECT` error Next rejects an action promise with when the
+ * server action redirects (issue #648).
+ */
+function makeRedirectError(): unknown {
+  try {
+    redirect("/recipes");
+  } catch (error) {
+    return error;
+  }
+  throw new Error("redirect() did not throw");
+}
+
+const caughtByBoundary: { digest?: string }[] = [];
+
+/** Stands in for Next's `RedirectBoundary`, which handles the rethrown error. */
+class CatchBoundary extends Component<{ children: ReactNode }> {
+  static getDerivedStateFromError() {
+    return {};
+  }
+  componentDidCatch(error: unknown) {
+    caughtByBoundary.push(error as { digest?: string });
+  }
+  render() {
+    return this.props.children;
+  }
 }
 
 vi.mock("~/server/recipes/actions", () => ({
@@ -27,9 +56,10 @@ vi.mock("~/server/recipes/actions", () => ({
 
 const push = vi.fn();
 const refresh = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push, refresh }),
-}));
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return { ...actual, useRouter: () => ({ push, refresh }) };
+});
 
 const toastFn = vi.fn((_message?: unknown, _options?: unknown) => "toast-1");
 const toastSuccess = vi.fn();
@@ -57,15 +87,18 @@ const mockedRestore = vi.mocked(restoreRecipeAction);
 
 afterEach(() => {
   cleanup();
+  caughtByBoundary.length = 0;
   vi.clearAllMocks();
   vi.restoreAllMocks();
 });
 
 function renderButton() {
   return render(
-    <ConfirmProvider>
-      <DeleteRecipeButton id="r1" slug="nanas-pie" title="Nana's pie" />
-    </ConfirmProvider>,
+    <CatchBoundary>
+      <ConfirmProvider>
+        <DeleteRecipeButton id="r1" slug="nanas-pie" title="Nana's pie" />
+      </ConfirmProvider>
+    </CatchBoundary>,
   );
 }
 
@@ -130,5 +163,26 @@ describe("DeleteRecipeButton (#427)", () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastDismiss).toHaveBeenCalledWith("toast-1");
+  });
+
+  // A successful delete redirects to /recipes, and Next signals that by
+  // rejecting the action promise with a NEXT_REDIRECT error (issue #648). The
+  // button must hand it back to Next's redirect boundary instead of reporting a
+  // delete failure the owner never had.
+  it("keeps the undo toast when the action redirects after a successful delete", async () => {
+    const user = userEvent.setup();
+    mockedDelete.mockRejectedValue(makeRedirectError());
+    renderButton();
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: "Delete recipe" }));
+
+    await waitFor(() => expect(mockedDelete).toHaveBeenCalledWith("r1"));
+    await waitFor(() => expect(caughtByBoundary).toHaveLength(1));
+    expect(caughtByBoundary[0]).toMatchObject({
+      digest: expect.stringContaining("NEXT_REDIRECT") as string,
+    });
+    expect(toastError).not.toHaveBeenCalled();
+    expect(toastDismiss).not.toHaveBeenCalled();
   });
 });

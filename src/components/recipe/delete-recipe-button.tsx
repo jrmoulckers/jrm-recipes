@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -71,7 +71,14 @@ export function DeleteRecipeButton({
     startTransition(async () => {
       try {
         await deleteRecipeAction(id);
-      } catch {
+      } catch (error) {
+        // A successful delete ends in the action's `redirect("/recipes")`, and
+        // Next signals that by *rejecting* the action promise with a
+        // `NEXT_REDIRECT` error so the router's redirect boundary can handle it
+        // (issue #648). Swallowing it here reported a failure the owner never
+        // had. Hand framework control-flow errors back to Next and only treat
+        // what's left as a real failure.
+        unstable_rethrow(error);
         toast.dismiss(toastId);
         toast.error(t("deleteRecipe.toast.deleteError"));
       }
