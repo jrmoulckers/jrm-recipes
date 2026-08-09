@@ -7,7 +7,6 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   describeQuantity,
   SHOPPING_CATEGORIES,
-  SHOPPING_CATEGORY_LABELS,
   type ShoppingCategory,
 } from "~/lib/shopping-list";
 import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
@@ -47,6 +46,7 @@ import {
   saveIngredientPackageDraftInput,
   type SaveIngredientPackageInput,
 } from "~/server/shopping/validation";
+import { useShoppingCategoryLabels } from "./shopping-localization";
 
 export type ShoppingViewItem = {
   id: string;
@@ -121,6 +121,7 @@ function ItemRow({
   currentListId,
   onMove,
   onSavePackage,
+  categoryLabels,
 }: {
   item: ShoppingViewItem;
   disabled: boolean;
@@ -140,18 +141,22 @@ function ItemRow({
     itemId: string,
     draft: PackagePreferenceDraft,
   ) => Promise<PackagePreferenceResult>;
+  categoryLabels: Readonly<Record<ShoppingCategory, string>>;
 }) {
-  const amount = describeQuantity(item);
+  const locale = useLocale();
+  const amount = describeQuantity(item, locale);
   const purchaseAmount =
     item.purchaseQuantity != null && item.purchaseUnit
-      ? describeQuantity({
-          quantity: item.purchaseQuantity,
-          quantityMax: null,
-          unit: item.purchaseUnit,
-        })
+      ? describeQuantity(
+          {
+            quantity: item.purchaseQuantity,
+            quantityMax: null,
+            unit: item.purchaseUnit,
+          },
+          locale,
+        )
       : "";
   const alerts = allergenConflicts(avoidAllergens, item.allergens ?? []);
-  const locale = useLocale();
   const t = useTranslations("shopping");
   const allergenDisclaimer = t("allergens.disclaimer");
   return (
@@ -288,7 +293,7 @@ function ItemRow({
       >
         {SHOPPING_CATEGORIES.map((c) => (
           <option key={c} value={c}>
-            {SHOPPING_CATEGORY_LABELS[c]}
+            {categoryLabels[c]}
           </option>
         ))}
       </select>
@@ -319,6 +324,7 @@ function PackagePreferenceDialog({
     draft: PackagePreferenceDraft,
   ) => Promise<PackagePreferenceResult>;
 }) {
+  const locale = useLocale();
   const t = useTranslations("shopping");
   const [open, setOpen] = React.useState(false);
   const [amount, setAmount] = React.useState("");
@@ -348,7 +354,7 @@ function PackagePreferenceDialog({
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedAmount = amount.trim();
-    const normalizedAmount = parseAmount(trimmedAmount);
+    const normalizedAmount = parseAmount(trimmedAmount, locale);
     if (trimmedAmount && (normalizedAmount == null || normalizedAmount <= 0)) {
       setFieldErrors({ packageAmount: [t("package.errors.amount")] });
       return;
@@ -845,7 +851,10 @@ export function ShoppingListView({
   const [name, setName] = React.useState("");
   const [qty, setQty] = React.useState("");
   const [unit, setUnit] = React.useState("");
+  const [quantityError, setQuantityError] = React.useState("");
+  const locale = useLocale();
   const t = useTranslations("shopping");
+  const categoryLabels = useShoppingCategoryLabels();
 
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
@@ -863,11 +872,17 @@ export function ShoppingListView({
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    const parsedQty = qty.trim() === "" ? null : Number(qty);
+    const trimmedQty = qty.trim();
+    const parsedQty =
+      trimmedQty === "" ? null : parseAmount(trimmedQty, locale);
+    if (trimmedQty && (parsedQty == null || parsedQty <= 0)) {
+      setQuantityError(t("manual.quantityError"));
+      return;
+    }
+    setQuantityError("");
     onAddManual({
       item: trimmed,
-      quantity:
-        parsedQty != null && Number.isFinite(parsedQty) ? parsedQty : null,
+      quantity: parsedQty,
       unit: unit.trim() || null,
     });
     setName("");
@@ -894,18 +909,32 @@ export function ShoppingListView({
             disabled={disabled}
           />
         </div>
-        <div className="flex w-20 flex-col gap-1">
+        <div className="flex w-32 flex-col gap-1">
           <label htmlFor="add-qty" className="text-xs text-muted-foreground">
             {t("manual.quantityLabel")}
           </label>
           <Input
             id="add-qty"
             value={qty}
-            onChange={(e) => setQty(e.target.value)}
+            onChange={(e) => {
+              setQty(e.target.value);
+              if (quantityError) setQuantityError("");
+            }}
             inputMode="decimal"
             placeholder="2"
             disabled={disabled}
+            aria-invalid={Boolean(quantityError)}
+            aria-describedby={quantityError ? "add-qty-error" : undefined}
           />
+          {quantityError ? (
+            <p
+              id="add-qty-error"
+              role="alert"
+              className="text-xs text-destructive"
+            >
+              {quantityError}
+            </p>
+          ) : null}
         </div>
         <div className="flex w-24 flex-col gap-1">
           <label htmlFor="add-unit" className="text-xs text-muted-foreground">
@@ -997,7 +1026,7 @@ export function ShoppingListView({
             {groups.map((group) => (
               <section key={group.category}>
                 <h2 className="mb-1 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  {SHOPPING_CATEGORY_LABELS[group.category]}
+                  {categoryLabels[group.category]}
                 </h2>
                 <ul className="flex flex-col">
                   {group.items.map((item) => (
@@ -1013,6 +1042,7 @@ export function ShoppingListView({
                       currentListId={currentListId}
                       onMove={onMove}
                       onSavePackage={onSavePackage}
+                      categoryLabels={categoryLabels}
                     />
                   ))}
                 </ul>
@@ -1039,6 +1069,7 @@ export function ShoppingListView({
                     currentListId={currentListId}
                     onMove={onMove}
                     onSavePackage={onSavePackage}
+                    categoryLabels={categoryLabels}
                   />
                 ))}
               </ul>

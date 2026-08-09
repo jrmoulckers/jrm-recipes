@@ -9,6 +9,11 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { localeDirection } from "~/config/i18n";
+import arMessages from "~/messages/ar.json";
+import deMessages from "~/messages/de.json";
+import enMessages from "~/messages/en.json";
+import esMessages from "~/messages/es.json";
 import { IntlWrapper } from "~/test/intl";
 import { ShoppingListView, type ShoppingViewItem } from "./shopping-list-view";
 
@@ -26,6 +31,142 @@ const item: ShoppingViewItem = {
 };
 
 afterEach(cleanup);
+
+const localizedCases = [
+  {
+    locale: "en",
+    messages: enMessages,
+    input: "1.5",
+    category: "Produce",
+    renderedQuantity: "1.2 ml",
+    direction: "ltr",
+  },
+  {
+    locale: "es",
+    messages: esMessages,
+    input: "1,5",
+    category: "Frutas y verduras",
+    renderedQuantity: "1,2 ml",
+    direction: "ltr",
+  },
+  {
+    locale: "de",
+    messages: deMessages,
+    input: "1,5",
+    category: "Obst und Gemüse",
+    renderedQuantity: "1,2 ml",
+    direction: "ltr",
+  },
+  {
+    locale: "ar",
+    messages: arMessages,
+    input: "١٫٥",
+    category: "المنتجات الطازجة",
+    renderedQuantity: "١٫٢ ml",
+    direction: "rtl",
+  },
+] as const;
+
+describe("ShoppingListView localization", () => {
+  it.each(localizedCases)(
+    "localizes labels and preserves decimal values in $locale",
+    ({ locale, messages, input, category, renderedQuantity, direction }) => {
+      const onAddManual = vi.fn();
+      render(
+        <div
+          data-testid="localized-shopping-root"
+          dir={localeDirection(locale)}
+        >
+          <ShoppingListView
+            items={[
+              {
+                ...item,
+                category: "Produce",
+                quantity: 1.2,
+                unit: "ml",
+              },
+            ]}
+            onAddManual={onAddManual}
+            onToggle={vi.fn()}
+            onRemove={vi.fn()}
+            onSetCategory={vi.fn()}
+            onUncheckAll={vi.fn()}
+            onClearChecked={vi.fn()}
+            onClearAll={vi.fn()}
+          />
+        </div>,
+        {
+          wrapper: ({ children }) => (
+            <IntlWrapper locale={locale} messages={messages}>
+              {children}
+            </IntlWrapper>
+          ),
+        },
+      );
+
+      expect(screen.getByTestId("localized-shopping-root")).toHaveAttribute(
+        "dir",
+        direction,
+      );
+      expect(screen.getAllByText(category).length).toBeGreaterThanOrEqual(2);
+      expect(
+        screen.getAllByText((_, element) =>
+          Boolean(element?.textContent?.includes(renderedQuantity)),
+        ).length,
+      ).toBeGreaterThan(0);
+
+      const name = document.querySelector<HTMLInputElement>("#add-item")!;
+      const quantity = document.querySelector<HTMLInputElement>("#add-qty")!;
+      const unit = document.querySelector<HTMLInputElement>("#add-unit")!;
+      fireEvent.change(name, { target: { value: "Apples" } });
+      fireEvent.change(quantity, { target: { value: input } });
+      fireEvent.change(unit, { target: { value: "ml" } });
+      fireEvent.submit(name.closest("form")!);
+
+      expect(onAddManual).toHaveBeenCalledWith({
+        item: "Apples",
+        quantity: 1.5,
+        unit: "ml",
+      });
+    },
+  );
+
+  it("keeps invalid quantity text and surfaces a localized error", () => {
+    const onAddManual = vi.fn();
+    render(
+      <ShoppingListView
+        items={[]}
+        onAddManual={onAddManual}
+        onToggle={vi.fn()}
+        onRemove={vi.fn()}
+        onSetCategory={vi.fn()}
+        onUncheckAll={vi.fn()}
+        onClearChecked={vi.fn()}
+        onClearAll={vi.fn()}
+      />,
+      {
+        wrapper: ({ children }) => (
+          <IntlWrapper locale="es" messages={esMessages}>
+            {children}
+          </IntlWrapper>
+        ),
+      },
+    );
+
+    const name = document.querySelector<HTMLInputElement>("#add-item")!;
+    const quantity = document.querySelector<HTMLInputElement>("#add-qty")!;
+    fireEvent.change(name, { target: { value: "Manzanas" } });
+    fireEvent.change(quantity, { target: { value: "uno y medio" } });
+    fireEvent.submit(name.closest("form")!);
+
+    expect(quantity).toHaveValue("uno y medio");
+    expect(quantity).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Introduce una cantidad mayor que cero",
+    );
+    expect(onAddManual).not.toHaveBeenCalled();
+  });
+});
 
 describe("ShoppingListView routing controls", () => {
   it("shows alternatives without duplicating an item and moves by keyboard-accessible controls", () => {

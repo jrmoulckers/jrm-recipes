@@ -101,7 +101,7 @@ export function ShoppingHistory({
                         ) : (
                           <ul className="max-h-48 overflow-y-auto pe-2 text-sm">
                             {entry.items.map((item) => {
-                              const amount = describeQuantity(item);
+                              const amount = describeQuantity(item, locale);
                               return (
                                 <li
                                   key={item.id}

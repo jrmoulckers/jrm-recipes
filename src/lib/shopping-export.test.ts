@@ -42,6 +42,14 @@ function exportDocument(includeChecked = false) {
         checked: false,
       },
       {
+        item: "Aceite",
+        quantity: 1.2,
+        quantityMax: null,
+        unit: "ml",
+        category: "Pantry",
+        checked: false,
+      },
+      {
         item: "Leche",
         quantity: 1,
         quantityMax: null,
@@ -61,13 +69,14 @@ describe("shopping export adapters", () => {
     expect(text).toContain("Tienda: Mercado Central");
     expect(text).toContain("Frutas y verduras:");
     expect(text).toContain("4 Tomates, maduros");
+    expect(text).toContain("1,2 ml Aceite");
     expect(text).not.toContain("Leche");
   });
 
   it("uses one grouped document model for completed items", () => {
     const groups = groupShoppingExportItems(exportDocument(true));
 
-    expect(groups.flatMap((group) => group.items)).toHaveLength(2);
+    expect(groups.flatMap((group) => group.items)).toHaveLength(3);
     expect(serializeShoppingExportText(exportDocument(true))).toContain(
       "- [x] 1 l Leche",
     );
@@ -113,6 +122,19 @@ describe("shopping export adapters", () => {
     expect(html).toContain("@media print");
     expect(html).not.toContain("window.print()");
     expect(html).toContain("border: 1px solid #78716c");
+  });
+
+  it("uses Arabic digits in RTL print quantities", () => {
+    const html = buildShoppingListPrintHtml(
+      createShoppingExportDocument({
+        ...exportDocument(),
+        locale: "ar",
+      }),
+      { print: "طباعة", close: "إغلاق", completed: "مكتمل" },
+    );
+
+    expect(html).toContain('<html lang="ar" dir="rtl">');
+    expect(html).toMatch(/١٫٢ ml Aceite/);
   });
 });
 

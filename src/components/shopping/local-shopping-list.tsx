@@ -4,7 +4,10 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { useShoppingStore } from "~/lib/shopping-store";
+import {
+  displayLocalShoppingListName,
+  useShoppingStore,
+} from "~/lib/shopping-store";
 import { findIngredientRoute } from "~/lib/shopping-routing";
 import { useConfirm } from "~/components/ui/confirm-dialog";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -52,6 +55,12 @@ export function LocalShoppingList() {
   );
   const confirm = useConfirm();
   const t = useTranslations("shopping");
+  const generatedListName = t("lists.generatedName");
+  const displayListName = (list: {
+    id: string;
+    name: string;
+    generatedName?: boolean;
+  }) => displayLocalShoppingListName(list, generatedListName);
 
   // The store hydrates from localStorage on the client only. Wait for mount so
   // the first render matches the server (empty) and avoids a hydration warning.
@@ -79,13 +88,13 @@ export function LocalShoppingList() {
   const activeLists = lists.filter((list) => !list.archived);
   const listOptions = activeLists.map((list) => ({
     id: list.id,
-    name: list.name,
+    name: displayListName(list),
     storeName: list.storeName,
     isDefault: list.isDefault,
   }));
   const summaries: ShoppingListSummary[] = lists.map((list) => ({
     id: list.id,
-    name: list.name,
+    name: displayListName(list),
     storeName: list.storeName,
     isDefault: list.isDefault,
     archived: list.archived,
@@ -163,14 +172,16 @@ export function LocalShoppingList() {
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return;
     makeDefault(listId);
-    toast.success(t("lists.toasts.madeDefault", { name: list.name }));
+    toast.success(
+      t("lists.toasts.madeDefault", { name: displayListName(list) }),
+    );
   }
 
   function onRestore(listId: string) {
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return;
     restoreList(listId);
-    toast.success(t("lists.toasts.restored", { name: list.name }));
+    toast.success(t("lists.toasts.restored", { name: displayListName(list) }));
   }
 
   function onMove(
@@ -192,7 +203,7 @@ export function LocalShoppingList() {
     toast.success(
       t(rememberRoute ? "routing.toasts.routeSaved" : "routing.toasts.moved", {
         item: item.item,
-        list: target.storeName ?? target.name,
+        list: target.storeName ?? displayListName(target),
       }),
     );
   }
@@ -204,7 +215,7 @@ export function LocalShoppingList() {
     toast.success(
       t("routing.bulk.toasts.moved", {
         count: itemIds.length,
-        list: target.storeName ?? target.name,
+        list: target.storeName ?? displayListName(target),
       }),
       {
         duration: Infinity,
@@ -314,13 +325,15 @@ export function LocalShoppingList() {
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const ok = await confirm({
-      title: t("lists.confirm.archive.title", { name: list.name }),
+      title: t("lists.confirm.archive.title", {
+        name: displayListName(list),
+      }),
       description: t("lists.confirm.archive.description"),
       confirmLabel: t("lists.archive"),
     });
     if (!ok) return false;
     archiveList(listId);
-    toast.success(t("lists.toasts.archived", { name: list.name }));
+    toast.success(t("lists.toasts.archived", { name: displayListName(list) }));
     return true;
   }
 
@@ -328,13 +341,13 @@ export function LocalShoppingList() {
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const ok = await confirm({
-      title: t("lists.confirm.delete.title", { name: list.name }),
+      title: t("lists.confirm.delete.title", { name: displayListName(list) }),
       description: t("lists.confirm.delete.description"),
       confirmLabel: t("lists.delete"),
     });
     if (!ok) return false;
     deleteList(listId);
-    toast.success(t("lists.toasts.deleted", { name: list.name }));
+    toast.success(t("lists.toasts.deleted", { name: displayListName(list) }));
     return true;
   }
 

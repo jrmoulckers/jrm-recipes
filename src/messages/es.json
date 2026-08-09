@@ -1544,6 +1544,7 @@
     },
     "lists": {
       "heading": "Listas de compras",
+      "generatedName": "Lista de la compra",
       "current": "Lista actual",
       "new": "Nueva lista",
       "manage": "Administrar",
@@ -1652,6 +1653,7 @@
       "itemLabel": "Agregar un artículo",
       "itemPlaceholder": "p. ej., papel de cocina",
       "quantityLabel": "Cant.",
+      "quantityError": "Introduce una cantidad mayor que cero con un número o una fracción válidos.",
       "unitLabel": "Unidad",
       "add": "Agregar",
       "unitPlaceholder": "tazas"

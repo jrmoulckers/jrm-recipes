@@ -801,6 +801,15 @@ describe("describeQuantity", () => {
       describeQuantity({ quantity: 237, quantityMax: 710, unit: "ml" }),
     ).toBe("237–710 ml");
   });
+
+  it("formats decimal quantities with the requested locale", () => {
+    expect(
+      describeQuantity({ quantity: 12.5, quantityMax: null, unit: "g" }, "de"),
+    ).toBe("12,5 g");
+    expect(
+      describeQuantity({ quantity: 1.2, quantityMax: null, unit: "ml" }, "ar"),
+    ).toMatch(/١٫٢ ml/);
+  });
 });
 
 // Type export smoke test, keeping the public input type wired up.
@@ -1001,6 +1010,21 @@ describe("formatShoppingListText", () => {
   it("prepends an optional title", () => {
     const text = formatShoppingListText(sample, { title: "Weeknight run" });
     expect(text.startsWith("Weeknight run\n")).toBe(true);
+  });
+
+  it("uses the export locale for quantity formatting", () => {
+    const text = formatShoppingListText(
+      [
+        item({
+          item: "Aceite",
+          quantity: 1.2,
+          unit: "ml",
+          category: "Pantry",
+        }),
+      ],
+      { locale: "es" },
+    );
+    expect(text).toContain("1,2 ml Aceite");
   });
 
   it("appends notes to the line", () => {

@@ -32,15 +32,86 @@ const VULGAR_VALUES: Record<string, number> = Object.fromEntries(
 );
 
 /**
+ * Map an app locale id to a BCP-47 tag suitable for `Intl` number formatting.
+ * Current CLDR resolves a region-less `ar` to Western ("latn") digits, but
+ * Heirloom's Arabic UI expects Arabic-Indic numerals, so pin the numbering
+ * system for the bare `ar` id. Every other locale (including region- or
+ * numbering-qualified Arabic like `ar-EG`) passes through unchanged.
+ */
+function numberingLocale(locale: string): string {
+  return locale === "ar" ? "ar-u-nu-arab" : locale;
+}
+
+function escapedForRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeLocaleAmount(input: string, locale: string): string | null {
+  let numberFormat: Intl.NumberFormat;
+  try {
+    numberFormat = new Intl.NumberFormat(numberingLocale(locale));
+  } catch {
+    numberFormat = new Intl.NumberFormat(DEFAULT_LOCALE);
+  }
+
+  const parts = numberFormat.formatToParts(12345.6);
+  const decimal = parts.find((part) => part.type === "decimal")?.value ?? ".";
+  const group = parts.find((part) => part.type === "group")?.value;
+  const digitFormat = new Intl.NumberFormat(
+    numberFormat.resolvedOptions().locale,
+    {
+      useGrouping: false,
+    },
+  );
+  const digits = new Map<string, string>();
+  for (let digit = 0; digit <= 9; digit += 1) {
+    digits.set(digitFormat.format(digit), String(digit));
+  }
+
+  let normalized = Array.from(input)
+    .map((character) => digits.get(character) ?? character)
+    .join("")
+    .replace(/[\u061c\u200e\u200f]/g, "");
+
+  if (group && normalized.includes(group)) {
+    const escapedGroup = escapedForRegExp(group);
+    const escapedDecimal = escapedForRegExp(decimal);
+    const groupedNumber = new RegExp(
+      `^[+-]?\\d{1,3}(?:${escapedGroup}\\d{3})+(?:${escapedDecimal}\\d+)?$`,
+    );
+    if (groupedNumber.test(normalized)) {
+      normalized = normalized.split(group).join("");
+    } else if (
+      !normalized.includes(decimal) &&
+      normalized.split(group).length === 2
+    ) {
+      // Accept the other common decimal key only when it cannot be a valid
+      // locale grouping, preserving existing cook-entered comma decimals.
+      normalized = normalized.replace(group, ".");
+    } else {
+      return null;
+    }
+  }
+
+  if (decimal !== ".") normalized = normalized.split(decimal).join(".");
+  return normalized;
+}
+
+/**
  * Parse a cook-entered amount into a number, understanding the ways people write
  * quantities: decimals ("1.5", or "1,5" with a comma separator), ascii fractions
  * ("1/2", "1 1/2"), and vulgar glyphs ("½", "1½", "1 ½"). Returns null for blank
  * or unparseable input so callers can distinguish "no amount" from zero. Used by
  * the editor's native amount entry and the unit-conversion affordance.
  */
-export function parseAmount(input: string | null | undefined): number | null {
+export function parseAmount(
+  input: string | null | undefined,
+  locale?: string,
+): number | null {
   if (input == null) return null;
-  const s = input.trim();
+  const trimmed = input.trim();
+  const s =
+    locale == null ? trimmed : (normalizeLocaleAmount(trimmed, locale) ?? "");
   if (s === "") return null;
 
   // Vulgar glyph, optionally preceded by a whole number ("1½", "1 ½", "½").
@@ -67,17 +138,6 @@ export function parseAmount(input: string | null | undefined): number | null {
   // Plain decimal. Tolerate a comma decimal separator (de/es keyboards).
   const n = Number(s.replace(",", "."));
   return Number.isFinite(n) ? roundNice(n) : null;
-}
-
-/**
- * Map an app locale id to a BCP-47 tag suitable for `Intl` number formatting.
- * Current CLDR resolves a region-less `ar` to Western ("latn") digits, but
- * Heirloom's Arabic UI expects Arabic-Indic numerals, so pin the numbering
- * system for the bare `ar` id. Every other locale (including region- or
- * numbering-qualified Arabic like `ar-EG`) passes through unchanged.
- */
-function numberingLocale(locale: string): string {
-  return locale === "ar" ? "ar-u-nu-arab" : locale;
 }
 
 /**

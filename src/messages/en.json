@@ -1544,6 +1544,7 @@
     },
     "lists": {
       "heading": "Shopping lists",
+      "generatedName": "Shopping list",
       "current": "Current list",
       "new": "New list",
       "manage": "Manage",
@@ -1652,6 +1653,7 @@
       "itemLabel": "Add an item",
       "itemPlaceholder": "e.g. Paper towels",
       "quantityLabel": "Qty",
+      "quantityError": "Enter a quantity greater than zero using a valid number or fraction.",
       "unitLabel": "Unit",
       "add": "Add",
       "unitPlaceholder": "cups"

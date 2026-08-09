@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  displayLocalShoppingListName,
+  LOCAL_DEFAULT_LIST_ID,
+  LOCAL_DEFAULT_LIST_NAME,
   migrateShoppingState,
   SHOPPING_HISTORY_LIMIT,
   mergeShoppingState,
@@ -50,6 +53,37 @@ afterEach(() => {
 });
 
 describe("persisted migration", () => {
+  it("localizes only the untouched generated sentinel name", () => {
+    expect(
+      displayLocalShoppingListName(
+        { id: LOCAL_DEFAULT_LIST_ID, name: LOCAL_DEFAULT_LIST_NAME },
+        "Lista de la compra",
+      ),
+    ).toBe("Lista de la compra");
+    expect(
+      displayLocalShoppingListName(
+        { id: LOCAL_DEFAULT_LIST_ID, name: "Mercado semanal" },
+        "Lista de la compra",
+      ),
+    ).toBe("Mercado semanal");
+    expect(
+      displayLocalShoppingListName(
+        { id: "user-list", name: LOCAL_DEFAULT_LIST_NAME },
+        "Lista de la compra",
+      ),
+    ).toBe(LOCAL_DEFAULT_LIST_NAME);
+    expect(
+      displayLocalShoppingListName(
+        {
+          id: "generated-fallback",
+          name: LOCAL_DEFAULT_LIST_NAME,
+          generatedName: true,
+        },
+        "Einkaufsliste",
+      ),
+    ).toBe("Einkaufsliste");
+  });
+
   it("moves every legacy flat item into one explicit default list", () => {
     const legacyItem = {
       id: "legacy",
@@ -71,11 +105,42 @@ describe("persisted migration", () => {
     expect(migrated.lists?.[0]?.items[0]).toMatchObject(legacyItem);
     expect(typeof migrated.lists?.[0]?.items[0]?.aggregationKey).toBe("string");
     expect(migrated.routes).toEqual([]);
+    expect(
+      displayLocalShoppingListName(migrated.lists![0]!, "قائمة التسوق"),
+    ).toBe("قائمة التسوق");
   });
 
   it("recovers a valid empty default from malformed legacy data", () => {
     const migrated = migrateShoppingState({ items: "broken" }, 0);
     expect(migrated.lists?.[0]?.items).toEqual([]);
+  });
+
+  it("stops localizing a generated name after the user renames it", () => {
+    useShoppingStore.setState({
+      lists: [
+        {
+          id: LOCAL_DEFAULT_LIST_ID,
+          name: LOCAL_DEFAULT_LIST_NAME,
+          generatedName: true,
+          storeName: null,
+          isDefault: true,
+          archived: false,
+          items: [],
+        },
+      ],
+      defaultListId: LOCAL_DEFAULT_LIST_ID,
+      currentListId: LOCAL_DEFAULT_LIST_ID,
+    });
+
+    store().renameList(LOCAL_DEFAULT_LIST_ID, "My market", null);
+
+    expect(store().lists[0]).toMatchObject({
+      name: "My market",
+      generatedName: false,
+    });
+    expect(
+      displayLocalShoppingListName(store().lists[0]!, "Lista de la compra"),
+    ).toBe("My market");
   });
 
   it("adds empty per-list history when upgrading the multi-list store", () => {
@@ -193,6 +258,16 @@ describe("independent current and default lists", () => {
 });
 
 describe("routing and list lifecycle", () => {
+  it("marks a generated fallback for localized display", () => {
+    store().archiveList("default");
+
+    const fallback = store().lists.find((candidate) => !candidate.archived)!;
+    expect(fallback.generatedName).toBe(true);
+    expect(displayLocalShoppingListName(fallback, "Einkaufsliste")).toBe(
+      "Einkaufsliste",
+    );
+  });
+
   it("routes an ingredient to one preferred list and not its alternatives", () => {
     const costco = store().createList("Warehouse", "Costco");
     store().addManual("default", { item: "Onion", foodId: "food-onion" });
