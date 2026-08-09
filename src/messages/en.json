@@ -3349,6 +3349,11 @@
     "clear": "Clear",
     "activeFiltersAria": "Active filters",
     "removeFilter": "Remove filter",
+    "clearSearch": "Clear search",
+    "updating": "Updating results…",
+    "quickPick": {
+      "safeFor": "Safe for {name}"
+    },
     "safeForNote": "Best-effort filtering from ingredient names and declared diets. Always double-check labels for allergies.",
     "field": {
       "meal": "Meal or course",
