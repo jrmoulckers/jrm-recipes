@@ -15,6 +15,8 @@ import {
 import {
   ShoppingListView,
   type ManualEntryDraft,
+  type PackagePreferenceDraft,
+  type PackagePreferenceResult,
   type ShoppingViewItem,
 } from "./shopping-list-view";
 import type { ShoppingHistoryEntry } from "./shopping-history";
@@ -35,6 +37,9 @@ export function LocalShoppingList() {
   const deleteList = useShoppingStore((s) => s.deleteList);
   const moveItem = useShoppingStore((s) => s.moveItem);
   const bulkMoveItems = useShoppingStore((s) => s.bulkMoveItems);
+  const saveIngredientPackage = useShoppingStore(
+    (s) => s.saveIngredientPackage,
+  );
   const setChecked = useShoppingStore((s) => s.setChecked);
   const setCategory = useShoppingStore((s) => s.setCategory);
   const remove = useShoppingStore((s) => s.remove);
@@ -94,6 +99,12 @@ export function LocalShoppingList() {
       quantity: i.quantity,
       quantityMax: i.quantityMax,
       unit: i.unit,
+      purchaseQuantity: i.purchaseQuantity,
+      purchaseUnit: i.purchaseUnit,
+      packageCount: i.packageCount,
+      packageAmount: route?.packageAmount ?? null,
+      packageUnit: route?.packageUnit ?? null,
+      packageLabel: route?.packageLabel ?? null,
       note: i.note,
       category: i.category,
       optional: i.optional,
@@ -103,6 +114,7 @@ export function LocalShoppingList() {
         route?.alternativeListIds.filter((id) =>
           activeLists.some((list) => list.id === id),
         ) ?? [],
+      packageRoundBehavior: route?.packageRoundBehavior ?? "inherit",
     };
   });
   const historyEntries = restorePoints
@@ -170,7 +182,13 @@ export function LocalShoppingList() {
     const item = currentList.items.find((candidate) => candidate.id === itemId);
     const target = lists.find((candidate) => candidate.id === targetListId);
     if (!item || !target) return;
-    moveItem(itemId, targetListId, rememberRoute, alternativeListIds);
+    moveItem(
+      currentList.id,
+      itemId,
+      targetListId,
+      rememberRoute,
+      alternativeListIds,
+    );
     toast.success(
       t(rememberRoute ? "routing.toasts.routeSaved" : "routing.toasts.moved", {
         item: item.item,
@@ -264,6 +282,15 @@ export function LocalShoppingList() {
     toast.success(t("toasts.uncheckedAll"));
   }
 
+  async function onSavePackage(
+    itemId: string,
+    draft: PackagePreferenceDraft,
+  ): Promise<PackagePreferenceResult> {
+    saveIngredientPackage({ itemId, ...draft });
+    toast.success(t("package.saved"));
+    return { ok: true };
+  }
+
   async function onClearAll() {
     if (currentList.items.length === 0) return;
     const ok = await confirm({
@@ -330,13 +357,18 @@ export function LocalShoppingList() {
         listOptions={listOptions}
         currentListId={currentList.id}
         onAddManual={onAddManual}
-        onToggle={setChecked}
-        onRemove={remove}
-        onSetCategory={setCategory}
+        onToggle={(itemId, checked) =>
+          setChecked(currentList.id, itemId, checked)
+        }
+        onRemove={(itemId) => remove(currentList.id, itemId)}
+        onSetCategory={(itemId, category) =>
+          setCategory(currentList.id, itemId, category)
+        }
         onMove={onMove}
         onBulkMove={onBulkMove}
         onClearChecked={onRemoveCompleted}
         onUncheckAll={onUncheckAll}
+        onSavePackage={onSavePackage}
         onClearAll={onClearAll}
         historyEntries={historyEntries}
         onRestoreHistory={onRestoreHistory}

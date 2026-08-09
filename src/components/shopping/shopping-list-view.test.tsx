@@ -3,8 +3,10 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { IntlWrapper } from "~/test/intl";
@@ -177,5 +179,228 @@ describe("ShoppingListView routing controls", () => {
     );
 
     expect(onBulkMove).toHaveBeenCalledWith(["milk"], "costco");
+  });
+});
+
+describe("ShoppingListView entity controls", () => {
+  it("uses unique entity ids for controls and targets only the selected duplicate", () => {
+    const onToggle = vi.fn();
+    const onRemove = vi.fn();
+    render(
+      <ShoppingListView
+        items={[
+          { ...item, id: "milk-checked", checked: true },
+          { ...item, id: "milk-new", quantity: 2 },
+        ]}
+        onAddManual={vi.fn()}
+        onToggle={onToggle}
+        onRemove={onRemove}
+        onSetCategory={vi.fn()}
+        onUncheckAll={vi.fn()}
+        onClearChecked={vi.fn()}
+        onClearAll={vi.fn()}
+      />,
+      { wrapper: IntlWrapper },
+    );
+
+    const ids = [...document.querySelectorAll<HTMLElement>("[id]")].map(
+      (element) => element.id,
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+
+    const newMilk = screen.getByRole("checkbox", { checked: false });
+    fireEvent.click(newMilk);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onToggle).toHaveBeenCalledWith("milk-new", true);
+
+    const removeButtons = screen.getAllByRole("button", {
+      name: "Remove Milk",
+    });
+    fireEvent.click(removeButtons[0]!);
+    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(onRemove).toHaveBeenCalledWith("milk-new");
+  });
+});
+
+describe("ShoppingListView package guidance", () => {
+  const listOptions = [
+    {
+      id: "qfc",
+      name: "Weekly",
+      storeName: "QFC",
+      isDefault: true,
+    },
+    {
+      id: "costco",
+      name: "Bulk",
+      storeName: "Costco",
+      isDefault: false,
+    },
+  ];
+
+  function renderView(
+    viewItem: ShoppingViewItem,
+    onSavePackage = vi.fn().mockResolvedValue({ ok: true }),
+  ) {
+    render(
+      <ShoppingListView
+        items={[viewItem]}
+        listOptions={listOptions}
+        currentListId="qfc"
+        onAddManual={vi.fn()}
+        onToggle={vi.fn()}
+        onRemove={vi.fn()}
+        onSetCategory={vi.fn()}
+        onSavePackage={onSavePackage}
+        onUncheckAll={vi.fn()}
+        onClearChecked={vi.fn()}
+        onClearAll={vi.fn()}
+      />,
+      { wrapper: IntlWrapper },
+    );
+    return onSavePackage;
+  }
+
+  it("shows required ranges and purchase guidance without implying less", () => {
+    renderView({
+      ...item,
+      quantity: 3,
+      quantityMax: 4,
+      unit: "cup",
+      purchaseQuantity: 4.5,
+      purchaseUnit: "cup",
+      packageCount: 1,
+      packageAmount: 4.5,
+      packageUnit: "cup",
+      packageLabel: "carton",
+    });
+
+    expect(screen.getByText("Need 3–4 cups")).toBeInTheDocument();
+    expect(screen.getByText("Buy 1 carton (4½ cups)")).toBeInTheDocument();
+  });
+
+  it("preserves an exact non-package quantity when no conversion is valid", () => {
+    renderView({
+      ...item,
+      quantity: 2,
+      quantityMax: 3,
+      unit: "bunch",
+      packageAmount: 1,
+      packageUnit: "case",
+      packageLabel: "Local Farm",
+      packageRoundBehavior: "disable",
+    });
+
+    expect(screen.getByText("Need 2–3 bunch")).toBeInTheDocument();
+    expect(screen.getByText(/Local Farm/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Buy /)).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Edit purchase settings for Milk",
+      }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Package amount")).toHaveValue("1");
+    expect(within(dialog).getByLabelText("Package unit")).toHaveValue("case");
+    expect(within(dialog).getByLabelText("Package rounding")).toHaveValue(
+      "disable",
+    );
+  });
+
+  it("edits package, rounding, label, and preferred store in one route form", async () => {
+    const onSave = renderView(item);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Edit purchase settings for Milk",
+      }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAccessibleDescription(
+      "Save the package sold at your preferred store. Leave the size blank to keep the exact required quantity.",
+    );
+
+    fireEvent.change(within(dialog).getByLabelText("Package amount"), {
+      target: { value: "4,5" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Package unit"), {
+      target: { value: "cup" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText("Brand or package label (optional)"),
+      { target: { value: "carton" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Preferred store"), {
+      target: { value: "costco" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Package rounding"), {
+      target: { value: "enable" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save purchase settings",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith("milk", {
+        listId: "qfc",
+        preferredListId: "costco",
+        packageAmount: 4.5,
+        packageUnit: "cup",
+        packageLabel: "carton",
+        packageRoundBehavior: "enable",
+      }),
+    );
+  });
+
+  it("surfaces invalid package amounts and keeps focusable form controls", () => {
+    const onSave = renderView(item);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Edit purchase settings for Milk",
+      }),
+    );
+    const dialog = screen.getByRole("dialog");
+    const amount = within(dialog).getByLabelText("Package amount");
+    fireEvent.change(amount, { target: { value: "0" } });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save purchase settings",
+      }),
+    );
+
+    expect(amount).toHaveAttribute("aria-invalid", "true");
+    expect(
+      within(dialog).getByText("Enter a package amount greater than zero."),
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("includes localized purchase guidance when sharing", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    renderView({
+      ...item,
+      quantity: 3,
+      unit: "cup",
+      purchaseQuantity: 4,
+      purchaseUnit: "cup",
+      packageCount: 1,
+      packageAmount: 4,
+      packageUnit: "cup",
+      packageLabel: "carton",
+    });
+
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    await user.click(screen.getByRole("menuitem", { name: "Copy text" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect(writeText.mock.calls[0]?.[0]).toContain("3 cups Milk");
+    expect(writeText.mock.calls[0]?.[0]).toContain("Buy 1 carton (4 cups)");
   });
 });

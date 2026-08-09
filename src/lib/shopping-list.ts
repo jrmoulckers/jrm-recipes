@@ -10,17 +10,22 @@
  */
 
 import {
-  convertUnit,
+  convertAmount,
+  convertAmountExact,
+  dimensionOf,
   displayUnit,
   formatQuantity,
   normalizeUnit,
+  resolveDisplayMeasure,
   roundNice,
   scaleQuantity,
   toSystem,
-  unitDimension,
+  type CustomUnitDef,
   type Dimension,
+  type UnitPrefs,
 } from "./units";
 import { detectAllergensForSafety, type Allergen } from "./allergens";
+import { volumeClassForItem } from "./food-units";
 
 // --- Public types -------------------------------------------------------
 
@@ -32,6 +37,13 @@ export type ShoppingItemInput = {
   quantity?: number | null;
   quantityMax?: number | null;
   unit?: string | null;
+  /**
+   * Stable aggregation measure. Persisted shopping rows provide these so a
+   * display/custom-unit change never becomes a new physical requirement.
+   */
+  requiredBaseQuantity?: number | null;
+  requiredBaseQuantityMax?: number | null;
+  requiredBaseUnit?: string | null;
   optional?: boolean | null;
   recipeId?: string | null;
 };
@@ -56,6 +68,17 @@ export type AggregatedItem = {
   quantity: number | null;
   quantityMax: number | null;
   unit: string | null;
+  requiredBaseQuantity: number | null;
+  requiredBaseQuantityMax: number | null;
+  requiredBaseUnit: string | null;
+  /** Rounded amount to purchase, expressed in `purchaseUnit`; null when exact. */
+  purchaseQuantity: number | null;
+  purchaseUnit: string | null;
+  /** Number of packages to buy; null when no valid enabled package rule applied. */
+  packageCount: number | null;
+  packageAmount: number | null;
+  packageUnit: string | null;
+  packageLabel: string | null;
   dimension: Dimension | null;
   category: ShoppingCategory;
   /** True only when every contribution was marked optional. */
@@ -86,6 +109,33 @@ export type AggregatedGroup = {
 export type ShoppingListResult = {
   items: AggregatedItem[];
   groups: AggregatedGroup[];
+};
+
+/** Ingredient-level override layered over the global package-rounding setting. */
+export type PackageRoundBehavior = "inherit" | "enable" | "disable";
+
+/**
+ * Serializable package preference shared by server and offline aggregation.
+ * It intentionally mirrors the package columns on `shopping_ingredient_routes`
+ * without coupling this pure module to Drizzle.
+ */
+export type ShoppingPackageRule = {
+  foodId: string | null;
+  normalizedItem: string;
+  /** Optional for backward-compatible deserialization of pre-package routes. */
+  packageAmount?: number | null;
+  packageUnit?: string | null;
+  packageLabel?: string | null;
+  packageRoundBehavior?: PackageRoundBehavior;
+};
+
+/** Pure inputs needed to make server and offline aggregation deterministic. */
+export type ShoppingAggregationOptions = {
+  unitPreferences?: UnitPrefs | null;
+  customUnits?: readonly CustomUnitDef[];
+  packageRules?: readonly ShoppingPackageRule[];
+  /** Global default. Ingredient rules may explicitly enable or disable it. */
+  packageRounding?: boolean;
 };
 
 // --- Categories ---------------------------------------------------------
@@ -578,8 +628,10 @@ export function isPantryStaple(item: string): boolean {
 /** Metric canonical units, used to pick a display system for a combined line. */
 const METRIC_CANONICAL = new Set(["ml", "l", "g", "kg"]);
 
-function baseUnitFor(dimension: Dimension): string {
-  return dimension === "mass" ? "g" : "ml";
+function baseUnitFor(dimension: Dimension): string | null {
+  if (dimension === "mass") return "g";
+  if (dimension === "volume") return "ml";
+  return null;
 }
 
 /** Serving scale factor. 1 when we lack the numbers to scale meaningfully. */
@@ -606,11 +658,15 @@ type Bucket = {
   unit: string | null;
 };
 
-function bucketFor(rawUnit: string | null | undefined): Bucket {
+function bucketFor(
+  rawUnit: string | null | undefined,
+  customs: readonly CustomUnitDef[],
+): Bucket {
   const unit = rawUnit?.trim();
   if (!unit) return { id: "count", dimension: null, unit: null };
-  const dimension = unitDimension(unit);
-  if (dimension) {
+  const dimension = dimensionOf(unit, customs);
+  const base = dimension ? baseUnitFor(dimension) : null;
+  if (dimension && base && convertAmount(1, unit, base, customs) != null) {
     return { id: dimension, dimension, unit: normalizeUnit(unit) };
   }
   const normalized = normalizeUnit(unit) ?? unit;
@@ -627,9 +683,11 @@ type Accumulator = {
   foodIds: string[];
   dimension: Dimension | null;
   unit: string | null;
+  requiredBaseUnit: string | null;
   min: number;
   max: number;
   hasQuantity: boolean;
+  hasRange: boolean;
   allOptional: boolean;
   anyOptional: boolean;
   recipeIds: string[];
@@ -643,14 +701,21 @@ type Accumulator = {
  */
 export function mergeShoppingItems(
   inputs: ShoppingItemInput[],
+  options: ShoppingAggregationOptions = {},
 ): AggregatedItem[] {
   const map = new Map<string, Accumulator>();
+  const customs = options.customUnits ?? [];
 
   for (const input of inputs) {
     const item = input.item?.trim();
     if (!item) continue;
 
-    const bucket = bucketFor(input.unit);
+    const hasPersistedBase = input.requiredBaseQuantity != null;
+    const sourceUnit = hasPersistedBase ? input.requiredBaseUnit : input.unit;
+    const bucket = bucketFor(sourceUnit, customs);
+    const displayBucket = bucketFor(input.unit, customs);
+    const displayUnit =
+      displayBucket.id === bucket.id ? displayBucket.unit : bucket.unit;
     const identity = input.foodId
       ? `food:${input.foodId}`
       : `text:${normalizeItemName(item)}`;
@@ -663,10 +728,14 @@ export function mergeShoppingItems(
         item,
         foodIds: [],
         dimension: bucket.dimension,
-        unit: bucket.unit,
+        unit: displayUnit,
+        requiredBaseUnit: bucket.dimension
+          ? baseUnitFor(bucket.dimension)
+          : bucket.unit,
         min: 0,
         max: 0,
         hasQuantity: false,
+        hasRange: false,
         allOptional: true,
         anyOptional: false,
         recipeIds: [],
@@ -675,20 +744,37 @@ export function mergeShoppingItems(
       map.set(key, acc);
     }
 
-    const quantity = input.quantity ?? null;
-    const quantityMax = input.quantityMax ?? quantity;
+    const quantity = hasPersistedBase
+      ? input.requiredBaseQuantity!
+      : (input.quantity ?? null);
+    const explicitQuantityMax = hasPersistedBase
+      ? input.requiredBaseQuantityMax
+      : input.quantityMax;
+    const quantityMax = explicitQuantityMax ?? quantity;
 
     if (quantity != null) {
       if (bucket.dimension) {
         const base = baseUnitFor(bucket.dimension);
-        acc.min += convertUnit(quantity, input.unit ?? base, base) ?? 0;
-        acc.max +=
-          convertUnit(quantityMax ?? quantity, input.unit ?? base, base) ?? 0;
+        if (base) {
+          acc.min +=
+            convertAmountExact(quantity, sourceUnit ?? base, base, customs) ??
+            0;
+          acc.max +=
+            convertAmountExact(
+              quantityMax ?? quantity,
+              sourceUnit ?? base,
+              base,
+              customs,
+            ) ?? 0;
+        }
       } else {
         acc.min += quantity;
         acc.max += quantityMax ?? quantity;
       }
       acc.hasQuantity = true;
+      if (explicitQuantityMax != null && explicitQuantityMax !== quantity) {
+        acc.hasRange = true;
+      }
     }
 
     if (!input.optional) acc.allOptional = false;
@@ -701,11 +787,153 @@ export function mergeShoppingItems(
     }
   }
 
-  const items = [...map.values()].map(finalize);
+  const items = [...map.values()].map((acc) => finalize(acc, options));
   return sortItems(items);
 }
 
-function finalize(acc: Accumulator): AggregatedItem {
+function preferredMeasure(
+  acc: Accumulator,
+  options: ShoppingAggregationOptions,
+): { quantity: number; unit: string } | null {
+  if (!acc.dimension) return null;
+  const base = baseUnitFor(acc.dimension);
+  if (!base) return null;
+  const customs = options.customUnits ?? [];
+  const prefs = options.unitPreferences;
+
+  if (!prefs) {
+    const system = acc.unit && METRIC_CANONICAL.has(acc.unit) ? "metric" : "us";
+    return toSystem(acc.min, base, system);
+  }
+
+  if (prefs?.autoConvert) {
+    return resolveDisplayMeasure(
+      acc.min,
+      base,
+      prefs,
+      customs,
+      volumeClassForItem(acc.item),
+    );
+  }
+
+  // With conversion disabled, preserve the first recipe unit where possible.
+  // Mixed inputs remain stable because accumulation has already happened in the
+  // dimension's base unit.
+  if (acc.unit) {
+    const quantity = convertAmount(acc.min, base, acc.unit, customs);
+    if (quantity != null) return { quantity, unit: acc.unit };
+  }
+
+  return null;
+}
+
+function findPackageRule(
+  acc: Accumulator,
+  rules: readonly ShoppingPackageRule[],
+): ShoppingPackageRule | null {
+  if (acc.foodIds.length === 1) {
+    const canonical = rules.find((rule) => rule.foodId === acc.foodIds[0]);
+    if (canonical) return canonical;
+  }
+  // Mirrors the lightweight identity normalization used by shopping routes,
+  // without importing the substitutions knowledge base into the offline bundle.
+  const routeNormalized = acc.item
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .split(",")[0]!
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const normalized = routeNormalized.length
+    ? routeNormalized
+    : normalizeItemName(acc.item);
+  return rules.find((rule) => rule.normalizedItem === normalized) ?? null;
+}
+
+function packageResult(
+  acc: Accumulator,
+  options: ShoppingAggregationOptions,
+): Pick<
+  AggregatedItem,
+  | "purchaseQuantity"
+  | "purchaseUnit"
+  | "packageCount"
+  | "packageAmount"
+  | "packageUnit"
+  | "packageLabel"
+> {
+  const none = {
+    purchaseQuantity: null,
+    purchaseUnit: null,
+    packageCount: null,
+    packageAmount: null,
+    packageUnit: null,
+    packageLabel: null,
+  };
+  const rule = findPackageRule(acc, options.packageRules ?? []);
+  if (!rule || !acc.hasQuantity || !acc.requiredBaseUnit) return none;
+
+  const behavior = rule.packageRoundBehavior ?? "inherit";
+  const enabled =
+    behavior === "enable" ||
+    (behavior === "inherit" && (options.packageRounding ?? false));
+  const amount = rule.packageAmount;
+  const packageUnit = rule.packageUnit?.trim();
+  if (
+    !enabled ||
+    amount == null ||
+    !Number.isFinite(amount) ||
+    amount <= 0 ||
+    !packageUnit
+  ) {
+    return none;
+  }
+
+  const packageBaseAmount = convertAmountExact(
+    amount,
+    packageUnit,
+    acc.requiredBaseUnit,
+    options.customUnits,
+  );
+  if (
+    packageBaseAmount == null ||
+    !Number.isFinite(packageBaseAmount) ||
+    packageBaseAmount <= 0 ||
+    !Number.isFinite(acc.max) ||
+    acc.max < 0
+  ) {
+    return none;
+  }
+  const packageCount = Math.ceil(acc.max / packageBaseAmount);
+  if (
+    !Number.isSafeInteger(packageCount) ||
+    packageCount < 0 ||
+    packageCount > 2_147_483_647
+  ) {
+    return none;
+  }
+  const purchaseQuantity = roundNice(packageCount * amount);
+  if (!Number.isFinite(purchaseQuantity)) {
+    return none;
+  }
+  const label = rule.packageLabel?.trim();
+
+  return {
+    purchaseQuantity,
+    purchaseUnit: packageUnit,
+    packageCount,
+    packageAmount: amount,
+    packageUnit,
+    packageLabel: label?.length ? label : null,
+  };
+}
+
+function finalize(
+  acc: Accumulator,
+  options: ShoppingAggregationOptions,
+): AggregatedItem {
   let quantity: number | null = null;
   let quantityMax: number | null = null;
   let unit = acc.unit;
@@ -713,24 +941,22 @@ function finalize(acc: Accumulator): AggregatedItem {
   if (acc.hasQuantity) {
     if (acc.dimension) {
       const base = baseUnitFor(acc.dimension);
-      const system =
-        acc.unit && METRIC_CANONICAL.has(acc.unit) ? "metric" : "us";
-      const friendly = toSystem(acc.min, base, system);
-      if (friendly) {
+      const friendly = preferredMeasure(acc, options);
+      if (friendly && base) {
         quantity = friendly.quantity;
         unit = friendly.unit;
-        quantityMax =
-          acc.max > acc.min + 1e-6
-            ? convertUnit(acc.max, base, friendly.unit)
-            : null;
+        quantityMax = acc.hasRange
+          ? convertAmount(acc.max, base, friendly.unit, options.customUnits)
+          : null;
       } else {
         quantity = roundNice(acc.min);
       }
     } else {
       quantity = roundNice(acc.min);
-      quantityMax = acc.max > acc.min + 1e-6 ? roundNice(acc.max) : null;
+      quantityMax = acc.hasRange ? roundNice(acc.max) : null;
     }
   }
+  const purchase = packageResult(acc, options);
 
   return {
     key: acc.key,
@@ -739,6 +965,10 @@ function finalize(acc: Accumulator): AggregatedItem {
     quantity,
     quantityMax,
     unit,
+    requiredBaseQuantity: acc.hasQuantity ? acc.min : null,
+    requiredBaseQuantityMax: acc.hasQuantity && acc.hasRange ? acc.max : null,
+    requiredBaseUnit: acc.hasQuantity ? acc.requiredBaseUnit : null,
+    ...purchase,
     dimension: acc.dimension,
     category: categorize(acc.item),
     optional: acc.allOptional,
@@ -800,9 +1030,10 @@ export function toShoppingItems(
  */
 export function aggregateShoppingList(
   recipes: ShoppingRecipeInput[],
+  options: ShoppingAggregationOptions = {},
 ): ShoppingListResult {
   const inputs = recipes.flatMap(toShoppingItems);
-  const items = mergeShoppingItems(inputs);
+  const items = mergeShoppingItems(inputs, options);
   return { items, groups: groupByCategory(items) };
 }
 

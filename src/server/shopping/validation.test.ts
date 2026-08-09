@@ -7,6 +7,7 @@ import {
   moveShoppingItemInput,
   restoreShoppingListPointInput,
   restoreShoppingListPointsInput,
+  saveIngredientPackageInput,
 } from "./validation";
 
 const id = (suffix: string) => `${"a".repeat(23)}${suffix}`;
@@ -85,5 +86,32 @@ describe("shopping list validation", () => {
         ],
       }).success,
     ).toBe(true);
+  });
+
+  it("validates package pairs and tri-state rounding", () => {
+    expect(
+      saveIngredientPackageInput.safeParse({
+        itemId: id("1"),
+        listId: id("2"),
+        preferredListId: id("2"),
+        packageAmount: 4.5,
+      }).success,
+    ).toBe(false);
+    expect(
+      saveIngredientPackageInput.parse({
+        itemId: id("1"),
+        listId: id("2"),
+        preferredListId: id("2"),
+        packageAmount: "4.5",
+        packageUnit: " cup ",
+        packageLabel: " Carton ",
+        packageRoundBehavior: "disable",
+      }),
+    ).toMatchObject({
+      packageAmount: 4.5,
+      packageUnit: "cup",
+      packageLabel: "Carton",
+      packageRoundBehavior: "disable",
+    });
   });
 });

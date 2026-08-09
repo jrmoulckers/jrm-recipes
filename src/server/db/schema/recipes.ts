@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -245,8 +246,8 @@ export const recipeIngredients = pgTable(
       .references(() => recipes.id, { onDelete: "cascade" }),
     position: integer().notNull().default(0),
     section: varchar({ length: 120 }),
-    quantity: real(),
-    quantityMax: real(),
+    quantity: doublePrecision(),
+    quantityMax: doublePrecision(),
     unit: varchar({ length: 40 }),
     item: varchar({ length: 300 }).notNull(),
     note: varchar({ length: 300 }),

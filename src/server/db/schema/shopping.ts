@@ -2,11 +2,11 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   pgTable,
   primaryKey,
-  real,
   text,
   timestamp,
   uniqueIndex,
@@ -56,9 +56,22 @@ export const shoppingListItems = pgTable(
       .notNull()
       .references(() => shoppingLists.id, { onDelete: "cascade" }),
     item: varchar({ length: 300 }).notNull(),
-    quantity: real(),
-    quantityMax: real(),
+    quantity: doublePrecision(),
+    quantityMax: doublePrecision(),
     unit: varchar({ length: 40 }),
+    // Package-math quantities use float8 to preserve JavaScript Number boundary
+    // behavior. Stable aggregation fields remain nullable for legacy rows.
+    requiredBaseQuantity: doublePrecision(),
+    requiredBaseQuantityMax: doublePrecision(),
+    requiredBaseUnit: varchar({ length: 40 }),
+    // `quantity`/`quantityMax` remain the exact recipe requirement. Purchase
+    // fields are populated only when a valid package ceiling is applied.
+    purchaseQuantity: doublePrecision(),
+    purchaseUnit: varchar({ length: 40 }),
+    packageCount: integer(),
+    packageAmount: doublePrecision(),
+    packageUnit: varchar({ length: 40 }),
+    packageLabel: varchar({ length: 120 }),
     category: varchar({ length: 40 }),
     note: varchar({ length: 300 }),
     optional: boolean().notNull().default(false),
@@ -80,8 +93,36 @@ export const shoppingListItems = pgTable(
     check("shopping_list_items_quantity_check", sql`${t.quantity} >= 0`),
     check("shopping_list_items_quantity_max_check", sql`${t.quantityMax} >= 0`),
     check(
+      "shopping_list_items_required_base_quantity_check",
+      sql`${t.requiredBaseQuantity} is null or ${t.requiredBaseQuantity} >= 0`,
+    ),
+    check(
+      "shopping_list_items_required_base_quantity_max_check",
+      sql`${t.requiredBaseQuantityMax} is null or ${t.requiredBaseQuantityMax} >= 0`,
+    ),
+    check(
       "shopping_list_items_quantity_range_check",
       sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
+    ),
+    check(
+      "shopping_list_items_required_base_quantity_range_check",
+      sql`${t.requiredBaseQuantityMax} is null or ${t.requiredBaseQuantity} is null or ${t.requiredBaseQuantityMax} >= ${t.requiredBaseQuantity}`,
+    ),
+    check(
+      "shopping_list_items_purchase_quantity_check",
+      sql`${t.purchaseQuantity} is null or ${t.purchaseQuantity} >= 0`,
+    ),
+    check(
+      "shopping_list_items_package_count_check",
+      sql`${t.packageCount} is null or ${t.packageCount} >= 0`,
+    ),
+    check(
+      "shopping_list_items_package_amount_check",
+      sql`${t.packageAmount} is null or ${t.packageAmount} > 0`,
+    ),
+    check(
+      "shopping_list_items_package_result_check",
+      sql`(${t.packageCount} is null and ${t.purchaseQuantity} is null and ${t.purchaseUnit} is null and ${t.packageAmount} is null and ${t.packageUnit} is null) or (${t.packageCount} is not null and ${t.purchaseQuantity} is not null and ${t.purchaseUnit} is not null and ${t.packageAmount} is not null and ${t.packageUnit} is not null)`,
     ),
   ],
 );
@@ -142,9 +183,18 @@ export const shoppingListRestorePointItems = pgTable(
       .notNull()
       .references(() => shoppingListRestorePoints.id, { onDelete: "cascade" }),
     item: varchar({ length: 300 }).notNull(),
-    quantity: real(),
-    quantityMax: real(),
+    quantity: doublePrecision(),
+    quantityMax: doublePrecision(),
     unit: varchar({ length: 40 }),
+    requiredBaseQuantity: doublePrecision(),
+    requiredBaseQuantityMax: doublePrecision(),
+    requiredBaseUnit: varchar({ length: 40 }),
+    purchaseQuantity: doublePrecision(),
+    purchaseUnit: varchar({ length: 40 }),
+    packageCount: integer(),
+    packageAmount: doublePrecision(),
+    packageUnit: varchar({ length: 40 }),
+    packageLabel: varchar({ length: 120 }),
     category: varchar({ length: 40 }),
     note: varchar({ length: 300 }),
     optional: boolean().notNull().default(false),
@@ -177,6 +227,34 @@ export const shoppingListRestorePointItems = pgTable(
       "shopping_list_restore_point_items_quantity_range_check",
       sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
     ),
+    check(
+      "shopping_list_restore_point_items_required_base_quantity_check",
+      sql`${t.requiredBaseQuantity} is null or ${t.requiredBaseQuantity} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_required_base_quantity_max_check",
+      sql`${t.requiredBaseQuantityMax} is null or ${t.requiredBaseQuantityMax} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_required_base_quantity_range_check",
+      sql`${t.requiredBaseQuantityMax} is null or ${t.requiredBaseQuantity} is null or ${t.requiredBaseQuantityMax} >= ${t.requiredBaseQuantity}`,
+    ),
+    check(
+      "shopping_list_restore_point_items_purchase_quantity_check",
+      sql`${t.purchaseQuantity} is null or ${t.purchaseQuantity} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_package_count_check",
+      sql`${t.packageCount} is null or ${t.packageCount} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_package_amount_check",
+      sql`${t.packageAmount} is null or ${t.packageAmount} > 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_package_result_check",
+      sql`(${t.packageCount} is null and ${t.purchaseQuantity} is null and ${t.purchaseUnit} is null and ${t.packageAmount} is null and ${t.packageUnit} is null) or (${t.packageCount} is not null and ${t.purchaseQuantity} is not null and ${t.purchaseUnit} is not null and ${t.packageAmount} is not null and ${t.packageUnit} is not null)`,
+    ),
   ],
 );
 
@@ -198,6 +276,11 @@ export const shoppingIngredientRoutes = pgTable(
     preferredListId: fk()
       .notNull()
       .references(() => shoppingLists.id, { onDelete: "cascade" }),
+    packageAmount: doublePrecision(),
+    packageUnit: varchar({ length: 40 }),
+    packageLabel: varchar({ length: 120 }),
+    /** NULL inherits the global preference; true/false explicitly overrides. */
+    packageRounding: boolean(),
     ...timestamps(),
   },
   (t) => [
@@ -212,6 +295,14 @@ export const shoppingIngredientRoutes = pgTable(
     index("shopping_ingredient_routes_food_idx").on(t.foodId),
     index("shopping_ingredient_routes_preferred_list_idx").on(
       t.preferredListId,
+    ),
+    check(
+      "shopping_ingredient_routes_package_amount_check",
+      sql`${t.packageAmount} is null or ${t.packageAmount} > 0`,
+    ),
+    check(
+      "shopping_ingredient_routes_package_pair_check",
+      sql`(${t.packageAmount} is null and ${t.packageUnit} is null) or (${t.packageAmount} is not null and ${t.packageUnit} is not null)`,
     ),
   ],
 );

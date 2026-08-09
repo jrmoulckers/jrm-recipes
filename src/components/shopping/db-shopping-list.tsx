@@ -24,6 +24,7 @@ import {
   restoreShoppingListAction,
   restoreShoppingListPointAction,
   restoreShoppingListPointsAction,
+  saveIngredientPackageAction,
   setItemCategoryAction,
   setItemCheckedAction,
   uncheckAllShoppingItemsAction,
@@ -37,6 +38,8 @@ import {
 import {
   ShoppingListView,
   type ManualEntryDraft,
+  type PackagePreferenceDraft,
+  type PackagePreferenceResult,
   type ShoppingViewItem,
 } from "./shopping-list-view";
 import type { ShoppingHistoryEntry } from "./shopping-history";
@@ -342,6 +345,22 @@ export function DbShoppingList({
     );
   }
 
+  async function onSavePackage(
+    itemId: string,
+    draft: PackagePreferenceDraft,
+  ): Promise<PackagePreferenceResult> {
+    const result = await saveIngredientPackageAction({
+      itemId,
+      ...draft,
+    });
+    if (!result.ok) {
+      return { ok: false, error: friendlyError(result.error) };
+    }
+    toast.success(t("package.saved"));
+    router.refresh();
+    return { ok: true };
+  }
+
   function onClearChecked() {
     const previous = optimistic;
     setOptimistic((previous) => previous.filter((item) => !item.checked));
@@ -438,6 +457,7 @@ export function DbShoppingList({
         onSetCategory={onSetCategory}
         onMove={onMove}
         onBulkMove={onBulkMove}
+        onSavePackage={onSavePackage}
         onClearChecked={onClearChecked}
         onUncheckAll={onUncheckAll}
         onClearAll={onClearAll}

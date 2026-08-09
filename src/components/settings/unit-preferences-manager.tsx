@@ -7,6 +7,7 @@ import { Pencil, Plus, Ruler, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { friendlyError } from "~/lib/error-copy";
+import { useShoppingStore } from "~/lib/shopping-store";
 import {
   createCustomUnitAction,
   deleteCustomUnitAction,
@@ -19,6 +20,7 @@ import {
   type CustomUnitInputRaw,
   type MeasurementSystemValue,
   type UnitPreferencesInputRaw,
+  customUnitInput,
 } from "~/server/units/validation";
 import {
   defaultUnitFor,
@@ -58,6 +60,7 @@ export type UnitPreferencesView = {
   massUnit: string | null;
   temperatureUnit: string | null;
   autoConvert: boolean;
+  packageRounding: boolean;
 };
 
 export type CustomUnitView = {
@@ -79,6 +82,7 @@ const DEFAULT_PREFS: UnitPreferencesView = {
   massUnit: null,
   temperatureUnit: null,
   autoConvert: true,
+  packageRounding: false,
 };
 
 /** Sentinel for "follow my system default" in a Radix Select (no empty value). */
@@ -136,9 +140,11 @@ type Editing = { kind: "add" } | { kind: "edit"; id: string };
 export function UnitPreferencesManager({
   preferences,
   customUnits,
+  offline = false,
 }: {
   preferences: UnitPreferencesView | null;
   customUnits: CustomUnitView[];
+  offline?: boolean;
 }) {
   const t = useTranslations("settings.units");
   const router = useRouter();
@@ -146,6 +152,24 @@ export function UnitPreferencesManager({
     preferences ?? DEFAULT_PREFS,
   );
   const [savingPrefs, startPrefsTransition] = React.useTransition();
+  const localPreferences = useShoppingStore((state) => state.unitPreferences);
+  const localPackageRounding = useShoppingStore(
+    (state) => state.packageRounding,
+  );
+  const localCustomUnits = useShoppingStore((state) => state.customUnits);
+  const setLocalPreferences = useShoppingStore(
+    (state) => state.setUnitPreferences,
+  );
+  const visibleCustomUnits = offline ? localCustomUnits : customUnits;
+
+  React.useEffect(() => {
+    if (!offline) return;
+    setPrefs({
+      ...DEFAULT_PREFS,
+      ...localPreferences,
+      packageRounding: localPackageRounding,
+    });
+  }, [localPackageRounding, localPreferences, offline]);
 
   // Persist the full preferences state whenever a control changes. Each save
   // sends the complete desired state, so the server row is always authoritative.
@@ -160,7 +184,24 @@ export function UnitPreferencesManager({
       massUnit: next.massUnit ?? undefined,
       temperatureUnit: next.temperatureUnit ?? undefined,
       autoConvert: next.autoConvert,
+      packageRounding: next.packageRounding,
     };
+    if (offline) {
+      setLocalPreferences(
+        {
+          defaultSystem: next.defaultSystem,
+          volumeUnit: next.volumeUnit,
+          liquidVolumeUnit: next.liquidVolumeUnit,
+          dryVolumeUnit: next.dryVolumeUnit,
+          smallVolumeUnit: next.smallVolumeUnit,
+          massUnit: next.massUnit,
+          temperatureUnit: next.temperatureUnit,
+          autoConvert: next.autoConvert,
+        },
+        next.packageRounding,
+      );
+      return;
+    }
     startPrefsTransition(() => {
       void saveUnitPreferencesAction(input).then((result) => {
         if (!result.ok) {
@@ -204,8 +245,9 @@ export function UnitPreferencesManager({
                 type="button"
                 aria-pressed={active}
                 onClick={() => savePrefs({ ...prefs, defaultSystem: sys })}
+                disabled={savingPrefs}
                 className={cn(
-                  "flex flex-col rounded-xl border p-4 text-start transition-colors",
+                  "flex min-h-11 flex-col rounded-xl border p-4 text-start transition-colors",
                   active
                     ? "border-primary bg-primary/10"
                     : "border-border hover:bg-muted",
@@ -233,8 +275,32 @@ export function UnitPreferencesManager({
               savePrefs({ ...prefs, autoConvert: checked })
             }
             aria-label={t("autoConvert.ariaLabel")}
+            disabled={savingPrefs}
           />
         </label>
+        <label className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
+          <span>
+            <span className="block font-medium">
+              {t("packageRounding.label")}
+            </span>
+            <span className="block text-sm text-muted-foreground">
+              {t("packageRounding.description")}
+            </span>
+          </span>
+          <Switch
+            checked={prefs.packageRounding}
+            onCheckedChange={(checked) =>
+              savePrefs({ ...prefs, packageRounding: checked })
+            }
+            aria-label={t("packageRounding.ariaLabel")}
+            disabled={savingPrefs}
+          />
+        </label>
+        {offline ? (
+          <p className="mt-3 text-sm text-muted-foreground" role="status">
+            {t("offlineNote")}
+          </p>
+        ) : null}
       </section>
 
       {/* Per-dimension overrides. */}
@@ -260,7 +326,7 @@ export function UnitPreferencesManager({
               prefs.defaultSystem,
               "liquid",
             )}
-            options={dimensionOptions("volume", customUnits, (name) =>
+            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
               t("custom.optionCustom", { name }),
             )}
             onChange={(v) => setOverride("liquidVolumeUnit", v)}
@@ -270,7 +336,7 @@ export function UnitPreferencesManager({
             hint={t("preferred.dryVolume.hint")}
             value={prefs.dryVolumeUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "dry")}
-            options={dimensionOptions("volume", customUnits, (name) =>
+            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
               t("custom.optionCustom", { name }),
             )}
             onChange={(v) => setOverride("dryVolumeUnit", v)}
@@ -280,7 +346,7 @@ export function UnitPreferencesManager({
             hint={t("preferred.smallAmounts.hint")}
             value={prefs.smallVolumeUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "small")}
-            options={dimensionOptions("volume", customUnits, (name) =>
+            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
               t("custom.optionCustom", { name }),
             )}
             onChange={(v) => setOverride("smallVolumeUnit", v)}
@@ -290,7 +356,7 @@ export function UnitPreferencesManager({
             hint={t("preferred.weight.hint")}
             value={prefs.massUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("mass", prefs.defaultSystem)}
-            options={dimensionOptions("mass", customUnits, (name) =>
+            options={dimensionOptions("mass", visibleCustomUnits, (name) =>
               t("custom.optionCustom", { name }),
             )}
             onChange={(v) => setOverride("massUnit", v)}
@@ -300,15 +366,17 @@ export function UnitPreferencesManager({
             hint={t("preferred.temperature.hint")}
             value={prefs.temperatureUnit ?? FOLLOW}
             defaultUnit={defaultUnitFor("temperature", prefs.defaultSystem)}
-            options={dimensionOptions("temperature", customUnits, (name) =>
-              t("custom.optionCustom", { name }),
+            options={dimensionOptions(
+              "temperature",
+              visibleCustomUnits,
+              (name) => t("custom.optionCustom", { name }),
             )}
             onChange={(v) => setOverride("temperatureUnit", v)}
           />
         </div>
       </section>
 
-      <CustomUnitsSection customUnits={customUnits} />
+      <CustomUnitsSection customUnits={visibleCustomUnits} offline={offline} />
     </div>
   );
 }
@@ -357,8 +425,10 @@ function DimensionPicker({
 
 function CustomUnitsSection({
   customUnits,
+  offline,
 }: {
   customUnits: CustomUnitView[];
+  offline: boolean;
 }) {
   const t = useTranslations("settings.units");
   const router = useRouter();
@@ -369,6 +439,15 @@ function CustomUnitsSection({
   >({});
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
+  const createLocalCustomUnit = useShoppingStore(
+    (state) => state.createCustomUnit,
+  );
+  const updateLocalCustomUnit = useShoppingStore(
+    (state) => state.updateCustomUnit,
+  );
+  const deleteLocalCustomUnit = useShoppingStore(
+    (state) => state.deleteCustomUnit,
+  );
 
   const nameId = React.useId();
   const abbrId = React.useId();
@@ -399,6 +478,40 @@ function CustomUnitsSection({
     };
     setFieldErrors({});
     const isAdd = editing.kind === "add";
+    const parsed = customUnitInput.safeParse(input);
+    if (!parsed.success) {
+      setFieldErrors(parsed.error.flatten().fieldErrors);
+      return;
+    }
+    if (
+      offline &&
+      customUnits.some(
+        (unit) =>
+          unit.name.trim().toLocaleLowerCase() ===
+            parsed.data.name.toLocaleLowerCase() &&
+          (editing.kind === "add" || unit.id !== editing.id),
+      )
+    ) {
+      setFieldErrors({ name: [t("custom.validation.duplicate")] });
+      return;
+    }
+    if (offline) {
+      const unit = {
+        name: parsed.data.name,
+        abbreviation: parsed.data.abbreviation ?? null,
+        dimension: parsed.data.dimension,
+        baseUnit: parsed.data.baseUnit ?? null,
+        baseAmount: parsed.data.baseAmount ?? null,
+        displayAsTrue: parsed.data.displayAsTrue,
+      };
+      if (editing.kind === "add") createLocalCustomUnit(unit);
+      else updateLocalCustomUnit(editing.id, unit);
+      toast.success(
+        isAdd ? t("custom.toasts.added") : t("custom.toasts.updated"),
+      );
+      setEditing(null);
+      return;
+    }
     startTransition(() => {
       const run = isAdd
         ? createCustomUnitAction(input)
@@ -425,6 +538,11 @@ function CustomUnitsSection({
       confirmLabel: t("custom.deleteConfirm.confirmLabel"),
     });
     if (!ok) return;
+    if (offline) {
+      deleteLocalCustomUnit(unit.id);
+      toast.success(t("custom.toasts.deleted"));
+      return;
+    }
     startTransition(() => {
       void deleteCustomUnitAction(unit.id).then((result) => {
         if (!result.ok) {

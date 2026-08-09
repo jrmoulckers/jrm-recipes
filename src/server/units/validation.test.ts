@@ -7,10 +7,8 @@ describe("unitPreferencesInput", () => {
     const parsed = unitPreferencesInput.parse({});
     expect(parsed).toEqual({
       defaultSystem: "metric",
-      volumeUnit: undefined,
-      massUnit: undefined,
-      temperatureUnit: undefined,
       autoConvert: true,
+      packageRounding: false,
     });
   });
 

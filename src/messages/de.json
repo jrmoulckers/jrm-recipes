@@ -1539,7 +1539,8 @@
       "optional": "Wahlweise",
       "aisleFor": "Gang für {item}",
       "changeAisle": "Gang ändern",
-      "remove": "{item} entfernen"
+      "remove": "{item} entfernen",
+      "required": "Benötigt: {quantity}"
     },
     "lists": {
       "heading": "Einkaufslisten",
@@ -1616,6 +1617,36 @@
           "moved": "{count, plural, one {# Artikel nach {list} verschoben.} other {# Artikel nach {list} verschoben.}}"
         }
       }
+    },
+    "package": {
+      "edit": "Einkaufseinstellungen",
+      "editAria": "Einkaufseinstellungen für {item} bearbeiten",
+      "title": "Einkaufseinstellungen für {item}",
+      "description": "Speichere die Packungsgröße aus deinem bevorzugten Geschäft. Lass die Größe leer, um die genaue benötigte Menge beizubehalten.",
+      "amount": "Packungsmenge",
+      "unit": "Packungseinheit",
+      "label": "Marke oder Packungsbezeichnung (optional)",
+      "labelPlaceholder": "z. B. Eigenmarken-Karton",
+      "preferredStore": "Bevorzugtes Geschäft",
+      "rounding": {
+        "label": "Auf Packungsgrößen runden",
+        "inherit": "Allgemeine Einstellung verwenden",
+        "enable": "Immer aufrunden",
+        "disable": "Nie runden"
+      },
+      "guidance": {
+        "withLabel": "{count} {label} kaufen ({quantity})",
+        "packages": "{count, plural, one {# Packung kaufen ({quantity})} other {# Packungen kaufen ({quantity})}}"
+      },
+      "errors": {
+        "amount": "Gib eine Packungsmenge größer als null ein.",
+        "sizePair": "Gib sowohl eine Packungsmenge als auch eine Einheit an.",
+        "labelNeedsSize": "Gib vor der Bezeichnung eine Packungsgröße an.",
+        "save": "Die Einkaufseinstellungen konnten nicht gespeichert werden."
+      },
+      "cancel": "Abbrechen",
+      "save": "Einkaufseinstellungen speichern",
+      "saved": "Einkaufseinstellungen gespeichert."
     },
     "manual": {
       "itemLabel": "Artikel hinzufügen",
@@ -2640,6 +2671,12 @@
         "description": "Zeige jedes Rezept in deinen Einheiten an. Schalte dies aus, um Mengen immer genau so zu sehen, wie sie geschrieben wurden.",
         "ariaLabel": "Rezepte automatisch in meine Einheiten umrechnen"
       },
+      "packageRounding": {
+        "label": "Auf ganze Packungen aufrunden",
+        "description": "Wenn für eine Zutat eine Packungsgröße gespeichert ist, wird angezeigt, wie viele ganze Packungen du kaufen solltest. Standardmäßig ist dies ausgeschaltet und kann pro Zutat geändert werden.",
+        "ariaLabel": "Einkaufsmengen auf gespeicherte Packungsgrößen aufrunden"
+      },
+      "offlineNote": "Diese Einstellungen und benutzerdefinierten Einheiten werden in diesem Browser gespeichert, solange die Datenbanksynchronisierung nicht verfügbar ist.",
       "preferred": {
         "title": "Bevorzugte Einheiten",
         "description": "Stelle jede Maßeinheit fein ein. Volumen ist danach getrennt, wie du eine Zutat misst, damit Flüssigkeiten in ml und trockene Zutaten in Cups bleiben können.",
@@ -2678,6 +2715,9 @@
           "added": "Einheit hinzugefügt",
           "updated": "Einheit aktualisiert",
           "deleted": "Einheit gelöscht"
+        },
+        "validation": {
+          "duplicate": "Du hast bereits eine Einheit mit diesem Namen."
         },
         "deleteConfirm": {
           "title": "Einheit „{name}“ löschen?",

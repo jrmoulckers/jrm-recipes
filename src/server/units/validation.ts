@@ -50,6 +50,7 @@ export const unitPreferencesInput = z
     massUnit: optionalUnit,
     temperatureUnit: optionalUnit,
     autoConvert: z.boolean().default(true),
+    packageRounding: z.boolean().default(false),
   })
   .superRefine((val, ctx) => {
     for (const key of [

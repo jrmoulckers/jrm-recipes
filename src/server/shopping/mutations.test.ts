@@ -48,6 +48,7 @@ import {
   restoreShoppingListPoints,
   setItemChecked,
   uncheckAll,
+  saveIngredientPackage,
 } from "./mutations";
 
 const user = { id: "user_1" } as User;
@@ -144,6 +145,12 @@ function fakeTx() {
       shoppingIngredientRouteAlternatives: {
         findMany: vi.fn(),
       },
+      userUnitPreferences: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      customUnits: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
     },
     insert: vi.fn((table: unknown) => {
       currentTable = table;
@@ -228,6 +235,128 @@ describe("shopping list ownership", () => {
       }),
     ).rejects.toThrow("NOT_FOUND");
     expect(foreignAlternativeTx.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects foreign item and store references before saving a package route", async () => {
+    const foreignItemTx = fakeTx();
+    foreignItemTx.query.shoppingListItems.findFirst.mockResolvedValue({
+      id: "foreign_item",
+      listId: "list_a",
+      item: "Milk",
+      list: { userId: "user_2" },
+    });
+    foreignItemTx.query.shoppingLists.findFirst.mockResolvedValue(
+      list("list_a"),
+    );
+    runWith(foreignItemTx);
+    await expect(
+      saveIngredientPackage(user, {
+        itemId: "foreign_item",
+        listId: "list_a",
+        preferredListId: "store",
+        packageAmount: 1,
+        packageUnit: "l",
+        packageRoundBehavior: "inherit",
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(foreignItemTx.query.shoppingLists.findFirst).toHaveBeenCalledTimes(
+      1,
+    );
+
+    const tx = fakeTx();
+    tx.query.shoppingListItems.findFirst.mockResolvedValue({
+      id: "item_1",
+      listId: "list_a",
+      item: "Milk",
+      foodId: "food_milk",
+      list: { userId: user.id },
+    });
+    tx.query.shoppingLists.findFirst.mockResolvedValue(
+      list("foreign", { userId: "user_2" }),
+    );
+    runWith(tx);
+
+    await expect(
+      saveIngredientPackage(user, {
+        itemId: "item_1",
+        listId: "list_a",
+        preferredListId: "foreign",
+        packageAmount: 1,
+        packageUnit: "l",
+        packageLabel: "Carton",
+        packageRoundBehavior: "enable",
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(tx.query.shoppingIngredientRoutes.findMany).not.toHaveBeenCalled();
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("updates one owned route and persists required and purchase amounts separately", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListItems.findFirst.mockResolvedValue({
+      id: "item_1",
+      listId: "list_a",
+      item: "Milk",
+      foodId: "food_milk",
+      quantity: 3,
+      quantityMax: null,
+      unit: "cup",
+      optional: false,
+      recipeId: null,
+      list: { userId: user.id },
+    });
+    tx.query.shoppingLists.findFirst.mockResolvedValue(
+      list("store", { isDefault: true }),
+    );
+    tx.query.shoppingLists.findMany.mockResolvedValue([
+      list("store", { isDefault: true }),
+    ]);
+    tx.query.shoppingIngredientRoutes.findMany.mockResolvedValue([
+      {
+        id: "route_1",
+        userId: user.id,
+        foodId: "food_milk",
+        normalizedItem: "milk",
+        preferredListId: "store",
+        packageAmount: null,
+        packageUnit: null,
+        packageLabel: null,
+        packageRounding: null,
+      },
+    ]);
+    tx.query.shoppingIngredientRouteAlternatives.findMany.mockResolvedValue([]);
+    runWith(tx);
+
+    await saveIngredientPackage(user, {
+      itemId: "item_1",
+      listId: "list_a",
+      preferredListId: "store",
+      packageAmount: 4.5,
+      packageUnit: "cup",
+      packageLabel: "Carton",
+      packageRoundBehavior: "enable",
+    });
+
+    expect(tx.sets).toContainEqual(
+      expect.objectContaining({
+        preferredListId: "store",
+        packageAmount: 4.5,
+        packageRounding: true,
+      }),
+    );
+    expect(tx.sets).toContainEqual(
+      expect.objectContaining({
+        quantity: 709.764,
+        unit: "ml",
+        requiredBaseQuantity: 709.764,
+        requiredBaseQuantityMax: null,
+        requiredBaseUnit: "ml",
+        packageCount: 1,
+        purchaseQuantity: 4.5,
+        purchaseUnit: "cup",
+        packageLabel: "Carton",
+      }),
+    );
   });
 });
 
@@ -355,8 +484,23 @@ describe("automatic ingredient routing", () => {
         foodId: "food_milk",
         normalizedItem: "milk",
         preferredListId: "preferred",
+        packageAmount: 500,
+        packageUnit: "ml",
+        packageLabel: "Carton",
+        packageRounding: null,
       },
     ]);
+    tx.query.userUnitPreferences.findFirst.mockResolvedValue({
+      defaultSystem: "metric",
+      volumeUnit: null,
+      liquidVolumeUnit: null,
+      dryVolumeUnit: null,
+      smallVolumeUnit: null,
+      massUnit: null,
+      temperatureUnit: null,
+      autoConvert: true,
+      packageRounding: true,
+    });
     tx.query.shoppingIngredientRouteAlternatives.findMany.mockResolvedValue([
       {
         routeId: "route_milk",
@@ -399,6 +543,14 @@ describe("automatic ingredient routing", () => {
         expect.objectContaining({
           listId: "preferred",
           foodId: "food_milk",
+          quantity: 236.588,
+          unit: "ml",
+          requiredBaseQuantity: 236.588,
+          requiredBaseUnit: "ml",
+          packageCount: 1,
+          purchaseQuantity: 500,
+          purchaseUnit: "ml",
+          packageLabel: "Carton",
         }),
         expect.objectContaining({
           listId: "default",
@@ -601,6 +753,13 @@ describe("shopping restore points", () => {
       .mockResolvedValueOnce(itemB)
       .mockResolvedValueOnce(itemA)
       .mockResolvedValueOnce(itemB);
+    tx.query.shoppingLists.findMany.mockResolvedValue([
+      list("list_a"),
+      list("list_b"),
+      list("list_c", { isDefault: true }),
+    ]);
+    tx.query.shoppingIngredientRoutes.findMany.mockResolvedValue([]);
+    tx.query.shoppingIngredientRouteAlternatives.findMany.mockResolvedValue([]);
     runWith(tx);
 
     const result = await bulkMoveShoppingItems(user, {

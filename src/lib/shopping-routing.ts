@@ -1,4 +1,8 @@
-import { normalizeItemName, type ShoppingItemInput } from "./shopping-list";
+import {
+  normalizeItemName,
+  type ShoppingItemInput,
+  type ShoppingPackageRule,
+} from "./shopping-list";
 import { normalizeIngredient } from "./substitutions";
 
 export type IngredientRouteIdentity = {
@@ -7,7 +11,7 @@ export type IngredientRouteIdentity = {
   normalizedItem: string;
 };
 
-export type ShoppingIngredientRoute = {
+export type ShoppingIngredientRoute = ShoppingPackageRule & {
   id: string;
   foodId: string | null;
   normalizedItem: string;

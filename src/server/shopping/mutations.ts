@@ -16,6 +16,7 @@ import {
 
 import { db } from "~/server/db";
 import {
+  customUnits,
   mealPlanEntries,
   groupMembers,
   shoppingIngredientRouteAlternatives,
@@ -25,16 +26,17 @@ import {
   shoppingListRestorePoints,
   shoppingLists,
   type ShoppingListRestorePoint,
+  userUnitPreferences,
   type User,
 } from "~/server/db/schema";
 import { getRecipe } from "~/server/recipes/queries";
 import { parseLeftoversNote } from "~/lib/planner-batch";
 import {
-  categorize,
   isPantryStaple,
   mergeShoppingItems,
   toShoppingItems,
   type ShoppingCategory,
+  type ShoppingAggregationOptions,
   type ShoppingItemInput,
 } from "~/lib/shopping-list";
 import {
@@ -43,6 +45,7 @@ import {
   partitionShoppingItemsByDestination,
   type ShoppingIngredientRoute,
 } from "~/lib/shopping-routing";
+import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
 import type {
   CreateShoppingListInput,
   BulkMoveShoppingItemsInput,
@@ -50,6 +53,7 @@ import type {
   MoveShoppingItemInput,
   RenameShoppingListInput,
   RestoreShoppingListPointsInput,
+  SaveIngredientPackageInput,
 } from "./validation";
 import {
   planWarningsForRecipes,
@@ -158,6 +162,15 @@ async function createRestorePoint(
         quantity: item.quantity,
         quantityMax: item.quantityMax,
         unit: item.unit,
+        requiredBaseQuantity: item.requiredBaseQuantity,
+        requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+        requiredBaseUnit: item.requiredBaseUnit,
+        purchaseQuantity: item.purchaseQuantity,
+        purchaseUnit: item.purchaseUnit,
+        packageCount: item.packageCount,
+        packageAmount: item.packageAmount,
+        packageUnit: item.packageUnit,
+        packageLabel: item.packageLabel,
         category: item.category,
         note: item.note,
         optional: item.optional,
@@ -286,8 +299,39 @@ async function loadOwnedRoutes(
       normalizedItem: route.normalizedItem,
       preferredListId: route.preferredListId,
       alternativeListIds: alternatives.get(route.id) ?? [],
+      packageAmount: route.packageAmount,
+      packageUnit: route.packageUnit,
+      packageLabel: route.packageLabel,
+      packageRoundBehavior:
+        route.packageRounding == null
+          ? "inherit"
+          : route.packageRounding
+            ? "enable"
+            : "disable",
     };
   });
+}
+
+async function loadAggregationOptions(
+  tx: Tx,
+  userId: string,
+  routes: ShoppingIngredientRoute[],
+): Promise<ShoppingAggregationOptions> {
+  const [preferenceRow, customUnitRows] = await Promise.all([
+    tx.query.userUnitPreferences.findFirst({
+      where: eq(userUnitPreferences.userId, userId),
+    }),
+    tx.query.customUnits.findMany({
+      where: eq(customUnits.userId, userId),
+      orderBy: [asc(customUnits.createdAt), asc(customUnits.id)],
+    }),
+  ]);
+  return {
+    unitPreferences: toUnitPrefs(preferenceRow),
+    customUnits: toCustomUnitDefs(customUnitRows),
+    packageRules: routes,
+    packageRounding: preferenceRow?.packageRounding ?? false,
+  };
 }
 
 async function routingWorkspace(tx: Tx, userId: string) {
@@ -333,10 +377,12 @@ async function routingWorkspace(tx: Tx, userId: string) {
 
   const ownedIds = new Set(lists.map((list) => list.id));
   const routes = await loadOwnedRoutes(tx, userId, ownedIds);
+  const aggregationOptions = await loadAggregationOptions(tx, userId, routes);
   return {
     defaultListId: defaultList.id,
     activeListIds: new Set(active.map((list) => list.id)),
     routes,
+    aggregationOptions,
   };
 }
 
@@ -355,6 +401,9 @@ function itemInput(
     | "quantity"
     | "quantityMax"
     | "unit"
+    | "requiredBaseQuantity"
+    | "requiredBaseQuantityMax"
+    | "requiredBaseUnit"
     | "optional"
     | "recipeId"
   >,
@@ -365,6 +414,9 @@ function itemInput(
     quantity: item.quantity,
     quantityMax: item.quantityMax,
     unit: item.unit,
+    requiredBaseQuantity: item.requiredBaseQuantity,
+    requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+    requiredBaseUnit: item.requiredBaseUnit,
     optional: item.optional,
     recipeId: item.recipeId,
   };
@@ -374,6 +426,7 @@ async function mergeIntoList(
   tx: Tx,
   listId: string,
   contributions: ShoppingItemInput[],
+  options: ShoppingAggregationOptions,
 ) {
   const existing = await tx.query.shoppingListItems.findMany({
     where: eq(shoppingListItems.listId, listId),
@@ -383,16 +436,19 @@ async function mergeIntoList(
   );
   const poolInputs = pool.map(itemInput);
   const poolKeys = new Set(
-    mergeShoppingItems(poolInputs).map((item) => item.key),
+    mergeShoppingItems(poolInputs, options).map((item) => item.key),
   );
   let added = 0;
   let merged = 0;
-  for (const line of mergeShoppingItems(contributions)) {
+  for (const line of mergeShoppingItems(contributions, options)) {
     if (poolKeys.has(line.key)) merged++;
     else added++;
   }
 
-  const consolidated = mergeShoppingItems([...poolInputs, ...contributions]);
+  const consolidated = mergeShoppingItems(
+    [...poolInputs, ...contributions],
+    options,
+  );
   if (pool.length > 0) {
     await tx.delete(shoppingListItems).where(
       inArray(
@@ -410,6 +466,15 @@ async function mergeIntoList(
         quantity: item.quantity,
         quantityMax: item.quantityMax,
         unit: item.unit,
+        requiredBaseQuantity: item.requiredBaseQuantity,
+        requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+        requiredBaseUnit: item.requiredBaseUnit,
+        purchaseQuantity: item.purchaseQuantity,
+        purchaseUnit: item.purchaseUnit,
+        packageCount: item.packageCount,
+        packageAmount: item.packageAmount,
+        packageUnit: item.packageUnit,
+        packageLabel: item.packageLabel,
         category: item.category,
         optional: item.optional,
         recipeId: item.recipeIds[0] ?? null,
@@ -454,7 +519,12 @@ async function routeContributions(
   let added = 0;
   let merged = 0;
   for (const [listId, items] of partitions) {
-    const result = await mergeIntoList(tx, listId, items);
+    const result = await mergeIntoList(
+      tx,
+      listId,
+      items,
+      workspace.aggregationOptions,
+    );
     added += result.added;
     merged += result.merged;
   }
@@ -676,6 +746,19 @@ export async function addManualItem(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const list = await lockOwnedList(tx, input.listId, user.id, true);
+    const workspace = await routingWorkspace(tx, user.id);
+    const [aggregated] = mergeShoppingItems(
+      [
+        {
+          item: input.item,
+          quantity: input.quantity ?? null,
+          quantityMax: input.quantityMax ?? null,
+          unit: input.unit ?? null,
+        },
+      ],
+      workspace.aggregationOptions,
+    );
+    if (!aggregated) throw new Error("INVALID_INPUT");
     const [{ next } = { next: 0 }] = await tx
       .select({
         next: sql<number>`coalesce(max(${shoppingListItems.position}), -1) + 1`,
@@ -685,12 +768,21 @@ export async function addManualItem(
 
     await tx.insert(shoppingListItems).values({
       listId: list.id,
-      item: input.item,
-      quantity: input.quantity ?? null,
-      quantityMax: input.quantityMax ?? null,
-      unit: input.unit ?? null,
+      item: aggregated.item,
+      quantity: aggregated.quantity,
+      quantityMax: aggregated.quantityMax,
+      unit: aggregated.unit,
+      requiredBaseQuantity: aggregated.requiredBaseQuantity,
+      requiredBaseQuantityMax: aggregated.requiredBaseQuantityMax,
+      requiredBaseUnit: aggregated.requiredBaseUnit,
+      purchaseQuantity: aggregated.purchaseQuantity,
+      purchaseUnit: aggregated.purchaseUnit,
+      packageCount: aggregated.packageCount,
+      packageAmount: aggregated.packageAmount,
+      packageUnit: aggregated.packageUnit,
+      packageLabel: aggregated.packageLabel,
       note: input.note ?? null,
-      category: categorize(input.item),
+      category: aggregated.category,
       position: next,
     });
     await touchList(tx, list.id);
@@ -958,6 +1050,7 @@ async function moveItemWithinTransaction(
   tx: Tx,
   item: Awaited<ReturnType<typeof ownedItem>>,
   target: OwnedList,
+  options: ShoppingAggregationOptions,
 ) {
   if (item.listId === target.id) return;
 
@@ -972,18 +1065,19 @@ async function moveItemWithinTransaction(
     const destination = await tx.query.shoppingListItems.findMany({
       where: eq(shoppingListItems.listId, target.id),
     });
-    const sourceKey = mergeShoppingItems([itemInput(item)])[0]?.key;
+    const sourceKey = mergeShoppingItems([itemInput(item)], options)[0]?.key;
     const compatible = destination.filter(
       (candidate) =>
         !candidate.checked &&
         (candidate.note ?? "").length === 0 &&
-        mergeShoppingItems([itemInput(candidate)])[0]?.key === sourceKey,
+        mergeShoppingItems([itemInput(candidate)], options)[0]?.key ===
+          sourceKey,
     );
     if (compatible.length > 0) {
-      const [merged] = mergeShoppingItems([
-        ...compatible.map(itemInput),
-        itemInput(item),
-      ]);
+      const [merged] = mergeShoppingItems(
+        [...compatible.map(itemInput), itemInput(item)],
+        options,
+      );
       if (!merged) throw new Error("NOT_FOUND");
       await tx
         .delete(shoppingListItems)
@@ -1000,6 +1094,15 @@ async function moveItemWithinTransaction(
         quantity: merged.quantity,
         quantityMax: merged.quantityMax,
         unit: merged.unit,
+        requiredBaseQuantity: merged.requiredBaseQuantity,
+        requiredBaseQuantityMax: merged.requiredBaseQuantityMax,
+        requiredBaseUnit: merged.requiredBaseUnit,
+        purchaseQuantity: merged.purchaseQuantity,
+        purchaseUnit: merged.purchaseUnit,
+        packageCount: merged.packageCount,
+        packageAmount: merged.packageAmount,
+        packageUnit: merged.packageUnit,
+        packageLabel: merged.packageLabel,
         category: compatible[0]?.category ?? item.category ?? merged.category,
         optional: merged.optional,
         recipeId: merged.recipeIds[0] ?? null,
@@ -1019,6 +1122,112 @@ async function moveItemWithinTransaction(
   }
   await touchList(tx, item.listId);
   await touchList(tx, target.id);
+}
+
+/** Save package and preferred-store settings on the shared ingredient route. */
+export async function saveIngredientPackage(
+  user: User,
+  input: SaveIngredientPackageInput,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await ownedList(tx, input.listId, user.id);
+    const item = await ownedItem(tx, input.itemId, user.id);
+    if (item.listId !== input.listId) throw new Error("NOT_FOUND");
+    const preferred = await ownedList(tx, input.preferredListId, user.id, true);
+    const lists = await tx.query.shoppingLists.findMany({
+      where: eq(shoppingLists.userId, user.id),
+      columns: { id: true },
+    });
+    const routes = await loadOwnedRoutes(
+      tx,
+      user.id,
+      new Set(lists.map((list) => list.id)),
+    );
+    const identity = ingredientRouteIdentity(item);
+    const existing = findIngredientRoute(item, routes);
+    const packageRoundBehavior =
+      input.packageAmount == null ? "inherit" : input.packageRoundBehavior;
+    const packageRounding =
+      packageRoundBehavior === "inherit"
+        ? null
+        : packageRoundBehavior === "enable";
+    const fields = {
+      foodId: identity.foodId,
+      normalizedItem: identity.normalizedItem,
+      displayItem: item.item,
+      preferredListId: preferred.id,
+      packageAmount: input.packageAmount ?? null,
+      packageUnit: input.packageUnit ?? null,
+      packageLabel: input.packageLabel ?? null,
+      packageRounding,
+      updatedAt: new Date(),
+    };
+
+    let routeId = existing?.id;
+    if (routeId) {
+      await tx
+        .update(shoppingIngredientRoutes)
+        .set(fields)
+        .where(
+          and(
+            eq(shoppingIngredientRoutes.id, routeId),
+            eq(shoppingIngredientRoutes.userId, user.id),
+          ),
+        );
+      await tx
+        .delete(shoppingIngredientRouteAlternatives)
+        .where(
+          and(
+            eq(shoppingIngredientRouteAlternatives.routeId, routeId),
+            eq(shoppingIngredientRouteAlternatives.listId, preferred.id),
+          ),
+        );
+    } else {
+      const [created] = await tx
+        .insert(shoppingIngredientRoutes)
+        .values({ ...fields, userId: user.id })
+        .returning({ id: shoppingIngredientRoutes.id });
+      routeId = created?.id;
+    }
+    if (!routeId) throw new Error("NOT_FOUND");
+
+    const savedRoute: ShoppingIngredientRoute = {
+      id: routeId,
+      foodId: identity.foodId,
+      normalizedItem: identity.normalizedItem,
+      preferredListId: preferred.id,
+      alternativeListIds:
+        existing?.alternativeListIds.filter((id) => id !== preferred.id) ?? [],
+      packageAmount: input.packageAmount ?? null,
+      packageUnit: input.packageUnit ?? null,
+      packageLabel: input.packageLabel ?? null,
+      packageRoundBehavior,
+    };
+    const nextRoutes = existing
+      ? routes.map((route) => (route.id === existing.id ? savedRoute : route))
+      : [...routes, savedRoute];
+    const options = await loadAggregationOptions(tx, user.id, nextRoutes);
+    const [aggregated] = mergeShoppingItems([itemInput(item)], options);
+    if (!aggregated) throw new Error("NOT_FOUND");
+    await tx
+      .update(shoppingListItems)
+      .set({
+        quantity: aggregated.quantity,
+        quantityMax: aggregated.quantityMax,
+        unit: aggregated.unit,
+        requiredBaseQuantity: aggregated.requiredBaseQuantity,
+        requiredBaseQuantityMax: aggregated.requiredBaseQuantityMax,
+        requiredBaseUnit: aggregated.requiredBaseUnit,
+        purchaseQuantity: aggregated.purchaseQuantity,
+        purchaseUnit: aggregated.purchaseUnit,
+        packageCount: aggregated.packageCount,
+        packageAmount: aggregated.packageAmount,
+        packageUnit: aggregated.packageUnit,
+        packageLabel: aggregated.packageLabel,
+        updatedAt: new Date(),
+      })
+      .where(eq(shoppingListItems.id, item.id));
+  });
 }
 
 export async function moveShoppingItem(
@@ -1049,7 +1258,8 @@ export async function moveShoppingItem(
       await ownedList(tx, alternativeId, user.id, true);
     }
 
-    await moveItemWithinTransaction(tx, item, target);
+    const options = (await routingWorkspace(tx, user.id)).aggregationOptions;
+    await moveItemWithinTransaction(tx, item, target, options);
 
     if (input.rememberRoute) {
       await saveItemRoute(
@@ -1120,8 +1330,9 @@ export async function bulkMoveShoppingItems(
         ),
       });
     }
+    const options = (await routingWorkspace(tx, user.id)).aggregationOptions;
     for (const item of movingItems) {
-      await moveItemWithinTransaction(tx, item, target);
+      await moveItemWithinTransaction(tx, item, target, options);
     }
     return { restorePoints, undoToken: { restorePoints } };
   });
@@ -1258,6 +1469,15 @@ export async function restoreShoppingListPoint(
           quantity: item.quantity,
           quantityMax: item.quantityMax,
           unit: item.unit,
+          requiredBaseQuantity: item.requiredBaseQuantity,
+          requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+          requiredBaseUnit: item.requiredBaseUnit,
+          purchaseQuantity: item.purchaseQuantity,
+          purchaseUnit: item.purchaseUnit,
+          packageCount: item.packageCount,
+          packageAmount: item.packageAmount,
+          packageUnit: item.packageUnit,
+          packageLabel: item.packageLabel,
           category: item.category,
           note: item.note,
           optional: item.optional,
@@ -1353,6 +1573,15 @@ export async function restoreShoppingListPoints(
             quantity: item.quantity,
             quantityMax: item.quantityMax,
             unit: item.unit,
+            requiredBaseQuantity: item.requiredBaseQuantity,
+            requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+            requiredBaseUnit: item.requiredBaseUnit,
+            purchaseQuantity: item.purchaseQuantity,
+            purchaseUnit: item.purchaseUnit,
+            packageCount: item.packageCount,
+            packageAmount: item.packageAmount,
+            packageUnit: item.packageUnit,
+            packageLabel: item.packageLabel,
             category: item.category,
             note: item.note,
             optional: item.optional,

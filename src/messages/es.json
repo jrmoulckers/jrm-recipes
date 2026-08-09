@@ -1539,7 +1539,8 @@
       "optional": "Opcional",
       "aisleFor": "Pasillo para {item}",
       "changeAisle": "Cambiar pasillo",
-      "remove": "Eliminar {item}"
+      "remove": "Eliminar {item}",
+      "required": "Necesitas {quantity}"
     },
     "lists": {
       "heading": "Listas de compras",
@@ -1616,6 +1617,36 @@
           "moved": "{count, plural, one {Se movió # artículo a {list}.} other {Se movieron # artículos a {list}.}}"
         }
       }
+    },
+    "package": {
+      "edit": "Ajustes de compra",
+      "editAria": "Editar los ajustes de compra de {item}",
+      "title": "Ajustes de compra de {item}",
+      "description": "Guarda el envase que venden en tu tienda preferida. Deja el tamaño vacío para conservar la cantidad exacta necesaria.",
+      "amount": "Cantidad por envase",
+      "unit": "Unidad del envase",
+      "label": "Marca o etiqueta del envase (opcional)",
+      "labelPlaceholder": "p. ej., cartón de marca blanca",
+      "preferredStore": "Tienda preferida",
+      "rounding": {
+        "label": "Redondeo por envases",
+        "inherit": "Usar mi ajuste general",
+        "enable": "Redondear siempre hacia arriba",
+        "disable": "No redondear nunca"
+      },
+      "guidance": {
+        "withLabel": "Compra {count} {label} ({quantity})",
+        "packages": "{count, plural, one {Compra # envase ({quantity})} other {Compra # envases ({quantity})}}"
+      },
+      "errors": {
+        "amount": "Introduce una cantidad por envase mayor que cero.",
+        "sizePair": "Añade tanto la cantidad como la unidad del envase.",
+        "labelNeedsSize": "Añade un tamaño de envase antes de su etiqueta.",
+        "save": "No pudimos guardar estos ajustes de compra."
+      },
+      "cancel": "Cancelar",
+      "save": "Guardar ajustes de compra",
+      "saved": "Ajustes de compra guardados."
     },
     "manual": {
       "itemLabel": "Agregar un artículo",
@@ -2640,6 +2671,12 @@
         "description": "Vuelve a expresar cada receta en tus unidades. Desactívalo para ver siempre las cantidades tal como las escribió la persona autora.",
         "ariaLabel": "Convertir recetas automáticamente a mis unidades"
       },
+      "packageRounding": {
+        "label": "Redondear a envases completos",
+        "description": "Cuando un ingrediente tenga un tamaño de envase guardado, muestra cuántos envases completos comprar. Está desactivado de forma predeterminada y se puede cambiar por ingrediente.",
+        "ariaLabel": "Redondear las cantidades de compra a los tamaños de envase guardados"
+      },
+      "offlineNote": "Estas preferencias y unidades personalizadas se guardan en este navegador mientras la sincronización con la base de datos no esté disponible.",
       "preferred": {
         "title": "Unidades preferidas",
         "description": "Ajusta cada medida. El volumen se divide según cómo mides un ingrediente, para que puedas dejar los líquidos en ml y los secos en tazas.",
@@ -2678,6 +2715,9 @@
           "added": "Unidad agregada",
           "updated": "Unidad actualizada",
           "deleted": "Unidad eliminada"
+        },
+        "validation": {
+          "duplicate": "Ya tienes una unidad con ese nombre."
         },
         "deleteConfirm": {
           "title": "¿Eliminar la unidad «{name}»?",

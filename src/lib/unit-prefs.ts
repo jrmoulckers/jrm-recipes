@@ -23,6 +23,7 @@ export type UnitPreferencesRow = {
   massUnit: string | null;
   temperatureUnit: string | null;
   autoConvert: boolean;
+  packageRounding?: boolean;
 };
 
 /** The subset of a `custom_units` row conversion needs. */

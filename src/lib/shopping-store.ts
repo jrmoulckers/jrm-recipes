@@ -4,9 +4,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import {
-  categorize,
   mergeShoppingItems,
   toShoppingItems,
+  type PackageRoundBehavior,
+  type ShoppingAggregationOptions,
   type ShoppingCategory,
   type ShoppingItemInput,
   type ShoppingRecipeInput,
@@ -17,6 +18,13 @@ import {
   partitionShoppingItemsByDestination,
   type ShoppingIngredientRoute,
 } from "~/lib/shopping-routing";
+import {
+  DEFAULT_UNIT_PREFS,
+  isKnownUnit,
+  normalizeUnit,
+  type Dimension,
+  type UnitPrefs,
+} from "~/lib/units";
 
 /**
  * Offline shopping list. When no database is configured the app still needs a
@@ -26,11 +34,22 @@ import {
 
 export type LocalShoppingItem = {
   id: string;
+  /** Stable ingredient identity used only for consolidation, never as an entity id. */
+  aggregationKey: string;
   item: string;
   foodId: string | null;
   quantity: number | null;
   quantityMax: number | null;
   unit: string | null;
+  requiredBaseQuantity: number | null;
+  requiredBaseQuantityMax: number | null;
+  requiredBaseUnit: string | null;
+  purchaseQuantity: number | null;
+  purchaseUnit: string | null;
+  packageCount: number | null;
+  packageAmount: number | null;
+  packageUnit: string | null;
+  packageLabel: string | null;
   note: string | null;
   category: ShoppingCategory;
   optional: boolean;
@@ -65,6 +84,16 @@ export type LocalShoppingRestorePoint = {
   items: LocalShoppingItem[];
 };
 
+export type LocalCustomUnit = {
+  id: string;
+  name: string;
+  dimension: Exclude<Dimension, "temperature">;
+  baseUnit: string | null;
+  baseAmount: number | null;
+  abbreviation: string | null;
+  displayAsTrue: boolean;
+};
+
 export type ManualEntry = {
   item: string;
   foodId?: string | null;
@@ -80,6 +109,9 @@ type ShoppingStore = {
   currentListId: string;
   routes: LocalShoppingRoute[];
   restorePoints: LocalShoppingRestorePoint[];
+  unitPreferences: UnitPrefs;
+  customUnits: LocalCustomUnit[];
+  packageRounding: boolean;
   addRecipe: (recipe: ShoppingRecipeInput) => void;
   addManual: (listId: string, entry: ManualEntry) => void;
   createList: (name: string, storeName?: string | null) => string;
@@ -90,14 +122,12 @@ type ShoppingStore = {
   restoreList: (id: string) => void;
   deleteList: (id: string) => void;
   moveItem: (
+    sourceListId: string,
     itemId: string,
     targetListId: string,
     rememberRoute?: boolean,
     alternativeListIds?: string[],
   ) => void;
-  setChecked: (id: string, checked: boolean) => void;
-  setCategory: (id: string, category: ShoppingCategory) => void;
-  remove: (id: string) => void;
   removeCompleted: (listId: string) => string | null;
   uncheckAll: (listId: string) => void;
   clearAll: (listId: string) => string | null;
@@ -117,6 +147,25 @@ type ShoppingStore = {
   restoreMultipleFromHistory: (
     restores: { listId: string; restorePointId: string }[],
   ) => { listId: string; restorePointId: string }[] | null;
+  saveIngredientPackage: (input: {
+    itemId: string;
+    listId: string;
+    preferredListId: string;
+    packageAmount?: number;
+    packageUnit?: string;
+    packageLabel?: string;
+    packageRoundBehavior: PackageRoundBehavior;
+  }) => void;
+  setUnitPreferences: (
+    preferences: UnitPrefs,
+    packageRounding: boolean,
+  ) => void;
+  createCustomUnit: (unit: Omit<LocalCustomUnit, "id">) => string;
+  updateCustomUnit: (id: string, unit: Omit<LocalCustomUnit, "id">) => void;
+  deleteCustomUnit: (id: string) => void;
+  setChecked: (listId: string, id: string, checked: boolean) => void;
+  setCategory: (listId: string, id: string, category: ShoppingCategory) => void;
+  remove: (listId: string, id: string) => void;
 };
 
 const LOCAL_DEFAULT_LIST_ID = "local-default";
@@ -143,6 +192,7 @@ function defaultList(items: LocalShoppingItem[] = []): LocalShoppingList {
 function consolidate(
   existing: LocalShoppingItem[],
   incoming: ShoppingItemInput[],
+  options: ShoppingAggregationOptions,
 ): LocalShoppingItem[] {
   const preserved = existing.filter(
     (i) => i.checked || (i.note ?? "").length > 0,
@@ -157,24 +207,53 @@ function consolidate(
     quantity: i.quantity,
     quantityMax: i.quantityMax,
     unit: i.unit,
+    requiredBaseQuantity: i.requiredBaseQuantity,
+    requiredBaseQuantityMax: i.requiredBaseQuantityMax,
+    requiredBaseUnit: i.requiredBaseUnit,
     optional: i.optional,
     recipeId: i.recipeId,
   }));
+  const availableIds = new Map<string, string[]>();
+  for (let index = 0; index < pool.length; index += 1) {
+    const item = pool[index]!;
+    const [single] = mergeShoppingItems([poolInputs[index]!], options);
+    const key = item.aggregationKey || single?.key;
+    if (!key) continue;
+    availableIds.set(key, [...(availableIds.get(key) ?? []), item.id]);
+  }
+  const reservedIds = new Set(preserved.map((item) => item.id));
 
-  const merged = mergeShoppingItems([...poolInputs, ...incoming]).map(
-    (m): LocalShoppingItem => ({
-      id: m.key,
-      item: m.item,
-      foodId: m.foodId,
-      quantity: m.quantity,
-      quantityMax: m.quantityMax,
-      unit: m.unit,
-      note: null,
-      category: m.category,
-      optional: m.optional,
-      checked: false,
-      recipeId: m.recipeIds[0] ?? null,
-    }),
+  const merged = mergeShoppingItems([...poolInputs, ...incoming], options).map(
+    (m): LocalShoppingItem => {
+      const matchingIds = availableIds.get(m.key) ?? [];
+      const preservedId = matchingIds.find((id) => !reservedIds.has(id));
+      let id = preservedId ?? uid();
+      while (reservedIds.has(id)) id = uid();
+      reservedIds.add(id);
+      return {
+        id,
+        aggregationKey: m.key,
+        item: m.item,
+        foodId: m.foodId,
+        quantity: m.quantity,
+        quantityMax: m.quantityMax,
+        unit: m.unit,
+        requiredBaseQuantity: m.requiredBaseQuantity,
+        requiredBaseQuantityMax: m.requiredBaseQuantityMax,
+        requiredBaseUnit: m.requiredBaseUnit,
+        purchaseQuantity: m.purchaseQuantity,
+        purchaseUnit: m.purchaseUnit,
+        packageCount: m.packageCount,
+        packageAmount: m.packageAmount,
+        packageUnit: m.packageUnit,
+        packageLabel: m.packageLabel,
+        note: null,
+        category: m.category,
+        optional: m.optional,
+        checked: false,
+        recipeId: m.recipeIds[0] ?? null,
+      };
+    },
   );
 
   return [...preserved, ...merged];
@@ -276,6 +355,7 @@ function upsertRoute(
   const identity = ingredientRouteIdentity(item);
   const existing = findIngredientRoute(item, routes);
   const next: LocalShoppingRoute = {
+    ...existing,
     id: existing?.id ?? uid(),
     foodId: identity.foodId,
     normalizedItem: identity.normalizedItem,
@@ -290,6 +370,135 @@ function upsertRoute(
   return existing
     ? routes.map((route) => (route.id === existing.id ? next : route))
     : [...routes, next];
+}
+
+function aggregationOptions(
+  state: Pick<
+    ShoppingStore,
+    "unitPreferences" | "customUnits" | "routes" | "packageRounding"
+  >,
+): ShoppingAggregationOptions {
+  return {
+    unitPreferences: state.unitPreferences,
+    customUnits: state.customUnits,
+    packageRules: state.routes,
+    packageRounding: state.packageRounding,
+  };
+}
+
+function reaggregateItem(
+  item: LocalShoppingItem,
+  options: ShoppingAggregationOptions,
+): LocalShoppingItem {
+  const [aggregated] = mergeShoppingItems(
+    [
+      {
+        item: item.item,
+        foodId: item.foodId,
+        quantity: item.quantity,
+        quantityMax: item.quantityMax,
+        unit: item.unit,
+        requiredBaseQuantity: item.requiredBaseQuantity,
+        requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+        requiredBaseUnit: item.requiredBaseUnit,
+        optional: item.optional,
+        recipeId: item.recipeId,
+      },
+    ],
+    options,
+  );
+  return aggregated
+    ? {
+        ...item,
+        quantity: aggregated.quantity,
+        quantityMax: aggregated.quantityMax,
+        unit: aggregated.unit,
+        requiredBaseQuantity: aggregated.requiredBaseQuantity,
+        requiredBaseQuantityMax: aggregated.requiredBaseQuantityMax,
+        requiredBaseUnit: aggregated.requiredBaseUnit,
+        purchaseQuantity: aggregated.purchaseQuantity,
+        purchaseUnit: aggregated.purchaseUnit,
+        packageCount: aggregated.packageCount,
+        packageAmount: aggregated.packageAmount,
+        packageUnit: aggregated.packageUnit,
+        packageLabel: aggregated.packageLabel,
+      }
+    : item;
+}
+
+function reaggregateLists(
+  lists: LocalShoppingList[],
+  options: ShoppingAggregationOptions,
+): LocalShoppingList[] {
+  return lists.map((list) => ({
+    ...list,
+    items: list.items.map((item) => reaggregateItem(item, options)),
+  }));
+}
+
+function customUnitNames(unit: LocalCustomUnit): Set<string> {
+  return new Set(
+    [unit.name, unit.abbreviation]
+      .filter((name): name is string => Boolean(name?.trim()))
+      .map((name) => name.trim().toLocaleLowerCase()),
+  );
+}
+
+function canonicalizeCustomUnitRoutes(
+  routes: LocalShoppingRoute[],
+  unit: LocalCustomUnit,
+): { routes: LocalShoppingRoute[]; changed: boolean } {
+  const names = customUnitNames(unit);
+  const baseUnit = normalizeUnit(unit.baseUnit);
+  const baseAmount = unit.baseAmount;
+  if (
+    !baseUnit ||
+    !isKnownUnit(baseUnit) ||
+    baseAmount == null ||
+    !Number.isFinite(baseAmount) ||
+    baseAmount <= 0
+  ) {
+    return { routes, changed: false };
+  }
+  let changed = false;
+  return {
+    routes: routes.map((route) => {
+      const packageUnit = route.packageUnit?.trim().toLocaleLowerCase();
+      if (
+        !packageUnit ||
+        !names.has(packageUnit) ||
+        route.packageAmount == null
+      ) {
+        return route;
+      }
+      changed = true;
+      return {
+        ...route,
+        packageAmount: route.packageAmount * baseAmount,
+        packageUnit: baseUnit,
+      };
+    }),
+    changed,
+  };
+}
+
+function canonicalizeCustomUnitRows(
+  lists: LocalShoppingList[],
+  unit: LocalCustomUnit,
+  options: ShoppingAggregationOptions,
+): LocalShoppingList[] {
+  const names = customUnitNames(unit);
+  return lists.map((list) => ({
+    ...list,
+    items: list.items.map((item) => {
+      const requiredUnit = item.requiredBaseUnit?.trim().toLocaleLowerCase();
+      const displayUnit = item.unit?.trim().toLocaleLowerCase();
+      return (requiredUnit && names.has(requiredUnit)) ||
+        (displayUnit && names.has(displayUnit))
+        ? reaggregateItem(item, options)
+        : item;
+    }),
+  }));
 }
 
 function promoteRoutes(
@@ -341,11 +550,55 @@ function ensureActiveFallback(
 type PersistedShoppingState = Partial<
   Pick<
     ShoppingStore,
-    "lists" | "defaultListId" | "currentListId" | "routes" | "restorePoints"
+    | "lists"
+    | "defaultListId"
+    | "currentListId"
+    | "routes"
+    | "restorePoints"
+    | "unitPreferences"
+    | "customUnits"
+    | "packageRounding"
   >
 > & {
   items?: LocalShoppingItem[];
 };
+
+function normalizePersistedLists(
+  lists: LocalShoppingList[],
+  customUnits: readonly LocalCustomUnit[],
+): LocalShoppingList[] {
+  const usedIds = new Set<string>();
+  return lists.map((list) => ({
+    ...list,
+    items: list.items.map((item) => {
+      const [aggregated] = mergeShoppingItems(
+        [
+          {
+            item: item.item,
+            foodId: item.foodId,
+            quantity: item.quantity,
+            quantityMax: item.quantityMax,
+            unit: item.unit,
+            requiredBaseQuantity: item.requiredBaseQuantity,
+            requiredBaseQuantityMax: item.requiredBaseQuantityMax,
+            requiredBaseUnit: item.requiredBaseUnit,
+            optional: item.optional,
+            recipeId: item.recipeId,
+          },
+        ],
+        { customUnits },
+      );
+      let id = typeof item.id === "string" && item.id ? item.id : uid();
+      while (usedIds.has(id)) id = uid();
+      usedIds.add(id);
+      return {
+        ...item,
+        id,
+        aggregationKey: item.aggregationKey ?? aggregated?.key ?? id,
+      };
+    }),
+  }));
+}
 
 function isPersistedList(value: unknown): value is LocalShoppingList {
   if (!value || typeof value !== "object") return false;
@@ -397,6 +650,10 @@ function isPersistedRestorePoint(
   );
 }
 
+function hasOwn(value: object, key: PropertyKey): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 export function migrateShoppingState(
   persisted: unknown,
   version: number,
@@ -407,12 +664,66 @@ export function migrateShoppingState(
       : {};
   if (version < 1) {
     const items = Array.isArray(saved.items) ? saved.items : [];
+    const lists = normalizePersistedLists(
+      [defaultList(items)],
+      Array.isArray(saved.customUnits) ? saved.customUnits : [],
+    );
     return {
-      lists: [defaultList(items)],
+      lists,
       defaultListId: LOCAL_DEFAULT_LIST_ID,
       currentListId: LOCAL_DEFAULT_LIST_ID,
       routes: [],
       restorePoints: [],
+      unitPreferences: { ...DEFAULT_UNIT_PREFS },
+      customUnits: [],
+      packageRounding: false,
+    };
+  }
+  if (version < 3 && Array.isArray(saved.lists)) {
+    const customUnits = Array.isArray(saved.customUnits)
+      ? saved.customUnits
+      : [];
+    return {
+      ...saved,
+      restorePoints: Array.isArray(saved.restorePoints)
+        ? saved.restorePoints
+        : [],
+      lists: normalizePersistedLists(saved.lists, customUnits).map((list) => ({
+        ...list,
+        items: list.items.map((item) => {
+          const [canonical] = mergeShoppingItems(
+            [
+              {
+                item: item.item,
+                foodId: item.foodId,
+                quantity: item.quantity,
+                quantityMax: item.quantityMax,
+                unit: item.unit,
+                optional: item.optional,
+                recipeId: item.recipeId,
+              },
+            ],
+            { customUnits },
+          );
+          return canonical
+            ? {
+                ...item,
+                requiredBaseQuantity: canonical.requiredBaseQuantity,
+                requiredBaseQuantityMax: canonical.requiredBaseQuantityMax,
+                requiredBaseUnit: canonical.requiredBaseUnit,
+              }
+            : item;
+        }),
+      })),
+    };
+  }
+  if (version < 4 && Array.isArray(saved.lists)) {
+    return {
+      ...saved,
+      lists: normalizePersistedLists(
+        saved.lists,
+        Array.isArray(saved.customUnits) ? saved.customUnits : [],
+      ),
     };
   }
   if (version < 2) {
@@ -421,7 +732,7 @@ export function migrateShoppingState(
   return saved;
 }
 
-function mergeShoppingState(
+export function mergeShoppingState(
   persisted: unknown,
   current: ShoppingStore,
 ): ShoppingStore {
@@ -432,7 +743,31 @@ function mergeShoppingState(
   const validLists = Array.isArray(saved.lists)
     ? saved.lists.filter(isPersistedList)
     : [];
-  const candidates = validLists.length > 0 ? validLists : current.lists;
+  const candidates = normalizePersistedLists(
+    validLists.length > 0 ? validLists : current.lists,
+    Array.isArray(saved.customUnits) ? saved.customUnits : current.customUnits,
+  ).map((list) => ({
+    ...list,
+    items: list.items.map((item) => ({
+      ...item,
+      foodId: item.foodId ?? null,
+      requiredBaseQuantity: hasOwn(item, "requiredBaseQuantity")
+        ? item.requiredBaseQuantity
+        : (item.quantity ?? null),
+      requiredBaseQuantityMax: hasOwn(item, "requiredBaseQuantityMax")
+        ? item.requiredBaseQuantityMax
+        : (item.quantityMax ?? null),
+      requiredBaseUnit: hasOwn(item, "requiredBaseUnit")
+        ? item.requiredBaseUnit
+        : (item.unit ?? null),
+      purchaseQuantity: item.purchaseQuantity ?? null,
+      purchaseUnit: item.purchaseUnit ?? null,
+      packageCount: item.packageCount ?? null,
+      packageAmount: item.packageAmount ?? null,
+      packageUnit: item.packageUnit ?? null,
+      packageLabel: item.packageLabel ?? null,
+    })),
+  }));
   const lists = candidates.some((list) => !list.archived)
     ? candidates
     : [...candidates, { ...defaultList(), id: uid() }];
@@ -492,6 +827,11 @@ function mergeShoppingState(
     currentListId,
     routes,
     restorePoints,
+    unitPreferences: saved.unitPreferences ?? current.unitPreferences,
+    customUnits: Array.isArray(saved.customUnits)
+      ? saved.customUnits
+      : current.customUnits,
+    packageRounding: saved.packageRounding ?? false,
   };
 }
 
@@ -503,6 +843,9 @@ export const useShoppingStore = create<ShoppingStore>()(
       currentListId: LOCAL_DEFAULT_LIST_ID,
       routes: [],
       restorePoints: [],
+      unitPreferences: { ...DEFAULT_UNIT_PREFS },
+      customUnits: [],
+      packageRounding: false,
       addRecipe: (recipe) =>
         set((state) => {
           const active = activeLists(state.lists);
@@ -522,7 +865,14 @@ export const useShoppingStore = create<ShoppingStore>()(
             lists: state.lists.map((list) => {
               const incoming = partitioned.get(list.id);
               return incoming
-                ? { ...list, items: consolidate(list.items, incoming) }
+                ? {
+                    ...list,
+                    items: consolidate(
+                      list.items,
+                      incoming,
+                      aggregationOptions(state),
+                    ),
+                  }
                 : list;
             }),
           };
@@ -533,15 +883,38 @@ export const useShoppingStore = create<ShoppingStore>()(
             (list) => list.id === listId && !list.archived,
           );
           if (!target) return state;
+          const [aggregated] = mergeShoppingItems(
+            [
+              {
+                item: entry.item,
+                foodId: entry.foodId,
+                quantity: entry.quantity,
+                quantityMax: entry.quantityMax,
+                unit: entry.unit,
+              },
+            ],
+            aggregationOptions(state),
+          );
+          if (!aggregated) return state;
           const item: LocalShoppingItem = {
             id: uid(),
-            item: entry.item.trim(),
-            foodId: entry.foodId ?? null,
-            quantity: entry.quantity ?? null,
-            quantityMax: entry.quantityMax ?? null,
-            unit: entry.unit?.trim() ?? null,
+            aggregationKey: aggregated.key,
+            item: aggregated.item,
+            foodId: aggregated.foodId,
+            quantity: aggregated.quantity,
+            quantityMax: aggregated.quantityMax,
+            unit: aggregated.unit,
+            requiredBaseQuantity: aggregated.requiredBaseQuantity,
+            requiredBaseQuantityMax: aggregated.requiredBaseQuantityMax,
+            requiredBaseUnit: aggregated.requiredBaseUnit,
+            purchaseQuantity: aggregated.purchaseQuantity,
+            purchaseUnit: aggregated.purchaseUnit,
+            packageCount: aggregated.packageCount,
+            packageAmount: aggregated.packageAmount,
+            packageUnit: aggregated.packageUnit,
+            packageLabel: aggregated.packageLabel,
             note: entry.note?.trim() ?? null,
-            category: categorize(entry.item),
+            category: aggregated.category,
             optional: false,
             checked: false,
             recipeId: null,
@@ -665,6 +1038,7 @@ export const useShoppingStore = create<ShoppingStore>()(
           };
         }),
       moveItem: (
+        sourceListId,
         itemId,
         targetListId,
         rememberRoute = false,
@@ -674,8 +1048,10 @@ export const useShoppingStore = create<ShoppingStore>()(
           const target = state.lists.find(
             (list) => list.id === targetListId && !list.archived,
           );
-          const source = state.lists.find((list) =>
-            list.items.some((item) => item.id === itemId),
+          const source = state.lists.find(
+            (list) =>
+              list.id === sourceListId &&
+              list.items.some((item) => item.id === itemId),
           );
           const item = source?.items.find(
             (candidate) => candidate.id === itemId,
@@ -696,7 +1072,10 @@ export const useShoppingStore = create<ShoppingStore>()(
             if (item.checked || (item.note ?? "").length > 0) {
               return { ...list, items: [...list.items, item] };
             }
-            return { ...list, items: consolidate(list.items, [item]) };
+            return {
+              ...list,
+              items: consolidate(list.items, [item], aggregationOptions(state)),
+            };
           });
           return {
             lists,
@@ -711,30 +1090,187 @@ export const useShoppingStore = create<ShoppingStore>()(
               : state.routes,
           };
         }),
-      setChecked: (id, checked) =>
-        set((state) => ({
-          lists: state.lists.map((list) => ({
-            ...list,
-            items: list.items.map((item) =>
-              item.id === id ? { ...item, checked } : item,
+      saveIngredientPackage: (input) =>
+        set((state) => {
+          const preferred = state.lists.find(
+            (list) => list.id === input.preferredListId && !list.archived,
+          );
+          const source = state.lists.find((list) => list.id === input.listId);
+          const item = source?.items.find(
+            (candidate) => candidate.id === input.itemId,
+          );
+          if (!preferred || !source || !item) return state;
+
+          const identity = ingredientRouteIdentity(item);
+          const existing = findIngredientRoute(item, state.routes);
+          const packageRoundBehavior =
+            input.packageAmount == null
+              ? "inherit"
+              : input.packageRoundBehavior;
+          const packageUnit = input.packageUnit?.trim();
+          const packageLabel = input.packageLabel?.trim();
+          const nextRoute: LocalShoppingRoute = {
+            ...existing,
+            id: existing?.id ?? uid(),
+            foodId: identity.foodId,
+            normalizedItem: identity.normalizedItem,
+            displayItem: item.item,
+            preferredListId: preferred.id,
+            alternativeListIds:
+              existing?.alternativeListIds.filter(
+                (id) => id !== preferred.id,
+              ) ?? [],
+            packageAmount: input.packageAmount ?? null,
+            packageUnit: packageUnit?.length ? packageUnit : null,
+            packageLabel: packageLabel?.length ? packageLabel : null,
+            packageRoundBehavior,
+          };
+          const routes = existing
+            ? state.routes.map((route) =>
+                route.id === existing.id ? nextRoute : route,
+              )
+            : [...state.routes, nextRoute];
+          const options = aggregationOptions({ ...state, routes });
+          return {
+            routes,
+            lists: state.lists.map((list) => ({
+              ...list,
+              items: list.items.map((candidate) =>
+                findIngredientRoute(candidate, [nextRoute])
+                  ? reaggregateItem(candidate, options)
+                  : candidate,
+              ),
+            })),
+          };
+        }),
+      setUnitPreferences: (unitPreferences, packageRounding) =>
+        set((state) => {
+          const next = { ...state, unitPreferences, packageRounding };
+          return {
+            unitPreferences,
+            packageRounding,
+            lists: reaggregateLists(state.lists, aggregationOptions(next)),
+          };
+        }),
+      createCustomUnit: (unit) => {
+        const id = uid();
+        set((state) => {
+          const customUnits = [...state.customUnits, { ...unit, id }];
+          const normalizedRoutes = canonicalizeCustomUnitRoutes(state.routes, {
+            ...unit,
+            id,
+          });
+          const next = {
+            ...state,
+            customUnits,
+            routes: normalizedRoutes.routes,
+          };
+          return {
+            customUnits,
+            routes: normalizedRoutes.routes,
+            lists: reaggregateLists(state.lists, aggregationOptions(next)),
+          };
+        });
+        return id;
+      },
+      updateCustomUnit: (id, unit) =>
+        set((state) => {
+          const oldUnit = state.customUnits.find(
+            (candidate) => candidate.id === id,
+          );
+          if (!oldUnit) return state;
+          const normalizedRoutes = canonicalizeCustomUnitRoutes(
+            state.routes,
+            oldUnit,
+          );
+          const canonicalizedLists = canonicalizeCustomUnitRows(
+            state.lists,
+            oldUnit,
+            aggregationOptions({ ...state, routes: normalizedRoutes.routes }),
+          );
+          const customUnits = state.customUnits.map((candidate) =>
+            candidate.id === id ? { ...unit, id } : candidate,
+          );
+          return {
+            customUnits,
+            routes: normalizedRoutes.routes,
+            lists: reaggregateLists(
+              canonicalizedLists,
+              aggregationOptions({
+                ...state,
+                customUnits,
+                routes: normalizedRoutes.routes,
+              }),
             ),
-          })),
-        })),
-      setCategory: (id, category) =>
-        set((state) => ({
-          lists: state.lists.map((list) => ({
-            ...list,
-            items: list.items.map((item) =>
-              item.id === id ? { ...item, category } : item,
+          };
+        }),
+      deleteCustomUnit: (id) =>
+        set((state) => {
+          const oldUnit = state.customUnits.find(
+            (candidate) => candidate.id === id,
+          );
+          if (!oldUnit) return state;
+          const normalizedRoutes = canonicalizeCustomUnitRoutes(
+            state.routes,
+            oldUnit,
+          );
+          const canonicalizedLists = canonicalizeCustomUnitRows(
+            state.lists,
+            oldUnit,
+            aggregationOptions({ ...state, routes: normalizedRoutes.routes }),
+          );
+          const customUnits = state.customUnits.filter(
+            (unit) => unit.id !== id,
+          );
+          return {
+            customUnits,
+            routes: normalizedRoutes.routes,
+            lists: reaggregateLists(
+              canonicalizedLists,
+              aggregationOptions({
+                ...state,
+                customUnits,
+                routes: normalizedRoutes.routes,
+              }),
             ),
-          })),
-        })),
-      remove: (id) =>
+          };
+        }),
+      setChecked: (listId, id, checked) =>
         set((state) => ({
-          lists: state.lists.map((list) => ({
-            ...list,
-            items: list.items.filter((item) => item.id !== id),
-          })),
+          lists: state.lists.map((list) =>
+            list.id === listId
+              ? {
+                  ...list,
+                  items: list.items.map((item) =>
+                    item.id === id ? { ...item, checked } : item,
+                  ),
+                }
+              : list,
+          ),
+        })),
+      setCategory: (listId, id, category) =>
+        set((state) => ({
+          lists: state.lists.map((list) =>
+            list.id === listId
+              ? {
+                  ...list,
+                  items: list.items.map((item) =>
+                    item.id === id ? { ...item, category } : item,
+                  ),
+                }
+              : list,
+          ),
+        })),
+      remove: (listId, id) =>
+        set((state) => ({
+          lists: state.lists.map((list) =>
+            list.id === listId
+              ? {
+                  ...list,
+                  items: list.items.filter((item) => item.id !== id),
+                }
+              : list,
+          ),
         })),
       removeCompleted: (listId) => {
         let restorePointId: string | null = null;
@@ -849,7 +1385,7 @@ export const useShoppingStore = create<ShoppingStore>()(
                     (items, item) =>
                       item.checked || (item.note ?? "").length > 0
                         ? [...items, item]
-                        : consolidate(items, [item]),
+                        : consolidate(items, [item], aggregationOptions(state)),
                     list.items,
                   ),
                 };
@@ -970,7 +1506,7 @@ export const useShoppingStore = create<ShoppingStore>()(
     }),
     {
       name: "heirloom-shopping-list",
-      version: 2,
+      version: 4,
       migrate: migrateShoppingState,
       merge: mergeShoppingState,
       partialize: (state) => ({
@@ -979,6 +1515,9 @@ export const useShoppingStore = create<ShoppingStore>()(
         currentListId: state.currentListId,
         routes: state.routes,
         restorePoints: state.restorePoints,
+        unitPreferences: state.unitPreferences,
+        customUnits: state.customUnits,
+        packageRounding: state.packageRounding,
       }),
     },
   ),

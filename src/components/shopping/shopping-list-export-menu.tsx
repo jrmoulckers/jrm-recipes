@@ -37,7 +37,7 @@ import {
   visibleShoppingExportItems,
   type ShoppingExportCapabilities,
 } from "~/lib/shopping-export";
-import type { ShoppingCategory } from "~/lib/shopping-list";
+import { describeQuantity, type ShoppingCategory } from "~/lib/shopping-list";
 import type {
   ShoppingListOption,
   ShoppingViewItem,
@@ -86,13 +86,41 @@ export function ShoppingListExportMenu({
     Beverages: t("export.categories.beverages"),
     Other: t("export.categories.other"),
   };
+  const exportItems = items.map((item) => {
+    if (
+      item.packageCount == null ||
+      item.purchaseQuantity == null ||
+      !item.purchaseUnit
+    ) {
+      return item;
+    }
+    const purchaseQuantity = describeQuantity({
+      quantity: item.purchaseQuantity,
+      quantityMax: null,
+      unit: item.purchaseUnit,
+    });
+    const guidance = item.packageLabel
+      ? t("package.guidance.withLabel", {
+          count: item.packageCount,
+          label: item.packageLabel,
+          quantity: purchaseQuantity,
+        })
+      : t("package.guidance.packages", {
+          count: item.packageCount,
+          quantity: purchaseQuantity,
+        });
+    return {
+      ...item,
+      note: [item.note, guidance].filter(Boolean).join(" · "),
+    };
+  });
   const exportDocument = createShoppingExportDocument({
     listName: list.name,
     storeName: list.storeName,
     storeLabel: t("export.storeLabel"),
     locale,
     categoryLabels,
-    items,
+    items: exportItems,
     includeChecked,
   });
   const checkedCount = items.filter((item) => item.checked).length;

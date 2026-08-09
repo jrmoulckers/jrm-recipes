@@ -12,6 +12,8 @@ import {
   shoppingListRestorePoints,
   shoppingLists,
 } from "./shopping";
+import { customUnits, userUnitPreferences } from "./preferences";
+import { recipeIngredients } from "./recipes";
 
 const indexColumns = (index: { config: { columns: unknown[] } }): string[] =>
   index.config.columns.map((column) => (column as { name: string }).name);
@@ -27,6 +29,10 @@ const restorePointMigration = readdirSync(drizzleDir)
   .filter((file) => file.endsWith(".sql"))
   .map((file) => readFileSync(join(drizzleDir, file), "utf8"))
   .find((body) => body.includes('CREATE TABLE "shopping_list_restore_points"'));
+const packageMigration = readdirSync(drizzleDir)
+  .filter((file) => file.endsWith(".sql"))
+  .map((file) => readFileSync(join(drizzleDir, file), "utf8"))
+  .find((body) => body.includes('"purchase_quantity" double precision'));
 
 describe("shopping routing schema (issue #630)", () => {
   it("models named, archivable store lists with one explicit default", () => {
@@ -128,6 +134,15 @@ describe("shopping routing schema (issue #630)", () => {
         "quantity",
         "quantityMax",
         "unit",
+        "requiredBaseQuantity",
+        "requiredBaseQuantityMax",
+        "requiredBaseUnit",
+        "purchaseQuantity",
+        "purchaseUnit",
+        "packageCount",
+        "packageAmount",
+        "packageUnit",
+        "packageLabel",
         "category",
         "note",
         "optional",
@@ -138,6 +153,15 @@ describe("shopping routing schema (issue #630)", () => {
       ]);
       expect(checks.map((item) => item.name)).toContain(
         "shopping_list_restore_point_items_position_check",
+      );
+      expect(checks.map((item) => item.name)).toEqual(
+        expect.arrayContaining([
+          "shopping_list_restore_point_items_required_base_quantity_check",
+          "shopping_list_restore_point_items_required_base_quantity_range_check",
+          "shopping_list_restore_point_items_purchase_quantity_check",
+          "shopping_list_restore_point_items_package_count_check",
+          "shopping_list_restore_point_items_package_result_check",
+        ]),
       );
       const orderedItems = indexes.find(
         (item) =>
@@ -168,6 +192,36 @@ describe("shopping routing schema (issue #630)", () => {
     ).toBe(true);
   });
 
+  it("stores exact requirements separately from package purchase results", () => {
+    const { checks, columns } = getTableConfig(shoppingListItems);
+    const column = (name: string) => columns.find((item) => item.name === name);
+
+    expect(column("quantity")?.notNull).toBe(false);
+    expect(column("quantityMax")?.notNull).toBe(false);
+    expect(column("quantity")?.getSQLType()).toBe("double precision");
+    expect(column("quantityMax")?.getSQLType()).toBe("double precision");
+    expect(column("requiredBaseQuantity")?.getSQLType()).toBe(
+      "double precision",
+    );
+    expect(column("requiredBaseQuantityMax")?.getSQLType()).toBe(
+      "double precision",
+    );
+    expect(column("requiredBaseUnit")?.getSQLType()).toBe("varchar(40)");
+    expect(column("purchaseQuantity")?.getSQLType()).toBe("double precision");
+    expect(column("purchaseUnit")?.getSQLType()).toBe("varchar(40)");
+    expect(column("packageCount")?.getSQLType()).toBe("integer");
+    expect(column("packageAmount")?.getSQLType()).toBe("double precision");
+    expect(checks.map((item) => item.name)).toEqual(
+      expect.arrayContaining([
+        "shopping_list_items_purchase_quantity_check",
+        "shopping_list_items_package_count_check",
+        "shopping_list_items_package_result_check",
+        "shopping_list_items_required_base_quantity_check",
+        "shopping_list_items_required_base_quantity_range_check",
+      ]),
+    );
+  });
+
   it("stores canonical and normalized fallback routes with covering indexes", () => {
     const { columns, foreignKeys, indexes } = getTableConfig(
       shoppingIngredientRoutes,
@@ -185,6 +239,10 @@ describe("shopping routing schema (issue #630)", () => {
       "normalizedItem",
       "displayItem",
       "preferredListId",
+      "packageAmount",
+      "packageUnit",
+      "packageLabel",
+      "packageRounding",
       "createdAt",
       "updatedAt",
     ]);
@@ -193,6 +251,9 @@ describe("shopping routing schema (issue #630)", () => {
     expect(column("normalizedItem")?.notNull).toBe(true);
     expect(column("displayItem")?.notNull).toBe(true);
     expect(column("preferredListId")?.notNull).toBe(true);
+    expect(column("packageAmount")?.getSQLType()).toBe("double precision");
+    expect(column("packageUnit")?.getSQLType()).toBe("varchar(40)");
+    expect(column("packageRounding")?.notNull).toBe(false);
     expect(foreignKey("userId")?.onDelete).toBe("cascade");
     expect(foreignKey("foodId")?.onDelete).toBe("set null");
     expect(foreignKey("preferredListId")?.onDelete).toBe("cascade");
@@ -215,6 +276,90 @@ describe("shopping routing schema (issue #630)", () => {
       "userId",
       "normalizedItem",
     ]);
+  });
+
+  describe("shopping package migration (issue #629)", () => {
+    it("defaults global rounding off and keeps existing rows exact", () => {
+      const preferences = getTableConfig(userUnitPreferences);
+      const packageRounding = preferences.columns.find(
+        (column) => column.name === "packageRounding",
+      );
+
+      expect(packageRounding?.notNull).toBe(true);
+      expect(packageRounding?.default).toBe(false);
+      expect(packageMigration).toContain(
+        'ADD COLUMN IF NOT EXISTS "package_rounding" boolean DEFAULT false NOT NULL',
+      );
+      expect(packageMigration).toContain(
+        'ADD COLUMN IF NOT EXISTS "purchase_quantity" double precision',
+      );
+      expect(
+        getTableConfig(recipeIngredients)
+          .columns.find((column) => column.name === "quantity")
+          ?.getSQLType(),
+      ).toBe("double precision");
+      expect(
+        getTableConfig(recipeIngredients)
+          .columns.find((column) => column.name === "quantityMax")
+          ?.getSQLType(),
+      ).toBe("double precision");
+      expect(
+        getTableConfig(customUnits)
+          .columns.find((column) => column.name === "baseAmount")
+          ?.getSQLType(),
+      ).toBe("double precision");
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "recipe_ingredients" ALTER COLUMN "quantity" TYPE double precision USING "quantity"::double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "recipe_ingredients" ALTER COLUMN "quantity_max" TYPE double precision USING "quantity_max"::double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "custom_units" ALTER COLUMN "base_amount" TYPE double precision USING "base_amount"::double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "shopping_list_items" ALTER COLUMN "quantity" TYPE double precision USING "quantity"::double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "shopping_list_items" ALTER COLUMN "quantity_max" TYPE double precision USING "quantity_max"::double precision',
+      );
+      expect(packageMigration).toContain(
+        'ADD COLUMN IF NOT EXISTS "required_base_quantity" double precision',
+      );
+      expect(packageMigration).toContain(
+        'ADD COLUMN IF NOT EXISTS "required_base_quantity_max" double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "shopping_ingredient_routes" ADD COLUMN IF NOT EXISTS "package_amount" double precision',
+      );
+      expect(packageMigration).toContain(
+        'ALTER TABLE IF EXISTS "shopping_list_items" ADD COLUMN IF NOT EXISTS "package_amount" double precision',
+      );
+      expect(packageMigration).not.toMatch(
+        /"(?:required_base_quantity(?:_max)?|purchase_quantity|package_amount)" real/,
+      );
+      expect(packageMigration).toContain("NOT VALID");
+      expect(packageMigration).toContain(
+        'VALIDATE CONSTRAINT "shopping_list_items_package_result_check"',
+      );
+      const additiveColumns =
+        packageMigration?.match(/^ALTER TABLE .* ADD COLUMN .*$/gm) ?? [];
+      expect(additiveColumns).toHaveLength(23);
+      expect(
+        additiveColumns.every(
+          (line) =>
+            line.includes("ALTER TABLE IF EXISTS") &&
+            line.includes("ADD COLUMN IF NOT EXISTS"),
+        ),
+      ).toBe(true);
+      expect(
+        packageMigration?.match(/EXCEPTION WHEN duplicate_object/g),
+      ).toHaveLength(16);
+      expect(packageMigration?.match(/VALIDATE CONSTRAINT/g)).toHaveLength(16);
+      expect(packageMigration).not.toMatch(
+        /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i,
+      );
+    });
   });
 
   it("orders alternative lists and rejects negative positions", () => {

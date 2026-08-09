@@ -11,7 +11,7 @@ import {
 import { listMemberProfiles } from "~/server/dietary/queries";
 import { detectAllergensForSafety, isAllergen } from "~/lib/allergens";
 import { type ActiveMemberOption } from "~/lib/dietary-match";
-import { type ShoppingCategory } from "~/lib/shopping-list";
+import { mergeShoppingItems, type ShoppingCategory } from "~/lib/shopping-list";
 import { findIngredientRoute } from "~/lib/shopping-routing";
 import { DbShoppingList } from "~/components/shopping/db-shopping-list";
 import { LocalShoppingList } from "~/components/shopping/local-shopping-list";
@@ -46,12 +46,26 @@ export default async function ShoppingPage({
   const items: ShoppingViewItem[] = (workspace?.selectedList?.items ?? []).map(
     (row) => {
       const route = findIngredientRoute(row, workspace?.routes ?? []);
+      const [display] = workspace
+        ? mergeShoppingItems([row], {
+            unitPreferences: workspace.unitPreferences,
+            customUnits: workspace.customUnits,
+            packageRules: workspace.routes,
+            packageRounding: workspace.packageRounding,
+          })
+        : [];
       return {
         id: row.id,
         item: row.item,
-        quantity: row.quantity,
-        quantityMax: row.quantityMax,
-        unit: row.unit,
+        quantity: display?.quantity ?? row.quantity,
+        quantityMax: display?.quantityMax ?? row.quantityMax,
+        unit: display?.unit ?? row.unit,
+        purchaseQuantity: display?.purchaseQuantity ?? null,
+        purchaseUnit: display?.purchaseUnit ?? null,
+        packageCount: display?.packageCount ?? null,
+        packageAmount: route?.packageAmount ?? null,
+        packageUnit: route?.packageUnit ?? null,
+        packageLabel: route?.packageLabel ?? null,
         note: row.note,
         category: (row.category as ShoppingCategory | null) ?? "Other",
         optional: row.optional,
@@ -64,6 +78,7 @@ export default async function ShoppingPage({
               (list) => list.id === id && list.archivedAt == null,
             ),
           ) ?? [],
+        packageRoundBehavior: route?.packageRoundBehavior ?? "inherit",
       };
     },
   );
@@ -86,6 +101,12 @@ export default async function ShoppingPage({
       quantity: item.quantity,
       quantityMax: item.quantityMax,
       unit: item.unit,
+      purchaseQuantity: item.purchaseQuantity,
+      purchaseUnit: item.purchaseUnit,
+      packageCount: item.packageCount,
+      packageAmount: item.packageAmount,
+      packageUnit: item.packageUnit,
+      packageLabel: item.packageLabel,
       note: item.note,
       category: (item.category as ShoppingCategory | null) ?? "Other",
       optional: item.optional,

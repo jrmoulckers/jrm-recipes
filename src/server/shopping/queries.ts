@@ -4,6 +4,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db, isDbConfigured } from "~/server/db";
 import {
+  customUnits,
   shoppingIngredientRouteAlternatives,
   shoppingIngredientRoutes,
   shoppingListItems,
@@ -11,9 +12,11 @@ import {
   shoppingListRestorePoints,
   shoppingLists,
   type ShoppingListRestorePoint,
+  userUnitPreferences,
   type User,
 } from "~/server/db/schema";
 import type { ShoppingIngredientRoute } from "~/lib/shopping-routing";
+import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
 
 export type ShoppingWorkspace = NonNullable<
   Awaited<ReturnType<typeof getShoppingWorkspace>>
@@ -70,10 +73,19 @@ export async function getShoppingWorkspace(
     defaultList ??
     null;
 
-  const routeRows = await db.query.shoppingIngredientRoutes.findMany({
-    where: eq(shoppingIngredientRoutes.userId, user.id),
-    orderBy: [asc(shoppingIngredientRoutes.normalizedItem)],
-  });
+  const [routeRows, preferenceRow, customUnitRows] = await Promise.all([
+    db.query.shoppingIngredientRoutes.findMany({
+      where: eq(shoppingIngredientRoutes.userId, user.id),
+      orderBy: [asc(shoppingIngredientRoutes.normalizedItem)],
+    }),
+    db.query.userUnitPreferences.findFirst({
+      where: eq(userUnitPreferences.userId, user.id),
+    }),
+    db.query.customUnits.findMany({
+      where: eq(customUnits.userId, user.id),
+      orderBy: [asc(customUnits.createdAt), asc(customUnits.id)],
+    }),
+  ]);
   const alternativeRows =
     routeRows.length === 0
       ? []
@@ -88,19 +100,34 @@ export async function getShoppingWorkspace(
           ],
         });
   const alternativesByRoute = new Map<string, string[]>();
+  const ownedListIds = new Set(lists.map((list) => list.id));
   for (const alternative of alternativeRows) {
+    if (!ownedListIds.has(alternative.listId)) throw new Error("NOT_FOUND");
     const ids = alternativesByRoute.get(alternative.routeId) ?? [];
     ids.push(alternative.listId);
     alternativesByRoute.set(alternative.routeId, ids);
   }
-
-  const routes: ShoppingIngredientRoute[] = routeRows.map((route) => ({
-    id: route.id,
-    foodId: route.foodId,
-    normalizedItem: route.normalizedItem,
-    preferredListId: route.preferredListId,
-    alternativeListIds: alternativesByRoute.get(route.id) ?? [],
-  }));
+  const routes: ShoppingIngredientRoute[] = routeRows.map((route) => {
+    if (!ownedListIds.has(route.preferredListId)) throw new Error("NOT_FOUND");
+    return {
+      id: route.id,
+      foodId: route.foodId,
+      normalizedItem: route.normalizedItem,
+      preferredListId: route.preferredListId,
+      alternativeListIds: alternativesByRoute.get(route.id) ?? [],
+      packageAmount: route.packageAmount,
+      packageUnit: route.packageUnit,
+      packageLabel: route.packageLabel,
+      packageRoundBehavior:
+        route.packageRounding == null
+          ? "inherit"
+          : route.packageRounding
+            ? "enable"
+            : "disable",
+    };
+  });
+  const unitPreferences = toUnitPrefs(preferenceRow);
+  const customUnitDefinitions = toCustomUnitDefs(customUnitRows);
 
   return {
     lists,
@@ -108,6 +135,9 @@ export async function getShoppingWorkspace(
     selectedListId: selectedList?.id ?? null,
     defaultListId: defaultList?.id ?? null,
     routes,
+    unitPreferences,
+    customUnits: customUnitDefinitions,
+    packageRounding: preferenceRow?.packageRounding ?? false,
   };
 }
 

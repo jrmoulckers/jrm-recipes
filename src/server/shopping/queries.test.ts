@@ -9,6 +9,8 @@ const { dbMock } = vi.hoisted(() => ({
       shoppingListRestorePoints: { findMany: vi.fn() },
       shoppingIngredientRoutes: { findMany: vi.fn() },
       shoppingIngredientRouteAlternatives: { findMany: vi.fn() },
+      userUnitPreferences: { findFirst: vi.fn() },
+      customUnits: { findMany: vi.fn() },
     },
   },
 }));
@@ -30,6 +32,8 @@ const user = { id: "user_1" } as User;
 beforeEach(() => {
   vi.clearAllMocks();
   dbMock.query.shoppingIngredientRoutes.findMany.mockResolvedValue([]);
+  dbMock.query.userUnitPreferences.findFirst.mockResolvedValue(null);
+  dbMock.query.customUnits.findMany.mockResolvedValue([]);
 });
 
 describe("getShoppingListHistory", () => {
@@ -137,5 +141,67 @@ describe("getShoppingWorkspace list selection", () => {
 
     expect(workspace?.selectedListId).toBe("viewed");
     expect(workspace?.defaultListId).toBe("default");
+  });
+
+  it("exposes package routes and the authenticated user's aggregation settings", async () => {
+    dbMock.query.shoppingLists.findMany.mockResolvedValue([
+      {
+        id: "store",
+        userId: user.id,
+        name: "Store",
+        isDefault: true,
+        archivedAt: null,
+        items: [
+          {
+            id: "item_1",
+            purchaseQuantity: 2,
+            purchaseUnit: "l",
+            packageCount: 2,
+          },
+        ],
+      },
+    ]);
+    dbMock.query.shoppingIngredientRoutes.findMany.mockResolvedValue([
+      {
+        id: "route_1",
+        foodId: "food_milk",
+        normalizedItem: "milk",
+        preferredListId: "store",
+        packageAmount: 1,
+        packageUnit: "l",
+        packageLabel: "Carton",
+        packageRounding: true,
+      },
+    ]);
+    dbMock.query.shoppingIngredientRouteAlternatives.findMany.mockResolvedValue(
+      [],
+    );
+    dbMock.query.userUnitPreferences.findFirst.mockResolvedValue({
+      defaultSystem: "metric",
+      volumeUnit: null,
+      liquidVolumeUnit: null,
+      dryVolumeUnit: null,
+      smallVolumeUnit: null,
+      massUnit: null,
+      temperatureUnit: null,
+      autoConvert: true,
+      packageRounding: false,
+    });
+
+    const workspace = await getShoppingWorkspace(user);
+
+    expect(workspace?.routes[0]).toMatchObject({
+      preferredListId: "store",
+      packageAmount: 1,
+      packageUnit: "l",
+      packageLabel: "Carton",
+      packageRoundBehavior: "enable",
+    });
+    expect(workspace?.selectedList?.items[0]).toMatchObject({
+      purchaseQuantity: 2,
+      packageCount: 2,
+    });
+    expect(workspace?.unitPreferences.defaultSystem).toBe("metric");
+    expect(workspace?.packageRounding).toBe(false);
   });
 });
