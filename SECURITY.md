@@ -1,50 +1,190 @@
-# Security policy
+# Security Policy
 
-Heirloom is a family-recipe PWA. Its security posture is centered on protecting private family recipes, account access, billing state, uploaded media, and the Postgres database that stores family history.
+**This policy extends the JRM Studio org-wide security policy at
+[`jrmoulckers/.github/SECURITY.md`](https://github.com/jrmoulckers/.github/blob/main/SECURITY.md).**
+Heirloom inherits every principle, prohibition, and safe-harbor commitment in that canonical
+document. This file adds the product-specific detail that the central policy cannot carry: the
+Heirloom threat model, the assets we protect, the mitigations that exist in this repository today,
+and the secrets-handling policy. Where this file is silent, the canonical policy governs. The small
+number of places where Heirloom deliberately differs from canon are listed in
+[Deliberate deviations from the canonical policy](#deliberate-deviations-from-the-canonical-policy).
 
-This document describes the supported version, vulnerability reporting process, threat model, and where to find the secrets-management policy. It is intentionally grounded in the repository as it exists today; deployment-provider details not present in the repo are called out as deployment-dependent.
+Heirloom is a family-recipe PWA. Its security posture is centered on protecting private family
+recipes, account access, billing state, uploaded media, and the Postgres database that stores family
+history. This document is intentionally grounded in the repository as it exists today;
+deployment-provider details not present in the repo are called out as deployment-dependent.
 
-## Supported versions
+## Supported Versions
 
-Heirloom follows a rolling support model:
+Heirloom is a continuously deployed application rather than a versioned library, so it follows a
+rolling support model instead of the canonical release-line model:
 
-| Version                                                    | Supported |
-| ---------------------------------------------------------- | --------- |
-| Deployed `main` branch                                     | Yes       |
-| Older commits, forks, local branches, or archived releases | No        |
+| Version or branch                                          | Supported                          |
+| ---------------------------------------------------------- | ---------------------------------- |
+| Deployed `main` branch                                     | :white_check_mark: Active          |
+| Older commits, forks, local branches, or archived releases | :x: Upgrade to the deployed `main` |
 
-Security fixes should be made against `main` and deployed through the normal Vercel production flow.
+Security fixes are made against `main` and deployed through the normal Vercel production flow.
 
-## Reporting a vulnerability
+## Reporting a Vulnerability
 
-Please do not open a public GitHub issue for suspected vulnerabilities.
+> **Do not open a public GitHub issue, pull request, or discussion for security vulnerabilities.**
+>
+> Public disclosure before a fix is available can put users and their private family recipes at
+> risk.
 
-Use one of these private channels instead:
+### Preferred: GitHub Private Vulnerability Reporting
 
-1. **Preferred:** Open a private GitHub Security Advisory for this repository.
-2. **Fallback:** Email `security@<your-domain>` (**to configure before launch**).
+1. Open this repository's **Security** tab.
+2. Go to **Advisories**.
+3. Choose **Report a vulnerability**.
+4. Include the details listed in [What to Include](#what-to-include).
 
-Coordinated disclosure process:
+### Alternative: Private Contact Placeholder
 
-1. We will acknowledge a valid report within **3 business days**.
-2. We will triage severity, affected assets, reproduction steps, and likely remediation.
-3. We will keep the reporter updated during remediation, especially for high-impact issues.
-4. We target coordinated public disclosure within **90 days**, unless active exploitation or user-risk reduction requires a different timeline.
-5. We ask reporters to avoid privacy-invasive testing, data destruction, persistence, social engineering, and public disclosure before remediation.
+If private vulnerability reporting is unavailable, contact the maintainer privately through the
+repository owner's GitHub profile.
 
-Safe harbor: good-faith security research that follows this process and avoids harming users or data will not be treated as unauthorized activity by the project maintainers.
+Placeholder contact: `security@<your-domain>` (**to configure before launch**).
 
-## Threat model
+Use the subject line:
+
+```text
+[SECURITY] jrm-recipes — <brief description>
+```
+
+Do not send secrets, exploit code against third-party systems, or real user data — including real
+family recipe content or other users' account data — in an initial message. Request a secure channel
+if sensitive details are required.
+
+## What to Include
+
+Please include enough information for maintainers to understand and reproduce the issue:
+
+- **Summary** — clear description of the vulnerability
+- **Affected component** — route handler, server action, query/mutation module, schema, workflow,
+  page, or service integration (Clerk, Stripe, Cloudinary, PostHog)
+- **Reproduction steps** — minimal steps to demonstrate the issue
+- **Proof of concept** — snippets, screenshots, or logs with sensitive data redacted
+- **Impact** — what an attacker could achieve, especially any cross-user or cross-group recipe
+  access
+- **Severity estimate** — Critical, High, Medium, or Low
+- **Environment** — browser, installed-PWA vs browser tab, deployment environment (production or
+  preview), and whether a service worker was active
+- **Suggested fix** — optional, but appreciated
+
+## Severity Guide
+
+Heirloom uses the canonical severity guide, with product-specific examples:
+
+| Severity     | Examples                                                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Critical** | Remote code execution, Clerk authentication bypass, `DATABASE_URL` or webhook-secret extraction, broad unauthorized access to private recipes across accounts                         |
+| **High**     | Privilege escalation within a group, stored cross-site scripting in recipe content, exploitable injection through recipe/import input, forged Clerk or Stripe webhooks mutating state |
+| **Medium**   | Limited data exposure such as unlisted share-token leakage, cross-site request forgery with user interaction, insecure defaults with a realistic exploit path                         |
+| **Low**      | Minor information disclosure, hardening gaps, security-relevant misconfiguration with limited impact                                                                                  |
+
+## What Not to Do
+
+- Do not publicly disclose details before a fix or advisory is available.
+- Do not exploit beyond the minimum necessary to demonstrate impact.
+- Do not access, modify, delete, or exfiltrate data that is not yours — this explicitly includes
+  other families' recipes, comments, cook logs, and meal plans.
+- Do not attack third-party services (Clerk, Stripe, Cloudinary, PostHog, Vercel), production
+  systems, CI infrastructure, or other users.
+- Do not perform denial-of-service testing.
+- Do not perform privacy-invasive testing, data destruction, persistence, or social engineering.
+- Do not share vulnerability details with third parties before coordination is complete.
+
+## Response Timeline
+
+Heirloom is maintained as an independent effort. These are target timelines, not guarantees:
+
+| Stage                     | Target                                  |
+| ------------------------- | --------------------------------------- |
+| Acknowledgment            | Within 3 business days                  |
+| Initial assessment        | Within 1 week                           |
+| Critical or High fix plan | As soon as practical after confirmation |
+| Medium or Low fix plan    | Next appropriate maintenance cycle      |
+
+Triage covers severity, affected assets, reproduction steps, and likely remediation. Maintainers
+follow up through the same private channel used for the report, and keep the reporter updated during
+remediation — especially for high-impact issues.
+
+## Coordinated Disclosure
+
+We follow coordinated disclosure:
+
+1. Validate the report and scope.
+2. Develop and test a fix.
+3. Publish a security advisory or release notes when appropriate.
+4. Credit the reporter unless anonymity is requested.
+
+Please allow up to 90 days from the initial report before public disclosure, unless active
+exploitation or user-risk reduction requires a different timeline.
+
+## Scope
+
+In-scope reports generally include:
+
+- Authentication or authorization bypasses, including cross-user or cross-group recipe access
+- Unlisted share-link token leakage, guessing, or failure to honor revocation
+- Injection vulnerabilities
+- Cross-site scripting or request forgery with meaningful impact
+- Content Security Policy or security-header weaknesses that materially increase blast radius
+- Service-worker caching that could serve one viewer's authorized recipe content to another
+- Secret exposure or insecure credential handling
+- Insecure cryptography or key management
+- Sensitive data exposure in logs, artifacts, builds, or APIs
+- Webhook signature-verification weaknesses in the Clerk or Stripe webhook routes
+- Dependency or supply-chain vulnerabilities exploitable in this repository's usage
+- CI/CD, migration, or release workflow vulnerabilities that could alter trusted outputs or mutate
+  production data
+
+Out-of-scope reports generally include:
+
+- Social engineering of users or maintainers
+- Denial-of-service against local development, CI, or hosted services
+- Issues only affecting unsupported versions, forks, or local branches
+- Best-practice suggestions without a demonstrated exploit path
+- UI/UX bugs without security impact
+- Vulnerabilities in upstream dependencies with no repository-specific exploitability
+- Findings that depend on setting `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or `SKIP_ENV_VALIDATION=1`, which
+  are local/CI-only controls that fail closed in deployed environments
+- Attacks requiring physical access to an unlocked, authenticated device
+- Self-XSS requiring a user to paste code into their own console
+
+## Safe Harbor
+
+Heirloom supports good-faith security research. We will not pursue legal action against researchers
+who:
+
+- Follow this policy and report through private channels
+- Avoid privacy violations, data destruction, and service disruption
+- Access only systems and data they are authorized to use
+- Give maintainers reasonable time to fix before disclosure
+
+Good-faith security research that follows this process and avoids harming users or data will not be
+treated as unauthorized activity by the project maintainers. If you are unsure whether research is in
+scope, contact maintainers privately before proceeding.
+
+## Heirloom Threat Model
+
+This section is specific to jrm-recipes and has no counterpart in the canonical policy.
 
 ### Assets
 
-- **Family recipes and history:** recipe content, stories, private/group/unlisted visibility, version history, comments, ratings, cook logs, meal plans, and shopping data.
+- **Family recipes and history:** recipe content, stories, private/group/unlisted visibility, version
+  history, comments, ratings, cook logs, meal plans, and shopping data.
 - **User accounts:** Clerk-backed identities mirrored into the app database.
-- **Billing data:** Stripe customer, subscription, gift, and webhook-derived billing state. Card data is handled by Stripe-hosted Checkout and Customer Portal flows, not by this app.
+- **Billing data:** Stripe customer, subscription, gift, and webhook-derived billing state. Card data
+  is handled by Stripe-hosted Checkout and Customer Portal flows, not by this app.
 - **Uploaded media:** recipe images and videos stored/delivered through Cloudinary when configured.
 - **Postgres database:** the `DATABASE_URL`-backed Postgres instance accessed through Drizzle ORM.
-- **Analytics telemetry:** optional PostHog product analytics when a deploy supplies `NEXT_PUBLIC_POSTHOG_KEY`.
-- **Operational secrets:** database credentials, Clerk/Stripe/Cloudinary server secrets, webhook signing secrets, and cron trigger secrets.
+- **Analytics telemetry:** optional PostHog product analytics when a deploy supplies
+  `NEXT_PUBLIC_POSTHOG_KEY`.
+- **Operational secrets:** database credentials, Clerk/Stripe/Cloudinary server secrets, webhook
+  signing secrets, and cron trigger secrets.
 
 ### Realistic threats and current mitigations
 
@@ -64,9 +204,13 @@ Safe harbor: good-faith security research that follows this process and avoids h
 | Dependency or CI supply-chain issues                                      | `.github/workflows/ci.yml` includes a dependency audit, SHA-pinned third-party actions, least-privilege job permissions, and Dependabot is configured for npm and GitHub Actions updates.                                                            |
 | Preview deploys mutating production schema                                | `scripts/migrate.mjs` skips migrations on `VERCEL_ENV=preview` unless `ALLOW_PREVIEW_MIGRATIONS=1` is explicitly set for an isolated preview database.                                                                                               |
 
-## Secrets-handling policy
+## Secrets-Handling Policy
 
-Secrets must be stored in deployment environment variables, not in source. For the current Vercel deployment model, store them in Vercel project environment variables separately for Production, Preview, and any staging environment.
+This section is specific to jrm-recipes and has no counterpart in the canonical policy.
+
+Secrets must be stored in deployment environment variables, not in source. For the current Vercel
+deployment model, store them in Vercel project environment variables separately for Production,
+Preview, and any staging environment.
 
 See [`docs/secrets-management.md`](docs/secrets-management.md) for:
 
@@ -74,4 +218,21 @@ See [`docs/secrets-management.md`](docs/secrets-management.md) for:
 - owner and rotation templates;
 - provider-specific rotation runbooks;
 - leak-response steps; and
-- the Stripe `plans.ts` convention that keeps Price IDs in environment variables rather than committed source.
+- the Stripe `plans.ts` convention that keeps Price IDs in environment variables rather than
+  committed source.
+
+## Deliberate deviations from the canonical policy
+
+Heirloom intentionally differs from
+[the canonical policy](https://github.com/jrmoulckers/.github/blob/main/SECURITY.md) in the
+following places. Everything else is inherited unchanged.
+
+| Area                  | Canonical policy                                                | Heirloom behavior                                         | Rationale                                                                                                                               |
+| --------------------- | --------------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Supported Versions    | Default branch plus the latest actively maintained release line | Deployed `main` only; no supported release lines          | Heirloom is a continuously deployed application, not a released library, so there is no older release line that can receive a backport. |
+| Acknowledgment target | Within 48 hours                                                 | Within 3 business days                                    | Single-maintainer capacity; a business-day target is one this project can actually meet rather than an aspirational clock-hour target.  |
+| Contact placeholder   | `security@example.com` (replace before use)                     | `security@<your-domain>` (**to configure before launch**) | Heirloom's placeholder is deliberately non-deliverable so it cannot be mistaken for a live inbox before launch configuration happens.   |
+
+The canonical policy explicitly allows product repositories to add stricter project-specific
+guidance. If any deviation above should instead become the studio-wide default, raise it in
+`jrmoulckers/.github` rather than editing this file in isolation.
