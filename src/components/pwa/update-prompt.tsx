@@ -8,6 +8,12 @@ import { cn } from "~/lib/utils";
 import { brand } from "~/config/brand";
 import { Button } from "~/components/ui/button";
 import { CloseButton } from "~/components/ui/close-button";
+import {
+  notificationDescription,
+  notificationIcon,
+  notificationSurface,
+  notificationTitle,
+} from "~/components/ui/notification";
 import { hasRunningCookTimers } from "~/lib/cook-state";
 import { SKIP_WAITING_MESSAGE, shouldShowUpdatePrompt } from "~/lib/sw-update";
 
@@ -174,19 +180,20 @@ export function UpdatePrompt() {
     >
       <div
         className={cn(
-          "flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-3 pe-2 shadow-lg backdrop-blur",
+          notificationSurface(),
+          "pe-2",
           "transition-all duration-300 ease-out motion-reduce:transition-none",
           entered
             ? "translate-y-0 opacity-100"
             : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
         )}
       >
-        <span className="bg-primary/12 inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-primary">
+        <span className={notificationIcon({ tone: "brand", size: "md" })}>
           <RefreshCw className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight">{t("title")}</p>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className={notificationTitle}>{t("title")}</p>
+          <p className={cn(notificationDescription, "truncate")}>
             {t("body", { brand: brand.name })}
           </p>
         </div>
