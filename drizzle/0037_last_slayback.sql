@@ -1,0 +1,2 @@
+ALTER TABLE "shopping_list_restore_points" ADD COLUMN "operation_group_id" varchar(24);--> statement-breakpoint
+CREATE INDEX "shopping_list_restore_points_user_group_idx" ON "shopping_list_restore_points" USING btree ("user_id","operation_group_id");

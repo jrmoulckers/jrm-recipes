@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   migrateShoppingState,
+  SHOPPING_HISTORY_LIMIT,
   useShoppingStore,
   type LocalShoppingItem,
   type LocalShoppingList,
@@ -23,6 +24,7 @@ function reset() {
     defaultListId: "default",
     currentListId: "default",
     routes: [],
+    restorePoints: [],
   });
   localStorage.clear();
 }
@@ -68,6 +70,20 @@ describe("persisted migration", () => {
   it("recovers a valid empty default from malformed legacy data", () => {
     const migrated = migrateShoppingState({ items: "broken" }, 0);
     expect(migrated.lists?.[0]?.items).toEqual([]);
+  });
+
+  it("adds empty per-list history when upgrading the multi-list store", () => {
+    const migrated = migrateShoppingState(
+      {
+        lists: [defaultList()],
+        defaultListId: "default",
+        currentListId: "default",
+        routes: [],
+      },
+      1,
+    );
+
+    expect(migrated.restorePoints).toEqual([]);
   });
 });
 
@@ -171,5 +187,152 @@ describe("per-list item mutations", () => {
     store().addManual("default", { item: "Cocoa" });
     const ids = list("default").items.map((item) => item.id);
     expect(new Set(ids).size).toBe(2);
+  });
+});
+
+describe("bounded per-list recovery history", () => {
+  it("separates removing completed items from unchecking them", () => {
+    store().addManual("default", { item: "Eggs" });
+    const itemId = list("default").items[0]!.id;
+    store().setChecked(itemId, true);
+
+    store().uncheckAll("default");
+    expect(list("default").items).toMatchObject([
+      { id: itemId, checked: false },
+    ]);
+    expect(store().restorePoints).toEqual([]);
+
+    store().setChecked(itemId, true);
+    const restorePointId = store().removeCompleted("default");
+    expect(restorePointId).toBeTruthy();
+    expect(list("default").items).toEqual([]);
+    expect(store().restorePoints).toMatchObject([
+      {
+        id: restorePointId,
+        listId: "default",
+        operation: "remove-completed",
+        items: [{ id: itemId, checked: true }],
+      },
+    ]);
+  });
+
+  it("restores an earlier snapshot and records the displaced current state", () => {
+    store().addManual("default", { item: "Milk" });
+    const originalId = list("default").items[0]!.id;
+    const removedPointId = store().clearAll("default")!;
+    store().addManual("default", { item: "Bread" });
+
+    const undoPointId = store().restoreFromHistory("default", removedPointId);
+
+    expect(list("default").items.map((item) => item.item)).toEqual(["Milk"]);
+    expect(store().restorePoints[0]).toMatchObject({
+      id: undoPointId,
+      listId: "default",
+      operation: "restore",
+      items: [{ item: "Bread" }],
+    });
+    expect(
+      store().restorePoints.some((point) => point.id === removedPointId),
+    ).toBe(true);
+    expect(list("default").items[0]!.id).toBe(originalId);
+  });
+
+  it("cannot restore a point into a different list", () => {
+    store().addManual("default", { item: "Milk" });
+    const pointId = store().clearAll("default")!;
+    const other = store().createList("Warehouse", "Costco");
+
+    expect(store().restoreFromHistory(other, pointId)).toBeNull();
+    expect(list(other).items).toEqual([]);
+    expect(list("default").items).toEqual([]);
+  });
+
+  it("keeps the newest 20 restore points for each list", () => {
+    for (let index = 0; index < SHOPPING_HISTORY_LIMIT + 3; index++) {
+      store().addManual("default", { item: `Item ${index}` });
+      store().clearAll("default");
+    }
+
+    const points = store().restorePoints.filter(
+      (point) => point.listId === "default",
+    );
+    expect(points).toHaveLength(SHOPPING_HISTORY_LIMIT);
+    expect(points[0]!.items[0]!.item).toBe("Item 22");
+    expect(points.at(-1)!.items[0]!.item).toBe("Item 3");
+  });
+
+  it("captures both lists before a bulk move", () => {
+    const warehouse = store().createList("Warehouse", "Costco");
+    store().addManual("default", { item: "Milk" });
+    store().addManual("default", { item: "Eggs" });
+    store().addManual(warehouse, { item: "Butter" });
+    const moving = list("default").items.map((item) => item.id);
+
+    const result = store().bulkMoveItems("default", moving, warehouse);
+
+    expect(result).not.toBeNull();
+    expect(list("default").items).toEqual([]);
+    expect(
+      list(warehouse)
+        .items.map((item) => item.item)
+        .sort(),
+    ).toEqual(["Butter", "Eggs", "Milk"]);
+    expect(
+      store().restorePoints.find(
+        (point) => point.id === result?.sourceRestorePointId,
+      ),
+    ).toMatchObject({
+      listId: "default",
+      operation: "bulk-move",
+      items: [{ item: "Milk" }, { item: "Eggs" }],
+    });
+    expect(
+      store().restorePoints.find(
+        (point) => point.id === result?.targetRestorePointId,
+      ),
+    ).toMatchObject({
+      listId: warehouse,
+      operation: "bulk-move",
+      items: [{ item: "Butter" }],
+    });
+
+    const undoPoints = store().restoreMultipleFromHistory([
+      {
+        listId: "default",
+        restorePointId: result!.sourceRestorePointId,
+      },
+      {
+        listId: warehouse,
+        restorePointId: result!.targetRestorePointId,
+      },
+    ]);
+    expect(undoPoints).toHaveLength(2);
+    expect(list("default").items.map((item) => item.item)).toEqual([
+      "Milk",
+      "Eggs",
+    ]);
+    expect(list(warehouse).items.map((item) => item.item)).toEqual(["Butter"]);
+  });
+
+  it("captures list replacement without recording normal checkbox toggles", () => {
+    store().addManual("default", { item: "Old item" });
+    const old = list("default").items[0]!;
+    store().setChecked(old.id, true);
+    expect(store().restorePoints).toEqual([]);
+
+    const replacement: LocalShoppingItem = {
+      ...old,
+      id: "replacement",
+      item: "New item",
+      checked: false,
+    };
+    const restorePointId = store().replaceListItems("default", [replacement]);
+
+    expect(list("default").items).toEqual([replacement]);
+    expect(store().restorePoints[0]).toMatchObject({
+      id: restorePointId,
+      operation: "list-rebuild",
+      items: [{ item: "Old item", checked: true }],
+    });
   });
 });

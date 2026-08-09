@@ -3,17 +3,24 @@ import { PgDialect } from "drizzle-orm/pg-core";
 
 vi.mock("server-only", () => ({}));
 
-const { transactionMock, getRecipeMock } = vi.hoisted(() => ({
+const {
+  transactionMock,
+  getRecipeMock,
+  groupMembersMock,
+  mealPlanEntriesMock,
+} = vi.hoisted(() => ({
   transactionMock: vi.fn(),
   getRecipeMock: vi.fn(),
+  groupMembersMock: vi.fn(),
+  mealPlanEntriesMock: vi.fn(),
 }));
 
 vi.mock("~/server/db", () => ({
   db: {
     transaction: transactionMock,
     query: {
-      groupMembers: { findFirst: vi.fn() },
-      mealPlanEntries: { findMany: vi.fn() },
+      groupMembers: { findFirst: groupMembersMock },
+      mealPlanEntries: { findMany: mealPlanEntriesMock },
     },
   },
 }));
@@ -22,14 +29,25 @@ vi.mock("~/server/dietary/gating", () => ({
   planWarningsForRecipes: vi.fn(async () => new Map()),
 }));
 
-import { shoppingListItems, type User } from "~/server/db/schema";
+import {
+  shoppingListItems,
+  shoppingListRestorePointItems,
+  shoppingListRestorePoints,
+  type User,
+} from "~/server/db/schema";
 import {
   addRecipeToList,
   archiveShoppingList,
+  buildListFromPlan,
+  bulkMoveShoppingItems,
   clearChecked,
   clearList,
   moveShoppingItem,
   renameShoppingList,
+  restoreShoppingListPoint,
+  restoreShoppingListPoints,
+  setItemChecked,
+  uncheckAll,
 } from "./mutations";
 
 const user = { id: "user_1" } as User;
@@ -57,7 +75,10 @@ function fakeTx() {
   const inserted: Array<{ table: unknown; values: unknown }> = [];
   const sets: unknown[] = [];
   const wheres: unknown[] = [];
+  const selectWheres: unknown[] = [];
+  const lockResults: unknown[][] = [];
   let currentTable: unknown;
+  let restorePointSequence = 0;
   const chain = {
     values: vi.fn((values: unknown) => {
       inserted.push({ table: currentTable, values });
@@ -71,15 +92,38 @@ function fakeTx() {
       wheres.push(where);
       return Promise.resolve([]);
     }),
-    returning: vi.fn(async () => [{ id: "created_1" }]),
+    returning: vi.fn(async () => [
+      {
+        id:
+          currentTable === shoppingListRestorePoints
+            ? `restore_${++restorePointSequence}`
+            : "created_1",
+      },
+    ]),
   };
   const selectChain = {
     from: vi.fn(() => selectChain),
-    where: vi.fn(async () => [{ next: 0 }]),
+    where: vi.fn((where: unknown) => {
+      selectWheres.push(where);
+      return selectChain;
+    }),
+    for: vi.fn(async () => {
+      if (lockResults.length > 0) return lockResults.shift();
+      const params = new PgDialect().sqlToQuery(
+        selectWheres.at(-1) as never,
+      ).params;
+      return [list(String(params[0]))];
+    }),
+    then: (
+      resolve: (value: Array<{ next: number }>) => unknown,
+      reject: (reason: unknown) => unknown,
+    ) => Promise.resolve([{ next: 0 }]).then(resolve, reject),
   };
   const tx = {
     inserted,
+    lockResults,
     sets,
+    selectWheres,
     wheres,
     query: {
       shoppingLists: {
@@ -88,7 +132,11 @@ function fakeTx() {
       },
       shoppingListItems: {
         findFirst: vi.fn(),
-        findMany: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      shoppingListRestorePoints: {
+        findFirst: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
       },
       shoppingIngredientRoutes: {
         findMany: vi.fn(),
@@ -110,6 +158,7 @@ function fakeTx() {
       return chain;
     }),
     select: vi.fn(() => selectChain),
+    selectChain,
   };
   return tx;
 }
@@ -151,9 +200,7 @@ describe("shopping list ownership", () => {
 
     const foreignTargetTx = fakeTx();
     foreignTargetTx.query.shoppingListItems.findFirst.mockResolvedValue(item);
-    foreignTargetTx.query.shoppingLists.findFirst.mockResolvedValue(
-      list("list_b", { userId: "user_2" }),
-    );
+    foreignTargetTx.lockResults.push([list("list_a")], []);
     runWith(foreignTargetTx);
     await expect(
       moveShoppingItem(user, {
@@ -168,9 +215,9 @@ describe("shopping list ownership", () => {
     foreignAlternativeTx.query.shoppingListItems.findFirst.mockResolvedValue(
       item,
     );
-    foreignAlternativeTx.query.shoppingLists.findFirst
-      .mockResolvedValueOnce(list("list_b"))
-      .mockResolvedValueOnce(list("list_c", { userId: "user_2" }));
+    foreignAlternativeTx.query.shoppingLists.findFirst.mockResolvedValue(
+      list("list_c", { userId: "user_2" }),
+    );
     runWith(foreignAlternativeTx);
     await expect(
       moveShoppingItem(user, {
@@ -197,12 +244,46 @@ describe("list-scoped mutations", () => {
     await clearList(user, "list_b");
 
     const dialect = new PgDialect();
-    expect(dialect.sqlToQuery(checkedTx.wheres.at(-1) as never).params).toEqual(
-      ["list_a", true],
-    );
-    expect(dialect.sqlToQuery(allTx.wheres.at(-1) as never).params).toEqual([
-      "list_b",
-    ]);
+    expect(
+      checkedTx.wheres.map(
+        (where) => dialect.sqlToQuery(where as never).params,
+      ),
+    ).toContainEqual(["list_a", true]);
+    expect(
+      allTx.wheres.map((where) => dialect.sqlToQuery(where as never).params),
+    ).toContainEqual(["list_b"]);
+    expect(checkedTx.selectChain.for).toHaveBeenCalledWith("update");
+    expect(allTx.selectChain.for).toHaveBeenCalledWith("update");
+  });
+
+  it("unchecks all in the owned list without writing history", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingLists.findFirst.mockResolvedValue(list("list_a"));
+    runWith(tx);
+
+    await uncheckAll(user, "list_a");
+
+    expect(tx.sets).toContainEqual(expect.objectContaining({ checked: false }));
+    expect(
+      tx.inserted.some((write) => write.table === shoppingListRestorePoints),
+    ).toBe(false);
+  });
+
+  it("keeps normal checkbox toggles lightweight", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListItems.findFirst.mockResolvedValue({
+      id: "item_1",
+      listId: "list_a",
+      list: { userId: user.id },
+    });
+    runWith(tx);
+
+    await setItemChecked(user, "item_1", true);
+
+    expect(tx.sets).toContainEqual({ checked: true });
+    expect(
+      tx.inserted.some((write) => write.table === shoppingListRestorePoints),
+    ).toBe(false);
   });
 
   it("does not replace the default when archiving a non-default list", async () => {
@@ -368,5 +449,307 @@ describe("automatic ingredient routing", () => {
     expect(
       tx.inserted.filter((write) => write.table === shoppingListItems),
     ).toHaveLength(0);
+  });
+});
+
+describe("shopping restore points", () => {
+  it("prunes beyond 20 deterministically in the snapshot transaction", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListRestorePoints.findMany.mockResolvedValue([
+      { id: "old_2" },
+      { id: "old_1" },
+    ]);
+    runWith(tx);
+
+    await clearList(user, "list_a");
+
+    const dialect = new PgDialect();
+    const historyOptions = tx.query.shoppingListRestorePoints.findMany.mock
+      .calls[0]?.[0] as unknown as { offset: number; orderBy: unknown[] };
+    expect(historyOptions.offset).toBe(20);
+    expect(
+      historyOptions.orderBy.map(
+        (order) => dialect.sqlToQuery(order as never).sql,
+      ),
+    ).toEqual([
+      '"shopping_list_restore_points"."createdAt" desc',
+      '"shopping_list_restore_points"."id" desc',
+    ]);
+    expect(
+      tx.wheres.map((where) => dialect.sqlToQuery(where as never).params),
+    ).toContainEqual(["list_a", user.id, "old_2", "old_1"]);
+  });
+
+  it("verifies ownership in the row-lock query before snapshotting", async () => {
+    const tx = fakeTx();
+    tx.lockResults.push([]);
+    runWith(tx);
+
+    await expect(clearChecked(user, "foreign")).rejects.toThrow("NOT_FOUND");
+    expect(tx.selectChain.for).toHaveBeenCalledWith("update");
+    expect(
+      tx.inserted.some((write) => write.table === shoppingListRestorePoints),
+    ).toBe(false);
+  });
+
+  it("restores snapshot items after recording the current state", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListItems.findMany.mockResolvedValue([
+      {
+        id: "current",
+        item: "Current milk",
+        quantity: 1,
+        quantityMax: null,
+        unit: "carton",
+        category: "Dairy",
+        note: null,
+        optional: false,
+        checked: false,
+        recipeId: null,
+        foodId: null,
+        position: 9,
+      },
+    ]);
+    tx.query.shoppingListRestorePoints.findFirst.mockResolvedValue({
+      id: "point_1",
+      listId: "list_a",
+      userId: user.id,
+      operation: "clear_all",
+      createdAt: new Date(),
+      items: [
+        {
+          id: "snapshot_item",
+          restorePointId: "point_1",
+          item: "Earlier bread",
+          quantity: 2,
+          quantityMax: null,
+          unit: null,
+          category: "Bakery",
+          note: null,
+          optional: false,
+          checked: true,
+          recipeId: null,
+          foodId: null,
+          position: 4,
+        },
+      ],
+    });
+    runWith(tx);
+
+    await expect(
+      restoreShoppingListPoint(user, "list_a", "point_1"),
+    ).resolves.toEqual({
+      listId: "list_a",
+      restorePointId: "restore_1",
+    });
+
+    expect(
+      tx.inserted.find((write) => write.table === shoppingListRestorePoints)
+        ?.values,
+    ).toMatchObject({ operation: "restore", listId: "list_a" });
+    expect(
+      tx.inserted.find((write) => write.table === shoppingListRestorePointItems)
+        ?.values,
+    ).toEqual([expect.objectContaining({ item: "Current milk", position: 0 })]);
+    expect(
+      tx.inserted.filter((write) => write.table === shoppingListItems).at(-1)
+        ?.values,
+    ).toEqual([
+      expect.objectContaining({ item: "Earlier bread", position: 0 }),
+    ]);
+    expect(tx.delete).not.toHaveBeenCalledWith(shoppingListRestorePoints);
+  });
+
+  it("cannot restore a foreign or stale point for an owned list", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListRestorePoints.findFirst.mockResolvedValue(undefined);
+    runWith(tx);
+
+    await expect(
+      restoreShoppingListPoint(user, "list_a", "foreign_point"),
+    ).rejects.toThrow("NOT_FOUND");
+    const pointQuery = tx.query.shoppingListRestorePoints.findFirst.mock
+      .calls[0]?.[0] as { where: unknown };
+    expect(
+      new PgDialect().sqlToQuery(pointQuery.where as never).params,
+    ).toEqual(["foreign_point", "list_a", user.id]);
+    expect(
+      tx.inserted.some((write) => write.table === shoppingListRestorePoints),
+    ).toBe(false);
+  });
+
+  it("snapshots source and destination lists once for a bulk move", async () => {
+    const tx = fakeTx();
+    const itemA = {
+      id: "item_a",
+      listId: "list_a",
+      item: "Milk",
+      foodId: null,
+      quantity: 1,
+      quantityMax: null,
+      unit: null,
+      category: "Dairy",
+      note: null,
+      optional: false,
+      checked: false,
+      recipeId: null,
+      list: { userId: user.id },
+    };
+    const itemB = { ...itemA, id: "item_b", listId: "list_b", item: "Bread" };
+    tx.query.shoppingListItems.findFirst
+      .mockResolvedValueOnce(itemA)
+      .mockResolvedValueOnce(itemB)
+      .mockResolvedValueOnce(itemA)
+      .mockResolvedValueOnce(itemB);
+    runWith(tx);
+
+    const result = await bulkMoveShoppingItems(user, {
+      itemIds: ["item_a", "item_b"],
+      targetListId: "list_c",
+    });
+
+    expect(result.restorePoints.map((point) => point.listId)).toEqual([
+      "list_a",
+      "list_b",
+      "list_c",
+    ]);
+    expect(
+      tx.inserted
+        .filter((write) => write.table === shoppingListRestorePoints)
+        .map((write) => (write.values as { operation: string }).operation),
+    ).toEqual([
+      "bulk_move_source",
+      "bulk_move_source",
+      "bulk_move_destination",
+    ]);
+    expect(result.undoToken).toEqual({
+      restorePoints: result.restorePoints,
+    });
+  });
+
+  it("atomically restores every list in a bulk undo token", async () => {
+    const tx = fakeTx();
+    const snapshotItem = (item: string) => ({
+      id: `snapshot_${item}`,
+      restorePointId: `point_${item}`,
+      item,
+      quantity: 1,
+      quantityMax: null,
+      unit: null,
+      category: "Other",
+      note: null,
+      optional: false,
+      checked: false,
+      recipeId: null,
+      foodId: null,
+      position: 0,
+    });
+    tx.query.shoppingListRestorePoints.findFirst
+      .mockResolvedValueOnce({
+        id: "source_point",
+        operation: "bulk_move_source",
+        items: [snapshotItem("Source milk")],
+      })
+      .mockResolvedValueOnce({
+        id: "target_point",
+        operation: "bulk_move_destination",
+        items: [snapshotItem("Target bread")],
+      });
+    runWith(tx);
+
+    const result = await restoreShoppingListPoints(user, {
+      restorePoints: [
+        { listId: "list_a", restorePointId: "source_point" },
+        { listId: "list_c", restorePointId: "target_point" },
+      ],
+    });
+
+    expect(transactionMock).toHaveBeenCalledOnce();
+    expect(tx.selectChain.for).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({
+      restorePoints: [
+        { listId: "list_a", restorePointId: "restore_1" },
+        { listId: "list_c", restorePointId: "restore_2" },
+      ],
+      undoToken: {
+        restorePoints: [
+          { listId: "list_a", restorePointId: "restore_1" },
+          { listId: "list_c", restorePointId: "restore_2" },
+        ],
+      },
+    });
+    expect(
+      tx.inserted
+        .filter((write) => write.table === shoppingListItems)
+        .map((write) =>
+          (write.values as Array<{ item: string }>).map((item) => item.item),
+        ),
+    ).toEqual([["Source milk"], ["Target bread"]]);
+    const dialect = new PgDialect();
+    expect(
+      tx.wheres.map((where) => dialect.sqlToQuery(where as never).params),
+    ).toEqual(expect.arrayContaining([["list_a"], ["list_c"]]));
+  });
+
+  it("aborts a multi-restore before writes when any point is unauthorized", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingListRestorePoints.findFirst
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce(undefined);
+    runWith(tx);
+
+    await expect(
+      restoreShoppingListPoints(user, {
+        restorePoints: [
+          { listId: "list_a", restorePointId: "source_point" },
+          { listId: "list_c", restorePointId: "foreign_point" },
+        ],
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(
+      tx.inserted.some((write) => write.table === shoppingListRestorePoints),
+    ).toBe(false);
+    expect(tx.delete).not.toHaveBeenCalled();
+  });
+
+  it("captures each affected list before a meal-plan rebuild", async () => {
+    const tx = fakeTx();
+    mealPlanEntriesMock.mockResolvedValue([
+      {
+        recipeId: "recipe_1",
+        note: null,
+        servingsMade: 2,
+        leftoverSourceId: null,
+        recipe: {
+          id: "recipe_1",
+          servings: 2,
+          ingredients: [
+            {
+              item: "Milk",
+              foodId: null,
+              quantity: 1,
+              quantityMax: null,
+              unit: "cup",
+              optional: false,
+            },
+          ],
+        },
+      },
+    ]);
+    tx.query.shoppingLists.findMany.mockResolvedValue([
+      list("default", { isDefault: true }),
+    ]);
+    tx.query.shoppingIngredientRoutes.findMany.mockResolvedValue([]);
+    runWith(tx);
+
+    const result = await buildListFromPlan(user, "2026-08-03", "2026-08-09");
+
+    expect(result.restorePoints).toEqual([
+      { listId: "default", restorePointId: "restore_1" },
+    ]);
+    expect(
+      tx.inserted.find((write) => write.table === shoppingListRestorePoints)
+        ?.values,
+    ).toMatchObject({ listId: "default", operation: "rebuild" });
   });
 });

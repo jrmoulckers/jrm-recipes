@@ -1,8 +1,10 @@
 import "server-only";
 
+import { createId } from "@paralleldrive/cuid2";
 import {
   and,
   asc,
+  desc,
   eq,
   gte,
   inArray,
@@ -19,7 +21,10 @@ import {
   shoppingIngredientRouteAlternatives,
   shoppingIngredientRoutes,
   shoppingListItems,
+  shoppingListRestorePointItems,
+  shoppingListRestorePoints,
   shoppingLists,
+  type ShoppingListRestorePoint,
   type User,
 } from "~/server/db/schema";
 import { getRecipe } from "~/server/recipes/queries";
@@ -40,9 +45,11 @@ import {
 } from "~/lib/shopping-routing";
 import type {
   CreateShoppingListInput,
+  BulkMoveShoppingItemsInput,
   ManualItemInput,
   MoveShoppingItemInput,
   RenameShoppingListInput,
+  RestoreShoppingListPointsInput,
 } from "./validation";
 import {
   planWarningsForRecipes,
@@ -50,6 +57,9 @@ import {
 } from "~/server/dietary/gating";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type RestoreOperation = ShoppingListRestorePoint["operation"];
+
+export const SHOPPING_RESTORE_POINT_LIMIT = 20;
 
 type OwnedList = {
   id: string;
@@ -79,12 +89,145 @@ async function ownedList(
   return list;
 }
 
+/**
+ * Locking the list row is the serialization boundary for snapshots and item
+ * replacement. Ownership is part of the locked query, not a preflight check.
+ */
+async function lockOwnedList(
+  tx: Tx,
+  listId: string,
+  userId: string,
+  activeOnly = false,
+): Promise<OwnedList> {
+  const [list] = await tx
+    .select({
+      id: shoppingLists.id,
+      userId: shoppingLists.userId,
+      isDefault: shoppingLists.isDefault,
+      archivedAt: shoppingLists.archivedAt,
+    })
+    .from(shoppingLists)
+    .where(and(eq(shoppingLists.id, listId), eq(shoppingLists.userId, userId)))
+    .for("update");
+  if (!list || (activeOnly && list.archivedAt != null)) {
+    throw new Error("NOT_FOUND");
+  }
+  return list;
+}
+
+async function lockOwnedLists(
+  tx: Tx,
+  listIds: Iterable<string>,
+  userId: string,
+  activeOnly = false,
+) {
+  const lists: OwnedList[] = [];
+  for (const listId of [...new Set(listIds)].sort()) {
+    lists.push(await lockOwnedList(tx, listId, userId, activeOnly));
+  }
+  return lists;
+}
+
+async function createRestorePoint(
+  tx: Tx,
+  list: OwnedList,
+  operation: RestoreOperation,
+  operationGroupId: string | null = null,
+): Promise<string> {
+  const items = await tx.query.shoppingListItems.findMany({
+    where: eq(shoppingListItems.listId, list.id),
+    orderBy: [asc(shoppingListItems.position), asc(shoppingListItems.id)],
+  });
+  const [restorePoint] = await tx
+    .insert(shoppingListRestorePoints)
+    .values({
+      listId: list.id,
+      userId: list.userId,
+      operation,
+      operationGroupId,
+      createdAt: sql`clock_timestamp()`,
+    })
+    .returning({ id: shoppingListRestorePoints.id });
+  if (!restorePoint) throw new Error("NOT_FOUND");
+
+  if (items.length > 0) {
+    await tx.insert(shoppingListRestorePointItems).values(
+      items.map((item, position) => ({
+        restorePointId: restorePoint.id,
+        item: item.item,
+        quantity: item.quantity,
+        quantityMax: item.quantityMax,
+        unit: item.unit,
+        category: item.category,
+        note: item.note,
+        optional: item.optional,
+        checked: item.checked,
+        recipeId: item.recipeId,
+        foodId: item.foodId,
+        position,
+      })),
+    );
+  }
+
+  const stale =
+    (await tx.query.shoppingListRestorePoints.findMany({
+      where: and(
+        eq(shoppingListRestorePoints.listId, list.id),
+        eq(shoppingListRestorePoints.userId, list.userId),
+      ),
+      columns: { id: true, operationGroupId: true },
+      orderBy: [
+        desc(shoppingListRestorePoints.createdAt),
+        desc(shoppingListRestorePoints.id),
+      ],
+      offset: SHOPPING_RESTORE_POINT_LIMIT,
+    })) ?? [];
+  if (stale.length > 0) {
+    const staleGroupIds = stale
+      .map((point) => point.operationGroupId)
+      .filter((id): id is string => id != null);
+    if (staleGroupIds.length > 0) {
+      await tx
+        .delete(shoppingListRestorePoints)
+        .where(
+          and(
+            eq(shoppingListRestorePoints.userId, list.userId),
+            inArray(shoppingListRestorePoints.operationGroupId, staleGroupIds),
+          ),
+        );
+    }
+    const staleUngroupedIds = stale
+      .filter((point) => point.operationGroupId == null)
+      .map((point) => point.id);
+    if (staleUngroupedIds.length > 0) {
+      await tx
+        .delete(shoppingListRestorePoints)
+        .where(
+          and(
+            eq(shoppingListRestorePoints.listId, list.id),
+            eq(shoppingListRestorePoints.userId, list.userId),
+            inArray(shoppingListRestorePoints.id, staleUngroupedIds),
+          ),
+        );
+    }
+  }
+  return restorePoint.id;
+}
+
 async function ownedItem(tx: Tx, itemId: string, userId: string) {
   const item = await tx.query.shoppingListItems.findFirst({
     where: eq(shoppingListItems.id, itemId),
     with: { list: { columns: { userId: true } } },
   });
   if (item?.list.userId !== userId) throw new Error("NOT_FOUND");
+  return item;
+}
+
+async function lockOwnedItemList(tx: Tx, itemId: string, userId: string) {
+  const initialItem = await ownedItem(tx, itemId, userId);
+  await lockOwnedList(tx, initialItem.listId, userId);
+  const item = await ownedItem(tx, itemId, userId);
+  if (item.listId !== initialItem.listId) throw new Error("CONFLICT");
   return item;
 }
 
@@ -282,6 +425,7 @@ async function routeContributions(
   tx: Tx,
   userId: string,
   contributions: ShoppingItemInput[],
+  restoreOperation?: RestoreOperation,
 ) {
   const workspace = await routingWorkspace(tx, userId);
   const partitions = partitionShoppingItemsByDestination(
@@ -290,6 +434,23 @@ async function routeContributions(
     workspace.activeListIds,
     workspace.defaultListId,
   );
+  const lockedLists = await lockOwnedLists(tx, partitions.keys(), userId, true);
+  const restorePoints: RestorePointReference[] = [];
+  const operationGroupId =
+    restoreOperation && lockedLists.length > 1 ? createId() : null;
+  if (restoreOperation) {
+    for (const list of lockedLists) {
+      restorePoints.push({
+        listId: list.id,
+        restorePointId: await createRestorePoint(
+          tx,
+          list,
+          restoreOperation,
+          operationGroupId,
+        ),
+      });
+    }
+  }
   let added = 0;
   let merged = 0;
   for (const [listId, items] of partitions) {
@@ -297,7 +458,7 @@ async function routeContributions(
     added += result.added;
     merged += result.merged;
   }
-  return { added, merged };
+  return { added, merged, restorePoints };
 }
 
 /**
@@ -352,6 +513,17 @@ export type BuildFromPlanResult = {
    * Advisory only. The list is still built. The UI surfaces this as a warning.
    */
   warnings: PlanSafetyWarning[];
+  /** Per-list pre-build snapshots for immediate undo. */
+  restorePoints: RestorePointReference[];
+};
+
+export type RestorePointReference = {
+  listId: string;
+  restorePointId: string;
+};
+
+export type BulkMoveUndoToken = {
+  restorePoints: RestorePointReference[];
 };
 
 /**
@@ -428,7 +600,14 @@ export async function buildListFromPlan(
       parseLeftoversNote(e.note) == null,
   );
   if (cooking.length === 0) {
-    return { recipesUsed: 0, added: 0, merged: 0, empty: true, warnings: [] };
+    return {
+      recipesUsed: 0,
+      added: 0,
+      merged: 0,
+      empty: true,
+      warnings: [],
+      restorePoints: [],
+    };
   }
 
   const contributions: ShoppingItemInput[] = [];
@@ -468,14 +647,16 @@ export async function buildListFromPlan(
       merged: 0,
       empty: false,
       warnings,
+      restorePoints: [],
     };
   }
 
   return db.transaction(async (tx) => {
-    const { added, merged } = await routeContributions(
+    const { added, merged, restorePoints } = await routeContributions(
       tx,
       user.id,
       contributions,
+      "rebuild",
     );
     return {
       recipesUsed: recipeIds.size,
@@ -483,6 +664,7 @@ export async function buildListFromPlan(
       merged,
       empty: false,
       warnings,
+      restorePoints,
     };
   });
 }
@@ -493,7 +675,7 @@ export async function addManualItem(
   input: ManualItemInput,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const list = await ownedList(tx, input.listId, user.id, true);
+    const list = await lockOwnedList(tx, input.listId, user.id, true);
     const [{ next } = { next: 0 }] = await tx
       .select({
         next: sql<number>`coalesce(max(${shoppingListItems.position}), -1) + 1`,
@@ -772,13 +954,90 @@ async function saveItemRoute(
   }
 }
 
+async function moveItemWithinTransaction(
+  tx: Tx,
+  item: Awaited<ReturnType<typeof ownedItem>>,
+  target: OwnedList,
+) {
+  if (item.listId === target.id) return;
+
+  const [{ next } = { next: 0 }] = await tx
+    .select({
+      next: sql<number>`coalesce(max(${shoppingListItems.position}), -1) + 1`,
+    })
+    .from(shoppingListItems)
+    .where(eq(shoppingListItems.listId, target.id));
+
+  if (!item.checked && (item.note ?? "").length === 0) {
+    const destination = await tx.query.shoppingListItems.findMany({
+      where: eq(shoppingListItems.listId, target.id),
+    });
+    const sourceKey = mergeShoppingItems([itemInput(item)])[0]?.key;
+    const compatible = destination.filter(
+      (candidate) =>
+        !candidate.checked &&
+        (candidate.note ?? "").length === 0 &&
+        mergeShoppingItems([itemInput(candidate)])[0]?.key === sourceKey,
+    );
+    if (compatible.length > 0) {
+      const [merged] = mergeShoppingItems([
+        ...compatible.map(itemInput),
+        itemInput(item),
+      ]);
+      if (!merged) throw new Error("NOT_FOUND");
+      await tx
+        .delete(shoppingListItems)
+        .where(
+          inArray(shoppingListItems.id, [
+            item.id,
+            ...compatible.map((candidate) => candidate.id),
+          ]),
+        );
+      await tx.insert(shoppingListItems).values({
+        listId: target.id,
+        item: merged.item,
+        foodId: merged.foodId,
+        quantity: merged.quantity,
+        quantityMax: merged.quantityMax,
+        unit: merged.unit,
+        category: compatible[0]?.category ?? item.category ?? merged.category,
+        optional: merged.optional,
+        recipeId: merged.recipeIds[0] ?? null,
+        position: next,
+      });
+    } else {
+      await tx
+        .update(shoppingListItems)
+        .set({ listId: target.id, position: next, updatedAt: new Date() })
+        .where(eq(shoppingListItems.id, item.id));
+    }
+  } else {
+    await tx
+      .update(shoppingListItems)
+      .set({ listId: target.id, position: next, updatedAt: new Date() })
+      .where(eq(shoppingListItems.id, item.id));
+  }
+  await touchList(tx, item.listId);
+  await touchList(tx, target.id);
+}
+
 export async function moveShoppingItem(
   user: User,
   input: MoveShoppingItemInput,
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    const initialItem = await ownedItem(tx, input.itemId, user.id);
+    const locked = await lockOwnedLists(
+      tx,
+      [initialItem.listId, input.targetListId],
+      user.id,
+    );
+    const target = locked.find((list) => list.id === input.targetListId);
+    if (!target || target.archivedAt != null) throw new Error("NOT_FOUND");
     const item = await ownedItem(tx, input.itemId, user.id);
-    const target = await ownedList(tx, input.targetListId, user.id, true);
+    if (!locked.some((list) => list.id === item.listId)) {
+      throw new Error("CONFLICT");
+    }
     if (
       new Set(input.alternativeListIds).size !==
         input.alternativeListIds.length ||
@@ -790,67 +1049,7 @@ export async function moveShoppingItem(
       await ownedList(tx, alternativeId, user.id, true);
     }
 
-    if (item.listId !== target.id) {
-      const [{ next } = { next: 0 }] = await tx
-        .select({
-          next: sql<number>`coalesce(max(${shoppingListItems.position}), -1) + 1`,
-        })
-        .from(shoppingListItems)
-        .where(eq(shoppingListItems.listId, target.id));
-
-      if (!item.checked && (item.note ?? "").length === 0) {
-        const destination = await tx.query.shoppingListItems.findMany({
-          where: eq(shoppingListItems.listId, target.id),
-        });
-        const sourceKey = mergeShoppingItems([itemInput(item)])[0]?.key;
-        const compatible = destination.filter(
-          (candidate) =>
-            !candidate.checked &&
-            (candidate.note ?? "").length === 0 &&
-            mergeShoppingItems([itemInput(candidate)])[0]?.key === sourceKey,
-        );
-        if (compatible.length > 0) {
-          const [merged] = mergeShoppingItems([
-            ...compatible.map(itemInput),
-            itemInput(item),
-          ]);
-          if (!merged) throw new Error("NOT_FOUND");
-          await tx
-            .delete(shoppingListItems)
-            .where(
-              inArray(shoppingListItems.id, [
-                item.id,
-                ...compatible.map((candidate) => candidate.id),
-              ]),
-            );
-          await tx.insert(shoppingListItems).values({
-            listId: target.id,
-            item: merged.item,
-            foodId: merged.foodId,
-            quantity: merged.quantity,
-            quantityMax: merged.quantityMax,
-            unit: merged.unit,
-            category:
-              compatible[0]?.category ?? item.category ?? merged.category,
-            optional: merged.optional,
-            recipeId: merged.recipeIds[0] ?? null,
-            position: next,
-          });
-        } else {
-          await tx
-            .update(shoppingListItems)
-            .set({ listId: target.id, position: next, updatedAt: new Date() })
-            .where(eq(shoppingListItems.id, item.id));
-        }
-      } else {
-        await tx
-          .update(shoppingListItems)
-          .set({ listId: target.id, position: next, updatedAt: new Date() })
-          .where(eq(shoppingListItems.id, item.id));
-      }
-      await touchList(tx, item.listId);
-      await touchList(tx, target.id);
-    }
+    await moveItemWithinTransaction(tx, item, target);
 
     if (input.rememberRoute) {
       await saveItemRoute(
@@ -864,13 +1063,77 @@ export async function moveShoppingItem(
   });
 }
 
+export async function bulkMoveShoppingItems(
+  user: User,
+  input: BulkMoveShoppingItemsInput,
+): Promise<{
+  restorePoints: RestorePointReference[];
+  undoToken: BulkMoveUndoToken | null;
+}> {
+  return db.transaction(async (tx) => {
+    if (new Set(input.itemIds).size !== input.itemIds.length) {
+      throw new Error("INVALID_INPUT");
+    }
+    const initialItems = await Promise.all(
+      input.itemIds.map((itemId) => ownedItem(tx, itemId, user.id)),
+    );
+    const locked = await lockOwnedLists(
+      tx,
+      [input.targetListId, ...initialItems.map((item) => item.listId)],
+      user.id,
+      true,
+    );
+    const target = locked.find((list) => list.id === input.targetListId);
+    if (!target) throw new Error("NOT_FOUND");
+
+    const items = await Promise.all(
+      input.itemIds.map((itemId) => ownedItem(tx, itemId, user.id)),
+    );
+    if (
+      items.some(
+        (item, index) =>
+          item.listId !== initialItems[index]?.listId ||
+          !locked.some((list) => list.id === item.listId),
+      )
+    ) {
+      throw new Error("CONFLICT");
+    }
+    const movingItems = items.filter((item) => item.listId !== target.id);
+    if (movingItems.length === 0) {
+      return { restorePoints: [], undoToken: null };
+    }
+
+    const affectedIds = new Set([
+      target.id,
+      ...movingItems.map((item) => item.listId),
+    ]);
+    const operationGroupId = createId();
+    const restorePoints: RestorePointReference[] = [];
+    for (const list of locked.filter((list) => affectedIds.has(list.id))) {
+      restorePoints.push({
+        listId: list.id,
+        restorePointId: await createRestorePoint(
+          tx,
+          list,
+          list.id === target.id ? "bulk_move_destination" : "bulk_move_source",
+          operationGroupId,
+        ),
+      });
+    }
+    for (const item of movingItems) {
+      await moveItemWithinTransaction(tx, item, target);
+    }
+    return { restorePoints, undoToken: { restorePoints } };
+  });
+}
+
 export async function setItemChecked(
   user: User,
   itemId: string,
   checked: boolean,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    await ownedItem(tx, itemId, user.id);
+    await lockOwnedItemList(tx, itemId, user.id);
     await tx
       .update(shoppingListItems)
       .set({ checked })
@@ -889,7 +1152,7 @@ export async function setItemCategory(
   category: ShoppingCategory,
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    await ownedItem(tx, itemId, user.id);
+    await lockOwnedItemList(tx, itemId, user.id);
     await tx
       .update(shoppingListItems)
       .set({ category })
@@ -899,14 +1162,22 @@ export async function setItemCategory(
 
 export async function removeItem(user: User, itemId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    await ownedItem(tx, itemId, user.id);
+    await lockOwnedItemList(tx, itemId, user.id);
     await tx.delete(shoppingListItems).where(eq(shoppingListItems.id, itemId));
   });
 }
 
-export async function clearChecked(user: User, listId: string): Promise<void> {
-  await db.transaction(async (tx) => {
-    const list = await ownedList(tx, listId, user.id);
+export async function clearChecked(
+  user: User,
+  listId: string,
+): Promise<{ restorePointId: string }> {
+  return db.transaction(async (tx) => {
+    const list = await lockOwnedList(tx, listId, user.id);
+    const restorePointId = await createRestorePoint(
+      tx,
+      list,
+      "remove_completed",
+    );
     await tx
       .delete(shoppingListItems)
       .where(
@@ -915,14 +1186,186 @@ export async function clearChecked(user: User, listId: string): Promise<void> {
           eq(shoppingListItems.checked, true),
         ),
       );
+    await touchList(tx, list.id);
+    return { restorePointId };
   });
 }
 
-export async function clearList(user: User, listId: string): Promise<void> {
-  await db.transaction(async (tx) => {
-    const list = await ownedList(tx, listId, user.id);
+export async function clearList(
+  user: User,
+  listId: string,
+): Promise<{ restorePointId: string }> {
+  return db.transaction(async (tx) => {
+    const list = await lockOwnedList(tx, listId, user.id);
+    const restorePointId = await createRestorePoint(tx, list, "clear_all");
     await tx
       .delete(shoppingListItems)
       .where(eq(shoppingListItems.listId, list.id));
+    await touchList(tx, list.id);
+    return { restorePointId };
+  });
+}
+
+export async function uncheckAll(user: User, listId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const list = await lockOwnedList(tx, listId, user.id);
+    await tx
+      .update(shoppingListItems)
+      .set({ checked: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(shoppingListItems.listId, list.id),
+          eq(shoppingListItems.checked, true),
+        ),
+      );
+    await touchList(tx, list.id);
+  });
+}
+
+export async function restoreShoppingListPoint(
+  user: User,
+  listId: string,
+  restorePointId: string,
+): Promise<{ listId: string; restorePointId: string }> {
+  return db.transaction(async (tx) => {
+    const list = await lockOwnedList(tx, listId, user.id);
+    const point = await tx.query.shoppingListRestorePoints.findFirst({
+      where: and(
+        eq(shoppingListRestorePoints.id, restorePointId),
+        eq(shoppingListRestorePoints.listId, list.id),
+        eq(shoppingListRestorePoints.userId, user.id),
+      ),
+      with: {
+        items: {
+          orderBy: [
+            asc(shoppingListRestorePointItems.position),
+            asc(shoppingListRestorePointItems.id),
+          ],
+        },
+      },
+    });
+    if (!point) throw new Error("NOT_FOUND");
+
+    const currentRestorePointId = await createRestorePoint(tx, list, "restore");
+    await tx
+      .delete(shoppingListItems)
+      .where(eq(shoppingListItems.listId, list.id));
+    if (point.items.length > 0) {
+      await tx.insert(shoppingListItems).values(
+        point.items.map((item, position) => ({
+          listId: list.id,
+          item: item.item,
+          quantity: item.quantity,
+          quantityMax: item.quantityMax,
+          unit: item.unit,
+          category: item.category,
+          note: item.note,
+          optional: item.optional,
+          checked: item.checked,
+          recipeId: item.recipeId,
+          foodId: item.foodId,
+          position,
+        })),
+      );
+    }
+    await touchList(tx, list.id);
+    return { listId: list.id, restorePointId: currentRestorePointId };
+  });
+}
+
+/**
+ * Atomically restore a multi-list undo token. Every list is locked before any
+ * point is read or current state is snapshotted, so a partial restore cannot
+ * commit.
+ */
+export async function restoreShoppingListPoints(
+  user: User,
+  input: RestoreShoppingListPointsInput,
+): Promise<{
+  restorePoints: RestorePointReference[];
+  undoToken: BulkMoveUndoToken;
+}> {
+  return db.transaction(async (tx) => {
+    const listIds = input.restorePoints.map((point) => point.listId);
+    const pointIds = input.restorePoints.map((point) => point.restorePointId);
+    if (
+      input.restorePoints.length < 2 ||
+      new Set(listIds).size !== listIds.length ||
+      new Set(pointIds).size !== pointIds.length
+    ) {
+      throw new Error("INVALID_INPUT");
+    }
+
+    const lists = await lockOwnedLists(tx, listIds, user.id);
+    const listsById = new Map(lists.map((list) => [list.id, list]));
+    const snapshots: Array<{
+      list: OwnedList;
+      point: {
+        items: (typeof shoppingListRestorePointItems.$inferSelect)[];
+      };
+    }> = [];
+
+    for (const reference of input.restorePoints) {
+      const list = listsById.get(reference.listId);
+      if (!list) throw new Error("NOT_FOUND");
+      const point = await tx.query.shoppingListRestorePoints.findFirst({
+        where: and(
+          eq(shoppingListRestorePoints.id, reference.restorePointId),
+          eq(shoppingListRestorePoints.listId, list.id),
+          eq(shoppingListRestorePoints.userId, user.id),
+        ),
+        with: {
+          items: {
+            orderBy: [
+              asc(shoppingListRestorePointItems.position),
+              asc(shoppingListRestorePointItems.id),
+            ],
+          },
+        },
+      });
+      if (!point) throw new Error("NOT_FOUND");
+      snapshots.push({ list, point });
+    }
+
+    const restorePoints: RestorePointReference[] = [];
+    const operationGroupId = createId();
+    for (const list of lists) {
+      restorePoints.push({
+        listId: list.id,
+        restorePointId: await createRestorePoint(
+          tx,
+          list,
+          "restore",
+          operationGroupId,
+        ),
+      });
+    }
+
+    for (const { list, point } of snapshots) {
+      await tx
+        .delete(shoppingListItems)
+        .where(eq(shoppingListItems.listId, list.id));
+      if (point.items.length > 0) {
+        await tx.insert(shoppingListItems).values(
+          point.items.map((item, position) => ({
+            listId: list.id,
+            item: item.item,
+            quantity: item.quantity,
+            quantityMax: item.quantityMax,
+            unit: item.unit,
+            category: item.category,
+            note: item.note,
+            optional: item.optional,
+            checked: item.checked,
+            recipeId: item.recipeId,
+            foodId: item.foodId,
+            position,
+          })),
+        );
+      }
+      await touchList(tx, list.id);
+    }
+
+    return { restorePoints, undoToken: { restorePoints } };
   });
 }

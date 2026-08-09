@@ -12,6 +12,7 @@ import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
   addManualItemAction,
   archiveShoppingListAction,
+  bulkMoveShoppingItemsAction,
   clearCheckedItemsAction,
   clearShoppingListAction,
   createShoppingListAction,
@@ -21,8 +22,11 @@ import {
   removeShoppingItemAction,
   renameShoppingListAction,
   restoreShoppingListAction,
+  restoreShoppingListPointAction,
+  restoreShoppingListPointsAction,
   setItemCategoryAction,
   setItemCheckedAction,
+  uncheckAllShoppingItemsAction,
   type ActionResult,
 } from "~/server/shopping/actions";
 import { useConfirm } from "~/components/ui/confirm-dialog";
@@ -35,6 +39,7 @@ import {
   type ManualEntryDraft,
   type ShoppingViewItem,
 } from "./shopping-list-view";
+import type { ShoppingHistoryEntry } from "./shopping-history";
 
 type ServerActionResult =
   ActionResult | ({ ok: true } & Record<string, unknown>);
@@ -45,12 +50,14 @@ export function DbShoppingList({
   lists,
   selectedListId,
   defaultListId,
+  historyEntries,
   members = [],
 }: {
   items: ShoppingViewItem[];
   lists: ShoppingListSummary[];
   selectedListId: string;
   defaultListId: string;
+  historyEntries: ShoppingHistoryEntry[];
   /** Family profiles, to warn on the active member's allergens (#432). */
   members?: ActiveMemberOption[];
 }) {
@@ -242,9 +249,133 @@ export function DbShoppingList({
     );
   }
 
+  function onBulkMove(itemIds: string[], targetListId: string) {
+    const target = lists.find((candidate) => candidate.id === targetListId);
+    if (!target) return;
+    const previous = optimistic;
+    setOptimistic((items) =>
+      items.filter((item) => !itemIds.includes(item.id)),
+    );
+    run(
+      () => bulkMoveShoppingItemsAction({ itemIds, targetListId }),
+      (result) => {
+        toast.success(
+          t("routing.bulk.toasts.moved", {
+            count: itemIds.length,
+            list: target.storeName ?? target.name,
+          }),
+          result.undoToken
+            ? {
+                duration: Infinity,
+                action: {
+                  label: t("history.undo"),
+                  onClick: () => {
+                    setOptimistic(previous);
+                    run(
+                      () => restoreShoppingListPointsAction(result.undoToken!),
+                      () => toast.success(t("history.toasts.undoComplete")),
+                    );
+                  },
+                },
+              }
+            : undefined,
+        );
+      },
+    );
+  }
+
+  function onRestoreHistory(entry: ShoppingHistoryEntry) {
+    const previous = optimistic;
+    setOptimistic(entry.items);
+    const references = entry.restorePoints ?? [
+      { listId: selectedListId, restorePointId: entry.id },
+    ];
+    if (references.length > 1) {
+      run(
+        () =>
+          restoreShoppingListPointsAction({
+            restorePoints: references,
+          }),
+        (result) => {
+          toast.success(t("history.toasts.restored"), {
+            duration: Infinity,
+            action: {
+              label: t("history.undo"),
+              onClick: () => {
+                setOptimistic(previous);
+                run(
+                  () => restoreShoppingListPointsAction(result.undoToken),
+                  () => toast.success(t("history.toasts.undoComplete")),
+                );
+              },
+            },
+          });
+        },
+      );
+      return;
+    }
+    run(
+      () =>
+        restoreShoppingListPointAction({
+          listId: selectedListId,
+          restorePointId: references[0]!.restorePointId,
+        }),
+      (result) => {
+        toast.success(t("history.toasts.restored"), {
+          duration: Infinity,
+          action: {
+            label: t("history.undo"),
+            onClick: () => {
+              setOptimistic(previous);
+              run(
+                () =>
+                  restoreShoppingListPointAction({
+                    listId: selectedListId,
+                    restorePointId: result.restorePointId,
+                  }),
+                () => toast.success(t("history.toasts.undoComplete")),
+              );
+            },
+          },
+        });
+      },
+    );
+  }
+
   function onClearChecked() {
+    const previous = optimistic;
     setOptimistic((previous) => previous.filter((item) => !item.checked));
-    run(() => clearCheckedItemsAction({ listId: selectedListId }));
+    run(
+      () => clearCheckedItemsAction({ listId: selectedListId }),
+      (result) =>
+        toast.success(t("toasts.removedCompleted"), {
+          duration: Infinity,
+          action: {
+            label: t("history.undo"),
+            onClick: () => {
+              setOptimistic(previous);
+              run(
+                () =>
+                  restoreShoppingListPointAction({
+                    listId: selectedListId,
+                    restorePointId: result.restorePointId,
+                  }),
+                () => toast.success(t("history.toasts.undoComplete")),
+              );
+            },
+          },
+        }),
+    );
+  }
+
+  function onUncheckAll() {
+    setOptimistic((previous) =>
+      previous.map((item) => ({ ...item, checked: false })),
+    );
+    run(
+      () => uncheckAllShoppingItemsAction({ listId: selectedListId }),
+      () => toast.success(t("toasts.uncheckedAll")),
+    );
   }
 
   async function onClearAll() {
@@ -255,10 +386,28 @@ export function DbShoppingList({
       confirmLabel: t("confirm.clearAll.confirmLabel"),
     });
     if (!accepted) return;
+    const previous = optimistic;
     setOptimistic([]);
     run(
       () => clearShoppingListAction({ listId: selectedListId }),
-      () => toast.success(t("toasts.cleared")),
+      (result) =>
+        toast.success(t("toasts.cleared"), {
+          duration: Infinity,
+          action: {
+            label: t("history.undo"),
+            onClick: () => {
+              setOptimistic(previous);
+              run(
+                () =>
+                  restoreShoppingListPointAction({
+                    listId: selectedListId,
+                    restorePointId: result.restorePointId,
+                  }),
+                () => toast.success(t("history.toasts.undoComplete")),
+              );
+            },
+          },
+        }),
     );
   }
 
@@ -288,8 +437,12 @@ export function DbShoppingList({
         onRemove={onRemove}
         onSetCategory={onSetCategory}
         onMove={onMove}
+        onBulkMove={onBulkMove}
         onClearChecked={onClearChecked}
+        onUncheckAll={onUncheckAll}
         onClearAll={onClearAll}
+        historyEntries={historyEntries}
+        onRestoreHistory={onRestoreHistory}
       />
     </div>
   );

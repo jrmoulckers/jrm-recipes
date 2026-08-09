@@ -1472,7 +1472,9 @@
       "nothingToSend": "No hay nada que enviar. Todo está marcado.",
       "listCopied": "Lista copiada. Pégala en un mensaje",
       "shareFailed": "No pudimos compartir la lista.",
-      "cleared": "Lista de compras borrada"
+      "cleared": "Lista de compras borrada.",
+      "removedCompleted": "Se eliminaron los artículos completados.",
+      "uncheckedAll": "Se desmarcaron todos los artículos."
     },
     "share": {
       "title": "🛒 Lista de compras",
@@ -1602,6 +1604,17 @@
       "toasts": {
         "moved": "Se movió {item} a {list}.",
         "routeSaved": "Asignación guardada. La próxima vez, {item} irá a {list}."
+      },
+      "bulk": {
+        "trigger": "Mover pendientes",
+        "title": "{count, plural, one {Mover # artículo pendiente} other {Mover # artículos pendientes}}",
+        "description": "Mueve todos los artículos sin marcar de esta lista a otra lista de compras.",
+        "destination": "Lista de destino",
+        "cancel": "Cancelar",
+        "confirm": "{count, plural, one {Mover # artículo} other {Mover # artículos}}",
+        "toasts": {
+          "moved": "{count, plural, one {Se movió # artículo a {list}.} other {Se movieron # artículos a {list}.}}"
+        }
       }
     },
     "manual": {
@@ -1621,8 +1634,34 @@
       "inCart": "{count, plural, one {# en el carrito} other {# en el carrito}}"
     },
     "actions": {
-      "clearChecked": "Borrar marcados",
+      "removeCompleted": "Eliminar completados",
+      "uncheckAll": "Desmarcar todo",
       "clearAll": "Borrar todo"
+    },
+    "history": {
+      "title": "Cambios recientes",
+      "count": "{count, plural, one {# estado guardado} other {# estados guardados}}",
+      "retention": "Se guardan hasta 20 cambios por lista. Los más antiguos se eliminan automáticamente.",
+      "empty": "Los cambios masivos y destructivos aparecerán aquí.",
+      "items": "{count, plural, one {# artículo} other {# artículos}}",
+      "preview": "Vista previa del estado",
+      "emptySnapshot": "Este estado guardado no tiene artículos.",
+      "completed": "(completado)",
+      "restore": "Restaurar este estado",
+      "restoreNamed": "Restaurar {operation} del {date}",
+      "undo": "Deshacer",
+      "restoring": "Restaurando…",
+      "operations": {
+        "remove-completed": "Se eliminaron los artículos completados",
+        "clear-all": "Se borró la lista",
+        "bulk-move": "Se movieron varios artículos",
+        "list-rebuild": "Se reconstruyó la lista",
+        "restore": "Se restauró un estado anterior"
+      },
+      "toasts": {
+        "restored": "Se restauró un estado anterior de la lista.",
+        "undoComplete": "Se restauró el estado anterior de la lista."
+      }
     },
     "sections": {
       "inCart": "En el carrito"
@@ -1637,11 +1676,11 @@
       },
       "clearAllSynced": {
         "title": "¿Borrar toda la lista de compras?",
-        "description": "Se eliminan todos los artículos sincronizados. Esto no se puede deshacer."
+        "description": "Se eliminan todos los artículos sincronizados. Puedes deshacerlo de inmediato o restaurarlos desde Cambios recientes."
       },
       "clearAllLocal": {
         "title": "¿Borrar toda la lista de compras?",
-        "description": "Se eliminan todos los artículos guardados en este dispositivo. Esto no se puede deshacer."
+        "description": "Se eliminan todos los artículos guardados en este dispositivo. Puedes deshacerlo de inmediato o restaurarlos desde Cambios recientes."
       }
     },
     "add": {

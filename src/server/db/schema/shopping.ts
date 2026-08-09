@@ -86,6 +86,100 @@ export const shoppingListItems = pgTable(
   ],
 );
 
+export const SHOPPING_RESTORE_OPERATIONS = [
+  "remove_completed",
+  "clear_all",
+  "bulk_move_source",
+  "bulk_move_destination",
+  "rebuild",
+  "restore",
+] as const;
+
+/**
+ * A bounded, append-only restore point for one list. The service retains the
+ * newest 20 per list and always scopes rows by both list and owner.
+ */
+export const shoppingListRestorePoints = pgTable(
+  "shopping_list_restore_points",
+  {
+    id: pk(),
+    listId: fk()
+      .notNull()
+      .references(() => shoppingLists.id, { onDelete: "cascade" }),
+    userId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    operation: varchar({ length: 40 })
+      .$type<(typeof SHOPPING_RESTORE_OPERATIONS)[number]>()
+      .notNull(),
+    operationGroupId: varchar({ length: 24 }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("shopping_list_restore_points_list_created_idx").on(
+      t.listId,
+      t.createdAt,
+      t.id,
+    ),
+    index("shopping_list_restore_points_user_idx").on(t.userId),
+    index("shopping_list_restore_points_user_group_idx").on(
+      t.userId,
+      t.operationGroupId,
+    ),
+    check(
+      "shopping_list_restore_points_operation_check",
+      sql`${t.operation} in ('remove_completed', 'clear_all', 'bulk_move_source', 'bulk_move_destination', 'rebuild', 'restore')`,
+    ),
+  ],
+);
+
+/** Immutable item data captured at a restore point. */
+export const shoppingListRestorePointItems = pgTable(
+  "shopping_list_restore_point_items",
+  {
+    id: pk(),
+    restorePointId: fk()
+      .notNull()
+      .references(() => shoppingListRestorePoints.id, { onDelete: "cascade" }),
+    item: varchar({ length: 300 }).notNull(),
+    quantity: real(),
+    quantityMax: real(),
+    unit: varchar({ length: 40 }),
+    category: varchar({ length: 40 }),
+    note: varchar({ length: 300 }),
+    optional: boolean().notNull().default(false),
+    checked: boolean().notNull().default(false),
+    recipeId: fk().references(() => recipes.id, { onDelete: "set null" }),
+    foodId: fk().references(() => foodItems.id, { onDelete: "set null" }),
+    position: integer().notNull(),
+  },
+  (t) => [
+    index("shopping_list_restore_point_items_point_position_idx").on(
+      t.restorePointId,
+      t.position,
+      t.id,
+    ),
+    index("shopping_list_restore_point_items_recipe_idx").on(t.recipeId),
+    index("shopping_list_restore_point_items_food_idx").on(t.foodId),
+    check(
+      "shopping_list_restore_point_items_position_check",
+      sql`${t.position} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_quantity_check",
+      sql`${t.quantity} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_quantity_max_check",
+      sql`${t.quantityMax} >= 0`,
+    ),
+    check(
+      "shopping_list_restore_point_items_quantity_range_check",
+      sql`${t.quantityMax} is null or ${t.quantity} is null or ${t.quantityMax} >= ${t.quantity}`,
+    ),
+  ],
+);
+
 /**
  * A user's canonical destination for an ingredient. Resolved foods use
  * `foodId`; unresolved ingredient text falls back to Unicode-safe normalized
@@ -156,8 +250,42 @@ export const shoppingListsRelations = relations(
       references: [users.id],
     }),
     items: many(shoppingListItems),
+    restorePoints: many(shoppingListRestorePoints),
     preferredRoutes: many(shoppingIngredientRoutes),
     routeAlternatives: many(shoppingIngredientRouteAlternatives),
+  }),
+);
+
+export const shoppingListRestorePointsRelations = relations(
+  shoppingListRestorePoints,
+  ({ one, many }) => ({
+    list: one(shoppingLists, {
+      fields: [shoppingListRestorePoints.listId],
+      references: [shoppingLists.id],
+    }),
+    user: one(users, {
+      fields: [shoppingListRestorePoints.userId],
+      references: [users.id],
+    }),
+    items: many(shoppingListRestorePointItems),
+  }),
+);
+
+export const shoppingListRestorePointItemsRelations = relations(
+  shoppingListRestorePointItems,
+  ({ one }) => ({
+    restorePoint: one(shoppingListRestorePoints, {
+      fields: [shoppingListRestorePointItems.restorePointId],
+      references: [shoppingListRestorePoints.id],
+    }),
+    recipe: one(recipes, {
+      fields: [shoppingListRestorePointItems.recipeId],
+      references: [recipes.id],
+    }),
+    food: one(foodItems, {
+      fields: [shoppingListRestorePointItems.foodId],
+      references: [foodItems.id],
+    }),
   }),
 );
 
@@ -216,6 +344,14 @@ export type ShoppingList = typeof shoppingLists.$inferSelect;
 export type NewShoppingList = typeof shoppingLists.$inferInsert;
 export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
 export type NewShoppingListItem = typeof shoppingListItems.$inferInsert;
+export type ShoppingListRestorePoint =
+  typeof shoppingListRestorePoints.$inferSelect;
+export type NewShoppingListRestorePoint =
+  typeof shoppingListRestorePoints.$inferInsert;
+export type ShoppingListRestorePointItem =
+  typeof shoppingListRestorePointItems.$inferSelect;
+export type NewShoppingListRestorePointItem =
+  typeof shoppingListRestorePointItems.$inferInsert;
 export type ShoppingIngredientRoute =
   typeof shoppingIngredientRoutes.$inferSelect;
 export type NewShoppingIngredientRoute =

@@ -8,7 +8,11 @@ import { toast } from "sonner";
 import { friendlyError } from "~/lib/error-copy";
 import { formatPlanWarnings } from "~/lib/plan-safety-copy";
 
-import { buildListFromPlanAction } from "~/server/shopping/actions";
+import {
+  buildListFromPlanAction,
+  restoreShoppingListPointAction,
+  restoreShoppingListPointsAction,
+} from "~/server/shopping/actions";
 import { Button } from "~/components/ui/button";
 
 /**
@@ -27,7 +31,32 @@ export function BuildShoppingListButton({
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("planner.shoppingList");
+  const historyT = useTranslations("shopping.history");
   const [isPending, startTransition] = React.useTransition();
+  const [undoPending, setUndoPending] = React.useState(false);
+
+  async function undoBuild(
+    restorePoints: { listId: string; restorePointId: string }[],
+  ) {
+    setUndoPending(true);
+    try {
+      const restored =
+        restorePoints.length === 1
+          ? await restoreShoppingListPointAction({
+              listId: restorePoints[0]!.listId,
+              restorePointId: restorePoints[0]!.restorePointId,
+            })
+          : await restoreShoppingListPointsAction({ restorePoints });
+      if (!restored.ok) {
+        toast.error(friendlyError(restored.error));
+        return;
+      }
+      toast.success(historyT("toasts.undoComplete"));
+      router.refresh();
+    } finally {
+      setUndoPending(false);
+    }
+  }
 
   function build() {
     startTransition(async () => {
@@ -56,10 +85,17 @@ export function BuildShoppingListButton({
         parts.push(t("toast.mergedItems", { count: result.merged }));
       }
       toast.success(t("toast.ready", { summary: parts.join(", ") }), {
-        action: {
-          label: t("toast.viewList"),
-          onClick: () => router.push("/shopping"),
-        },
+        duration: result.restorePoints.length > 0 ? Infinity : undefined,
+        action:
+          result.restorePoints.length > 0
+            ? {
+                label: historyT("undo"),
+                onClick: () => void undoBuild(result.restorePoints),
+              }
+            : {
+                label: t("toast.viewList"),
+                onClick: () => router.push("/shopping"),
+              },
       });
       router.refresh();
     });
@@ -70,10 +106,14 @@ export function BuildShoppingListButton({
       type="button"
       variant="outline"
       onClick={build}
-      disabled={isPending}
+      disabled={isPending || undoPending}
     >
       <ShoppingCart />
-      {isPending ? t("button.building") : t("button.default")}
+      {undoPending
+        ? historyT("restoring")
+        : isPending
+          ? t("button.building")
+          : t("button.default")}
     </Button>
   );
 }

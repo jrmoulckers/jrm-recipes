@@ -27,7 +27,11 @@ const optionalNumber = z
     return Number.isFinite(n) ? n : undefined;
   });
 
-const entityId = z.string().trim().min(1).max(24);
+const entityId = z
+  .string()
+  .trim()
+  .length(24)
+  .regex(/^[a-z][a-z0-9]+$/, "Invalid identifier");
 
 /** A manually added grocery line. */
 export const manualItemInput = z.object({
@@ -52,7 +56,7 @@ export const addRecipeToListInput = z.object({
 /** Build a personal shopping list from a personal or shared planner week. */
 export const buildFromPlanInput = z.object({
   week: dateParam,
-  groupId: z.string().trim().min(1).max(24).optional(),
+  groupId: entityId.optional(),
 });
 
 /** Override the aisle (category) an item is filed under (#360). */
@@ -102,6 +106,58 @@ export const moveShoppingItemInput = z
     }
   });
 
+export const bulkMoveShoppingItemsInput = z
+  .object({
+    itemIds: z.array(entityId).min(1).max(10000),
+    targetListId: entityId,
+  })
+  .superRefine((value, ctx) => {
+    if (new Set(value.itemIds).size !== value.itemIds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["itemIds"],
+        message: "Choose each item once.",
+      });
+    }
+  });
+
+export const restoreShoppingListPointInput = z.object({
+  listId: entityId,
+  restorePointId: entityId,
+});
+
+const restorePointReferenceInput = z.object({
+  listId: entityId,
+  restorePointId: entityId,
+});
+
+export const restoreShoppingListPointsInput = z
+  .object({
+    restorePoints: z.array(restorePointReferenceInput).min(2).max(10000),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      new Set(value.restorePoints.map((point) => point.listId)).size !==
+      value.restorePoints.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["restorePoints"],
+        message: "Each list can only be restored once.",
+      });
+    }
+    if (
+      new Set(value.restorePoints.map((point) => point.restorePointId)).size !==
+      value.restorePoints.length
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["restorePoints"],
+        message: "Each restore point can only be used once.",
+      });
+    }
+  });
+
 export type ManualItemInput = z.infer<typeof manualItemInput>;
 export type AddRecipeToListInput = z.infer<typeof addRecipeToListInput>;
 export type BuildFromPlanInput = z.infer<typeof buildFromPlanInput>;
@@ -111,3 +167,12 @@ export type SetItemCheckedInput = z.infer<typeof setItemCheckedInput>;
 export type CreateShoppingListInput = z.infer<typeof createShoppingListInput>;
 export type RenameShoppingListInput = z.infer<typeof renameShoppingListInput>;
 export type MoveShoppingItemInput = z.infer<typeof moveShoppingItemInput>;
+export type BulkMoveShoppingItemsInput = z.infer<
+  typeof bulkMoveShoppingItemsInput
+>;
+export type RestoreShoppingListPointInput = z.infer<
+  typeof restoreShoppingListPointInput
+>;
+export type RestoreShoppingListPointsInput = z.infer<
+  typeof restoreShoppingListPointsInput
+>;

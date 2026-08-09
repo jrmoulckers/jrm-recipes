@@ -8,6 +8,8 @@ import {
   shoppingIngredientRouteAlternatives,
   shoppingIngredientRoutes,
   shoppingListItems,
+  shoppingListRestorePointItems,
+  shoppingListRestorePoints,
   shoppingLists,
 } from "./shopping";
 
@@ -21,6 +23,10 @@ const routingMigration = readdirSync(drizzleDir)
   .find((body) =>
     body.includes('CREATE TABLE IF NOT EXISTS "shopping_ingredient_routes"'),
   );
+const restorePointMigration = readdirSync(drizzleDir)
+  .filter((file) => file.endsWith(".sql"))
+  .map((file) => readFileSync(join(drizzleDir, file), "utf8"))
+  .find((body) => body.includes('CREATE TABLE "shopping_list_restore_points"'));
 
 describe("shopping routing schema (issue #630)", () => {
   it("models named, archivable store lists with one explicit default", () => {
@@ -46,6 +52,104 @@ describe("shopping routing schema (issue #630)", () => {
     );
     expect(active?.config.where).toBeDefined();
     expect(active && indexColumns(active)).toEqual(["userId", "updatedAt"]);
+  });
+
+  describe("shopping restore-point schema (issue #628)", () => {
+    it("scopes restore points to both list and owner with deterministic history ordering", () => {
+      const { columns, foreignKeys, indexes, checks } = getTableConfig(
+        shoppingListRestorePoints,
+      );
+      const foreignKey = (name: string) =>
+        foreignKeys.find((item) =>
+          item.reference().columns.some((candidate) => candidate.name === name),
+        );
+
+      expect(columns.find((column) => column.name === "listId")?.notNull).toBe(
+        true,
+      );
+      expect(columns.find((column) => column.name === "userId")?.notNull).toBe(
+        true,
+      );
+      expect(
+        columns.find((column) => column.name === "operationGroupId")?.notNull,
+      ).toBe(false);
+      expect(foreignKey("listId")?.onDelete).toBe("cascade");
+      expect(foreignKey("userId")?.onDelete).toBe("cascade");
+      expect(checks.map((item) => item.name)).toContain(
+        "shopping_list_restore_points_operation_check",
+      );
+      const history = indexes.find(
+        (item) =>
+          item.config.name === "shopping_list_restore_points_list_created_idx",
+      );
+      expect(history && indexColumns(history)).toEqual([
+        "listId",
+        "createdAt",
+        "id",
+      ]);
+      const grouped = indexes.find(
+        (item) =>
+          item.config.name === "shopping_list_restore_points_user_group_idx",
+      );
+      expect(grouped && indexColumns(grouped)).toEqual([
+        "userId",
+        "operationGroupId",
+      ]);
+    });
+
+    describe("shopping restore-point migration (issue #628)", () => {
+      it("adds valid, reversible restore tables without destructive DDL", () => {
+        expect(restorePointMigration).toBeDefined();
+        expect(restorePointMigration).toContain(
+          "'remove_completed', 'clear_all', 'bulk_move_source'",
+        );
+        expect(restorePointMigration).not.toMatch(/\$\d+/);
+        expect(restorePointMigration).not.toMatch(
+          /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i,
+        );
+      });
+    });
+
+    it("captures complete item previews with stable positions and cascading cleanup", () => {
+      const { columns, foreignKeys, indexes, checks } = getTableConfig(
+        shoppingListRestorePointItems,
+      );
+      const pointFk = foreignKeys.find((item) =>
+        item
+          .reference()
+          .columns.some((candidate) => candidate.name === "restorePointId"),
+      );
+
+      expect(pointFk?.onDelete).toBe("cascade");
+      expect(columns.map((column) => column.name)).toEqual([
+        "id",
+        "restorePointId",
+        "item",
+        "quantity",
+        "quantityMax",
+        "unit",
+        "category",
+        "note",
+        "optional",
+        "checked",
+        "recipeId",
+        "foodId",
+        "position",
+      ]);
+      expect(checks.map((item) => item.name)).toContain(
+        "shopping_list_restore_point_items_position_check",
+      );
+      const orderedItems = indexes.find(
+        (item) =>
+          item.config.name ===
+          "shopping_list_restore_point_items_point_position_idx",
+      );
+      expect(orderedItems && indexColumns(orderedItems)).toEqual([
+        "restorePointId",
+        "position",
+        "id",
+      ]);
+    });
   });
 
   it("optionally links shopping lines to the canonical food graph", () => {
