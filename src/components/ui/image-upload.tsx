@@ -4,35 +4,40 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ImageOff, ImagePlus } from "lucide-react";
-import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
-import { env } from "~/env";
 import { cn } from "~/lib/utils";
-import { recordStorageUsageAction } from "~/server/billing/usage-actions";
 import { CloseButton } from "~/components/ui/close-button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  cloudinaryConfigured,
+  type MediaSelection,
+} from "~/components/ui/media-picker-config";
 
 /**
- * The Cloudinary upload widget is a heavy, interaction-gated dependency, so it's
- * split into its own async chunk and loaded on the client only when a configured
- * upload control actually renders (#201). It never ships in the editor route's
- * first-load JS, and the unconfigured URL-input fallback never fetches it at all.
+ * The picker dialog — its tabs, the photo grid, and the Cloudinary upload
+ * widget it wraps — is interaction-gated, so it is split into its own async
+ * chunk and fetched only once a field is actually opened. That keeps both the
+ * dialog and the heavy widget (#201) out of the recipe editor route's
+ * first-load JS, which is budgeted in `bundle-budgets.json`.
  */
-const CldUploadWidget = dynamic(
-  () => import("next-cloudinary").then((mod) => mod.CldUploadWidget),
+const MediaPicker = dynamic(
+  () => import("~/components/ui/media-picker").then((mod) => mod.MediaPicker),
   { ssr: false },
 );
 
 /**
- * Cloudinary is optional. When it isn't configured the field degrades to a
- * plain image-URL input so recipes still work with zero setup (mirrors the
- * optional-auth / optional-db design elsewhere in the app).
+ * A single image field. Since #656 it is a thin wrapper over the media picker,
+ * so every call site (recipe cover, step photos, cook log, reviews, quick
+ * capture) inherits upload + library reuse + link with no change of its own.
+ *
+ * `onChange` also receives the media-library asset id when the chosen photo has
+ * one, which callers may ignore; the URL-only signature still type-checks.
+ *
+ * When Cloudinary isn't configured there is nothing to upload and nothing to
+ * store, so the field degrades to the plain image-URL input it has always been
+ * and the picker chunk is never fetched at all.
  */
-const cloudinaryConfigured = Boolean(
-  env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-);
-
 export function ImageUploadField({
   value,
   onChange,
@@ -42,7 +47,7 @@ export function ImageUploadField({
   size = "default",
 }: {
   value: string;
-  onChange: (url: string) => void;
+  onChange: (url: string, assetId?: string | null) => void;
   label?: string;
   hint?: string;
   folder?: string;
@@ -50,6 +55,7 @@ export function ImageUploadField({
 }) {
   const t = useTranslations("imageUpload");
   const compact = size === "compact";
+  const [pickerOpen, setPickerOpen] = React.useState(false);
 
   // A pasted URL can be a typo, a hotlink-blocked host, or a since-deleted
   // image. Track load failures so we can swap the browser's broken-image glyph
@@ -58,6 +64,10 @@ export function ImageUploadField({
   React.useEffect(() => {
     setErrored(false);
   }, [value]);
+
+  function onPicked(selection: MediaSelection) {
+    onChange(selection.url, selection.assetId);
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -98,85 +108,73 @@ export function ImageUploadField({
           ) : null}
           <CloseButton
             variant="overlay"
-            onClick={() => onChange("")}
+            onClick={() => onChange("", null)}
             label={t("remove")}
             className="absolute end-2 top-2"
           />
         </figure>
       ) : cloudinaryConfigured ? (
         <div className={cn(compact ? "aspect-[3/2] max-w-56" : "aspect-video")}>
-          <CldUploadWidget
-            signatureEndpoint="/api/cloudinary/sign"
-            options={{
-              folder,
-              maxFiles: 1,
-              resourceType: "image",
-              sources: ["local", "url", "camera"],
-              clientAllowedFormats: [
-                "png",
-                "jpeg",
-                "jpg",
-                "webp",
-                "gif",
-                "avif",
-              ],
-              maxImageFileSize: 8_000_000,
-            }}
-            onSuccess={(result: CloudinaryUploadWidgetResults) => {
-              const info = result.info;
-              if (info && typeof info !== "string") {
-                onChange(info.secure_url);
-                // Meter storage against the plan cap (#318). Fire-and-forget:
-                // the upload already succeeded, so a metering failure must never
-                // surface to the user.
-                if (typeof info.bytes === "number" && info.bytes > 0) {
-                  void recordStorageUsageAction(info.bytes);
-                }
-              }
-            }}
-          >
-            {({ open }) => (
-              <button
-                type="button"
-                onClick={() => open()}
-                className={cn(
-                  "flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  compact ? "p-3" : "p-6",
-                )}
-              >
-                <ImagePlus className={compact ? "size-5" : "size-6"} />
-                <span
-                  className={cn("font-medium", compact ? "text-xs" : "text-sm")}
-                >
-                  {compact ? t("addPhoto") : t("uploadPhoto")}
-                </span>
-                {compact ? null : (
-                  <span className="text-xs text-muted-foreground">
-                    {t("dropHint")}
-                  </span>
-                )}
-              </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className={cn(
+              "flex size-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/40 text-center text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              compact ? "p-3" : "p-6",
             )}
-          </CldUploadWidget>
+          >
+            <ImagePlus className={compact ? "size-5" : "size-6"} />
+            <span
+              className={cn("font-medium", compact ? "text-xs" : "text-sm")}
+            >
+              {compact ? t("addPhoto") : t("uploadPhoto")}
+            </span>
+            {compact ? null : (
+              <span className="text-xs text-muted-foreground">
+                {t("dropHint")}
+              </span>
+            )}
+          </button>
         </div>
       ) : null}
 
-      {value && !errored ? null : (
+      {/* Without Cloudinary the URL input is the whole experience, so it stays
+          inline rather than behind a dialog no upload could ever fill. */}
+      {cloudinaryConfigured || (value && !errored) ? null : (
         <Input
           type="url"
           inputMode="url"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={
-            cloudinaryConfigured
-              ? t("urlPlaceholderWithUpload")
-              : t("urlPlaceholder")
-          }
+          onChange={(e) => onChange(e.target.value, null)}
+          placeholder={t("urlPlaceholder")}
           aria-label={label ? t("urlLabelFor", { label }) : t("urlLabel")}
         />
       )}
 
+      {/* A chosen photo can still be swapped for another from the library. */}
+      {cloudinaryConfigured && value ? (
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="self-start rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {t("change")}
+        </button>
+      ) : null}
+
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+
+      {/* Mounted only after the first open, so a field the user never touches
+          never fetches the picker chunk. */}
+      {cloudinaryConfigured && pickerOpen ? (
+        <MediaPicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          value={value}
+          onChange={onPicked}
+          folder={folder}
+        />
+      ) : null}
     </div>
   );
 }

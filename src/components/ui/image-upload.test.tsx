@@ -39,13 +39,17 @@ const src = readFileSync(
   "utf8",
 );
 
-describe("image-upload lazy widget (#201)", () => {
-  it("imports the Cloudinary widget as a dynamic (code-split) chunk", () => {
-    expect(src).toMatch(/dynamic\(\s*\(\)\s*=>\s*import\("next-cloudinary"\)/);
-    // No eager top-level value import of the heavy widget.
-    expect(src).not.toMatch(
-      /import\s*\{[^}]*CldUploadWidget[^}]*\}\s*from\s*"next-cloudinary"/,
+describe("image-upload lazy picker (#201, #656)", () => {
+  it("imports the picker dialog as a dynamic (code-split) chunk", () => {
+    expect(src).toMatch(
+      /dynamic\(\s*\(\)\s*=>\s*\n?\s*import\("~\/components\/ui\/media-picker"\)/,
     );
+    // No eager top-level value import of the dialog (which in turn owns the
+    // heavy Cloudinary widget), so neither reaches first-load JS.
+    expect(src).not.toMatch(
+      /import\s*\{[^}]*MediaPicker[^}]*\}\s*from\s*"~\/components\/ui\/media-picker"/,
+    );
+    expect(src).not.toMatch(/from\s*"next-cloudinary"/);
   });
 
   it("degrades to a plain URL input without mounting the widget when Cloudinary is unconfigured", () => {
