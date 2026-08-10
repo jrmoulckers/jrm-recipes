@@ -33,6 +33,14 @@ export default defineConfig({
       SKIP_ENV_VALIDATION: "1",
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       NEXT_PUBLIC_DEV_AUTH_BYPASS: "1",
+      // Let a spec pick which seeded fixture a browser context is (issue #698),
+      // so the co-creator journey can be driven by two distinct identities.
+      // Server-only and deliberately not NEXT_PUBLIC_, so it is never inlined
+      // into a client bundle; set here and in CI's e2e job, and nowhere else.
+      // The selector it enables sits inside the already-guarded dev-bypass
+      // branch and can only name a frozen allowlist of fixtures — see
+      // E2E_IDENTITIES in src/server/auth/dev-user.ts.
+      E2E_IDENTITY_SELECTOR: "1",
       // Forward a caller-provided DATABASE_URL so the built server talks to the
       // seeded Postgres, letting data-backed journeys (recipe detail, Cook Mode)
       // run. When unset, data-dependent specs skip gracefully (issue #233).

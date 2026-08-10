@@ -345,6 +345,10 @@ jobs:
       SKIP_ENV_VALIDATION: "1"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+      # Enable the seeded-identity selector for this job only (#698). Server-only
+      # and never NEXT_PUBLIC_, so it cannot reach a client bundle, and it is set
+      # in no Vercel environment.
+      E2E_IDENTITY_SELECTOR: "1"
 
     steps:
       - name: Checkout
@@ -390,6 +394,14 @@ jobs:
 
       - name: Seed demo data
         run: pnpm db:seed
+
+      # The two co-creation identities and the recipe one of them owns (#698).
+      # Deliberately a separate seed from the demo data: these are the only rows
+      # the dev-bypass identity selector can ever name, so keeping them out of
+      # `db:seed` keeps them out of every dev, demo, preview and production
+      # database.
+      - name: Seed e2e identity fixtures
+        run: pnpm db:seed:e2e
 
       # Cache the downloaded Playwright browser binaries (#243). Keyed on the
       # lockfile so a Playwright version bump re-downloads them.

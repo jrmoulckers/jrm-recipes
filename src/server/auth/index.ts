@@ -6,7 +6,12 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
 import { groupMembers, recipes, users, type User } from "~/server/db/schema";
-import { DEV_USER } from "~/server/auth/dev-user";
+import {
+  DEV_USER,
+  E2E_IDENTITY_COOKIE,
+  E2E_IDENTITY_FLAG,
+  resolveE2EIdentity,
+} from "~/server/auth/dev-user";
 import { getEntitlements } from "~/server/billing/entitlements";
 import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -28,6 +33,14 @@ import { eraseUserAccount, type ErasureResult } from "~/server/users/erasure";
  * shared, fully-authenticated account. This backs up the boot/build guard in
  * `~/env`. `SKIP_ENV_VALIDATION` is the single escape hatch, used only by the
  * CI build + e2e run (which never serve real users).
+ *
+ * Inside that already-guarded branch — and only there — an end-to-end run may
+ * additionally select *which* seeded fixture it is, so a spec can drive two
+ * distinct identities (issue #698). That selector adds no authentication
+ * surface: anyone who reaches it has already been served a fully-authenticated
+ * shared account, and it can only choose among a frozen allowlist of fixtures
+ * that exist in no real database. See `E2E_IDENTITIES` in
+ * `~/server/auth/dev-user` for the full argument.
  */
 
 export { DEV_USER };
@@ -68,22 +81,40 @@ export type AuthState = {
 
 async function getOrCreateDevUser(): Promise<User> {
   if (!isDbConfigured()) return DEV_USER;
+  const identity = await resolveRequestedDevIdentity();
+  const wanted = identity ?? DEV_USER;
   const existing = await db.query.users.findFirst({
-    where: eq(users.id, DEV_USER.id),
+    where: eq(users.id, wanted.id),
   });
   if (existing) return existing;
   const [created] = await db
     .insert(users)
     .values({
-      id: DEV_USER.id,
-      email: DEV_USER.email,
-      name: DEV_USER.name,
-      handle: DEV_USER.handle,
-      slug: DEV_USER.slug,
+      id: wanted.id,
+      email: wanted.email,
+      name: wanted.name,
+      handle: wanted.handle,
+      slug: wanted.slug,
     })
     .onConflictDoNothing()
     .returning();
-  return created ?? DEV_USER;
+  return created ?? wanted;
+}
+
+/**
+ * Which seeded fixture this request asked to be, or null for the default.
+ *
+ * Only ever called from {@link getOrCreateDevUser}, i.e. only after
+ * `assertDevBypassAllowed` has already permitted dev-bypass for this request.
+ * `resolveE2EIdentity` short-circuits on the server-only `E2E_IDENTITY_SELECTOR`
+ * flag before the cookie is even read, so on any deploy the cookie jar is never
+ * consulted. See `E2E_IDENTITIES` for the full four-barrier argument.
+ */
+async function resolveRequestedDevIdentity(): Promise<User | null> {
+  if (process.env[E2E_IDENTITY_FLAG] !== "1") return null;
+  const { cookies } = await import("next/headers");
+  const jar = await cookies();
+  return resolveE2EIdentity(jar.get(E2E_IDENTITY_COOKIE)?.value);
 }
 
 /** Fetch (and lazily sync) the app user for a signed-in Clerk account. */
