@@ -24,4 +24,5 @@ test-results/
 .github/skills/
 .github/prompts/
 .github/instructions/
+.github/copilot-instructions.md
 AGENTS.md
