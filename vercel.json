@@ -13,6 +13,10 @@
     {
       "path": "/api/cron/food-graph",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/erasure-backlog",
+      "schedule": "0 9 * * *"
     }
   ]
 }

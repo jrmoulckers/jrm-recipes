@@ -27,6 +27,10 @@ import {
   isPurgeComplete,
   purgeUserMedia,
 } from "~/server/media/purge";
+import {
+  findEntanglement,
+  recordErasureHold,
+} from "~/server/users/erasure-holds";
 
 /**
  * Account erasure (issue #678).
@@ -75,6 +79,16 @@ import {
  * *before* that delete, and once a deletion has run the remedy is unavailable
  * for that user forever.
  *
+ * **Containment, pending that remedy (#694).** Because the loss is permanent
+ * and the remedy is undecided, an erasure that touches a co-created recipe no
+ * longer runs at all. `findEntanglement` is evaluated ahead of every
+ * destructive step — including the media purge and the `users` delete, since
+ * `recipe_versions.authorId` is `set null` and the account delete severs the
+ * basis on its own — and an entangled request is recorded in `erasure_holds`
+ * instead of executed. That is a decision about *when* erasure runs, not about
+ * what it means: no retention is added, and the request stays durable,
+ * countable and replayable. See ADR 0003.
+ *
  * **Pending creators are not creators.** A `pending` invitation grants nothing
  * and has no slug, so it never makes a recipe "co-created" for survival
  * purposes.
@@ -97,6 +111,13 @@ import {
 export type ErasureCounts = Record<string, number>;
 
 export type ErasureResult = {
+  /**
+   * `erased` — the account is gone. `held` — nothing was deleted, because
+   * executing this request would have destroyed the only evidence needed to
+   * remedy the co-creator gap (#694). A held request is recorded in
+   * `erasure_holds` and is replayable once a remedy lands.
+   */
+  status: "erased" | "held";
   counts: ErasureCounts;
   /**
    * Recipes kept because the user was a non-owner creator on them.
@@ -107,6 +128,8 @@ export type ErasureResult = {
    */
   retainedRecipeCount: number;
   purgedAssetCount: number;
+  /** Populated only when `status` is `held`. The remedy worklist. */
+  entangledRecipeIds?: string[];
 };
 
 export type ErasureOptions = {
@@ -150,6 +173,8 @@ async function deleteCounted(
  * `media_assets.userId` are `restrict`, so a missed step is a loud foreign-key
  * violation rather than a silent cascade that strands CDN bytes.
  *
+ * 0. Halt if erasing this user would destroy the co-creator diff basis (#694).
+ *    Nothing is deleted; the request is recorded as a hold and replayed later.
  * 1. Destroy the remote media bytes. Abort the whole erasure if any survive —
  *    a partial deletion the operator can retry is better than deleting the only
  *    rows that name still-live public images.
@@ -170,7 +195,37 @@ export async function eraseUserAccount(
   if (!user) {
     // Already erased. Idempotent by design: a webhook retry after a successful
     // deletion must not throw, or Clerk will keep redelivering forever.
-    return { counts: {}, retainedRecipeCount: 0, purgedAssetCount: 0 };
+    return {
+      status: "erased",
+      counts: {},
+      retainedRecipeCount: 0,
+      purgedAssetCount: 0,
+    };
+  }
+
+  // --- Step 0: containment, before anything is destroyed (#694). ---
+  //
+  // Every step below this line is irreversible, and two of them destroy the
+  // only record of which words in a co-created recipe were this user's: the
+  // explicit `recipe_versions` delete, and the `users` delete, which severs
+  // `recipe_versions.authorId` because that column is `ON DELETE set null`.
+  // Ordering alone does not contain the second one, so the halt has to sit
+  // ahead of both — and ahead of the media purge, which is equally final.
+  //
+  // This is not a decision about what erasure means. It is a decision about
+  // when it runs: nothing that would otherwise be kept is deleted, and nothing
+  // that would otherwise be deleted is kept. The request is held, recorded and
+  // replayable, instead of being executed in the one way that cannot be undone.
+  const entanglement = await findEntanglement(userId);
+  if (entanglement.recipeIds.length > 0) {
+    await recordErasureHold(userId, entanglement, options);
+    return {
+      status: "held",
+      counts: {},
+      retainedRecipeCount: 0,
+      purgedAssetCount: 0,
+      entangledRecipeIds: entanglement.recipeIds,
+    };
   }
 
   // --- Step 1: remote bytes, before any row that names them disappears. ---
@@ -441,7 +496,12 @@ export async function eraseUserAccount(
     purgedAssetCount: purge.purged,
   });
 
-  return { counts, retainedRecipeCount, purgedAssetCount: purge.purged };
+  return {
+    status: "erased",
+    counts,
+    retainedRecipeCount,
+    purgedAssetCount: purge.purged,
+  };
 }
 
 /**
@@ -492,7 +552,7 @@ async function writeDeletionRecord(
   userId: string,
   clerkId: string | null,
   options: ErasureOptions,
-  result: ErasureResult,
+  result: Omit<ErasureResult, "status" | "entangledRecipeIds">,
 ): Promise<void> {
   const subjectHash = hashDeletionSubject(userId);
   if (!subjectHash) return;

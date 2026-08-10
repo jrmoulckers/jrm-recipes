@@ -57,7 +57,9 @@ survival purposes.
 
 **Precondition on widening writes, and its breach.** This reasoning depended on cross-owner editing
 not existing. It now does: #685 shipped after this ADR was written and lets an accepted co-creator
-edit the recipe body, so the precondition recorded here has been crossed rather than held.
+edit the recipe body, so the precondition recorded here has been crossed rather than held. It is a
+**known-open gap**, not an invariant this ADR maintains — read the co-creator exception above as
+describing a design whose safety condition no longer holds in production.
 
 The consequence is live. The departing user's prose can sit inside someone else's
 `recipes.story` / `notes` and step text, and invisibly in every `recipe_versions.snapshot` jsonb
@@ -73,9 +75,56 @@ carries `authorId` plus a full snapshot per save, so diffing a user's versions a
 predecessors yields exactly the text they introduced, with no new attribution table. **Ordering
 hazard:** erasure deletes those version rows, which destroys the diff basis. Any revert must be
 computed and applied _first_, and once a deletion has run the remedy is gone for that user
-permanently. Four candidate remedies and this ordering constraint are tracked on #678; none is
-implemented, because each changes what erasure means and that is a product and legal decision
+permanently. Four candidate remedies and this ordering constraint are tracked on #678 and #694; none
+is implemented, because each changes what erasure means and that is a product and legal decision
 rather than an implementation detail.
+
+### Containment while the remedy is undecided
+
+**Decision (#694): an erasure that touches a co-created recipe is held, not executed.**
+
+Disclosure alone was not sufficient, because the harm is not only that erasure under-erases — it is
+that erasure **destroys the evidence needed to ever fix the under-erasure**, in the same
+transaction. Waiting for the product decision while continuing to process erasures meant that by the
+time a remedy shipped, it could not be applied to any account that had already left.
+
+Two destruction paths, and they need different containment:
+
+- The explicit `delete(recipe_versions).where(authorId = U)`. Ordering would be enough for this one.
+- The `users` delete itself. `recipe_versions.authorId` is `ON DELETE set null`, so deleting the
+  account severs the attribution on surviving version rows even if the explicit delete were removed.
+  Ordering is **not** enough here.
+
+The guard therefore sits ahead of every destructive step, including the Cloudinary purge, whose
+bytes are equally unrecoverable. `findEntanglement` (`src/server/users/erasure-holds.ts`) asks
+whether the user is an accepted non-owner creator on someone else's recipe, **or** the owner of a
+recipe carrying other accepted creators. Both directions count; `pending` counts for neither, which
+is the same rule that decides survival. If either matches, `eraseUserAccount` returns `held` having
+deleted nothing at all.
+
+**This is a decision about _when_ erasure runs, not about what it means.** Nothing that would
+otherwise be deleted is retained as a policy change, and nothing that would otherwise survive is
+removed. It does not pick a remedy and does not depend on which remedy is picked.
+
+**A held request must not be a dropped request.** It is recorded in `erasure_holds` with the
+subject, timestamps, the trigger, and the ids of the entangled recipes — the worklist a remedy will
+replay. One row per subject, upserted, because Clerk retries `user.deleted` and a backlog of "N
+pending erasures" is only defensible if N counts people. The row cascades with the `users` row, so
+once the erasure finally runs it leaves no residue about someone who has been erased.
+
+**The backlog is visible.** `GET /api/cron/erasure-backlog` (cron-secret authenticated, counts only)
+reports open holds, the oldest request date, and the total entangled recipes. Non-zero is the alert
+condition. "We are holding N erasure requests we cannot yet fulfil, the oldest since <date>" is a
+position that can be defended to a regulator; silently neither completing nor erroring is not.
+
+**Callers must not report a hold as success.** The in-app action returns `ERASURE_HELD` and leaves
+the Clerk identity in place, since deleting it would strand a sign-in for an account whose data is
+still present. The webhook route answers **202**, not 200 and not 5xx: the request is accepted and
+recorded but not complete, and a 5xx would make Clerk redeliver an event that cannot succeed until a
+remedy ships.
+
+The post-hoc `ERASURE_INCOMPLETE` assertions in `assertUserErased` are not containment and are not a
+substitute for it: they run after the deletes, when the evidence is already gone.
 
 ### Ordering is enforced by the schema, not by discipline
 
@@ -182,6 +231,9 @@ a no-op.
 
 - Deletion is irreversible. There is no undo, and the pre-deletion export
   (`/api/backup`) is the only recovery path, which is why the confirmation flow must offer it.
+- **Erasure is not always immediate.** An account entangled in a co-created recipe is held until the
+  #694 remedy lands (see "Containment while the remedy is undecided"). The request is durable and
+  replayable, but the person is still waiting, so the backlog needs watching rather than filing.
 - Restoring a backup taken before an erasure resurrects the deleted user.
   `docs/db-backup-and-recovery.md` gains a mandatory re-application gate before a restored instance
   can be promoted.
