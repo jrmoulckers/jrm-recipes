@@ -1,10 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import {
-  applyClerkUserDeletion,
-  applyClerkUserUpdate,
-  type ClerkUserProfile,
-} from "~/server/auth";
+import { applyClerkUserDeletion, applyClerkUserUpdate, type ClerkUserProfile } from '~/server/auth';
 
 /** Minimal shape of a Clerk `user.*` webhook event (issue #217). */
 export type ClerkWebhookEvent = {
@@ -33,7 +29,7 @@ function primaryEmail(data: ClerkUserData): string | null {
 export function extractProfile(data: ClerkUserData): ClerkUserProfile {
   const joinedName = [data.first_name, data.last_name]
     .filter((part): part is string => Boolean(part))
-    .join(" ");
+    .join(' ');
   const name = joinedName.length > 0 ? joinedName : (data.username ?? null);
   return {
     email: primaryEmail(data),
@@ -49,7 +45,7 @@ export function extractProfile(data: ClerkUserData): ClerkUserProfile {
  * `held` exists because an erasure can now be recorded without being executed
  * (#694). It is neither success nor failure and must not be reported as either.
  */
-export type ClerkEventOutcome = "ignored" | "applied" | "held";
+export type ClerkEventOutcome = 'ignored' | 'applied' | 'held';
 
 /**
  * Route a verified Clerk webhook event to the matching sync side effect
@@ -57,20 +53,18 @@ export type ClerkEventOutcome = "ignored" | "applied" | "held";
  * erases the account. Unknown event types are ignored so Clerk can
  * fan out additional events without this endpoint erroring.
  */
-export async function handleClerkEvent(
-  event: ClerkWebhookEvent,
-): Promise<ClerkEventOutcome> {
+export async function handleClerkEvent(event: ClerkWebhookEvent): Promise<ClerkEventOutcome> {
   const clerkId = event.data?.id;
-  if (!clerkId) return "ignored";
+  if (!clerkId) return 'ignored';
   switch (event.type) {
-    case "user.updated":
+    case 'user.updated':
       await applyClerkUserUpdate(clerkId, extractProfile(event.data));
-      return "applied";
-    case "user.deleted": {
+      return 'applied';
+    case 'user.deleted': {
       const status = await applyClerkUserDeletion(clerkId);
-      return status === "held" ? "held" : "applied";
+      return status === 'held' ? 'held' : 'applied';
     }
     default:
-      return "ignored";
+      return 'ignored';
   }
 }

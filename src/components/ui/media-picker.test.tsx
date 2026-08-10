@@ -208,10 +208,10 @@ describe('media picker upload tab', () => {
     // does not remove `recordUploadAction(`; coexisting is precisely the bug.
     // So anchor the literal against the module that really exports it: if the
     // name is misspelled here, this fails loudly instead of going quiet.
-    const forbidden = "recordStorageUsageAction";
+    const forbidden = 'recordStorageUsageAction';
     const usageActions = readFileSync(
-      resolve(process.cwd(), "src/server/billing/usage-actions.ts"),
-      "utf8",
+      resolve(process.cwd(), 'src/server/billing/usage-actions.ts'),
+      'utf8',
     );
     expect(
       usageActions,

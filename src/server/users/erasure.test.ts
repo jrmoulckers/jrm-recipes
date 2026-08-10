@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Erasure orchestration tests (issue #678).
@@ -15,8 +15,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { state, db, purge, envMock, holds } = vi.hoisted(() => {
   const state = {
     configured: true,
-    user: undefined as
-      { id: string; clerkId: string | null; email: string | null } | undefined,
+    user: undefined as { id: string; clerkId: string | null; email: string | null } | undefined,
     /** Every mutating call, in order, as `"<verb> <table>"`. */
     calls: [] as string[],
     selects: [] as unknown[][],
@@ -30,7 +29,7 @@ const { state, db, purge, envMock, holds } = vi.hoisted(() => {
   const table = (t: unknown) =>
     // Drizzle stores the table name under a well-known symbol; `getTableName`
     // just reads it. Can't import here (this block is hoisted above imports).
-    (t as Record<symbol, string>)?.[Symbol.for("drizzle:Name")] ?? "unknown";
+    (t as Record<symbol, string>)?.[Symbol.for('drizzle:Name')] ?? 'unknown';
 
   const makeChain = (verb: string, t: unknown) => {
     const chain = {
@@ -43,7 +42,7 @@ const { state, db, purge, envMock, holds } = vi.hoisted(() => {
       where: vi.fn(() => chain),
       returning: vi.fn(async () => {
         state.calls.push(`${verb} ${table(t)}`);
-        return [{ id: "x" }];
+        return [{ id: 'x' }];
       }),
       then: (resolve: (v: unknown) => unknown) => {
         state.calls.push(`${verb} ${table(t)}`);
@@ -58,8 +57,7 @@ const { state, db, purge, envMock, holds } = vi.hoisted(() => {
       from: vi.fn(() => chain),
       where: vi.fn(() => chain),
       limit: vi.fn(async () => state.selects.shift() ?? []),
-      then: (resolve: (v: unknown) => unknown) =>
-        resolve(state.selects.shift() ?? []),
+      then: (resolve: (v: unknown) => unknown) => resolve(state.selects.shift() ?? []),
     };
     return chain;
   };
@@ -69,53 +67,53 @@ const { state, db, purge, envMock, holds } = vi.hoisted(() => {
       users: { findFirst: vi.fn(async () => state.user) },
     },
     select: vi.fn(() => selectChain()),
-    insert: vi.fn((t: unknown) => makeChain("insert", t)),
-    update: vi.fn((t: unknown) => makeChain("update", t)),
-    delete: vi.fn((t: unknown) => makeChain("delete", t)),
+    insert: vi.fn((t: unknown) => makeChain('insert', t)),
+    update: vi.fn((t: unknown) => makeChain('update', t)),
+    delete: vi.fn((t: unknown) => makeChain('delete', t)),
     transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => {
-      state.calls.push("BEGIN");
+      state.calls.push('BEGIN');
       await fn(db);
-      state.calls.push("COMMIT");
+      state.calls.push('COMMIT');
     }),
   };
 
   const purge = {
     purgeUserMedia: vi.fn(async () => {
-      state.calls.push("purge cloudinary");
+      state.calls.push('purge cloudinary');
       return { purged: 3, failed: state.purgeFailed, skippedExternal: 0 };
     }),
     isPurgeComplete: (r: { failed: string[] }) => r.failed.length === 0,
     deleteUserMediaRows: vi.fn(async () => {
-      state.calls.push("delete media_assets");
+      state.calls.push('delete media_assets');
       return 3;
     }),
   };
 
-  const envMock = { env: { DELETION_HASH_SALT: "a-sufficiently-long-salt" } };
+  const envMock = { env: { DELETION_HASH_SALT: 'a-sufficiently-long-salt' } };
 
   const holds = {
     findEntanglement: vi.fn(async () => ({
-      reason: "co_created_entanglement" as const,
+      reason: 'co_created_entanglement' as const,
       recipeIds: state.entangled,
     })),
     recordErasureHold: vi.fn(async () => {
-      state.calls.push("record erasure_hold");
+      state.calls.push('record erasure_hold');
     }),
   };
 
   return { state, db, purge, envMock, holds };
 });
 
-vi.mock("~/server/db", () => ({ db, isDbConfigured: () => state.configured }));
-vi.mock("~/server/media/purge", () => purge);
-vi.mock("~/env", () => envMock);
-vi.mock("~/server/users/erasure-holds", () => holds);
+vi.mock('~/server/db', () => ({ db, isDbConfigured: () => state.configured }));
+vi.mock('~/server/media/purge', () => purge);
+vi.mock('~/env', () => envMock);
+vi.mock('~/server/users/erasure-holds', () => holds);
 
-import { eraseUserAccount, hashDeletionSubject } from "./erasure";
+import { eraseUserAccount, hashDeletionSubject } from './erasure';
 
 beforeEach(() => {
   state.configured = true;
-  state.user = { id: "u1", clerkId: "clerk_1", email: "nonna@example.com" };
+  state.user = { id: 'u1', clerkId: 'clerk_1', email: 'nonna@example.com' };
   state.calls = [];
   state.selects = [];
   state.inserted = null;
@@ -146,14 +144,14 @@ function queueSelects(options?: {
   ];
 }
 
-describe("eraseUserAccount", () => {
-  it("destroys media bytes before deleting the rows that name them", async () => {
-    queueSelects({ owned: [{ id: "r1" }] });
-    await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+describe('eraseUserAccount', () => {
+  it('destroys media bytes before deleting the rows that name them', async () => {
+    queueSelects({ owned: [{ id: 'r1' }] });
+    await eraseUserAccount('u1', { trigger: 'clerk_webhook' });
 
-    const purgeAt = state.calls.indexOf("purge cloudinary");
-    const mediaRowsAt = state.calls.indexOf("delete media_assets");
-    const usersAt = state.calls.indexOf("delete users");
+    const purgeAt = state.calls.indexOf('purge cloudinary');
+    const mediaRowsAt = state.calls.indexOf('delete media_assets');
+    const usersAt = state.calls.indexOf('delete users');
 
     expect(purgeAt).toBeGreaterThanOrEqual(0);
     // Bytes first. Reversing this strands live CDN images with nothing left
@@ -163,26 +161,26 @@ describe("eraseUserAccount", () => {
   });
 
   it("deletes the user's own recipes before the users row", async () => {
-    queueSelects({ owned: [{ id: "r1" }, { id: "r2" }] });
-    await eraseUserAccount("u1", { trigger: "in_app" });
+    queueSelects({ owned: [{ id: 'r1' }, { id: 'r2' }] });
+    await eraseUserAccount('u1', { trigger: 'in_app' });
 
-    const recipesAt = state.calls.indexOf("delete recipes");
-    const usersAt = state.calls.indexOf("delete users");
+    const recipesAt = state.calls.indexOf('delete recipes');
+    const usersAt = state.calls.indexOf('delete users');
     expect(recipesAt).toBeGreaterThanOrEqual(0);
     expect(recipesAt).toBeLessThan(usersAt);
   });
 
-  it("refuses to delete anything when media bytes survived", async () => {
-    state.purgeFailed = ["heirloom/a1"];
+  it('refuses to delete anything when media bytes survived', async () => {
+    state.purgeFailed = ['heirloom/a1'];
     queueSelects();
 
-    await expect(
-      eraseUserAccount("u1", { trigger: "clerk_webhook" }),
-    ).rejects.toThrow(/MEDIA_PURGE_INCOMPLETE/);
+    await expect(eraseUserAccount('u1', { trigger: 'clerk_webhook' })).rejects.toThrow(
+      /MEDIA_PURGE_INCOMPLETE/,
+    );
 
     // A retryable partial failure, not a half-erased account.
-    expect(state.calls).not.toContain("delete users");
-    expect(state.calls).not.toContain("BEGIN");
+    expect(state.calls).not.toContain('delete users');
+    expect(state.calls).not.toContain('BEGIN');
   });
 
   /**
@@ -202,46 +200,43 @@ describe("eraseUserAccount", () => {
    * sibling FKs on `recipes.ts` are `cascade`, so the flip reads as a
    * consistency cleanup, which is the direction #716 records as dangerous.
    */
-  it("keeps recipe_events.actorId set-null, which the measurement note assumes", () => {
+  it('keeps recipe_events.actorId set-null, which the measurement note assumes', () => {
+    // Quote style is a formatting concern. Normalize it at the read so a Prettier
+    // config change cannot turn these assertions into ones that match nothing.
     const schema = readFileSync(
-      join(
-        resolve(dirname(fileURLToPath(import.meta.url)), "../db/schema"),
-        "recipes.ts",
-      ),
-      "utf8",
-    );
+      join(resolve(dirname(fileURLToPath(import.meta.url)), '../db/schema'), 'recipes.ts'),
+      'utf8',
+    ).replace(/'/g, '"');
 
     // The `recipeEvents` table body, from its declaration to the next export.
-    const start = schema.indexOf("export const recipeEvents");
+    const start = schema.indexOf('export const recipeEvents');
     expect(
       start,
-      "recipeEvents declaration not found — has it been renamed?",
+      'recipeEvents declaration not found — has it been renamed?',
     ).toBeGreaterThanOrEqual(0);
-    const next = schema.indexOf("\nexport const ", start + 1);
+    const next = schema.indexOf('\nexport const ', start + 1);
     const body = schema.slice(start, next === -1 ? undefined : next);
 
-    const actorId = /actorId:\s*fk\(\)[\s\S]*?onDelete:\s*"([\w ]+)"/.exec(
-      body,
-    );
+    const actorId = /actorId:\s*fk\(\)[\s\S]*?onDelete:\s*"([\w ]+)"/.exec(body);
 
     expect(
       actorId?.[1],
-      "recipe_events.actorId is no longer `set null`. The measurement note in " +
-        "erasure.ts says the users delete detaches these rows regardless of " +
-        "where a capture step sits, and that the basis therefore differs from " +
-        "recipe_versions. Changing this does not trip the ordering checks " +
-        "above — it changes what they are guarding.",
-    ).toBe("set null");
+      'recipe_events.actorId is no longer `set null`. The measurement note in ' +
+        'erasure.ts says the users delete detaches these rows regardless of ' +
+        'where a capture step sits, and that the basis therefore differs from ' +
+        'recipe_versions. Changing this does not trip the ordering checks ' +
+        'above — it changes what they are guarding.',
+    ).toBe('set null');
   });
 
-  it("counts every accepted non-owned creator row, edited or not (upper bound)", async () => {
+  it('counts every accepted non-owned creator row, edited or not (upper bound)', async () => {
     queueSelects({
-      owned: [{ id: "r1" }],
+      owned: [{ id: 'r1' }],
       // `r1` is their own; only `r9` is somebody else's recipe they co-create.
-      coCreated: [{ recipeId: "r1" }, { recipeId: "r9" }],
+      coCreated: [{ recipeId: 'r1' }, { recipeId: 'r9' }],
     });
 
-    const result = await eraseUserAccount("u1", { trigger: "in_app" });
+    const result = await eraseUserAccount('u1', { trigger: 'in_app' });
     // Note what is absent from the fixture: nothing describes whether the user
     // ever edited `r9`. The count is derived from creator rows alone, so it is
     // an upper bound on the #694 remediation population rather than a count of
@@ -257,89 +252,89 @@ describe("eraseUserAccount", () => {
    * Both are irreversible, so the halt has to precede every destructive step —
    * including the media purge, which is equally final.
    */
-  describe("co-creator containment (#694)", () => {
-    it("deletes nothing at all when the user is entangled", async () => {
-      state.entangled = ["r9"];
-      queueSelects({ owned: [{ id: "r1" }] });
+  describe('co-creator containment (#694)', () => {
+    it('deletes nothing at all when the user is entangled', async () => {
+      state.entangled = ['r9'];
+      queueSelects({ owned: [{ id: 'r1' }] });
 
-      const result = await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+      const result = await eraseUserAccount('u1', { trigger: 'clerk_webhook' });
 
-      expect(result.status).toBe("held");
-      expect(result.entangledRecipeIds).toEqual(["r9"]);
+      expect(result.status).toBe('held');
+      expect(result.entangledRecipeIds).toEqual(['r9']);
       expect(result.counts).toEqual({});
 
       // Not "deleted less". Nothing ran: no transaction, no media bytes, no
       // version rows, and no `users` delete — the second destruction path,
       // which ordering alone would not have contained.
-      expect(state.calls).not.toContain("BEGIN");
-      expect(state.calls).not.toContain("purge cloudinary");
-      expect(state.calls).not.toContain("delete recipe_versions");
-      expect(state.calls).not.toContain("delete recipes");
-      expect(state.calls).not.toContain("delete users");
-      expect(state.calls).not.toContain("delete media_assets");
+      expect(state.calls).not.toContain('BEGIN');
+      expect(state.calls).not.toContain('purge cloudinary');
+      expect(state.calls).not.toContain('delete recipe_versions');
+      expect(state.calls).not.toContain('delete recipes');
+      expect(state.calls).not.toContain('delete users');
+      expect(state.calls).not.toContain('delete media_assets');
     });
 
-    it("records the held request durably before returning", async () => {
-      state.entangled = ["r9", "r12"];
+    it('records the held request durably before returning', async () => {
+      state.entangled = ['r9', 'r12'];
       queueSelects();
 
-      await eraseUserAccount("u1", {
-        trigger: "in_app",
-        noticeVersion: "delete-account-v1",
+      await eraseUserAccount('u1', {
+        trigger: 'in_app',
+        noticeVersion: 'delete-account-v1',
       });
 
       // A dropped request that leaves no trace is itself a compliance failure:
       // the subject asked, and nothing recorded that they did.
       expect(holds.recordErasureHold).toHaveBeenCalledWith(
-        "u1",
-        { reason: "co_created_entanglement", recipeIds: ["r9", "r12"] },
-        { trigger: "in_app", noticeVersion: "delete-account-v1" },
+        'u1',
+        { reason: 'co_created_entanglement', recipeIds: ['r9', 'r12'] },
+        { trigger: 'in_app', noticeVersion: 'delete-account-v1' },
       );
     });
 
-    it("writes no tombstone for a held request", async () => {
-      state.entangled = ["r9"];
+    it('writes no tombstone for a held request', async () => {
+      state.entangled = ['r9'];
       queueSelects();
 
-      await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+      await eraseUserAccount('u1', { trigger: 'clerk_webhook' });
 
       // `deletion_records.completedAt` is the completion proof. Writing one here
       // would evidence an erasure that did not happen.
       expect(state.inserted).toBeNull();
     });
 
-    it("leaves the unentangled common case exactly as it was", async () => {
+    it('leaves the unentangled common case exactly as it was', async () => {
       state.entangled = [];
-      queueSelects({ owned: [{ id: "r1" }], coCreated: [{ recipeId: "r1" }] });
+      queueSelects({ owned: [{ id: 'r1' }], coCreated: [{ recipeId: 'r1' }] });
 
-      const result = await eraseUserAccount("u1", { trigger: "in_app" });
+      const result = await eraseUserAccount('u1', { trigger: 'in_app' });
 
       // The guard is narrow by construction. Most accounts share nothing, and
       // for them the erasure must still run start to finish, today, unchanged.
-      expect(result.status).toBe("erased");
+      expect(result.status).toBe('erased');
       expect(holds.recordErasureHold).not.toHaveBeenCalled();
-      expect(state.calls).toContain("purge cloudinary");
-      expect(state.calls).toContain("delete recipe_versions");
-      expect(state.calls).toContain("delete users");
+      expect(state.calls).toContain('purge cloudinary');
+      expect(state.calls).toContain('delete recipe_versions');
+      expect(state.calls).toContain('delete users');
       expect(state.inserted?.completedAt).toBeInstanceOf(Date);
     });
 
-    it("checks entanglement before the media purge, not after", async () => {
-      state.entangled = ["r9"];
+    it('checks entanglement before the media purge, not after', async () => {
+      state.entangled = ['r9'];
       queueSelects();
 
-      await eraseUserAccount("u1", { trigger: "admin" });
+      await eraseUserAccount('u1', { trigger: 'admin' });
 
       // Cloudinary bytes are destroyed remotely and are unrecoverable. A guard
       // placed after the purge would contain the database and still have
       // deleted the photographs.
-      expect(state.calls).toEqual(["record erasure_hold"]);
+      expect(state.calls).toEqual(['record erasure_hold']);
     });
   });
 
-  it("is a no-op for an already-erased subject", async () => {
+  it('is a no-op for an already-erased subject', async () => {
     state.user = undefined;
-    const result = await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+    const result = await eraseUserAccount('u1', { trigger: 'clerk_webhook' });
 
     // Clerk retries `user.deleted`; throwing here would make it redeliver
     // forever against an account that is already gone.
@@ -347,47 +342,45 @@ describe("eraseUserAccount", () => {
     expect(state.calls).toEqual([]);
   });
 
-  it("refuses to run when the database is unconfigured", async () => {
+  it('refuses to run when the database is unconfigured', async () => {
     state.configured = false;
-    await expect(eraseUserAccount("u1", { trigger: "admin" })).rejects.toThrow(
-      /NOT_CONFIGURED/,
-    );
+    await expect(eraseUserAccount('u1', { trigger: 'admin' })).rejects.toThrow(/NOT_CONFIGURED/);
   });
 
-  it("writes a tombstone carrying only hashes and counts", async () => {
-    queueSelects({ owned: [{ id: "r1" }] });
-    await eraseUserAccount("u1", {
-      trigger: "in_app",
-      noticeVersion: "delete-account-v1",
+  it('writes a tombstone carrying only hashes and counts', async () => {
+    queueSelects({ owned: [{ id: 'r1' }] });
+    await eraseUserAccount('u1', {
+      trigger: 'in_app',
+      noticeVersion: 'delete-account-v1',
     });
 
     const row = state.inserted!;
-    expect(row.subjectHash).toBe(hashDeletionSubject("u1"));
-    expect(row.clerkIdHash).toBe(hashDeletionSubject("clerk_1"));
-    expect(row.noticeVersion).toBe("delete-account-v1");
+    expect(row.subjectHash).toBe(hashDeletionSubject('u1'));
+    expect(row.clerkIdHash).toBe(hashDeletionSubject('clerk_1'));
+    expect(row.noticeVersion).toBe('delete-account-v1');
     expect(row.completedAt).toBeInstanceOf(Date);
 
     // The tombstone outlives the data it describes, so it must not re-create
     // the identifiers the erasure just removed.
     const serialized = JSON.stringify(row);
-    expect(serialized).not.toContain("u1");
-    expect(serialized).not.toContain("clerk_1");
-    expect(serialized).not.toContain("nonna@example.com");
+    expect(serialized).not.toContain('u1');
+    expect(serialized).not.toContain('clerk_1');
+    expect(serialized).not.toContain('nonna@example.com');
   });
 });
 
-describe("hashDeletionSubject", () => {
-  it("is deterministic so a restored row can be matched back", () => {
-    expect(hashDeletionSubject("u1")).toBe(hashDeletionSubject("u1"));
+describe('hashDeletionSubject', () => {
+  it('is deterministic so a restored row can be matched back', () => {
+    expect(hashDeletionSubject('u1')).toBe(hashDeletionSubject('u1'));
   });
 
-  it("is salt-dependent, so a bare id hash is not confirmable", () => {
-    expect(hashDeletionSubject("u1", "salt-one-long-enough")).not.toBe(
-      hashDeletionSubject("u1", "salt-two-long-enough"),
+  it('is salt-dependent, so a bare id hash is not confirmable', () => {
+    expect(hashDeletionSubject('u1', 'salt-one-long-enough')).not.toBe(
+      hashDeletionSubject('u1', 'salt-two-long-enough'),
     );
   });
 
-  it("returns null rather than a guessable digest when no salt is set", () => {
-    expect(hashDeletionSubject("u1", "")).toBeNull();
+  it('returns null rather than a guessable digest when no salt is set', () => {
+    expect(hashDeletionSubject('u1', '')).toBeNull();
   });
 });

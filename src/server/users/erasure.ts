@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { createHash } from "node:crypto";
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { createHash } from 'node:crypto';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 
-import { env } from "~/env";
-import { db, isDbConfigured } from "~/server/db";
+import { env } from '~/env';
+import { db, isDbConfigured } from '~/server/db';
 import {
   auditLog,
   comments,
@@ -21,16 +21,9 @@ import {
   users,
   waitlistSignups,
   type DeletionTrigger,
-} from "~/server/db/schema";
-import {
-  deleteUserMediaRows,
-  isPurgeComplete,
-  purgeUserMedia,
-} from "~/server/media/purge";
-import {
-  findEntanglement,
-  recordErasureHold,
-} from "~/server/users/erasure-holds";
+} from '~/server/db/schema';
+import { deleteUserMediaRows, isPurgeComplete, purgeUserMedia } from '~/server/media/purge';
+import { findEntanglement, recordErasureHold } from '~/server/users/erasure-holds';
 
 /**
  * Account erasure (issue #678).
@@ -117,7 +110,7 @@ export type ErasureResult = {
    * remedy the co-creator gap (#694). A held request is recorded in
    * `erasure_holds` and is replayable once a remedy lands.
    */
-  status: "erased" | "held";
+  status: 'erased' | 'held';
   counts: ErasureCounts;
   /**
    * Recipes kept because the user was a non-owner creator on them.
@@ -154,12 +147,18 @@ export function hashDeletionSubject(
   salt: string | undefined = env.DELETION_HASH_SALT,
 ): string | null {
   if (!salt) return null;
-  return createHash("sha256").update(`${salt}:${value}`).digest("hex");
+  return createHash('sha256').update(`${salt}:${value}`).digest('hex');
 }
 
-/** Delete rows and report how many went, so the tombstone can evidence it. */
+/**
+ * Delete rows and report how many went, so the tombstone can evidence it.
+ *
+ * `_tx` is unused on purpose: `run` already closes over the transaction. Taking
+ * it as a parameter forces every caller to name the transaction it is deleting
+ * inside, so an erasure step cannot silently run outside one.
+ */
 async function deleteCounted(
-  tx: typeof db,
+  _tx: typeof db,
   run: () => Promise<{ id: string }[]>,
 ): Promise<number> {
   const rows = await run();
@@ -186,7 +185,7 @@ export async function eraseUserAccount(
   userId: string,
   options: ErasureOptions,
 ): Promise<ErasureResult> {
-  if (!isDbConfigured()) throw new Error("NOT_CONFIGURED");
+  if (!isDbConfigured()) throw new Error('NOT_CONFIGURED');
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
@@ -196,7 +195,7 @@ export async function eraseUserAccount(
     // Already erased. Idempotent by design: a webhook retry after a successful
     // deletion must not throw, or Clerk will keep redelivering forever.
     return {
-      status: "erased",
+      status: 'erased',
       counts: {},
       retainedRecipeCount: 0,
       purgedAssetCount: 0,
@@ -229,7 +228,7 @@ export async function eraseUserAccount(
   if (entanglement.recipeIds.length > 0) {
     await recordErasureHold(userId, entanglement, options);
     return {
-      status: "held",
+      status: 'held',
       counts: {},
       retainedRecipeCount: 0,
       purgedAssetCount: 0,
@@ -246,7 +245,7 @@ export async function eraseUserAccount(
   if (!isPurgeComplete(purge)) {
     throw new Error(
       `MEDIA_PURGE_INCOMPLETE: ${purge.failed.length} asset(s) survived; ` +
-        "refusing to delete the rows that identify them.",
+        'refusing to delete the rows that identify them.',
     );
   }
 
@@ -311,15 +310,8 @@ export async function eraseUserAccount(
     const coCreated = await t
       .select({ recipeId: recipeCreators.recipeId })
       .from(recipeCreators)
-      .where(
-        and(
-          eq(recipeCreators.userId, userId),
-          eq(recipeCreators.status, "accepted"),
-        ),
-      );
-    retainedRecipeCount = coCreated.filter(
-      (row) => !ownedIds.includes(row.recipeId),
-    ).length;
+      .where(and(eq(recipeCreators.userId, userId), eq(recipeCreators.status, 'accepted')));
+    retainedRecipeCount = coCreated.filter((row) => !ownedIds.includes(row.recipeId)).length;
 
     // Recipes belonging to *other* people that the user rated. `ratings`
     // cascades, but `recipes.ratingCount`/`ratingSum` are maintained
@@ -329,9 +321,7 @@ export async function eraseUserAccount(
       .select({ recipeId: ratings.recipeId })
       .from(ratings)
       .where(eq(ratings.userId, userId));
-    const recomputeIds = ratedOthers
-      .map((r) => r.recipeId)
-      .filter((id) => !ownedIds.includes(id));
+    const recomputeIds = ratedOthers.map((r) => r.recipeId).filter((id) => !ownedIds.includes(id));
 
     // Other people's replies to the user's comments. `comments.parentId`
     // cascades for thread hygiene, which here would destroy third parties'
@@ -346,12 +336,7 @@ export async function eraseUserAccount(
       const reparented = await t
         .update(comments)
         .set({ parentId: null })
-        .where(
-          and(
-            inArray(comments.parentId, ownCommentIds),
-            ne(comments.userId, userId),
-          ),
-        )
+        .where(and(inArray(comments.parentId, ownCommentIds), ne(comments.userId, userId)))
         .returning({ id: comments.id });
       counts.comments_reparented = reparented.length;
     }
@@ -364,10 +349,7 @@ export async function eraseUserAccount(
         t
           .delete(reactions)
           .where(
-            and(
-              eq(reactions.targetType, "comment"),
-              inArray(reactions.targetId, ownCommentIds),
-            ),
+            and(eq(reactions.targetType, 'comment'), inArray(reactions.targetId, ownCommentIds)),
           )
           .returning({ id: reactions.id }),
       );
@@ -456,12 +438,7 @@ export async function eraseUserAccount(
     counts.usage_counters = await deleteCounted(t, () =>
       t
         .delete(usageCounters)
-        .where(
-          and(
-            eq(usageCounters.ownerId, userId),
-            eq(usageCounters.ownerType, "user"),
-          ),
-        )
+        .where(and(eq(usageCounters.ownerId, userId), eq(usageCounters.ownerType, 'user')))
         .returning({ id: usageCounters.id }),
     );
     if (user.email) {
@@ -483,10 +460,7 @@ export async function eraseUserAccount(
     // `restrict` precisely so forgetting this is a loud error.
     if (ownedIds.length > 0) {
       counts.recipes = await deleteCounted(t, () =>
-        t
-          .delete(recipes)
-          .where(eq(recipes.authorId, userId))
-          .returning({ id: recipes.id }),
+        t.delete(recipes).where(eq(recipes.authorId, userId)).returning({ id: recipes.id }),
       );
     }
 
@@ -525,7 +499,7 @@ export async function eraseUserAccount(
   });
 
   return {
-    status: "erased",
+    status: 'erased',
     counts,
     retainedRecipeCount,
     purgedAssetCount: purge.purged,
@@ -580,7 +554,7 @@ async function writeDeletionRecord(
   userId: string,
   clerkId: string | null,
   options: ErasureOptions,
-  result: Omit<ErasureResult, "status" | "entangledRecipeIds">,
+  result: Omit<ErasureResult, 'status' | 'entangledRecipeIds'>,
 ): Promise<void> {
   const subjectHash = hashDeletionSubject(userId);
   if (!subjectHash) return;

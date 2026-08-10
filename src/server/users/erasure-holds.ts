@@ -1,16 +1,16 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 
-import { log } from "~/lib/log";
-import { db } from "~/server/db";
+import { log } from '~/lib/log';
+import { db } from '~/server/db';
 import {
   erasureHolds,
   recipeCreators,
   recipes,
   type DeletionTrigger,
   type ErasureHoldReason,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 /**
  * Containment for the co-creator erasure gap (issue #694).
@@ -76,7 +76,7 @@ export async function findEntanglement(userId: string): Promise<Entanglement> {
     .where(
       and(
         eq(recipeCreators.userId, userId),
-        eq(recipeCreators.status, "accepted"),
+        eq(recipeCreators.status, 'accepted'),
         ne(recipes.authorId, userId),
       ),
     );
@@ -88,16 +88,14 @@ export async function findEntanglement(userId: string): Promise<Entanglement> {
     .where(
       and(
         eq(recipes.authorId, userId),
-        eq(recipeCreators.status, "accepted"),
+        eq(recipeCreators.status, 'accepted'),
         ne(recipeCreators.userId, userId),
       ),
     );
 
-  const recipeIds = [
-    ...new Set([...asCoCreator, ...asOwner].map((row) => row.recipeId)),
-  ].sort();
+  const recipeIds = [...new Set([...asCoCreator, ...asOwner].map((row) => row.recipeId))].sort();
 
-  return { reason: "co_created_entanglement", recipeIds };
+  return { reason: 'co_created_entanglement', recipeIds };
 }
 
 /**
@@ -143,7 +141,7 @@ export async function recordErasureHold(
       },
     });
 
-  log.warn("erasure.held", {
+  log.warn('erasure.held', {
     reason: entanglement.reason,
     trigger: options.trigger,
     entangledRecipeCount: entanglement.recipeIds.length,

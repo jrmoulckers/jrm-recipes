@@ -72,19 +72,19 @@
  * Runs against the throwaway database in the `Migrations` CI job, after the
  * chain has been applied.
  */
-import { is } from "drizzle-orm";
-import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
-import postgres from "postgres";
+import { is } from 'drizzle-orm';
+import { getTableConfig, PgTable } from 'drizzle-orm/pg-core';
+import postgres from 'postgres';
 
-import * as schema from "../src/server/db/schema/index.js";
+import * as schema from '../src/server/db/schema/index.js';
 
 /** Postgres encodes referential actions as a single char in `pg_constraint`. */
 const ACTION_BY_CODE: Record<string, string> = {
-  a: "no action",
-  r: "restrict",
-  c: "cascade",
-  n: "set null",
-  d: "set default",
+  a: 'no action',
+  r: 'restrict',
+  c: 'cascade',
+  n: 'set null',
+  d: 'set default',
 };
 
 /**
@@ -92,20 +92,16 @@ const ACTION_BY_CODE: Record<string, string> = {
  * Postgres reports as `no action`. Normalize both sides before comparing.
  */
 function normalizeAction(action: string | undefined): string {
-  return (action ?? "no action").toLowerCase();
+  return (action ?? 'no action').toLowerCase();
 }
 
 /** Case- and underscore-insensitive identifier form; see the note above. */
 function canon(identifier: string): string {
-  return identifier.toLowerCase().split("_").join("");
+  return identifier.toLowerCase().split('_').join('');
 }
 
-function keyFor(
-  table: string,
-  columns: string[],
-  foreignTable: string,
-): string {
-  const cols = columns.map(canon).sort().join(",");
+function keyFor(table: string, columns: string[], foreignTable: string): string {
+  const cols = columns.map(canon).sort().join(',');
   return `${canon(table)}(${cols})->${canon(foreignTable)}`;
 }
 
@@ -155,9 +151,9 @@ async function main(): Promise<void> {
 
   if (!url) {
     console.error(
-      "check-fk-actions: no DATABASE_URL set. This check compares the schema " +
-        "against a real database, so skipping it would pass for the wrong " +
-        "reason. Run it after the migration chain has been applied.",
+      'check-fk-actions: no DATABASE_URL set. This check compares the schema ' +
+        'against a real database, so skipping it would pass for the wrong ' +
+        'reason. Run it after the migration chain has been applied.',
     );
     process.exit(1);
   }
@@ -165,9 +161,9 @@ async function main(): Promise<void> {
   const declared = declaredForeignKeys();
   if (declared.length === 0) {
     console.error(
-      "check-fk-actions: found no foreign keys in the schema barrel. That is " +
-        "almost certainly a loading fault rather than a real schema, and a " +
-        "check that inspects nothing would pass while asserting nothing.",
+      'check-fk-actions: found no foreign keys in the schema barrel. That is ' +
+        'almost certainly a loading fault rather than a real schema, and a ' +
+        'check that inspects nothing would pass while asserting nothing.',
     );
     process.exit(1);
   }
@@ -194,8 +190,8 @@ async function main(): Promise<void> {
 
     if (rows.length === 0) {
       console.error(
-        "check-fk-actions: the database reports no foreign keys at all. The " +
-          "migration chain has probably not been applied to this database.",
+        'check-fk-actions: the database reports no foreign keys at all. The ' +
+          'migration chain has probably not been applied to this database.',
       );
       process.exit(1);
     }
@@ -229,11 +225,11 @@ async function main(): Promise<void> {
             const del = ACTION_BY_CODE[row.del] ?? row.del;
             return `${row.constraint_name} (ON DELETE ${del})`;
           })
-          .join(", ");
+          .join(', ');
         problems.push(
           `${fk.label}: ${bucket.length} constraints cover the same columns and target — ${detail}. ` +
-            "Postgres enforces every one of them, so the effective behaviour is not the declared " +
-            "action: a cascade alongside a set null deletes the row",
+            'Postgres enforces every one of them, so the effective behaviour is not the declared ' +
+            'action: a cascade alongside a set null deletes the row',
         );
       }
 
@@ -265,8 +261,8 @@ async function main(): Promise<void> {
         const del = ACTION_BY_CODE[row.del] ?? row.del;
         problems.push(
           `${row.table_name}.${row.constraint_name}: exists in the database (ON DELETE ${del}) ` +
-            "but the schema declares no such foreign key. Either it was added by a hand-written " +
-            "migration, or its table is missing from src/server/db/schema/index.ts",
+            'but the schema declares no such foreign key. Either it was added by a hand-written ' +
+            'migration, or its table is missing from src/server/db/schema/index.ts',
         );
       }
     }
@@ -277,13 +273,13 @@ async function main(): Promise<void> {
       );
       for (const problem of problems) console.error(`  - ${problem}`);
       console.error(
-        "\nThe TypeScript declaration and the deployed constraint are two " +
-          "different sources of truth, and unit tests only ever read the " +
-          "first. A referential action decides what an existing delete does, " +
-          "so a mismatch changes behaviour without changing any call site. In " +
-          "particular recipe_versions.author_id must stay ON DELETE set null: " +
-          "it is the diff basis account erasure reads (see " +
-          "src/server/users/erasure.ts and schema/versions.test.ts).",
+        '\nThe TypeScript declaration and the deployed constraint are two ' +
+          'different sources of truth, and unit tests only ever read the ' +
+          'first. A referential action decides what an existing delete does, ' +
+          'so a mismatch changes behaviour without changing any call site. In ' +
+          'particular recipe_versions.author_id must stay ON DELETE set null: ' +
+          'it is the diff basis account erasure reads (see ' +
+          'src/server/users/erasure.ts and schema/versions.test.ts).',
       );
       process.exit(1);
     }

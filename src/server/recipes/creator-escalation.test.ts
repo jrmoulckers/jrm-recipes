@@ -1,13 +1,16 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 const mutations = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), "mutations.ts"),
-  "utf8",
-);
+  resolve(dirname(fileURLToPath(import.meta.url)), 'mutations.ts'),
+  'utf8',
+  // Quote style is a formatting concern, not a security one. Normalizing it at
+  // the read means a Prettier config change cannot silently turn these
+  // assertions into ones that match nothing and pass.
+).replace(/'/g, '"');
 
 /**
  * Guard on how far co-creator authority is allowed to reach inside this module.
@@ -83,35 +86,35 @@ const mutations = readFileSync(
  */
 const maskedMutations = (() => {
   const source = mutations;
-  let out = "";
+  let out = '';
   let i = 0;
 
-  const blank = (text: string) => text.replace(/[^\n]/g, " ");
+  const blank = (text: string) => text.replace(/[^\n]/g, ' ');
 
   while (i < source.length) {
     const char = source[i]!;
     const next = source[i + 1];
 
-    if (char === "/" && next === "/") {
-      const end = source.indexOf("\n", i);
+    if (char === '/' && next === '/') {
+      const end = source.indexOf('\n', i);
       const stop = end === -1 ? source.length : end;
       out += blank(source.slice(i, stop));
       i = stop;
       continue;
     }
 
-    if (char === "/" && next === "*") {
-      const end = source.indexOf("*/", i + 2);
+    if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', i + 2);
       const stop = end === -1 ? source.length : end + 2;
       out += blank(source.slice(i, stop));
       i = stop;
       continue;
     }
 
-    if (char === '"' || char === "'" || char === "`") {
+    if (char === '"' || char === "'" || char === '`') {
       let j = i + 1;
       while (j < source.length) {
-        if (source[j] === "\\") {
+        if (source[j] === '\\') {
           j += 2;
           continue;
         }
@@ -121,8 +124,7 @@ const maskedMutations = (() => {
       const stop = Math.min(j + 1, source.length);
       // Keep the delimiters; blank only the contents, so the masked text stays
       // the same length and still reads as a string to anything downstream.
-      out +=
-        char + blank(source.slice(i + 1, stop - 1)) + (source[stop - 1] ?? "");
+      out += char + blank(source.slice(i + 1, stop - 1)) + (source[stop - 1] ?? '');
       i = stop;
       continue;
     }
@@ -174,9 +176,9 @@ function bodyOf(name: string): string {
  * loud there and the negative check inherits their anchor rather than needing a
  * probe of its own.
  */
-const OWNER_PREDICATE = "eq(recipes.authorId,";
+const OWNER_PREDICATE = 'eq(recipes.authorId,';
 
-describe("co-creator write escalation", () => {
+describe('co-creator write escalation', () => {
   /**
    * The masking that boundaries are located in (#747) must not move anything.
    * Spans index into the masked text while every body is sliced from the real
@@ -184,11 +186,9 @@ describe("co-creator write escalation", () => {
    * leave each check reading the wrong function — passing, but about something
    * else. Asserted directly rather than trusted.
    */
-  it("masks strings and comments without moving any offset", () => {
+  it('masks strings and comments without moving any offset', () => {
     expect(maskedMutations).toHaveLength(mutations.length);
-    expect(maskedMutations.split("\n")).toHaveLength(
-      mutations.split("\n").length,
-    );
+    expect(maskedMutations.split('\n')).toHaveLength(mutations.split('\n').length);
 
     // Non-vacuity: mutations.ts does contain strings and comments, so a masker
     // that returned its input unchanged would satisfy the lengths above.
@@ -236,9 +236,8 @@ describe("co-creator write escalation", () => {
    * cannot silently stop working is worth more than one that needs a second
    * guard to watch it.
    */
-  it("has no span that swallowed an unrecognised declaration", () => {
-    const binding =
-      /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|const|let|var|class)\b/;
+  it('has no span that swallowed an unrecognised declaration', () => {
+    const binding = /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|const|let|var|class)\b/;
 
     // Both model checks iterate `spans`, so an empty map passes them by doing
     // nothing — and an empty map is exactly what a dead model produces. The
@@ -248,9 +247,7 @@ describe("co-creator write escalation", () => {
     expect(spans.size).toBeGreaterThan(0);
 
     for (const [name, span] of spans) {
-      const [, ...rest] = maskedMutations
-        .slice(span.start + 1, span.end)
-        .split("\n");
+      const [, ...rest] = maskedMutations.slice(span.start + 1, span.end).split('\n');
       const absorbed = rest.filter((line) => binding.test(line));
 
       expect(
@@ -294,25 +291,20 @@ describe("co-creator write escalation", () => {
    * genuine backstop rather than a second reading of the text that misled the
    * boundary.
    */
-  it("has no span that was cut short by a spurious boundary", () => {
+  it('has no span that was cut short by a spurious boundary', () => {
     // Non-vacuity, as above (#746): a dead model yields no spans, and a loop
     // over no spans asserts nothing.
     expect(spans.size).toBeGreaterThan(0);
 
     for (const [name, span] of spans) {
-      const lines = maskedMutations.slice(span.start, span.end).split("\n");
+      const lines = maskedMutations.slice(span.start, span.end).split('\n');
 
       // Trailing blank lines and the next declaration's comment block belong to
       // this span but sit after the closing brace.
       let last = lines.length - 1;
       while (last >= 0) {
         const text = lines[last]!.trim();
-        if (
-          text === "" ||
-          text.startsWith("//") ||
-          text.startsWith("/*") ||
-          text.startsWith("*")
-        ) {
+        if (text === '' || text.startsWith('//') || text.startsWith('/*') || text.startsWith('*')) {
           last--;
           continue;
         }
@@ -320,19 +312,22 @@ describe("co-creator write escalation", () => {
       }
 
       expect(
-        last >= 0 ? lines[last]! : "",
+        last >= 0 ? lines[last]! : '',
         `the span for ${name} does not end at a closing brace in column zero, so \`declaration\` matched something that is not a top-level declaration — most likely a column-zero binding inside a template literal or string — and split ${name} in two. Everything after that point is still live code but is invisible to every check in this file, including the negative ones. Narrow \`declaration\` rather than adjusting this assertion.`,
       ).toMatch(/^\}/);
     }
   });
 
-  it("confines every recipeCreators reference to the two sanctioned gates", () => {
+  it('confines every recipeCreators reference to the two sanctioned gates', () => {
     // `slugTaken` (#679) must see a creator's slug because it occupies that
     // creator's namespace, and `assertRecipeEditAccess` (#685) is the single
     // place a co-creator is admitted to a write path. Anywhere else means some
     // mutation grew a private notion of who counts as a creator.
-    const sanctioned = ["slugTaken", "assertRecipeEditAccess"].map(spanOf);
+    const sanctioned = ['slugTaken', 'assertRecipeEditAccess'].map(spanOf);
     const importsEnd = mutations.indexOf('from "~/server/db/schema"');
+    // If the anchor stops matching, every import below would be counted as an
+    // unsanctioned reference. Assert it explicitly so the cause is named.
+    expect(importsEnd).toBeGreaterThan(-1);
     const occurrences = [...mutations.matchAll(/recipeCreators/g)]
       .map((match) => match.index)
       .filter((at) => at > importsEnd);
@@ -346,17 +341,17 @@ describe("co-creator write escalation", () => {
     }
   });
 
-  it("admits co-creators to the recipe body through the shared gate only", () => {
-    const body = bodyOf("updateRecipe");
-    expect(body).toContain("assertRecipeEditAccess(");
+  it('admits co-creators to the recipe body through the shared gate only', () => {
+    const body = bodyOf('updateRecipe');
+    expect(body).toContain('assertRecipeEditAccess(');
     // The gate is a lookup rather than a filter, so `updateRecipe` no longer
     // carries an `authorId` predicate. Dropping the gate must not silently
     // leave the row unguarded, so assert the two together.
     expect(body).not.toContain(OWNER_PREDICATE);
   });
 
-  it("requires an accepted creator row, never a pending invitation", () => {
-    const body = bodyOf("assertRecipeEditAccess");
+  it('requires an accepted creator row, never a pending invitation', () => {
+    const body = bodyOf('assertRecipeEditAccess');
     expect(body).toContain('eq(recipeCreators.status, "accepted")');
     // An unauthorised editor is indistinguishable from a missing recipe, so the
     // failure cannot be used to probe which recipe ids exist.
@@ -364,11 +359,11 @@ describe("co-creator write escalation", () => {
   });
 
   it.each([
-    ["revertRecipe", "version reverts"],
-    ["deleteRecipe", "deletion"],
-    ["restoreRecipe", "restore"],
-    ["setShareLinkState", "share-link rotation"],
-  ])("still scopes %s (%s) to the owner", (fn) => {
+    ['revertRecipe', 'version reverts'],
+    ['deleteRecipe', 'deletion'],
+    ['restoreRecipe', 'restore'],
+    ['setShareLinkState', 'share-link rotation'],
+  ])('still scopes %s (%s) to the owner', (fn) => {
     expect(bodyOf(fn)).toContain(OWNER_PREDICATE);
   });
 });

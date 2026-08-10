@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Containment detection tests (issue #694).
@@ -24,8 +24,7 @@ const { state, db } = vi.hoisted(() => {
       innerJoin: vi.fn(() => chain),
       where: vi.fn(() => chain),
       orderBy: vi.fn(() => chain),
-      then: (resolve: (v: unknown) => unknown) =>
-        resolve(state.selects.shift() ?? []),
+      then: (resolve: (v: unknown) => unknown) => resolve(state.selects.shift() ?? []),
     };
     return chain;
   };
@@ -51,14 +50,10 @@ const { state, db } = vi.hoisted(() => {
   return { state, db };
 });
 
-vi.mock("~/server/db", () => ({ db, isDbConfigured: () => true }));
-vi.mock("~/env", () => ({ env: { DELETION_HASH_SALT: "salt-long-enough" } }));
+vi.mock('~/server/db', () => ({ db, isDbConfigured: () => true }));
+vi.mock('~/env', () => ({ env: { DELETION_HASH_SALT: 'salt-long-enough' } }));
 
-import {
-  findEntanglement,
-  getErasureBacklog,
-  recordErasureHold,
-} from "./erasure-holds";
+import { findEntanglement, getErasureBacklog, recordErasureHold } from './erasure-holds';
 
 beforeEach(() => {
   state.selects = [];
@@ -67,66 +62,66 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("findEntanglement", () => {
-  it("reports nothing for a user who shares no recipes", async () => {
+describe('findEntanglement', () => {
+  it('reports nothing for a user who shares no recipes', async () => {
     state.selects = [[], []];
-    expect((await findEntanglement("u1")).recipeIds).toEqual([]);
+    expect((await findEntanglement('u1')).recipeIds).toEqual([]);
   });
 
-  it("catches recipes the user co-creates but does not own", async () => {
+  it('catches recipes the user co-creates but does not own', async () => {
     // Since #685 they could have edited the body, so their prose may sit in a
     // recipe that survives the erasure with nothing naming them.
-    state.selects = [[{ recipeId: "r9" }], []];
-    expect((await findEntanglement("u1")).recipeIds).toEqual(["r9"]);
+    state.selects = [[{ recipeId: 'r9' }], []];
+    expect((await findEntanglement('u1')).recipeIds).toEqual(['r9']);
   });
 
-  it("catches recipes the user owns that carry other accepted creators", async () => {
+  it('catches recipes the user owns that carry other accepted creators', async () => {
     // The other direction, and it is not symmetrical: erasure deletes this
     // recipe, and with it every co-creator's version rows on it — including the
     // ones evidencing which words were the departing owner's.
-    state.selects = [[], [{ recipeId: "r3" }]];
-    expect((await findEntanglement("u1")).recipeIds).toEqual(["r3"]);
+    state.selects = [[], [{ recipeId: 'r3' }]];
+    expect((await findEntanglement('u1')).recipeIds).toEqual(['r3']);
   });
 
-  it("returns each entangled recipe once when both directions match", async () => {
-    state.selects = [[{ recipeId: "r9" }], [{ recipeId: "r9" }]];
-    expect((await findEntanglement("u1")).recipeIds).toEqual(["r9"]);
+  it('returns each entangled recipe once when both directions match', async () => {
+    state.selects = [[{ recipeId: 'r9' }], [{ recipeId: 'r9' }]];
+    expect((await findEntanglement('u1')).recipeIds).toEqual(['r9']);
   });
 
-  it("queries both directions even when the first one already matched", async () => {
-    state.selects = [[{ recipeId: "r9" }], [{ recipeId: "r3" }]];
+  it('queries both directions even when the first one already matched', async () => {
+    state.selects = [[{ recipeId: 'r9' }], [{ recipeId: 'r3' }]];
 
-    const result = await findEntanglement("u1");
+    const result = await findEntanglement('u1');
 
     // Short-circuiting after the first hit would under-report the worklist the
     // eventual remedy has to cover, which is the point of recording ids at all.
     expect(db.select).toHaveBeenCalledTimes(2);
-    expect(result.recipeIds).toEqual(["r3", "r9"]);
+    expect(result.recipeIds).toEqual(['r3', 'r9']);
   });
 });
 
-describe("recordErasureHold", () => {
-  it("stores the worklist, trigger and notice version", async () => {
+describe('recordErasureHold', () => {
+  it('stores the worklist, trigger and notice version', async () => {
     await recordErasureHold(
-      "u1",
-      { reason: "co_created_entanglement", recipeIds: ["r9"] },
-      { trigger: "in_app", noticeVersion: "delete-account-v1" },
+      'u1',
+      { reason: 'co_created_entanglement', recipeIds: ['r9'] },
+      { trigger: 'in_app', noticeVersion: 'delete-account-v1' },
     );
 
     expect(state.inserted).toMatchObject({
-      userId: "u1",
-      trigger: "in_app",
-      reason: "co_created_entanglement",
-      entangledRecipeIds: ["r9"],
-      noticeVersion: "delete-account-v1",
+      userId: 'u1',
+      trigger: 'in_app',
+      reason: 'co_created_entanglement',
+      entangledRecipeIds: ['r9'],
+      noticeVersion: 'delete-account-v1',
     });
   });
 
-  it("upserts on the subject so Clerk retries do not inflate the backlog", async () => {
+  it('upserts on the subject so Clerk retries do not inflate the backlog', async () => {
     await recordErasureHold(
-      "u1",
-      { reason: "co_created_entanglement", recipeIds: ["r9"] },
-      { trigger: "clerk_webhook" },
+      'u1',
+      { reason: 'co_created_entanglement', recipeIds: ['r9'] },
+      { trigger: 'clerk_webhook' },
     );
 
     // Clerk redelivers `user.deleted`. Each delivery is the same standing
@@ -136,15 +131,15 @@ describe("recordErasureHold", () => {
   });
 });
 
-describe("getErasureBacklog", () => {
-  it("counts open holds and how long the oldest has waited", async () => {
-    const oldest = new Date("2026-08-01T00:00:00.000Z");
+describe('getErasureBacklog', () => {
+  it('counts open holds and how long the oldest has waited', async () => {
+    const oldest = new Date('2026-08-01T00:00:00.000Z');
     state.selects = [
       [
-        { firstRequestedAt: oldest, entangledRecipeIds: ["r9", "r3"] },
+        { firstRequestedAt: oldest, entangledRecipeIds: ['r9', 'r3'] },
         {
-          firstRequestedAt: new Date("2026-08-05T00:00:00.000Z"),
-          entangledRecipeIds: ["r12"],
+          firstRequestedAt: new Date('2026-08-05T00:00:00.000Z'),
+          entangledRecipeIds: ['r12'],
         },
       ],
     ];
@@ -156,7 +151,7 @@ describe("getErasureBacklog", () => {
     });
   });
 
-  it("reports an empty backlog rather than throwing when nothing is held", async () => {
+  it('reports an empty backlog rather than throwing when nothing is held', async () => {
     state.selects = [[]];
     expect(await getErasureBacklog()).toEqual({
       open: 0,

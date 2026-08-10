@@ -1,24 +1,22 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { getTableConfig } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import { describe, expect, it } from 'vitest';
 
-import { recipeVersions } from "./recipes";
+import { recipeVersions } from './recipes';
 
 /**
  * Issue #170. `Recipe_versions.snapshot` must be stored as `jsonb`, not `text`,
  * so Postgres validates the JSON structurally and future timeline/diff features
  * can query inside a snapshot. Asserted at the schema source of truth.
  */
-describe("recipe_versions.snapshot column (issue #170)", () => {
-  it("is a jsonb column", () => {
-    const snapshot = getTableConfig(recipeVersions).columns.find(
-      (c) => c.name === "snapshot",
-    );
-    expect(snapshot, "expected a snapshot column").toBeDefined();
-    expect(snapshot?.getSQLType()).toBe("jsonb");
+describe('recipe_versions.snapshot column (issue #170)', () => {
+  it('is a jsonb column', () => {
+    const snapshot = getTableConfig(recipeVersions).columns.find((c) => c.name === 'snapshot');
+    expect(snapshot, 'expected a snapshot column').toBeDefined();
+    expect(snapshot?.getSQLType()).toBe('jsonb');
     expect(snapshot?.notNull).toBe(true);
   });
 });
@@ -29,24 +27,17 @@ describe("recipe_versions.snapshot column (issue #170)", () => {
  * constraint creates also serves the version-ordered history reads that the old
  * non-unique `recipe_versions_recipe_idx` index used to back.
  */
-describe("recipe_versions version-number uniqueness (issue #151)", () => {
-  it("has a unique constraint on (recipe_id, version_number)", () => {
+describe('recipe_versions version-number uniqueness (issue #151)', () => {
+  it('has a unique constraint on (recipe_id, version_number)', () => {
     const { uniqueConstraints } = getTableConfig(recipeVersions);
-    const uq = uniqueConstraints.find(
-      (u) => u.name === "recipe_versions_recipe_version_uq",
-    );
-    expect(uq, "expected a unique constraint").toBeDefined();
-    expect(uq?.columns.map((c) => c.name)).toEqual([
-      "recipeId",
-      "versionNumber",
-    ]);
+    const uq = uniqueConstraints.find((u) => u.name === 'recipe_versions_recipe_version_uq');
+    expect(uq, 'expected a unique constraint').toBeDefined();
+    expect(uq?.columns.map((c) => c.name)).toEqual(['recipeId', 'versionNumber']);
   });
 
-  it("no longer declares the redundant non-unique recipe index", () => {
+  it('no longer declares the redundant non-unique recipe index', () => {
     const { indexes } = getTableConfig(recipeVersions);
-    expect(
-      indexes.some((i) => i.config.name === "recipe_versions_recipe_idx"),
-    ).toBe(false);
+    expect(indexes.some((i) => i.config.name === 'recipe_versions_recipe_idx')).toBe(false);
   });
 });
 
@@ -100,10 +91,10 @@ describe("recipe_versions version-number uniqueness (issue #151)", () => {
  * load-bearing premises, so changing one silently invalidates the reasoning
  * while every call-site check stays green — see the `FK_ACTIONS` block.
  */
-describe("recipe_versions retention (issue #699)", () => {
-  const srcRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+describe('recipe_versions retention (issue #699)', () => {
+  const srcRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-  const ERASURE = join("server", "users", "erasure.ts");
+  const ERASURE = join('server', 'users', 'erasure.ts');
 
   /**
    * Every way the version-history diff basis can be destroyed, with the files
@@ -122,61 +113,61 @@ describe("recipe_versions retention (issue #699)", () => {
     rejects?: string;
   }[] = [
     {
-      what: "deleting recipe_versions rows",
+      what: 'deleting recipe_versions rows',
       // Matches `.delete(recipeVersions)` through any builder receiver (db, tx,
       // sp, t), which is how every existing delete in the codebase is written.
       pattern: /\.delete\(\s*recipeVersions\s*\)/,
-      harm: "destroys the snapshots outright",
+      harm: 'destroys the snapshots outright',
       sanctioned: [
         // Account erasure, scoped to the departing user's own rows.
         ERASURE,
         // Dev-only reseed of an existing recipe.
-        join("server", "db", "seed.ts"),
+        join('server', 'db', 'seed.ts'),
       ],
-      probe: "await tx.delete(recipeVersions).where(eq(x, y))",
+      probe: 'await tx.delete(recipeVersions).where(eq(x, y))',
     },
     {
-      what: "hard-deleting recipes",
+      what: 'hard-deleting recipes',
       pattern: /\.delete\(\s*recipes\s*\)/,
       harm:
-        "cascades to recipe_versions via `recipeId ON DELETE cascade` and takes the " +
-        "whole history with it. `deleteRecipe` is a soft delete, so if this is a " +
-        "trash-purge job, it is exactly the change #699 exists to catch",
+        'cascades to recipe_versions via `recipeId ON DELETE cascade` and takes the ' +
+        'whole history with it. `deleteRecipe` is a soft delete, so if this is a ' +
+        'trash-purge job, it is exactly the change #699 exists to catch',
       sanctioned: [ERASURE],
-      probe: "await db.delete(recipes).where(eq(x, y))",
+      probe: 'await db.delete(recipes).where(eq(x, y))',
       // `recipes` must not swallow `recipeVersions`, or the seed -- sanctioned
       // for versions but not for recipes -- would be reported as an offender.
-      rejects: "await tx.delete(recipeVersions)",
+      rejects: 'await tx.delete(recipeVersions)',
     },
     {
-      what: "hard-deleting users",
+      what: 'hard-deleting users',
       pattern: /\.delete\(\s*users\s*\)/,
       harm:
-        "nulls recipe_versions.author_id via `authorId ON DELETE set null`, which " +
-        "deletes no row and no text but severs the attribution that derived " +
-        "provenance (#686) needs, leaving a table that still looks fully populated",
+        'nulls recipe_versions.author_id via `authorId ON DELETE set null`, which ' +
+        'deletes no row and no text but severs the attribution that derived ' +
+        'provenance (#686) needs, leaving a table that still looks fully populated',
       sanctioned: [ERASURE],
-      probe: "t.delete(users).where(eq(users.id, userId))",
+      probe: 't.delete(users).where(eq(users.id, userId))',
     },
     {
       // #715. The schema calls these "immutable snapshots" and nothing enforced
       // it. An update destroys the diff basis as effectively as a delete while
       // matching none of the mechanisms above, which read deletes only.
-      what: "updating recipe_versions rows",
+      what: 'updating recipe_versions rows',
       pattern: /\.update\(\s*recipeVersions\s*\)/,
       harm:
-        "rewrites history in place, which the schema forbids by calling these " +
-        "snapshots immutable: a `snapshot` edit corrupts the diff basis and an " +
-        "`authorId` edit severs attribution. It is worse than a delete, because a " +
-        "missing row shows up as a gap in version_number while a mutated row still " +
-        "looks entirely valid",
+        'rewrites history in place, which the schema forbids by calling these ' +
+        'snapshots immutable: a `snapshot` edit corrupts the diff basis and an ' +
+        '`authorId` edit severs attribution. It is worse than a delete, because a ' +
+        'missing row shows up as a gap in version_number while a mutated row still ' +
+        'looks entirely valid',
       // Empty: never permitted anywhere. See the vacuity note below.
       sanctioned: [],
-      probe: "await db.update(recipeVersions).set({ snapshot })",
+      probe: 'await db.update(recipeVersions).set({ snapshot })',
     },
   ];
 
-  const toPosix = (file: string) => file.split(sep).join("/");
+  const toPosix = (file: string) => file.split(sep).join('/');
 
   function walk(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -190,19 +181,19 @@ describe("recipe_versions retention (issue #699)", () => {
   }
 
   it.each(MECHANISMS)(
-    "$what happens only at the sanctioned call sites",
+    '$what happens only at the sanctioned call sites',
     ({ pattern, harm, sanctioned }) => {
       const allowed = sanctioned.map(toPosix);
 
       const offenders = walk(srcRoot)
-        .filter((file) => pattern.test(readFileSync(file, "utf8")))
+        .filter((file) => pattern.test(readFileSync(file, 'utf8')))
         .map((file) => toPosix(relative(srcRoot, file)))
         .filter((file) => !allowed.includes(file))
         .sort();
 
       const where = allowed.length
-        ? `outside ${allowed.join(", ")}`
-        : "anywhere (this one is never permitted)";
+        ? `outside ${allowed.join(', ')}`
+        : 'anywhere (this one is never permitted)';
 
       expect(
         offenders,
@@ -222,10 +213,10 @@ describe("recipe_versions retention (issue #699)", () => {
    * the whole reason part two exists.
    */
   it.each(MECHANISMS.filter((m) => m.sanctioned.length > 0))(
-    "$what still occurs at every sanctioned site, so the guard cannot pass vacuously",
+    '$what still occurs at every sanctioned site, so the guard cannot pass vacuously',
     ({ pattern, sanctioned }) => {
       for (const relPath of sanctioned) {
-        const source = readFileSync(join(srcRoot, relPath), "utf8");
+        const source = readFileSync(join(srcRoot, relPath), 'utf8');
         expect(
           pattern.test(source),
           `expected ${toPosix(relPath)} to still match ${String(pattern)}`,
@@ -245,17 +236,16 @@ describe("recipe_versions retention (issue #699)", () => {
    * typo in any of them fails the same silent way, and part one would only
    * catch it for those with sanctioned sites.
    */
-  it.each(MECHANISMS)("$what has a pattern that actually matches", (m) => {
+  it.each(MECHANISMS)('$what has a pattern that actually matches', (m) => {
     expect(
       m.pattern.test(m.probe),
       `${String(m.pattern)} failed to match its own probe: ${m.probe}`,
     ).toBe(true);
 
     if (m.rejects !== undefined) {
-      expect(
-        m.pattern.test(m.rejects),
-        `${String(m.pattern)} wrongly matched: ${m.rejects}`,
-      ).toBe(false);
+      expect(m.pattern.test(m.rejects), `${String(m.pattern)} wrongly matched: ${m.rejects}`).toBe(
+        false,
+      );
     }
   });
 
@@ -286,19 +276,19 @@ describe("recipe_versions retention (issue #699)", () => {
    */
   const FK_ACTIONS = [
     {
-      column: "recipeId",
-      onDelete: "cascade",
+      column: 'recipeId',
+      onDelete: 'cascade',
       why: "hard-deleting a recipe must take its version history with it; without the cascade, mechanism 2's stated harm is false and erasure's recipe delete would fail or orphan rows",
     },
     {
-      column: "authorId",
-      onDelete: "set null",
+      column: 'authorId',
+      onDelete: 'set null',
       why: "erasure must sever attribution WITHOUT deleting the snapshot. `cascade` here would silently widen the sanctioned `.delete(users)` into a hard delete of the diff basis, on other people's recipes, with every call-site check still green",
     },
   ];
 
   it.each(FK_ACTIONS)(
-    "recipe_versions.$column is ON DELETE $onDelete, which the cascade mechanisms above assume",
+    'recipe_versions.$column is ON DELETE $onDelete, which the cascade mechanisms above assume',
     ({ column, onDelete, why }) => {
       const fk = getTableConfig(recipeVersions).foreignKeys.find((f) =>
         f
