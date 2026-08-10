@@ -131,6 +131,60 @@ describe("co-creator write escalation", () => {
     }
   });
 
+  /**
+   * The span model is faithful in the other direction too: no span was cut
+   * short (#742).
+   *
+   * The check above detects the model recognising too *few* boundaries. This
+   * one detects too many. `declaration` matches on a newline, so a column-zero
+   * `function name` inside a template literal or string is also a boundary, and
+   * it splits the enclosing function's span in two. Every check here reads
+   * `bodyOf`, which is the head of that split, so everything past the split
+   * point escapes inspection while remaining live code.
+   *
+   * That is the exact mirror of absorption: one makes a span cover code it
+   * should not, the other stops it covering code it should. Both make `bodyOf`
+   * wrong, and the column-zero check cannot see this one — after a split every
+   * line of the tail is indented, so it presents no binding to detect.
+   *
+   * Demonstrated on #742: an owner predicate placed after a spurious boundary
+   * inside `updateRecipe` left all eight checks green, including the assertion
+   * that `updateRecipe` does not contain that predicate; moving the same line
+   * before the boundary failed it.
+   *
+   * Asserted as the consequence — a function span ends where a function ends —
+   * rather than by enumerating the causes (templates, strings, comments), for
+   * the same reason the check above prefers column-zero bindings to matching
+   * arrow syntax.
+   */
+  it("has no span that was cut short by a spurious boundary", () => {
+    for (const [name, span] of spans) {
+      const lines = mutations.slice(span.start, span.end).split("\n");
+
+      // Trailing blank lines and the next declaration's comment block belong to
+      // this span but sit after the closing brace.
+      let last = lines.length - 1;
+      while (last >= 0) {
+        const text = lines[last]!.trim();
+        if (
+          text === "" ||
+          text.startsWith("//") ||
+          text.startsWith("/*") ||
+          text.startsWith("*")
+        ) {
+          last--;
+          continue;
+        }
+        break;
+      }
+
+      expect(
+        last >= 0 ? lines[last]! : "",
+        `the span for ${name} does not end at a closing brace in column zero, so \`declaration\` matched something that is not a top-level declaration — most likely a column-zero binding inside a template literal or string — and split ${name} in two. Everything after that point is still live code but is invisible to every check in this file, including the negative ones. Narrow \`declaration\` rather than adjusting this assertion.`,
+      ).toMatch(/^\}/);
+    }
+  });
+
   it("confines every recipeCreators reference to the two sanctioned gates", () => {
     // `slugTaken` (#679) must see a creator's slug because it occupies that
     // creator's namespace, and `assertRecipeEditAccess` (#685) is the single
