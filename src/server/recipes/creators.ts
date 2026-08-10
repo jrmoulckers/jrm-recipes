@@ -1,12 +1,12 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
 import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 import { notify } from "~/server/notifications/notify";
-import { recipeCreators, recipes } from "~/server/db/schema";
+import { recipeCreators, recipes, users } from "~/server/db/schema";
 import { recipeSlug } from "./validation";
 import { uniqueSlug, withSlugConflictRetry } from "./mutations";
 
@@ -298,6 +298,35 @@ async function deleteCreatorRow(
     },
     removed,
   };
+}
+
+/**
+ * Resolve a co-creator invitation target from what the owner typed.
+ *
+ * Handle or email, matched case-insensitively, mirroring group invitations.
+ * Deliberately **not** exposed as a search: it answers "is this exact person a
+ * cook here", so it can't be used to enumerate accounts.
+ */
+export async function findCreatorTarget(
+  identifier: string,
+): Promise<{ id: string }> {
+  const trimmed = identifier.trim();
+  if (trimmed.length === 0) throw new DomainError("USER_NOT_FOUND");
+  const handle = trimmed.replace(/^@/, "").toLowerCase();
+  const email = trimmed.toLowerCase();
+
+  const found = await db.query.users.findFirst({
+    where: and(
+      or(
+        sql`lower(${users.handle}) = ${handle}`,
+        sql`lower(${users.email}) = ${email}`,
+      ),
+      isNull(users.deletedAt),
+    ),
+    columns: { id: true },
+  });
+  if (!found) throw new DomainError("USER_NOT_FOUND");
+  return found;
 }
 
 /**

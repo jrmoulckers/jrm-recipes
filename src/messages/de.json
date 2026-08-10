@@ -3603,5 +3603,42 @@
       "body": "Tritt einer Familiengruppe bei oder leg eine an, um zu sehen, was alle kochen, an einem Ort.",
       "cta": "Finde deine Familie"
     }
+  },
+  "recipeCreators": {
+    "title": "Mitautor:innen",
+    "description": "Mitautor:innen können dieses Rezept sehen, und es ist auch unter ihrer eigenen Adresse erreichbar. Du bleibst Eigentümer:in: Nur du kannst einladen, entfernen, löschen oder die Sichtbarkeit ändern.",
+    "empty": "Noch keine Mitautor:innen.",
+    "unknownCook": "Unbenannte:r Koch/Köchin",
+    "pendingHint": "Eingeladen. Ohne Zusage besteht kein Zugriff.",
+    "status": {
+      "pending": "Eingeladen",
+      "accepted": "Mitautor:in"
+    },
+    "actions": {
+      "invite": "Einladen",
+      "inviting": "Wird eingeladen…",
+      "remove": "Entfernen",
+      "rescind": "Einladung zurücknehmen"
+    },
+    "invite": {
+      "label": "Koch oder Köchin einladen",
+      "placeholder": "Benutzername oder E-Mail"
+    },
+    "toast": {
+      "invited": "Einladung gesendet.",
+      "removed": "Mitautor:in entfernt."
+    },
+    "invites": {
+      "title": "Rezept-Einladungen",
+      "empty": "Zurzeit keine Einladungen.",
+      "from": "Von {name}",
+      "someone": "einer anderen Person",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "toast": {
+        "accepted": "Du bist jetzt Mitautor:in.",
+        "declined": "Einladung abgelehnt."
+      }
+    }
   }
 }

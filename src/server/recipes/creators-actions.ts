@@ -9,6 +9,7 @@ import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import {
   acceptRecipeCreatorInvite,
   declineRecipeCreatorInvite,
+  findCreatorTarget,
   inviteRecipeCreator,
   leaveRecipeAsCreator,
   removeRecipeCreator,
@@ -42,6 +43,12 @@ const recipeCreatorInput = z.object({
   userId: z.string().min(1),
 });
 
+/** The owner types a handle or email, never an opaque user id. */
+const inviteInput = z.object({
+  recipeId: z.string().min(1),
+  identifier: z.string().trim().min(1, "Enter a handle or email"),
+});
+
 const recipeOnlyInput = z.object({ recipeId: z.string().min(1) });
 
 /** Bust every path the recipe answers on, including the one just revoked. */
@@ -58,12 +65,13 @@ async function fanOut(removal: CreatorRemoval): Promise<void> {
 
 /** Invite a cook to co-create a recipe. Owner only; grants nothing until accepted. */
 export const inviteRecipeCreatorAction = authedAction({
-  input: recipeCreatorInput,
+  input: inviteInput,
   handler: async (data, user): Promise<ActionResult> => {
     if (!checkRateLimit("recipeWrite", user.id).ok)
       return fail(RATE_LIMITED_MESSAGE);
     try {
-      await inviteRecipeCreator(data.recipeId, user.id, data.userId);
+      const target = await findCreatorTarget(data.identifier);
+      await inviteRecipeCreator(data.recipeId, user.id, target.id);
       return ok();
     } catch (error) {
       return fail(messageForError(error, MESSAGES));
