@@ -93,6 +93,12 @@ describe("recipe_versions version-number uniqueness (issue #151)", () => {
  * than a limit written down. There is no raw DML in `src` today; the only
  * `.execute` calls are a healthcheck select, the slug advisory lock and one
  * read query.
+ *
+ * Issue #716 closes the door the two cascade mechanisms leave open. Every check
+ * below asserts *who* may perform a mechanism; none says whether a mechanism is
+ * still what it is described as being. Both `ON DELETE` actions are
+ * load-bearing premises, so changing one silently invalidates the reasoning
+ * while every call-site check stays green — see the `FK_ACTIONS` block.
  */
 describe("recipe_versions retention (issue #699)", () => {
   const srcRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -252,4 +258,60 @@ describe("recipe_versions retention (issue #699)", () => {
       ).toBe(false);
     }
   });
+
+  /**
+   * The `ON DELETE` actions the two cascade mechanisms above are *premised* on.
+   *
+   * The call-site checks police who may run each mechanism. They cannot notice
+   * that a mechanism has changed shape, because a foreign key is not a call
+   * site: flipping an action rewrites what an already-sanctioned delete does,
+   * touching none of the source those checks read.
+   *
+   * `authorId` is the dangerous direction. Most sibling FKs in `./recipes.ts`
+   * are `cascade`, so flipping this one to match reads as a consistency
+   * cleanup. It would turn the sanctioned `.delete(users)` in `erasure.ts` into
+   * a hard delete of every version row the departing user authored — including
+   * versions of recipes owned by *other people*, which is exactly the diff
+   * basis the #678 remedy consumes — while every check above stays green.
+   * Erasure's blast radius would widen and the guard would still report the
+   * property as protected.
+   *
+   * These also keep the `harm` strings honest: they name the actions in prose,
+   * so an unasserted change leaves the guard emitting a message that
+   * misdescribes the mechanism and sends the next reader after a cascade that
+   * no longer exists.
+   *
+   * The schema is the right layer: it is the source of truth, and the Migration
+   * drift CI job already fails when generated SQL diverges from it.
+   */
+  const FK_ACTIONS = [
+    {
+      column: "recipeId",
+      onDelete: "cascade",
+      why: "hard-deleting a recipe must take its version history with it; without the cascade, mechanism 2's stated harm is false and erasure's recipe delete would fail or orphan rows",
+    },
+    {
+      column: "authorId",
+      onDelete: "set null",
+      why: "erasure must sever attribution WITHOUT deleting the snapshot. `cascade` here would silently widen the sanctioned `.delete(users)` into a hard delete of the diff basis, on other people's recipes, with every call-site check still green",
+    },
+  ];
+
+  it.each(FK_ACTIONS)(
+    "recipe_versions.$column is ON DELETE $onDelete, which the cascade mechanisms above assume",
+    ({ column, onDelete, why }) => {
+      const fk = getTableConfig(recipeVersions).foreignKeys.find((f) =>
+        f
+          .reference()
+          .columns.map((c) => c.name)
+          .includes(column),
+      );
+
+      expect(fk, `expected a foreign key on ${column}`).toBeDefined();
+      expect(
+        fk?.onDelete,
+        `recipe_versions.${column} must stay ON DELETE ${onDelete} (#716): ${why}. If this change is deliberate, the MECHANISMS list above and the schema comment in ./recipes.ts both describe the old behaviour and must be rewritten with it.`,
+      ).toBe(onDelete);
+    },
+  );
 });
