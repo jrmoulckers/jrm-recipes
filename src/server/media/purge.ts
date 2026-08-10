@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { eq, inArray } from "drizzle-orm";
-import { v2 as cloudinary } from "cloudinary";
+import { eq, inArray } from 'drizzle-orm';
+import { v2 as cloudinary } from 'cloudinary';
 
-import { env } from "~/env";
-import { db } from "~/server/db";
+import { env } from '~/env';
+import { db } from '~/server/db';
 import {
   collections,
   cookLogEntries,
@@ -13,8 +13,8 @@ import {
   recipes,
   reviews,
   users,
-} from "~/server/db/schema";
-import { cloudinaryRefFromUrl, type CloudinaryRef } from "./public-id";
+} from '~/server/db/schema';
+import { cloudinaryRefFromUrl, type CloudinaryRef } from './public-id';
 
 /**
  * Bulk media purge for account erasure (issue #678).
@@ -99,14 +99,14 @@ export async function collectUserAssets(
     columns: { provider: true, publicId: true, url: true },
   });
   for (const asset of assets) {
-    if (asset.provider !== "cloudinary") {
+    if (asset.provider !== 'cloudinary') {
       skippedExternal += 1;
       continue;
     }
     if (asset.publicId) {
       byId.set(`image:${asset.publicId}`, {
         publicId: asset.publicId,
-        resourceType: "image",
+        resourceType: 'image',
       });
       continue;
     }
@@ -173,7 +173,7 @@ async function destroyWithRetry(ref: CloudinaryRef): Promise<boolean> {
       // `not found` is the desired end state, reached by a prior partial run or
       // a console deletion. Treat it as success so a retried erasure converges
       // instead of stalling forever on assets that are already gone.
-      if (result.result === "ok" || result.result === "not found") return true;
+      if (result.result === 'ok' || result.result === 'not found') return true;
     } catch {
       // Fall through to retry. A network blip must not silently abandon bytes.
     }
@@ -189,13 +189,11 @@ async function destroyWithRetry(ref: CloudinaryRef): Promise<boolean> {
  * records of images that are still live and publicly addressable, which is a
  * worse outcome than a failed deletion the operator can retry.
  */
-export async function purgeUserMedia(
-  userId: string,
-): Promise<MediaPurgeResult> {
+export async function purgeUserMedia(userId: string): Promise<MediaPurgeResult> {
   const { refs, skippedExternal } = await collectUserAssets(userId);
   if (refs.length === 0) return { purged: 0, failed: [], skippedExternal };
 
-  if (!cloudinaryConfigured()) throw new Error("MEDIA_PURGE_NOT_CONFIGURED");
+  if (!cloudinaryConfigured()) throw new Error('MEDIA_PURGE_NOT_CONFIGURED');
 
   cloudinary.config({
     cloud_name: env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,

@@ -182,14 +182,12 @@ describe('resolveNamespacedRecipe', () => {
    * an old link *drifting* into somebody else's content by a fuzzy or global
    * fallback, so these pin the resolver's exact-match behaviour.
    */
-  describe("after the namespace holder is erased", () => {
-    it("404s an old link instead of falling back to a global slug lookup", async () => {
+  describe('after the namespace holder is erased', () => {
+    it('404s an old link instead of falling back to a global slug lookup', async () => {
       // Nobody holds `nonna` any more: the row and its aliases are gone.
       resolveUserSlugMock.mockResolvedValue(null);
 
-      await expect(
-        resolveNamespacedRecipe("nonna", "blueberry-muffins"),
-      ).resolves.toBeNull();
+      await expect(resolveNamespacedRecipe('nonna', 'blueberry-muffins')).resolves.toBeNull();
 
       // The critical part: it must not degrade to "find *any* recipe called
       // blueberry-muffins", which is exactly how a shared link would land on a
@@ -199,39 +197,37 @@ describe('resolveNamespacedRecipe', () => {
       expect(dbMock.query.recipeCreators.findFirst).not.toHaveBeenCalled();
     });
 
-    it("does not serve a same-named recipe from a different namespace", async () => {
+    it('does not serve a same-named recipe from a different namespace', async () => {
       // A *different* cook still holds `blueberry-muffins`. The erased cook's
       // segment no longer resolves, so that must not help.
       resolveUserSlugMock.mockResolvedValue(null);
-      dbMock.query.recipes.findFirst.mockResolvedValue({ id: "rec_someone" });
+      dbMock.query.recipes.findFirst.mockResolvedValue({ id: 'rec_someone' });
 
-      await expect(
-        resolveNamespacedRecipe("nonna", "blueberry-muffins"),
-      ).resolves.toBeNull();
+      await expect(resolveNamespacedRecipe('nonna', 'blueberry-muffins')).resolves.toBeNull();
     });
 
-    it("scopes every probe to the resolved namespace holder, never a bare slug", async () => {
+    it('scopes every probe to the resolved namespace holder, never a bare slug', async () => {
       // The slug has been re-claimed by somebody else. Serving *their* recipe is
       // the accepted residual risk; serving it under the old owner's identity
       // would not be. Assert each probe carries the new holder's id, so the
       // result is unambiguously the new namespace and never a cross-namespace
       // match.
       resolveUserSlugMock.mockResolvedValue({
-        userId: "usr_newholder",
+        userId: 'usr_newholder',
         redirect: false,
       });
-      dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: "rec_new" });
+      dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: 'rec_new' });
 
-      await expect(
-        resolveNamespacedRecipe("nonna", "blueberry-muffins"),
-      ).resolves.toEqual({ recipeId: "rec_new", disposition: "canonical" });
+      await expect(resolveNamespacedRecipe('nonna', 'blueberry-muffins')).resolves.toEqual({
+        recipeId: 'rec_new',
+        disposition: 'canonical',
+      });
 
       const params: unknown[] = [];
       const walk = (node: unknown) => {
-        if (!node || typeof node !== "object") return;
+        if (!node || typeof node !== 'object') return;
         const record = node as Record<string, unknown>;
-        if ("value" in record && !("table" in record))
-          params.push(record.value);
+        if ('value' in record && !('table' in record)) params.push(record.value);
         const chunks = record.queryChunks;
         if (Array.isArray(chunks)) chunks.forEach(walk);
       };
@@ -239,8 +235,8 @@ describe('resolveNamespacedRecipe', () => {
         where: unknown;
       };
       walk(call.where);
-      expect(params).toContain("usr_newholder");
-      expect(params).not.toContain("usr_ada");
+      expect(params).toContain('usr_newholder');
+      expect(params).not.toContain('usr_ada');
     });
   });
 });

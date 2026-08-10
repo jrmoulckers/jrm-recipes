@@ -15,10 +15,10 @@
  * real URL shapes without a Cloudinary account.
  */
 
-const CLOUDINARY_HOST = "res.cloudinary.com";
+const CLOUDINARY_HOST = 'res.cloudinary.com';
 
 /** Delivery types whose bytes we may destroy. */
-const RESOURCE_TYPES = new Set(["image", "video", "raw"]);
+const RESOURCE_TYPES = new Set(['image', 'video', 'raw']);
 
 /**
  * A transformation segment, e.g. `f_auto,q_auto,c_limit,w_640`. Cloudinary
@@ -27,7 +27,7 @@ const RESOURCE_TYPES = new Set(["image", "video", "raw"]);
  * public-id segment never contains a comma).
  */
 function isTransformSegment(segment: string): boolean {
-  return segment.includes(",") && /^[a-z]{1,3}_/.test(segment);
+  return segment.includes(',') && /^[a-z]{1,3}_/.test(segment);
 }
 
 /** A version marker, e.g. `v1699999999`. Not part of the public id. */
@@ -37,7 +37,7 @@ function isVersionSegment(segment: string): boolean {
 
 export type CloudinaryRef = {
   publicId: string;
-  resourceType: "image" | "video" | "raw";
+  resourceType: 'image' | 'video' | 'raw';
 };
 
 /**
@@ -63,7 +63,7 @@ export function cloudinaryRefFromUrl(raw: string): CloudinaryRef | null {
   } catch {
     return null;
   }
-  if (decoded.includes("..")) return null;
+  if (decoded.includes('..')) return null;
 
   let url: URL;
   try {
@@ -74,8 +74,8 @@ export function cloudinaryRefFromUrl(raw: string): CloudinaryRef | null {
   if (url.hostname !== CLOUDINARY_HOST) return null;
 
   // /<cloud>/<resourceType>/<deliveryType>/[transforms]/[vN]/<publicId>.<ext>
-  const parts = url.pathname.split("/").filter(Boolean);
-  const uploadIdx = parts.indexOf("upload");
+  const parts = url.pathname.split('/').filter(Boolean);
+  const uploadIdx = parts.indexOf('upload');
   if (uploadIdx < 2) return null;
 
   const resourceType = parts[uploadIdx - 1];
@@ -86,15 +86,12 @@ export function cloudinaryRefFromUrl(raw: string): CloudinaryRef | null {
     .filter((s) => !isTransformSegment(s) && !isVersionSegment(s));
   if (rest.length === 0) return null;
 
-  const publicId = decodeURIComponent(rest.join("/")).replace(
-    /\.[A-Za-z0-9]{1,8}$/,
-    "",
-  );
+  const publicId = decodeURIComponent(rest.join('/')).replace(/\.[A-Za-z0-9]{1,8}$/, '');
   if (publicId.length === 0) return null;
-  if (publicId.includes("..") || publicId.startsWith("/")) return null;
+  if (publicId.includes('..') || publicId.startsWith('/')) return null;
 
   return {
     publicId,
-    resourceType: resourceType as CloudinaryRef["resourceType"],
+    resourceType: resourceType as CloudinaryRef['resourceType'],
   };
 }
