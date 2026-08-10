@@ -1,6 +1,6 @@
-import { type FlagMap, type FlagValue } from "./flags-shared";
+import { type FlagMap, type FlagValue } from './flags-shared';
 
-export { type FlagMap, type FlagValue } from "./flags-shared";
+export { type FlagMap, type FlagValue } from './flags-shared';
 
 /**
  * Resolve a (possibly multivariate) flag from a bootstrapped map, falling back

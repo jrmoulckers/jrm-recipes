@@ -1,24 +1,20 @@
-import { ImageResponse } from "next/og";
+import { ImageResponse } from 'next/og';
 
-import { getPublicProfileByHandle } from "~/server/users/queries";
-import { displayNameFrom } from "~/lib/utils";
-import { loadFonts, fetchCoverDataUri } from "../../recipes/_assets/og";
-import { SIZE } from "../../recipes/_assets/card";
-import { ProfileCard, type ProfileCardData } from "../../_og/social-card";
+import { getPublicProfileByHandle } from '~/server/users/queries';
+import { displayNameFrom } from '~/lib/utils';
+import { loadFonts, fetchCoverDataUri } from '../../recipes/_assets/og';
+import { SIZE } from '../../recipes/_assets/card';
+import { ProfileCard, type ProfileCardData } from '../../_og/social-card';
 
 // Node runtime so it can reuse the pooled Postgres query and embed the avatar
 // via Buffer. Rendered on demand (never at build time).
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 
-export const alt = "A cook on Heirloom";
+export const alt = 'A cook on Heirloom';
 export const size = SIZE;
-export const contentType = "image/png";
+export const contentType = 'image/png';
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ handle: string }>;
-}) {
+export default async function Image({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
 
   // Unknown handle (or DB off) => neutral brand card, never a data leak. Only

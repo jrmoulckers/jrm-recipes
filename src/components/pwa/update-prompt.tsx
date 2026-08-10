@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { RefreshCw } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { RefreshCw } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { brand } from "~/config/brand";
-import { Button } from "~/components/ui/button";
-import { CloseButton } from "~/components/ui/close-button";
+import { cn } from '~/lib/utils';
+import { brand } from '~/config/brand';
+import { Button } from '~/components/ui/button';
+import { CloseButton } from '~/components/ui/close-button';
 import {
   notificationDescription,
   notificationIcon,
   notificationSurface,
   notificationTitle,
-} from "~/components/ui/notification";
-import { hasRunningCookTimers } from "~/lib/cook-state";
-import { SKIP_WAITING_MESSAGE, shouldShowUpdatePrompt } from "~/lib/sw-update";
+} from '~/components/ui/notification';
+import { hasRunningCookTimers } from '~/lib/cook-state';
+import { SKIP_WAITING_MESSAGE, shouldShowUpdatePrompt } from '~/lib/sw-update';
 
 /** How often to re-check whether a Cook Mode session is still holding the prompt back. */
 const COOK_RECHECK_INTERVAL_MS = 10_000;
@@ -36,9 +36,8 @@ const COOK_RECHECK_INTERVAL_MS = 10_000;
  * app chrome only. Never in immersive cook/print views.
  */
 export function UpdatePrompt() {
-  const t = useTranslations("pwa.update");
-  const [waitingWorker, setWaitingWorker] =
-    React.useState<ServiceWorker | null>(null);
+  const t = useTranslations('pwa.update');
+  const [waitingWorker, setWaitingWorker] = React.useState<ServiceWorker | null>(null);
   const [blockedByCook, setBlockedByCook] = React.useState(false);
   const [dismissed, setDismissed] = React.useState(false);
   const [entered, setEntered] = React.useState(false);
@@ -49,7 +48,7 @@ export function UpdatePrompt() {
 
   // Detect a waiting service worker and reload once it takes control.
   React.useEffect(() => {
-    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
       return;
     }
     const container = navigator.serviceWorker;
@@ -73,7 +72,7 @@ export function UpdatePrompt() {
       reloading = true;
       window.location.reload();
     };
-    container.addEventListener("controllerchange", onControllerChange);
+    container.addEventListener('controllerchange', onControllerChange);
 
     const considerWaiting = (registration: ServiceWorkerRegistration) => {
       if (
@@ -93,8 +92,8 @@ export function UpdatePrompt() {
       worker: ServiceWorker | null,
     ) => {
       if (!worker) return;
-      worker.addEventListener("statechange", () => {
-        if (worker.state === "installed") considerWaiting(registration);
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed') considerWaiting(registration);
       });
     };
 
@@ -106,7 +105,7 @@ export function UpdatePrompt() {
         considerWaiting(registration);
         // …or one is installing right now / starts while this tab is open.
         trackInstalling(registration, registration.installing);
-        registration.addEventListener("updatefound", () => {
+        registration.addEventListener('updatefound', () => {
           trackInstalling(registration, registration.installing);
         });
       })
@@ -116,7 +115,7 @@ export function UpdatePrompt() {
 
     return () => {
       cancelled = true;
-      container.removeEventListener("controllerchange", onControllerChange);
+      container.removeEventListener('controllerchange', onControllerChange);
     };
   }, []);
 
@@ -135,12 +134,12 @@ export function UpdatePrompt() {
     check();
     const timer = window.setInterval(check, COOK_RECHECK_INTERVAL_MS);
     const onVisibility = () => {
-      if (document.visibilityState === "visible") check();
+      if (document.visibilityState === 'visible') check();
     };
-    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [waitingWorker]);
 
@@ -174,38 +173,34 @@ export function UpdatePrompt() {
       role="status"
       aria-live="polite"
       className={cn(
-        "no-print fixed inset-x-4 z-40 mx-auto max-w-sm",
-        "bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6",
+        'no-print fixed inset-x-4 z-40 mx-auto max-w-sm',
+        'bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:bottom-6',
       )}
     >
       <div
         className={cn(
           notificationSurface(),
-          "pe-2",
-          "transition-all duration-300 ease-out motion-reduce:transition-none",
+          'pe-2',
+          'transition-all duration-300 ease-out motion-reduce:transition-none',
           entered
-            ? "translate-y-0 opacity-100"
-            : "translate-y-3 opacity-0 motion-reduce:translate-y-0",
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-3 opacity-0 motion-reduce:translate-y-0',
         )}
       >
-        <span className={notificationIcon({ tone: "brand", size: "md" })}>
+        <span className={notificationIcon({ tone: 'brand', size: 'md' })}>
           <RefreshCw className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className={notificationTitle}>{t("title")}</p>
-          <p className={cn(notificationDescription, "truncate")}>
-            {t("body", { brand: brand.name })}
+          <p className={notificationTitle}>{t('title')}</p>
+          <p className={cn(notificationDescription, 'truncate')}>
+            {t('body', { brand: brand.name })}
           </p>
         </div>
         <Button size="sm" onClick={reload} className="shrink-0">
           <RefreshCw className="size-4" />
-          {t("action")}
+          {t('action')}
         </Button>
-        <CloseButton
-          onClick={dismiss}
-          label={t("dismiss")}
-          className="shrink-0"
-        />
+        <CloseButton onClick={dismiss} label={t('dismiss')} className="shrink-0" />
       </div>
     </div>
   );

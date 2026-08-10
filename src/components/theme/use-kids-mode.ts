@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { useA11y } from "~/components/a11y/a11y-provider";
-import { useTheme } from "~/components/theme/theme-provider";
+import { useA11y } from '~/components/a11y/a11y-provider';
+import { useTheme } from '~/components/theme/theme-provider';
 
 /**
  * The single entry point for flipping Kids mode. It couples the two orthogonal
@@ -22,7 +22,7 @@ import { useTheme } from "~/components/theme/theme-provider";
 export function useKidsMode() {
   const { theme, setKidsMode: setThemeKidsMode } = useTheme();
   const { setKidsDefaults } = useA11y();
-  const kidsOn = theme === "kids";
+  const kidsOn = theme === 'kids';
 
   const setKidsMode = React.useCallback(
     (on: boolean) => {

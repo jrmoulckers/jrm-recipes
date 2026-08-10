@@ -39,10 +39,7 @@ export function tokenizeIngredients(items: string[]): string[] {
 }
 
 /** Weighted similarity between a source recipe and a candidate. */
-export function similarityScore(
-  source: RecipeSignals,
-  candidate: RecipeSignals,
-): number {
+export function similarityScore(source: RecipeSignals, candidate: RecipeSignals): number {
   const sourceTags = new Set(source.tagSlugs);
   const sharedTags = candidate.tagSlugs.filter((s) => sourceTags.has(s)).length;
 

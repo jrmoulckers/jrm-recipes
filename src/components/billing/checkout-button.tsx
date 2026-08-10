@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
-import { createCheckoutSessionAction } from "~/server/billing/actions";
-import { Button, type ButtonProps } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { createCheckoutSessionAction } from '~/server/billing/actions';
+import { Button, type ButtonProps } from '~/components/ui/button';
 
 /**
  * The single client entry point into Stripe Checkout (issues #311 / #312).
@@ -44,7 +44,7 @@ export function CheckoutButton({
         type="button"
         onClick={startCheckout}
         loading={pending}
-        className={cn("w-full", className)}
+        className={cn('w-full', className)}
         {...props}
       >
         {children}

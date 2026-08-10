@@ -1,9 +1,9 @@
-import { cleanup, render as rtlRender } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render as rtlRender } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { RecipeCard, type CardRecipe } from "./recipe-card";
-import type { ReactElement } from "react";
-import { IntlWrapper } from "~/test/intl";
+import { RecipeCard, type CardRecipe } from './recipe-card';
+import type { ReactElement } from 'react';
+import { IntlWrapper } from '~/test/intl';
 
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -11,15 +11,15 @@ function render(ui: ReactElement) {
 
 // RecipeCard imports FavoriteButton, which pulls in a server action + router;
 // stub the pieces so the card can render in jsdom.
-vi.mock("~/server/collections/actions", () => ({
+vi.mock('~/server/collections/actions', () => ({
   toggleFavoriteAction: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 
@@ -27,22 +27,20 @@ afterEach(() => {
   cleanup();
   // A `priority` next/image injects a preload <link> into <head> via React's
   // resource system. Drop them between tests so each asserts a clean head.
-  document.head
-    .querySelectorAll('link[rel="preload"][as="image"]')
-    .forEach((el) => el.remove());
+  document.head.querySelectorAll('link[rel="preload"][as="image"]').forEach((el) => el.remove());
 });
 
 function makeRecipe(overrides: Partial<CardRecipe> = {}): CardRecipe {
   return {
-    id: "r1",
-    slug: "sourdough",
-    title: "Sourdough",
-    description: "Crusty loaf",
-    coverImageUrl: "https://img.test/default.jpg",
+    id: 'r1',
+    slug: 'sourdough',
+    title: 'Sourdough',
+    description: 'Crusty loaf',
+    coverImageUrl: 'https://img.test/default.jpg',
     totalMinutes: 120,
     servings: 2,
-    difficulty: "medium",
-    visibility: "public",
+    difficulty: 'medium',
+    visibility: 'public',
     ...overrides,
   };
 }
@@ -50,68 +48,59 @@ function makeRecipe(overrides: Partial<CardRecipe> = {}): CardRecipe {
 /** Image preload hints (`<link rel="preload" as="image">`) currently in <head>. */
 function preloadImageLinks() {
   return Array.from(
-    document.head.querySelectorAll<HTMLLinkElement>(
-      'link[rel="preload"][as="image"]',
-    ),
+    document.head.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="image"]'),
   );
 }
 
-describe("RecipeCard LCP priority", () => {
-  it("lazy-loads the cover image by default (below-the-fold cards)", () => {
+describe('RecipeCard LCP priority', () => {
+  it('lazy-loads the cover image by default (below-the-fold cards)', () => {
     const { container } = render(
-      <RecipeCard
-        recipe={makeRecipe({ coverImageUrl: "https://img.test/lazy-card.jpg" })}
-      />,
+      <RecipeCard recipe={makeRecipe({ coverImageUrl: 'https://img.test/lazy-card.jpg' })} />,
     );
 
-    const img = container.querySelector("img");
-    expect(img).toHaveAttribute("loading", "lazy");
+    const img = container.querySelector('img');
+    expect(img).toHaveAttribute('loading', 'lazy');
     expect(
-      preloadImageLinks().some((l) =>
-        l.getAttribute("imagesrcset")?.includes("lazy-card.jpg"),
-      ),
+      preloadImageLinks().some((l) => l.getAttribute('imagesrcset')?.includes('lazy-card.jpg')),
     ).toBe(false);
   });
 
-  it("eagerly loads and preloads the cover image when priority is set (LCP)", () => {
+  it('eagerly loads and preloads the cover image when priority is set (LCP)', () => {
     const { container } = render(
       <RecipeCard
         recipe={makeRecipe({
-          coverImageUrl:
-            "https://res.cloudinary.com/demo/image/upload/v1/lcp-card.jpg",
+          coverImageUrl: 'https://res.cloudinary.com/demo/image/upload/v1/lcp-card.jpg',
         })}
         priority
       />,
     );
 
-    const img = container.querySelector("img");
+    const img = container.querySelector('img');
     // next/image omits the loading attribute for priority images (eager).
-    expect(img).not.toHaveAttribute("loading", "lazy");
+    expect(img).not.toHaveAttribute('loading', 'lazy');
     // The prioritized image gets a preload hint so it isn't blocked by hydration.
     expect(
-      preloadImageLinks().some((l) =>
-        l.getAttribute("imagesrcset")?.includes("lcp-card.jpg"),
-      ),
+      preloadImageLinks().some((l) => l.getAttribute('imagesrcset')?.includes('lcp-card.jpg')),
     ).toBe(true);
   });
 
-  it("eagerly loads a bundled fallback when the recipe has no cover", () => {
+  it('eagerly loads a bundled fallback when the recipe has no cover', () => {
     const { container } = render(
       <RecipeCard
         recipe={makeRecipe({
           coverImageUrl: null,
-          title: "Blueberry Buttermilk Pancakes",
+          title: 'Blueberry Buttermilk Pancakes',
         })}
         priority
       />,
     );
 
-    const img = container.querySelector("img");
-    expect(decodeURIComponent(img?.getAttribute("src") ?? "")).toMatch(
+    const img = container.querySelector('img');
+    expect(decodeURIComponent(img?.getAttribute('src') ?? '')).toMatch(
       /\/img\/recipe-fallbacks\/breakfast-/,
     );
-    expect(img).toHaveAttribute("data-fallback");
-    expect(img).toHaveClass("scale-[1.02]");
+    expect(img).toHaveAttribute('data-fallback');
+    expect(img).toHaveClass('scale-[1.02]');
     expect(preloadImageLinks()).toHaveLength(1);
   });
 });

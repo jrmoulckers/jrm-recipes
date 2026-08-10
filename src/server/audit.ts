@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { db } from "~/server/db";
-import { auditLog } from "~/server/db/schema";
+import type { db } from '~/server/db';
+import { auditLog } from '~/server/db/schema';
 
 type Db = typeof db;
 /** The transaction handle drizzle hands to `db.transaction(async (tx) => …)`. */
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 /**
  * Stable machine keys for audited actions (issue #219). Keep these in sync with
@@ -13,14 +13,14 @@ type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
  * here rather than passing an ad-hoc string.
  */
 export const AuditAction = {
-  GroupMemberRoleUpdated: "group.member_role_updated",
-  GroupMemberAdded: "group.member_added",
-  GroupMemberRemoved: "group.member_removed",
-  GroupOwnershipTransferred: "group.ownership_transferred",
-  GroupDeleted: "group.deleted",
-  RecipeDeleted: "recipe.deleted",
-  RecipeVisibilityChanged: "recipe.visibility_changed",
-  RecipeShareLinkChanged: "recipe.share_link_changed",
+  GroupMemberRoleUpdated: 'group.member_role_updated',
+  GroupMemberAdded: 'group.member_added',
+  GroupMemberRemoved: 'group.member_removed',
+  GroupOwnershipTransferred: 'group.ownership_transferred',
+  GroupDeleted: 'group.deleted',
+  RecipeDeleted: 'recipe.deleted',
+  RecipeVisibilityChanged: 'recipe.visibility_changed',
+  RecipeShareLinkChanged: 'recipe.share_link_changed',
 } as const;
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
@@ -36,7 +36,7 @@ type LiteralUnion<T extends string> = T | (string & {});
 export type AuditEntry = {
   actorId: string | null;
   action: LiteralUnion<AuditAction>;
-  targetType: LiteralUnion<"group" | "recipe" | "user">;
+  targetType: LiteralUnion<'group' | 'recipe' | 'user'>;
   targetId?: string | null;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
@@ -50,10 +50,7 @@ export type AuditEntry = {
  * surrounding transaction when one is available so the audit row commits
  * atomically with the change. Otherwise the top-level `db` is used.
  */
-export async function recordAudit(
-  exec: Db | Tx,
-  entry: AuditEntry,
-): Promise<void> {
+export async function recordAudit(exec: Db | Tx, entry: AuditEntry): Promise<void> {
   try {
     await exec.insert(auditLog).values({
       actorId: entry.actorId,

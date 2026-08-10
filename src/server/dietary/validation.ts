@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { ALLERGENS } from "~/lib/allergens";
-import { DIETARY_TAGS } from "~/lib/substitutions";
+import { ALLERGENS } from '~/lib/allergens';
+import { DIETARY_TAGS } from '~/lib/substitutions';
 
 /**
  * Validation contract for per-family-member dietary profiles (issue #396).
@@ -13,25 +13,17 @@ import { DIETARY_TAGS } from "~/lib/substitutions";
 const dedupe = <T>(values: T[]): T[] => [...new Set(values)];
 
 export const memberProfileInput = z.object({
-  name: z.string().trim().min(1, "Add a name").max(80),
-  allergens: z
-    .array(z.enum(ALLERGENS))
-    .max(ALLERGENS.length)
-    .default([])
-    .transform(dedupe),
-  diets: z
-    .array(z.enum(DIETARY_TAGS))
-    .max(DIETARY_TAGS.length)
-    .default([])
-    .transform(dedupe),
+  name: z.string().trim().min(1, 'Add a name').max(80),
+  allergens: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).default([]).transform(dedupe),
+  diets: z.array(z.enum(DIETARY_TAGS)).max(DIETARY_TAGS.length).default([]).transform(dedupe),
   // A sensible daily-energy range: high enough for athletes, low enough to
   // reject typos. Optional. Many members won't track calories.
   calorieGoal: z
     .union([z.string(), z.number()])
     .optional()
     .transform((v) => {
-      if (v === undefined || v === "" || v === null) return undefined;
-      const n = typeof v === "number" ? v : Number(v);
+      if (v === undefined || v === '' || v === null) return undefined;
+      const n = typeof v === 'number' ? v : Number(v);
       return Number.isFinite(n) ? n : NaN;
     })
     .pipe(z.number().int().min(0).max(20000).optional()),

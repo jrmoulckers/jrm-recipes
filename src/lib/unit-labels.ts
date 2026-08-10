@@ -6,22 +6,22 @@
  */
 
 const UNIT_LABELS: Record<string, string> = {
-  tsp: "Teaspoon (tsp)",
-  tbsp: "Tablespoon (tbsp)",
-  "fl oz": "Fluid ounce (fl oz)",
-  cup: "Cup",
-  pint: "Pint",
-  quart: "Quart",
-  gallon: "Gallon",
-  ml: "Milliliter (mL)",
-  l: "Liter (L)",
-  oz: "Ounce (oz)",
-  lb: "Pound (lb)",
-  g: "Gram (g)",
-  kg: "Kilogram (kg)",
-  "°F": "Fahrenheit (°F)",
-  "°C": "Celsius (°C)",
-  K: "Kelvin (K)",
+  tsp: 'Teaspoon (tsp)',
+  tbsp: 'Tablespoon (tbsp)',
+  'fl oz': 'Fluid ounce (fl oz)',
+  cup: 'Cup',
+  pint: 'Pint',
+  quart: 'Quart',
+  gallon: 'Gallon',
+  ml: 'Milliliter (mL)',
+  l: 'Liter (L)',
+  oz: 'Ounce (oz)',
+  lb: 'Pound (lb)',
+  g: 'Gram (g)',
+  kg: 'Kilogram (kg)',
+  '°F': 'Fahrenheit (°F)',
+  '°C': 'Celsius (°C)',
+  K: 'Kelvin (K)',
 };
 
 /** A friendly label for a unit id, or the id itself when unmapped. */

@@ -1,20 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { CircleUser } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { CircleUser } from 'lucide-react';
 
-import {
-  DEFAULT_MOBILE_PINNED,
-  navByKey,
-  primaryNav,
-  type NavItem,
-} from "~/config/nav";
-import { useBottomNavStore } from "~/lib/bottom-nav-store";
-import { cn } from "~/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { DEFAULT_MOBILE_PINNED, navByKey, primaryNav, type NavItem } from '~/config/nav';
+import { useBottomNavStore } from '~/lib/bottom-nav-store';
+import { cn } from '~/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 
 export type BottomNavUser = {
   name: string | null;
@@ -27,41 +22,36 @@ function isActive(pathname: string, item: NavItem) {
 
 function initialsOf(name: string | null): string {
   const initials = name
-    ?.split(" ")
+    ?.split(' ')
     .map((p) => p[0])
     .filter(Boolean)
     .slice(0, 2)
-    .join("")
+    .join('')
     .toUpperCase();
-  return initials && initials.length > 0 ? initials : "";
+  return initials && initials.length > 0 ? initials : '';
 }
 
 /** Horizontal nav for the desktop header. */
 export function MainNav() {
   const pathname = usePathname();
-  const t = useTranslations("nav");
+  const t = useTranslations('nav');
   // "Create" is intentionally dropped from the horizontal bar: it points at the
   // same /recipes/new route as the prominent "New recipe" header CTA sitting
   // right beside this nav, so listing it twice only crowds the row. It still
   // appears in the command menu and the mobile Profile hub.
-  const items = primaryNav.filter((item) => item.id !== "create");
+  const items = primaryNav.filter((item) => item.id !== 'create');
   return (
-    <nav
-      aria-label={t("landmarks.primary")}
-      className="hidden items-center gap-1 md:flex"
-    >
+    <nav aria-label={t('landmarks.primary')} className="hidden items-center gap-1 md:flex">
       {items.map((item) => {
         const active = isActive(pathname, item);
         return (
           <Link
             key={item.href}
             href={item.href}
-            aria-current={active ? "page" : undefined}
+            aria-current={active ? 'page' : undefined}
             className={cn(
-              "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground",
-              active
-                ? "font-semibold text-foreground"
-                : "text-muted-foreground",
+              'relative rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground',
+              active ? 'font-semibold text-foreground' : 'text-muted-foreground',
             )}
           >
             {t(item.labelKey)}
@@ -69,8 +59,8 @@ export function MainNav() {
             <span
               aria-hidden="true"
               className={cn(
-                "pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-full bg-foreground transition-transform duration-base ease-standard motion-reduce:transition-none",
-                active ? "scale-x-100" : "scale-x-0",
+                'pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-full bg-foreground transition-transform duration-base ease-standard motion-reduce:transition-none',
+                active ? 'scale-x-100' : 'scale-x-0',
               )}
             />
           </Link>
@@ -83,7 +73,7 @@ export function MainNav() {
 /** App-like bottom tab bar for mobile with a customizable set of tabs. */
 export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   const pathname = usePathname();
-  const t = useTranslations("nav");
+  const t = useTranslations('nav');
   const hydrated = useBottomNavStore((s) => s.hydrated);
   const storedPinned = useBottomNavStore((s) => s.pinned);
 
@@ -91,10 +81,10 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   // recipe editor. Its sticky mobile Save/Cancel bar owns the bottom edge,
   // issue #294).
   if (
-    pathname.includes("/cook") ||
-    pathname.includes("/print") ||
-    pathname.endsWith("/edit") ||
-    pathname.endsWith("/new")
+    pathname.includes('/cook') ||
+    pathname.includes('/print') ||
+    pathname.endsWith('/edit') ||
+    pathname.endsWith('/new')
   )
     return null;
 
@@ -104,18 +94,17 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
   const pinnedKeys = hydrated ? storedPinned : DEFAULT_MOBILE_PINNED;
   const tabs = pinnedKeys.map((key) => navByKey[key]).filter(Boolean);
 
-  const profileActive = pathname.startsWith("/profile");
+  const profileActive = pathname.startsWith('/profile');
   // The Profile slot is always the fixed last tab.
   const count = tabs.length + 1;
   // First matching tab drives the sliding indicator. Computed from the pathname
   // so it's correct on SSR, initial load, and back/forward. No flash.
   const activeIndex = tabs.findIndex((item) => isActive(pathname, item));
-  const indicatorIndex =
-    activeIndex >= 0 ? activeIndex : profileActive ? count - 1 : -1;
+  const indicatorIndex = activeIndex >= 0 ? activeIndex : profileActive ? count - 1 : -1;
 
   return (
     <nav
-      aria-label={t("landmarks.primaryMobile")}
+      aria-label={t('landmarks.primaryMobile')}
       className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur xl:hidden"
     >
       <ul className="relative mx-auto flex max-w-md items-stretch justify-around px-2 pb-safe-b">
@@ -143,18 +132,16 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
-                aria-current={active ? "page" : undefined}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted",
-                  active
-                    ? "font-semibold text-primary"
-                    : "text-muted-foreground",
+                  'flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted',
+                  active ? 'font-semibold text-primary' : 'text-muted-foreground',
                 )}
               >
                 <Icon
                   className={cn(
-                    "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
-                    active && "-translate-y-0.5 scale-110",
+                    'size-5 transition-transform duration-base ease-standard motion-reduce:transition-none',
+                    active && '-translate-y-0.5 scale-110',
                   )}
                 />
                 {t(item.labelKey)}
@@ -167,39 +154,32 @@ export function BottomNav({ user }: { user?: BottomNavUser | null }) {
         <li className="flex-1">
           <Link
             href="/profile"
-            aria-current={profileActive ? "page" : undefined}
+            aria-current={profileActive ? 'page' : undefined}
             className={cn(
-              "flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted",
-              profileActive
-                ? "font-semibold text-primary"
-                : "text-muted-foreground",
+              'flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[0.7rem] font-medium transition-colors active:bg-muted',
+              profileActive ? 'font-semibold text-primary' : 'text-muted-foreground',
             )}
           >
             {user ? (
               <Avatar
                 className={cn(
-                  "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
-                  profileActive &&
-                    "-translate-y-0.5 scale-110 ring-2 ring-primary",
+                  'size-5 transition-transform duration-base ease-standard motion-reduce:transition-none',
+                  profileActive && '-translate-y-0.5 scale-110 ring-2 ring-primary',
                 )}
               >
                 {/* Decorative: the avatar repeats the name rendered beside it. */}
-                {user.avatarUrl ? (
-                  <AvatarImage src={user.avatarUrl} alt="" />
-                ) : null}
-                <AvatarFallback className="text-[0.6rem]">
-                  {initialsOf(user.name)}
-                </AvatarFallback>
+                {user.avatarUrl ? <AvatarImage src={user.avatarUrl} alt="" /> : null}
+                <AvatarFallback className="text-[0.6rem]">{initialsOf(user.name)}</AvatarFallback>
               </Avatar>
             ) : (
               <CircleUser
                 className={cn(
-                  "size-5 transition-transform duration-base ease-standard motion-reduce:transition-none",
-                  profileActive && "-translate-y-0.5 scale-110",
+                  'size-5 transition-transform duration-base ease-standard motion-reduce:transition-none',
+                  profileActive && '-translate-y-0.5 scale-110',
                 )}
               />
             )}
-            {t("profile")}
+            {t('profile')}
           </Link>
         </li>
       </ul>

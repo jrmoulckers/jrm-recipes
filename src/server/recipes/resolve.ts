@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, eq, sql } from "drizzle-orm";
-import { cache } from "react";
+import { and, asc, eq, sql } from 'drizzle-orm';
+import { cache } from 'react';
 
-import { db } from "~/server/db";
-import { recipeCreators, recipeSlugAliases, recipes } from "~/server/db/schema";
-import { resolveUserSlug } from "~/server/users/slug";
+import { db } from '~/server/db';
+import { recipeCreators, recipeSlugAliases, recipes } from '~/server/db/schema';
+import { resolveUserSlug } from '~/server/users/slug';
 
 /**
  * URL → recipe resolution for the namespaced recipe routes (#666, #668).
@@ -39,7 +39,7 @@ import { resolveUserSlug } from "~/server/users/slug";
  * is neither: a boolean would silently fold it into one of the other two, and
  * whichever way it fell would be wrong.
  */
-export type RecipeUrlDisposition = "canonical" | "mirror" | "alias";
+export type RecipeUrlDisposition = 'canonical' | 'mirror' | 'alias';
 
 export type RecipeUrlResolution = {
   /** The recipe the URL points at. */
@@ -78,10 +78,7 @@ function normalizeSegment(segment: string): string | null {
  * namespace.
  */
 export const resolveNamespacedRecipe = cache(
-  async (
-    cookSegment: string,
-    recipeSegment: string,
-  ): Promise<RecipeUrlResolution | null> => {
+  async (cookSegment: string, recipeSegment: string): Promise<RecipeUrlResolution | null> => {
     const cook = normalizeSegment(cookSegment);
     const recipe = normalizeSegment(recipeSegment);
     if (!cook || !recipe) return null;
@@ -96,7 +93,7 @@ export const resolveNamespacedRecipe = cache(
     if (live) {
       return {
         recipeId: live.id,
-        disposition: owner.redirect ? "alias" : "canonical",
+        disposition: owner.redirect ? 'alias' : 'canonical',
       };
     }
 
@@ -107,25 +104,22 @@ export const resolveNamespacedRecipe = cache(
       where: and(
         eq(recipeCreators.userId, owner.userId),
         eq(recipeCreators.slug, recipe),
-        eq(recipeCreators.status, "accepted"),
+        eq(recipeCreators.status, 'accepted'),
       ),
       columns: { recipeId: true },
     });
     if (creator) {
       return {
         recipeId: creator.recipeId,
-        disposition: owner.redirect ? "alias" : "mirror",
+        disposition: owner.redirect ? 'alias' : 'mirror',
       };
     }
 
     const alias = await db.query.recipeSlugAliases.findFirst({
-      where: and(
-        eq(recipeSlugAliases.ownerId, owner.userId),
-        eq(recipeSlugAliases.slug, recipe),
-      ),
+      where: and(eq(recipeSlugAliases.ownerId, owner.userId), eq(recipeSlugAliases.slug, recipe)),
       columns: { recipeId: true },
     });
-    if (alias) return { recipeId: alias.recipeId, disposition: "alias" };
+    if (alias) return { recipeId: alias.recipeId, disposition: 'alias' };
 
     // An id in the recipe position still resolves (the editor's post-save push
     // and hand-typed links both produce it), but it is never canonical.
@@ -133,7 +127,7 @@ export const resolveNamespacedRecipe = cache(
       where: and(eq(recipes.authorId, owner.userId), eq(recipes.id, recipe)),
       columns: { id: true },
     });
-    return byId ? { recipeId: byId.id, disposition: "alias" } : null;
+    return byId ? { recipeId: byId.id, disposition: 'alias' } : null;
   },
 );
 
@@ -160,22 +154,19 @@ export const resolveFlatRecipe = cache(
       where: eq(recipes.id, value),
       columns: { id: true },
     });
-    if (byId) return { recipeId: byId.id, disposition: "alias" };
+    if (byId) return { recipeId: byId.id, disposition: 'alias' };
 
     const legacy = await db.query.recipeSlugAliases.findFirst({
-      where: and(
-        eq(recipeSlugAliases.slug, value),
-        eq(recipeSlugAliases.legacy, true),
-      ),
+      where: and(eq(recipeSlugAliases.slug, value), eq(recipeSlugAliases.legacy, true)),
       columns: { recipeId: true },
     });
-    if (legacy) return { recipeId: legacy.recipeId, disposition: "alias" };
+    if (legacy) return { recipeId: legacy.recipeId, disposition: 'alias' };
 
     const live = await db.query.recipes.findFirst({
       where: eq(recipes.slug, value),
       columns: { id: true },
       orderBy: [asc(recipes.createdAt), sql`${recipes.id} asc`],
     });
-    return live ? { recipeId: live.id, disposition: "alias" } : null;
+    return live ? { recipeId: live.id, disposition: 'alias' } : null;
   },
 );

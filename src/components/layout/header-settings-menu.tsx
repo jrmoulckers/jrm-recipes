@@ -1,20 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { SlidersHorizontal } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { SlidersHorizontal } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
-import { ThemeSwitcher } from "~/components/theme/theme-switcher";
-import { KidsModeToggle } from "~/components/theme/kids-mode-toggle";
-import { LocaleSwitcher } from "~/components/i18n/locale-switcher";
-import { AccessibilityMenu } from "~/components/a11y/accessibility-menu";
-import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
+import { Button } from '~/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
+import { ThemeSwitcher } from '~/components/theme/theme-switcher';
+import { KidsModeToggle } from '~/components/theme/kids-mode-toggle';
+import { LocaleSwitcher } from '~/components/i18n/locale-switcher';
+import { AccessibilityMenu } from '~/components/a11y/accessibility-menu';
+import { OfflineStorageMenu } from '~/components/pwa/offline-storage-menu';
 
 /**
  * Single header entry point that collapses the device-level utility controls
@@ -29,35 +25,35 @@ import { OfflineStorageMenu } from "~/components/pwa/offline-storage-menu";
  * own dropdown/dialog from inside this popover without collapsing it.
  */
 export function HeaderSettingsMenu() {
-  const t = useTranslations("nav");
-  const tp = useTranslations("profile.preferences");
+  const t = useTranslations('nav');
+  const tp = useTranslations('profile.preferences');
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" aria-label={t("settings")}>
+        <Button variant="outline" size="icon" aria-label={t('settings')}>
           <SlidersHorizontal className="size-5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-1.5">
         <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("settings")}
+          {t('settings')}
         </p>
         <ul className="grid gap-0.5">
           <li>
-            <ThemeSwitcher label={tp("appearance")} />
+            <ThemeSwitcher label={tp('appearance')} />
           </li>
           <li>
-            <KidsModeToggle label={tp("kidsMode")} />
+            <KidsModeToggle label={tp('kidsMode')} />
           </li>
           <li>
-            <LocaleSwitcher label={tp("language")} />
+            <LocaleSwitcher label={tp('language')} />
           </li>
           <li>
-            <AccessibilityMenu label={tp("accessibility")} />
+            <AccessibilityMenu label={tp('accessibility')} />
           </li>
           <li>
-            <OfflineStorageMenu label={tp("offline")} />
+            <OfflineStorageMenu label={tp('offline')} />
           </li>
         </ul>
       </PopoverContent>

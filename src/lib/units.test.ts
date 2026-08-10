@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from 'vitest';
 
 import {
   convertAmount,
@@ -30,741 +30,716 @@ import {
   unitsForDimension,
   type CustomUnitDef,
   type UnitPrefs,
-} from "./units";
+} from './units';
 
-describe("formatQuantity", () => {
-  it("formats common fractions with vulgar glyphs", () => {
-    expect(formatQuantity(0.5)).toBe("½");
-    expect(formatQuantity(1.25)).toBe("1¼");
-    expect(formatQuantity(2 + 2 / 3)).toBe("2⅔");
+describe('formatQuantity', () => {
+  it('formats common fractions with vulgar glyphs', () => {
+    expect(formatQuantity(0.5)).toBe('½');
+    expect(formatQuantity(1.25)).toBe('1¼');
+    expect(formatQuantity(2 + 2 / 3)).toBe('2⅔');
   });
 
-  it("formats whole numbers, zero, nullish values, and decimals", () => {
-    expect(formatQuantity(2)).toBe("2");
-    expect(formatQuantity(0)).toBe("0");
-    expect(formatQuantity(null)).toBe("");
-    expect(formatQuantity(Number.NaN)).toBe("");
-    expect(formatQuantity(1.2)).toBe("1.2");
+  it('formats whole numbers, zero, nullish values, and decimals', () => {
+    expect(formatQuantity(2)).toBe('2');
+    expect(formatQuantity(0)).toBe('0');
+    expect(formatQuantity(null)).toBe('');
+    expect(formatQuantity(Number.NaN)).toBe('');
+    expect(formatQuantity(1.2)).toBe('1.2');
   });
 
-  it("formats metric quantities as measurable decimals, not vulgar fractions (ck06)", () => {
+  it('formats metric quantities as measurable decimals, not vulgar fractions (ck06)', () => {
     // Awkward imperial→metric conversions must round to sensible precision and
     // render as decimals. Never as a vulgar fraction of a gram/millilitre.
     // Small metric masses keep a decimal of measurable precision (#403), so
     // an oz→g conversion of a small dose is no longer rounded to a whole gram.
-    expect(formatQuantity(28.35, "g")).toBe("28.4");
-    expect(formatQuantity(14.17, "g")).toBe("14.2");
-    expect(formatQuantity(236.588, "ml")).toBe("237");
+    expect(formatQuantity(28.35, 'g')).toBe('28.4');
+    expect(formatQuantity(14.17, 'g')).toBe('14.2');
+    expect(formatQuantity(236.588, 'ml')).toBe('237');
     // Small amounts keep a single decimal place.
-    expect(formatQuantity(0.5, "g")).toBe("0.5");
-    expect(formatQuantity(4.92892, "ml")).toBe("4.9");
-    expect(formatQuantity(1.183, "l")).toBe("1.2");
+    expect(formatQuantity(0.5, 'g')).toBe('0.5');
+    expect(formatQuantity(4.92892, 'ml')).toBe('4.9');
+    expect(formatQuantity(1.183, 'l')).toBe('1.2');
     // Metric aliases resolve the same way.
-    expect(formatQuantity(0.5, "gram")).toBe("0.5");
-    expect(formatQuantity(2.04, "kilogram")).toBe("2");
+    expect(formatQuantity(0.5, 'gram')).toBe('0.5');
+    expect(formatQuantity(2.04, 'kilogram')).toBe('2');
   });
 
-  it("keeps imperial vulgar fractions and unit-less behavior unchanged (ck06)", () => {
-    expect(formatQuantity(0.5, "cup")).toBe("½");
-    expect(formatQuantity(1.25, "tbsp")).toBe("1¼");
-    expect(formatQuantity(2.5, "oz")).toBe("2½");
-    expect(formatQuantity(0.5)).toBe("½");
-    expect(formatQuantity(0.5, "pinch")).toBe("½");
+  it('keeps imperial vulgar fractions and unit-less behavior unchanged (ck06)', () => {
+    expect(formatQuantity(0.5, 'cup')).toBe('½');
+    expect(formatQuantity(1.25, 'tbsp')).toBe('1¼');
+    expect(formatQuantity(2.5, 'oz')).toBe('2½');
+    expect(formatQuantity(0.5)).toBe('½');
+    expect(formatQuantity(0.5, 'pinch')).toBe('½');
   });
 
-  it("defaults to the app default locale (Western digits, dot decimal)", () => {
-    expect(formatQuantity(1.2)).toBe("1.2");
-    expect(formatQuantity(1.5, "ml")).toBe("1.5");
+  it('defaults to the app default locale (Western digits, dot decimal)', () => {
+    expect(formatQuantity(1.2)).toBe('1.2');
+    expect(formatQuantity(1.5, 'ml')).toBe('1.5');
   });
 
   it("uses the locale's decimal separator for comma-decimal locales", () => {
-    expect(formatQuantity(1.2, undefined, "de-DE")).toBe("1,2");
-    expect(formatQuantity(1.5, "ml", "de-DE")).toBe("1,5");
+    expect(formatQuantity(1.2, undefined, 'de-DE')).toBe('1,2');
+    expect(formatQuantity(1.5, 'ml', 'de-DE')).toBe('1,5');
     // Whole numbers gain no thousands separator (grouping is disabled).
-    expect(formatQuantity(237, "ml", "de-DE")).toBe("237");
+    expect(formatQuantity(237, 'ml', 'de-DE')).toBe('237');
   });
 
   it("uses the locale's numbering system for non-Latin-digit locales", () => {
-    const out = formatQuantity(1.2, undefined, "ar");
+    const out = formatQuantity(1.2, undefined, 'ar');
     // Arabic-Indic digits, not Western, and different from the en rendering.
-    expect(out).not.toBe("1.2");
+    expect(out).not.toBe('1.2');
     expect(out).toMatch(/[\u0660-\u0669]/);
-    expect(formatQuantity(3, undefined, "ar")).toMatch(/[\u0660-\u0669]/);
+    expect(formatQuantity(3, undefined, 'ar')).toMatch(/[\u0660-\u0669]/);
   });
 
-  it("keeps vulgar-fraction glyphs invariant, localizing only the whole part", () => {
-    expect(formatQuantity(0.5, "cup", "de-DE")).toBe("½");
-    expect(formatQuantity(2.5, "oz", "de-DE")).toBe("2½");
-    expect(formatQuantity(0.5, "cup", "ar")).toBe("½");
+  it('keeps vulgar-fraction glyphs invariant, localizing only the whole part', () => {
+    expect(formatQuantity(0.5, 'cup', 'de-DE')).toBe('½');
+    expect(formatQuantity(2.5, 'oz', 'de-DE')).toBe('2½');
+    expect(formatQuantity(0.5, 'cup', 'ar')).toBe('½');
   });
 });
 
-describe("formatMetricQuantity (#403 small-dose precision)", () => {
-  it("keeps one decimal for small masses instead of rounding to whole grams", () => {
+describe('formatMetricQuantity (#403 small-dose precision)', () => {
+  it('keeps one decimal for small masses instead of rounding to whole grams', () => {
     // A scaled 12.5 g dose of salt must not collapse to 13 g.
-    expect(formatMetricQuantity(12.5)).toBe("12.5");
-    expect(formatMetricQuantity(2.4)).toBe("2.4");
-    expect(formatMetricQuantity(0.6)).toBe("0.6");
-    expect(formatMetricQuantity(49.9)).toBe("49.9");
+    expect(formatMetricQuantity(12.5)).toBe('12.5');
+    expect(formatMetricQuantity(2.4)).toBe('2.4');
+    expect(formatMetricQuantity(0.6)).toBe('0.6');
+    expect(formatMetricQuantity(49.9)).toBe('49.9');
   });
 
-  it("renders large clean amounts as whole numbers without a trailing .0", () => {
-    expect(formatMetricQuantity(50)).toBe("50");
-    expect(formatMetricQuantity(500)).toBe("500");
-    expect(formatMetricQuantity(1000)).toBe("1000");
+  it('renders large clean amounts as whole numbers without a trailing .0', () => {
+    expect(formatMetricQuantity(50)).toBe('50');
+    expect(formatMetricQuantity(500)).toBe('500');
+    expect(formatMetricQuantity(1000)).toBe('1000');
     // At/above the threshold, precision rounds to whole grams.
-    expect(formatMetricQuantity(500.4)).toBe("500");
+    expect(formatMetricQuantity(500.4)).toBe('500');
   });
 
-  it("drops a trailing zero for small whole values and handles zero", () => {
-    expect(formatMetricQuantity(12)).toBe("12");
-    expect(formatMetricQuantity(0)).toBe("0");
+  it('drops a trailing zero for small whole values and handles zero', () => {
+    expect(formatMetricQuantity(12)).toBe('12');
+    expect(formatMetricQuantity(0)).toBe('0');
   });
 
-  it("localizes the decimal separator", () => {
-    expect(formatMetricQuantity(12.5, "de-DE")).toBe("12,5");
+  it('localizes the decimal separator', () => {
+    expect(formatMetricQuantity(12.5, 'de-DE')).toBe('12,5');
   });
 });
 
-describe("scaleQuantity", () => {
-  it("scales quantities with cooking-friendly rounding", () => {
+describe('scaleQuantity', () => {
+  it('scales quantities with cooking-friendly rounding', () => {
     expect(scaleQuantity(1.3333, 3)).toBe(4);
     expect(scaleQuantity(0.1, 3)).toBe(0.3);
   });
 
-  it("preserves nullable quantities", () => {
+  it('preserves nullable quantities', () => {
     expect(scaleQuantity(null, 2)).toBeNull();
     expect(scaleQuantity(undefined, 2)).toBeNull();
   });
 });
 
-describe("densityForItem / toWeight (#385 weigh-based cooking)", () => {
-  it("resolves densities for common staples and prefers the specific phrase", () => {
-    expect(densityForItem("all-purpose flour")).toBe(0.53);
-    expect(densityForItem("granulated sugar")).toBe(0.85);
+describe('densityForItem / toWeight (#385 weigh-based cooking)', () => {
+  it('resolves densities for common staples and prefers the specific phrase', () => {
+    expect(densityForItem('all-purpose flour')).toBe(0.53);
+    expect(densityForItem('granulated sugar')).toBe(0.85);
     // "brown sugar" must win over the bare "sugar" entry.
-    expect(densityForItem("brown sugar, packed")).toBe(0.9);
-    expect(densityForItem("extra-virgin olive oil")).toBe(0.92);
-    expect(densityForItem("water")).toBe(1);
+    expect(densityForItem('brown sugar, packed')).toBe(0.9);
+    expect(densityForItem('extra-virgin olive oil')).toBe(0.92);
+    expect(densityForItem('water')).toBe(1);
   });
 
-  it("returns null for ingredients with no known density", () => {
-    expect(densityForItem("dragonfruit")).toBeNull();
-    expect(densityForItem("")).toBeNull();
+  it('returns null for ingredients with no known density', () => {
+    expect(densityForItem('dragonfruit')).toBeNull();
+    expect(densityForItem('')).toBeNull();
     expect(densityForItem(null)).toBeNull();
   });
 
-  it("converts volume ingredients to grams via density", () => {
+  it('converts volume ingredients to grams via density', () => {
     // 1 cup (236.588 ml) flour × 0.53 ≈ 125 g.
-    expect(toWeight(1, "cup", "all-purpose flour")).toBeCloseTo(125.39, 1);
+    expect(toWeight(1, 'cup', 'all-purpose flour')).toBeCloseTo(125.39, 1);
     // 1 cup water ≈ 236.6 g.
-    expect(toWeight(1, "cup", "water")).toBeCloseTo(236.59, 1);
+    expect(toWeight(1, 'cup', 'water')).toBeCloseTo(236.59, 1);
   });
 
-  it("converts mass units to grams directly, no density needed", () => {
-    expect(toWeight(1, "oz", "anything")).toBeCloseTo(28.35, 2);
-    expect(toWeight(1, "lb", "butter")).toBeCloseTo(453.59, 1);
-    expect(toWeight(2, "kg", "flour")).toBe(2000);
+  it('converts mass units to grams directly, no density needed', () => {
+    expect(toWeight(1, 'oz', 'anything')).toBeCloseTo(28.35, 2);
+    expect(toWeight(1, 'lb', 'butter')).toBeCloseTo(453.59, 1);
+    expect(toWeight(2, 'kg', 'flour')).toBe(2000);
   });
 
-  it("leaves count/unknown/undensity amounts unconverted (no NaN g)", () => {
-    expect(toWeight(1, null, "egg")).toBeNull();
-    expect(toWeight(1, "", "pinch")).toBeNull();
+  it('leaves count/unknown/undensity amounts unconverted (no NaN g)', () => {
+    expect(toWeight(1, null, 'egg')).toBeNull();
+    expect(toWeight(1, '', 'pinch')).toBeNull();
     // A volume of something with no known density can't be weighed.
-    expect(toWeight(2, "cup", "diced tomatoes")).toBeNull();
-    expect(toWeight(null, "cup", "flour")).toBeNull();
+    expect(toWeight(2, 'cup', 'diced tomatoes')).toBeNull();
+    expect(toWeight(null, 'cup', 'flour')).toBeNull();
   });
 });
 
-describe("deriveScaleFactor (#390 scale to target)", () => {
-  it("derives a factor from a target amount in the same unit", () => {
-    expect(deriveScaleFactor(250, 500, "g", "g")).toBe(2);
-    expect(deriveScaleFactor(4, 3, "cup", "cup")).toBe(0.75);
+describe('deriveScaleFactor (#390 scale to target)', () => {
+  it('derives a factor from a target amount in the same unit', () => {
+    expect(deriveScaleFactor(250, 500, 'g', 'g')).toBe(2);
+    expect(deriveScaleFactor(4, 3, 'cup', 'cup')).toBe(0.75);
   });
 
-  it("converts the target through a compatible unit", () => {
+  it('converts the target through a compatible unit', () => {
     // Recipe base 2 cups. Cook has 1 quart (= 4 cups) → ×2.
-    expect(deriveScaleFactor(2, 1, "cup", "quart")).toBe(2);
+    expect(deriveScaleFactor(2, 1, 'cup', 'quart')).toBe(2);
     // 500 g target against a 1 lb (453.592 g) base ≈ ×1.1.
-    expect(deriveScaleFactor(1, 500, "lb", "g")).toBeCloseTo(1.1023, 3);
+    expect(deriveScaleFactor(1, 500, 'lb', 'g')).toBeCloseTo(1.1023, 3);
   });
 
-  it("treats a missing unit on either side as same-unit", () => {
+  it('treats a missing unit on either side as same-unit', () => {
     expect(deriveScaleFactor(12, 24, null, null)).toBe(2);
-    expect(deriveScaleFactor(12, 24, "cup", null)).toBe(2);
+    expect(deriveScaleFactor(12, 24, 'cup', null)).toBe(2);
   });
 
-  it("returns null for incompatible units or bad input", () => {
-    expect(deriveScaleFactor(2, 3, "cup", "g")).toBeNull();
-    expect(deriveScaleFactor(null, 3, "g", "g")).toBeNull();
-    expect(deriveScaleFactor(0, 3, "g", "g")).toBeNull();
-    expect(deriveScaleFactor(2, 0, "g", "g")).toBeNull();
-    expect(deriveScaleFactor(2, -3, "g", "g")).toBeNull();
+  it('returns null for incompatible units or bad input', () => {
+    expect(deriveScaleFactor(2, 3, 'cup', 'g')).toBeNull();
+    expect(deriveScaleFactor(null, 3, 'g', 'g')).toBeNull();
+    expect(deriveScaleFactor(0, 3, 'g', 'g')).toBeNull();
+    expect(deriveScaleFactor(2, 0, 'g', 'g')).toBeNull();
+    expect(deriveScaleFactor(2, -3, 'g', 'g')).toBeNull();
   });
 });
 
-describe("decomposeMeasure (#391 practical measures)", () => {
-  it("breaks awkward tablespoons into tbsp + tsp", () => {
-    expect(decomposeMeasure(1.37, "tbsp")).toBe("1 tbsp + 1 tsp");
-    expect(decomposeMeasure(2.33, "tbsp")).toBe("2 tbsp + 1 tsp");
+describe('decomposeMeasure (#391 practical measures)', () => {
+  it('breaks awkward tablespoons into tbsp + tsp', () => {
+    expect(decomposeMeasure(1.37, 'tbsp')).toBe('1 tbsp + 1 tsp');
+    expect(decomposeMeasure(2.33, 'tbsp')).toBe('2 tbsp + 1 tsp');
   });
 
-  it("breaks awkward cups into a practical mix", () => {
+  it('breaks awkward cups into a practical mix', () => {
     // 0.42 cup ≈ 20.16 tsp → 6 tbsp + ~2¼ tsp (nearest quarter teaspoon).
-    expect(decomposeMeasure(0.42, "cup")).toBe("6 tbsp + 2¼ tsp");
+    expect(decomposeMeasure(0.42, 'cup')).toBe('6 tbsp + 2¼ tsp');
     // 1⅓ cups → 1 cup + a remainder in tablespoons.
-    expect(decomposeMeasure(1 + 1 / 3, "cup")).toBe("1 cup + 5 tbsp + 1 tsp");
+    expect(decomposeMeasure(1 + 1 / 3, 'cup')).toBe('1 cup + 5 tbsp + 1 tsp');
   });
 
-  it("returns null for clean single measures", () => {
-    expect(decomposeMeasure(2, "tbsp")).toBeNull();
-    expect(decomposeMeasure(0.5, "cup")).toBeNull();
-    expect(decomposeMeasure(2, "cup")).toBeNull();
-    expect(decomposeMeasure(1, "tsp")).toBeNull();
+  it('returns null for clean single measures', () => {
+    expect(decomposeMeasure(2, 'tbsp')).toBeNull();
+    expect(decomposeMeasure(0.5, 'cup')).toBeNull();
+    expect(decomposeMeasure(2, 'cup')).toBeNull();
+    expect(decomposeMeasure(1, 'tsp')).toBeNull();
   });
 
-  it("leaves metric and weight amounts alone", () => {
-    expect(decomposeMeasure(1.37, "ml")).toBeNull();
-    expect(decomposeMeasure(125, "g")).toBeNull();
+  it('leaves metric and weight amounts alone', () => {
+    expect(decomposeMeasure(1.37, 'ml')).toBeNull();
+    expect(decomposeMeasure(125, 'g')).toBeNull();
     expect(decomposeMeasure(1.5, null)).toBeNull();
-    expect(decomposeMeasure(0, "tbsp")).toBeNull();
+    expect(decomposeMeasure(0, 'tbsp')).toBeNull();
   });
 });
 
-describe("convertUnit", () => {
-  it("converts compatible units and round-trips through base dimensions", () => {
-    expect(convertUnit(1, "cup", "tbsp")).toBe(16);
-    expect(convertUnit(16, "tbsp", "cup")).toBe(1);
-    expect(convertUnit(1, "kg", "g")).toBe(1000);
-    expect(convertUnit(1000, "g", "kg")).toBe(1);
+describe('convertUnit', () => {
+  it('converts compatible units and round-trips through base dimensions', () => {
+    expect(convertUnit(1, 'cup', 'tbsp')).toBe(16);
+    expect(convertUnit(16, 'tbsp', 'cup')).toBe(1);
+    expect(convertUnit(1, 'kg', 'g')).toBe(1000);
+    expect(convertUnit(1000, 'g', 'kg')).toBe(1);
   });
 
-  it("returns null for unknown or incompatible units", () => {
-    expect(convertUnit(1, "cup", "g")).toBeNull();
-    expect(convertUnit(1, "pinch", "tsp")).toBeNull();
+  it('returns null for unknown or incompatible units', () => {
+    expect(convertUnit(1, 'cup', 'g')).toBeNull();
+    expect(convertUnit(1, 'pinch', 'tsp')).toBeNull();
   });
 });
 
-describe("toSystem", () => {
-  it("chooses friendly US and metric units on each ladder", () => {
-    expect(toSystem(3, "tsp", "us")).toEqual({ quantity: 1, unit: "tbsp" });
-    expect(toSystem(2000, "ml", "metric")).toEqual({
+describe('toSystem', () => {
+  it('chooses friendly US and metric units on each ladder', () => {
+    expect(toSystem(3, 'tsp', 'us')).toEqual({ quantity: 1, unit: 'tbsp' });
+    expect(toSystem(2000, 'ml', 'metric')).toEqual({
       quantity: 2,
-      unit: "l",
+      unit: 'l',
     });
-    expect(toSystem(1, "cup", "metric")).toEqual({
+    expect(toSystem(1, 'cup', 'metric')).toEqual({
       quantity: 236.588,
-      unit: "ml",
+      unit: 'ml',
     });
-    expect(toSystem(1, "kg", "us")).toEqual({ quantity: 2.205, unit: "lb" });
+    expect(toSystem(1, 'kg', 'us')).toEqual({ quantity: 2.205, unit: 'lb' });
   });
 
-  it("leaves unknown units unchanged and returns null without a unit", () => {
-    expect(toSystem(1.2345, "pinch", "metric")).toEqual({
+  it('leaves unknown units unchanged and returns null without a unit', () => {
+    expect(toSystem(1.2345, 'pinch', 'metric')).toEqual({
       quantity: 1.235,
-      unit: "pinch",
+      unit: 'pinch',
     });
-    expect(toSystem(1, null, "metric")).toBeNull();
+    expect(toSystem(1, null, 'metric')).toBeNull();
   });
 });
 
-describe("displayUnit", () => {
-  it("uses canonical display labels and configured plurals", () => {
-    expect(displayUnit("cup", 1)).toBe("cup");
-    expect(displayUnit("cup", 2)).toBe("cups");
-    expect(displayUnit("lb", 2)).toBe("lb");
-    expect(displayUnit("Tablespoons", 3)).toBe("tbsp");
-    expect(displayUnit(null, 3)).toBe("");
+describe('displayUnit', () => {
+  it('uses canonical display labels and configured plurals', () => {
+    expect(displayUnit('cup', 1)).toBe('cup');
+    expect(displayUnit('cup', 2)).toBe('cups');
+    expect(displayUnit('lb', 2)).toBe('lb');
+    expect(displayUnit('Tablespoons', 3)).toBe('tbsp');
+    expect(displayUnit(null, 3)).toBe('');
   });
 
-  it("selects the plural category by locale, not a count !== 1 check (#247)", () => {
+  it('selects the plural category by locale, not a count !== 1 check (#247)', () => {
     // English: only 1 is the "one" category. 0 and 2 are "other" → plural.
-    expect(displayUnit("cup", 0, "en")).toBe("cups");
-    expect(displayUnit("cup", 1, "en")).toBe("cup");
-    expect(displayUnit("cup", 2, "en")).toBe("cups");
+    expect(displayUnit('cup', 0, 'en')).toBe('cups');
+    expect(displayUnit('cup', 1, 'en')).toBe('cup');
+    expect(displayUnit('cup', 2, 'en')).toBe('cups');
     // French treats 0 and 1 as singular ("one").
-    expect(displayUnit("cup", 0, "fr")).toBe("cup");
-    expect(displayUnit("cup", 1, "fr")).toBe("cup");
-    expect(displayUnit("cup", 2, "fr")).toBe("cups");
+    expect(displayUnit('cup', 0, 'fr')).toBe('cup');
+    expect(displayUnit('cup', 1, 'fr')).toBe('cup');
+    expect(displayUnit('cup', 2, 'fr')).toBe('cups');
     // Arabic has more than two categories (zero/one/two/few/many/other). Every
     // non-"one" count resolves to the plural label.
-    expect(displayUnit("cup", 1, "ar")).toBe("cup"); // one
-    expect(displayUnit("cup", 2, "ar")).toBe("cups"); // two
-    expect(displayUnit("cup", 3, "ar")).toBe("cups"); // few
-    expect(displayUnit("cup", 11, "ar")).toBe("cups"); // many
-    expect(displayUnit("cup", 100, "ar")).toBe("cups"); // other
+    expect(displayUnit('cup', 1, 'ar')).toBe('cup'); // one
+    expect(displayUnit('cup', 2, 'ar')).toBe('cups'); // two
+    expect(displayUnit('cup', 3, 'ar')).toBe('cups'); // few
+    expect(displayUnit('cup', 11, 'ar')).toBe('cups'); // many
+    expect(displayUnit('cup', 100, 'ar')).toBe('cups'); // other
   });
 
-  it("keeps unit symbols invariant and falls back safely for bad locales", () => {
+  it('keeps unit symbols invariant and falls back safely for bad locales', () => {
     // Symbols (no configured plural) never inflect, whatever the count/locale.
-    expect(displayUnit("g", 5, "ar")).toBe("g");
-    expect(displayUnit("ml", 2, "fr")).toBe("ml");
+    expect(displayUnit('g', 5, 'ar')).toBe('g');
+    expect(displayUnit('ml', 2, 'fr')).toBe('ml');
     // An unparseable locale falls back to the default plural rules.
-    expect(displayUnit("cup", 2, "not a locale!!")).toBe("cups");
+    expect(displayUnit('cup', 2, 'not a locale!!')).toBe('cups');
   });
 });
 
-describe("normalizeUnit", () => {
-  it("canonicalizes known units and trims unknown units", () => {
-    expect(normalizeUnit(" Tablespoons ")).toBe("tbsp");
-    expect(normalizeUnit("cups")).toBe("cup");
-    expect(normalizeUnit("millilitres")).toBe("ml");
-    expect(normalizeUnit(" pinch ")).toBe("pinch");
+describe('normalizeUnit', () => {
+  it('canonicalizes known units and trims unknown units', () => {
+    expect(normalizeUnit(' Tablespoons ')).toBe('tbsp');
+    expect(normalizeUnit('cups')).toBe('cup');
+    expect(normalizeUnit('millilitres')).toBe('ml');
+    expect(normalizeUnit(' pinch ')).toBe('pinch');
     expect(normalizeUnit(undefined)).toBeNull();
   });
 });
 
-describe("toSystemRange", () => {
-  it("converts both ends of a range to one consistent unit (ck01)", () => {
+describe('toSystemRange', () => {
+  it('converts both ends of a range to one consistent unit (ck01)', () => {
     // "2–3 cups" → metric: both ends land in ml, correctly paired.
-    expect(toSystemRange(2, 3, "cup", "metric")).toEqual({
+    expect(toSystemRange(2, 3, 'cup', 'metric')).toEqual({
       quantity: 473.176,
       quantityMax: 709.764,
-      unit: "ml",
+      unit: 'ml',
     });
   });
 
   it("keeps the max on the min's chosen unit across a unit threshold (ck01)", () => {
     // 5 cups alone rounds up to litres. Converting the range independently
     // would show the litre value beside the ml label. Both must stay ml.
-    expect(toSystemRange(3, 5, "cup", "metric")).toEqual({
+    expect(toSystemRange(3, 5, 'cup', 'metric')).toEqual({
       quantity: 709.764,
       quantityMax: 1182.94,
-      unit: "ml",
+      unit: 'ml',
     });
   });
 
-  it("handles mass ranges that cross a ladder step, sharing one unit", () => {
-    expect(toSystemRange(1, 2, "kg", "us")).toEqual({
+  it('handles mass ranges that cross a ladder step, sharing one unit', () => {
+    expect(toSystemRange(1, 2, 'kg', 'us')).toEqual({
       quantity: 2.205,
       quantityMax: 4.409,
-      unit: "lb",
+      unit: 'lb',
     });
     // Range whose min is sub-1 in the shared unit.
-    expect(toSystemRange(8, 20, "oz", "metric")).toEqual({
+    expect(toSystemRange(8, 20, 'oz', 'metric')).toEqual({
       quantity: 226.796,
       quantityMax: 566.99,
-      unit: "g",
+      unit: 'g',
     });
   });
 
-  it("returns a null max for single values and degenerate ranges", () => {
-    expect(toSystemRange(2, null, "cup", "metric")).toEqual({
+  it('returns a null max for single values and degenerate ranges', () => {
+    expect(toSystemRange(2, null, 'cup', 'metric')).toEqual({
       quantity: 473.176,
       quantityMax: null,
-      unit: "ml",
+      unit: 'ml',
     });
-    expect(toSystemRange(2, 2, "cup", "metric")).toEqual({
+    expect(toSystemRange(2, 2, 'cup', 'metric')).toEqual({
       quantity: 473.176,
       quantityMax: null,
-      unit: "ml",
+      unit: 'ml',
     });
-    expect(toSystemRange(2, 1, "cup", "metric")).toEqual({
+    expect(toSystemRange(2, 1, 'cup', 'metric')).toEqual({
       quantity: 473.176,
       quantityMax: null,
-      unit: "ml",
+      unit: 'ml',
     });
   });
 
-  it("leaves unknown units unchanged and returns null without a unit", () => {
-    expect(toSystemRange(2, 3, "pinch", "metric")).toEqual({
+  it('leaves unknown units unchanged and returns null without a unit', () => {
+    expect(toSystemRange(2, 3, 'pinch', 'metric')).toEqual({
       quantity: 2,
       quantityMax: 3,
-      unit: "pinch",
+      unit: 'pinch',
     });
-    expect(toSystemRange(1, 2, null, "metric")).toBeNull();
+    expect(toSystemRange(1, 2, null, 'metric')).toBeNull();
   });
 
-  it("renders a metric-converted range coherently via formatQuantity (#51)", () => {
+  it('renders a metric-converted range coherently via formatQuantity (#51)', () => {
     // Mirrors the ingredients panel: convert the range as a whole, then format
     // each end on the shared unit so metric rounding applies to both.
-    const range = toSystemRange(2, 3, "cup", "metric");
+    const range = toSystemRange(2, 3, 'cup', 'metric');
     expect(range).not.toBeNull();
     if (range) {
       const lo = formatQuantity(range.quantity, range.unit);
       const hi = formatQuantity(range.quantityMax, range.unit);
-      expect(`${lo}–${hi} ${range.unit}`).toBe("473–710 ml");
+      expect(`${lo}–${hi} ${range.unit}`).toBe('473–710 ml');
     }
   });
 });
 
-describe("temperature (#249)", () => {
-  it("recognizes temperature units and aliases", () => {
-    expect(unitDimension("°F")).toBe("temperature");
-    expect(unitDimension("°C")).toBe("temperature");
-    expect(unitDimension("fahrenheit")).toBe("temperature");
-    expect(unitDimension("Celsius")).toBe("temperature");
-    expect(unitDimension("centigrade")).toBe("temperature");
-    expect(normalizeUnit("Fahrenheit")).toBe("°F");
-    expect(normalizeUnit("celsius")).toBe("°C");
+describe('temperature (#249)', () => {
+  it('recognizes temperature units and aliases', () => {
+    expect(unitDimension('°F')).toBe('temperature');
+    expect(unitDimension('°C')).toBe('temperature');
+    expect(unitDimension('fahrenheit')).toBe('temperature');
+    expect(unitDimension('Celsius')).toBe('temperature');
+    expect(unitDimension('centigrade')).toBe('temperature');
+    expect(normalizeUnit('Fahrenheit')).toBe('°F');
+    expect(normalizeUnit('celsius')).toBe('°C');
   });
 
   it('keeps the bare "c" alias meaning cups, not Celsius', () => {
-    expect(normalizeUnit("c")).toBe("cup");
-    expect(unitDimension("c")).toBe("volume");
+    expect(normalizeUnit('c')).toBe('cup');
+    expect(unitDimension('c')).toBe('volume');
   });
 
-  it("converts Fahrenheit↔Celsius affinely and rounds to whole degrees", () => {
-    expect(convertTemperature(350, "°F", "°C")).toBe(177);
-    expect(convertTemperature(180, "°C", "°F")).toBe(356);
-    expect(convertTemperature(212, "°F", "°C")).toBe(100);
-    expect(convertTemperature(0, "°C", "°F")).toBe(32);
-    expect(convertTemperature(425, "fahrenheit", "celsius")).toBe(218);
+  it('converts Fahrenheit↔Celsius affinely and rounds to whole degrees', () => {
+    expect(convertTemperature(350, '°F', '°C')).toBe(177);
+    expect(convertTemperature(180, '°C', '°F')).toBe(356);
+    expect(convertTemperature(212, '°F', '°C')).toBe(100);
+    expect(convertTemperature(0, '°C', '°F')).toBe(32);
+    expect(convertTemperature(425, 'fahrenheit', 'celsius')).toBe(218);
   });
 
-  it("converts Kelvin through Celsius in every direction", () => {
-    expect(unitDimension("K")).toBe("temperature");
-    expect(unitDimension("kelvin")).toBe("temperature");
-    expect(normalizeUnit("kelvin")).toBe("K");
-    expect(convertTemperature(0, "°C", "K")).toBe(273);
-    expect(convertTemperature(100, "°C", "K")).toBe(373);
-    expect(convertTemperature(273.15, "K", "°C")).toBe(0);
-    expect(convertTemperature(32, "°F", "K")).toBe(273);
-    expect(convertTemperature(373.15, "K", "°F")).toBe(212);
-    expect(convertTemperature(300, "K", "K")).toBe(300);
+  it('converts Kelvin through Celsius in every direction', () => {
+    expect(unitDimension('K')).toBe('temperature');
+    expect(unitDimension('kelvin')).toBe('temperature');
+    expect(normalizeUnit('kelvin')).toBe('K');
+    expect(convertTemperature(0, '°C', 'K')).toBe(273);
+    expect(convertTemperature(100, '°C', 'K')).toBe(373);
+    expect(convertTemperature(273.15, 'K', '°C')).toBe(0);
+    expect(convertTemperature(32, '°F', 'K')).toBe(273);
+    expect(convertTemperature(373.15, 'K', '°F')).toBe(212);
+    expect(convertTemperature(300, 'K', 'K')).toBe(300);
   });
 
-  it("returns the same value for identical units and null across dimensions", () => {
-    expect(convertTemperature(350, "°F", "°F")).toBe(350);
-    expect(convertTemperature(1, "°C", "g")).toBeNull();
-    expect(convertUnit(1, "°C", "cup")).toBeNull();
+  it('returns the same value for identical units and null across dimensions', () => {
+    expect(convertTemperature(350, '°F', '°F')).toBe(350);
+    expect(convertTemperature(1, '°C', 'g')).toBeNull();
+    expect(convertUnit(1, '°C', 'cup')).toBeNull();
   });
 
   it("routes temperature through convertUnit's affine path", () => {
-    expect(convertUnit(350, "°F", "°C")).toBe(177);
-    expect(convertUnit(100, "°C", "°F")).toBe(212);
+    expect(convertUnit(350, '°F', '°C')).toBe(177);
+    expect(convertUnit(100, '°C', '°F')).toBe(212);
   });
 
-  it("selects °F for US and °C for metric via toSystem", () => {
-    expect(toSystem(180, "°C", "us")).toEqual({ quantity: 356, unit: "°F" });
-    expect(toSystem(350, "°F", "metric")).toEqual({
+  it('selects °F for US and °C for metric via toSystem', () => {
+    expect(toSystem(180, '°C', 'us')).toEqual({ quantity: 356, unit: '°F' });
+    expect(toSystem(350, '°F', 'metric')).toEqual({
       quantity: 177,
-      unit: "°C",
+      unit: '°C',
     });
     // Already in the target system: value unchanged, unit canonicalized.
-    expect(toSystem(350, "°F", "us")).toEqual({ quantity: 350, unit: "°F" });
+    expect(toSystem(350, '°F', 'us')).toEqual({ quantity: 350, unit: '°F' });
   });
 
-  it("formats temperatures as plain locale-aware decimals, never fractions", () => {
-    expect(formatQuantity(350, "°F")).toBe("350");
-    expect(formatQuantity(177, "°C")).toBe("177");
+  it('formats temperatures as plain locale-aware decimals, never fractions', () => {
+    expect(formatQuantity(350, '°F')).toBe('350');
+    expect(formatQuantity(177, '°C')).toBe('177');
     // Large temperatures round to whole degrees. Small ones keep one decimal
     // and honor the locale separator.
-    expect(formatQuantity(212.5, "°C")).toBe("213");
-    expect(formatQuantity(4.5, "°C", "de-DE")).toBe("4,5");
-    expect(displayUnit("°C", 200)).toBe("°C");
+    expect(formatQuantity(212.5, '°C')).toBe('213');
+    expect(formatQuantity(4.5, '°C', 'de-DE')).toBe('4,5');
+    expect(displayUnit('°C', 200)).toBe('°C');
   });
 });
 
-describe("defaultSystemForLocale (#246)", () => {
-  it("maps US and US-adjacent locales to imperial", () => {
-    expect(defaultSystemForLocale("en")).toBe("us");
-    expect(defaultSystemForLocale("en-US")).toBe("us");
+describe('defaultSystemForLocale (#246)', () => {
+  it('maps US and US-adjacent locales to imperial', () => {
+    expect(defaultSystemForLocale('en')).toBe('us');
+    expect(defaultSystemForLocale('en-US')).toBe('us');
   });
 
-  it("maps other locales to metric", () => {
-    expect(defaultSystemForLocale("de")).toBe("metric");
-    expect(defaultSystemForLocale("de-DE")).toBe("metric");
-    expect(defaultSystemForLocale("ar")).toBe("metric");
-    expect(defaultSystemForLocale("es")).toBe("metric");
-    expect(defaultSystemForLocale("en-GB")).toBe("metric");
+  it('maps other locales to metric', () => {
+    expect(defaultSystemForLocale('de')).toBe('metric');
+    expect(defaultSystemForLocale('de-DE')).toBe('metric');
+    expect(defaultSystemForLocale('ar')).toBe('metric');
+    expect(defaultSystemForLocale('es')).toBe('metric');
+    expect(defaultSystemForLocale('en-GB')).toBe('metric');
   });
 
-  it("falls back to metric for unparseable locales", () => {
-    expect(defaultSystemForLocale("")).toBe("metric");
-    expect(defaultSystemForLocale("not a locale!!")).toBe("metric");
+  it('falls back to metric for unparseable locales', () => {
+    expect(defaultSystemForLocale('')).toBe('metric');
+    expect(defaultSystemForLocale('not a locale!!')).toBe('metric');
   });
 });
 
-describe("formatKidAmount (issue #447)", () => {
-  it("spells out simple fractions with a unit", () => {
-    expect(formatKidAmount(0.5, "cup")).toEqual({
-      number: "half a",
-      unit: "cup",
+describe('formatKidAmount (issue #447)', () => {
+  it('spells out simple fractions with a unit', () => {
+    expect(formatKidAmount(0.5, 'cup')).toEqual({
+      number: 'half a',
+      unit: 'cup',
     });
-    expect(formatKidAmount(0.75, "cup")).toEqual({
-      number: "three-quarters of a",
-      unit: "cup",
+    expect(formatKidAmount(0.75, 'cup')).toEqual({
+      number: 'three-quarters of a',
+      unit: 'cup',
     });
-    expect(formatKidAmount(1 / 3, "cup")).toEqual({
-      number: "a third of a",
-      unit: "cup",
+    expect(formatKidAmount(1 / 3, 'cup')).toEqual({
+      number: 'a third of a',
+      unit: 'cup',
     });
   });
 
   it("joins whole numbers and fractions with 'and' and pluralizes the unit", () => {
-    expect(formatKidAmount(1.5, "tbsp")).toEqual({
-      number: "1 and a half",
-      unit: "tablespoons",
+    expect(formatKidAmount(1.5, 'tbsp')).toEqual({
+      number: '1 and a half',
+      unit: 'tablespoons',
     });
-    expect(formatKidAmount(2.25, "cup")).toEqual({
-      number: "2 and a quarter",
-      unit: "cups",
-    });
-  });
-
-  it("uses singular units for one or less and plural above one", () => {
-    expect(formatKidAmount(1, "cup")).toEqual({ number: "1", unit: "cup" });
-    expect(formatKidAmount(3, "tsp")).toEqual({
-      number: "3",
-      unit: "teaspoons",
+    expect(formatKidAmount(2.25, 'cup')).toEqual({
+      number: '2 and a quarter',
+      unit: 'cups',
     });
   });
 
-  it("spells fraction-only amounts without a unit as a bare count", () => {
-    expect(formatKidAmount(0.5)).toEqual({ number: "half", unit: "" });
-  });
-
-  it("keeps precise decimals for metric weights and temperatures", () => {
-    expect(formatKidAmount(200, "g")).toEqual({ number: "200", unit: "grams" });
-    expect(formatKidAmount(180, "°C")).toEqual({
-      number: "180",
-      unit: "degrees",
+  it('uses singular units for one or less and plural above one', () => {
+    expect(formatKidAmount(1, 'cup')).toEqual({ number: '1', unit: 'cup' });
+    expect(formatKidAmount(3, 'tsp')).toEqual({
+      number: '3',
+      unit: 'teaspoons',
     });
   });
 
-  it("returns an empty number when the value is missing", () => {
-    expect(formatKidAmount(null, "cup")).toEqual({ number: "", unit: "cup" });
-    expect(formatKidAmount(undefined)).toEqual({ number: "", unit: "" });
+  it('spells fraction-only amounts without a unit as a bare count', () => {
+    expect(formatKidAmount(0.5)).toEqual({ number: 'half', unit: '' });
+  });
+
+  it('keeps precise decimals for metric weights and temperatures', () => {
+    expect(formatKidAmount(200, 'g')).toEqual({ number: '200', unit: 'grams' });
+    expect(formatKidAmount(180, '°C')).toEqual({
+      number: '180',
+      unit: 'degrees',
+    });
+  });
+
+  it('returns an empty number when the value is missing', () => {
+    expect(formatKidAmount(null, 'cup')).toEqual({ number: '', unit: 'cup' });
+    expect(formatKidAmount(undefined)).toEqual({ number: '', unit: '' });
   });
 });
 
-describe("expandKidUnit (issue #447)", () => {
-  it("spells out and pluralizes known units", () => {
-    expect(expandKidUnit("tbsp", 1)).toBe("tablespoon");
-    expect(expandKidUnit("tbsp", 3)).toBe("tablespoons");
-    expect(expandKidUnit("cup", 0.5)).toBe("cup");
+describe('expandKidUnit (issue #447)', () => {
+  it('spells out and pluralizes known units', () => {
+    expect(expandKidUnit('tbsp', 1)).toBe('tablespoon');
+    expect(expandKidUnit('tbsp', 3)).toBe('tablespoons');
+    expect(expandKidUnit('cup', 0.5)).toBe('cup');
   });
 
-  it("degrades gracefully for unknown units", () => {
-    expect(expandKidUnit("clove", 2)).toBe(displayUnit("clove", 2));
-    expect(expandKidUnit(null, 2)).toBe("");
+  it('degrades gracefully for unknown units', () => {
+    expect(expandKidUnit('clove', 2)).toBe(displayUnit('clove', 2));
+    expect(expandKidUnit(null, 2)).toBe('');
   });
 });
 
 const PINCH: CustomUnitDef = {
-  name: "pinch",
-  dimension: "volume",
-  baseUnit: "tsp",
+  name: 'pinch',
+  dimension: 'volume',
+  baseUnit: 'tsp',
   baseAmount: 1 / 16,
-  abbreviation: "pn",
+  abbreviation: 'pn',
 };
 
 const KNOB: CustomUnitDef = {
-  name: "knob",
-  dimension: "mass",
+  name: 'knob',
+  dimension: 'mass',
   baseUnit: null,
   baseAmount: null,
 };
 
-describe("unit catalog", () => {
-  it("lists built-in units and filters by dimension", () => {
+describe('unit catalog', () => {
+  it('lists built-in units and filters by dimension', () => {
     const all = listUnits();
-    expect(all.some((u) => u.id === "cup")).toBe(true);
-    expect(all.every((u) => !("base" in u))).toBe(true);
-    const volume = unitsForDimension("volume");
-    expect(volume.every((u) => u.dimension === "volume")).toBe(true);
-    expect(volume.some((u) => u.id === "ml")).toBe(true);
-    expect(volume.some((u) => u.id === "g")).toBe(false);
+    expect(all.some((u) => u.id === 'cup')).toBe(true);
+    expect(all.every((u) => !('base' in u))).toBe(true);
+    const volume = unitsForDimension('volume');
+    expect(volume.every((u) => u.dimension === 'volume')).toBe(true);
+    expect(volume.some((u) => u.id === 'ml')).toBe(true);
+    expect(volume.some((u) => u.id === 'g')).toBe(false);
   });
 
-  it("resolves unit info by id or alias, and reports known units", () => {
-    expect(getUnitInfo("Tablespoons")?.id).toBe("tbsp");
-    expect(getUnitInfo("pinch")).toBeNull();
-    expect(isKnownUnit("cups")).toBe(true);
-    expect(isKnownUnit("pinch")).toBe(false);
-  });
-});
-
-describe("dimensionOf", () => {
-  it("resolves built-in and custom units", () => {
-    expect(dimensionOf("cup")).toBe("volume");
-    expect(dimensionOf("kg")).toBe("mass");
-    expect(dimensionOf("pinch")).toBeNull();
-    expect(dimensionOf("pinch", [PINCH])).toBe("volume");
+  it('resolves unit info by id or alias, and reports known units', () => {
+    expect(getUnitInfo('Tablespoons')?.id).toBe('tbsp');
+    expect(getUnitInfo('pinch')).toBeNull();
+    expect(isKnownUnit('cups')).toBe(true);
+    expect(isKnownUnit('pinch')).toBe(false);
   });
 });
 
-describe("convertAmount (custom units)", () => {
-  it("converts between built-in units like convertUnit", () => {
-    expect(convertAmount(3, "tsp", "tbsp")).toBe(convertUnit(3, "tsp", "tbsp"));
+describe('dimensionOf', () => {
+  it('resolves built-in and custom units', () => {
+    expect(dimensionOf('cup')).toBe('volume');
+    expect(dimensionOf('kg')).toBe('mass');
+    expect(dimensionOf('pinch')).toBeNull();
+    expect(dimensionOf('pinch', [PINCH])).toBe('volume');
+  });
+});
+
+describe('convertAmount (custom units)', () => {
+  it('converts between built-in units like convertUnit', () => {
+    expect(convertAmount(3, 'tsp', 'tbsp')).toBe(convertUnit(3, 'tsp', 'tbsp'));
   });
 
-  it("converts a custom unit to its true amount", () => {
+  it('converts a custom unit to its true amount', () => {
     // 16 pinches = 1 tsp
-    expect(convertAmount(16, "pinch", "tsp", [PINCH])).toBeCloseTo(1, 5);
+    expect(convertAmount(16, 'pinch', 'tsp', [PINCH])).toBeCloseTo(1, 5);
     // 1 tsp = 16 pinches
-    expect(convertAmount(1, "tsp", "pinch", [PINCH])).toBeCloseTo(16, 5);
+    expect(convertAmount(1, 'tsp', 'pinch', [PINCH])).toBeCloseTo(16, 5);
   });
 
-  it("returns null for display-only custom units and incompatible dims", () => {
-    expect(convertAmount(1, "knob", "g", [KNOB])).toBeNull();
-    expect(convertAmount(1, "pinch", "g", [PINCH])).toBeNull();
-    expect(convertAmount(1, "unknownium", "g")).toBeNull();
+  it('returns null for display-only custom units and incompatible dims', () => {
+    expect(convertAmount(1, 'knob', 'g', [KNOB])).toBeNull();
+    expect(convertAmount(1, 'pinch', 'g', [PINCH])).toBeNull();
+    expect(convertAmount(1, 'unknownium', 'g')).toBeNull();
   });
 });
 
-describe("resolveDisplayMeasure", () => {
+describe('resolveDisplayMeasure', () => {
   const prefs = (over: Partial<UnitPrefs> = {}): UnitPrefs => ({
     ...DEFAULT_UNIT_PREFS,
     ...over,
   });
 
-  it("returns the original when auto-convert is off", () => {
-    expect(
-      resolveDisplayMeasure(2, "cup", prefs({ autoConvert: false })),
-    ).toEqual({ quantity: 2, unit: "cup" });
-  });
-
-  it("leaves counts and unitless amounts untouched", () => {
-    expect(resolveDisplayMeasure(3, null, prefs())).toBeNull();
-    expect(resolveDisplayMeasure(2, "egg", prefs())).toEqual({
+  it('returns the original when auto-convert is off', () => {
+    expect(resolveDisplayMeasure(2, 'cup', prefs({ autoConvert: false }))).toEqual({
       quantity: 2,
-      unit: "egg",
+      unit: 'cup',
     });
   });
 
-  it("converts to a per-dimension override unit", () => {
-    const m = resolveDisplayMeasure(1, "cup", prefs({ volumeUnit: "ml" }));
-    expect(m?.unit).toBe("ml");
+  it('leaves counts and unitless amounts untouched', () => {
+    expect(resolveDisplayMeasure(3, null, prefs())).toBeNull();
+    expect(resolveDisplayMeasure(2, 'egg', prefs())).toEqual({
+      quantity: 2,
+      unit: 'egg',
+    });
+  });
+
+  it('converts to a per-dimension override unit', () => {
+    const m = resolveDisplayMeasure(1, 'cup', prefs({ volumeUnit: 'ml' }));
+    expect(m?.unit).toBe('ml');
     expect(m?.quantity).toBeCloseTo(236.588, 1);
   });
 
-  it("falls back to the friendly ladder with no override", () => {
-    const m = resolveDisplayMeasure(500, "ml", prefs({ defaultSystem: "us" }));
-    expect(m?.unit).toBe("cup");
+  it('falls back to the friendly ladder with no override', () => {
+    const m = resolveDisplayMeasure(500, 'ml', prefs({ defaultSystem: 'us' }));
+    expect(m?.unit).toBe('cup');
   });
 
-  it("converts into a custom unit, or its true amount when asked", () => {
-    const asCustom = resolveDisplayMeasure(
-      1,
-      "tsp",
-      prefs({ volumeUnit: "pinch" }),
-      [PINCH],
-    );
-    expect(asCustom).toEqual({ quantity: 16, unit: "pinch" });
+  it('converts into a custom unit, or its true amount when asked', () => {
+    const asCustom = resolveDisplayMeasure(1, 'tsp', prefs({ volumeUnit: 'pinch' }), [PINCH]);
+    expect(asCustom).toEqual({ quantity: 16, unit: 'pinch' });
 
-    const asTrue = resolveDisplayMeasure(
-      1,
-      "tsp",
-      prefs({ volumeUnit: "pinch" }),
-      [{ ...PINCH, displayAsTrue: true }],
-    );
-    expect(asTrue?.unit).toBe("tsp");
+    const asTrue = resolveDisplayMeasure(1, 'tsp', prefs({ volumeUnit: 'pinch' }), [
+      { ...PINCH, displayAsTrue: true },
+    ]);
+    expect(asTrue?.unit).toBe('tsp');
     expect(asTrue?.quantity).toBeCloseTo(1, 5);
   });
 
-  it("honors per-volume-class overrides by ingredient kind", () => {
+  it('honors per-volume-class overrides by ingredient kind', () => {
     // Liquids in mL, dry goods in cups, seasonings in tsp. All at once.
     const p = prefs({
-      defaultSystem: "us",
-      liquidVolumeUnit: "ml",
-      dryVolumeUnit: "cup",
-      smallVolumeUnit: "tsp",
+      defaultSystem: 'us',
+      liquidVolumeUnit: 'ml',
+      dryVolumeUnit: 'cup',
+      smallVolumeUnit: 'tsp',
     });
-    expect(resolveDisplayMeasure(1, "cup", p, undefined, "liquid")?.unit).toBe(
-      "ml",
-    );
-    expect(resolveDisplayMeasure(1, "cup", p, undefined, "dry")?.unit).toBe(
-      "cup",
-    );
-    expect(resolveDisplayMeasure(3, "tsp", p, undefined, "small")?.unit).toBe(
-      "tsp",
-    );
+    expect(resolveDisplayMeasure(1, 'cup', p, undefined, 'liquid')?.unit).toBe('ml');
+    expect(resolveDisplayMeasure(1, 'cup', p, undefined, 'dry')?.unit).toBe('cup');
+    expect(resolveDisplayMeasure(3, 'tsp', p, undefined, 'small')?.unit).toBe('tsp');
   });
 
-  it("falls back to the general volume slot when a class has no override", () => {
-    const m = resolveDisplayMeasure(
-      1,
-      "cup",
-      prefs({ volumeUnit: "ml" }),
-      undefined,
-      "liquid",
-    );
-    expect(m?.unit).toBe("ml");
+  it('falls back to the general volume slot when a class has no override', () => {
+    const m = resolveDisplayMeasure(1, 'cup', prefs({ volumeUnit: 'ml' }), undefined, 'liquid');
+    expect(m?.unit).toBe('ml');
   });
 
-  it("caps small-amount volumes at tbsp instead of scaling to cups", () => {
+  it('caps small-amount volumes at tbsp instead of scaling to cups', () => {
     // 12 tsp = 4 tbsp = 0.25 cup. The small-amounts ladder stops at tbsp.
-    const m = resolveDisplayMeasure(
-      12,
-      "tsp",
-      prefs({ defaultSystem: "us" }),
-      undefined,
-      "small",
-    );
-    expect(m?.unit).toBe("tbsp");
+    const m = resolveDisplayMeasure(12, 'tsp', prefs({ defaultSystem: 'us' }), undefined, 'small');
+    expect(m?.unit).toBe('tbsp');
   });
 });
 
-describe("defaultUnitFor", () => {
-  it("names the representative default unit per dimension and system", () => {
-    expect(defaultUnitFor("mass", "us")).toBe("oz");
-    expect(defaultUnitFor("mass", "metric")).toBe("g");
-    expect(defaultUnitFor("temperature", "us")).toBe("°F");
-    expect(defaultUnitFor("temperature", "metric")).toBe("°C");
+describe('defaultUnitFor', () => {
+  it('names the representative default unit per dimension and system', () => {
+    expect(defaultUnitFor('mass', 'us')).toBe('oz');
+    expect(defaultUnitFor('mass', 'metric')).toBe('g');
+    expect(defaultUnitFor('temperature', 'us')).toBe('°F');
+    expect(defaultUnitFor('temperature', 'metric')).toBe('°C');
   });
 
-  it("distinguishes volume classes for US, and uses mL for metric", () => {
-    expect(defaultUnitFor("volume", "us", "small")).toBe("tbsp");
-    expect(defaultUnitFor("volume", "us", "dry")).toBe("cup");
-    expect(defaultUnitFor("volume", "us", "liquid")).toBe("fl oz");
-    expect(defaultUnitFor("volume", "metric", "small")).toBe("ml");
-    expect(defaultUnitFor("volume", "metric", "dry")).toBe("ml");
+  it('distinguishes volume classes for US, and uses mL for metric', () => {
+    expect(defaultUnitFor('volume', 'us', 'small')).toBe('tbsp');
+    expect(defaultUnitFor('volume', 'us', 'dry')).toBe('cup');
+    expect(defaultUnitFor('volume', 'us', 'liquid')).toBe('fl oz');
+    expect(defaultUnitFor('volume', 'metric', 'small')).toBe('ml');
+    expect(defaultUnitFor('volume', 'metric', 'dry')).toBe('ml');
   });
 });
 
-describe("parseAmount", () => {
-  it("parses plain decimals", () => {
-    expect(parseAmount("2")).toBe(2);
-    expect(parseAmount("1.5")).toBe(1.5);
-    expect(parseAmount("0.25")).toBe(0.25);
+describe('parseAmount', () => {
+  it('parses plain decimals', () => {
+    expect(parseAmount('2')).toBe(2);
+    expect(parseAmount('1.5')).toBe(1.5);
+    expect(parseAmount('0.25')).toBe(0.25);
   });
 
-  it("parses ascii fractions with and without a whole part", () => {
-    expect(parseAmount("1/2")).toBe(0.5);
-    expect(parseAmount("3/4")).toBe(0.75);
-    expect(parseAmount("1 1/2")).toBe(1.5);
-    expect(parseAmount("2 2/3")).toBeCloseTo(2.667, 3);
+  it('parses ascii fractions with and without a whole part', () => {
+    expect(parseAmount('1/2')).toBe(0.5);
+    expect(parseAmount('3/4')).toBe(0.75);
+    expect(parseAmount('1 1/2')).toBe(1.5);
+    expect(parseAmount('2 2/3')).toBeCloseTo(2.667, 3);
   });
 
-  it("parses vulgar-fraction glyphs, alone or after a whole", () => {
-    expect(parseAmount("½")).toBe(0.5);
-    expect(parseAmount("1½")).toBe(1.5);
-    expect(parseAmount("1 ¾")).toBe(1.75);
-    expect(parseAmount("⅓")).toBeCloseTo(0.333, 3);
+  it('parses vulgar-fraction glyphs, alone or after a whole', () => {
+    expect(parseAmount('½')).toBe(0.5);
+    expect(parseAmount('1½')).toBe(1.5);
+    expect(parseAmount('1 ¾')).toBe(1.75);
+    expect(parseAmount('⅓')).toBeCloseTo(0.333, 3);
   });
 
-  it("tolerates a comma decimal separator", () => {
-    expect(parseAmount("1,5")).toBe(1.5);
+  it('tolerates a comma decimal separator', () => {
+    expect(parseAmount('1,5')).toBe(1.5);
   });
 
   it.each([
-    ["en", "1.5"],
-    ["es", "1,5"],
-    ["de", "1,5"],
-    ["ar", "١٫٥"],
-  ])("parses decimal input for the %s locale", (locale, input) => {
+    ['en', '1.5'],
+    ['es', '1,5'],
+    ['de', '1,5'],
+    ['ar', '١٫٥'],
+  ])('parses decimal input for the %s locale', (locale, input) => {
     expect(parseAmount(input, locale)).toBe(1.5);
   });
 
-  it("distinguishes locale grouping from decimal separators", () => {
-    expect(parseAmount("1,500", "en")).toBe(1500);
-    expect(parseAmount("1.500", "de")).toBe(1500);
-    expect(parseAmount("1,5", "en")).toBe(1.5);
-    expect(parseAmount("1.5", "de")).toBe(1.5);
+  it('distinguishes locale grouping from decimal separators', () => {
+    expect(parseAmount('1,500', 'en')).toBe(1500);
+    expect(parseAmount('1.500', 'de')).toBe(1500);
+    expect(parseAmount('1,5', 'en')).toBe(1.5);
+    expect(parseAmount('1.5', 'de')).toBe(1.5);
   });
 
-  it("parses localized digits in fractions without changing their value", () => {
-    expect(parseAmount("١ ١/٢", "ar")).toBe(1.5);
+  it('parses localized digits in fractions without changing their value', () => {
+    expect(parseAmount('١ ١/٢', 'ar')).toBe(1.5);
   });
 
-  it("returns null for blank or unparseable input", () => {
-    expect(parseAmount("")).toBeNull();
-    expect(parseAmount("   ")).toBeNull();
+  it('returns null for blank or unparseable input', () => {
+    expect(parseAmount('')).toBeNull();
+    expect(parseAmount('   ')).toBeNull();
     expect(parseAmount(null)).toBeNull();
-    expect(parseAmount("abc")).toBeNull();
-    expect(parseAmount("1/0")).toBeNull();
-    expect(parseAmount("1,2,3", "es")).toBeNull();
+    expect(parseAmount('abc')).toBeNull();
+    expect(parseAmount('1/0')).toBeNull();
+    expect(parseAmount('1,2,3', 'es')).toBeNull();
   });
 });

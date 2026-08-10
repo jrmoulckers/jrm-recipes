@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { Wifi, WifiOff } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Wifi, WifiOff } from 'lucide-react';
 
 /** Shared toast id so the offline notice is replaced (not stacked) by "back online". */
-const CONNECTIVITY_TOAST_ID = "connectivity-status";
+const CONNECTIVITY_TOAST_ID = 'connectivity-status';
 
 /**
  * Session-wide connectivity status (#141). Mounted once near the app's toaster,
@@ -16,27 +16,27 @@ const CONNECTIVITY_TOAST_ID = "connectivity-status";
  * markup of its own. The standalone `/~offline` page keeps its own controls.
  */
 export function ConnectivityStatus() {
-  const t = useTranslations("pwa.connectivity");
+  const t = useTranslations('pwa.connectivity');
   React.useEffect(() => {
     const handleOffline = () => {
-      toast(t("offline"), {
+      toast(t('offline'), {
         id: CONNECTIVITY_TOAST_ID,
         icon: <WifiOff className="size-4" />,
         duration: Infinity,
       });
     };
     const handleOnline = () => {
-      toast.success(t("online"), {
+      toast.success(t('online'), {
         id: CONNECTIVITY_TOAST_ID,
         icon: <Wifi className="size-4" />,
         duration: 3000,
       });
     };
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
     return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
     };
   }, [t]);
 

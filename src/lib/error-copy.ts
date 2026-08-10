@@ -14,8 +14,8 @@
  * route its error toasts through it.
  */
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 /** Warm, blameless default shown when we can't map the error to anything better. */
 export const DEFAULT_ERROR_COPY = "That didn't go through. Please try again.";
@@ -26,15 +26,15 @@ export const DEFAULT_ERROR_COPY = "That didn't go through. Please try again.";
  * `RATE_LIMITED` code and any accidental lowercase variant resolve the same way.
  */
 const ERROR_COPY = {
-  NOT_AUTHENTICATED: "Please sign in to do that.",
-  UNAUTHENTICATED: "Please sign in to do that.",
+  NOT_AUTHENTICATED: 'Please sign in to do that.',
+  UNAUTHENTICATED: 'Please sign in to do that.',
   FORBIDDEN: "You don't have permission to do that.",
   NOT_FOUND: "We couldn't find that.",
   RATE_LIMITED: "You're going a little fast. Try again in a moment.",
   TOO_MANY_REQUESTS: "You're going a little fast. Try again in a moment.",
-  NETWORK: "You seem to be offline. Check your connection and try again.",
-  NETWORK_ERROR: "You seem to be offline. Check your connection and try again.",
-  TIMEOUT: "That took too long. Please try again.",
+  NETWORK: 'You seem to be offline. Check your connection and try again.',
+  NETWORK_ERROR: 'You seem to be offline. Check your connection and try again.',
+  TIMEOUT: 'That took too long. Please try again.',
   CONFLICT: "That change couldn't be completed. Please refresh and try again.",
   INTERNAL: DEFAULT_ERROR_COPY,
   INTERNAL_ERROR: DEFAULT_ERROR_COPY,
@@ -49,11 +49,7 @@ function looksLikeRawCode(value: string): boolean {
 }
 
 function rawErrorMessage(error: unknown): string {
-  return typeof error === "string"
-    ? error
-    : error instanceof Error
-      ? error.message
-      : "";
+  return typeof error === 'string' ? error : error instanceof Error ? error.message : '';
 }
 
 function knownErrorCode(value: string): ErrorCopyCode | null {
@@ -63,10 +59,7 @@ function knownErrorCode(value: string): ErrorCopyCode | null {
   return upper in ERROR_COPY ? upper : null;
 }
 
-function safeFallback(
-  fallback: string | undefined,
-  defaultCopy: string,
-): string {
+function safeFallback(fallback: string | undefined, defaultCopy: string): string {
   return fallback && fallback.trim().length > 0 ? fallback : defaultCopy;
 }
 
@@ -79,10 +72,7 @@ function safeFallback(
  * - An unmapped bare code, empty string, or non-string resolves to `fallback`.
  * - Never returns an empty string.
  */
-export function friendlyError(
-  error: unknown,
-  fallback: string = DEFAULT_ERROR_COPY,
-): string {
+export function friendlyError(error: unknown, fallback: string = DEFAULT_ERROR_COPY): string {
   const safeFallbackCopy = safeFallback(fallback, DEFAULT_ERROR_COPY);
 
   const trimmed = rawErrorMessage(error).trim();
@@ -105,15 +95,12 @@ export function friendlyError(
  * resolve the fixed code map through the `errors` catalog while still passing
  * through server-returned prose unchanged.
  */
-export function useFriendlyError(): (
-  error: unknown,
-  fallback?: string,
-) => string {
-  const t = useTranslations("errors");
+export function useFriendlyError(): (error: unknown, fallback?: string) => string {
+  const t = useTranslations('errors');
 
   return React.useCallback(
     (error: unknown, fallback?: string) => {
-      const localizedDefault = t("default");
+      const localizedDefault = t('default');
       const safeFallbackCopy = safeFallback(fallback, localizedDefault);
       const trimmed = rawErrorMessage(error).trim();
       if (trimmed.length === 0) return safeFallbackCopy;

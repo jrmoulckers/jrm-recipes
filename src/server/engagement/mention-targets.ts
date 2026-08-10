@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { eq } from "drizzle-orm";
+import { eq } from 'drizzle-orm';
 
-import { type db } from "~/server/db";
-import { groupMembers, recipes } from "~/server/db/schema";
-import type { MentionCandidate } from "~/lib/mentions";
+import { type db } from '~/server/db';
+import { groupMembers, recipes } from '~/server/db/schema';
+import type { MentionCandidate } from '~/lib/mentions';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Exec = typeof db | Tx;

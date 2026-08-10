@@ -1,15 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { foodItems, recipeIngredients } from "~/server/db/schema";
+import { db, isDbConfigured } from '~/server/db';
+import { foodItems, recipeIngredients } from '~/server/db/schema';
 import {
   ingredientAllergens,
   unionIngredientAllergens,
   type AllergenIngredientSource,
-} from "~/lib/recipe-allergens";
-import { type Allergen } from "~/lib/allergens";
+} from '~/lib/recipe-allergens';
+import { type Allergen } from '~/lib/allergens';
 
 /**
  * The STRUCTURED source of truth for a recipe's allergens (issue: attach
@@ -55,9 +55,7 @@ export async function getRecipeAllergensBatch(
 }
 
 /** The structured allergens for a single recipe (see {@link getRecipeAllergensBatch}). */
-export async function getRecipeAllergens(
-  recipeId: string,
-): Promise<Allergen[]> {
+export async function getRecipeAllergens(recipeId: string): Promise<Allergen[]> {
   const map = await getRecipeAllergensBatch([recipeId]);
   return map.get(recipeId) ?? [];
 }

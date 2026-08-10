@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * Draft auto-save + recovery for the recipe editor (issue #421).
@@ -16,7 +16,7 @@ import * as React from "react";
  * recipe never contaminates an edit-in-progress and vice-versa.
  */
 
-const PREFIX = "heirloom:recipe-draft:";
+const PREFIX = 'heirloom:recipe-draft:';
 
 export type AutosaveDraft<T> = {
   /** A previously-saved draft found on mount, or null once resolved/absent. */
@@ -34,7 +34,7 @@ export function draftStorageKey(key: string): string {
 }
 
 function readDraft<T>(storageKey: string): T | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) return null;
@@ -68,7 +68,7 @@ export function useAutosaveDraft<T>({
   const offered = availableDraft !== null;
 
   const clear = React.useCallback(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     try {
       window.localStorage.removeItem(storageKey);
     } catch {
@@ -85,7 +85,7 @@ export function useAutosaveDraft<T>({
   // Debounced persist: skip while an unresolved draft offer is on screen so we
   // never overwrite it before the user chooses restore vs. Discard.
   React.useEffect(() => {
-    if (offered || !dirty || typeof window === "undefined") return;
+    if (offered || !dirty || typeof window === 'undefined') return;
     const handle = window.setTimeout(() => {
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
@@ -98,14 +98,14 @@ export function useAutosaveDraft<T>({
 
   // Warn before an unsaved exit (refresh, close, back to a non-SPA page).
   React.useEffect(() => {
-    if (!dirty || typeof window === "undefined") return;
+    if (!dirty || typeof window === 'undefined') return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       // Legacy browsers require a returnValue to trigger the native prompt.
-      event.returnValue = "";
+      event.returnValue = '';
     };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [dirty]);
 
   return { availableDraft, acceptDraft, discardDraft, clear };

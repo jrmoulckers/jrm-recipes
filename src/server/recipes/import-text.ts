@@ -14,43 +14,43 @@ import {
   type ImportedIngredient,
   type ImportedRecipe,
   type ImportedStep,
-} from "./import";
+} from './import';
 
 const EMPTY: ImportedRecipe = {
-  title: "",
-  description: "",
-  coverImageUrl: "",
-  servings: "",
-  servingsNoun: "",
-  prepMinutes: "",
-  cookMinutes: "",
-  cuisine: "",
-  cuisines: "",
-  mealTypes: "",
-  sourceName: "",
-  sourceUrl: "",
-  tags: "",
+  title: '',
+  description: '',
+  coverImageUrl: '',
+  servings: '',
+  servingsNoun: '',
+  prepMinutes: '',
+  cookMinutes: '',
+  cuisine: '',
+  cuisines: '',
+  mealTypes: '',
+  sourceName: '',
+  sourceUrl: '',
+  tags: '',
   ingredients: [],
   steps: [],
 };
 
-const INGREDIENT_HEADINGS = ["ingredients", "you will need", "you'll need"];
+const INGREDIENT_HEADINGS = ['ingredients', 'you will need', "you'll need"];
 const STEP_HEADINGS = [
-  "instructions",
-  "directions",
-  "method",
-  "steps",
-  "preparation",
-  "directions",
-  "to make",
+  'instructions',
+  'directions',
+  'method',
+  'steps',
+  'preparation',
+  'directions',
+  'to make',
 ];
 
 /** Normalize a line to a comparable heading token (letters only, lowercased). */
 function headingToken(line: string): string {
   return line
     .toLowerCase()
-    .replace(/[^a-z' ]/g, "")
-    .replace(/\s+/g, " ")
+    .replace(/[^a-z' ]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -63,9 +63,9 @@ function matchesHeading(line: string, headings: string[]): boolean {
 /** Strip a leading bullet or ordinal marker ("1.", "1)", "-", "•", "Step 2:"). */
 function stripMarker(line: string): string {
   return line
-    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, "")
-    .replace(/^\s*\d+\s*[.)]\s+/, "")
-    .replace(/^\s*[-*•·]\s+/, "")
+    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, '')
+    .replace(/^\s*\d+\s*[.)]\s+/, '')
+    .replace(/^\s*[-*•·]\s+/, '')
     .trim();
 }
 
@@ -89,12 +89,12 @@ function wordCount(line: string): number {
 
 function toStep(instruction: string): ImportedStep {
   return {
-    section: "",
+    section: '',
     instruction,
-    imageUrl: "",
-    videoUrl: "",
-    timerMinutes: "",
-    techniques: "",
+    imageUrl: '',
+    videoUrl: '',
+    timerMinutes: '',
+    techniques: '',
   };
 }
 
@@ -120,8 +120,8 @@ function buildIngredients(lines: string[]): ImportedIngredient[] {
  * editor with something to edit.
  */
 export function parseRecipeText(raw: string): ImportedRecipe {
-  const text = (raw ?? "").replace(/\r\n?/g, "\n");
-  const rawLines = text.split("\n");
+  const text = (raw ?? '').replace(/\r\n?/g, '\n');
+  const rawLines = text.split('\n');
   const lines = rawLines.map((l) => l.trim());
 
   // Locate section headings.
@@ -142,9 +142,8 @@ export function parseRecipeText(raw: string): ImportedRecipe {
 
   // Title: the first non-empty line that isn't itself a section heading.
   const headingRow = ingredientsAt === -1 ? stepsAt : ingredientsAt;
-  const titleIdx =
-    headingRow > firstNonEmpty || headingRow === -1 ? firstNonEmpty : -1;
-  const title = titleIdx >= 0 ? lines[titleIdx]! : "";
+  const titleIdx = headingRow > firstNonEmpty || headingRow === -1 ? firstNonEmpty : -1;
+  const title = titleIdx >= 0 ? lines[titleIdx]! : '';
 
   let ingredientLines: string[] = [];
   let stepLines: string[] = [];
@@ -181,10 +180,7 @@ export function parseRecipeText(raw: string): ImportedRecipe {
     stepLines = body.slice(splitAt).map((b) => b.line);
 
     // If nothing looked like an ingredient, treat the whole body as steps.
-    if (
-      ingredientLines.every((l) => !looksLikeIngredient(l)) &&
-      stepLines.length === 0
-    ) {
+    if (ingredientLines.every((l) => !looksLikeIngredient(l)) && stepLines.length === 0) {
       stepLines = ingredientLines;
       ingredientLines = [];
     }

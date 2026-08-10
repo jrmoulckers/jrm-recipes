@@ -11,7 +11,7 @@
  * built with `skipWaiting: false`, so the newer SW calls `self.skipWaiting()`
  * and takes control (firing `controllerchange` on the client).
  */
-export const SKIP_WAITING_MESSAGE = { type: "SKIP_WAITING" } as const;
+export const SKIP_WAITING_MESSAGE = { type: 'SKIP_WAITING' } as const;
 
 export type SkipWaitingMessage = typeof SKIP_WAITING_MESSAGE;
 

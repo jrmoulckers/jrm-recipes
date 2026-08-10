@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   ArrowLeft,
   ChevronDown,
@@ -13,15 +13,15 @@ import {
   Printer,
   Share2,
   Type,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { brand } from "~/config/brand";
-import { cn } from "~/lib/utils";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { brand } from '~/config/brand';
+import { cn } from '~/lib/utils';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,12 +29,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import type {
-  PrintRecipe,
-  PrintRecipeIngredient,
-  PrintRecipeStep,
-} from "~/components/print/types";
+} from '~/components/ui/dropdown-menu';
+import type { PrintRecipe, PrintRecipeIngredient, PrintRecipeStep } from '~/components/print/types';
 import {
   formatIngredientAmount,
   formatIngredientLine,
@@ -48,10 +44,10 @@ import {
   serializeRecipeMarkdown,
   serializeRecipePlainText,
   serializeShareCaption,
-} from "~/components/print/export";
-import { PrintQr } from "~/components/print/qr-code";
+} from '~/components/print/export';
+import { PrintQr } from '~/components/print/qr-code';
 
-const FORMAT_ORDER = ["full", "compact", "card-4x6", "card-3x5"] as const;
+const FORMAT_ORDER = ['full', 'compact', 'card-4x6', 'card-3x5'] as const;
 
 type PrintFormat = (typeof FORMAT_ORDER)[number];
 
@@ -65,32 +61,32 @@ type FormatDetails = {
 
 const FORMAT_DETAILS: Record<PrintFormat, FormatDetails> = {
   full: {
-    label: "Full page",
-    hint: "Generous recipe sheet with image, notes, and source.",
-    className: "print-format-full",
-    pageSize: "auto",
-    pageMargin: "0.55in",
+    label: 'Full page',
+    hint: 'Generous recipe sheet with image, notes, and source.',
+    className: 'print-format-full',
+    pageSize: 'auto',
+    pageMargin: '0.55in',
   },
   compact: {
-    label: "Two-column",
-    hint: "Ingredients sidebar with flowing method.",
-    className: "print-format-compact",
-    pageSize: "auto",
-    pageMargin: "0.45in",
+    label: 'Two-column',
+    hint: 'Ingredients sidebar with flowing method.',
+    className: 'print-format-compact',
+    pageSize: 'auto',
+    pageMargin: '0.45in',
   },
-  "card-4x6": {
-    label: "4×6 card",
-    hint: "Index-card paper size with tight typography.",
-    className: "print-format-card-4x6",
-    pageSize: "4in 6in",
-    pageMargin: "0.18in",
+  'card-4x6': {
+    label: '4×6 card',
+    hint: 'Index-card paper size with tight typography.',
+    className: 'print-format-card-4x6',
+    pageSize: '4in 6in',
+    pageMargin: '0.18in',
   },
-  "card-3x5": {
-    label: "3×5 card",
-    hint: "Smallest card layout for recipe boxes.",
-    className: "print-format-card-3x5",
-    pageSize: "3in 5in",
-    pageMargin: "0.14in",
+  'card-3x5': {
+    label: '3×5 card',
+    hint: 'Smallest card layout for recipe boxes.',
+    className: 'print-format-card-3x5',
+    pageSize: '3in 5in',
+    pageMargin: '0.14in',
   },
 };
 
@@ -107,7 +103,7 @@ function printStyles(format: FormatDetails, largePrint: boolean): string {
     line-height: 1.6 !important;
   }
 `
-    : "";
+    : '';
   const largePrintScreen = largePrint
     ? `
 .print-large .heirloom-print-document,
@@ -118,7 +114,7 @@ function printStyles(format: FormatDetails, largePrint: boolean): string {
   line-height: 1.65;
 }
 `
-    : "";
+    : '';
   return `
 @media print {
   @page {
@@ -197,10 +193,10 @@ ${largePrintScreen}
 }
 
 function previewClass(format: PrintFormat): string {
-  if (format === "card-4x6") return "max-w-[4in]";
-  if (format === "card-3x5") return "max-w-[3in]";
-  if (format === "compact") return "max-w-6xl";
-  return "max-w-5xl";
+  if (format === 'card-4x6') return 'max-w-[4in]';
+  if (format === 'card-3x5') return 'max-w-[3in]';
+  if (format === 'compact') return 'max-w-6xl';
+  return 'max-w-5xl';
 }
 
 /**
@@ -209,7 +205,7 @@ function previewClass(format: PrintFormat): string {
  * never advertise a link that 404s for the reader (issue #350).
  */
 function canShareRecipe(visibility: string): boolean {
-  return visibility === "public" || visibility === "unlisted";
+  return visibility === 'public' || visibility === 'unlisted';
 }
 
 function SourceBlock({
@@ -223,7 +219,7 @@ function SourceBlock({
   shareUrl: string | null;
   className?: string;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   const attribution =
     !recipe.sourceName && !recipe.sourceUrl ? (
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground print:text-black">
@@ -233,9 +229,7 @@ function SourceBlock({
     ) : (
       <div className="flex flex-col gap-1 text-sm text-muted-foreground print:text-black">
         <p>
-          <span className="font-medium text-foreground print:text-black">
-            {t("body.source")}
-          </span>{" "}
+          <span className="font-medium text-foreground print:text-black">{t('body.source')}</span>{' '}
           {recipe.sourceUrl ? (
             <a
               href={recipe.sourceUrl}
@@ -256,7 +250,7 @@ function SourceBlock({
   return (
     <footer
       className={cn(
-        "flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4 print:border-black/30",
+        'flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4 print:border-black/30',
         className,
       )}
     >
@@ -267,7 +261,7 @@ function SourceBlock({
 }
 
 function MetaPills({ recipe }: { recipe: PrintRecipe }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   const meta = formatRecipeMeta(recipe);
 
   if (meta.length === 0) return null;
@@ -279,7 +273,7 @@ function MetaPills({ recipe }: { recipe: PrintRecipe }) {
           key={item}
           className="rounded-full border border-border bg-muted px-3 py-1 print:border-black/40 print:bg-white print:px-0 print:py-0"
         >
-          <dt className="sr-only">{t("body.recipeDetail")}</dt>
+          <dt className="sr-only">{t('body.recipeDetail')}</dt>
           <dd>{item}</dd>
         </div>
       ))}
@@ -294,7 +288,7 @@ function TagRow({ recipe }: { recipe: PrintRecipe }) {
     <div className="flex flex-wrap gap-2 print:hidden">
       {recipe.tags.map(({ tag }) => (
         <Badge key={tag.name} variant="muted">
-          {tag.category === "general" ? `#${tag.name}` : tag.name}
+          {tag.category === 'general' ? `#${tag.name}` : tag.name}
         </Badge>
       ))}
     </div>
@@ -308,33 +302,29 @@ function IngredientsList({
   ingredients: PrintRecipeIngredient[];
   dense?: boolean;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   if (ingredients.length === 0) {
-    return (
-      <p className="text-muted-foreground print:text-black">
-        {t("body.noIngredients")}
-      </p>
-    );
+    return <p className="text-muted-foreground print:text-black">{t('body.noIngredients')}</p>;
   }
 
   return (
-    <div className={cn("space-y-4", dense && "space-y-2")}>
+    <div className={cn('space-y-4', dense && 'space-y-2')}>
       {groupIngredients(ingredients).map((group) => (
         <section
-          key={group.section ?? "main"}
+          key={group.section ?? 'main'}
           className="heirloom-print-section break-inside-avoid"
         >
           {group.section && (
             <h3
               className={cn(
-                "mb-2 font-display text-sm font-semibold text-muted-foreground print:text-black",
-                dense && "mb-1 text-xs",
+                'mb-2 font-display text-sm font-semibold text-muted-foreground print:text-black',
+                dense && 'mb-1 text-xs',
               )}
             >
               {group.section}
             </h3>
           )}
-          <ul className={cn("space-y-2", dense && "space-y-1")}>
+          <ul className={cn('space-y-2', dense && 'space-y-1')}>
             {group.items.map((ingredient) => {
               const amount = formatIngredientAmount(ingredient);
 
@@ -342,25 +332,24 @@ function IngredientsList({
                 <li
                   key={ingredient.id}
                   className={cn(
-                    "heirloom-print-ingredient rounded-lg border border-border bg-card px-3 py-2 print:border-0 print:border-b print:border-black/20 print:bg-white print:px-0 print:py-1",
-                    dense &&
-                      "rounded-none border-0 bg-transparent px-0 py-0 text-sm",
+                    'heirloom-print-ingredient rounded-lg border border-border bg-card px-3 py-2 print:border-0 print:border-b print:border-black/20 print:bg-white print:px-0 print:py-1',
+                    dense && 'rounded-none border-0 bg-transparent px-0 py-0 text-sm',
                   )}
                 >
                   <span className="font-medium tabular-nums text-foreground print:text-black">
                     {amount}
-                    {amount ? " " : ""}
+                    {amount ? ' ' : ''}
                   </span>
                   <span>{ingredient.item}</span>
                   {ingredient.note && (
                     <span className="text-muted-foreground print:text-black">
-                      {" "}
+                      {' '}
                       . {ingredient.note}
                     </span>
                   )}
                   {ingredient.optional && (
                     <span className="ms-1 text-xs text-muted-foreground print:text-black">
-                      {t("body.optional")}
+                      {t('body.optional')}
                     </span>
                   )}
                 </li>
@@ -373,42 +362,32 @@ function IngredientsList({
   );
 }
 
-function StepsList({
-  steps,
-  dense = false,
-}: {
-  steps: PrintRecipeStep[];
-  dense?: boolean;
-}) {
-  const t = useTranslations("print");
+function StepsList({ steps, dense = false }: { steps: PrintRecipeStep[]; dense?: boolean }) {
+  const t = useTranslations('print');
   if (steps.length === 0) {
-    return (
-      <p className="text-muted-foreground print:text-black">
-        {t("body.noSteps")}
-      </p>
-    );
+    return <p className="text-muted-foreground print:text-black">{t('body.noSteps')}</p>;
   }
 
   let stepNumber = 1;
 
   return (
-    <div className={cn("space-y-5", dense && "space-y-2")}>
+    <div className={cn('space-y-5', dense && 'space-y-2')}>
       {groupSteps(steps).map((group) => (
         <section
-          key={group.section ?? "main"}
+          key={group.section ?? 'main'}
           className="heirloom-print-section break-inside-avoid"
         >
           {group.section && (
             <h3
               className={cn(
-                "mb-2 font-display text-sm font-semibold text-muted-foreground print:text-black",
-                dense && "mb-1 text-xs",
+                'mb-2 font-display text-sm font-semibold text-muted-foreground print:text-black',
+                dense && 'mb-1 text-xs',
               )}
             >
               {group.section}
             </h3>
           )}
-          <ol className={cn("space-y-4", dense && "space-y-2")}>
+          <ol className={cn('space-y-4', dense && 'space-y-2')}>
             {group.items.map((step) => {
               const currentStep = stepNumber;
               stepNumber += 1;
@@ -417,35 +396,31 @@ function StepsList({
                 <li
                   key={step.id}
                   className={cn(
-                    "heirloom-print-step flex break-inside-avoid gap-3",
-                    dense && "gap-2 text-sm",
+                    'heirloom-print-step flex break-inside-avoid gap-3',
+                    dense && 'gap-2 text-sm',
                   )}
                 >
                   <span
                     className={cn(
-                      "bg-primary/12 flex size-8 shrink-0 items-center justify-center rounded-full font-display font-semibold text-primary print:size-auto print:min-w-5 print:bg-white print:text-black",
-                      dense && "size-6 text-sm",
+                      'bg-primary/12 flex size-8 shrink-0 items-center justify-center rounded-full font-display font-semibold text-primary print:size-auto print:min-w-5 print:bg-white print:text-black',
+                      dense && 'size-6 text-sm',
                     )}
                   >
                     {currentStep}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="leading-relaxed print:leading-snug">
-                      {step.instruction}
-                    </p>
+                    <p className="leading-relaxed print:leading-snug">{step.instruction}</p>
                     {(step.timerSeconds != null ||
                       (step.techniques && step.techniques.length > 0)) && (
                       <p className="mt-1 text-xs text-muted-foreground print:text-black">
                         {[
-                          step.timerSeconds != null
-                            ? formatTimerLabel(step.timerSeconds)
-                            : null,
+                          step.timerSeconds != null ? formatTimerLabel(step.timerSeconds) : null,
                           step.techniques && step.techniques.length > 0
-                            ? step.techniques.join(", ")
+                            ? step.techniques.join(', ')
                             : null,
                         ]
                           .filter(Boolean)
-                          .join(" · ")}
+                          .join(' · ')}
                       </p>
                     )}
                   </div>
@@ -468,13 +443,13 @@ function FullPage({
   url: string;
   shareUrl: string | null;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   return (
     <article className="space-y-8 print:space-y-5">
       <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] print:block">
         <div className="space-y-4">
           <p className="text-sm font-medium text-muted-foreground print:text-black">
-            {t("body.recipeSheet", { brand: brand.name })}
+            {t('body.recipeSheet', { brand: brand.name })}
           </p>
           <div className="space-y-3">
             <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground print:text-3xl print:text-black">
@@ -514,14 +489,14 @@ function FullPage({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] print:grid-cols-2 print:gap-8">
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-2xl font-bold tracking-tight print:text-xl print:text-black">
-            {t("body.ingredients")}
+            {t('body.ingredients')}
           </h2>
           <IngredientsList ingredients={recipe.ingredients} />
         </section>
 
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-2xl font-bold tracking-tight print:text-xl print:text-black">
-            {t("body.method")}
+            {t('body.method')}
           </h2>
           <StepsList steps={recipe.steps} />
         </section>
@@ -530,7 +505,7 @@ function FullPage({
       {recipe.notes && (
         <section className="heirloom-print-section rounded-2xl border border-border bg-card p-5 print:rounded-none print:border-black/30 print:bg-white print:p-0 print:pt-4">
           <h2 className="font-display text-xl font-bold print:text-lg print:text-black">
-            {t("body.notes")}
+            {t('body.notes')}
           </h2>
           <p className="mt-2 whitespace-pre-line leading-relaxed text-muted-foreground print:text-black">
             {recipe.notes}
@@ -552,23 +527,19 @@ function CompactPage({
   url: string;
   shareUrl: string | null;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   return (
     <article className="space-y-6 print:space-y-4">
       <header className="space-y-3 border-b border-border pb-5 print:border-black/30 print:pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-medium text-muted-foreground print:text-black">
-            {brand.name}
-          </p>
+          <p className="text-sm font-medium text-muted-foreground print:text-black">{brand.name}</p>
           <MetaPills recipe={recipe} />
         </div>
         <h1 className="max-w-4xl font-display text-4xl font-bold leading-tight tracking-tight print:text-2xl print:text-black">
           {recipe.title}
         </h1>
         {recipe.description && (
-          <p className="max-w-3xl text-muted-foreground print:text-black">
-            {recipe.description}
-          </p>
+          <p className="max-w-3xl text-muted-foreground print:text-black">{recipe.description}</p>
         )}
       </header>
 
@@ -576,7 +547,7 @@ function CompactPage({
         <aside className="space-y-5">
           <section className="heirloom-print-section space-y-3">
             <h2 className="font-display text-xl font-bold print:text-base print:text-black">
-              {t("body.ingredients")}
+              {t('body.ingredients')}
             </h2>
             <IngredientsList ingredients={recipe.ingredients} dense />
           </section>
@@ -584,7 +555,7 @@ function CompactPage({
           {recipe.notes && (
             <section className="heirloom-print-section space-y-2 rounded-xl border border-border bg-card p-4 print:rounded-none print:border-black/30 print:bg-white print:p-0 print:pt-3">
               <h2 className="font-display text-lg font-bold print:text-sm print:text-black">
-                {t("body.notes")}
+                {t('body.notes')}
               </h2>
               <p className="whitespace-pre-line text-sm text-muted-foreground print:text-black">
                 {recipe.notes}
@@ -595,7 +566,7 @@ function CompactPage({
 
         <section className="heirloom-print-section space-y-4">
           <h2 className="font-display text-xl font-bold print:text-base print:text-black">
-            {t("body.method")}
+            {t('body.method')}
           </h2>
           <StepsList steps={recipe.steps} dense />
         </section>
@@ -615,7 +586,7 @@ function IndexCard({
   url: string;
   shareUrl: string | null;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   const meta = formatRecipeMeta(recipe);
 
   return (
@@ -623,28 +594,24 @@ function IndexCard({
       <header className="space-y-2 border-b border-border pb-3 print:border-black/30 print:pb-2">
         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground print:text-black">
           <span>{brand.name}</span>
-          {recipe.author?.name && (
-            <span>{t("body.byAuthor", { name: recipe.author.name })}</span>
-          )}
+          {recipe.author?.name && <span>{t('body.byAuthor', { name: recipe.author.name })}</span>}
         </div>
         <h1 className="font-display text-2xl font-bold leading-tight tracking-tight print:text-[15pt] print:text-black">
           {recipe.title}
         </h1>
         {meta.length > 0 && (
-          <p className="text-xs text-muted-foreground print:text-black">
-            {meta.join(" · ")}
-          </p>
+          <p className="text-xs text-muted-foreground print:text-black">{meta.join(' · ')}</p>
         )}
       </header>
 
       <div className="print-card-body grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
         <section className="heirloom-print-section space-y-2">
           <h2 className="font-display text-sm font-bold print:text-[9pt] print:text-black">
-            {t("body.ingredients")}
+            {t('body.ingredients')}
           </h2>
           {recipe.ingredients.length === 0 ? (
             <p className="text-xs text-muted-foreground print:text-black">
-              {t("body.noIngredients")}
+              {t('body.noIngredients')}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -662,12 +629,10 @@ function IndexCard({
 
         <section className="print-card-method heirloom-print-section space-y-2">
           <h2 className="font-display text-sm font-bold print:text-[9pt] print:text-black">
-            {t("body.method")}
+            {t('body.method')}
           </h2>
           {recipe.steps.length === 0 ? (
-            <p className="text-xs text-muted-foreground print:text-black">
-              {t("body.noSteps")}
-            </p>
+            <p className="text-xs text-muted-foreground print:text-black">{t('body.noSteps')}</p>
           ) : (
             <ol className="space-y-1">
               {recipe.steps.map((step, index) => (
@@ -675,9 +640,7 @@ function IndexCard({
                   key={step.id}
                   className="heirloom-print-step text-xs leading-snug print:text-[inherit]"
                 >
-                  <span className="font-semibold tabular-nums">
-                    {index + 1}.
-                  </span>{" "}
+                  <span className="font-semibold tabular-nums">{index + 1}.</span>{' '}
                   {formatStepLine(step)}
                 </li>
               ))}
@@ -697,29 +660,26 @@ function IndexCard({
 }
 
 export function PrintView({ recipe }: { recipe: PrintRecipe }) {
-  const t = useTranslations("print");
-  const [format, setFormat] = React.useState<PrintFormat>("full");
+  const t = useTranslations('print');
+  const [format, setFormat] = React.useState<PrintFormat>('full');
   const [largePrint, setLargePrint] = React.useState(false);
   const [canNativeShare, setCanNativeShare] = React.useState(false);
-  const formatCopy: Record<
-    PrintFormat,
-    Pick<FormatDetails, "label" | "hint">
-  > = {
+  const formatCopy: Record<PrintFormat, Pick<FormatDetails, 'label' | 'hint'>> = {
     full: {
-      label: t("formats.full.label"),
-      hint: t("formats.full.hint"),
+      label: t('formats.full.label'),
+      hint: t('formats.full.hint'),
     },
     compact: {
-      label: t("formats.compact.label"),
-      hint: t("formats.compact.hint"),
+      label: t('formats.compact.label'),
+      hint: t('formats.compact.hint'),
     },
-    "card-4x6": {
-      label: t("formats.card4x6.label"),
-      hint: t("formats.card4x6.hint"),
+    'card-4x6': {
+      label: t('formats.card4x6.label'),
+      hint: t('formats.card4x6.hint'),
     },
-    "card-3x5": {
-      label: t("formats.card3x5.label"),
-      hint: t("formats.card3x5.hint"),
+    'card-3x5': {
+      label: t('formats.card3x5.label'),
+      hint: t('formats.card3x5.hint'),
     },
   };
   const activeFormat = { ...FORMAT_DETAILS[format], ...formatCopy[format] };
@@ -727,12 +687,12 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
   const shareUrl = canShareRecipe(recipe.visibility) ? url : null;
 
   React.useEffect(() => {
-    setCanNativeShare(typeof navigator.share === "function");
+    setCanNativeShare(typeof navigator.share === 'function');
   }, []);
 
   async function copyToClipboard(text: string, successMessage: string) {
     if (!navigator.clipboard) {
-      toast.error(t("toasts.clipboardUnavailable"));
+      toast.error(t('toasts.clipboardUnavailable'));
       return;
     }
 
@@ -740,13 +700,13 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
       await navigator.clipboard.writeText(text);
       toast.success(successMessage);
     } catch {
-      toast.error(t("toasts.copyFailed"));
+      toast.error(t('toasts.copyFailed'));
     }
   }
 
   async function handleNativeShare() {
-    if (typeof navigator.share !== "function") {
-      await copyToClipboard(url, t("toasts.linkCopied"));
+    if (typeof navigator.share !== 'function') {
+      await copyToClipboard(url, t('toasts.linkCopied'));
       return;
     }
 
@@ -764,7 +724,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
   function downloadText(contents: string, filename: string, type: string) {
     const blob = new Blob([contents], { type });
     const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
 
     anchor.href = objectUrl;
     anchor.download = filename;
@@ -772,15 +732,15 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
     anchor.click();
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-    toast.success(t("toasts.downloaded", { filename }));
+    toast.success(t('toasts.downloaded', { filename }));
   }
 
   return (
     <div
       className={cn(
-        "heirloom-print-root min-h-dvh bg-muted/30 text-foreground print:bg-white print:text-black",
+        'heirloom-print-root min-h-dvh bg-muted/30 text-foreground print:bg-white print:text-black',
         activeFormat.className,
-        largePrint && "print-large",
+        largePrint && 'print-large',
       )}
     >
       <style>{printStyles(activeFormat, largePrint)}</style>
@@ -791,35 +751,27 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
             <div className="flex min-w-0 items-center gap-3">
               <Button asChild variant="ghost" size="sm" className="-ms-2">
                 <Link href={`/recipes/${recipe.slug}`}>
-                  <ArrowLeft /> {t("actions.back")}
+                  <ArrowLeft /> {t('actions.back')}
                 </Link>
               </Button>
               <div className="min-w-0">
-                <h1 className="truncate font-display text-xl font-bold">
-                  {t("title")}
-                </h1>
-                <p className="truncate text-sm text-muted-foreground">
-                  {recipe.title}
-                </p>
+                <h1 className="truncate font-display text-xl font-bold">{t('title')}</h1>
+                <p className="truncate text-sm text-muted-foreground">{recipe.title}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                onClick={() => window.print()}
-                className="shrink-0"
-              >
-                <Printer /> {t("actions.print")}
+              <Button type="button" onClick={() => window.print()} className="shrink-0">
+                <Printer /> {t('actions.print')}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  void copyToClipboard(url, t("toasts.linkCopied"));
+                  void copyToClipboard(url, t('toasts.linkCopied'));
                 }}
               >
-                <Link2 /> {t("actions.copyLink")}
+                <Link2 /> {t('actions.copyLink')}
               </Button>
               {canNativeShare && (
                 <Button
@@ -829,70 +781,70 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                     void handleNativeShare();
                   }}
                 >
-                  <Share2 /> {t("actions.share")}
+                  <Share2 /> {t('actions.share')}
                 </Button>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button type="button" variant="outline">
-                    <FileText /> {t("actions.export")} <ChevronDown />
+                    <FileText /> {t('actions.export')} <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>{t("menus.copy")}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('menus.copy')}</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeRecipePlainText(recipe),
-                        t("toasts.plainTextCopied"),
+                        t('toasts.plainTextCopied'),
                       );
                     }}
                   >
-                    <Clipboard /> {t("actions.copyPlainText")}
+                    <Clipboard /> {t('actions.copyPlainText')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeRecipeMarkdown(recipe),
-                        t("toasts.markdownCopied"),
+                        t('toasts.markdownCopied'),
                       );
                     }}
                   >
-                    <Clipboard /> {t("actions.copyMarkdown")}
+                    <Clipboard /> {t('actions.copyMarkdown')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
                       void copyToClipboard(
                         serializeShareCaption(recipe),
-                        t("toasts.shareCaptionCopied"),
+                        t('toasts.shareCaptionCopied'),
                       );
                     }}
                   >
-                    <Share2 /> {t("actions.copyShareCaption")}
+                    <Share2 /> {t('actions.copyShareCaption')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>{t("menus.download")}</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t('menus.download')}</DropdownMenuLabel>
                   <DropdownMenuItem
                     onSelect={() =>
                       downloadText(
                         serializeRecipeMarkdown(recipe),
-                        recipeDownloadFilename(recipe, "md"),
-                        "text/markdown;charset=utf-8",
+                        recipeDownloadFilename(recipe, 'md'),
+                        'text/markdown;charset=utf-8',
                       )
                     }
                   >
-                    <Download /> {t("actions.downloadMarkdown")}
+                    <Download /> {t('actions.downloadMarkdown')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() =>
                       downloadText(
                         serializeRecipePlainText(recipe),
-                        recipeDownloadFilename(recipe, "txt"),
-                        "text/plain;charset=utf-8",
+                        recipeDownloadFilename(recipe, 'txt'),
+                        'text/plain;charset=utf-8',
                       )
                     }
                   >
-                    <Download /> {t("actions.downloadText")}
+                    <Download /> {t('actions.downloadText')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -902,7 +854,7 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <ToggleGroup
-                aria-label={t("formatAria")}
+                aria-label={t('formatAria')}
                 className="h-auto flex-wrap justify-start rounded-xl p-1"
                 value={format}
                 onValueChange={(next) => setFormat(next as PrintFormat)}
@@ -922,18 +874,17 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
                 aria-pressed={largePrint}
                 onClick={() => setLargePrint((on) => !on)}
                 className={cn(
-                  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   largePrint
-                    ? "border-transparent bg-card text-foreground shadow-token"
-                    : "border-border text-muted-foreground hover:text-foreground",
+                    ? 'border-transparent bg-card text-foreground shadow-token'
+                    : 'border-border text-muted-foreground hover:text-foreground',
                 )}
               >
-                <Type aria-hidden="true" className="size-4" />{" "}
-                {t("largePrint.label")}
+                <Type aria-hidden="true" className="size-4" /> {t('largePrint.label')}
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
-              {largePrint ? t("largePrint.hint") : activeFormat.hint}
+              {largePrint ? t('largePrint.hint') : activeFormat.hint}
             </p>
           </div>
         </div>
@@ -942,22 +893,14 @@ export function PrintView({ recipe }: { recipe: PrintRecipe }) {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 print:block print:max-w-none print:p-0">
         <div
           className={cn(
-            "heirloom-print-document mx-auto rounded-3xl border border-border bg-card p-6 shadow-token-lg sm:p-8 print:bg-white print:text-black",
+            'heirloom-print-document mx-auto rounded-3xl border border-border bg-card p-6 shadow-token-lg sm:p-8 print:bg-white print:text-black',
             previewClass(format),
           )}
         >
-          {format === "full" && (
-            <FullPage recipe={recipe} url={url} shareUrl={shareUrl} />
-          )}
-          {format === "compact" && (
-            <CompactPage recipe={recipe} url={url} shareUrl={shareUrl} />
-          )}
-          {format === "card-4x6" && (
-            <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />
-          )}
-          {format === "card-3x5" && (
-            <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />
-          )}
+          {format === 'full' && <FullPage recipe={recipe} url={url} shareUrl={shareUrl} />}
+          {format === 'compact' && <CompactPage recipe={recipe} url={url} shareUrl={shareUrl} />}
+          {format === 'card-4x6' && <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />}
+          {format === 'card-3x5' && <IndexCard recipe={recipe} url={url} shareUrl={shareUrl} />}
         </div>
       </main>
     </div>

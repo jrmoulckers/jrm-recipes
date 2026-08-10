@@ -1,16 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { loadMoreSearchAction } from "~/server/recipes/search-actions";
-import { type RecipeSearchResult } from "~/server/recipes/queries";
-import { Button } from "~/components/ui/button";
-import {
-  RecipeCard,
-  type QuickPlanContext,
-} from "~/components/recipe/recipe-card";
-import { type CardDietaryMember } from "~/components/recipe/card-dietary-badge";
+import { loadMoreSearchAction } from '~/server/recipes/search-actions';
+import { type RecipeSearchResult } from '~/server/recipes/queries';
+import { Button } from '~/components/ui/button';
+import { RecipeCard, type QuickPlanContext } from '~/components/recipe/recipe-card';
+import { type CardDietaryMember } from '~/components/recipe/card-dietary-badge';
 
 /**
  * Search/filter results grid with a "Load more" button (#58).
@@ -43,16 +40,11 @@ export function SearchResultsFeed({
   quickPlan?: QuickPlanContext;
   correction?: { from: string; to: string };
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const [items, setItems] = React.useState<RecipeSearchResult[]>(initialItems);
-  const [nextOffset, setNextOffset] = React.useState<number | null>(
-    initialNextOffset,
-  );
+  const [nextOffset, setNextOffset] = React.useState<number | null>(initialNextOffset);
   const [pending, startTransition] = React.useTransition();
-  const favoritedSet = React.useMemo(
-    () => new Set(favoritedIds),
-    [favoritedIds],
-  );
+  const favoritedSet = React.useMemo(() => new Set(favoritedIds), [favoritedIds]);
 
   function onLoadMore() {
     if (nextOffset == null || pending) return;
@@ -74,24 +66,22 @@ export function SearchResultsFeed({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            {t("searchResults.title")}
+            {t('searchResults.title')}
           </h2>
           {correction && (
             <p className="text-sm text-muted-foreground">
-              {t.rich("searchResults.correction", {
+              {t.rich('searchResults.correction', {
                 from: correction.from,
                 to: correction.to,
-                strong: (chunks) => (
-                  <span className="font-medium text-foreground">{chunks}</span>
-                ),
+                strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
               })}
             </p>
           )}
         </div>
         <span className="text-sm text-muted-foreground">
-          {t("searchResults.count", {
+          {t('searchResults.count', {
             count: items.length,
-            plus: hasMore ? "+" : "",
+            plus: hasMore ? '+' : '',
           })}
         </span>
       </div>
@@ -111,14 +101,8 @@ export function SearchResultsFeed({
       </div>
       {hasMore && (
         <div className="flex justify-center pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onLoadMore}
-            disabled={pending}
-          >
-            {pending ? t("common.loading") : t("common.loadMoreRecipes")}
+          <Button type="button" variant="outline" size="lg" onClick={onLoadMore} disabled={pending}>
+            {pending ? t('common.loading') : t('common.loadMoreRecipes')}
           </Button>
         </div>
       )}

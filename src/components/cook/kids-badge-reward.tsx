@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { readBadges, type KidBadge } from "./kids-rewards";
+import { readBadges, type KidBadge } from './kids-rewards';
 
 /**
  * Reward UI shown inside the completion moment in Kids mode (#413): reveals the
@@ -12,7 +12,7 @@ import { readBadges, type KidBadge } from "./kids-rewards";
  * they've made.
  */
 export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
-  const t = useTranslations("cook.badges");
+  const t = useTranslations('cook.badges');
   const [allBadges, setAllBadges] = React.useState<KidBadge[]>([]);
   const [showShelf, setShowShelf] = React.useState(false);
 
@@ -25,23 +25,15 @@ export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
       {newlyEarned.length > 0 && (
         <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
           <p className="text-sm font-bold uppercase tracking-wide text-foreground">
-            {t(newlyEarned.length > 1 ? "newMultiple" : "newSingle")}
+            {t(newlyEarned.length > 1 ? 'newMultiple' : 'newSingle')}
           </p>
           <ul className="mt-3 flex flex-wrap justify-center gap-4">
             {newlyEarned.map((badge) => (
-              <li
-                key={badge.id}
-                className="flex w-24 flex-col items-center gap-1"
-              >
-                <span
-                  className="text-5xl motion-safe:animate-fade-in"
-                  aria-hidden="true"
-                >
+              <li key={badge.id} className="flex w-24 flex-col items-center gap-1">
+                <span className="text-5xl motion-safe:animate-fade-in" aria-hidden="true">
                   {badge.emoji}
                 </span>
-                <span className="text-center text-xs font-semibold">
-                  {badge.name}
-                </span>
+                <span className="text-center text-xs font-semibold">{badge.name}</span>
               </li>
             ))}
           </ul>
@@ -56,7 +48,7 @@ export function KidsBadgeReward({ newlyEarned }: { newlyEarned: KidBadge[] }) {
             aria-expanded={showShelf}
             className="text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            {showShelf ? t("hide") : t("show", { count: allBadges.length })}
+            {showShelf ? t('hide') : t('show', { count: allBadges.length })}
           </button>
           {showShelf && (
             <ul className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-5">

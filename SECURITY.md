@@ -21,14 +21,14 @@
 [`jrmoulckers/.github/SECURITY.md`](https://github.com/jrmoulckers/.github/blob/main/SECURITY.md).**
 Heirloom inherits every principle, prohibition, and safe-harbor commitment in that canonical
 document. This file adds the product-specific detail that the central policy cannot carry: the
-Heirloom threat model, the assets we protect, the mitigations that exist in this repository today,
-and the secrets-handling policy. Where this file is silent, the canonical policy governs. The small
-number of places where Heirloom deliberately differs from canon are listed in
+Heirloom threat model, the assets we protect, the mitigations that exist in this repository
+today, and the secrets-handling policy. Where this file is silent, the canonical policy governs.
+The small number of places where Heirloom deliberately differs from canon are listed in
 [Deliberate deviations from the canonical policy](#deliberate-deviations-from-the-canonical-policy).
 
 Heirloom is a family-recipe PWA. Its security posture is centered on protecting private family
-recipes, account access, billing state, uploaded media, and the Postgres database that stores family
-history. This document is intentionally grounded in the repository as it exists today;
+recipes, account access, billing state, uploaded media, and the Postgres database that stores
+family history. This document is intentionally grounded in the repository as it exists today;
 deployment-provider details not present in the repo are called out as deployment-dependent.
 
 ## Supported Versions
@@ -45,7 +45,8 @@ Security fixes are made against `main` and deployed through the normal Vercel pr
 
 ## Reporting a Vulnerability
 
-> **Do not open a public GitHub issue, pull request, or discussion for security vulnerabilities.**
+> **Do not open a public GitHub issue, pull request, or discussion for security
+> vulnerabilities.**
 >
 > Public disclosure before a fix is available can put users and their private family recipes at
 > risk.
@@ -70,17 +71,17 @@ Use the subject line:
 [SECURITY] jrm-recipes — <brief description>
 ```
 
-Do not send secrets, exploit code against third-party systems, or real user data — including real
-family recipe content or other users' account data — in an initial message. Request a secure channel
-if sensitive details are required.
+Do not send secrets, exploit code against third-party systems, or real user data — including
+real family recipe content or other users' account data — in an initial message. Request a
+secure channel if sensitive details are required.
 
 ## What to Include
 
 Please include enough information for maintainers to understand and reproduce the issue:
 
 - **Summary** — clear description of the vulnerability
-- **Affected component** — route handler, server action, query/mutation module, schema, workflow,
-  page, or service integration (Clerk, Stripe, Cloudinary, PostHog)
+- **Affected component** — route handler, server action, query/mutation module, schema,
+  workflow, page, or service integration (Clerk, Stripe, Cloudinary, PostHog)
 - **Reproduction steps** — minimal steps to demonstrate the issue
 - **Proof of concept** — snippets, screenshots, or logs with sensitive data redacted
 - **Impact** — what an attacker could achieve, especially any cross-user or cross-group recipe
@@ -125,8 +126,8 @@ Heirloom is maintained as an independent effort. These are target timelines, not
 | Medium or Low fix plan    | Next appropriate maintenance cycle      |
 
 Triage covers severity, affected assets, reproduction steps, and likely remediation. Maintainers
-follow up through the same private channel used for the report, and keep the reporter updated during
-remediation — especially for high-impact issues.
+follow up through the same private channel used for the report, and keep the reporter updated
+during remediation — especially for high-impact issues.
 
 ## Coordinated Disclosure
 
@@ -155,8 +156,8 @@ In-scope reports generally include:
 - Sensitive data exposure in logs, artifacts, builds, or APIs
 - Webhook signature-verification weaknesses in the Clerk or Stripe webhook routes
 - Dependency or supply-chain vulnerabilities exploitable in this repository's usage
-- CI/CD, migration, or release workflow vulnerabilities that could alter trusted outputs or mutate
-  production data
+- CI/CD, migration, or release workflow vulnerabilities that could alter trusted outputs or
+  mutate production data
 
 Out-of-scope reports generally include:
 
@@ -166,24 +167,24 @@ Out-of-scope reports generally include:
 - Best-practice suggestions without a demonstrated exploit path
 - UI/UX bugs without security impact
 - Vulnerabilities in upstream dependencies with no repository-specific exploitability
-- Findings that depend on setting `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or `SKIP_ENV_VALIDATION=1`, which
-  are local/CI-only controls that fail closed in deployed environments
+- Findings that depend on setting `NEXT_PUBLIC_DEV_AUTH_BYPASS=1` or `SKIP_ENV_VALIDATION=1`,
+  which are local/CI-only controls that fail closed in deployed environments
 - Attacks requiring physical access to an unlocked, authenticated device
 - Self-XSS requiring a user to paste code into their own console
 
 ## Safe Harbor
 
-Heirloom supports good-faith security research. We will not pursue legal action against researchers
-who:
+Heirloom supports good-faith security research. We will not pursue legal action against
+researchers who:
 
 - Follow this policy and report through private channels
 - Avoid privacy violations, data destruction, and service disruption
 - Access only systems and data they are authorized to use
 - Give maintainers reasonable time to fix before disclosure
 
-Good-faith security research that follows this process and avoids harming users or data will not be
-treated as unauthorized activity by the project maintainers. If you are unsure whether research is in
-scope, contact maintainers privately before proceeding.
+Good-faith security research that follows this process and avoids harming users or data will not
+be treated as unauthorized activity by the project maintainers. If you are unsure whether
+research is in scope, contact maintainers privately before proceeding.
 
 ## Heirloom Threat Model
 
@@ -191,13 +192,15 @@ This section is specific to jrm-recipes and has no counterpart in the canonical 
 
 ### Assets
 
-- **Family recipes and history:** recipe content, stories, private/group/unlisted visibility, version
-  history, comments, ratings, cook logs, meal plans, and shopping data.
+- **Family recipes and history:** recipe content, stories, private/group/unlisted visibility,
+  version history, comments, ratings, cook logs, meal plans, and shopping data.
 - **User accounts:** Clerk-backed identities mirrored into the app database.
-- **Billing data:** Stripe customer, subscription, gift, and webhook-derived billing state. Card data
-  is handled by Stripe-hosted Checkout and Customer Portal flows, not by this app.
-- **Uploaded media:** recipe images and videos stored/delivered through Cloudinary when configured.
-- **Postgres database:** the `DATABASE_URL`-backed Postgres instance accessed through Drizzle ORM.
+- **Billing data:** Stripe customer, subscription, gift, and webhook-derived billing state. Card
+  data is handled by Stripe-hosted Checkout and Customer Portal flows, not by this app.
+- **Uploaded media:** recipe images and videos stored/delivered through Cloudinary when
+  configured.
+- **Postgres database:** the `DATABASE_URL`-backed Postgres instance accessed through Drizzle
+  ORM.
 - **Analytics telemetry:** optional PostHog product analytics when a deploy supplies
   `NEXT_PUBLIC_POSTHOG_KEY`.
 - **Operational secrets:** database credentials, Clerk/Stripe/Cloudinary server secrets, webhook
@@ -225,9 +228,9 @@ This section is specific to jrm-recipes and has no counterpart in the canonical 
 
 This section is specific to jrm-recipes and has no counterpart in the canonical policy.
 
-Secrets must be stored in deployment environment variables, not in source. For the current Vercel
-deployment model, store them in Vercel project environment variables separately for Production,
-Preview, and any staging environment.
+Secrets must be stored in deployment environment variables, not in source. For the current
+Vercel deployment model, store them in Vercel project environment variables separately for
+Production, Preview, and any staging environment.
 
 See [`docs/secrets-management.md`](docs/secrets-management.md) for:
 

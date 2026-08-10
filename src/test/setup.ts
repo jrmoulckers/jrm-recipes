@@ -1,4 +1,4 @@
-﻿import "@testing-library/jest-dom/vitest";
+﻿import '@testing-library/jest-dom/vitest';
 
 // jsdom does not implement ResizeObserver, but several Radix primitives measure
 // themselves with it (Checkbox/Switch bubble inputs, Slider thumb, Tooltip

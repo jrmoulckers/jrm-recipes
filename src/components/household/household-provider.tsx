@@ -1,12 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import {
-  HOUSEHOLD_COOKIE,
-  clampHouseholdSize,
-  serializeHousehold,
-} from "~/config/household";
+import { HOUSEHOLD_COOKIE, clampHouseholdSize, serializeHousehold } from '~/config/household';
 
 type HouseholdContextValue = {
   /** Number of people to cook for, or null when no preference is set. */
@@ -72,11 +68,7 @@ export function HouseholdProvider({
     [size, setSize, clear],
   );
 
-  return (
-    <HouseholdContext.Provider value={value}>
-      {children}
-    </HouseholdContext.Provider>
-  );
+  return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>;
 }
 
 export function useHousehold() {

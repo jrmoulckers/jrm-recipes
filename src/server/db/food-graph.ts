@@ -1,15 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
 
-import { canonicalFood, normalizeFoodText } from "~/lib/food-db";
-import { nutritionForFood, type NutritionFacts } from "~/lib/food-nutrition";
-import {
-  rankNeighbours,
-  rankUnitStats,
-  type PairEdge,
-  type UnitStatRow,
-} from "~/lib/food-mining";
+import { canonicalFood, normalizeFoodText } from '~/lib/food-db';
+import { nutritionForFood, type NutritionFacts } from '~/lib/food-nutrition';
+import { rankNeighbours, rankUnitStats, type PairEdge, type UnitStatRow } from '~/lib/food-mining';
 import {
   applyUnitPreference,
   dimensionForUnit,
@@ -18,8 +13,8 @@ import {
   mergeLearnedUnits,
   type FoodDimension,
   type SuggestedUnit,
-} from "~/lib/food-units";
-import { db, isDbConfigured } from "~/server/db";
+} from '~/lib/food-units';
+import { db, isDbConfigured } from '~/server/db';
 import {
   foodAliases,
   foodItems,
@@ -31,7 +26,7 @@ import {
   recipeIngredients,
   recipes,
   userFoodPrefs,
-} from "~/server/db/schema";
+} from '~/server/db/schema';
 
 /**
  * Server-side serving layer for the live food graph (see `docs/food-graph.md`).
@@ -94,9 +89,7 @@ export type FoodSuggestion = {
  * (fast, offline, covers the curated backbone). Falls back to the mined
  * `food_aliases` table for foods that exist only in the corpus.
  */
-async function resolveNodeId(
-  item: string | null | undefined,
-): Promise<string | null> {
+async function resolveNodeId(item: string | null | undefined): Promise<string | null> {
   const canon = canonicalFood(item);
   if (canon) return canon.id;
   if (!isDbConfigured()) return null;
@@ -112,15 +105,11 @@ async function resolveNodeId(
 }
 
 /** Resolve a free-text ingredient to its canonical food node, or `null`. */
-export async function getFoodMatch(
-  item: string | null | undefined,
-): Promise<FoodMatch | null> {
+export async function getFoodMatch(item: string | null | undefined): Promise<FoodMatch | null> {
   const id = await resolveNodeId(item);
   if (!id || !isDbConfigured()) {
     const canon = canonicalFood(item);
-    return canon
-      ? { ...canon, category: canon.category, source: "curated" }
-      : null;
+    return canon ? { ...canon, category: canon.category, source: 'curated' } : null;
   }
   const [row] = await db
     .select({
@@ -254,9 +243,7 @@ export async function getPairedFoods(
       lift: foodPairs.lift,
     })
     .from(foodPairs)
-    .where(
-      or(inArray(foodPairs.foodAId, ids), inArray(foodPairs.foodBId, ids)),
-    );
+    .where(or(inArray(foodPairs.foodAId, ids), inArray(foodPairs.foodBId, ids)));
 
   const ranked = rankNeighbours(edges, ids, {
     minCoCount: options.minCoCount,

@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { cookLogEntries, groupMembers, recipes } from "~/server/db/schema";
-import type { User } from "~/server/db/schema";
+import { db, isDbConfigured } from '~/server/db';
+import { cookLogEntries, groupMembers, recipes } from '~/server/db/schema';
+import type { User } from '~/server/db/schema';
 
 /**
  * First-run onboarding signals derived entirely from the user's real data
@@ -37,9 +37,7 @@ export function isOnboardingComplete(progress: OnboardingProgress): boolean {
  * Returns all-false without a database so callers can render safely in any
  * environment.
  */
-export async function getOnboardingProgress(
-  user: User,
-): Promise<OnboardingProgress> {
+export async function getOnboardingProgress(user: User): Promise<OnboardingProgress> {
   if (!isDbConfigured()) return EMPTY_ONBOARDING_PROGRESS;
 
   const [recipeRow, cookRow, groupRow] = await Promise.all([

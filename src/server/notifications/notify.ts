@@ -1,7 +1,7 @@
-import "server-only";
+import 'server-only';
 
-import { type db } from "~/server/db";
-import { notifications, type NotificationType } from "~/server/db/schema";
+import { type db } from '~/server/db';
+import { notifications, type NotificationType } from '~/server/db/schema';
 
 /**
  * `notify()`. The single write path for the notification center (issue #348).
@@ -39,10 +39,7 @@ export type NotifyParams = {
  * notify yourself about your own action) so callers don't have to special-case
  * self-mentions or rating your own recipe.
  */
-export async function notify(
-  exec: NotifyExecutor,
-  params: NotifyParams,
-): Promise<void> {
+export async function notify(exec: NotifyExecutor, params: NotifyParams): Promise<void> {
   if (params.actorId && params.actorId === params.recipientId) return;
 
   await exec.insert(notifications).values({
@@ -63,7 +60,7 @@ export async function notify(
 export async function notifyMany(
   exec: NotifyExecutor,
   recipientIds: string[],
-  params: Omit<NotifyParams, "recipientId">,
+  params: Omit<NotifyParams, 'recipientId'>,
 ): Promise<void> {
   const unique = [...new Set(recipientIds)].filter(
     (id) => !(params.actorId && params.actorId === id),

@@ -21,7 +21,7 @@ export type PrintRecipeTag = {
   tag: {
     name: string;
     slug: string;
-    category: "meal" | "cuisine" | "dietary" | "general";
+    category: 'meal' | 'cuisine' | 'dietary' | 'general';
   };
 };
 

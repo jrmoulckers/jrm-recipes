@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Validation contracts for favorites & collections. Shared by the client UI and
@@ -21,10 +21,10 @@ const optionalUrl = z
   .url()
   .max(2048)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 export const collectionInput = z.object({
-  name: z.string().trim().min(1, "Name your collection").max(120),
+  name: z.string().trim().min(1, 'Name your collection').max(120),
   description: optionalString(500),
   coverImageUrl: optionalUrl,
 });
@@ -40,11 +40,7 @@ export const collectionRecipeInput = z.object({
   recipeId: idInput,
 });
 
-export const collectionVisibilityValues = [
-  "private",
-  "unlisted",
-  "public",
-] as const;
+export const collectionVisibilityValues = ['private', 'unlisted', 'public'] as const;
 
 export const setCollectionVisibilityInput = z.object({
   id: idInput,
@@ -59,8 +55,5 @@ export const collectionGroupShareInput = z.object({
 export type CollectionInput = z.infer<typeof collectionInput>;
 export type ToggleFavoriteInput = z.infer<typeof toggleFavoriteInput>;
 export type CollectionRecipeInput = z.infer<typeof collectionRecipeInput>;
-export type CollectionGroupShareInput = z.infer<
-  typeof collectionGroupShareInput
->;
-export type CollectionVisibilityValue =
-  (typeof collectionVisibilityValues)[number];
+export type CollectionGroupShareInput = z.infer<typeof collectionGroupShareInput>;
+export type CollectionVisibilityValue = (typeof collectionVisibilityValues)[number];

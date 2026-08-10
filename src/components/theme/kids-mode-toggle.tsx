@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Blocks } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Blocks } from 'lucide-react';
 
-import { useKidsMode } from "~/components/theme/use-kids-mode";
-import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { useKidsMode } from '~/components/theme/use-kids-mode';
+import { Button } from '~/components/ui/button';
+import { cn } from '~/lib/utils';
 
 /**
  * Always-visible, one-tap Kids mode toggle for the site header (#435).
@@ -29,26 +29,21 @@ export function KidsModeToggle({
    */
   label?: string;
 }) {
-  const t = useTranslations("theme.kidsMode");
+  const t = useTranslations('theme.kidsMode');
   const { kidsOn, setKidsMode } = useKidsMode();
 
   return (
     <Button
       type="button"
-      variant={kidsOn ? "default" : label ? "ghost" : "outline"}
-      size={label ? "default" : "icon"}
+      variant={kidsOn ? 'default' : label ? 'ghost' : 'outline'}
+      size={label ? 'default' : 'icon'}
       aria-pressed={kidsOn}
-      aria-label={
-        label ? undefined : kidsOn ? t("turnOffAria") : t("turnOnAria")
-      }
-      title={kidsOn ? t("onTitle") : t("title")}
+      aria-label={label ? undefined : kidsOn ? t('turnOffAria') : t('turnOnAria')}
+      title={kidsOn ? t('onTitle') : t('title')}
       onClick={() => setKidsMode(!kidsOn)}
-      className={cn(
-        label && "h-11 w-full justify-start gap-3 px-2 font-medium",
-        className,
-      )}
+      className={cn(label && 'h-11 w-full justify-start gap-3 px-2 font-medium', className)}
     >
-      <Blocks className={cn("size-5", kidsOn && "fill-current")} />
+      <Blocks className={cn('size-5', kidsOn && 'fill-current')} />
       {label}
     </Button>
   );

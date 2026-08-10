@@ -10,13 +10,13 @@
  * throw on private-mode/quota failures.
  */
 
-export const COOK_TRACK_PREFIX = "heirloom.cook.track.";
+export const COOK_TRACK_PREFIX = 'heirloom.cook.track.';
 
 /** Device-local marker recording that the user has ever started a cook (#328). */
-export const FIRST_COOK_MARKER = "heirloom.cook.first";
+export const FIRST_COOK_MARKER = 'heirloom.cook.first';
 
-type ReadableStorage = Pick<Storage, "getItem">;
-type WritableStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+type ReadableStorage = Pick<Storage, 'getItem'>;
+type WritableStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export function cookTrackKey(recipeId: string): string {
   return `${COOK_TRACK_PREFIX}${recipeId}`;

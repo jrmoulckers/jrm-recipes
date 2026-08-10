@@ -1,4 +1,4 @@
-import { RESERVED_RECIPE_SLUGS } from "./recipe-reserved-slugs";
+import { RESERVED_RECIPE_SLUGS } from './recipe-reserved-slugs';
 
 /**
  * Maximum length of a user slug. Matches the `users.slug` column width, which
@@ -25,10 +25,10 @@ export const USER_SLUG_MAX_LENGTH = 60;
  */
 export const RESERVED_USER_SLUGS: ReadonlySet<string> = new Set([
   ...RESERVED_RECIPE_SLUGS,
-  "r",
-  "api",
-  "admin",
-  "www",
+  'r',
+  'api',
+  'admin',
+  'www',
 ]);
 
 /** Whether `slug` is one no user may hold. */
@@ -70,12 +70,12 @@ export function userSlugBase(input: string): string | null {
   const base = input
     .toLowerCase()
     .trim()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, USER_SLUG_MAX_LENGTH)
     // A trailing hyphen can reappear after the length cap.
-    .replace(/-+$/g, "");
+    .replace(/-+$/g, '');
   return base.length > 0 ? base : null;
 }
 

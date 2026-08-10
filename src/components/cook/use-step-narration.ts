@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * Kid-facing "Read it to me" narration for a single Cook Mode step (issue #411).
@@ -25,9 +25,9 @@ export type StepNarration = {
 
 function hasSpeech(): boolean {
   return (
-    typeof window !== "undefined" &&
-    "speechSynthesis" in window &&
-    typeof window.SpeechSynthesisUtterance === "function"
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    typeof window.SpeechSynthesisUtterance === 'function'
   );
 }
 

@@ -1,10 +1,10 @@
-import { cleanup, render as rtlRender, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render as rtlRender, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { LockBadge, LockedFeatureCard } from "./lock-badge";
-import { UpgradeDialog } from "./upgrade-dialog";
-import type { ReactElement } from "react";
-import { IntlWrapper } from "~/test/intl";
+import { LockBadge, LockedFeatureCard } from './lock-badge';
+import { UpgradeDialog } from './upgrade-dialog';
+import type { ReactElement } from 'react';
+import { IntlWrapper } from '~/test/intl';
 
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -12,56 +12,47 @@ function render(ui: ReactElement) {
 
 afterEach(cleanup);
 
-describe("LockBadge", () => {
-  it("defaults to a calm Family label", () => {
+describe('LockBadge', () => {
+  it('defaults to a calm Family label', () => {
     render(<LockBadge />);
-    expect(screen.getByText("Family")).toBeInTheDocument();
+    expect(screen.getByText('Family')).toBeInTheDocument();
   });
 
-  it("accepts a custom label", () => {
+  it('accepts a custom label', () => {
     render(<LockBadge label="Premium" />);
-    expect(screen.getByText("Premium")).toBeInTheDocument();
+    expect(screen.getByText('Premium')).toBeInTheDocument();
   });
 });
 
-describe("LockedFeatureCard", () => {
-  it("routes its single CTA to /pricing", () => {
+describe('LockedFeatureCard', () => {
+  it('routes its single CTA to /pricing', () => {
     render(<LockedFeatureCard />);
-    const cta = screen.getByRole("link", { name: "See plans" });
-    expect(cta).toHaveAttribute("href", "/pricing");
+    const cta = screen.getByRole('link', { name: 'See plans' });
+    expect(cta).toHaveAttribute('href', '/pricing');
   });
 
-  it("reassures that existing content stays free (no dark pattern)", () => {
+  it('reassures that existing content stays free (no dark pattern)', () => {
     render(<LockedFeatureCard />);
     expect(screen.getByText(/already saved stays free/i)).toBeInTheDocument();
   });
 
-  it("uses the provided title", () => {
+  it('uses the provided title', () => {
     render(<LockedFeatureCard title="AI recipe generation" />);
-    expect(
-      screen.getByRole("heading", { name: "AI recipe generation" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'AI recipe generation' })).toBeInTheDocument();
   });
 });
 
-describe("UpgradeDialog", () => {
-  it("explains the gated feature and links to /pricing when open", () => {
+describe('UpgradeDialog', () => {
+  it('explains the gated feature and links to /pricing when open', () => {
     render(<UpgradeDialog feature="aiGeneration" open />);
 
-    expect(
-      screen.getByRole("heading", { name: /Unlock Family/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/AI recipe generation is part of Family/i),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See plans" })).toHaveAttribute(
-      "href",
-      "/pricing",
-    );
+    expect(screen.getByRole('heading', { name: /Unlock Family/i })).toBeInTheDocument();
+    expect(screen.getByText(/AI recipe generation is part of Family/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'See plans' })).toHaveAttribute('href', '/pricing');
   });
 
-  it("offers a dismiss control (no forced conversion)", () => {
+  it('offers a dismiss control (no forced conversion)', () => {
     render(<UpgradeDialog open />);
-    expect(screen.getByRole("button", { name: "Not now" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
   });
 });

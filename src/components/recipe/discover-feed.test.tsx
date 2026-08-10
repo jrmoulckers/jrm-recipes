@@ -1,36 +1,34 @@
-import { cleanup, render as rtlRender } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render as rtlRender } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { DiscoverFeed } from "./discover-feed";
-import { type CardRecipe } from "./recipe-card";
-import type { ReactElement } from "react";
-import { IntlWrapper } from "~/test/intl";
+import { DiscoverFeed } from './discover-feed';
+import { type CardRecipe } from './recipe-card';
+import type { ReactElement } from 'react';
+import { IntlWrapper } from '~/test/intl';
 
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
 }
 
-vi.mock("~/server/recipes/discover-actions", () => ({
+vi.mock('~/server/recipes/discover-actions', () => ({
   loadMorePublicRecipesAction: vi.fn(),
 }));
 
-vi.mock("~/server/collections/actions", () => ({
+vi.mock('~/server/collections/actions', () => ({
   toggleFavoriteAction: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 
 afterEach(() => {
   cleanup();
-  document.head
-    .querySelectorAll('link[rel="preload"][as="image"]')
-    .forEach((el) => el.remove());
+  document.head.querySelectorAll('link[rel="preload"][as="image"]').forEach((el) => el.remove());
 });
 
 function makeItems(count: number): CardRecipe[] {
@@ -43,49 +41,41 @@ function makeItems(count: number): CardRecipe[] {
     totalMinutes: null,
     servings: null,
     difficulty: null,
-    visibility: "public",
+    visibility: 'public',
   }));
 }
 
-describe("DiscoverFeed LCP priority", () => {
-  it("prioritizes only the first priorityCount cards and lazy-loads the rest", () => {
+describe('DiscoverFeed LCP priority', () => {
+  it('prioritizes only the first priorityCount cards and lazy-loads the rest', () => {
     const { container } = render(
-      <DiscoverFeed
-        initialItems={makeItems(5)}
-        initialNextOffset={null}
-        priorityCount={3}
-      />,
+      <DiscoverFeed initialItems={makeItems(5)} initialNextOffset={null} priorityCount={3} />,
     );
 
-    const imgs = Array.from(container.querySelectorAll("img"));
+    const imgs = Array.from(container.querySelectorAll('img'));
     expect(imgs).toHaveLength(5);
 
     // First row (indices 0-2) render eagerly for LCP.
     for (const img of imgs.slice(0, 3)) {
-      expect(img).not.toHaveAttribute("loading", "lazy");
+      expect(img).not.toHaveAttribute('loading', 'lazy');
     }
     // Everything after the first row stays lazy.
     for (const img of imgs.slice(3)) {
-      expect(img).toHaveAttribute("loading", "lazy");
+      expect(img).toHaveAttribute('loading', 'lazy');
     }
 
     // Exactly the first three images get a preload hint.
-    const preloads = document.head.querySelectorAll(
-      'link[rel="preload"][as="image"]',
-    );
+    const preloads = document.head.querySelectorAll('link[rel="preload"][as="image"]');
     expect(preloads).toHaveLength(3);
   });
 
-  it("keeps every card lazy when priorityCount is 0 (below-the-fold feed)", () => {
+  it('keeps every card lazy when priorityCount is 0 (below-the-fold feed)', () => {
     const { container } = render(
       <DiscoverFeed initialItems={makeItems(3)} initialNextOffset={null} />,
     );
 
-    for (const img of container.querySelectorAll("img")) {
-      expect(img).toHaveAttribute("loading", "lazy");
+    for (const img of container.querySelectorAll('img')) {
+      expect(img).toHaveAttribute('loading', 'lazy');
     }
-    expect(
-      document.head.querySelectorAll('link[rel="preload"][as="image"]'),
-    ).toHaveLength(0);
+    expect(document.head.querySelectorAll('link[rel="preload"][as="image"]')).toHaveLength(0);
   });
 });

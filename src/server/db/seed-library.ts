@@ -10,10 +10,10 @@
  * Every row carries a stable, deterministic id so re-running `pnpm db:seed`
  * updates in place and row counts stay constant.
  */
-import type { NewCollection, NewCollectionRecipe, NewFavorite } from "./schema";
-import type { NewCookLogEntry } from "./schema";
-import type { NewMealPlanEntry } from "./schema";
-import type { NewShoppingList, NewShoppingListItem } from "./schema";
+import type { NewCollection, NewCollectionRecipe, NewFavorite } from './schema';
+import type { NewCookLogEntry } from './schema';
+import type { NewMealPlanEntry } from './schema';
+import type { NewShoppingList, NewShoppingListItem } from './schema';
 
 /** A clock that resolves an offset (days in the past) to a concrete Date. */
 export type SeedClock = (daysAgo: number, extraMinutes?: number) => Date;
@@ -27,20 +27,20 @@ export type LibraryIds = {
 };
 
 /** Stable id of the single owner shopping list (so its items rebuild cleanly). */
-export const SEED_SHOPPING_LIST_ID = "seed_shl_owner";
+export const SEED_SHOPPING_LIST_ID = 'seed_shl_owner';
 
 /** Stable ids of the seeded collections (so their memberships rebuild cleanly). */
 export const SEED_COLLECTION_IDS = [
-  "seed_col_weeknight",
-  "seed_col_baking",
-  "seed_col_sunday",
+  'seed_col_weeknight',
+  'seed_col_baking',
+  'seed_col_sunday',
 ] as const;
 
 /** Format a Date as a timezone-stable `YYYY-MM-DD` for `date`-typed columns. */
 export function toDateStr(d: Date): string {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
@@ -49,65 +49,62 @@ export function toDateStr(d: Date): string {
  * making the seeded dishes, dated across the last few months, some with a note,
  * a photo, or a servings count.
  */
-export function buildCookLogRows(
-  ids: LibraryIds,
-  clock: SeedClock,
-): NewCookLogEntry[] {
+export function buildCookLogRows(ids: LibraryIds, clock: SeedClock): NewCookLogEntry[] {
   const { ownerId, users, recipes } = ids;
   return [
     {
-      id: "seed_clog_gravy_recent",
+      id: 'seed_clog_gravy_recent',
       recipeId: recipes.gravy,
       userId: ownerId,
       cookedAt: clock(6, 18 * 60),
-      note: "Doubled the batch and froze half. The ribs fell right off the bone.",
+      note: 'Doubled the batch and froze half. The ribs fell right off the bone.',
       servingsMade: 8,
     },
     {
-      id: "seed_clog_gravy_rosa",
+      id: 'seed_clog_gravy_rosa',
       recipeId: recipes.gravy,
       userId: users.rosa,
       cookedAt: clock(34, 17 * 60),
-      note: "Added a parmesan rind like Mateo suggested. Worth it.",
+      note: 'Added a parmesan rind like Mateo suggested. Worth it.',
       servingsMade: 6,
     },
     {
-      id: "seed_clog_gravy_old",
+      id: 'seed_clog_gravy_old',
       recipeId: recipes.gravy,
       userId: ownerId,
       cookedAt: clock(88),
       servingsMade: 8,
     },
     {
-      id: "seed_clog_marinara_owner",
+      id: 'seed_clog_marinara_owner',
       recipeId: recipes.marinara,
       userId: ownerId,
       cookedAt: clock(3, 19 * 60),
-      note: "Tuesday-night rescue. On the table in 25 minutes.",
+      note: 'Tuesday-night rescue. On the table in 25 minutes.',
       servingsMade: 4,
     },
     {
-      id: "seed_clog_marinara_mateo",
+      id: 'seed_clog_marinara_mateo',
       recipeId: recipes.marinara,
       userId: users.mateo,
       cookedAt: clock(12),
       servingsMade: 4,
     },
     {
-      id: "seed_clog_focaccia_owner",
+      id: 'seed_clog_focaccia_owner',
       recipeId: recipes.focaccia,
       userId: ownerId,
       cookedAt: clock(20, 15 * 60),
-      note: "Overnight ferment gave the biggest crumb yet.",
-      photoUrl: "https://images.heirloom.local/seed/focaccia-crumb.jpg",
+      note: 'Overnight ferment gave the biggest crumb yet.',
+      photoUrl: 'https://images.heirloom.local/seed/focaccia-crumb.jpg',
       servingsMade: 12,
     },
     {
-      id: "seed_clog_focaccia_gran",
+      id: 'seed_clog_focaccia_gran',
       recipeId: recipes.focaccia,
       userId: users.gran,
       cookedAt: clock(46),
-      note: "Made it for Sunday lunch. Everyone went back for seconds.",
+      note: 'Made it for Sunday lunch. Everyone went back for seconds.',
       servingsMade: 12,
     },
   ];
@@ -118,59 +115,57 @@ export function buildCollectionRows(ids: LibraryIds): NewCollection[] {
   const { ownerId, users } = ids;
   return [
     {
-      id: "seed_col_weeknight",
+      id: 'seed_col_weeknight',
       userId: ownerId,
-      name: "Weeknight Winners",
-      description: "Fast, forgiving dinners for the middle of the week.",
+      name: 'Weeknight Winners',
+      description: 'Fast, forgiving dinners for the middle of the week.',
     },
     {
-      id: "seed_col_baking",
+      id: 'seed_col_baking',
       userId: ownerId,
-      name: "Baking Projects",
-      description: "Weekend bakes worth the wait.",
+      name: 'Baking Projects',
+      description: 'Weekend bakes worth the wait.',
     },
     {
-      id: "seed_col_sunday",
+      id: 'seed_col_sunday',
       userId: users.gran,
-      name: "Sunday Traditions",
-      description: "The slow, saucy classics we grew up on.",
+      name: 'Sunday Traditions',
+      description: 'The slow, saucy classics we grew up on.',
     },
   ];
 }
 
 /** Recipe memberships for the seeded collections, ordered by `position`. */
-export function buildCollectionRecipeRows(
-  ids: LibraryIds,
-): NewCollectionRecipe[] {
+export function buildCollectionRecipeRows(ids: LibraryIds): NewCollectionRecipe[] {
   const { recipes } = ids;
   return [
     {
-      id: "seed_colr_weeknight_mar",
-      collectionId: "seed_col_weeknight",
+      id: 'seed_colr_weeknight_mar',
+      collectionId: 'seed_col_weeknight',
       recipeId: recipes.marinara,
       position: 0,
     },
     {
-      id: "seed_colr_weeknight_foc",
-      collectionId: "seed_col_weeknight",
+      id: 'seed_colr_weeknight_foc',
+      collectionId: 'seed_col_weeknight',
       recipeId: recipes.focaccia,
       position: 1,
     },
     {
-      id: "seed_colr_baking_foc",
-      collectionId: "seed_col_baking",
+      id: 'seed_colr_baking_foc',
+      collectionId: 'seed_col_baking',
       recipeId: recipes.focaccia,
       position: 0,
     },
     {
-      id: "seed_colr_sunday_gravy",
-      collectionId: "seed_col_sunday",
+      id: 'seed_colr_sunday_gravy',
+      collectionId: 'seed_col_sunday',
       recipeId: recipes.gravy,
       position: 0,
     },
     {
-      id: "seed_colr_sunday_mar",
-      collectionId: "seed_col_sunday",
+      id: 'seed_colr_sunday_mar',
+      collectionId: 'seed_col_sunday',
       recipeId: recipes.marinara,
       position: 1,
     },
@@ -181,20 +176,20 @@ export function buildCollectionRecipeRows(
 export function buildFavoriteRows(ids: LibraryIds): NewFavorite[] {
   const { ownerId, users, recipes } = ids;
   return [
-    { id: "seed_fav_owner_gravy", userId: ownerId, recipeId: recipes.gravy },
-    { id: "seed_fav_rosa_gravy", userId: users.rosa, recipeId: recipes.gravy },
+    { id: 'seed_fav_owner_gravy', userId: ownerId, recipeId: recipes.gravy },
+    { id: 'seed_fav_rosa_gravy', userId: users.rosa, recipeId: recipes.gravy },
     {
-      id: "seed_fav_rosa_focaccia",
+      id: 'seed_fav_rosa_focaccia',
       userId: users.rosa,
       recipeId: recipes.focaccia,
     },
     {
-      id: "seed_fav_mateo_marinara",
+      id: 'seed_fav_mateo_marinara',
       userId: users.mateo,
       recipeId: recipes.marinara,
     },
     {
-      id: "seed_fav_gran_focaccia",
+      id: 'seed_fav_gran_focaccia',
       userId: users.gran,
       recipeId: recipes.focaccia,
     },
@@ -215,81 +210,79 @@ export function buildShoppingListRow(ids: LibraryIds): NewShoppingList {
  * added by hand, with a mix of checked state. Quantities stay within the
  * shopping_list_items CHECK constraints (>= 0, and max >= min when both set).
  */
-export function buildShoppingListItemRows(
-  ids: LibraryIds,
-): NewShoppingListItem[] {
+export function buildShoppingListItemRows(ids: LibraryIds): NewShoppingListItem[] {
   const { recipes } = ids;
   const listId = SEED_SHOPPING_LIST_ID;
   return [
     {
-      id: "seed_sli_tomatoes",
+      id: 'seed_sli_tomatoes',
       listId,
-      item: "Canned San Marzano tomatoes",
+      item: 'Canned San Marzano tomatoes',
       quantity: 84,
-      unit: "oz",
+      unit: 'oz',
       requiredBaseQuantity: 2381.358,
-      requiredBaseUnit: "g",
-      category: "Pantry",
-      note: "Gravy + marinara combined",
+      requiredBaseUnit: 'g',
+      category: 'Pantry',
+      note: 'Gravy + marinara combined',
       checked: false,
       recipeId: recipes.gravy,
       position: 0,
     },
     {
-      id: "seed_sli_garlic",
+      id: 'seed_sli_garlic',
       listId,
-      item: "Garlic",
+      item: 'Garlic',
       quantity: 10,
       quantityMax: 12,
-      unit: "cloves",
+      unit: 'cloves',
       requiredBaseQuantity: 10,
       requiredBaseQuantityMax: 12,
-      requiredBaseUnit: "cloves",
-      category: "Produce",
+      requiredBaseUnit: 'cloves',
+      category: 'Produce',
       checked: false,
       recipeId: recipes.marinara,
       position: 1,
     },
     {
-      id: "seed_sli_ribs",
+      id: 'seed_sli_ribs',
       listId,
-      item: "Pork spare ribs",
+      item: 'Pork spare ribs',
       quantity: 1,
-      unit: "lb",
+      unit: 'lb',
       requiredBaseQuantity: 453.592,
-      requiredBaseUnit: "g",
-      category: "Butcher",
+      requiredBaseUnit: 'g',
+      category: 'Butcher',
       checked: true,
       recipeId: recipes.gravy,
       position: 2,
     },
     {
-      id: "seed_sli_oil",
+      id: 'seed_sli_oil',
       listId,
-      item: "Extra-virgin olive oil",
+      item: 'Extra-virgin olive oil',
       quantity: 1,
-      unit: "bottle",
+      unit: 'bottle',
       requiredBaseQuantity: 1,
-      requiredBaseUnit: "bottle",
-      category: "Pantry",
+      requiredBaseUnit: 'bottle',
+      category: 'Pantry',
       checked: false,
       recipeId: recipes.focaccia,
       position: 3,
     },
     {
-      id: "seed_sli_parmesan",
+      id: 'seed_sli_parmesan',
       listId,
-      item: "Parmesan wedge",
-      category: "Dairy",
-      note: "For grating + a rind for the gravy",
+      item: 'Parmesan wedge',
+      category: 'Dairy',
+      note: 'For grating + a rind for the gravy',
       checked: false,
       position: 4,
     },
     {
-      id: "seed_sli_towels",
+      id: 'seed_sli_towels',
       listId,
-      item: "Paper towels",
-      category: "Household",
+      item: 'Paper towels',
+      category: 'Household',
       checked: true,
       position: 5,
     },
@@ -301,81 +294,78 @@ export function buildShoppingListItemRows(
  * notes ("Leftovers", "Eat out"). Dates run from today forward so the planner
  * shows an upcoming week. Some entries are scoped to the family group.
  */
-export function buildMealPlanRows(
-  ids: LibraryIds,
-  clock: SeedClock,
-): NewMealPlanEntry[] {
+export function buildMealPlanRows(ids: LibraryIds, clock: SeedClock): NewMealPlanEntry[] {
   const { ownerId, groupId, recipes } = ids;
   const day = (aheadDays: number) => toDateStr(clock(-aheadDays));
   return [
     {
-      id: "seed_mpe_d0_dinner",
+      id: 'seed_mpe_d0_dinner',
       userId: ownerId,
       groupId,
       date: day(0),
-      slot: "dinner",
+      slot: 'dinner',
       recipeId: recipes.gravy,
       position: 0,
     },
     {
-      id: "seed_mpe_d1_dinner",
+      id: 'seed_mpe_d1_dinner',
       userId: ownerId,
       groupId,
       date: day(1),
-      slot: "dinner",
+      slot: 'dinner',
       recipeId: recipes.marinara,
       position: 0,
     },
     {
-      id: "seed_mpe_d2_dinner",
+      id: 'seed_mpe_d2_dinner',
       userId: ownerId,
       groupId,
       date: day(2),
-      slot: "dinner",
-      note: "Leftovers night",
+      slot: 'dinner',
+      note: 'Leftovers night',
       position: 0,
     },
     {
-      id: "seed_mpe_d3_lunch",
+      id: 'seed_mpe_d3_lunch',
       userId: ownerId,
       date: day(3),
-      slot: "lunch",
+      slot: 'lunch',
       recipeId: recipes.marinara,
       position: 0,
     },
     {
-      id: "seed_mpe_d3_dinner",
+      id: 'seed_mpe_d3_dinner',
       userId: ownerId,
       groupId,
       date: day(3),
-      slot: "dinner",
+      slot: 'dinner',
       recipeId: recipes.focaccia,
-      note: "As a side with soup",
+      note: 'As a side with soup',
       position: 1,
     },
     {
-      id: "seed_mpe_d4_dinner",
+      id: 'seed_mpe_d4_dinner',
       userId: ownerId,
       date: day(4),
-      slot: "dinner",
-      note: "Eat out",
+      slot: 'dinner',
+      note: 'Eat out',
       position: 0,
     },
     {
-      id: "seed_mpe_d5_breakfast",
+      id: 'seed_mpe_d5_breakfast',
       userId: ownerId,
       date: day(5),
-      slot: "breakfast",
+      slot: 'breakfast',
       recipeId: recipes.focaccia,
-      note: "Focaccia toast",
+      note: 'Focaccia toast',
       position: 0,
     },
     {
-      id: "seed_mpe_d6_dinner",
+      id: 'seed_mpe_d6_dinner',
       userId: ownerId,
       groupId,
       date: day(6),
-      slot: "dinner",
+      slot: 'dinner',
       recipeId: recipes.gravy,
       position: 0,
     },

@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { cookAlongs, groupMembers } from "~/server/db/schema";
-import type { RsvpStatus } from "~/server/db/schema";
-import { getHiddenAuthorIds } from "~/server/moderation/blocks";
+import { db, isDbConfigured } from '~/server/db';
+import { cookAlongs, groupMembers } from '~/server/db/schema';
+import type { RsvpStatus } from '~/server/db/schema';
+import { getHiddenAuthorIds } from '~/server/moderation/blocks';
 
 export type CookAlongAttendee = {
   userId: string;
@@ -50,19 +50,13 @@ export async function getUpcomingCookAlongs(
   if (!isDbConfigured() || !viewerId) return [];
 
   const membership = await db.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, viewerId),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, viewerId)),
     columns: { id: true },
   });
   if (!membership) return [];
 
   const rows = await db.query.cookAlongs.findMany({
-    where: and(
-      eq(cookAlongs.groupId, groupId),
-      gte(cookAlongs.scheduledFor, now),
-    ),
+    where: and(eq(cookAlongs.groupId, groupId), gte(cookAlongs.scheduledFor, now)),
     orderBy: [asc(cookAlongs.scheduledFor)],
     limit,
     columns: {
@@ -109,9 +103,8 @@ export async function getUpcomingCookAlongs(
       recipe: row.recipe ?? null,
       host: row.host ?? null,
       attendees,
-      goingCount: attendees.filter((a) => a.status === "going").length,
-      viewerStatus:
-        attendees.find((a) => a.userId === viewerId)?.status ?? null,
+      goingCount: attendees.filter((a) => a.status === 'going').length,
+      viewerStatus: attendees.find((a) => a.userId === viewerId)?.status ?? null,
     };
   });
 }
@@ -154,9 +147,7 @@ export async function getRecentCookAlongsToLog(
   return rows
     .filter((row) =>
       row.rsvps.some(
-        (r) =>
-          r.userId === viewerId &&
-          (r.status === "going" || r.status === "maybe"),
+        (r) => r.userId === viewerId && (r.status === 'going' || r.status === 'maybe'),
       ),
     )
     .map((row) => ({

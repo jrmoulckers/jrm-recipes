@@ -1,4 +1,4 @@
-import "server-only";
+import 'server-only';
 
 /**
  * Server-side consent gate (issue #324, hardened per the #471 review).
@@ -13,10 +13,10 @@ import "server-only";
  * Fails closed: if the request state can't be read (e.g. called outside a
  * request scope), nothing is captured.
  */
-import { cookies, headers } from "next/headers";
+import { cookies, headers } from 'next/headers';
 
-import { ANALYTICS_CONSENT_COOKIE, parseConsent } from "~/config/consent";
-import { analyticsRequiresConsent } from "./config";
+import { ANALYTICS_CONSENT_COOKIE, parseConsent } from '~/config/consent';
+import { analyticsRequiresConsent } from './config';
 
 /**
  * Whether server-side capture is permitted for the current request. Same rules,
@@ -29,25 +29,20 @@ import { analyticsRequiresConsent } from "./config";
  */
 export async function serverCaptureAllowed(): Promise<boolean> {
   try {
-    const [cookieStore, headerStore] = await Promise.all([
-      cookies(),
-      headers(),
-    ]);
+    const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
 
     // 1. Browser privacy signals always win.
-    if (headerStore.get("sec-gpc") === "1" || headerStore.get("dnt") === "1") {
+    if (headerStore.get('sec-gpc') === '1' || headerStore.get('dnt') === '1') {
       return false;
     }
 
-    const status = parseConsent(
-      cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
-    );
+    const status = parseConsent(cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value);
 
     // 2. Explicit opt-out.
-    if (status === "denied") return false;
+    if (status === 'denied') return false;
 
     // 3. Opt-in model: nothing until an explicit grant.
-    if (analyticsRequiresConsent()) return status === "granted";
+    if (analyticsRequiresConsent()) return status === 'granted';
 
     // 4. Opt-out model: allowed unless blocked above.
     return true;

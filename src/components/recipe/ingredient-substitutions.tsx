@@ -1,53 +1,49 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { ArrowLeftRight } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeftRight } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 import {
   getSubstitutions,
   isDietaryTag,
   matchIngredientDetailed,
   type DietaryTag,
-} from "~/lib/substitutions";
-import { safeSubstitutions } from "~/lib/dietary-match";
-import { type Allergen } from "~/lib/allergens";
-import { Badge, type BadgeProps } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/lib/substitutions';
+import { safeSubstitutions } from '~/lib/dietary-match';
+import { type Allergen } from '~/lib/allergens';
+import { Badge, type BadgeProps } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
-const TAG_VARIANT: Record<DietaryTag, NonNullable<BadgeProps["variant"]>> = {
-  vegan: "success",
-  vegetarian: "secondary",
-  "dairy-free": "accent",
-  "gluten-free": "warning",
-  "egg-free": "muted",
-  "nut-free": "warning",
-  "soy-free": "muted",
-  "shellfish-free": "secondary",
-  "fish-free": "accent",
-  "sesame-free": "muted",
+const TAG_VARIANT: Record<DietaryTag, NonNullable<BadgeProps['variant']>> = {
+  vegan: 'success',
+  vegetarian: 'secondary',
+  'dairy-free': 'accent',
+  'gluten-free': 'warning',
+  'egg-free': 'muted',
+  'nut-free': 'warning',
+  'soy-free': 'muted',
+  'shellfish-free': 'secondary',
+  'fish-free': 'accent',
+  'sesame-free': 'muted',
 };
 
 const FILTER_TAGS = [
-  "vegan",
-  "vegetarian",
-  "dairy-free",
-  "gluten-free",
-  "egg-free",
+  'vegan',
+  'vegetarian',
+  'dairy-free',
+  'gluten-free',
+  'egg-free',
 ] as const satisfies readonly DietaryTag[];
 
 const FILTER_LABEL_KEY: Record<(typeof FILTER_TAGS)[number], string> = {
-  vegan: "vegan",
-  vegetarian: "vegetarian",
-  "dairy-free": "dairyFree",
-  "gluten-free": "glutenFree",
-  "egg-free": "eggFree",
+  vegan: 'vegan',
+  vegetarian: 'vegetarian',
+  'dairy-free': 'dairyFree',
+  'gluten-free': 'glutenFree',
+  'egg-free': 'eggFree',
 };
 
 /**
@@ -80,18 +76,12 @@ export function IngredientSubstitutions({
    */
   avoidAllergens?: Allergen[];
 }) {
-  const t = useTranslations("ingredientSubstitutions");
-  const presetKey = (presetTags ?? []).join("|");
-  const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>(
-    presetTags ?? [],
-  );
+  const t = useTranslations('ingredientSubstitutions');
+  const presetKey = (presetTags ?? []).join('|');
+  const [selectedTags, setSelectedTags] = React.useState<DietaryTag[]>(presetTags ?? []);
   const match = React.useMemo(() => matchIngredientDetailed(item), [item]);
   const substitutions = React.useMemo(
-    () =>
-      safeSubstitutions(
-        getSubstitutions(item, selectedTags),
-        avoidAllergens ?? [],
-      ),
+    () => safeSubstitutions(getSubstitutions(item, selectedTags), avoidAllergens ?? []),
     [item, selectedTags, avoidAllergens],
   );
 
@@ -99,9 +89,7 @@ export function IngredientSubstitutions({
   // a different family member). Keyed on the joined tags so a same-content array
   // identity change doesn't clobber a manual toggle.
   React.useEffect(() => {
-    setSelectedTags(
-      presetKey.length > 0 ? presetKey.split("|").filter(isDietaryTag) : [],
-    );
+    setSelectedTags(presetKey.length > 0 ? presetKey.split('|').filter(isDietaryTag) : []);
   }, [presetKey]);
 
   if (!match) return null;
@@ -111,9 +99,7 @@ export function IngredientSubstitutions({
 
   function toggleTag(tag: DietaryTag) {
     setSelectedTags((current) =>
-      current.includes(tag)
-        ? current.filter((selected) => selected !== tag)
-        : [...current, tag],
+      current.includes(tag) ? current.filter((selected) => selected !== tag) : [...current, tag],
     );
   }
 
@@ -124,15 +110,15 @@ export function IngredientSubstitutions({
           type="button"
           aria-label={
             flagged
-              ? t("safeSwapsAria", { item: entry.name.toLowerCase() })
-              : t("substitutionsAria", { item: entry.name.toLowerCase() })
+              ? t('safeSwapsAria', { item: entry.name.toLowerCase() })
+              : t('substitutionsAria', { item: entry.name.toLowerCase() })
           }
-          title={flagged ? t("safeSwapsTitle") : t("substitutionsTitle")}
+          title={flagged ? t('safeSwapsTitle') : t('substitutionsTitle')}
           className={cn(
-            "inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            'inline-flex size-6 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
             flagged
-              ? "text-warning hover:bg-warning/10"
-              : "text-muted-foreground hover:bg-muted hover:text-primary",
+              ? 'text-warning hover:bg-warning/10'
+              : 'text-muted-foreground hover:bg-muted hover:text-primary',
             className,
           )}
         >
@@ -143,17 +129,13 @@ export function IngredientSubstitutions({
         <div className="mb-3 space-y-1.5">
           <div className="flex items-center gap-1.5 font-display text-sm font-semibold">
             <ArrowLeftRight className="size-3.5 text-primary" />
-            {t("outOf", { item: entry.name.toLowerCase() })}
+            {t('outOf', { item: entry.name.toLowerCase() })}
           </div>
           <p className="text-xs text-muted-foreground">
-            {t("confidenceMatch", { level: confidenceLabel })}
+            {t('confidenceMatch', { level: confidenceLabel })}
           </p>
         </div>
-        <div
-          role="group"
-          aria-label={t("filterAria")}
-          className="mb-3 flex flex-wrap gap-1.5"
-        >
+        <div role="group" aria-label={t('filterAria')} className="mb-3 flex flex-wrap gap-1.5">
           {FILTER_TAGS.map((tag) => {
             const selected = selectedTags.includes(tag);
             return (
@@ -161,7 +143,7 @@ export function IngredientSubstitutions({
                 key={tag}
                 type="button"
                 size="sm"
-                variant={selected ? "secondary" : "outline"}
+                variant={selected ? 'secondary' : 'outline'}
                 aria-pressed={selected}
                 onClick={() => toggleTag(tag)}
                 className="h-7 rounded-full px-2 text-xs"
@@ -174,10 +156,7 @@ export function IngredientSubstitutions({
         {substitutions.length > 0 ? (
           <ul className="flex flex-col gap-2.5">
             {substitutions.map((sub, i) => (
-              <li
-                key={`${sub.substitute}-${i}`}
-                className="flex flex-col gap-1"
-              >
+              <li key={`${sub.substitute}-${i}`} className="flex flex-col gap-1">
                 <span className="font-medium">{sub.substitute}</span>
                 <span className="text-xs leading-relaxed text-muted-foreground">
                   {sub.ratioOrNotes}
@@ -200,7 +179,7 @@ export function IngredientSubstitutions({
           </ul>
         ) : (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-            {t("noMatches")}
+            {t('noMatches')}
           </p>
         )}
       </PopoverContent>

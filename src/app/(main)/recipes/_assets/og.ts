@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import type { FullRecipe } from "~/server/recipes/queries";
-import type { CardData, CardDifficulty } from "./card";
-import { fraunces600, nunito600, nunito800 } from "./fonts";
+import type { FullRecipe } from '~/server/recipes/queries';
+import type { CardData, CardDifficulty } from './card';
+import { fraunces600, nunito600, nunito800 } from './fonts';
 
 /**
  * Server-side helpers for the recipe share-card image: font loading, cover
@@ -14,7 +14,7 @@ export type OgFont = {
   name: string;
   data: Buffer;
   weight: 400 | 600 | 700 | 800;
-  style: "normal";
+  style: 'normal';
 };
 
 let fonts: OgFont[] | null = null;
@@ -23,22 +23,22 @@ let fonts: OgFont[] | null = null;
 export function loadFonts(): OgFont[] {
   fonts ??= [
     {
-      name: "Fraunces",
-      data: Buffer.from(fraunces600, "base64"),
+      name: 'Fraunces',
+      data: Buffer.from(fraunces600, 'base64'),
       weight: 600,
-      style: "normal",
+      style: 'normal',
     },
     {
-      name: "Nunito",
-      data: Buffer.from(nunito600, "base64"),
+      name: 'Nunito',
+      data: Buffer.from(nunito600, 'base64'),
       weight: 600,
-      style: "normal",
+      style: 'normal',
     },
     {
-      name: "Nunito",
-      data: Buffer.from(nunito800, "base64"),
+      name: 'Nunito',
+      data: Buffer.from(nunito800, 'base64'),
       weight: 800,
-      style: "normal",
+      style: 'normal',
     },
   ];
   return fonts;
@@ -46,13 +46,10 @@ export function loadFonts(): OgFont[] {
 
 /** Ask Cloudinary for a right-sized, optimized cover. No-op for other hosts. */
 function optimizeCoverUrl(url: string): string {
-  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) {
     return url;
   }
-  return url.replace(
-    "/upload/",
-    "/upload/f_jpg,q_auto,w_1200,h_630,c_fill,g_auto/",
-  );
+  return url.replace('/upload/', '/upload/f_jpg,q_auto,w_1200,h_630,c_fill,g_auto/');
 }
 
 /**
@@ -69,30 +66,27 @@ export async function fetchCoverDataUri(
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
-    const type = res.headers.get("content-type") ?? "";
-    if (!type.startsWith("image/")) return null;
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.startsWith('image/')) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     // Guard against absurdly large downloads (~8 MB cap).
     if (buf.byteLength > 8_000_000) return null;
-    return `data:${type};base64,${buf.toString("base64")}`;
+    return `data:${type};base64,${buf.toString('base64')}`;
   } catch {
     return null;
   }
 }
 
-const DIFFICULTIES: CardDifficulty[] = ["easy", "medium", "hard"];
+const DIFFICULTIES: CardDifficulty[] = ['easy', 'medium', 'hard'];
 
 function asDifficulty(value: unknown): CardDifficulty | null {
-  return DIFFICULTIES.includes(value as CardDifficulty)
-    ? (value as CardDifficulty)
-    : null;
+  return DIFFICULTIES.includes(value as CardDifficulty) ? (value as CardDifficulty) : null;
 }
 
 /** Map a full recipe to card data, embedding an optimized cover image. */
 export async function mapRecipeToCard(recipe: FullRecipe): Promise<CardData> {
   const total =
-    recipe.totalMinutes ??
-    ((recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0) || null);
+    recipe.totalMinutes ?? ((recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0) || null);
 
   return {
     title: recipe.title,

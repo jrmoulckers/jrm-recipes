@@ -27,13 +27,13 @@
  * findUntranslated) are exported for reuse/testing. The CLI only runs when the
  * file is executed directly.
  */
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const messagesDir = resolve(repoRoot, "src", "messages");
-const configPath = resolve(repoRoot, "src", "config", "i18n.ts");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const messagesDir = resolve(repoRoot, 'src', 'messages');
+const configPath = resolve(repoRoot, 'src', 'config', 'i18n.ts');
 
 /** Cap on how many untranslated keys are listed before the report truncates. */
 const MAX_LISTED = 20;
@@ -43,12 +43,12 @@ const MAX_LISTED = 20;
  * their string values. Arrays are indexed (`items.0`) so ordered lists still
  * compare structurally.
  */
-export function flatten(value, prefix = "", out = {}) {
+export function flatten(value, prefix = '', out = {}) {
   if (Array.isArray(value)) {
     value.forEach((entry, index) =>
       flatten(entry, prefix ? `${prefix}.${index}` : String(index), out),
     );
-  } else if (value !== null && typeof value === "object") {
+  } else if (value !== null && typeof value === 'object') {
     for (const [key, child] of Object.entries(value)) {
       flatten(child, prefix ? `${prefix}.${key}` : key, out);
     }
@@ -67,19 +67,19 @@ export function flatten(value, prefix = "", out = {}) {
  * de-duplicated list. Non-string values yield [].
  */
 export function extractPlaceholders(message) {
-  if (typeof message !== "string") return [];
+  if (typeof message !== 'string') return [];
   const names = new Set();
   let depth = 0;
   for (let i = 0; i < message.length; i += 1) {
     const ch = message[i];
-    if (ch === "{") {
+    if (ch === '{') {
       if (depth === 0) {
         const rest = message.slice(i + 1);
         const name = rest.match(/^\s*([a-zA-Z0-9_]+)\s*(?:,|\})/);
         if (name) names.add(name[1]);
       }
       depth += 1;
-    } else if (ch === "}") {
+    } else if (ch === '}') {
       depth = Math.max(0, depth - 1);
     }
   }
@@ -93,27 +93,26 @@ export function extractPlaceholders(message) {
  */
 const ALLOWED_IDENTICAL = {
   de: new Set([
-    "Plan",
-    "Timer",
-    "Start",
-    "Familie",
-    "Import",
-    "Links",
-    "Pause",
-    "optional",
-    "(optional)",
-    "Status",
-    "Vegan",
-    "Moderation",
-    "Admin",
+    'Plan',
+    'Timer',
+    'Start',
+    'Familie',
+    'Import',
+    'Links',
+    'Pause',
+    'optional',
+    '(optional)',
+    'Status',
+    'Vegan',
+    'Moderation',
+    'Admin',
   ]),
-  es: new Set(["Plan", "Timer", "Ideal", "Total", "total", "min"]),
+  es: new Set(['Plan', 'Timer', 'Ideal', 'Total', 'total', 'min']),
   ar: new Set([]),
 };
 
 /** Brand and product nouns that stay in English for every locale. */
-const BRAND_TERMS =
-  /^(Heirloom|Heirloom Family|Family|PDF|URL|iOS|Android|Google|Apple|GitHub)$/;
+const BRAND_TERMS = /^(Heirloom|Heirloom Family|Family|PDF|URL|iOS|Android|Google|Apple|GitHub)$/;
 
 /**
  * Example email addresses, bare domains, and file extensions are identifiers
@@ -135,7 +134,7 @@ export function findUntranslated(sourceFlat, targetFlat, locale) {
   const allowed = ALLOWED_IDENTICAL[locale];
   const offenders = [];
   for (const [key, value] of Object.entries(sourceFlat)) {
-    if (typeof value !== "string") continue;
+    if (typeof value !== 'string') continue;
     if (!/[a-z]{3}/.test(value)) continue;
     if (BRAND_TERMS.test(value)) continue;
     if (IDENTIFIER_LIKE.test(value)) continue;
@@ -162,7 +161,7 @@ export function diffCatalog(sourceFlat, targetFlat, locale) {
     if (!targetKeys.has(key)) continue;
     const expected = extractPlaceholders(sourceFlat[key]);
     const actual = extractPlaceholders(targetFlat[key]);
-    if (expected.join("\u0000") !== actual.join("\u0000")) {
+    if (expected.join('\u0000') !== actual.join('\u0000')) {
       placeholderMismatches.push({ key, expected, actual });
     }
   }
@@ -189,11 +188,11 @@ export function diffCatalog(sourceFlat, targetFlat, locale) {
 export function findBannedPunctuation(flatCatalog) {
   const offenders = [];
   for (const [key, value] of Object.entries(flatCatalog)) {
-    if (typeof value !== "string") continue;
+    if (typeof value !== 'string') continue;
     const reasons = [];
-    if (value.includes("\u2014")) reasons.push("em dash");
-    if (/ \u2013 /.test(value)) reasons.push("en dash as a prose connector");
-    if (/\w; \w/.test(value)) reasons.push("prose semicolon");
+    if (value.includes('\u2014')) reasons.push('em dash');
+    if (/ \u2013 /.test(value)) reasons.push('en dash as a prose connector');
+    if (/\w; \w/.test(value)) reasons.push('prose semicolon');
     if (reasons.length) offenders.push({ key, reasons });
   }
   return offenders;
@@ -202,7 +201,7 @@ export function findBannedPunctuation(flatCatalog) {
 /** Read a JSON catalog for a locale from src/messages. */
 function loadCatalog(locale) {
   const file = resolve(messagesDir, `${locale}.json`);
-  return JSON.parse(readFileSync(file, "utf8"));
+  return JSON.parse(readFileSync(file, 'utf8'));
 }
 
 /**
@@ -211,27 +210,21 @@ function loadCatalog(locale) {
  * plain Node). A tolerant regex is enough given the file's stable shape.
  */
 export function readLocaleConfig(source) {
-  const listMatch = source.match(
-    /SUPPORTED_LOCALES\s*=\s*\[([^\]]*)\]\s*as const/,
-  );
+  const listMatch = source.match(/SUPPORTED_LOCALES\s*=\s*\[([^\]]*)\]\s*as const/);
   if (!listMatch) {
-    throw new Error("Could not find SUPPORTED_LOCALES in src/config/i18n.ts");
+    throw new Error('Could not find SUPPORTED_LOCALES in src/config/i18n.ts');
   }
-  const locales = [...listMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const locales = [...listMatch[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
 
-  const defaultMatch = source.match(
-    /DEFAULT_LOCALE\s*:\s*Locale\s*=\s*"([^"]+)"/,
-  );
+  const defaultMatch = source.match(/DEFAULT_LOCALE\s*:\s*Locale\s*=\s*['"]([^'"]+)['"]/);
   const defaultLocale = defaultMatch ? defaultMatch[1] : locales[0];
 
   return { locales, defaultLocale };
 }
 
 function main() {
-  const asJson = process.argv.includes("--json");
-  const { locales, defaultLocale } = readLocaleConfig(
-    readFileSync(configPath, "utf8"),
-  );
+  const asJson = process.argv.includes('--json');
+  const { locales, defaultLocale } = readLocaleConfig(readFileSync(configPath, 'utf8'));
 
   const sourceFlat = flatten(loadCatalog(defaultLocale));
   const targets = locales.filter((locale) => locale !== defaultLocale);
@@ -243,19 +236,14 @@ function main() {
   // The source catalog is not diffed against itself, but its punctuation still
   // has to hold, so this pass covers every locale.
   for (const locale of locales) {
-    const flat =
-      locale === defaultLocale ? sourceFlat : flatten(loadCatalog(locale));
+    const flat = locale === defaultLocale ? sourceFlat : flatten(loadCatalog(locale));
     const offenders = findBannedPunctuation(flat);
     punctuation[locale] = offenders;
     if (offenders.length) hasDrift = true;
   }
 
   for (const locale of targets) {
-    const result = diffCatalog(
-      sourceFlat,
-      flatten(loadCatalog(locale)),
-      locale,
-    );
+    const result = diffCatalog(sourceFlat, flatten(loadCatalog(locale)), locale);
     report[locale] = result;
     if (
       result.missing.length ||
@@ -289,13 +277,9 @@ function main() {
   );
 
   for (const locale of targets) {
-    const { missing, extra, placeholderMismatches, untranslated } =
-      report[locale];
+    const { missing, extra, placeholderMismatches, untranslated } = report[locale];
     const ok =
-      !missing.length &&
-      !extra.length &&
-      !placeholderMismatches.length &&
-      !untranslated.length;
+      !missing.length && !extra.length && !placeholderMismatches.length && !untranslated.length;
     if (ok) {
       console.log(`  \u2713 ${locale}: in sync`);
       continue;
@@ -312,19 +296,19 @@ function main() {
     for (const { key, expected, actual } of placeholderMismatches) {
       console.log(
         `      placeholder mismatch at ${key}: ` +
-          `expected {${expected.join(", ")}} got {${actual.join(", ")}}`,
+          `expected {${expected.join(', ')}} got {${actual.join(', ')}}`,
       );
     }
     if (untranslated.length) {
       const byNamespace = {};
       for (const key of untranslated) {
-        const namespace = key.split(".")[0];
+        const namespace = key.split('.')[0];
         byNamespace[namespace] = (byNamespace[namespace] ?? 0) + 1;
       }
       const summary = Object.entries(byNamespace)
         .sort((a, b) => b[1] - a[1])
         .map(([namespace, count]) => `${namespace}:${count}`)
-        .join(", ");
+        .join(', ');
       console.log(
         `      untranslated ${untranslated.length} key(s) still identical ` +
           `to ${defaultLocale} (${summary}):`,
@@ -342,11 +326,11 @@ function main() {
     ([, offenders]) => offenders.length,
   );
   if (punctuationOffenders.length) {
-    console.log("\n  punctuation standard (docs/voice-and-tone.md):");
+    console.log('\n  punctuation standard (docs/voice-and-tone.md):');
     for (const [locale, offenders] of punctuationOffenders) {
       console.log(`    \u2717 ${locale}: ${offenders.length} value(s)`);
       for (const { key, reasons } of offenders.slice(0, MAX_LISTED)) {
-        console.log(`        ${key}: ${reasons.join(", ")}`);
+        console.log(`        ${key}: ${reasons.join(', ')}`);
       }
       if (offenders.length > MAX_LISTED) {
         console.log(`        ... and ${offenders.length - MAX_LISTED} more`);
@@ -356,15 +340,12 @@ function main() {
 
   console.log(
     hasDrift
-      ? "\ni18n: catalogs are OUT OF SYNC. Resolve the differences above."
-      : "\ni18n: all catalogs are in sync.",
+      ? '\ni18n: catalogs are OUT OF SYNC. Resolve the differences above.'
+      : '\ni18n: all catalogs are in sync.',
   );
   process.exit(hasDrift ? 1 : 0);
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

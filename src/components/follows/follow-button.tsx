@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { UserCheck, UserPlus } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { UserCheck, UserPlus } from 'lucide-react';
 
-import { followUserAction, unfollowUserAction } from "~/server/follows/actions";
-import { Button } from "~/components/ui/button";
-import { useServerAction } from "~/lib/use-server-action";
+import { followUserAction, unfollowUserAction } from '~/server/follows/actions';
+import { Button } from '~/components/ui/button';
+import { useServerAction } from '~/lib/use-server-action';
 
 /**
  * Follow / Unfollow toggle for a public profile. Optimistic: flips immediately
@@ -22,12 +22,12 @@ export function FollowButton({
   initialFollowing: boolean;
   className?: string;
 }) {
-  const t = useTranslations("follows.button");
+  const t = useTranslations('follows.button');
   const [following, setFollowing] = React.useState(initialFollowing);
 
   const follow = useServerAction(followUserAction, {
     errorToast: true,
-    successToast: t("toasts.following"),
+    successToast: t('toasts.following'),
     onError: () => setFollowing(false),
   });
   const unfollow = useServerAction(unfollowUserAction, {
@@ -50,7 +50,7 @@ export function FollowButton({
   return (
     <Button
       type="button"
-      variant={following ? "outline" : "default"}
+      variant={following ? 'outline' : 'default'}
       disabled={pending}
       onClick={toggle}
       className={className}
@@ -58,11 +58,11 @@ export function FollowButton({
     >
       {following ? (
         <>
-          <UserCheck /> {t("following")}
+          <UserCheck /> {t('following')}
         </>
       ) : (
         <>
-          <UserPlus /> {t("follow")}
+          <UserPlus /> {t('follow')}
         </>
       )}
     </Button>

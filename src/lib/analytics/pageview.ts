@@ -9,13 +9,10 @@
  */
 
 /** Collection segments whose following segment is a dynamic id/slug. */
-const DYNAMIC_SEGMENTS: Record<
-  string,
-  { placeholder: string; statics: ReadonlySet<string> }
-> = {
-  recipes: { placeholder: ":id", statics: new Set(["new"]) },
-  collections: { placeholder: ":id", statics: new Set() },
-  groups: { placeholder: ":slug", statics: new Set() },
+const DYNAMIC_SEGMENTS: Record<string, { placeholder: string; statics: ReadonlySet<string> }> = {
+  recipes: { placeholder: ':id', statics: new Set(['new']) },
+  collections: { placeholder: ':id', statics: new Set() },
+  groups: { placeholder: ':slug', statics: new Set() },
 };
 
 /**
@@ -23,15 +20,15 @@ const DYNAMIC_SEGMENTS: Record<
  * (e.g. `/recipes/new`, `/recipes/:id/edit`, `/groups/:slug/settings`).
  */
 export function normalizePathname(pathname: string): string {
-  if (!pathname) return "/";
-  const segments = pathname.split("/");
+  if (!pathname) return '/';
+  const segments = pathname.split('/');
   for (let i = 0; i < segments.length - 1; i++) {
-    const rule = DYNAMIC_SEGMENTS[segments[i] ?? ""];
+    const rule = DYNAMIC_SEGMENTS[segments[i] ?? ''];
     const next = segments[i + 1];
     if (rule && next && !rule.statics.has(next)) {
       segments[i + 1] = rule.placeholder;
     }
   }
-  const normalized = segments.join("/");
-  return normalized.length > 0 ? normalized : "/";
+  const normalized = segments.join('/');
+  return normalized.length > 0 ? normalized : '/';
 }

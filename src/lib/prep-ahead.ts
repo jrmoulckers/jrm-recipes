@@ -11,7 +11,7 @@
  */
 
 export type PrepAheadCueKind =
-  "defrost" | "marinate" | "soak" | "overnight" | "chill" | "room-temp";
+  'defrost' | 'marinate' | 'soak' | 'overnight' | 'chill' | 'room-temp';
 
 export type PrepAheadCue = {
   kind: PrepAheadCueKind;
@@ -32,40 +32,40 @@ type CuePattern = {
  */
 const CUE_PATTERNS: CuePattern[] = [
   {
-    kind: "defrost",
-    label: "defrost",
+    kind: 'defrost',
+    label: 'defrost',
     pattern: /\b(?:defrost|thaw)(?:s|ed|ing)?\b/i,
   },
   {
-    kind: "marinate",
-    label: "marinate",
+    kind: 'marinate',
+    label: 'marinate',
     pattern: /\bmarin(?:ate|ated|ating|ade)\b/i,
   },
   {
-    kind: "soak",
-    label: "soak",
+    kind: 'soak',
+    label: 'soak',
     pattern: /\bsoak(?:s|ed|ing)?\b/i,
   },
   {
-    kind: "overnight",
-    label: "start it the night before",
+    kind: 'overnight',
+    label: 'start it the night before',
     pattern: /\b(?:overnight|night before|day before)\b/i,
   },
   {
-    kind: "chill",
-    label: "chill",
+    kind: 'chill',
+    label: 'chill',
     pattern: /\b(?:chill|refrigerate)(?:s|ed|ing)?\b/i,
   },
   {
-    kind: "room-temp",
-    label: "bring to room temperature",
+    kind: 'room-temp',
+    label: 'bring to room temperature',
     pattern: /\b(?:room temp(?:erature)?|come to room)\b/i,
   },
 ];
 
 /** Detect the distinct prep-ahead cues present across a recipe's text blocks. */
 export function detectPrepAheadCues(texts: readonly string[]): PrepAheadCue[] {
-  const haystack = texts.filter((t): t is string => Boolean(t)).join("\n");
+  const haystack = texts.filter((t): t is string => Boolean(t)).join('\n');
   if (!haystack.trim()) return [];
   const cues: PrepAheadCue[] = [];
   for (const { kind, label, pattern } of CUE_PATTERNS) {
@@ -81,9 +81,9 @@ export function detectPrepAheadCues(texts: readonly string[]): PrepAheadCue[] {
  */
 export function summarizePrepCues(cues: readonly PrepAheadCue[]): string {
   const labels = cues.map((c) => c.label);
-  if (labels.length === 0) return "";
+  if (labels.length === 0) return '';
   if (labels.length === 1) return labels[0]!;
-  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]!}`;
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]!}`;
 }
 
 /** A planned recipe to inspect. The text blocks are its steps + ingredients. */

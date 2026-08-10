@@ -2,30 +2,30 @@
 // Run: node scripts/generate-icons.mjs
 // Uses sharp to rasterize the potted plant from src/components/layout/logo.tsx
 // so installed-app surfaces carry the same mark as the site.
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
-const root = join(here, "..");
+const root = join(here, '..');
 
 // sharp may be pnpm-nested, try the normal resolve then the store path.
 let sharp;
 try {
-  sharp = require("sharp");
+  sharp = require('sharp');
 } catch {
-  sharp = require(join(root, "node_modules/.pnpm/node_modules/sharp"));
+  sharp = require(join(root, 'node_modules/.pnpm/node_modules/sharp'));
 }
 
-const outDir = join(root, "public", "icons");
+const outDir = join(root, 'public', 'icons');
 mkdirSync(outDir, { recursive: true });
 
-const BACKGROUND = "#fffaf3";
-const POT = "#b4552d";
-const LEAF = "#5d764c";
-const RIM = "#f28c18";
+const BACKGROUND = '#fffaf3';
+const POT = '#b4552d';
+const LEAF = '#5d764c';
+const RIM = '#f28c18';
 
 function markSvg({ x, y, size }) {
   const scale = size / 32;
@@ -55,7 +55,7 @@ function svg({ size = 512, mark = 260, radius = 112, bleed = false } = {}) {
 async function emit(name, opts) {
   const buf = Buffer.from(svg(opts));
   await sharp(buf).png().toFile(join(outDir, name));
-  console.log("wrote", name);
+  console.log('wrote', name);
 }
 
 async function emitFavicon() {
@@ -75,11 +75,8 @@ async function emitFavicon() {
   header.writeUInt32LE(png.length, 14);
   header.writeUInt32LE(header.length, 18);
 
-  writeFileSync(
-    join(root, "public", "favicon.ico"),
-    Buffer.concat([header, png]),
-  );
-  console.log("wrote favicon.ico");
+  writeFileSync(join(root, 'public', 'favicon.ico'), Buffer.concat([header, png]));
+  console.log('wrote favicon.ico');
 }
 
 // --- iOS launch splash screens (#187) -------------------------------------
@@ -107,7 +104,7 @@ function splashFileName(device, orientation) {
 function splashPixels(device, orientation) {
   const long = device.h * device.dpr;
   const short = device.w * device.dpr;
-  return orientation === "portrait"
+  return orientation === 'portrait'
     ? { width: short, height: long }
     : { width: long, height: short };
 }
@@ -117,19 +114,19 @@ async function emitSplash(device, orientation) {
   const buf = Buffer.from(splashSvg(width, height));
   const name = splashFileName(device, orientation);
   await sharp(buf).png({ palette: true }).toFile(join(outDir, name));
-  console.log("wrote", name, `(${width}x${height})`);
+  console.log('wrote', name, `(${width}x${height})`);
 }
 
-await emit("icon-192.png", { size: 192, mark: 100, radius: 42 });
-await emit("icon-512.png", { size: 512, mark: 260, radius: 112 });
-await emit("icon-maskable-512.png", {
+await emit('icon-192.png', { size: 192, mark: 100, radius: 42 });
+await emit('icon-512.png', { size: 512, mark: 260, radius: 112 });
+await emit('icon-maskable-512.png', {
   size: 512,
   mark: 200,
   radius: 0,
   bleed: true,
 });
 // Opaque, full-bleed home-screen glyph for iOS (it applies its own rounding).
-await emit("apple-touch-icon.png", {
+await emit('apple-touch-icon.png', {
   size: 180,
   mark: 96,
   radius: 0,
@@ -138,10 +135,10 @@ await emit("apple-touch-icon.png", {
 await emitFavicon();
 
 const splashDevices = JSON.parse(
-  readFileSync(join(root, "src/config/ios-splash-devices.json"), "utf8"),
+  readFileSync(join(root, 'src/config/ios-splash-devices.json'), 'utf8'),
 );
 for (const device of splashDevices) {
-  await emitSplash(device, "portrait");
-  await emitSplash(device, "landscape");
+  await emitSplash(device, 'portrait');
+  await emitSplash(device, 'landscape');
 }
-console.log("done");
+console.log('done');

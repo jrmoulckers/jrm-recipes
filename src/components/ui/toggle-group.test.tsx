@@ -1,12 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
-import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
+import { ToggleGroup, ToggleGroupItem } from './toggle-group';
 
 function Harness({
   onValueChange,
-  initial = "a",
+  initial = 'a',
 }: {
   onValueChange?: (value: string) => void;
   initial?: string;
@@ -27,33 +27,24 @@ function Harness({
   );
 }
 
-describe("ToggleGroup", () => {
-  it("marks only the selected item as pressed", () => {
+describe('ToggleGroup', () => {
+  it('marks only the selected item as pressed', () => {
     render(<Harness initial="a" />);
-    expect(screen.getByRole("button", { name: "First" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
+    expect(screen.getByRole('button', { name: 'First' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Second' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it("exposes the group with its accessible label", () => {
+  it('exposes the group with its accessible label', () => {
     render(<Harness />);
-    expect(screen.getByRole("group", { name: "Sample" })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Sample' })).toBeInTheDocument();
   });
 
-  it("selects a value when an item is clicked", () => {
+  it('selects a value when an item is clicked', () => {
     const onValueChange = vi.fn();
     render(<Harness onValueChange={onValueChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "Second" }));
-    expect(onValueChange).toHaveBeenCalledWith("b");
-    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Second' }));
+    expect(onValueChange).toHaveBeenCalledWith('b');
+    expect(screen.getByRole('button', { name: 'Second' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it("does not select when the item's own handler prevents default", () => {
@@ -66,15 +57,15 @@ describe("ToggleGroup", () => {
         </ToggleGroupItem>
       </ToggleGroup>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "B" }));
+    fireEvent.click(screen.getByRole('button', { name: 'B' }));
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
-  it("throws when an item is rendered outside a group", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    expect(() =>
-      render(<ToggleGroupItem value="x">Orphan</ToggleGroupItem>),
-    ).toThrow(/must be used within a <ToggleGroup>/);
+  it('throws when an item is rendered outside a group', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(() => render(<ToggleGroupItem value="x">Orphan</ToggleGroupItem>)).toThrow(
+      /must be used within a <ToggleGroup>/,
+    );
     spy.mockRestore();
   });
 });

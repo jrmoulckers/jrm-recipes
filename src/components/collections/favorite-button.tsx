@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Heart } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Heart } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { toggleFavoriteAction } from "~/server/collections/actions";
-import { cn } from "~/lib/utils";
-import { useReducedMotion } from "~/lib/use-reduced-motion";
-import { useServerAction } from "~/lib/use-server-action";
-import { Button } from "~/components/ui/button";
+import { toggleFavoriteAction } from '~/server/collections/actions';
+import { cn } from '~/lib/utils';
+import { useReducedMotion } from '~/lib/use-reduced-motion';
+import { useServerAction } from '~/lib/use-server-action';
+import { Button } from '~/components/ui/button';
 
 type FavoriteButtonProps = {
   recipeId: string;
   recipeSlug?: string;
   initialFavorited?: boolean;
   /** `icon` is a compact overlay for cards; `button` is a labelled action. */
-  variant?: "icon" | "button";
+  variant?: 'icon' | 'button';
   /** When false, the button nudges the visitor to sign in instead of saving. */
   canFavorite?: boolean;
   className?: string;
@@ -26,11 +26,11 @@ export function FavoriteButton({
   recipeId,
   recipeSlug,
   initialFavorited = false,
-  variant = "icon",
+  variant = 'icon',
   canFavorite = true,
   className,
 }: FavoriteButtonProps) {
-  const t = useTranslations("collections.favorite");
+  const t = useTranslations('collections.favorite');
   const [favorited, setFavorited] = React.useState(initialFavorited);
   // Snapshot of the pre-click state so a failed toggle can roll the icon back.
   const previousRef = React.useRef(initialFavorited);
@@ -41,8 +41,7 @@ export function FavoriteButton({
   const toggle = useServerAction(toggleFavoriteAction, {
     onSuccess: (result) => setFavorited(result.favorited),
     onError: () => setFavorited(previousRef.current),
-    successToast: (result) =>
-      result.favorited ? t("toast.saved") : t("toast.removed"),
+    successToast: (result) => (result.favorited ? t('toast.saved') : t('toast.removed')),
     errorToast: true,
     refresh: true,
   });
@@ -58,7 +57,7 @@ export function FavoriteButton({
     if (pending) return;
 
     if (!canFavorite) {
-      toast(t("signInToSave"));
+      toast(t('signInToSave'));
       return;
     }
 
@@ -71,9 +70,9 @@ export function FavoriteButton({
     toggle.run({ recipeId, recipeSlug });
   }
 
-  const label = favorited ? t("a11y.saved") : t("a11y.save");
+  const label = favorited ? t('a11y.saved') : t('a11y.save');
 
-  if (variant === "button") {
+  if (variant === 'button') {
     return (
       <Button
         type="button"
@@ -84,7 +83,7 @@ export function FavoriteButton({
         className={className}
       >
         <HeartGlyph favorited={favorited} burstKey={burstKey} />
-        {favorited ? t("saved") : t("save")}
+        {favorited ? t('saved') : t('save')}
       </Button>
     );
   }
@@ -98,17 +97,13 @@ export function FavoriteButton({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none",
-        favorited && "text-primary",
-        pending && "cursor-wait",
+        'inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none',
+        favorited && 'text-primary',
+        pending && 'cursor-wait',
         className,
       )}
     >
-      <HeartGlyph
-        favorited={favorited}
-        burstKey={burstKey}
-        iconClassName="size-5"
-      />
+      <HeartGlyph favorited={favorited} burstKey={burstKey} iconClassName="size-5" />
     </button>
   );
 }
@@ -141,9 +136,9 @@ function HeartGlyph({
       <Heart
         key={`heart-${burstKey}`}
         className={cn(
-          "relative z-10 transition-colors",
-          favorited && "fill-primary text-primary",
-          burstKey > 0 && "motion-safe:animate-heart-pop",
+          'relative z-10 transition-colors',
+          favorited && 'fill-primary text-primary',
+          burstKey > 0 && 'motion-safe:animate-heart-pop',
           iconClassName,
         )}
       />

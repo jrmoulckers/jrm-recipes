@@ -17,35 +17,35 @@
 
 /** Substrings that mark a property key as identifying (matched case-insensitively). */
 const PII_KEY_PATTERNS = [
-  "email",
-  "e-mail",
-  "firstname",
-  "lastname",
-  "fullname",
-  "username",
-  "handle",
-  "phone",
-  "address",
-  "password",
-  "secret",
-  "token",
-  "apikey",
-  "ssn",
-  "dob",
-  "birthday",
-  "birthdate",
+  'email',
+  'e-mail',
+  'firstname',
+  'lastname',
+  'fullname',
+  'username',
+  'handle',
+  'phone',
+  'address',
+  'password',
+  'secret',
+  'token',
+  'apikey',
+  'ssn',
+  'dob',
+  'birthday',
+  'birthdate',
 ] as const;
 
 /** Keys that are explicitly allowed even though they contain a flagged substring. */
 const ALLOWLIST = new Set<string>([
   // PostHog's own reserved property, not user PII.
-  "$feature_flag_response",
+  '$feature_flag_response',
 ]);
 
 const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 const PHONE_RE = /(?:\+?\d[\s.-]?){7,}/;
 
-const REDACTED = "[redacted]";
+const REDACTED = '[redacted]';
 
 function isPiiKey(key: string): boolean {
   if (ALLOWLIST.has(key)) return false;
@@ -54,12 +54,12 @@ function isPiiKey(key: string): boolean {
 }
 
 function scrubValue(value: unknown): unknown {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     if (EMAIL_RE.test(value) || PHONE_RE.test(value)) return REDACTED;
     return value;
   }
   if (Array.isArray(value)) return value.map(scrubValue);
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     return scrubProperties(value as Record<string, unknown>);
   }
   return value;

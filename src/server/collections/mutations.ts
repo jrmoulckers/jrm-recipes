@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, sql } from "drizzle-orm";
-import { createId } from "@paralleldrive/cuid2";
+import { and, eq, sql } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
 
-import { db } from "~/server/db";
+import { db } from '~/server/db';
 import {
   collectionGroups,
   collectionRecipes,
@@ -12,11 +12,8 @@ import {
   groupMembers,
   recipes,
   type User,
-} from "~/server/db/schema";
-import {
-  type CollectionInput,
-  type CollectionVisibilityValue,
-} from "./validation";
+} from '~/server/db/schema';
+import { type CollectionInput, type CollectionVisibilityValue } from './validation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -34,13 +31,10 @@ function canView(
   viewer: User,
   groupIds: string[],
 ): boolean {
-  if (recipe.visibility === "public" || recipe.visibility === "unlisted")
-    return true;
+  if (recipe.visibility === 'public' || recipe.visibility === 'unlisted') return true;
   if (recipe.authorId === viewer.id) return true;
   return (
-    recipe.visibility === "group" &&
-    recipe.groupId != null &&
-    groupIds.includes(recipe.groupId)
+    recipe.visibility === 'group' && recipe.groupId != null && groupIds.includes(recipe.groupId)
   );
 }
 
@@ -50,27 +44,19 @@ async function requireViewableRecipe(tx: Tx, recipeId: string, viewer: User) {
     where: eq(recipes.id, recipeId),
     columns: { id: true, authorId: true, visibility: true, groupId: true },
   });
-  if (!recipe) throw new Error("NOT_FOUND");
+  if (!recipe) throw new Error('NOT_FOUND');
 
-  const groupIds =
-    recipe.visibility === "group" ? await viewerGroupIds(tx, viewer.id) : [];
-  if (!canView(recipe, viewer, groupIds)) throw new Error("NOT_FOUND");
+  const groupIds = recipe.visibility === 'group' ? await viewerGroupIds(tx, viewer.id) : [];
+  if (!canView(recipe, viewer, groupIds)) throw new Error('NOT_FOUND');
   return recipe;
 }
 
-async function requireOwnedCollection(
-  tx: Tx,
-  collectionId: string,
-  user: User,
-) {
+async function requireOwnedCollection(tx: Tx, collectionId: string, user: User) {
   const collection = await tx.query.collections.findFirst({
-    where: and(
-      eq(collections.id, collectionId),
-      eq(collections.userId, user.id),
-    ),
+    where: and(eq(collections.id, collectionId), eq(collections.userId, user.id)),
     columns: { id: true },
   });
-  if (!collection) throw new Error("NOT_FOUND");
+  if (!collection) throw new Error('NOT_FOUND');
   return collection;
 }
 
@@ -91,10 +77,7 @@ export async function toggleFavorite(
     await requireViewableRecipe(tx, recipeId, user);
 
     const existing = await tx.query.favorites.findFirst({
-      where: and(
-        eq(favorites.userId, user.id),
-        eq(favorites.recipeId, recipeId),
-      ),
+      where: and(eq(favorites.userId, user.id), eq(favorites.recipeId, recipeId)),
       columns: { id: true },
     });
 
@@ -118,21 +101,17 @@ export async function createCollection(input: CollectionInput, user: User) {
     .insert(collections)
     .values({ ...collectionFields(input), userId: user.id })
     .returning({ id: collections.id, name: collections.name });
-  if (!row) throw new Error("CONFLICT");
+  if (!row) throw new Error('CONFLICT');
   return row;
 }
 
-export async function renameCollection(
-  id: string,
-  input: CollectionInput,
-  user: User,
-) {
+export async function renameCollection(id: string, input: CollectionInput, user: User) {
   const [row] = await db
     .update(collections)
     .set(collectionFields(input))
     .where(and(eq(collections.id, id), eq(collections.userId, user.id)))
     .returning({ id: collections.id, name: collections.name });
-  if (!row) throw new Error("NOT_FOUND");
+  if (!row) throw new Error('NOT_FOUND');
   return row;
 }
 
@@ -141,7 +120,7 @@ export async function deleteCollection(id: string, user: User) {
     .delete(collections)
     .where(and(eq(collections.id, id), eq(collections.userId, user.id)))
     .returning({ id: collections.id });
-  if (!row) throw new Error("NOT_FOUND");
+  if (!row) throw new Error('NOT_FOUND');
   return row;
 }
 
@@ -160,12 +139,10 @@ export async function setCollectionVisibility(
       where: and(eq(collections.id, id), eq(collections.userId, user.id)),
       columns: { id: true, shareToken: true },
     });
-    if (!existing) throw new Error("NOT_FOUND");
+    if (!existing) throw new Error('NOT_FOUND');
 
     const shareToken =
-      visibility !== "private" && !existing.shareToken
-        ? createId()
-        : existing.shareToken;
+      visibility !== 'private' && !existing.shareToken ? createId() : existing.shareToken;
 
     const [row] = await tx
       .update(collections)
@@ -176,16 +153,12 @@ export async function setCollectionVisibility(
         visibility: collections.visibility,
         shareToken: collections.shareToken,
       });
-    if (!row) throw new Error("NOT_FOUND");
+    if (!row) throw new Error('NOT_FOUND');
     return row;
   });
 }
 
-export async function addRecipeToCollection(
-  collectionId: string,
-  recipeId: string,
-  user: User,
-) {
+export async function addRecipeToCollection(collectionId: string, recipeId: string, user: User) {
   return db.transaction(async (tx) => {
     await requireOwnedCollection(tx, collectionId, user);
     await requireViewableRecipe(tx, recipeId, user);
@@ -243,13 +216,10 @@ export async function removeRecipeFromCollection(
 /** Assert the caller is a member of the group, or throw NOT_FOUND. */
 async function requireGroupMembership(tx: Tx, groupId: string, user: User) {
   const membership = await tx.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, user.id),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, user.id)),
     columns: { id: true },
   });
-  if (!membership) throw new Error("NOT_FOUND");
+  if (!membership) throw new Error('NOT_FOUND');
   return membership;
 }
 
@@ -258,11 +228,7 @@ async function requireGroupMembership(tx: Tx, groupId: string, user: User) {
  * *owner* may share it, and only with a group they belong to. Idempotent. A
  * repeat share of the same pair is a no-op.
  */
-export async function shareCollectionWithGroup(
-  collectionId: string,
-  groupId: string,
-  user: User,
-) {
+export async function shareCollectionWithGroup(collectionId: string, groupId: string, user: User) {
   return db.transaction(async (tx) => {
     await requireOwnedCollection(tx, collectionId, user);
     await requireGroupMembership(tx, groupId, user);
@@ -293,10 +259,7 @@ export async function unshareCollectionWithGroup(
     await tx
       .delete(collectionGroups)
       .where(
-        and(
-          eq(collectionGroups.collectionId, collectionId),
-          eq(collectionGroups.groupId, groupId),
-        ),
+        and(eq(collectionGroups.collectionId, collectionId), eq(collectionGroups.groupId, groupId)),
       );
 
     return { collectionId, groupId };

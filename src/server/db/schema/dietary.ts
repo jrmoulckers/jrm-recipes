@@ -1,9 +1,9 @@
-import { relations } from "drizzle-orm";
-import { index, integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { index, integer, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { groups } from "./groups";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { groups } from './groups';
 
 /**
  * Per-family-member dietary profiles (issue #396). A cook records each person
@@ -17,15 +17,15 @@ import { groups } from "./groups";
  * (e.g. one household), so it can be shared with the right family table.
  */
 export const memberDietaryProfiles = pgTable(
-  "member_dietary_profiles",
+  'member_dietary_profiles',
   {
     id: pk(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     // Optional household scope. If the group is deleted the profile survives as
     // a personal (unscoped) profile rather than vanishing.
-    groupId: fk().references(() => groups.id, { onDelete: "set null" }),
+    groupId: fk().references(() => groups.id, { onDelete: 'set null' }),
     name: varchar({ length: 80 }).notNull(),
     allergens: text().array(),
     diets: text().array(),
@@ -33,24 +33,21 @@ export const memberDietaryProfiles = pgTable(
     ...timestamps(),
   },
   (t) => [
-    index("member_dietary_profiles_user_idx").on(t.userId),
-    index("member_dietary_profiles_group_idx").on(t.groupId),
+    index('member_dietary_profiles_user_idx').on(t.userId),
+    index('member_dietary_profiles_group_idx').on(t.groupId),
   ],
 );
 
-export const memberDietaryProfilesRelations = relations(
-  memberDietaryProfiles,
-  ({ one }) => ({
-    owner: one(users, {
-      fields: [memberDietaryProfiles.userId],
-      references: [users.id],
-    }),
-    group: one(groups, {
-      fields: [memberDietaryProfiles.groupId],
-      references: [groups.id],
-    }),
+export const memberDietaryProfilesRelations = relations(memberDietaryProfiles, ({ one }) => ({
+  owner: one(users, {
+    fields: [memberDietaryProfiles.userId],
+    references: [users.id],
   }),
-);
+  group: one(groups, {
+    fields: [memberDietaryProfiles.groupId],
+    references: [groups.id],
+  }),
+}));
 
 export type MemberDietaryProfile = typeof memberDietaryProfiles.$inferSelect;
 export type NewMemberDietaryProfile = typeof memberDietaryProfiles.$inferInsert;

@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   check,
@@ -8,29 +8,24 @@ import {
   pgTable,
   unique,
   varchar,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
 
 /**
  * The measurement systems a user can batch-default to. Mirrors the `System`
  * split in src/lib/units.ts (`"us" | "metric"`). A user's per-dimension
  * overrides (below) refine this coarse default one dimension at a time.
  */
-export const measurementSystem = pgEnum("measurement_system", ["us", "metric"]);
+export const measurementSystem = pgEnum('measurement_system', ['us', 'metric']);
 
 /**
  * The physical dimensions a unit can measure. Mirrors the `Dimension` type in
  * src/lib/units.ts. Custom units are restricted (in validation) to
  * volume/mass/count. Temperature is affine and not user-definable.
  */
-export const unitDimension = pgEnum("unit_dimension", [
-  "volume",
-  "mass",
-  "count",
-  "temperature",
-]);
+export const unitDimension = pgEnum('unit_dimension', ['volume', 'mass', 'count', 'temperature']);
 
 /**
  * Per-user unit preferences (one row per user). Drives display-time
@@ -43,13 +38,13 @@ export const unitDimension = pgEnum("unit_dimension", [
  * turn the whole behavior off and always see the author's original units.
  */
 export const userUnitPreferences = pgTable(
-  "user_unit_preferences",
+  'user_unit_preferences',
   {
     id: pk(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    defaultSystem: measurementSystem().notNull().default("metric"),
+      .references(() => users.id, { onDelete: 'cascade' }),
+    defaultSystem: measurementSystem().notNull().default('metric'),
     // Canonical unit ids (from src/lib/units.ts UNIT_DEFS), or a user's custom
     // unit name. NULL = follow `defaultSystem` for that dimension. Validation
     // guarantees each references a real unit of the matching dimension.
@@ -69,7 +64,7 @@ export const userUnitPreferences = pgTable(
   },
   (t) => [
     // One preferences row per user. The unique constraint also backs the lookup.
-    unique("user_unit_preferences_user_uq").on(t.userId),
+    unique('user_unit_preferences_user_uq').on(t.userId),
   ],
 );
 
@@ -85,12 +80,12 @@ export const userUnitPreferences = pgTable(
  * conversions stay type-safe.
  */
 export const customUnits = pgTable(
-  "custom_units",
+  'custom_units',
   {
     id: pk(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     name: varchar({ length: 40 }).notNull(),
     abbreviation: varchar({ length: 20 }),
     dimension: unitDimension().notNull(),
@@ -103,34 +98,28 @@ export const customUnits = pgTable(
     ...timestamps(),
   },
   (t) => [
-    index("custom_units_user_idx").on(t.userId),
+    index('custom_units_user_idx').on(t.userId),
     // A user can't define the same-named unit twice. Case handling is done in
     // the app layer (names are stored trimmed). The constraint stops exact dups.
-    unique("custom_units_user_name_uq").on(t.userId, t.name),
+    unique('custom_units_user_name_uq').on(t.userId, t.name),
     // A conversion factor, when present, is strictly positive. NULL passes by
     // SQL semantics (a display-only unit with no equivalence).
-    check(
-      "custom_units_base_amount_check",
-      sql`${t.baseAmount} is null or ${t.baseAmount} > 0`,
-    ),
+    check('custom_units_base_amount_check', sql`${t.baseAmount} is null or ${t.baseAmount} > 0`),
     // If there's an amount there must be a base unit to measure it in, and vice
     // versa. The two are meaningful only together.
     check(
-      "custom_units_base_pair_check",
+      'custom_units_base_pair_check',
       sql`(${t.baseUnit} is null and ${t.baseAmount} is null) or (${t.baseUnit} is not null and ${t.baseAmount} is not null)`,
     ),
   ],
 );
 
-export const userUnitPreferencesRelations = relations(
-  userUnitPreferences,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [userUnitPreferences.userId],
-      references: [users.id],
-    }),
+export const userUnitPreferencesRelations = relations(userUnitPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userUnitPreferences.userId],
+    references: [users.id],
   }),
-);
+}));
 
 export const customUnitsRelations = relations(customUnits, ({ one }) => ({
   user: one(users, {

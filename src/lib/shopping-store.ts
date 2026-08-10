@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 import {
   mergeShoppingItems,
@@ -11,20 +11,20 @@ import {
   type ShoppingCategory,
   type ShoppingItemInput,
   type ShoppingRecipeInput,
-} from "~/lib/shopping-list";
+} from '~/lib/shopping-list';
 import {
   findIngredientRoute,
   ingredientRouteIdentity,
   partitionShoppingItemsByDestination,
   type ShoppingIngredientRoute,
-} from "~/lib/shopping-routing";
+} from '~/lib/shopping-routing';
 import {
   DEFAULT_UNIT_PREFS,
   isKnownUnit,
   normalizeUnit,
   type Dimension,
   type UnitPrefs,
-} from "~/lib/units";
+} from '~/lib/units';
 
 /**
  * Offline shopping list. When no database is configured the app still needs a
@@ -82,7 +82,7 @@ export type LocalShoppingRoute = ShoppingIngredientRoute & {
 export const SHOPPING_HISTORY_LIMIT = 20;
 
 export type ShoppingHistoryOperation =
-  "remove-completed" | "clear-all" | "bulk-move" | "list-rebuild" | "restore";
+  'remove-completed' | 'clear-all' | 'bulk-move' | 'list-rebuild' | 'restore';
 
 export type LocalShoppingRestorePoint = {
   id: string;
@@ -96,7 +96,7 @@ export type LocalShoppingRestorePoint = {
 export type LocalCustomUnit = {
   id: string;
   name: string;
-  dimension: Exclude<Dimension, "temperature">;
+  dimension: Exclude<Dimension, 'temperature'>;
   baseUnit: string | null;
   baseAmount: number | null;
   abbreviation: string | null;
@@ -153,10 +153,7 @@ type ShoppingStore = {
     sourceRestorePointId: string;
     targetRestorePointId: string;
   } | null;
-  replaceListItems: (
-    listId: string,
-    items: LocalShoppingItem[],
-  ) => string | null;
+  replaceListItems: (listId: string, items: LocalShoppingItem[]) => string | null;
   restoreFromHistory: (listId: string, restorePointId: string) => string | null;
   restoreMultipleFromHistory: (
     restores: { listId: string; restorePointId: string }[],
@@ -170,23 +167,20 @@ type ShoppingStore = {
     packageLabel?: string;
     packageRoundBehavior: PackageRoundBehavior;
   }) => void;
-  setUnitPreferences: (
-    preferences: UnitPrefs,
-    packageRounding: boolean,
-  ) => void;
-  createCustomUnit: (unit: Omit<LocalCustomUnit, "id">) => string;
-  updateCustomUnit: (id: string, unit: Omit<LocalCustomUnit, "id">) => void;
+  setUnitPreferences: (preferences: UnitPrefs, packageRounding: boolean) => void;
+  createCustomUnit: (unit: Omit<LocalCustomUnit, 'id'>) => string;
+  updateCustomUnit: (id: string, unit: Omit<LocalCustomUnit, 'id'>) => void;
   deleteCustomUnit: (id: string) => void;
   setChecked: (listId: string, id: string, checked: boolean) => void;
   setCategory: (listId: string, id: string, category: ShoppingCategory) => void;
   remove: (listId: string, id: string) => void;
 };
 
-export const LOCAL_DEFAULT_LIST_ID = "local-default";
-export const LOCAL_DEFAULT_LIST_NAME = "Shopping list";
+export const LOCAL_DEFAULT_LIST_ID = 'local-default';
+export const LOCAL_DEFAULT_LIST_NAME = 'Shopping list';
 
 export function displayLocalShoppingListName(
-  list: Pick<LocalShoppingList, "id" | "name" | "generatedName">,
+  list: Pick<LocalShoppingList, 'id' | 'name' | 'generatedName'>,
   generatedName: string,
 ): string {
   return list.generatedName === true ||
@@ -196,7 +190,7 @@ export function displayLocalShoppingListName(
 }
 
 function uid(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -220,12 +214,8 @@ function consolidate(
   incoming: ShoppingItemInput[],
   options: ShoppingAggregationOptions,
 ): LocalShoppingItem[] {
-  const preserved = existing.filter(
-    (i) => i.checked || (i.note ?? "").length > 0,
-  );
-  const pool = existing.filter(
-    (i) => !i.checked && (i.note ?? "").length === 0,
-  );
+  const preserved = existing.filter((i) => i.checked || (i.note ?? '').length > 0);
+  const pool = existing.filter((i) => !i.checked && (i.note ?? '').length === 0);
 
   const poolInputs: ShoppingItemInput[] = pool.map((i) => ({
     item: i.item,
@@ -320,8 +310,7 @@ function createRestorePoint(
   operationGroupId: string | null = null,
 ): LocalShoppingRestorePoint {
   const newestForList = existing.reduce(
-    (newest, point) =>
-      point.listId === list.id ? Math.max(newest, point.createdAt) : newest,
+    (newest, point) => (point.listId === list.id ? Math.max(newest, point.createdAt) : newest),
     0,
   );
   return {
@@ -357,8 +346,7 @@ function boundedRestorePoints(
     retained.push(point);
   }
   return retained.filter(
-    (point) =>
-      !point.operationGroupId || !prunedGroupIds.has(point.operationGroupId),
+    (point) => !point.operationGroupId || !prunedGroupIds.has(point.operationGroupId),
   );
 }
 
@@ -376,19 +364,16 @@ function normalizedAlternatives(
   includeArchived = false,
 ) {
   const active = new Set(
-    lists
-      .filter((list) => includeArchived || !list.archived)
-      .map((list) => list.id),
+    lists.filter((list) => includeArchived || !list.archived).map((list) => list.id),
   );
   return ids.filter(
-    (id, index) =>
-      id !== preferredListId && active.has(id) && ids.indexOf(id) === index,
+    (id, index) => id !== preferredListId && active.has(id) && ids.indexOf(id) === index,
   );
 }
 
 function upsertRoute(
   routes: LocalShoppingRoute[],
-  item: Pick<LocalShoppingItem, "item" | "foodId">,
+  item: Pick<LocalShoppingItem, 'item' | 'foodId'>,
   preferredListId: string,
   alternativeListIds: string[],
   lists: LocalShoppingList[],
@@ -402,11 +387,7 @@ function upsertRoute(
     normalizedItem: identity.normalizedItem,
     displayItem: item.item,
     preferredListId,
-    alternativeListIds: normalizedAlternatives(
-      alternativeListIds,
-      preferredListId,
-      lists,
-    ),
+    alternativeListIds: normalizedAlternatives(alternativeListIds, preferredListId, lists),
   };
   return existing
     ? routes.map((route) => (route.id === existing.id ? next : route))
@@ -414,10 +395,7 @@ function upsertRoute(
 }
 
 function aggregationOptions(
-  state: Pick<
-    ShoppingStore,
-    "unitPreferences" | "customUnits" | "routes" | "packageRounding"
-  >,
+  state: Pick<ShoppingStore, 'unitPreferences' | 'customUnits' | 'routes' | 'packageRounding'>,
 ): ShoppingAggregationOptions {
   return {
     unitPreferences: state.unitPreferences,
@@ -505,11 +483,7 @@ function canonicalizeCustomUnitRoutes(
   return {
     routes: routes.map((route) => {
       const packageUnit = route.packageUnit?.trim().toLocaleLowerCase();
-      if (
-        !packageUnit ||
-        !names.has(packageUnit) ||
-        route.packageAmount == null
-      ) {
+      if (!packageUnit || !names.has(packageUnit) || route.packageAmount == null) {
         return route;
       }
       changed = true;
@@ -534,8 +508,7 @@ function canonicalizeCustomUnitRows(
     items: list.items.map((item) => {
       const requiredUnit = item.requiredBaseUnit?.trim().toLocaleLowerCase();
       const displayUnit = item.unit?.trim().toLocaleLowerCase();
-      return (requiredUnit && names.has(requiredUnit)) ||
-        (displayUnit && names.has(displayUnit))
+      return (requiredUnit && names.has(requiredUnit)) || (displayUnit && names.has(displayUnit))
         ? reaggregateItem(item, options)
         : item;
     }),
@@ -549,9 +522,7 @@ function promoteRoutes(
   lists: LocalShoppingList[],
   preserveDormantAlternatives = false,
 ): LocalShoppingRoute[] {
-  const active = new Set(
-    lists.filter((list) => !list.archived).map((list) => list.id),
-  );
+  const active = new Set(lists.filter((list) => !list.archived).map((list) => list.id));
   return routes.map((route) => {
     if (route.preferredListId !== unavailableListId) {
       return {
@@ -577,9 +548,7 @@ function ensureActiveFallback(
   lists: LocalShoppingList[],
   unavailableListId: string,
 ): { lists: LocalShoppingList[]; fallbackListId: string } {
-  const available = activeLists(lists).filter(
-    (list) => list.id !== unavailableListId,
-  );
+  const available = activeLists(lists).filter((list) => list.id !== unavailableListId);
   const fallback = available.find((list) => list.isDefault) ?? available[0];
   if (fallback) return { lists, fallbackListId: fallback.id };
   const created: LocalShoppingList = {
@@ -590,7 +559,7 @@ function ensureActiveFallback(
 }
 
 /** Pre-#664 shape: lists carried a single free-text store name. */
-type PersistedShoppingList = Omit<LocalShoppingList, "storeIds"> & {
+type PersistedShoppingList = Omit<LocalShoppingList, 'storeIds'> & {
   storeIds?: string[];
   storeName?: string | null;
 };
@@ -598,14 +567,14 @@ type PersistedShoppingList = Omit<LocalShoppingList, "storeIds"> & {
 type PersistedShoppingState = Partial<
   Pick<
     ShoppingStore,
-    | "stores"
-    | "defaultListId"
-    | "currentListId"
-    | "routes"
-    | "restorePoints"
-    | "unitPreferences"
-    | "customUnits"
-    | "packageRounding"
+    | 'stores'
+    | 'defaultListId'
+    | 'currentListId'
+    | 'routes'
+    | 'restorePoints'
+    | 'unitPreferences'
+    | 'customUnits'
+    | 'packageRounding'
   >
 > & {
   items?: LocalShoppingItem[];
@@ -637,7 +606,7 @@ function normalizePersistedLists(
         ],
         { customUnits },
       );
-      let id = typeof item.id === "string" && item.id ? item.id : uid();
+      let id = typeof item.id === 'string' && item.id ? item.id : uid();
       while (usedIds.has(id)) id = uid();
       usedIds.add(id);
       return {
@@ -650,50 +619,43 @@ function normalizePersistedLists(
 }
 
 function isPersistedList(value: unknown): value is LocalShoppingList {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const list = value as Partial<LocalShoppingList>;
   return (
-    typeof list.id === "string" &&
-    typeof list.name === "string" &&
+    typeof list.id === 'string' &&
+    typeof list.name === 'string' &&
     Array.isArray(list.storeIds) &&
-    typeof list.isDefault === "boolean" &&
-    typeof list.archived === "boolean" &&
+    typeof list.isDefault === 'boolean' &&
+    typeof list.archived === 'boolean' &&
     Array.isArray(list.items)
   );
 }
 
 function isPersistedRoute(value: unknown): value is LocalShoppingRoute {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const route = value as Partial<LocalShoppingRoute>;
   return (
-    typeof route.id === "string" &&
-    (typeof route.foodId === "string" || route.foodId === null) &&
-    typeof route.normalizedItem === "string" &&
-    typeof route.displayItem === "string" &&
-    typeof route.preferredListId === "string" &&
+    typeof route.id === 'string' &&
+    (typeof route.foodId === 'string' || route.foodId === null) &&
+    typeof route.normalizedItem === 'string' &&
+    typeof route.displayItem === 'string' &&
+    typeof route.preferredListId === 'string' &&
     Array.isArray(route.alternativeListIds)
   );
 }
 
-function isPersistedRestorePoint(
-  value: unknown,
-): value is LocalShoppingRestorePoint {
-  if (!value || typeof value !== "object") return false;
+function isPersistedRestorePoint(value: unknown): value is LocalShoppingRestorePoint {
+  if (!value || typeof value !== 'object') return false;
   const point = value as Partial<LocalShoppingRestorePoint>;
   return (
-    typeof point.id === "string" &&
-    typeof point.listId === "string" &&
-    typeof point.operation === "string" &&
-    [
-      "remove-completed",
-      "clear-all",
-      "bulk-move",
-      "list-rebuild",
-      "restore",
-    ].includes(point.operation) &&
-    (point.operationGroupId == null ||
-      typeof point.operationGroupId === "string") &&
-    typeof point.createdAt === "number" &&
+    typeof point.id === 'string' &&
+    typeof point.listId === 'string' &&
+    typeof point.operation === 'string' &&
+    ['remove-completed', 'clear-all', 'bulk-move', 'list-rebuild', 'restore'].includes(
+      point.operation,
+    ) &&
+    (point.operationGroupId == null || typeof point.operationGroupId === 'string') &&
+    typeof point.createdAt === 'number' &&
     Number.isFinite(point.createdAt) &&
     Array.isArray(point.items)
   );
@@ -703,10 +665,7 @@ function hasOwn(value: object, key: PropertyKey): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
-export function migrateShoppingState(
-  persisted: unknown,
-  version: number,
-): PersistedShoppingState {
+export function migrateShoppingState(persisted: unknown, version: number): PersistedShoppingState {
   return extractStoreLibrary(migrateShoppingStateShape(persisted, version));
 }
 
@@ -714,16 +673,10 @@ export function migrateShoppingState(
  * Lift the pre-#664 per-list `storeName` into a deduplicated store library so
  * an offline shopper keeps their stores and gains multi-store lists.
  */
-function extractStoreLibrary(
-  state: PersistedShoppingState,
-): PersistedShoppingState {
+function extractStoreLibrary(state: PersistedShoppingState): PersistedShoppingState {
   if (!Array.isArray(state.lists)) return state;
-  const stores: LocalShoppingStoreEntry[] = Array.isArray(state.stores)
-    ? [...state.stores]
-    : [];
-  const byName = new Map(
-    stores.map((store) => [store.name.toLowerCase(), store] as const),
-  );
+  const stores: LocalShoppingStoreEntry[] = Array.isArray(state.stores) ? [...state.stores] : [];
+  const byName = new Map(stores.map((store) => [store.name.toLowerCase(), store] as const));
   const lists = state.lists.map((list) => {
     if (Array.isArray(list.storeIds)) {
       const { storeName: _legacy, ...rest } = list;
@@ -743,14 +696,9 @@ function extractStoreLibrary(
   return { ...state, lists, stores };
 }
 
-function migrateShoppingStateShape(
-  persisted: unknown,
-  version: number,
-): PersistedShoppingState {
+function migrateShoppingStateShape(persisted: unknown, version: number): PersistedShoppingState {
   const saved =
-    persisted && typeof persisted === "object"
-      ? (persisted as PersistedShoppingState)
-      : {};
+    persisted && typeof persisted === 'object' ? (persisted as PersistedShoppingState) : {};
   if (version < 1) {
     const items = Array.isArray(saved.items) ? saved.items : [];
     const lists = normalizePersistedLists(
@@ -769,14 +717,10 @@ function migrateShoppingStateShape(
     };
   }
   if (version < 3 && Array.isArray(saved.lists)) {
-    const customUnits = Array.isArray(saved.customUnits)
-      ? saved.customUnits
-      : [];
+    const customUnits = Array.isArray(saved.customUnits) ? saved.customUnits : [];
     return {
       ...saved,
-      restorePoints: Array.isArray(saved.restorePoints)
-        ? saved.restorePoints
-        : [],
+      restorePoints: Array.isArray(saved.restorePoints) ? saved.restorePoints : [],
       lists: normalizePersistedLists(saved.lists, customUnits).map((list) => ({
         ...list,
         items: list.items.map((item) => {
@@ -821,25 +765,16 @@ function migrateShoppingStateShape(
   return saved;
 }
 
-export function mergeShoppingState(
-  persisted: unknown,
-  current: ShoppingStore,
-): ShoppingStore {
+export function mergeShoppingState(persisted: unknown, current: ShoppingStore): ShoppingStore {
   const saved =
-    persisted && typeof persisted === "object"
-      ? (persisted as PersistedShoppingState)
-      : {};
-  const validLists = Array.isArray(saved.lists)
-    ? saved.lists.filter(isPersistedList)
-    : [];
-  const stores = (
-    Array.isArray(saved.stores) ? saved.stores : current.stores
-  ).filter(
+    persisted && typeof persisted === 'object' ? (persisted as PersistedShoppingState) : {};
+  const validLists = Array.isArray(saved.lists) ? saved.lists.filter(isPersistedList) : [];
+  const stores = (Array.isArray(saved.stores) ? saved.stores : current.stores).filter(
     (store): store is LocalShoppingStoreEntry =>
       !!store &&
-      typeof store === "object" &&
-      typeof store.id === "string" &&
-      typeof store.name === "string",
+      typeof store === 'object' &&
+      typeof store.id === 'string' &&
+      typeof store.name === 'string',
   );
   const candidates = normalizePersistedLists(
     validLists.length > 0 ? validLists : current.lists,
@@ -850,13 +785,13 @@ export function mergeShoppingState(
     items: list.items.map((item) => ({
       ...item,
       foodId: item.foodId ?? null,
-      requiredBaseQuantity: hasOwn(item, "requiredBaseQuantity")
+      requiredBaseQuantity: hasOwn(item, 'requiredBaseQuantity')
         ? item.requiredBaseQuantity
         : (item.quantity ?? null),
-      requiredBaseQuantityMax: hasOwn(item, "requiredBaseQuantityMax")
+      requiredBaseQuantityMax: hasOwn(item, 'requiredBaseQuantityMax')
         ? item.requiredBaseQuantityMax
         : (item.quantityMax ?? null),
-      requiredBaseUnit: hasOwn(item, "requiredBaseUnit")
+      requiredBaseUnit: hasOwn(item, 'requiredBaseUnit')
         ? item.requiredBaseUnit
         : (item.unit ?? null),
       purchaseQuantity: item.purchaseQuantity ?? null,
@@ -873,9 +808,7 @@ export function mergeShoppingState(
   const active = lists.filter((list) => !list.archived);
   const selectedDefault =
     active.find(
-      (list) =>
-        list.id === saved.defaultListId ||
-        (saved.defaultListId == null && list.isDefault),
+      (list) => list.id === saved.defaultListId || (saved.defaultListId == null && list.isDefault),
     ) ??
     active.find((list) => list.isDefault) ??
     active[0]!;
@@ -887,25 +820,23 @@ export function mergeShoppingState(
     ? saved.currentListId!
     : selectedDefault.id;
   const activeIds = new Set(active.map((list) => list.id));
-  const routes = (
-    Array.isArray(saved.routes) ? saved.routes.filter(isPersistedRoute) : []
-  ).map((route) => {
-    const preferredListId = activeIds.has(route.preferredListId)
-      ? route.preferredListId
-      : selectedDefault.id;
-    return {
-      ...route,
-      preferredListId,
-      alternativeListIds: normalizedAlternatives(
-        route.alternativeListIds.filter(
-          (id): id is string => typeof id === "string",
-        ),
+  const routes = (Array.isArray(saved.routes) ? saved.routes.filter(isPersistedRoute) : []).map(
+    (route) => {
+      const preferredListId = activeIds.has(route.preferredListId)
+        ? route.preferredListId
+        : selectedDefault.id;
+      return {
+        ...route,
         preferredListId,
-        normalizedLists,
-        true,
-      ),
-    };
-  });
+        alternativeListIds: normalizedAlternatives(
+          route.alternativeListIds.filter((id): id is string => typeof id === 'string'),
+          preferredListId,
+          normalizedLists,
+          true,
+        ),
+      };
+    },
+  );
   const listIds = new Set(normalizedLists.map((list) => list.id));
   const restorePoints = boundedRestorePoints(
     (Array.isArray(saved.restorePoints)
@@ -914,10 +845,7 @@ export function mergeShoppingState(
     ).filter((point) => listIds.has(point.listId)),
   ).map((point) => ({
     ...point,
-    operationGroupId:
-      typeof point.operationGroupId === "string"
-        ? point.operationGroupId
-        : null,
+    operationGroupId: typeof point.operationGroupId === 'string' ? point.operationGroupId : null,
   }));
   return {
     ...current,
@@ -928,9 +856,7 @@ export function mergeShoppingState(
     routes,
     restorePoints,
     unitPreferences: saved.unitPreferences ?? current.unitPreferences,
-    customUnits: Array.isArray(saved.customUnits)
-      ? saved.customUnits
-      : current.customUnits,
+    customUnits: Array.isArray(saved.customUnits) ? saved.customUnits : current.customUnits,
     packageRounding: saved.packageRounding ?? false,
   };
 }
@@ -950,9 +876,7 @@ export const useShoppingStore = create<ShoppingStore>()(
       addRecipe: (recipe) =>
         set((state) => {
           const active = activeLists(state.lists);
-          const defaultListId = active.some(
-            (list) => list.id === state.defaultListId,
-          )
+          const defaultListId = active.some((list) => list.id === state.defaultListId)
             ? state.defaultListId
             : active[0]?.id;
           if (!defaultListId) return state;
@@ -968,11 +892,7 @@ export const useShoppingStore = create<ShoppingStore>()(
               return incoming
                 ? {
                     ...list,
-                    items: consolidate(
-                      list.items,
-                      incoming,
-                      aggregationOptions(state),
-                    ),
+                    items: consolidate(list.items, incoming, aggregationOptions(state)),
                   }
                 : list;
             }),
@@ -980,9 +900,7 @@ export const useShoppingStore = create<ShoppingStore>()(
         }),
       addManual: (listId, entry) =>
         set((state) => {
-          const target = state.lists.find(
-            (list) => list.id === listId && !list.archived,
-          );
+          const target = state.lists.find((list) => list.id === listId && !list.archived);
           if (!target) return state;
           const [aggregated] = mergeShoppingItems(
             [
@@ -1022,9 +940,7 @@ export const useShoppingStore = create<ShoppingStore>()(
           };
           return {
             lists: state.lists.map((list) =>
-              list.id === listId
-                ? { ...list, items: [...list.items, item] }
-                : list,
+              list.id === listId ? { ...list, items: [...list.items, item] } : list,
             ),
           };
         }),
@@ -1061,7 +977,7 @@ export const useShoppingStore = create<ShoppingStore>()(
         })),
       createStore: (name) => {
         const trimmed = optionalStoreName(name);
-        if (!trimmed) return "";
+        if (!trimmed) return '';
         const existing = get().stores.find(
           (store) => store.name.toLowerCase() === trimmed.toLowerCase(),
         );
@@ -1075,9 +991,7 @@ export const useShoppingStore = create<ShoppingStore>()(
           const trimmed = optionalStoreName(name);
           if (!trimmed) return state;
           const clash = state.stores.some(
-            (store) =>
-              store.id !== id &&
-              store.name.toLowerCase() === trimmed.toLowerCase(),
+            (store) => store.id !== id && store.name.toLowerCase() === trimmed.toLowerCase(),
           );
           if (clash) return state;
           return {
@@ -1121,9 +1035,7 @@ export const useShoppingStore = create<ShoppingStore>()(
           const target = state.lists.find((list) => list.id === id);
           if (!target || target.archived) return state;
           const ensured = ensureActiveFallback(state.lists, id);
-          const fallbackListId = target.isDefault
-            ? ensured.fallbackListId
-            : state.defaultListId;
+          const fallbackListId = target.isDefault ? ensured.fallbackListId : state.defaultListId;
           const lists = ensured.lists.map((list) => ({
             ...list,
             archived: list.id === id ? true : list.archived,
@@ -1133,32 +1045,20 @@ export const useShoppingStore = create<ShoppingStore>()(
             lists,
             defaultListId: fallbackListId,
             currentListId:
-              state.currentListId === id
-                ? ensured.fallbackListId
-                : state.currentListId,
-            routes: promoteRoutes(
-              state.routes,
-              id,
-              fallbackListId,
-              lists,
-              true,
-            ),
+              state.currentListId === id ? ensured.fallbackListId : state.currentListId,
+            routes: promoteRoutes(state.routes, id, fallbackListId, lists, true),
           };
         }),
       restoreList: (id) =>
         set((state) => ({
-          lists: state.lists.map((list) =>
-            list.id === id ? { ...list, archived: false } : list,
-          ),
+          lists: state.lists.map((list) => (list.id === id ? { ...list, archived: false } : list)),
         })),
       deleteList: (id) =>
         set((state) => {
           const target = state.lists.find((list) => list.id === id);
           if (!target) return state;
           const ensured = ensureActiveFallback(state.lists, id);
-          const fallbackListId = target.isDefault
-            ? ensured.fallbackListId
-            : state.defaultListId;
+          const fallbackListId = target.isDefault ? ensured.fallbackListId : state.defaultListId;
           const lists = ensured.lists
             .filter((list) => list.id !== id)
             .map((list) => ({
@@ -1169,13 +1069,9 @@ export const useShoppingStore = create<ShoppingStore>()(
             lists,
             defaultListId: fallbackListId,
             currentListId:
-              state.currentListId === id
-                ? ensured.fallbackListId
-                : state.currentListId,
+              state.currentListId === id ? ensured.fallbackListId : state.currentListId,
             routes: promoteRoutes(state.routes, id, fallbackListId, lists),
-            restorePoints: state.restorePoints.filter(
-              (point) => point.listId !== id,
-            ),
+            restorePoints: state.restorePoints.filter((point) => point.listId !== id),
           };
         }),
       moveItem: (
@@ -1186,17 +1082,11 @@ export const useShoppingStore = create<ShoppingStore>()(
         alternativeListIds = [],
       ) =>
         set((state) => {
-          const target = state.lists.find(
-            (list) => list.id === targetListId && !list.archived,
-          );
+          const target = state.lists.find((list) => list.id === targetListId && !list.archived);
           const source = state.lists.find(
-            (list) =>
-              list.id === sourceListId &&
-              list.items.some((item) => item.id === itemId),
+            (list) => list.id === sourceListId && list.items.some((item) => item.id === itemId),
           );
-          const item = source?.items.find(
-            (candidate) => candidate.id === itemId,
-          );
+          const item = source?.items.find((candidate) => candidate.id === itemId);
           if (!target || !source || !item || source.id === target.id) {
             return state;
           }
@@ -1204,13 +1094,11 @@ export const useShoppingStore = create<ShoppingStore>()(
             if (list.id === source.id) {
               return {
                 ...list,
-                items: list.items.filter(
-                  (candidate) => candidate.id !== itemId,
-                ),
+                items: list.items.filter((candidate) => candidate.id !== itemId),
               };
             }
             if (list.id !== target.id) return list;
-            if (item.checked || (item.note ?? "").length > 0) {
+            if (item.checked || (item.note ?? '').length > 0) {
               return { ...list, items: [...list.items, item] };
             }
             return {
@@ -1221,13 +1109,7 @@ export const useShoppingStore = create<ShoppingStore>()(
           return {
             lists,
             routes: rememberRoute
-              ? upsertRoute(
-                  state.routes,
-                  item,
-                  targetListId,
-                  alternativeListIds,
-                  lists,
-                )
+              ? upsertRoute(state.routes, item, targetListId, alternativeListIds, lists)
               : state.routes,
           };
         }),
@@ -1237,17 +1119,13 @@ export const useShoppingStore = create<ShoppingStore>()(
             (list) => list.id === input.preferredListId && !list.archived,
           );
           const source = state.lists.find((list) => list.id === input.listId);
-          const item = source?.items.find(
-            (candidate) => candidate.id === input.itemId,
-          );
+          const item = source?.items.find((candidate) => candidate.id === input.itemId);
           if (!preferred || !source || !item) return state;
 
           const identity = ingredientRouteIdentity(item);
           const existing = findIngredientRoute(item, state.routes);
           const packageRoundBehavior =
-            input.packageAmount == null
-              ? "inherit"
-              : input.packageRoundBehavior;
+            input.packageAmount == null ? 'inherit' : input.packageRoundBehavior;
           const packageUnit = input.packageUnit?.trim();
           const packageLabel = input.packageLabel?.trim();
           const nextRoute: LocalShoppingRoute = {
@@ -1258,18 +1136,14 @@ export const useShoppingStore = create<ShoppingStore>()(
             displayItem: item.item,
             preferredListId: preferred.id,
             alternativeListIds:
-              existing?.alternativeListIds.filter(
-                (id) => id !== preferred.id,
-              ) ?? [],
+              existing?.alternativeListIds.filter((id) => id !== preferred.id) ?? [],
             packageAmount: input.packageAmount ?? null,
             packageUnit: packageUnit?.length ? packageUnit : null,
             packageLabel: packageLabel?.length ? packageLabel : null,
             packageRoundBehavior,
           };
           const routes = existing
-            ? state.routes.map((route) =>
-                route.id === existing.id ? nextRoute : route,
-              )
+            ? state.routes.map((route) => (route.id === existing.id ? nextRoute : route))
             : [...state.routes, nextRoute];
           const options = aggregationOptions({ ...state, routes });
           return {
@@ -1316,14 +1190,9 @@ export const useShoppingStore = create<ShoppingStore>()(
       },
       updateCustomUnit: (id, unit) =>
         set((state) => {
-          const oldUnit = state.customUnits.find(
-            (candidate) => candidate.id === id,
-          );
+          const oldUnit = state.customUnits.find((candidate) => candidate.id === id);
           if (!oldUnit) return state;
-          const normalizedRoutes = canonicalizeCustomUnitRoutes(
-            state.routes,
-            oldUnit,
-          );
+          const normalizedRoutes = canonicalizeCustomUnitRoutes(state.routes, oldUnit);
           const canonicalizedLists = canonicalizeCustomUnitRows(
             state.lists,
             oldUnit,
@@ -1347,22 +1216,15 @@ export const useShoppingStore = create<ShoppingStore>()(
         }),
       deleteCustomUnit: (id) =>
         set((state) => {
-          const oldUnit = state.customUnits.find(
-            (candidate) => candidate.id === id,
-          );
+          const oldUnit = state.customUnits.find((candidate) => candidate.id === id);
           if (!oldUnit) return state;
-          const normalizedRoutes = canonicalizeCustomUnitRoutes(
-            state.routes,
-            oldUnit,
-          );
+          const normalizedRoutes = canonicalizeCustomUnitRoutes(state.routes, oldUnit);
           const canonicalizedLists = canonicalizeCustomUnitRows(
             state.lists,
             oldUnit,
             aggregationOptions({ ...state, routes: normalizedRoutes.routes }),
           );
-          const customUnits = state.customUnits.filter(
-            (unit) => unit.id !== id,
-          );
+          const customUnits = state.customUnits.filter((unit) => unit.id !== id);
           return {
             customUnits,
             routes: normalizedRoutes.routes,
@@ -1382,9 +1244,7 @@ export const useShoppingStore = create<ShoppingStore>()(
             list.id === listId
               ? {
                   ...list,
-                  items: list.items.map((item) =>
-                    item.id === id ? { ...item, checked } : item,
-                  ),
+                  items: list.items.map((item) => (item.id === id ? { ...item, checked } : item)),
                 }
               : list,
           ),
@@ -1395,9 +1255,7 @@ export const useShoppingStore = create<ShoppingStore>()(
             list.id === listId
               ? {
                   ...list,
-                  items: list.items.map((item) =>
-                    item.id === id ? { ...item, category } : item,
-                  ),
+                  items: list.items.map((item) => (item.id === id ? { ...item, category } : item)),
                 }
               : list,
           ),
@@ -1418,11 +1276,7 @@ export const useShoppingStore = create<ShoppingStore>()(
         set((state) => {
           const target = state.lists.find((list) => list.id === listId);
           if (!target?.items.some((item) => item.checked)) return state;
-          const point = createRestorePoint(
-            target,
-            "remove-completed",
-            state.restorePoints,
-          );
+          const point = createRestorePoint(target, 'remove-completed', state.restorePoints);
           restorePointId = point.id;
           return {
             lists: state.lists.map((list) =>
@@ -1457,16 +1311,10 @@ export const useShoppingStore = create<ShoppingStore>()(
         set((state) => {
           const target = state.lists.find((list) => list.id === listId);
           if (!target || target.items.length === 0) return state;
-          const point = createRestorePoint(
-            target,
-            "clear-all",
-            state.restorePoints,
-          );
+          const point = createRestorePoint(target, 'clear-all', state.restorePoints);
           restorePointId = point.id;
           return {
-            lists: state.lists.map((list) =>
-              list.id === listId ? { ...list, items: [] } : list,
-            ),
+            lists: state.lists.map((list) => (list.id === listId ? { ...list, items: [] } : list)),
             restorePoints: addRestorePoints(state.restorePoints, point),
           };
         });
@@ -1478,32 +1326,23 @@ export const useShoppingStore = create<ShoppingStore>()(
           targetRestorePointId: string;
         } | null = null;
         set((state) => {
-          const source = state.lists.find(
-            (list) => list.id === sourceListId && !list.archived,
-          );
-          const target = state.lists.find(
-            (list) => list.id === targetListId && !list.archived,
-          );
+          const source = state.lists.find((list) => list.id === sourceListId && !list.archived);
+          const target = state.lists.find((list) => list.id === targetListId && !list.archived);
           const selected = new Set(itemIds);
           const moving = source?.items.filter((item) => selected.has(item.id));
-          if (
-            !source ||
-            !target ||
-            source.id === target.id ||
-            !moving?.length
-          ) {
+          if (!source || !target || source.id === target.id || !moving?.length) {
             return state;
           }
           const operationGroupId = uid();
           const sourcePoint = createRestorePoint(
             source,
-            "bulk-move",
+            'bulk-move',
             state.restorePoints,
             operationGroupId,
           );
           const targetPoint = createRestorePoint(
             target,
-            "bulk-move",
+            'bulk-move',
             state.restorePoints,
             operationGroupId,
           );
@@ -1524,7 +1363,7 @@ export const useShoppingStore = create<ShoppingStore>()(
                   ...list,
                   items: moving.reduce(
                     (items, item) =>
-                      item.checked || (item.note ?? "").length > 0
+                      item.checked || (item.note ?? '').length > 0
                         ? [...items, item]
                         : consolidate(items, [item], aggregationOptions(state)),
                     list.items,
@@ -1533,11 +1372,7 @@ export const useShoppingStore = create<ShoppingStore>()(
               }
               return list;
             }),
-            restorePoints: addRestorePoints(
-              state.restorePoints,
-              sourcePoint,
-              targetPoint,
-            ),
+            restorePoints: addRestorePoints(state.restorePoints, sourcePoint, targetPoint),
           };
         });
         return result;
@@ -1545,15 +1380,9 @@ export const useShoppingStore = create<ShoppingStore>()(
       replaceListItems: (listId, items) => {
         let restorePointId: string | null = null;
         set((state) => {
-          const target = state.lists.find(
-            (list) => list.id === listId && !list.archived,
-          );
+          const target = state.lists.find((list) => list.id === listId && !list.archived);
           if (!target) return state;
-          const point = createRestorePoint(
-            target,
-            "list-rebuild",
-            state.restorePoints,
-          );
+          const point = createRestorePoint(target, 'list-rebuild', state.restorePoints);
           restorePointId = point.id;
           return {
             lists: state.lists.map((list) =>
@@ -1567,24 +1396,16 @@ export const useShoppingStore = create<ShoppingStore>()(
       restoreFromHistory: (listId, restorePointId) => {
         let undoPointId: string | null = null;
         set((state) => {
-          const target = state.lists.find(
-            (list) => list.id === listId && !list.archived,
-          );
+          const target = state.lists.find((list) => list.id === listId && !list.archived);
           const selected = state.restorePoints.find(
             (point) => point.id === restorePointId && point.listId === listId,
           );
           if (!target || !selected) return state;
-          const current = createRestorePoint(
-            target,
-            "restore",
-            state.restorePoints,
-          );
+          const current = createRestorePoint(target, 'restore', state.restorePoints);
           undoPointId = current.id;
           return {
             lists: state.lists.map((list) =>
-              list.id === listId
-                ? { ...list, items: cloneItems(selected.items) }
-                : list,
+              list.id === listId ? { ...list, items: cloneItems(selected.items) } : list,
             ),
             restorePoints: addRestorePoints(state.restorePoints, current),
           };
@@ -1592,20 +1413,17 @@ export const useShoppingStore = create<ShoppingStore>()(
         return undoPointId;
       },
       restoreMultipleFromHistory: (restores) => {
-        let undoPoints: { listId: string; restorePointId: string }[] | null =
-          null;
+        let undoPoints: { listId: string; restorePointId: string }[] | null = null;
         set((state) => {
           const listIds = restores.map((restore) => restore.listId);
           if (new Set(listIds).size !== listIds.length) return state;
           const resolved = restores.map((restore) => {
             const list = state.lists.find(
-              (candidate) =>
-                candidate.id === restore.listId && !candidate.archived,
+              (candidate) => candidate.id === restore.listId && !candidate.archived,
             );
             const point = state.restorePoints.find(
               (candidate) =>
-                candidate.id === restore.restorePointId &&
-                candidate.listId === restore.listId,
+                candidate.id === restore.restorePointId && candidate.listId === restore.listId,
             );
             return list && point ? { list, point } : null;
           });
@@ -1620,20 +1438,13 @@ export const useShoppingStore = create<ShoppingStore>()(
           );
           const operationGroupId = uid();
           const current = entries.map(({ list }) =>
-            createRestorePoint(
-              list,
-              "restore",
-              state.restorePoints,
-              operationGroupId,
-            ),
+            createRestorePoint(list, 'restore', state.restorePoints, operationGroupId),
           );
           undoPoints = current.map((point) => ({
             listId: point.listId,
             restorePointId: point.id,
           }));
-          const snapshots = new Map(
-            entries.map(({ list, point }) => [list.id, point.items]),
-          );
+          const snapshots = new Map(entries.map(({ list, point }) => [list.id, point.items]));
           return {
             lists: state.lists.map((list) => {
               const items = snapshots.get(list.id);
@@ -1646,7 +1457,7 @@ export const useShoppingStore = create<ShoppingStore>()(
       },
     }),
     {
-      name: "heirloom-shopping-list",
+      name: 'heirloom-shopping-list',
       version: 5,
       migrate: migrateShoppingState,
       merge: mergeShoppingState,

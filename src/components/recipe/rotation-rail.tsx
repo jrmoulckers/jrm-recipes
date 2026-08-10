@@ -1,15 +1,15 @@
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { ChefHat, RotateCcw } from "lucide-react";
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { ChefHat, RotateCcw } from 'lucide-react';
 
 import {
   RecipeCard,
   type CardRecipe,
   type QuickPlanContext,
-} from "~/components/recipe/recipe-card";
-import { QuickPlanButton } from "~/components/recipe/quick-plan-button";
-import { recipeCookPath } from "~/lib/recipe-path";
-import { Button } from "~/components/ui/button";
+} from '~/components/recipe/recipe-card';
+import { QuickPlanButton } from '~/components/recipe/quick-plan-button';
+import { recipeCookPath } from '~/lib/recipe-path';
+import { Button } from '~/components/ui/button';
 
 /**
  * "Back in the rotation" rail (#426): family favorites the cook hasn't made in a
@@ -24,7 +24,7 @@ export function RotationRail({
   recipes: CardRecipe[];
   quickPlan: QuickPlanContext | null;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   if (recipes.length === 0) return null;
 
   return (
@@ -32,20 +32,13 @@ export function RotationRail({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <RotateCcw className="size-5 text-primary" />
-          <h2 className="font-display text-xl font-bold tracking-tight">
-            {t("rotation.heading")}
-          </h2>
+          <h2 className="font-display text-xl font-bold tracking-tight">{t('rotation.heading')}</h2>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {t("rotation.description")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('rotation.description')}</p>
       </div>
       <div className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]">
         {recipes.map((recipe) => (
-          <div
-            key={recipe.id}
-            className="flex w-64 shrink-0 snap-start flex-col gap-2"
-          >
+          <div key={recipe.id} className="flex w-64 shrink-0 snap-start flex-col gap-2">
             <RecipeCard recipe={recipe} />
             <div className="flex gap-2">
               <Button asChild size="sm" variant="outline" className="flex-1">
@@ -56,7 +49,7 @@ export function RotationRail({
                     cook: recipe.author?.slug,
                   })}
                 >
-                  <ChefHat /> {t("common.cook")}
+                  <ChefHat /> {t('common.cook')}
                 </Link>
               </Button>
               {quickPlan ? (

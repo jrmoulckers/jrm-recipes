@@ -1,11 +1,11 @@
-import { getRequestConfig } from "next-intl/server";
-import { cookies, headers } from "next/headers";
+import { getRequestConfig } from 'next-intl/server';
+import { cookies, headers } from 'next/headers';
 
-import { LOCALE_COOKIE, resolveRequestLocale } from "~/config/i18n";
-import en from "../messages/en.json";
-import es from "../messages/es.json";
-import de from "../messages/de.json";
-import ar from "../messages/ar.json";
+import { LOCALE_COOKIE, resolveRequestLocale } from '~/config/i18n';
+import en from '../messages/en.json';
+import es from '../messages/es.json';
+import de from '../messages/de.json';
+import ar from '../messages/ar.json';
 
 /**
  * Message catalogs keyed by locale. Imported statically so the active catalog is
@@ -34,7 +34,7 @@ export default getRequestConfig(async () => {
   const [store, headerList] = await Promise.all([cookies(), headers()]);
   const locale = resolveRequestLocale(
     store.get(LOCALE_COOKIE)?.value,
-    headerList.get("accept-language"),
+    headerList.get('accept-language'),
   );
 
   return { locale, messages: CATALOGS[locale] };

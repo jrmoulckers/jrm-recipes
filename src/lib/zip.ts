@@ -44,7 +44,7 @@ export function crc32(bytes: Uint8Array): number {
 }
 
 function toBytes(data: string | Uint8Array): Uint8Array {
-  return typeof data === "string" ? encoder.encode(data) : data;
+  return typeof data === 'string' ? encoder.encode(data) : data;
 }
 
 /**

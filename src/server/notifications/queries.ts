@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import type { Route } from "next";
-import { and, desc, eq, isNull, lt } from "drizzle-orm";
+import type { Route } from 'next';
+import { and, desc, eq, isNull, lt } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { notifications, type NotificationType } from "~/server/db/schema";
-import { filterBlocked, getHiddenAuthorIds } from "~/server/moderation/blocks";
+import { db, isDbConfigured } from '~/server/db';
+import { notifications, type NotificationType } from '~/server/db/schema';
+import { filterBlocked, getHiddenAuthorIds } from '~/server/moderation/blocks';
 
 /** One notification shaped for the bell dropdown / inbox. */
 export type NotificationItem = {
@@ -42,9 +42,7 @@ export async function getUnreadCount(userId: string | null): Promise<number> {
   const rows = await db
     .select({ id: notifications.id, actorId: notifications.actorId })
     .from(notifications)
-    .where(
-      and(eq(notifications.recipientId, userId), isNull(notifications.readAt)),
-    );
+    .where(and(eq(notifications.recipientId, userId), isNull(notifications.readAt)));
   return filterBlocked(rows, (row) => row.actorId, hiddenAuthorIds).length;
 }
 
@@ -81,10 +79,7 @@ function hrefFor(row: {
  */
 export async function listNotifications(
   userId: string | null,
-  {
-    limit = 20,
-    cursor = null,
-  }: { limit?: number; cursor?: string | null } = {},
+  { limit = 20, cursor = null }: { limit?: number; cursor?: string | null } = {},
 ): Promise<NotificationPage> {
   if (!isDbConfigured() || !userId) return { items: [], nextCursor: null };
 
@@ -109,8 +104,7 @@ export async function listNotifications(
   });
 
   const page = rows.slice(0, limit);
-  const nextCursor =
-    rows.length > limit ? page[page.length - 1]!.createdAt.toISOString() : null;
+  const nextCursor = rows.length > limit ? page[page.length - 1]!.createdAt.toISOString() : null;
 
   const visible = filterBlocked(page, (row) => row.actorId, hiddenAuthorIds);
 

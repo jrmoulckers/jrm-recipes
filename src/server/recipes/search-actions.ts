@@ -1,16 +1,12 @@
-"use server";
+'use server';
 
-import { getCurrentUser } from "~/server/auth";
-import { isAllergen } from "~/lib/allergens";
-import { listMemberProfiles } from "~/server/dietary/queries";
-import { type SearchParams } from "~/lib/route-params";
-import { type Paginated } from "./pagination";
-import { parseRecipeSearch } from "./search";
-import {
-  attachCardAllergens,
-  searchRecipes,
-  type RecipeSearchResult,
-} from "./queries";
+import { getCurrentUser } from '~/server/auth';
+import { isAllergen } from '~/lib/allergens';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { type SearchParams } from '~/lib/route-params';
+import { type Paginated } from './pagination';
+import { parseRecipeSearch } from './search';
+import { attachCardAllergens, searchRecipes, type RecipeSearchResult } from './queries';
 
 /**
  * Rebuild a `SearchParams` shape from a query string, preserving repeated keys

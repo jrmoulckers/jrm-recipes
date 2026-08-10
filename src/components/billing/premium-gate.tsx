@@ -1,9 +1,9 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { type FeatureFlagKey } from "~/config/plans";
-import { hasEntitlement } from "~/server/billing/entitlements";
-import { type User } from "~/server/db/schema";
-import { LockedFeatureCard } from "./lock-badge";
+import { type FeatureFlagKey } from '~/config/plans';
+import { hasEntitlement } from '~/server/billing/entitlements';
+import { type User } from '~/server/db/schema';
+import { LockedFeatureCard } from './lock-badge';
 
 /**
  * Server-side premium gate (issue #311).

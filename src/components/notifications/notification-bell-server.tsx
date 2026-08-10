@@ -1,11 +1,8 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { getAuthState } from "~/server/auth";
-import {
-  getUnreadCount,
-  listNotifications,
-} from "~/server/notifications/queries";
-import { NotificationBell } from "./notification-bell";
+import { getAuthState } from '~/server/auth';
+import { getUnreadCount, listNotifications } from '~/server/notifications/queries';
+import { NotificationBell } from './notification-bell';
 
 /**
  * Server wrapper for the header bell (#348): resolves the current user, loads

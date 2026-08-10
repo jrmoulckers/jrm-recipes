@@ -81,11 +81,7 @@ export function toCursorPage<T, C>(
  * A short page (fewer rows than `limit`) means we reached the end, so there is
  * no next offset. A full page implies there may be more, so advance by `limit`.
  */
-export function nextPageOffset(
-  offset: number,
-  pageLength: number,
-  limit: number,
-): number | null {
+export function nextPageOffset(offset: number, pageLength: number, limit: number): number | null {
   if (limit <= 0) return null;
   return pageLength >= limit ? offset + limit : null;
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 import {
   type A11yPrefs,
@@ -13,7 +13,7 @@ import {
   parseA11y,
   resolveTriState,
   serializeA11y,
-} from "~/config/a11y";
+} from '~/config/a11y';
 
 type A11yContextValue = {
   prefs: A11yPrefs;
@@ -40,11 +40,11 @@ const A11yContext = React.createContext<A11yContextValue | null>(null);
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-const CONTRAST_QUERY = "(prefers-contrast: more)";
+const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const CONTRAST_QUERY = '(prefers-contrast: more)';
 
 function readSystem(): { motion: boolean; contrast: boolean } {
-  if (typeof window === "undefined" || !window.matchMedia) {
+  if (typeof window === 'undefined' || !window.matchMedia) {
     return { motion: false, contrast: false };
   }
   return {
@@ -110,9 +110,7 @@ export function A11yProvider({
   children: React.ReactNode;
   initialPrefs?: A11yPrefs;
 }) {
-  const [prefs, setPrefs] = React.useState<A11yPrefs>(
-    initialPrefs ?? DEFAULT_A11Y,
-  );
+  const [prefs, setPrefs] = React.useState<A11yPrefs>(initialPrefs ?? DEFAULT_A11Y);
 
   // OS signals. Seeded false for SSR/first paint (matchMedia is client-only),
   // then hydrated + kept live via listeners. Only read where no explicit pref
@@ -123,16 +121,16 @@ export function A11yProvider({
   });
 
   React.useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (typeof window === 'undefined' || !window.matchMedia) return;
     const motionMq = window.matchMedia(MOTION_QUERY);
     const contrastMq = window.matchMedia(CONTRAST_QUERY);
     const sync = () => setSystem(readSystem());
     sync();
-    motionMq.addEventListener("change", sync);
-    contrastMq.addEventListener("change", sync);
+    motionMq.addEventListener('change', sync);
+    contrastMq.addEventListener('change', sync);
     return () => {
-      motionMq.removeEventListener("change", sync);
-      contrastMq.removeEventListener("change", sync);
+      motionMq.removeEventListener('change', sync);
+      contrastMq.removeEventListener('change', sync);
     };
   }, []);
 
@@ -197,6 +195,6 @@ export function A11yProvider({
 
 export function useA11y() {
   const ctx = React.useContext(A11yContext);
-  if (!ctx) throw new Error("useA11y must be used within <A11yProvider>");
+  if (!ctx) throw new Error('useA11y must be used within <A11yProvider>');
   return ctx;
 }

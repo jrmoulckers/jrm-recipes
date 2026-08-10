@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { slugify } from "~/lib/utils";
-import { DIETARY_TAGS } from "~/lib/substitutions";
-import { ALLOWED_MEDIA_HOSTS } from "~/config/media-hosts";
+import { slugify } from '~/lib/utils';
+import { DIETARY_TAGS } from '~/lib/substitutions';
+import { ALLOWED_MEDIA_HOSTS } from '~/config/media-hosts';
 
 /**
  * Validation contract for recipe input. The editor (client) and the server
@@ -31,7 +31,7 @@ const optionalUrl = z
   .url()
   .max(2048)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 /**
  * Stored recipe media (cover/step image + step video) is rendered on every
@@ -45,9 +45,7 @@ const optionalUrl = z
  * app still runs with zero config. In a Cloudinary-configured deploy the
  * allowlist is enforced.
  */
-const cloudinaryConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-);
+const cloudinaryConfigured = Boolean(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
 
 const MEDIA_HOST_MESSAGE =
   "Upload photos and videos to Heirloom. Links to other sites aren't allowed.";
@@ -68,7 +66,7 @@ const mediaUrl = z
   .max(2048)
   .refine(mediaHostAllowed, { message: MEDIA_HOST_MESSAGE })
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 /**
  * Author-written alt text (#125). Bounded to the column width; blank collapses
@@ -81,8 +79,8 @@ const optionalNumber = z
   .union([z.string(), z.number()])
   .optional()
   .transform((v) => {
-    if (v === undefined || v === "" || v === null) return undefined;
-    const n = typeof v === "number" ? v : Number(v);
+    if (v === undefined || v === '' || v === null) return undefined;
+    const n = typeof v === 'number' ? v : Number(v);
     return Number.isFinite(n) ? n : undefined;
   });
 
@@ -94,15 +92,13 @@ export const ingredientInput = z.object({
   item: z
     .string()
     .trim()
-    .min(1, "Add an ingredient")
-    .max(300, "Keep each ingredient under 300 characters"),
+    .min(1, 'Add an ingredient')
+    .max(300, 'Keep each ingredient under 300 characters'),
   note: optionalString(300),
   // Structured prep state, separate from free-text note (#401).
   prep: optionalString(200),
   // Optional link to the step that uses this ingredient, by ordinal (#425).
-  stepPosition: optionalNumber.pipe(
-    z.number().int().min(0).max(999).optional(),
-  ),
+  stepPosition: optionalNumber.pipe(z.number().int().min(0).max(999).optional()),
   optional: z.boolean().optional().default(false),
 });
 
@@ -112,31 +108,22 @@ export const stepInput = z.object({
   instruction: z
     .string()
     .trim()
-    .min(1, "Add step text")
-    .max(5000, "Keep each step under 5,000 characters"),
+    .min(1, 'Add step text')
+    .max(5000, 'Keep each step under 5,000 characters'),
   imageUrl: mediaUrl,
   imageAlt,
   videoUrl: mediaUrl,
-  timerSeconds: optionalNumber.pipe(
-    z.number().int().min(0).max(86400).optional(),
-  ),
+  timerSeconds: optionalNumber.pipe(z.number().int().min(0).max(86400).optional()),
   // Target internal/doneness temperature in °C + a short doneness cue (#417).
   // Bounds cover freezer (-50) through a very hot oven (400 °C). NULL passes.
-  targetTempC: optionalNumber.pipe(
-    z.number().int().min(-50).max(400).optional(),
-  ),
+  targetTempC: optionalNumber.pipe(z.number().int().min(-50).max(400).optional()),
   doneness: optionalString(200),
   techniques: z.array(z.string().trim().min(1).max(80)).optional().default([]),
 });
 
-export const recipeVisibility = z.enum([
-  "private",
-  "group",
-  "unlisted",
-  "public",
-]);
-export const recipeStatus = z.enum(["draft", "published"]);
-export const recipeDifficulty = z.enum(["easy", "medium", "hard"]);
+export const recipeVisibility = z.enum(['private', 'group', 'unlisted', 'public']);
+export const recipeStatus = z.enum(['draft', 'published']);
+export const recipeDifficulty = z.enum(['easy', 'medium', 'hard']);
 
 /** A single structured dietary self-declaration (issue #404). */
 export const dietaryTag = z.enum(DIETARY_TAGS);
@@ -146,29 +133,18 @@ export const recipeInput = z
     title: z
       .string()
       .trim()
-      .min(1, "Give your recipe a title")
-      .max(200, "Keep the title under 200 characters"),
-    description: optionalString(
-      2000,
-      "Keep the description under 2,000 characters",
-    ),
+      .min(1, 'Give your recipe a title')
+      .max(200, 'Keep the title under 200 characters'),
+    description: optionalString(2000, 'Keep the description under 2,000 characters'),
     coverImageUrl: mediaUrl,
     coverImageAlt: imageAlt,
     servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
     servingsNoun: optionalString(40),
-    prepMinutes: optionalNumber.pipe(
-      z.number().int().min(0).max(100000).optional(),
-    ),
-    cookMinutes: optionalNumber.pipe(
-      z.number().int().min(0).max(100000).optional(),
-    ),
-    totalMinutes: optionalNumber.pipe(
-      z.number().int().min(0).max(100000).optional(),
-    ),
+    prepMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    cookMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
+    totalMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
     // Inactive/rest time + make-ahead callout (#409).
-    restMinutes: optionalNumber.pipe(
-      z.number().int().min(0).max(100000).optional(),
-    ),
+    restMinutes: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
     makeAheadNote: optionalString(500),
     difficulty: recipeDifficulty.optional(),
     // Legacy single-value projection retained while cuisine classifications
@@ -178,7 +154,7 @@ export const recipeInput = z
     mealTypes: z.array(z.string().trim().min(1).max(80)).max(12).default([]),
     sourceName: optionalString(200),
     sourceUrl: optionalUrl,
-    notes: optionalString(4000, "Keep notes under 4,000 characters"),
+    notes: optionalString(4000, 'Keep notes under 4,000 characters'),
     // "Story & memories" heritage text (issue #377), distinct from `notes`.
     story: optionalString(4000),
     // Heirloom provenance (issue #381): short structured family attribution,
@@ -189,22 +165,16 @@ export const recipeInput = z
     // Optional per-serving nutrition (issue #414). Non-negative. Energy (kcal)
     // and sodium (mg) are whole numbers, macronutrients are grams and may be
     // fractional. These bounds are mirrored by CHECK constraints on `recipes`.
-    calories: optionalNumber.pipe(
-      z.number().int().min(0).max(100000).optional(),
-    ),
+    calories: optionalNumber.pipe(z.number().int().min(0).max(100000).optional()),
     proteinGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     carbsGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     fatGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
-    saturatedFatGrams: optionalNumber.pipe(
-      z.number().min(0).max(100000).optional(),
-    ),
-    sodiumMg: optionalNumber.pipe(
-      z.number().int().min(0).max(1000000).optional(),
-    ),
+    saturatedFatGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
+    sodiumMg: optionalNumber.pipe(z.number().int().min(0).max(1000000).optional()),
     sugarGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
     fiberGrams: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
-    visibility: recipeVisibility.default("private"),
-    status: recipeStatus.default("draft"),
+    visibility: recipeVisibility.default('private'),
+    status: recipeStatus.default('draft'),
     groupId: optionalString(24),
     ingredients: z.array(ingredientInput).max(200).default([]),
     steps: z.array(stepInput).max(200).default([]),
@@ -227,11 +197,11 @@ export const recipeInput = z
     // "Group" visibility only makes sense with a group. Without one the recipe
     // is hidden from everyone but its author. Require a group so the form
     // surfaces a clear error instead of silently orphaning the recipe.
-    if (val.visibility === "group" && !val.groupId) {
+    if (val.visibility === 'group' && !val.groupId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["groupId"],
-        message: "Choose a group for this group recipe",
+        path: ['groupId'],
+        message: 'Choose a group for this group recipe',
       });
     }
   });
@@ -243,5 +213,5 @@ export type StepInput = z.infer<typeof stepInput>;
 /** Build a URL-friendly slug from a title (uniqueness handled at write time). */
 export function recipeSlug(title: string): string {
   const base = slugify(title).slice(0, 80);
-  return base || "recipe";
+  return base || 'recipe';
 }

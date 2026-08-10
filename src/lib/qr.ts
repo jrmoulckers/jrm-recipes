@@ -1,4 +1,4 @@
-import qrcode from "qrcode-generator";
+import qrcode from 'qrcode-generator';
 
 /**
  * Dependency-light QR generation for print (issue #350). Wraps the tiny,
@@ -7,7 +7,7 @@ import qrcode from "qrcode-generator";
  * Pure + deterministic, so it unit tests without a DOM.
  */
 
-export type QrErrorCorrection = "L" | "M" | "Q" | "H";
+export type QrErrorCorrection = 'L' | 'M' | 'Q' | 'H';
 
 export type QrCode = {
   /** Number of modules per side of the QR matrix (excludes the quiet zone). */
@@ -28,16 +28,16 @@ export function buildQrCode(
   opts: { margin?: number; errorCorrection?: QrErrorCorrection } = {},
 ): QrCode {
   const margin = opts.margin ?? 4;
-  if (data.length === 0) return { count: 0, size: margin * 2, path: "" };
+  if (data.length === 0) return { count: 0, size: margin * 2, path: '' };
 
-  const qr = qrcode(0, opts.errorCorrection ?? "M");
+  const qr = qrcode(0, opts.errorCorrection ?? 'M');
   qr.addData(data);
   qr.make();
 
   const count = qr.getModuleCount();
   const size = count + margin * 2;
 
-  let path = "";
+  let path = '';
   for (let row = 0; row < count; row++) {
     for (let col = 0; col < count; col++) {
       if (qr.isDark(row, col)) {

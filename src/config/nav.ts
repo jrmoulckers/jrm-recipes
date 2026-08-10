@@ -9,8 +9,8 @@ import {
   ShoppingCart,
   Users,
   type LucideIcon,
-} from "lucide-react";
-import type { Route } from "next";
+} from 'lucide-react';
+import type { Route } from 'next';
 
 /**
  * Keys into the `nav` message namespace (see src/messages/*.json). Every primary
@@ -18,15 +18,7 @@ import type { Route } from "next";
  * the header, mobile tab bar, and "More" menu all read in the active locale.
  */
 export type NavLabelKey =
-  | "home"
-  | "recipes"
-  | "discover"
-  | "saved"
-  | "plan"
-  | "journal"
-  | "shopping"
-  | "family"
-  | "create";
+  'home' | 'recipes' | 'discover' | 'saved' | 'plan' | 'journal' | 'shopping' | 'family' | 'create';
 
 /**
  * Stable identity for a nav destination, decoupled from its route so the
@@ -54,73 +46,73 @@ export type NavItem = {
 
 export const primaryNav: NavItem[] = [
   {
-    id: "home",
-    href: "/",
-    labelKey: "home",
+    id: 'home',
+    href: '/',
+    labelKey: 'home',
     icon: Home,
-    match: (p) => p === "/",
+    match: (p) => p === '/',
     mobile: true,
   },
   {
-    id: "recipes",
-    href: "/recipes",
-    labelKey: "recipes",
+    id: 'recipes',
+    href: '/recipes',
+    labelKey: 'recipes',
     icon: BookOpen,
     // Exclude the create route so "Recipes" and "Create" never both read as
     // active on /recipes/new.
-    match: (p) => p.startsWith("/recipes") && p !== "/recipes/new",
+    match: (p) => p.startsWith('/recipes') && p !== '/recipes/new',
     mobile: true,
   },
   {
-    id: "discover",
-    href: "/discover",
-    labelKey: "discover",
+    id: 'discover',
+    href: '/discover',
+    labelKey: 'discover',
     icon: Compass,
-    match: (p) => p.startsWith("/discover"),
+    match: (p) => p.startsWith('/discover'),
   },
   {
-    id: "saved",
-    href: "/collections",
-    labelKey: "saved",
+    id: 'saved',
+    href: '/collections',
+    labelKey: 'saved',
     icon: Heart,
-    match: (p) => p.startsWith("/collections"),
+    match: (p) => p.startsWith('/collections'),
   },
   {
-    id: "plan",
-    href: "/plan",
-    labelKey: "plan",
+    id: 'plan',
+    href: '/plan',
+    labelKey: 'plan',
     icon: CalendarDays,
-    match: (p) => p.startsWith("/plan"),
+    match: (p) => p.startsWith('/plan'),
     mobile: true,
   },
   {
-    id: "journal",
-    href: "/journal",
-    labelKey: "journal",
+    id: 'journal',
+    href: '/journal',
+    labelKey: 'journal',
     icon: CookingPot,
-    match: (p) => p.startsWith("/journal"),
+    match: (p) => p.startsWith('/journal'),
   },
   {
-    id: "shopping",
-    href: "/shopping",
-    labelKey: "shopping",
+    id: 'shopping',
+    href: '/shopping',
+    labelKey: 'shopping',
     icon: ShoppingCart,
-    match: (p) => p.startsWith("/shopping"),
+    match: (p) => p.startsWith('/shopping'),
     mobile: true,
   },
   {
-    id: "family",
-    href: "/groups",
-    labelKey: "family",
+    id: 'family',
+    href: '/groups',
+    labelKey: 'family',
     icon: Users,
-    match: (p) => p.startsWith("/groups"),
+    match: (p) => p.startsWith('/groups'),
   },
   {
-    id: "create",
-    href: "/recipes/new",
-    labelKey: "create",
+    id: 'create',
+    href: '/recipes/new',
+    labelKey: 'create',
     icon: ChefHat,
-    match: (p) => p === "/recipes/new",
+    match: (p) => p === '/recipes/new',
   },
 ];
 
@@ -134,9 +126,7 @@ export const navByKey: Record<NavKey, NavItem> = Object.fromEntries(
  * it lives as a header CTA and a Profile action rather than a tab (and the
  * bottom bar hides itself on the editor routes anyway).
  */
-export const pinnableNav: NavItem[] = primaryNav.filter(
-  (item) => item.id !== "create",
-);
+export const pinnableNav: NavItem[] = primaryNav.filter((item) => item.id !== 'create');
 
 /** Maximum number of user-pinned tabs. The Profile slot is always the 5th. */
 export const MAX_PINNED = 4;
@@ -176,7 +166,7 @@ export function normalizePinned(keys: readonly string[]): NavKey[] {
 export type FooterNavItem = {
   href: Route;
   /** Key into the `footer` message namespace (see src/messages/*.json). */
-  labelKey: "pricing" | "billing";
+  labelKey: 'pricing' | 'billing';
 };
 
 /**
@@ -185,6 +175,6 @@ export type FooterNavItem = {
  * labels stay localized via the `footer` message namespace.
  */
 export const footerNav: FooterNavItem[] = [
-  { href: "/pricing", labelKey: "pricing" },
-  { href: "/settings/billing", labelKey: "billing" },
+  { href: '/pricing', labelKey: 'pricing' },
+  { href: '/settings/billing', labelKey: 'billing' },
 ];

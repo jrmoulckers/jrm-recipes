@@ -58,10 +58,7 @@ export function ratingBreakdown(values: { value: number }[]): RatingBreakdown {
  * {@link ratingSummary} so a card fed by the stored aggregates and one fed by a
  * raw ratings array render identically. Guards a zero/negative count.
  */
-export function summaryFromAggregates(
-  count: number,
-  sum: number,
-): RatingSummary {
+export function summaryFromAggregates(count: number, sum: number): RatingSummary {
   if (count <= 0) return { average: 0, count: 0 };
   return { average: Math.round((sum / count) * 10) / 10, count };
 }
@@ -104,15 +101,15 @@ export function bayesianScore({ average, count }: RatingSummary): number {
 }
 
 /** Ways the recipe lists can be ordered. */
-export type RatingSort = "recent" | "top-rated";
+export type RatingSort = 'recent' | 'top-rated';
 
 /** The full set of sort options, handy for building UI controls. */
-export const RATING_SORTS: readonly RatingSort[] = ["recent", "top-rated"];
+export const RATING_SORTS: readonly RatingSort[] = ['recent', 'top-rated'];
 
 /** Human labels for each sort option. */
 export const RATING_SORT_LABELS: Record<RatingSort, string> = {
-  recent: "Recent",
-  "top-rated": "Top rated",
+  recent: 'Recent',
+  'top-rated': 'Top rated',
 };
 
 /** Whole number of filled stars (0–5) for a compact star row. */
@@ -137,7 +134,7 @@ export type RatingDisplay =
 export function ratingDisplay(summary: RatingSummary): RatingDisplay {
   if (summary.count <= 0) return { unrated: true };
   const filled = filledStars(summary.average);
-  const noun = summary.count === 1 ? "rating" : "ratings";
+  const noun = summary.count === 1 ? 'rating' : 'ratings';
   return {
     unrated: false,
     average: summary.average,
@@ -165,9 +162,7 @@ export function compareByTopRated(a: RatingSummary, b: RatingSummary): number {
 }
 
 /** Coerce an untrusted query-string value into a known sort option. */
-export function parseRatingSort(
-  value: string | string[] | undefined,
-): RatingSort {
+export function parseRatingSort(value: string | string[] | undefined): RatingSort {
   const raw = Array.isArray(value) ? value[0] : value;
-  return raw === "top-rated" ? "top-rated" : "recent";
+  return raw === 'top-rated' ? 'top-rated' : 'recent';
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   DAYS_IN_WEEK,
@@ -19,177 +19,165 @@ import {
   startOfPlannerWeek,
   toDateParam,
   todayParam,
-} from "./week";
+} from './week';
 
 // July 6, 2026 is a Monday. The Sunday-start week runs Jul 5 – Jul 11.
 const MON_JUL_6 = new Date(2026, 6, 6);
 const THU_JUL_9 = new Date(2026, 6, 9);
 
-describe("toDateParam / parseDateParam", () => {
-  it("formats a date as yyyy-MM-dd", () => {
-    expect(toDateParam(MON_JUL_6)).toBe("2026-07-06");
+describe('toDateParam / parseDateParam', () => {
+  it('formats a date as yyyy-MM-dd', () => {
+    expect(toDateParam(MON_JUL_6)).toBe('2026-07-06');
   });
 
-  it("round-trips a valid date param", () => {
-    expect(toDateParam(parseDateParam("2026-07-06"))).toBe("2026-07-06");
+  it('round-trips a valid date param', () => {
+    expect(toDateParam(parseDateParam('2026-07-06'))).toBe('2026-07-06');
   });
 
-  it("falls back to today for missing or malformed params", () => {
+  it('falls back to today for missing or malformed params', () => {
     const today = todayParam();
     expect(toDateParam(parseDateParam(undefined))).toBe(today);
-    expect(toDateParam(parseDateParam(""))).toBe(today);
-    expect(toDateParam(parseDateParam("not-a-date"))).toBe(today);
-    expect(toDateParam(parseDateParam("2026-13-40"))).toBe(today);
+    expect(toDateParam(parseDateParam(''))).toBe(today);
+    expect(toDateParam(parseDateParam('not-a-date'))).toBe(today);
+    expect(toDateParam(parseDateParam('2026-13-40'))).toBe(today);
   });
 });
 
-describe("startOfPlannerWeek", () => {
-  it("snaps any weekday back to the preceding Sunday", () => {
+describe('startOfPlannerWeek', () => {
+  it('snaps any weekday back to the preceding Sunday', () => {
     expect(startOfPlannerWeek(MON_JUL_6).getDay()).toBe(0);
-    expect(toDateParam(startOfPlannerWeek(MON_JUL_6))).toBe("2026-07-05");
-    expect(toDateParam(startOfPlannerWeek(THU_JUL_9))).toBe("2026-07-05");
+    expect(toDateParam(startOfPlannerWeek(MON_JUL_6))).toBe('2026-07-05');
+    expect(toDateParam(startOfPlannerWeek(THU_JUL_9))).toBe('2026-07-05');
   });
 
   it("honors the locale's week start (Monday for es/de)", () => {
-    expect(startOfPlannerWeek(MON_JUL_6, "es").getDay()).toBe(1);
-    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "es"))).toBe("2026-07-06");
-    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, "de"))).toBe("2026-07-06");
+    expect(startOfPlannerWeek(MON_JUL_6, 'es').getDay()).toBe(1);
+    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, 'es'))).toBe('2026-07-06');
+    expect(toDateParam(startOfPlannerWeek(THU_JUL_9, 'de'))).toBe('2026-07-06');
   });
 });
 
-describe("cookTimestampForParam", () => {
-  it("records the exact moment when the planned day is today", () => {
+describe('cookTimestampForParam', () => {
+  it('records the exact moment when the planned day is today', () => {
     const now = new Date(2026, 6, 9, 13, 36, 44);
-    expect(cookTimestampForParam(toDateParam(now), now).getTime()).toBe(
-      now.getTime(),
-    );
+    expect(cookTimestampForParam(toDateParam(now), now).getTime()).toBe(now.getTime());
   });
 
-  it("never resolves to UTC midnight of the planned day", () => {
+  it('never resolves to UTC midnight of the planned day', () => {
     // The bug: `new Date("2026-07-09")` is UTC midnight, which lands on the
     // previous evening (and reads as "21 hours ago") west of Greenwich.
     const now = new Date(2026, 6, 9, 13, 36, 44);
-    const stamp = cookTimestampForParam("2026-07-09", now);
-    expect(stamp.toISOString()).not.toBe("2026-07-09T00:00:00.000Z");
+    const stamp = cookTimestampForParam('2026-07-09', now);
+    expect(stamp.toISOString()).not.toBe('2026-07-09T00:00:00.000Z');
     expect(now.getTime() - stamp.getTime()).toBeLessThan(60_000);
   });
 
-  it("anchors a backdated day to local noon", () => {
+  it('anchors a backdated day to local noon', () => {
     const now = new Date(2026, 6, 9, 13, 36, 44);
-    const stamp = cookTimestampForParam("2026-07-06", now);
-    expect(toDateParam(stamp)).toBe("2026-07-06");
+    const stamp = cookTimestampForParam('2026-07-06', now);
+    expect(toDateParam(stamp)).toBe('2026-07-06');
     expect(stamp.getHours()).toBe(12);
     expect(stamp.getMinutes()).toBe(0);
   });
 
-  it("clamps a future planned day to now", () => {
+  it('clamps a future planned day to now', () => {
     const now = new Date(2026, 6, 9, 13, 36, 44);
-    expect(cookTimestampForParam("2026-07-11", now).getTime()).toBe(
-      now.getTime(),
-    );
+    expect(cookTimestampForParam('2026-07-11', now).getTime()).toBe(now.getTime());
   });
 
   it("clamps today's noon back to now when logged before midday", () => {
     const now = new Date(2026, 6, 9, 8, 15, 0);
-    expect(cookTimestampForParam("2026-07-09", now).getTime()).toBe(
-      now.getTime(),
-    );
+    expect(cookTimestampForParam('2026-07-09', now).getTime()).toBe(now.getTime());
   });
 });
 
-describe("addDaysToParam", () => {
-  it("shifts a date param forward and backward by whole days", () => {
-    expect(addDaysToParam("2026-07-06", 7)).toBe("2026-07-13");
-    expect(addDaysToParam("2026-07-06", -7)).toBe("2026-06-29");
-    expect(addDaysToParam("2026-07-06", 0)).toBe("2026-07-06");
+describe('addDaysToParam', () => {
+  it('shifts a date param forward and backward by whole days', () => {
+    expect(addDaysToParam('2026-07-06', 7)).toBe('2026-07-13');
+    expect(addDaysToParam('2026-07-06', -7)).toBe('2026-06-29');
+    expect(addDaysToParam('2026-07-06', 0)).toBe('2026-07-06');
   });
 
-  it("rolls across month boundaries", () => {
-    expect(addDaysToParam("2026-07-30", 7)).toBe("2026-08-06");
+  it('rolls across month boundaries', () => {
+    expect(addDaysToParam('2026-07-30', 7)).toBe('2026-08-06');
   });
 });
 
-describe("getPlannerWeek", () => {
-  it("returns seven consecutive days from Sunday to Saturday", () => {
+describe('getPlannerWeek', () => {
+  it('returns seven consecutive days from Sunday to Saturday', () => {
     const week = getPlannerWeek(MON_JUL_6);
     expect(week.days).toHaveLength(DAYS_IN_WEEK);
-    expect(week.startParam).toBe("2026-07-05");
-    expect(week.endParam).toBe("2026-07-11");
+    expect(week.startParam).toBe('2026-07-05');
+    expect(week.endParam).toBe('2026-07-11');
     expect(week.days[0]!.getDay()).toBe(0);
     expect(week.days[6]!.getDay()).toBe(6);
-    expect(toDateParam(week.days[0]!)).toBe("2026-07-05");
-    expect(toDateParam(week.days[6]!)).toBe("2026-07-11");
+    expect(toDateParam(week.days[0]!)).toBe('2026-07-05');
+    expect(toDateParam(week.days[6]!)).toBe('2026-07-11');
   });
 
-  it("shifts to a Monday–Sunday week for a Monday-start locale", () => {
-    const week = getPlannerWeek(THU_JUL_9, "es");
-    expect(week.startParam).toBe("2026-07-06");
-    expect(week.endParam).toBe("2026-07-12");
+  it('shifts to a Monday–Sunday week for a Monday-start locale', () => {
+    const week = getPlannerWeek(THU_JUL_9, 'es');
+    expect(week.startParam).toBe('2026-07-06');
+    expect(week.endParam).toBe('2026-07-12');
     expect(week.days[0]!.getDay()).toBe(1);
     expect(week.days[6]!.getDay()).toBe(0);
   });
 });
 
-describe("week navigation", () => {
-  it("moves to the start of the next and previous week", () => {
-    expect(nextWeekParam(MON_JUL_6)).toBe("2026-07-12");
-    expect(previousWeekParam(MON_JUL_6)).toBe("2026-06-28");
+describe('week navigation', () => {
+  it('moves to the start of the next and previous week', () => {
+    expect(nextWeekParam(MON_JUL_6)).toBe('2026-07-12');
+    expect(previousWeekParam(MON_JUL_6)).toBe('2026-06-28');
   });
 
   it("keeps navigation aligned to the locale's week start", () => {
-    expect(nextWeekParam(MON_JUL_6, "es")).toBe("2026-07-13");
-    expect(previousWeekParam(MON_JUL_6, "es")).toBe("2026-06-29");
+    expect(nextWeekParam(MON_JUL_6, 'es')).toBe('2026-07-13');
+    expect(previousWeekParam(MON_JUL_6, 'es')).toBe('2026-06-29');
   });
 });
 
-describe("formatWeekRange", () => {
-  it("collapses a same-month range", () => {
-    expect(formatWeekRange(new Date(2026, 6, 5), new Date(2026, 6, 11))).toBe(
-      "Jul 5 – 11, 2026",
-    );
+describe('formatWeekRange', () => {
+  it('collapses a same-month range', () => {
+    expect(formatWeekRange(new Date(2026, 6, 5), new Date(2026, 6, 11))).toBe('Jul 5 – 11, 2026');
   });
 
-  it("spells out a cross-month range", () => {
+  it('spells out a cross-month range', () => {
     expect(formatWeekRange(new Date(2026, 5, 29), new Date(2026, 6, 5))).toBe(
-      "Jun 29 – Jul 5, 2026",
+      'Jun 29 – Jul 5, 2026',
     );
   });
 
-  it("spells out a cross-year range", () => {
+  it('spells out a cross-year range', () => {
     expect(formatWeekRange(new Date(2025, 11, 28), new Date(2026, 0, 3))).toBe(
-      "Dec 28, 2025 – Jan 3, 2026",
+      'Dec 28, 2025 – Jan 3, 2026',
     );
   });
 });
 
-describe("day formatting", () => {
-  it("formats weekday, day number and full label", () => {
+describe('day formatting', () => {
+  it('formats weekday, day number and full label', () => {
     const sunday = new Date(2026, 6, 5);
-    expect(formatDayName(sunday)).toBe("Sun");
-    expect(formatDayNumber(sunday)).toBe("5");
-    expect(formatFullDay(sunday)).toBe("Sunday, Jul 5");
-    expect(formatWeekdayLong(sunday)).toBe("Sunday");
-    expect(formatMonthDay(sunday)).toBe("Jul 5");
+    expect(formatDayName(sunday)).toBe('Sun');
+    expect(formatDayNumber(sunday)).toBe('5');
+    expect(formatFullDay(sunday)).toBe('Sunday, Jul 5');
+    expect(formatWeekdayLong(sunday)).toBe('Sunday');
+    expect(formatMonthDay(sunday)).toBe('Jul 5');
   });
 
-  it("re-exports locale-aware formatters", () => {
+  it('re-exports locale-aware formatters', () => {
     const sunday = new Date(2026, 6, 5);
-    expect(formatDayName(sunday, "es")).toBe("dom");
-    expect(formatWeekRange(sunday, new Date(2026, 6, 11), "de")).toBe(
-      "Juli 5 – 11, 2026",
-    );
+    expect(formatDayName(sunday, 'es')).toBe('dom');
+    expect(formatWeekRange(sunday, new Date(2026, 6, 11), 'de')).toBe('Juli 5 – 11, 2026');
   });
 });
 
-describe("isSameDate / isToday", () => {
-  it("compares calendar days ignoring time", () => {
-    expect(
-      isSameDate(new Date(2026, 6, 6, 8, 30), new Date(2026, 6, 6, 21, 15)),
-    ).toBe(true);
+describe('isSameDate / isToday', () => {
+  it('compares calendar days ignoring time', () => {
+    expect(isSameDate(new Date(2026, 6, 6, 8, 30), new Date(2026, 6, 6, 21, 15))).toBe(true);
     expect(isSameDate(new Date(2026, 6, 6), new Date(2026, 6, 7))).toBe(false);
   });
 
-  it("recognizes today", () => {
+  it('recognizes today', () => {
     expect(isToday(new Date())).toBe(true);
     expect(isToday(new Date(2000, 0, 1))).toBe(false);
   });

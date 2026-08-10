@@ -9,10 +9,10 @@
  * `parseRecipeFromHtml` and its helpers.
  */
 
-import { promises as dns } from "node:dns";
+import { promises as dns } from 'node:dns';
 
-import { normalizeUnit, roundNice, unitDimension } from "~/lib/units";
-import { parseClassificationList } from "~/lib/tag-taxonomy";
+import { normalizeUnit, roundNice, unitDimension } from '~/lib/units';
+import { parseClassificationList } from '~/lib/tag-taxonomy';
 
 export type ImportedIngredient = {
   section: string;
@@ -53,8 +53,7 @@ export type ImportedRecipe = {
   steps: ImportedStep[];
 };
 
-export type ImportResult =
-  { ok: true; recipe: ImportedRecipe } | { ok: false; error: string };
+export type ImportResult = { ok: true; recipe: ImportedRecipe } | { ok: false; error: string };
 
 // --- small typed helpers over unknown JSON ------------------------------
 
@@ -63,59 +62,57 @@ function asArray(v: unknown): unknown[] {
 }
 
 function typeArray(t: unknown): string[] {
-  if (typeof t === "string") return [t];
-  return asArray(t).filter((x): x is string => typeof x === "string");
+  if (typeof t === 'string') return [t];
+  return asArray(t).filter((x): x is string => typeof x === 'string');
 }
 
 function safeCodePoint(cp: number): string {
   try {
     return String.fromCodePoint(cp);
   } catch {
-    return "";
+    return '';
   }
 }
 
 function decodeEntities(input: string): string {
   return input
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
     .replace(/&#0*39;|&#x0*27;|&apos;/gi, "'")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) =>
-      safeCodePoint(parseInt(h, 16)),
-    )
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => safeCodePoint(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (_m, d: string) => safeCodePoint(parseInt(d, 10)))
-    .replace(/&amp;/gi, "&");
+    .replace(/&amp;/gi, '&');
 }
 
 /** Strip tags, decode entities, collapse whitespace. */
 function htmlToText(input: unknown): string {
-  if (typeof input !== "string") return "";
+  if (typeof input !== 'string') return '';
   return decodeEntities(input)
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
 function textFrom(v: unknown): string {
-  if (typeof v === "string") return htmlToText(v);
+  if (typeof v === 'string') return htmlToText(v);
   for (const x of asArray(v)) {
     const t = textFrom(x);
     if (t) return t;
   }
-  if (v && typeof v === "object") {
+  if (v && typeof v === 'object') {
     const name = (v as Record<string, unknown>).name;
-    if (typeof name === "string") return htmlToText(name);
+    if (typeof name === 'string') return htmlToText(name);
   }
-  return "";
+  return '';
 }
 
 function joinList(v: unknown): string {
-  if (typeof v === "string") return v;
+  if (typeof v === 'string') return v;
   return asArray(v)
-    .filter((x): x is string => typeof x === "string")
-    .join(", ");
+    .filter((x): x is string => typeof x === 'string')
+    .join(', ');
 }
 
 // --- durations ----------------------------------------------------------
@@ -132,11 +129,7 @@ export function parseIsoDuration(value: string): number | undefined {
   const m = ISO_DURATION_RE.exec(value.trim());
   if (!m) return undefined;
   const total =
-    num(m[1]) * 7 * 24 * 60 +
-    num(m[2]) * 24 * 60 +
-    num(m[3]) * 60 +
-    num(m[4]) +
-    num(m[5]) / 60;
+    num(m[1]) * 7 * 24 * 60 + num(m[2]) * 24 * 60 + num(m[3]) * 60 + num(m[4]) + num(m[5]) / 60;
   return total > 0 ? Math.round(total) : undefined;
 }
 
@@ -166,13 +159,12 @@ function parseDurationText(value: string): number | undefined {
 
 /** Coerce a schema.org duration (ISO string, plain text, or number) to minutes. */
 export function parseDurationToMinutes(value: unknown): number | undefined {
-  if (typeof value === "number")
-    return value > 0 ? Math.round(value) : undefined;
+  if (typeof value === 'number') return value > 0 ? Math.round(value) : undefined;
   for (const v of asArray(value)) {
     const r = parseDurationToMinutes(v);
     if (r) return r;
   }
-  if (typeof value !== "string") return undefined;
+  if (typeof value !== 'string') return undefined;
   const s = value.trim();
   if (!s) return undefined;
   if (/^p/i.test(s)) return parseIsoDuration(s) ?? parseDurationText(s);
@@ -183,26 +175,23 @@ export function parseDurationToMinutes(value: unknown): number | undefined {
 
 export function parseYield(value: unknown): { servings: string; noun: string } {
   const pick = (v: unknown): string => {
-    if (typeof v === "number") return String(v);
-    if (typeof v === "string") return v;
+    if (typeof v === 'number') return String(v);
+    if (typeof v === 'string') return v;
     for (const x of asArray(v)) {
       const p = pick(x);
       if (p) return p;
     }
-    return "";
+    return '';
   };
   const raw = pick(value).trim();
-  if (!raw) return { servings: "", noun: "" };
+  if (!raw) return { servings: '', noun: '' };
   const m = /(\d+)/.exec(raw);
-  const servings = m ? (m[1] ?? "") : "";
+  const servings = m ? (m[1] ?? '') : '';
   const noun = raw
-    .replace(/\d+(?:\s*[-–]\s*\d+)?/g, " ")
-    .replace(
-      /\b(?:serves?|serving|yields?|makes?|about|approximately|roughly)\b/gi,
-      " ",
-    )
-    .replace(/[^a-z ]/gi, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\d+(?:\s*[-–]\s*\d+)?/g, ' ')
+    .replace(/\b(?:serves?|serving|yields?|makes?|about|approximately|roughly)\b/gi, ' ')
+    .replace(/[^a-z ]/gi, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 40);
   return { servings, noun };
@@ -211,125 +200,123 @@ export function parseYield(value: unknown): { servings: string; noun: string } {
 // --- images / source ----------------------------------------------------
 
 function firstImageUrl(v: unknown): string {
-  if (typeof v === "string")
-    return /^https?:\/\//i.test(v.trim()) ? v.trim() : "";
+  if (typeof v === 'string') return /^https?:\/\//i.test(v.trim()) ? v.trim() : '';
   for (const x of asArray(v)) {
     const u = firstImageUrl(x);
     if (u) return u;
   }
-  if (v && typeof v === "object") {
+  if (v && typeof v === 'object') {
     const o = v as Record<string, unknown>;
-    if (typeof o.url === "string" && /^https?:\/\//i.test(o.url)) return o.url;
-    if (typeof o.contentUrl === "string" && /^https?:\/\//i.test(o.contentUrl))
-      return o.contentUrl;
+    if (typeof o.url === 'string' && /^https?:\/\//i.test(o.url)) return o.url;
+    if (typeof o.contentUrl === 'string' && /^https?:\/\//i.test(o.contentUrl)) return o.contentUrl;
   }
-  return "";
+  return '';
 }
 
 function mainEntityUrl(v: unknown): string {
-  if (typeof v === "string") return /^https?:/i.test(v) ? v : "";
-  if (v && typeof v === "object") {
+  if (typeof v === 'string') return /^https?:/i.test(v) ? v : '';
+  if (v && typeof v === 'object') {
     const o = v as Record<string, unknown>;
-    const id = o["@id"];
-    if (typeof id === "string" && /^https?:/i.test(id)) return id;
-    if (typeof o.url === "string" && /^https?:/i.test(o.url)) return o.url;
+    const id = o['@id'];
+    if (typeof id === 'string' && /^https?:/i.test(id)) return id;
+    if (typeof o.url === 'string' && /^https?:/i.test(o.url)) return o.url;
   }
-  return "";
+  return '';
 }
 
 function normalizeTags(v: unknown): string {
   const joined = joinList(v);
-  if (!joined) return "";
+  if (!joined) return '';
   return parseClassificationList(htmlToText(joined))
     .filter((tag) => tag.length <= 80)
     .slice(0, 30)
-    .join(", ");
+    .join(', ');
 }
 
 // --- ingredient line parsing -------------------------------------------
 
-const GLYPHS = "¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒";
+const GLYPHS = '¼½¾⅓⅔⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒';
 const VULGAR: Record<string, number> = {
-  "¼": 0.25,
-  "½": 0.5,
-  "¾": 0.75,
-  "⅓": 1 / 3,
-  "⅔": 2 / 3,
-  "⅕": 0.2,
-  "⅖": 0.4,
-  "⅗": 0.6,
-  "⅘": 0.8,
-  "⅙": 1 / 6,
-  "⅚": 5 / 6,
-  "⅐": 1 / 7,
-  "⅛": 0.125,
-  "⅜": 0.375,
-  "⅝": 0.625,
-  "⅞": 0.875,
-  "⅑": 1 / 9,
-  "⅒": 0.1,
+  '¼': 0.25,
+  '½': 0.5,
+  '¾': 0.75,
+  '⅓': 1 / 3,
+  '⅔': 2 / 3,
+  '⅕': 0.2,
+  '⅖': 0.4,
+  '⅗': 0.6,
+  '⅘': 0.8,
+  '⅙': 1 / 6,
+  '⅚': 5 / 6,
+  '⅐': 1 / 7,
+  '⅛': 0.125,
+  '⅜': 0.375,
+  '⅝': 0.625,
+  '⅞': 0.875,
+  '⅑': 1 / 9,
+  '⅒': 0.1,
 };
 
 /** Units the app can't convert but should still recognize as a unit word. */
 const EXTRA_UNITS = new Set([
-  "pinch",
-  "pinches",
-  "dash",
-  "dashes",
-  "clove",
-  "cloves",
-  "can",
-  "cans",
-  "package",
-  "packages",
-  "pkg",
-  "slice",
-  "slices",
-  "stick",
-  "sticks",
-  "sprig",
-  "sprigs",
-  "stalk",
-  "stalks",
-  "handful",
-  "handfuls",
-  "bunch",
-  "bunches",
-  "head",
-  "heads",
-  "piece",
-  "pieces",
-  "strip",
-  "strips",
-  "fillet",
-  "fillets",
-  "jar",
-  "jars",
-  "bottle",
-  "bottles",
-  "container",
-  "containers",
-  "cube",
-  "cubes",
-  "drop",
-  "drops",
-  "scoop",
-  "scoops",
-  "packet",
-  "packets",
-  "sheet",
-  "sheets",
-  "ear",
-  "ears",
-  "wedge",
-  "wedges",
+  'pinch',
+  'pinches',
+  'dash',
+  'dashes',
+  'clove',
+  'cloves',
+  'can',
+  'cans',
+  'package',
+  'packages',
+  'pkg',
+  'slice',
+  'slices',
+  'stick',
+  'sticks',
+  'sprig',
+  'sprigs',
+  'stalk',
+  'stalks',
+  'handful',
+  'handfuls',
+  'bunch',
+  'bunches',
+  'head',
+  'heads',
+  'piece',
+  'pieces',
+  'strip',
+  'strips',
+  'fillet',
+  'fillets',
+  'jar',
+  'jars',
+  'bottle',
+  'bottles',
+  'container',
+  'containers',
+  'cube',
+  'cubes',
+  'drop',
+  'drops',
+  'scoop',
+  'scoops',
+  'packet',
+  'packets',
+  'sheet',
+  'sheets',
+  'ear',
+  'ears',
+  'wedge',
+  'wedges',
 ]);
 
 function parseQuantityToken(raw: string): number | undefined {
   const s = raw.trim();
   if (!s) return undefined;
   const combo = new RegExp(`^(\\d+)\\s*([${GLYPHS}])$`).exec(s);
-  if (combo) return num(combo[1]) + (VULGAR[combo[2] ?? ""] ?? 0);
+  if (combo) return num(combo[1]) + (VULGAR[combo[2] ?? ''] ?? 0);
   if (VULGAR[s] != null) return VULGAR[s];
   const mixed = /^(\d+)\s+(\d+)\/(\d+)$/.exec(s);
   if (mixed) {
@@ -352,24 +339,22 @@ function splitLeadingQuantity(line: string): {
 } {
   const t = line.trim();
   const token = `\\d+\\s+\\d+/\\d+|\\d+/\\d+|\\d+(?:\\.\\d+)?\\s*[${GLYPHS}]|\\d+(?:\\.\\d+)?|[${GLYPHS}]`;
-  const re = new RegExp(
-    `^(${token})(?:\\s*(?:-|–||to)\\s*(${token}))?\\s+(.*)$`,
-  );
+  const re = new RegExp(`^(${token})(?:\\s*(?:-|–||to)\\s*(${token}))?\\s+(.*)$`);
   const m = re.exec(t);
   if (!m) return { rest: t };
-  const q = parseQuantityToken(m[1] ?? "");
+  const q = parseQuantityToken(m[1] ?? '');
   if (q == null) return { rest: t };
   const max = m[2] ? parseQuantityToken(m[2]) : undefined;
   return {
     quantity: q,
     // Only treat the second value as a max when it's a sane upper bound.
     quantityMax: max != null && max >= q ? max : undefined,
-    rest: (m[3] ?? "").trim(),
+    rest: (m[3] ?? '').trim(),
   };
 }
 
 function knownUnit(word: string): string | null {
-  const w = word.toLowerCase().replace(/\.$/, "").trim();
+  const w = word.toLowerCase().replace(/\.$/, '').trim();
   if (!w) return null;
   if (unitDimension(w) != null) return normalizeUnit(w);
   if (EXTRA_UNITS.has(w)) return w;
@@ -378,13 +363,13 @@ function knownUnit(word: string): string | null {
 
 function splitUnit(rest: string): { unit: string; item: string } {
   const trimmed = rest.trim();
-  if (!trimmed) return { unit: "", item: "" };
-  const spaceIdx = trimmed.indexOf(" ");
+  if (!trimmed) return { unit: '', item: '' };
+  const spaceIdx = trimmed.indexOf(' ');
   const firstWord = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx);
-  const remainder = spaceIdx === -1 ? "" : trimmed.slice(spaceIdx + 1).trim();
+  const remainder = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1).trim();
   const u = knownUnit(firstWord);
-  if (u) return { unit: u, item: remainder.replace(/^of\s+/i, "").trim() };
-  return { unit: "", item: trimmed };
+  if (u) return { unit: u, item: remainder.replace(/^of\s+/i, '').trim() };
+  return { unit: '', item: trimmed };
 }
 
 export function parseIngredientLine(raw: string): ImportedIngredient {
@@ -393,27 +378,25 @@ export function parseIngredientLine(raw: string): ImportedIngredient {
   if (/\(\s*optional\s*\)/i.test(line) || /\boptional\b/i.test(line)) {
     optional = true;
     line = line
-      .replace(/\(\s*optional\s*\)/i, "")
-      .replace(/,?\s*\boptional\b/i, "")
-      .replace(/\s+/g, " ")
+      .replace(/\(\s*optional\s*\)/i, '')
+      .replace(/,?\s*\boptional\b/i, '')
+      .replace(/\s+/g, ' ')
       .trim();
   }
-  let note = "";
+  let note = '';
   const paren = /\(([^)]*)\)/.exec(line);
   if (paren) {
-    note = (paren[1] ?? "").trim();
-    line = (
-      line.slice(0, paren.index) + line.slice(paren.index + paren[0].length)
-    )
-      .replace(/\s+/g, " ")
+    note = (paren[1] ?? '').trim();
+    line = (line.slice(0, paren.index) + line.slice(paren.index + paren[0].length))
+      .replace(/\s+/g, ' ')
       .trim();
   }
   const { quantity, quantityMax, rest } = splitLeadingQuantity(line);
   const { unit, item } = splitUnit(rest);
   return {
-    section: "",
-    quantity: quantity != null ? String(roundNice(quantity)) : "",
-    quantityMax: quantityMax != null ? String(roundNice(quantityMax)) : "",
+    section: '',
+    quantity: quantity != null ? String(roundNice(quantity)) : '',
+    quantityMax: quantityMax != null ? String(roundNice(quantityMax)) : '',
     unit,
     item: (item || rest || line).trim(),
     note,
@@ -424,7 +407,7 @@ export function parseIngredientLine(raw: string): ImportedIngredient {
 function mapIngredients(value: unknown): ImportedIngredient[] {
   const lines: string[] = [];
   const walk = (n: unknown): void => {
-    if (typeof n === "string") {
+    if (typeof n === 'string') {
       const t = htmlToText(n);
       if (t) lines.push(t);
       return;
@@ -434,9 +417,9 @@ function mapIngredients(value: unknown): ImportedIngredient[] {
       arr.forEach(walk);
       return;
     }
-    if (n && typeof n === "object") {
+    if (n && typeof n === 'object') {
       const name = (n as Record<string, unknown>).name;
-      if (typeof name === "string") {
+      if (typeof name === 'string') {
         const t = htmlToText(name);
         if (t) lines.push(t);
       }
@@ -450,33 +433,33 @@ function mapIngredients(value: unknown): ImportedIngredient[] {
 
 function cleanStep(text: string): string {
   return htmlToText(text)
-    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, "")
-    .replace(/^\s*\d+\s*[.)]\s+/, "")
+    .replace(/^\s*step\s*\d+\s*[:.)-]?\s*/i, '')
+    .replace(/^\s*\d+\s*[.)]\s+/, '')
     .trim();
 }
 
 function mapInstructions(value: unknown): ImportedStep[] {
   const steps: ImportedStep[] = [];
-  const push = (text: string, image = "", section = "", video = ""): void => {
+  const push = (text: string, image = '', section = '', video = ''): void => {
     const instruction = cleanStep(text);
     if (instruction)
       steps.push({
         section,
         instruction,
-        imageUrl: /^https?:\/\//i.test(image) ? image : "",
-        videoUrl: /^https?:\/\//i.test(video) ? video : "",
-        timerMinutes: "",
-        techniques: "",
+        imageUrl: /^https?:\/\//i.test(image) ? image : '',
+        videoUrl: /^https?:\/\//i.test(video) ? video : '',
+        timerMinutes: '',
+        techniques: '',
       });
   };
-  const walk = (node: unknown, section = ""): void => {
-    if (typeof node === "string") {
+  const walk = (node: unknown, section = ''): void => {
+    if (typeof node === 'string') {
       const parts = node
         .split(/\r?\n+/)
         .map((s) => s.trim())
         .filter(Boolean);
-      if (parts.length > 1) parts.forEach((p) => push(p, "", section));
-      else push(node, "", section);
+      if (parts.length > 1) parts.forEach((p) => push(p, '', section));
+      else push(node, '', section);
       return;
     }
     const arr = asArray(node);
@@ -484,19 +467,15 @@ function mapInstructions(value: unknown): ImportedStep[] {
       arr.forEach((n) => walk(n, section));
       return;
     }
-    if (node && typeof node === "object") {
+    if (node && typeof node === 'object') {
       const o = node as Record<string, unknown>;
-      if (
-        typeArray(o["@type"]).some((t) => t.toLowerCase() === "howtosection")
-      ) {
-        const name = typeof o.name === "string" ? cleanStep(o.name) : "";
+      if (typeArray(o['@type']).some((t) => t.toLowerCase() === 'howtosection')) {
+        const name = typeof o.name === 'string' ? cleanStep(o.name) : '';
         walk(o.itemListElement, name || section);
         return;
       }
       const text =
-        (typeof o.text === "string" && o.text) ||
-        (typeof o.name === "string" && o.name) ||
-        "";
+        (typeof o.text === 'string' && o.text) || (typeof o.name === 'string' && o.name) || '';
       if (text) {
         push(text, firstImageUrl(o.image), section, firstImageUrl(o.video));
         return;
@@ -519,26 +498,22 @@ function findRecipeNode(data: unknown): Record<string, unknown> | null {
       queue.push(...asArray(cur));
       continue;
     }
-    if (cur && typeof cur === "object") {
+    if (cur && typeof cur === 'object') {
       const o = cur as Record<string, unknown>;
-      if (typeArray(o["@type"]).some((t) => t.toLowerCase() === "recipe"))
-        return o;
-      if (o["@graph"]) queue.push(o["@graph"]);
+      if (typeArray(o['@type']).some((t) => t.toLowerCase() === 'recipe')) return o;
+      if (o['@graph']) queue.push(o['@graph']);
       if (o.mainEntity) queue.push(o.mainEntity);
     }
   }
   return null;
 }
 
-function mapRecipe(
-  node: Record<string, unknown>,
-  sourceUrl: string,
-): ImportedRecipe {
+function mapRecipe(node: Record<string, unknown>, sourceUrl: string): ImportedRecipe {
   const { servings, noun } = parseYield(node.recipeYield ?? node.yield);
   const prep = parseDurationToMinutes(node.prepTime);
   const cook = parseDurationToMinutes(node.cookTime);
   const canonical =
-    (typeof node.url === "string" && /^https?:/i.test(node.url) && node.url) ||
+    (typeof node.url === 'string' && /^https?:/i.test(node.url) && node.url) ||
     mainEntityUrl(node.mainEntityOfPage) ||
     sourceUrl;
   const cuisines = normalizeTags(node.recipeCuisine);
@@ -548,9 +523,9 @@ function mapRecipe(
     coverImageUrl: firstImageUrl(node.image),
     servings,
     servingsNoun: noun,
-    prepMinutes: prep ? String(prep) : "",
-    cookMinutes: cook ? String(cook) : "",
-    cuisine: (cuisines.split(",")[0] ?? "").trim().slice(0, 80),
+    prepMinutes: prep ? String(prep) : '',
+    cookMinutes: cook ? String(cook) : '',
+    cuisine: (cuisines.split(',')[0] ?? '').trim().slice(0, 80),
     cuisines,
     mealTypes: normalizeTags(node.recipeCategory),
     sourceName: textFrom(node.author).slice(0, 200),
@@ -568,10 +543,10 @@ function tryParseJson(raw: string): unknown {
     return JSON.parse(raw) as unknown;
   } catch {
     const cleaned = raw
-      .replace(/^\s*<!\[CDATA\[/i, "")
-      .replace(/\]\]>\s*$/i, "")
+      .replace(/^\s*<!\[CDATA\[/i, '')
+      .replace(/\]\]>\s*$/i, '')
       .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&");
+      .replace(/&amp;/g, '&');
     try {
       return JSON.parse(cleaned) as unknown;
     } catch {
@@ -581,12 +556,11 @@ function tryParseJson(raw: string): unknown {
 }
 
 function extractJsonLdBlocks(html: string): unknown[] {
-  const re =
-    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   const blocks: unknown[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
-    const raw = (m[1] ?? "").trim();
+    const raw = (m[1] ?? '').trim();
     if (!raw) continue;
     const parsed = tryParseJson(raw);
     if (parsed !== undefined) blocks.push(parsed);
@@ -598,16 +572,12 @@ function extractJsonLdBlocks(html: string): unknown[] {
  * Pure core: given page HTML, return the first usable recipe found in its
  * JSON-LD, or null. Exported for unit testing.
  */
-export function parseRecipeFromHtml(
-  html: string,
-  sourceUrl: string,
-): ImportedRecipe | null {
+export function parseRecipeFromHtml(html: string, sourceUrl: string): ImportedRecipe | null {
   for (const block of extractJsonLdBlocks(html)) {
     const node = findRecipeNode(block);
     if (!node) continue;
     const mapped = mapRecipe(node, sourceUrl);
-    if (mapped.title || mapped.ingredients.length || mapped.steps.length)
-      return mapped;
+    if (mapped.title || mapped.ingredients.length || mapped.steps.length) return mapped;
   }
   return null;
 }
@@ -620,7 +590,7 @@ function normalizeInputUrl(raw: string): URL | null {
   if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
   try {
     const u = new URL(s);
-    return u.protocol === "http:" || u.protocol === "https:" ? u : null;
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u : null;
   } catch {
     return null;
   }
@@ -628,28 +598,23 @@ function normalizeInputUrl(raw: string): URL | null {
 
 /** Defense-in-depth against SSRF: reject obvious internal/loopback hosts. */
 export function isPublicHost(host: string): boolean {
-  const h = stripIpv6Brackets(host.trim().toLowerCase()).replace(/\.+$/, "");
+  const h = stripIpv6Brackets(host.trim().toLowerCase()).replace(/\.+$/, '');
   if (!h) return false;
-  if (
-    h === "localhost" ||
-    h.endsWith(".localhost") ||
-    h.endsWith(".local") ||
-    h === "0.0.0.0"
-  )
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h === '0.0.0.0')
     return false;
 
   if (IPV4_DOTTED_QUAD_RE.test(h)) return isPublicIpv4(h);
 
-  if (h.includes(":")) {
+  if (h.includes(':')) {
     const mapped = ipv4MappedIpv6Tail(h);
     if (mapped) return isPublicIpv4(mapped);
     if (
-      h === "::" ||
-      h === "::1" ||
-      h === "0:0:0:0:0:0:0:0" ||
-      h === "0:0:0:0:0:0:0:1" ||
-      h.startsWith("fc") ||
-      h.startsWith("fd") ||
+      h === '::' ||
+      h === '::1' ||
+      h === '0:0:0:0:0:0:0:0' ||
+      h === '0:0:0:0:0:0:0:1' ||
+      h.startsWith('fc') ||
+      h.startsWith('fd') ||
       /^fe[89ab][0-9a-f]/.test(h)
     )
       return false;
@@ -666,7 +631,7 @@ const NUMERIC_DOTTED_HOST_RE =
   /^(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*)(?:\.(?:0x[0-9a-f]+|[0-9a-f]*\d[0-9a-f]*))*$/i;
 
 function stripIpv6Brackets(host: string): string {
-  return host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+  return host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
 }
 
 function ipv4MappedIpv6Tail(host: string): string | null {
@@ -678,8 +643,8 @@ function ipv4MappedIpv6Tail(host: string): string | null {
   // Node normalizes `::ffff:1.2.3.4` to hex, e.g. `::ffff:0102:0304`.
   const hex = /^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(tail);
   if (hex) {
-    const high = parseInt(hex[1] ?? "", 16);
-    const low = parseInt(hex[2] ?? "", 16);
+    const high = parseInt(hex[1] ?? '', 16);
+    const low = parseInt(hex[2] ?? '', 16);
     if (Number.isNaN(high) || Number.isNaN(low)) return null;
     return `${(high >> 8) & 0xff}.${high & 0xff}.${(low >> 8) & 0xff}.${low & 0xff}`;
   }
@@ -690,13 +655,10 @@ function isPublicIpv4(host: string): boolean {
   const v4 = IPV4_DOTTED_QUAD_RE.exec(host);
   if (!v4) return false;
   const octets = v4.slice(1).map((part) => {
-    if (!part || (part.length > 1 && part.startsWith("0"))) return NaN;
+    if (!part || (part.length > 1 && part.startsWith('0'))) return NaN;
     return Number(part);
   });
-  if (
-    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
-  )
-    return false;
+  if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) return false;
 
   const [a = 0, b = 0] = octets;
   if (
@@ -714,9 +676,9 @@ function isPublicIpv4(host: string): boolean {
 }
 
 const IMPORT_FETCH_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (compatible; HeirloomRecipeImporter/1.0; +https://heirloom.jrmoulckers.com)",
-  Accept: "text/html,application/xhtml+xml,application/ld+json;q=0.9,*/*;q=0.8",
+  'User-Agent':
+    'Mozilla/5.0 (compatible; HeirloomRecipeImporter/1.0; +https://heirloom.jrmoulckers.com)',
+  Accept: 'text/html,application/xhtml+xml,application/ld+json;q=0.9,*/*;q=0.8',
 } as const;
 
 const MAX_IMPORT_REDIRECTS = 5;
@@ -737,12 +699,9 @@ class BlockedRedirectError extends Error {}
  * guard can be unit-tested without real DNS. `verbatim` keeps the resolver from
  * reordering/filtering families, so we validate exactly what would be dialed.
  */
-export type HostLookup = (
-  host: string,
-) => Promise<{ address: string; family: number }[]>;
+export type HostLookup = (host: string) => Promise<{ address: string; family: number }[]>;
 
-const defaultHostLookup: HostLookup = (host) =>
-  dns.lookup(host, { all: true, verbatim: true });
+const defaultHostLookup: HostLookup = (host) => dns.lookup(host, { all: true, verbatim: true });
 
 /**
  * Harden the SSRF guard against DNS-rebinding (issue #194).
@@ -761,10 +720,7 @@ const defaultHostLookup: HostLookup = (host) =>
  * masking a genuine "site not found". Only a *successful* resolution to an
  * internal address is blocked here.
  */
-async function assertResolvedHostIsPublic(
-  host: string,
-  lookup: HostLookup,
-): Promise<void> {
+async function assertResolvedHostIsPublic(host: string, lookup: HostLookup): Promise<void> {
   let addresses: { address: string; family: number }[];
   try {
     addresses = await lookup(host);
@@ -773,19 +729,13 @@ async function assertResolvedHostIsPublic(
   }
   for (const { address } of addresses) {
     if (!isPublicHost(address)) {
-      throw new BlockedRedirectError("host resolves to a non-public address");
+      throw new BlockedRedirectError('host resolves to a non-public address');
     }
   }
 }
 
 function isHttpRedirect(status: number): boolean {
-  return (
-    status === 301 ||
-    status === 302 ||
-    status === 303 ||
-    status === 307 ||
-    status === 308
-  );
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
 }
 
 /**
@@ -805,29 +755,28 @@ async function fetchGuardingRedirects(
   for (let hop = 0; hop <= MAX_IMPORT_REDIRECTS; hop++) {
     await assertResolvedHostIsPublic(current.hostname, lookup);
     const res = await fetch(current.toString(), {
-      redirect: "manual",
+      redirect: 'manual',
       signal,
       headers: IMPORT_FETCH_HEADERS,
     });
     if (!isHttpRedirect(res.status)) return res;
 
-    const location = res.headers.get("location");
+    const location = res.headers.get('location');
     await res.body?.cancel();
-    if (!location) throw new BlockedRedirectError("redirect without location");
+    if (!location) throw new BlockedRedirectError('redirect without location');
 
     let next: URL;
     try {
       next = new URL(location, current);
     } catch {
-      throw new BlockedRedirectError("invalid redirect target");
+      throw new BlockedRedirectError('invalid redirect target');
     }
-    if (next.protocol !== "http:" && next.protocol !== "https:")
-      throw new BlockedRedirectError("unsupported redirect protocol");
-    if (!isPublicHost(next.hostname))
-      throw new BlockedRedirectError("redirect to non-public host");
+    if (next.protocol !== 'http:' && next.protocol !== 'https:')
+      throw new BlockedRedirectError('unsupported redirect protocol');
+    if (!isPublicHost(next.hostname)) throw new BlockedRedirectError('redirect to non-public host');
     current = next;
   }
-  throw new BlockedRedirectError("too many redirects");
+  throw new BlockedRedirectError('too many redirects');
 }
 
 /**
@@ -835,16 +784,13 @@ async function fetchGuardingRedirects(
  * an unbounded stream cannot exhaust memory (issue #222). The excess is dropped
  * and the underlying stream cancelled rather than buffered.
  */
-async function readCappedText(
-  res: Response,
-  maxBytes: number,
-): Promise<string> {
+async function readCappedText(res: Response, maxBytes: number): Promise<string> {
   const body = res.body;
   if (!body) return (await res.text()).slice(0, maxBytes);
 
   const reader = body.getReader();
   const decoder = new TextDecoder();
-  let out = "";
+  let out = '';
   let total = 0;
   try {
     for (;;) {
@@ -876,10 +822,8 @@ export async function importRecipeFromUrl(
 ): Promise<ImportResult> {
   const lookup = options.lookup ?? defaultHostLookup;
   const url = normalizeInputUrl(rawUrl);
-  if (!url)
-    return { ok: false, error: "That doesn't look like a valid web address." };
-  if (!isPublicHost(url.hostname))
-    return { ok: false, error: "That address can't be imported." };
+  if (!url) return { ok: false, error: "That doesn't look like a valid web address." };
+  if (!isPublicHost(url.hostname)) return { ok: false, error: "That address can't be imported." };
 
   let res: Response;
   try {
@@ -887,13 +831,11 @@ export async function importRecipeFromUrl(
   } catch (e) {
     if (e instanceof BlockedRedirectError)
       return { ok: false, error: "That address can't be imported." };
-    const timedOut =
-      e instanceof Error &&
-      (e.name === "TimeoutError" || e.name === "AbortError");
+    const timedOut = e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError');
     return {
       ok: false,
       error: timedOut
-        ? "That site took too long to respond. Try again or paste it in manually."
+        ? 'That site took too long to respond. Try again or paste it in manually.'
         : "We couldn't reach that site.",
     };
   }
@@ -908,12 +850,12 @@ export async function importRecipeFromUrl(
     };
   }
 
-  const declaredLength = Number(res.headers.get("content-length"));
+  const declaredLength = Number(res.headers.get('content-length'));
   if (Number.isFinite(declaredLength) && declaredLength > MAX_IMPORT_BYTES) {
     await res.body?.cancel();
     return {
       ok: false,
-      error: "That page is too large to import. Try adding it by hand.",
+      error: 'That page is too large to import. Try adding it by hand.',
     };
   }
 

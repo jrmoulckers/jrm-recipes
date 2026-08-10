@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import { listWeekDinners } from "./queries";
+import { listWeekDinners } from './queries';
 import {
   formatDayName,
   formatMonthDay,
@@ -9,7 +9,7 @@ import {
   parseDateParam,
   toDateParam,
   todayParam,
-} from "./week";
+} from './week';
 
 /** One selectable day in the quick-plan picker (#379). */
 export type QuickPlanDayOption = { value: string; label: string };
@@ -26,9 +26,7 @@ export type QuickPlanData = {
  * onward to pre-select. Used by the browse grid (#379) and the home rails
  * (#375/#426) so a single click lands a recipe on a sensible night.
  */
-export async function buildQuickPlanContext(
-  userId: string,
-): Promise<QuickPlanData> {
+export async function buildQuickPlanContext(userId: string): Promise<QuickPlanData> {
   const week = getPlannerWeek(new Date());
   const dinners = await listWeekDinners(userId, week.startParam, week.endParam);
   const occupied = new Set(dinners.map((entry) => entry.date));
@@ -40,9 +38,7 @@ export async function buildQuickPlanContext(
   const upcoming = days.filter((day) => day.value >= today);
   const pool = upcoming.length > 0 ? upcoming : days;
   const defaultDate =
-    pool.find((day) => !occupied.has(day.value))?.value ??
-    pool[0]?.value ??
-    today;
+    pool.find((day) => !occupied.has(day.value))?.value ?? pool[0]?.value ?? today;
   return { days, defaultDate };
 }
 

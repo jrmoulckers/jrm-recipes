@@ -43,9 +43,9 @@
  * });
  * ```
  */
-import { vi, type Mock } from "vitest";
+import { vi, type Mock } from 'vitest';
 
-import type { User } from "~/server/db/schema";
+import type { User } from '~/server/db/schema';
 
 /** The fluent builder surface an insert/statement resolves through. */
 export interface Chainable {
@@ -65,16 +65,12 @@ export interface Chainable {
  */
 export function chainable(rows: unknown[] = []): Chainable {
   return {
-    returning: vi.fn((..._cols: unknown[]): Promise<unknown[]> =>
-      Promise.resolve(rows),
-    ),
+    returning: vi.fn((..._cols: unknown[]): Promise<unknown[]> => Promise.resolve(rows)),
     onConflictDoNothing: vi.fn((..._args: unknown[]): Promise<undefined> =>
       Promise.resolve(undefined),
     ),
-    then: (
-      onFulfilled: (value: unknown) => unknown,
-      onRejected?: (reason: unknown) => unknown,
-    ) => Promise.resolve(rows).then(onFulfilled, onRejected),
+    then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
+      Promise.resolve(rows).then(onFulfilled, onRejected),
   };
 }
 
@@ -89,10 +85,7 @@ export type QueryTableMock = {
  * `db.query.recipes` needs no undefined check), while extra tables added via
  * {@link createDbMock} resolve through the string index signature.
  */
-export type QueryMock = Record<
-  (typeof DEFAULT_TABLES)[number],
-  QueryTableMock
-> &
+export type QueryMock = Record<(typeof DEFAULT_TABLES)[number], QueryTableMock> &
   Record<string, QueryTableMock>;
 
 type InsertBuilder = { values: (vals?: unknown) => Chainable };
@@ -121,16 +114,16 @@ export interface TxMock extends StatementMocks {
 
 /** Default tables exposed on `query`. extend per-test via {@link createDbMock}. */
 const DEFAULT_TABLES = [
-  "recipes",
-  "recipeIngredients",
-  "recipeSteps",
-  "recipeVersions",
-  "recipeEvents",
-  "recipeTags",
-  "tags",
-  "groups",
-  "groupMembers",
-  "users",
+  'recipes',
+  'recipeIngredients',
+  'recipeSteps',
+  'recipeVersions',
+  'recipeEvents',
+  'recipeTags',
+  'tags',
+  'groups',
+  'groupMembers',
+  'users',
 ] as const;
 
 function makeQuery(tables: readonly string[]): QueryMock {
@@ -223,9 +216,8 @@ const dbProxy = new Proxy(
   {},
   {
     get(_t, prop) {
-      if (!activeDb)
-        throw new Error("useDbMock() must run before the db is accessed");
-      return activeDb.db[prop as keyof DbMock["db"]];
+      if (!activeDb) throw new Error('useDbMock() must run before the db is accessed');
+      return activeDb.db[prop as keyof DbMock['db']];
     },
   },
 ) as unknown as TxMock & { $count: Mock };
@@ -256,7 +248,7 @@ export function useAuthMock(user: User | null): void {
 export function authModuleMock() {
   return {
     requireUser: vi.fn(async (): Promise<User> => {
-      if (!activeUser) throw new Error("UNAUTHENTICATED");
+      if (!activeUser) throw new Error('UNAUTHENTICATED');
       return activeUser;
     }),
     getCurrentUser: vi.fn(async (): Promise<User | null> => activeUser),
@@ -271,7 +263,7 @@ export function mockAuth(opts: { user?: User | null } = {}) {
   const user = opts.user ?? null;
   return {
     requireUser: vi.fn(async (): Promise<User> => {
-      if (!user) throw new Error("UNAUTHENTICATED");
+      if (!user) throw new Error('UNAUTHENTICATED');
       return user;
     }),
     getCurrentUser: vi.fn(async (): Promise<User | null> => user),

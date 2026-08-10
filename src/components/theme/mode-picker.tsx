@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Check } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
 
-import { UI_THEMES } from "~/config/themes";
-import { useTheme } from "~/components/theme/theme-provider";
-import { ThemeSwatch } from "~/components/theme/theme-swatch";
-import { cn } from "~/lib/utils";
+import { UI_THEMES } from '~/config/themes';
+import { useTheme } from '~/components/theme/theme-provider';
+import { ThemeSwatch } from '~/components/theme/theme-swatch';
+import { cn } from '~/lib/utils';
 
 /**
  * Landing-page "try it live" mode picker. Applies each UI mode instantly so
  * visitors feel the theming system before signing up.
  */
 export function ModePicker() {
-  const t = useTranslations("theme");
+  const t = useTranslations('theme');
   const { theme, setTheme } = useTheme();
 
   return (
@@ -28,8 +28,8 @@ export function ModePicker() {
             onClick={() => setTheme(themeOption.id)}
             aria-pressed={active}
             className={cn(
-              "group relative flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-start transition-all hover:-translate-y-0.5 hover:shadow-token-lg",
-              active ? "border-primary shadow-token" : "border-border",
+              'group relative flex flex-col gap-3 rounded-xl border-2 bg-card p-4 text-start transition-all hover:-translate-y-0.5 hover:shadow-token-lg',
+              active ? 'border-primary shadow-token' : 'border-border',
             )}
           >
             <ThemeSwatch theme={themeOption.id} size="lg" />

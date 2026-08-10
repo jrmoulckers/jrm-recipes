@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
   /**
@@ -21,17 +21,14 @@ export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {
 const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
   ({ className, label, ...props }, ref) => {
     const a11y = label
-      ? ({ role: "status", "aria-label": label } as const)
-      : ({ "aria-hidden": true } as const);
+      ? ({ role: 'status', 'aria-label': label } as const)
+      : ({ 'aria-hidden': true } as const);
     return (
       <svg
         ref={ref}
         viewBox="0 0 24 24"
         fill="none"
-        className={cn(
-          "size-[1em] shrink-0 animate-spin text-current",
-          className,
-        )}
+        className={cn('size-[1em] shrink-0 animate-spin text-current', className)}
         {...a11y}
         {...props}
       >
@@ -54,6 +51,6 @@ const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
     );
   },
 );
-Spinner.displayName = "Spinner";
+Spinner.displayName = 'Spinner';
 
 export { Spinner };

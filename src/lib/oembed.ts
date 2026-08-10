@@ -1,5 +1,5 @@
-import { brand } from "~/config/brand";
-import { absoluteUrl } from "~/lib/utils";
+import { brand } from '~/config/brand';
+import { absoluteUrl } from '~/lib/utils';
 
 /**
  * oEmbed provider helpers (issue #347). Pure + dependency-light so they unit
@@ -16,8 +16,8 @@ export const OEMBED_MIN_HEIGHT = 200;
 
 /** A minimal oEmbed `rich` response (https://oembed.com/#section2.3.4). */
 export type OembedRich = {
-  version: "1.0";
-  type: "rich";
+  version: '1.0';
+  type: 'rich';
   provider_name: string;
   provider_url: string;
   title: string;
@@ -57,7 +57,7 @@ export type OembedRecipeRef = {
  */
 export function recipeRefFromUrl(
   rawUrl: string,
-  baseUrl: string = absoluteUrl("/"),
+  baseUrl: string = absoluteUrl('/'),
 ): OembedRecipeRef | null {
   let url: URL;
   let base: URL;
@@ -73,19 +73,13 @@ export function recipeRefFromUrl(
   const first = decodeURIComponent(match[1]!).trim();
   const second = match[2] ? decodeURIComponent(match[2]).trim() : null;
   if (second) {
-    return first.length > 0 && second.length > 0
-      ? { cook: first, recipe: second }
-      : null;
+    return first.length > 0 && second.length > 0 ? { cook: first, recipe: second } : null;
   }
   return first.length > 0 ? { cook: null, recipe: first } : null;
 }
 
 /** Clamp a requested dimension into `[min, fallback]` (oEmbed maxwidth/height). */
-export function clampDimension(
-  requested: number | null,
-  fallback: number,
-  min: number,
-): number {
+export function clampDimension(requested: number | null, fallback: number, min: number): number {
   if (requested == null || !Number.isFinite(requested)) return fallback;
   return Math.max(min, Math.min(Math.floor(requested), fallback));
 }
@@ -99,16 +93,8 @@ export function buildRecipeOembed(
   recipe: OembedRecipe,
   opts: { maxwidth?: number | null; maxheight?: number | null } = {},
 ): OembedRich {
-  const width = clampDimension(
-    opts.maxwidth ?? null,
-    OEMBED_DEFAULT_WIDTH,
-    OEMBED_MIN_WIDTH,
-  );
-  const height = clampDimension(
-    opts.maxheight ?? null,
-    OEMBED_DEFAULT_HEIGHT,
-    OEMBED_MIN_HEIGHT,
-  );
+  const width = clampDimension(opts.maxwidth ?? null, OEMBED_DEFAULT_WIDTH, OEMBED_MIN_WIDTH);
+  const height = clampDimension(opts.maxheight ?? null, OEMBED_DEFAULT_HEIGHT, OEMBED_MIN_HEIGHT);
   // Keyed by id, not slug: recipe slugs are only unique inside a cook's
   // namespace, so the id is the one segment that can't become ambiguous (#666).
   const src = absoluteUrl(`/embed/recipes/${recipe.id}`);
@@ -121,15 +107,13 @@ export function buildRecipeOembed(
 
   const authorHandle = recipe.author?.handle ?? null;
   return {
-    version: "1.0",
-    type: "rich",
+    version: '1.0',
+    type: 'rich',
     provider_name: brand.name,
-    provider_url: absoluteUrl("/"),
+    provider_url: absoluteUrl('/'),
     title: recipe.title,
     ...(recipe.author?.name ? { author_name: recipe.author.name } : {}),
-    ...(authorHandle
-      ? { author_url: absoluteUrl(`/cooks/${authorHandle}`) }
-      : {}),
+    ...(authorHandle ? { author_url: absoluteUrl(`/cooks/${authorHandle}`) } : {}),
     ...(recipe.coverImageUrl ? { thumbnail_url: recipe.coverImageUrl } : {}),
     cache_age: 3600,
     width,
@@ -141,8 +125,8 @@ export function buildRecipeOembed(
 /** Escape the few characters that would break a double-quoted HTML attribute. */
 function escapeHtmlAttr(value: string): string {
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }

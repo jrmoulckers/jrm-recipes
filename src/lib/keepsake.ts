@@ -24,9 +24,9 @@ function tidy(value: string | null | undefined, max: number): string | null {
   // Collapse runs of blank lines/spaces but keep single newlines so a note can
   // have simple line breaks. Trim the ends and cap the length.
   const cleaned = value
-    .replace(/\r\n?/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, max);
   return cleaned.length > 0 ? cleaned : null;
@@ -41,8 +41,7 @@ export function parseKeepsakeMessage(input: {
   from?: string | string[] | null;
   note?: string | string[] | null;
 }): KeepsakeMessage {
-  const first = (v: string | string[] | null | undefined) =>
-    Array.isArray(v) ? v[0] : v;
+  const first = (v: string | string[] | null | undefined) => (Array.isArray(v) ? v[0] : v);
   return {
     from: tidy(first(input.from), KEEPSAKE_FROM_MAX),
     note: tidy(first(input.note), KEEPSAKE_NOTE_MAX),
@@ -69,9 +68,9 @@ export function buildKeepsakePath(
   const params = new URLSearchParams();
   const from = tidy(message.from, KEEPSAKE_FROM_MAX);
   const note = tidy(message.note, KEEPSAKE_NOTE_MAX);
-  if (from) params.set("from", from);
-  if (note) params.set("note", note);
-  if (message.token) params.set("t", message.token);
+  if (from) params.set('from', from);
+  if (note) params.set('note', note);
+  if (message.token) params.set('t', message.token);
   const query = params.toString();
   const base = `${recipePath}/keepsake`;
   return query ? `${base}?${query}` : base;

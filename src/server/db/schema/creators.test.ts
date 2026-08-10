@@ -1,14 +1,10 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { getTableConfig } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import { describe, expect, it } from 'vitest';
 
-import {
-  recipeCreatorRole,
-  recipeCreatorStatus,
-  recipeCreators,
-} from "./recipes";
+import { recipeCreatorRole, recipeCreatorStatus, recipeCreators } from './recipes';
 
 /**
  * Issue #668. `recipe_creators` carries the permission and URL-namespace
@@ -19,75 +15,67 @@ import {
  * and referential actions only survive as text.
  */
 function migrationContaining(needle: string): string {
-  const dir = join(process.cwd(), "drizzle");
+  const dir = join(process.cwd(), 'drizzle');
   const body = readdirSync(dir)
-    .filter((f) => f.endsWith(".sql"))
-    .map((f) => readFileSync(join(dir, f), "utf8"))
+    .filter((f) => f.endsWith('.sql'))
+    .map((f) => readFileSync(join(dir, f), 'utf8'))
     .find((sql) => sql.includes(needle));
   expect(body, `no migration contains ${needle}`).toBeDefined();
   return body!;
 }
 
-describe("recipe_creators schema (issue #668)", () => {
-  it("has no `owner` role, because the owner is recipes.authorId", () => {
+describe('recipe_creators schema (issue #668)', () => {
+  it('has no `owner` role, because the owner is recipes.authorId', () => {
     // A row for the owner would be a second representation of a fact the
     // `notNull` authorId FK already guarantees, and could only ever drift from
     // it. Ownership stays single-sourced.
-    expect(recipeCreatorRole.enumValues).toEqual(["creator"]);
+    expect(recipeCreatorRole.enumValues).toEqual(['creator']);
   });
 
-  it("defaults an invitation to pending, never accepted", () => {
+  it('defaults an invitation to pending, never accepted', () => {
     // Adding someone publishes a recipe under *their* public namespace, so it
     // needs their consent. A default of `accepted` would grant access and a URL
     // on a bare insert.
-    expect(recipeCreatorStatus.enumValues).toEqual(["pending", "accepted"]);
-    const status = getTableConfig(recipeCreators).columns.find(
-      (c) => c.name === "status",
-    );
-    expect(status?.default).toBe("pending");
+    expect(recipeCreatorStatus.enumValues).toEqual(['pending', 'accepted']);
+    const status = getTableConfig(recipeCreators).columns.find((c) => c.name === 'status');
+    expect(status?.default).toBe('pending');
   });
 
-  it("allows only one row per person per recipe", () => {
+  it('allows only one row per person per recipe', () => {
     const { uniqueConstraints } = getTableConfig(recipeCreators);
-    const uq = uniqueConstraints.find(
-      (u) => u.name === "recipe_creators_recipe_user_uq",
-    );
-    expect(uq?.columns.map((c) => c.name)).toEqual(["recipeId", "userId"]);
+    const uq = uniqueConstraints.find((u) => u.name === 'recipe_creators_recipe_user_uq');
+    expect(uq?.columns.map((c) => c.name)).toEqual(['recipeId', 'userId']);
   });
 
   it("keeps a creator's slug unique inside their own namespace", () => {
     const { uniqueConstraints } = getTableConfig(recipeCreators);
-    const uq = uniqueConstraints.find(
-      (u) => u.name === "recipe_creators_user_slug_uq",
-    );
-    expect(uq?.columns.map((c) => c.name)).toEqual(["userId", "slug"]);
+    const uq = uniqueConstraints.find((u) => u.name === 'recipe_creators_user_slug_uq');
+    expect(uq?.columns.map((c) => c.name)).toEqual(['userId', 'slug']);
   });
 
-  it("leaves the slug nullable so a pending invite occupies nothing", () => {
+  it('leaves the slug nullable so a pending invite occupies nothing', () => {
     // Postgres treats NULLs as distinct under a unique constraint, so any number
     // of pending invitations coexist without colliding — which is the point: a
     // pending row must not reserve a slug in the invitee's namespace.
-    const slug = getTableConfig(recipeCreators).columns.find(
-      (c) => c.name === "slug",
-    );
+    const slug = getTableConfig(recipeCreators).columns.find((c) => c.name === 'slug');
     expect(slug?.notNull).toBe(false);
   });
 
-  it("binds status to the slug/acceptedAt pair with a CHECK", () => {
+  it('binds status to the slug/acceptedAt pair with a CHECK', () => {
     const { checks } = getTableConfig(recipeCreators);
-    const check = checks.find((c) => c.name === "recipe_creators_status_check");
-    expect(check, "missing recipe_creators_status_check").toBeDefined();
+    const check = checks.find((c) => c.name === 'recipe_creators_status_check');
+    expect(check, 'missing recipe_creators_status_check').toBeDefined();
     // The predicate itself is asserted against the generated DDL below, where
     // the enum literals survive as text rather than as SQL chunk objects.
   });
 
-  it("compiles the status CHECK into the migration DDL", () => {
+  it('compiles the status CHECK into the migration DDL', () => {
     // Accepted implies a namespace slug and a timestamp; pending implies
     // neither. This is what makes "pending grants nothing" checkable at the DB
     // rather than merely intended by the mutation layer.
-    const body = migrationContaining("recipe_creators_status_check");
+    const body = migrationContaining('recipe_creators_status_check');
     const start = body.indexOf('CONSTRAINT "recipe_creators_status_check"');
-    const clause = body.slice(start, body.indexOf("\n", start));
+    const clause = body.slice(start, body.indexOf('\n', start));
     expect(clause).toContain("'accepted'");
     expect(clause).toContain("'pending'");
     expect(clause).toContain('"slug" is not null');
@@ -96,7 +84,7 @@ describe("recipe_creators schema (issue #668)", () => {
     expect(clause).toContain('"accepted_at" is null');
   });
 
-  it("cascades away with either side of the relationship", () => {
+  it('cascades away with either side of the relationship', () => {
     // Deleting the recipe or the user must not leave a row that still grants
     // access or resolves a URL. Account deletion in particular has to stop the
     // departing user's creator paths resolving on other people's recipes.
@@ -115,12 +103,9 @@ describe("recipe_creators schema (issue #668)", () => {
     );
   });
 
-  it("indexes both reverse lookups on accepted rows only", () => {
+  it('indexes both reverse lookups on accepted rows only', () => {
     const { indexes } = getTableConfig(recipeCreators);
-    for (const name of [
-      "recipe_creators_user_idx",
-      "recipe_creators_recipe_idx",
-    ]) {
+    for (const name of ['recipe_creators_user_idx', 'recipe_creators_recipe_idx']) {
       const found = indexes.find((i) => i.config.name === name);
       expect(found, `expected index "${name}"`).toBeDefined();
       // Partial on `accepted`, because every access path filters on it and a

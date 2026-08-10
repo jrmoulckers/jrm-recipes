@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   state,
@@ -15,7 +15,7 @@ const {
     configured: true,
     authorized: true,
     db: true,
-    providerName: "log",
+    providerName: 'log',
     sendThrowsFor: null as string | null,
   };
   type Recipient = { id: string; email: string | null; name: string | null };
@@ -29,40 +29,41 @@ const {
     isCronAuthorized: vi.fn(() => state.authorized),
     isDbConfigured: vi.fn(() => state.db),
     listDigestRecipients: vi.fn<() => Promise<Recipient[]>>(),
-    getUserDigestData: vi.fn<(userId: string) => Promise<DigestData>>(
-      async () => ({ groups: [], recipes: [] }),
-    ),
+    getUserDigestData: vi.fn<(userId: string) => Promise<DigestData>>(async () => ({
+      groups: [],
+      recipes: [],
+    })),
     buildWeeklyDigest: vi.fn<(input: { recipes: unknown[] }) => unknown>(),
     renderDigestEmail: vi.fn(() => ({
-      subject: "s",
-      html: "<p>h</p>",
-      text: "t",
+      subject: 's',
+      html: '<p>h</p>',
+      text: 't',
     })),
     sendSpy: vi.fn(async (msg: { to: string }) => {
       if (state.sendThrowsFor && msg.to === state.sendThrowsFor) {
-        throw new Error("boom");
+        throw new Error('boom');
       }
     }),
   };
 });
 
-vi.mock("~/server/cron/auth", () => ({ isCronConfigured, isCronAuthorized }));
-vi.mock("~/server/db", () => ({ isDbConfigured }));
-vi.mock("~/server/digest/queries", () => ({
+vi.mock('~/server/cron/auth', () => ({ isCronConfigured, isCronAuthorized }));
+vi.mock('~/server/db', () => ({ isDbConfigured }));
+vi.mock('~/server/digest/queries', () => ({
   listDigestRecipients,
   getUserDigestData,
 }));
-vi.mock("~/server/digest/builder", () => ({ buildWeeklyDigest }));
-vi.mock("~/server/digest/email", () => ({
+vi.mock('~/server/digest/builder', () => ({ buildWeeklyDigest }));
+vi.mock('~/server/digest/email', () => ({
   renderDigestEmail,
   getEmailProvider: () => ({ name: state.providerName, send: sendSpy }),
 }));
-vi.mock("~/lib/log", () => ({ log: { error: vi.fn(), info: vi.fn() } }));
+vi.mock('~/lib/log', () => ({ log: { error: vi.fn(), info: vi.fn() } }));
 
-import { GET } from "./route";
+import { GET } from './route';
 
 function get(): Request {
-  return new Request("http://localhost/api/cron/digest");
+  return new Request('http://localhost/api/cron/digest');
 }
 
 beforeEach(() => {
@@ -70,26 +71,26 @@ beforeEach(() => {
   state.configured = true;
   state.authorized = true;
   state.db = true;
-  state.providerName = "log";
+  state.providerName = 'log';
   state.sendThrowsFor = null;
 });
 
-describe("GET /api/cron/digest. Auth", () => {
-  it("returns 503 when CRON_SECRET is unconfigured", async () => {
+describe('GET /api/cron/digest. Auth', () => {
+  it('returns 503 when CRON_SECRET is unconfigured', async () => {
     state.configured = false;
     const res = await GET(get());
     expect(res.status).toBe(503);
     expect(listDigestRecipients).not.toHaveBeenCalled();
   });
 
-  it("returns 401 on a bad/absent bearer", async () => {
+  it('returns 401 on a bad/absent bearer', async () => {
     state.authorized = false;
     const res = await GET(get());
     expect(res.status).toBe(401);
     expect(listDigestRecipients).not.toHaveBeenCalled();
   });
 
-  it("no-ops with zero counts when the database is unconfigured", async () => {
+  it('no-ops with zero counts when the database is unconfigured', async () => {
     state.db = false;
     const res = await GET(get());
     expect(res.status).toBe(200);
@@ -98,22 +99,19 @@ describe("GET /api/cron/digest. Auth", () => {
   });
 });
 
-describe("GET /api/cron/digest. Recipient iteration", () => {
-  it("sends to opted-in recipients with activity and skips the rest", async () => {
+describe('GET /api/cron/digest. Recipient iteration', () => {
+  it('sends to opted-in recipients with activity and skips the rest', async () => {
     listDigestRecipients.mockResolvedValue([
-      { id: "u1", email: "a@example.com", name: "A" },
-      { id: "u2", email: null, name: "B" }, // no email → skipped
-      { id: "u3", email: "c@example.com", name: "C" }, // no digest → skipped
+      { id: 'u1', email: 'a@example.com', name: 'A' },
+      { id: 'u2', email: null, name: 'B' }, // no email → skipped
+      { id: 'u3', email: 'c@example.com', name: 'C' }, // no digest → skipped
     ]);
-    buildWeeklyDigest.mockImplementation(
-      ({ recipes }: { recipes: unknown[] }) =>
-        recipes.length > 0
-          ? { groups: [], totalNew: 1, totalUpdated: 0 }
-          : null,
+    buildWeeklyDigest.mockImplementation(({ recipes }: { recipes: unknown[] }) =>
+      recipes.length > 0 ? { groups: [], totalNew: 1, totalUpdated: 0 } : null,
     );
     getUserDigestData.mockImplementation(async (userId: string) =>
-      userId === "u1"
-        ? { groups: [{ id: "g", name: "G" }], recipes: [{ id: "r" }] }
+      userId === 'u1'
+        ? { groups: [{ id: 'g', name: 'G' }], recipes: [{ id: 'r' }] }
         : { groups: [], recipes: [] },
     );
 
@@ -122,12 +120,10 @@ describe("GET /api/cron/digest. Recipient iteration", () => {
 
     expect(res.status).toBe(200);
     expect(sendSpy).toHaveBeenCalledTimes(1);
-    expect(sendSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "a@example.com" }),
-    );
+    expect(sendSpy).toHaveBeenCalledWith(expect.objectContaining({ to: 'a@example.com' }));
     expect(body).toMatchObject({
       ok: true,
-      provider: "log",
+      provider: 'log',
       recipients: 3,
       sent: 1,
       skipped: 2,
@@ -135,14 +131,12 @@ describe("GET /api/cron/digest. Recipient iteration", () => {
     });
   });
 
-  it("degrades to the log/no-op provider without throwing when no ESP is set", async () => {
+  it('degrades to the log/no-op provider without throwing when no ESP is set', async () => {
     // getEmailProvider returns the log provider (name "log"). Calling send() never throws.
-    listDigestRecipients.mockResolvedValue([
-      { id: "u1", email: "a@example.com", name: "A" },
-    ]);
+    listDigestRecipients.mockResolvedValue([{ id: 'u1', email: 'a@example.com', name: 'A' }]);
     getUserDigestData.mockResolvedValue({
-      groups: [{ id: "g", name: "G" }],
-      recipes: [{ id: "r" }],
+      groups: [{ id: 'g', name: 'G' }],
+      recipes: [{ id: 'r' }],
     });
     buildWeeklyDigest.mockReturnValue({
       groups: [],
@@ -152,18 +146,18 @@ describe("GET /api/cron/digest. Recipient iteration", () => {
 
     const res = await GET(get());
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ provider: "log", sent: 1 });
+    expect(await res.json()).toMatchObject({ provider: 'log', sent: 1 });
   });
 
-  it("isolates a failed send so the run still completes", async () => {
-    state.sendThrowsFor = "a@example.com";
+  it('isolates a failed send so the run still completes', async () => {
+    state.sendThrowsFor = 'a@example.com';
     listDigestRecipients.mockResolvedValue([
-      { id: "u1", email: "a@example.com", name: "A" },
-      { id: "u2", email: "b@example.com", name: "B" },
+      { id: 'u1', email: 'a@example.com', name: 'A' },
+      { id: 'u2', email: 'b@example.com', name: 'B' },
     ]);
     getUserDigestData.mockResolvedValue({
-      groups: [{ id: "g", name: "G" }],
-      recipes: [{ id: "r" }],
+      groups: [{ id: 'g', name: 'G' }],
+      recipes: [{ id: 'r' }],
     });
     buildWeeklyDigest.mockReturnValue({
       groups: [],

@@ -17,14 +17,14 @@ import {
   startOfDay,
   startOfWeek,
   subWeeks,
-} from "date-fns";
+} from 'date-fns';
 
-import { DEFAULT_LOCALE } from "~/config/i18n";
-import { weekStartsOn } from "~/lib/dates";
+import { DEFAULT_LOCALE } from '~/config/i18n';
+import { weekStartsOn } from '~/lib/dates';
 
 export const DAYS_IN_WEEK = 7;
 
-const DATE_PARAM_FORMAT = "yyyy-MM-dd";
+const DATE_PARAM_FORMAT = 'yyyy-MM-dd';
 
 /** Format a date as the `yyyy-MM-dd` string used in URLs and the `date` column. */
 export function toDateParam(date: Date): string {
@@ -70,10 +70,7 @@ export function parseDateParam(param?: string | null): Date {
  * day (the planner lets you tick ahead) clamps to `now`, matching the
  * server-side upper bound on cook dates.
  */
-export function cookTimestampForParam(
-  param: string,
-  now: Date = new Date(),
-): Date {
+export function cookTimestampForParam(param: string, now: Date = new Date()): Date {
   const day = parseDateParam(param);
   if (isSameDay(day, now)) return now;
   const noon = setHours(startOfDay(day), 12);
@@ -85,10 +82,7 @@ export function cookTimestampForParam(
  * comes from the locale (Sunday for `en`, Monday for `es`/`de`, …), defaulting
  * to English so existing callers keep their Sunday-start grid.
  */
-export function startOfPlannerWeek(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): Date {
+export function startOfPlannerWeek(date: Date, locale: string = DEFAULT_LOCALE): Date {
   return startOfWeek(date, { weekStartsOn: weekStartsOn(locale) });
 }
 
@@ -101,14 +95,9 @@ export type PlannerWeek = {
 };
 
 /** The 7-day week (start, end, each day, and query params) containing `date`. */
-export function getPlannerWeek(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): PlannerWeek {
+export function getPlannerWeek(date: Date, locale: string = DEFAULT_LOCALE): PlannerWeek {
   const start = startOfPlannerWeek(date, locale);
-  const days = Array.from({ length: DAYS_IN_WEEK }, (_, index) =>
-    addDays(start, index),
-  );
+  const days = Array.from({ length: DAYS_IN_WEEK }, (_, index) => addDays(start, index));
   const end = days[DAYS_IN_WEEK - 1]!;
   return {
     start,
@@ -120,18 +109,12 @@ export function getPlannerWeek(
 }
 
 /** `yyyy-MM-dd` for the start of the week after the one containing `date`. */
-export function nextWeekParam(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function nextWeekParam(date: Date, locale: string = DEFAULT_LOCALE): string {
   return toDateParam(startOfPlannerWeek(addWeeks(date, 1), locale));
 }
 
 /** `yyyy-MM-dd` for the start of the week before the one containing `date`. */
-export function previousWeekParam(
-  date: Date,
-  locale: string = DEFAULT_LOCALE,
-): string {
+export function previousWeekParam(date: Date, locale: string = DEFAULT_LOCALE): string {
   return toDateParam(startOfPlannerWeek(subWeeks(date, 1), locale));
 }
 
@@ -158,4 +141,4 @@ export {
   formatFullDay,
   formatWeekdayLong,
   formatMonthDay,
-} from "~/lib/dates";
+} from '~/lib/dates';

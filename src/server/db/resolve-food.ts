@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { inArray } from "drizzle-orm";
+import { inArray } from 'drizzle-orm';
 
-import { buildAliasIndex, pickFoodId } from "~/lib/food-resolve";
-import { normalizeFoodText } from "~/lib/food-db";
-import { db, isDbConfigured } from "~/server/db";
-import { foodAliases, foodItems } from "~/server/db/schema";
+import { buildAliasIndex, pickFoodId } from '~/lib/food-resolve';
+import { normalizeFoodText } from '~/lib/food-db';
+import { db, isDbConfigured } from '~/server/db';
+import { foodAliases, foodItems } from '~/server/db/schema';
 
 /**
  * Write-time resolution of free-text ingredient lines onto canonical
@@ -35,7 +35,7 @@ const ALIAS_MAX = 160;
  * connection) until the serverless function times out. Running them on the
  * transaction's own connection avoids that entirely.
  */
-type FoodResolveExecutor = Pick<typeof db, "select">;
+type FoodResolveExecutor = Pick<typeof db, 'select'>;
 
 /** Resolve a batch of ingredient `item` strings to `food_items.id`s (or null). */
 export async function resolveFoodIds(
@@ -77,9 +77,7 @@ export async function resolveFoodIds(
     // the hot save path (the `max: 1` pool serializes every query).
     const aliasFoodIds = new Set(index.values());
     const needVerify = [
-      ...new Set(
-        candidates.filter((id): id is string => !!id && !aliasFoodIds.has(id)),
-      ),
+      ...new Set(candidates.filter((id): id is string => !!id && !aliasFoodIds.has(id))),
     ];
     const verified =
       needVerify.length > 0

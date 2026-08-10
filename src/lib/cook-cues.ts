@@ -1,4 +1,4 @@
-import { type UnitSystem } from "~/lib/cook-state";
+import { type UnitSystem } from '~/lib/cook-state';
 
 /**
  * Precision-cooking cues derived from a recipe's steps. Pure and framework-free
@@ -33,7 +33,7 @@ export function formatStepTemperature(
   system: UnitSystem,
 ): string | null {
   if (tempC == null || !Number.isFinite(tempC)) return null;
-  if (system === "us") {
+  if (system === 'us') {
     return `${celsiusToFahrenheit(tempC)}°F`;
   }
   return `${Math.round(tempC)}°C`;

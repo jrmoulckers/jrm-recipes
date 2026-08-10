@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Business-logic tests for the recipe write path (issue #226), focused on the
@@ -11,13 +11,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * fully mocked transaction. No database.
  */
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { dbMock } = vi.hoisted(() => ({
   dbMock: { transaction: vi.fn() },
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: dbMock,
   isDbConfigured: () => true,
 }));
@@ -31,11 +31,11 @@ import {
   recipeVersions,
   tags,
   type User,
-} from "~/server/db/schema";
-import { recipeInput } from "./validation";
-import { createRecipe } from "./mutations";
+} from '~/server/db/schema';
+import { recipeInput } from './validation';
+import { createRecipe } from './mutations';
 
-const author = { id: "user_1" } as User;
+const author = { id: 'user_1' } as User;
 
 /** Resolved-and-chainable insert stand-in mirroring the fluent drizzle surface. */
 function chainable(result: unknown) {
@@ -43,10 +43,8 @@ function chainable(result: unknown) {
     returning: vi.fn(() => Promise.resolve(result)),
     onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
     onConflictDoUpdate: vi.fn(() => Promise.resolve(undefined)),
-    then: (
-      onFulfilled: (value: unknown) => unknown,
-      onRejected?: (reason: unknown) => unknown,
-    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+    then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
+      Promise.resolve(result).then(onFulfilled, onRejected),
   };
 }
 
@@ -64,21 +62,21 @@ function recordingTx() {
   const keyOf = (table: unknown): string => {
     switch (table) {
       case recipes:
-        return "recipes";
+        return 'recipes';
       case recipeIngredients:
-        return "recipeIngredients";
+        return 'recipeIngredients';
       case recipeSteps:
-        return "recipeSteps";
+        return 'recipeSteps';
       case tags:
-        return "tags";
+        return 'tags';
       case recipeTags:
-        return "recipeTags";
+        return 'recipeTags';
       case recipeEvents:
-        return "recipeEvents";
+        return 'recipeEvents';
       case recipeVersions:
-        return "recipeVersions";
+        return 'recipeVersions';
       default:
-        return "unknown";
+        return 'unknown';
     }
   };
   let lastTagCount = 0;
@@ -87,10 +85,8 @@ function recordingTx() {
     values: (vals: unknown) => {
       const key = keyOf(table);
       push(key, vals);
-      if (key === "tags") lastTagCount = (vals as unknown[]).length;
-      return chainable(
-        key === "recipes" ? [{ id: "r1", slug: "apple-pie" }] : undefined,
-      );
+      if (key === 'tags') lastTagCount = (vals as unknown[]).length;
+      return chainable(key === 'recipes' ? [{ id: 'r1', slug: 'apple-pie' }] : undefined);
     },
   }));
 
@@ -126,10 +122,8 @@ function recordingTx() {
 
 function runCreate(overrides: Record<string, unknown>) {
   const { tx, inserts } = recordingTx();
-  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
-    cb(tx),
-  );
-  const parsed = recipeInput.parse({ title: "Apple Pie", ...overrides });
+  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => cb(tx));
+  const parsed = recipeInput.parse({ title: 'Apple Pie', ...overrides });
   return { promise: createRecipe(parsed, author), inserts };
 }
 
@@ -137,7 +131,7 @@ beforeEach(() => {
   dbMock.transaction.mockReset();
 });
 
-describe("scalarFields (derived columns persisted on create)", () => {
+describe('scalarFields (derived columns persisted on create)', () => {
   it("derives totalMinutes from prep + cook when it isn't supplied", async () => {
     const { promise, inserts } = runCreate({
       prepMinutes: 10,
@@ -148,7 +142,7 @@ describe("scalarFields (derived columns persisted on create)", () => {
     expect(inserts.recipes?.[0]).toMatchObject({ totalMinutes: 30 });
   });
 
-  it("prefers an explicit totalMinutes over the derived sum", async () => {
+  it('prefers an explicit totalMinutes over the derived sum', async () => {
     const { promise, inserts } = runCreate({
       prepMinutes: 10,
       cookMinutes: 20,
@@ -159,13 +153,11 @@ describe("scalarFields (derived columns persisted on create)", () => {
     expect(inserts.recipes?.[0]).toMatchObject({ totalMinutes: 45 });
   });
 
-  it("leaves totalMinutes null when only one of prep/cook is known", async () => {
+  it('leaves totalMinutes null when only one of prep/cook is known', async () => {
     const { promise, inserts } = runCreate({ prepMinutes: 10 });
     await promise;
 
-    expect(
-      (inserts.recipes?.[0] as { totalMinutes: unknown }).totalMinutes,
-    ).toBeNull();
+    expect((inserts.recipes?.[0] as { totalMinutes: unknown }).totalMinutes).toBeNull();
   });
 
   it("defaults servingsNoun to 'servings' and null-coerces empty collections", async () => {
@@ -173,25 +165,25 @@ describe("scalarFields (derived columns persisted on create)", () => {
     await promise;
 
     expect(inserts.recipes?.[0]).toMatchObject({
-      servingsNoun: "servings",
+      servingsNoun: 'servings',
       equipment: null,
       dietaryFlags: null,
       description: null,
     });
   });
 
-  it("preserves a caller-provided servingsNoun", async () => {
-    const { promise, inserts } = runCreate({ servingsNoun: "cookies" });
+  it('preserves a caller-provided servingsNoun', async () => {
+    const { promise, inserts } = runCreate({ servingsNoun: 'cookies' });
     await promise;
 
-    expect(inserts.recipes?.[0]).toMatchObject({ servingsNoun: "cookies" });
+    expect(inserts.recipes?.[0]).toMatchObject({ servingsNoun: 'cookies' });
   });
 });
 
-describe("syncTags (canonical de-duplication)", () => {
-  it("collapses case/whitespace variants into a single tag + join row", async () => {
+describe('syncTags (canonical de-duplication)', () => {
+  it('collapses case/whitespace variants into a single tag + join row', async () => {
     const { promise, inserts } = runCreate({
-      tags: ["Vegan", "vegan", " Vegan "],
+      tags: ['Vegan', 'vegan', ' Vegan '],
     });
     await promise;
 
@@ -199,29 +191,29 @@ describe("syncTags (canonical de-duplication)", () => {
     expect(inserts.recipeTags?.[0]).toHaveLength(1);
   });
 
-  it("canonicalizes each classification and mirrors the first cuisine", async () => {
+  it('canonicalizes each classification and mirrors the first cuisine', async () => {
     const { promise, inserts } = runCreate({
-      tags: ["QUICK", "quick"],
-      mealTypes: [" brunch ", "Brunch"],
-      cuisines: ["italian", "Italian", "Mediterranean"],
+      tags: ['QUICK', 'quick'],
+      mealTypes: [' brunch ', 'Brunch'],
+      cuisines: ['italian', 'Italian', 'Mediterranean'],
     });
     await promise;
 
-    expect(inserts.recipes?.[0]).toMatchObject({ cuisine: "Italian" });
+    expect(inserts.recipes?.[0]).toMatchObject({ cuisine: 'Italian' });
     expect(inserts.tags?.[0]).toEqual([
-      { slug: "quick", name: "Quick", category: "general" },
-      { slug: "brunch", name: "Brunch", category: "meal" },
-      { slug: "italian", name: "Italian", category: "cuisine" },
+      { slug: 'quick', name: 'Quick', category: 'general' },
+      { slug: 'brunch', name: 'Brunch', category: 'meal' },
+      { slug: 'italian', name: 'Italian', category: 'cuisine' },
       {
-        slug: "mediterranean",
-        name: "Mediterranean",
-        category: "cuisine",
+        slug: 'mediterranean',
+        name: 'Mediterranean',
+        category: 'cuisine',
       },
     ]);
     expect(inserts.recipeTags?.[0]).toHaveLength(4);
   });
 
-  it("writes no tag rows when there are no tags", async () => {
+  it('writes no tag rows when there are no tags', async () => {
     const { promise, inserts } = runCreate({});
     await promise;
 
@@ -230,24 +222,20 @@ describe("syncTags (canonical de-duplication)", () => {
   });
 });
 
-describe("recipe-event journal", () => {
+describe('recipe-event journal', () => {
   it("records a single 'created' event for a draft", async () => {
     const { promise, inserts } = runCreate({});
     await promise;
 
-    const types = (inserts.recipeEvents ?? []).map(
-      (e) => (e as { type: string }).type,
-    );
-    expect(types).toEqual(["created"]);
+    const types = (inserts.recipeEvents ?? []).map((e) => (e as { type: string }).type);
+    expect(types).toEqual(['created']);
   });
 
   it("records both 'created' and 'published' when created as published", async () => {
-    const { promise, inserts } = runCreate({ status: "published" });
+    const { promise, inserts } = runCreate({ status: 'published' });
     await promise;
 
-    const types = (inserts.recipeEvents ?? []).map(
-      (e) => (e as { type: string }).type,
-    );
-    expect(types).toEqual(["created", "published"]);
+    const types = (inserts.recipeEvents ?? []).map((e) => (e as { type: string }).type);
+    expect(types).toEqual(['created', 'published']);
   });
 });

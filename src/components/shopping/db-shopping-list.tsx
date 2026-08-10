@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
-import { useActiveMemberStore } from "~/lib/active-member-store";
-import { type ActiveMemberOption } from "~/lib/dietary-match";
-import { useFriendlyError } from "~/lib/error-copy";
-import { type ShoppingCategory } from "~/lib/shopping-list";
+import { useActiveMemberStore } from '~/lib/active-member-store';
+import { type ActiveMemberOption } from '~/lib/dietary-match';
+import { useFriendlyError } from '~/lib/error-copy';
+import { type ShoppingCategory } from '~/lib/shopping-list';
 import {
   addManualItemAction,
   archiveShoppingListAction,
@@ -31,25 +31,24 @@ import {
   setItemCheckedAction,
   uncheckAllShoppingItemsAction,
   type ActionResult,
-} from "~/server/shopping/actions";
-import { useConfirm } from "~/components/ui/confirm-dialog";
+} from '~/server/shopping/actions';
+import { useConfirm } from '~/components/ui/confirm-dialog';
 import {
   ShoppingListNavigation,
   type ShoppingListSummary,
   type ShoppingStoreSummary,
   type StoreSelection,
-} from "./shopping-list-navigation";
+} from './shopping-list-navigation';
 import {
   ShoppingListView,
   type ManualEntryDraft,
   type PackagePreferenceDraft,
   type PackagePreferenceResult,
   type ShoppingViewItem,
-} from "./shopping-list-view";
-import type { ShoppingHistoryEntry } from "./shopping-history";
+} from './shopping-list-view';
+import type { ShoppingHistoryEntry } from './shopping-history';
 
-type ServerActionResult =
-  ActionResult | ({ ok: true } & Record<string, unknown>);
+type ServerActionResult = ActionResult | ({ ok: true } & Record<string, unknown>);
 
 /** DB-backed shopping workspace with optimistic item updates and URL-backed list selection. */
 export function DbShoppingList({
@@ -74,18 +73,15 @@ export function DbShoppingList({
   const [pending, startTransition] = React.useTransition();
   const [optimistic, setOptimistic] = React.useState(items);
   const confirm = useConfirm();
-  const t = useTranslations("shopping");
+  const t = useTranslations('shopping');
   const friendlyError = useFriendlyError();
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
-  const avoidAllergens =
-    members.find((member) => member.id === activeMemberId)?.allergens ?? [];
+  const avoidAllergens = members.find((member) => member.id === activeMemberId)?.allergens ?? [];
 
   React.useEffect(() => setOptimistic(items), [items]);
 
   const activeLists = lists.filter((list) => !list.archived);
-  const storeNamesById = new Map(
-    stores.map((store) => [store.id, store.name] as const),
-  );
+  const storeNamesById = new Map(stores.map((store) => [store.id, store.name] as const));
   const listOptions = activeLists.map((list) => ({
     id: list.id,
     name: list.name,
@@ -154,7 +150,7 @@ export function DbShoppingList({
           newStoreNames: selection.newStoreNames,
         }),
       (result) => {
-        toast.success(t("lists.toasts.created", { name }));
+        toast.success(t('lists.toasts.created', { name }));
         navigateToList(result.listId);
       },
     );
@@ -169,14 +165,14 @@ export function DbShoppingList({
           storeIds: selection.storeIds,
           newStoreNames: selection.newStoreNames,
         }),
-      () => toast.success(t("lists.toasts.renamed", { name })),
+      () => toast.success(t('lists.toasts.renamed', { name })),
     );
   }
 
   function onRenameStore(storeId: string, name: string) {
     run(
       () => renameShoppingStoreAction({ storeId, name }),
-      () => toast.success(t("lists.stores.toasts.renamed", { name })),
+      () => toast.success(t('lists.stores.toasts.renamed', { name })),
     );
   }
 
@@ -184,15 +180,14 @@ export function DbShoppingList({
     const store = stores.find((candidate) => candidate.id === storeId);
     if (!store) return false;
     const accepted = await confirm({
-      title: t("lists.stores.confirm.delete.title", { name: store.name }),
-      description: t("lists.stores.confirm.delete.description"),
-      confirmLabel: t("lists.stores.delete"),
+      title: t('lists.stores.confirm.delete.title', { name: store.name }),
+      description: t('lists.stores.confirm.delete.description'),
+      confirmLabel: t('lists.stores.delete'),
     });
     if (!accepted) return false;
     run(
       () => deleteShoppingStoreAction({ storeId }),
-      () =>
-        toast.success(t("lists.stores.toasts.deleted", { name: store.name })),
+      () => toast.success(t('lists.stores.toasts.deleted', { name: store.name })),
     );
     return true;
   }
@@ -202,7 +197,7 @@ export function DbShoppingList({
     if (!list) return;
     run(
       () => makeShoppingListDefaultAction({ listId }),
-      () => toast.success(t("lists.toasts.madeDefault", { name: list.name })),
+      () => toast.success(t('lists.toasts.madeDefault', { name: list.name })),
     );
   }
 
@@ -210,15 +205,15 @@ export function DbShoppingList({
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const accepted = await confirm({
-      title: t("lists.confirm.archive.title", { name: list.name }),
-      description: t("lists.confirm.archive.description"),
-      confirmLabel: t("lists.archive"),
+      title: t('lists.confirm.archive.title', { name: list.name }),
+      description: t('lists.confirm.archive.description'),
+      confirmLabel: t('lists.archive'),
     });
     if (!accepted) return false;
     run(
       () => archiveShoppingListAction({ listId }),
       (result) => {
-        toast.success(t("lists.toasts.archived", { name: list.name }));
+        toast.success(t('lists.toasts.archived', { name: list.name }));
         if (listId === selectedListId) {
           navigateToList(result.fallbackListId);
         }
@@ -232,7 +227,7 @@ export function DbShoppingList({
     if (!list) return;
     run(
       () => restoreShoppingListAction({ listId }),
-      () => toast.success(t("lists.toasts.restored", { name: list.name })),
+      () => toast.success(t('lists.toasts.restored', { name: list.name })),
     );
   }
 
@@ -240,15 +235,15 @@ export function DbShoppingList({
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const accepted = await confirm({
-      title: t("lists.confirm.delete.title", { name: list.name }),
-      description: t("lists.confirm.delete.description"),
-      confirmLabel: t("lists.delete"),
+      title: t('lists.confirm.delete.title', { name: list.name }),
+      description: t('lists.confirm.delete.description'),
+      confirmLabel: t('lists.delete'),
     });
     if (!accepted) return false;
     run(
       () => deleteShoppingListAction({ listId }),
       (result) => {
-        toast.success(t("lists.toasts.deleted", { name: list.name }));
+        toast.success(t('lists.toasts.deleted', { name: list.name }));
         if (listId === selectedListId) {
           navigateToList(result.fallbackListId);
         }
@@ -266,9 +261,7 @@ export function DbShoppingList({
     const item = optimistic.find((candidate) => candidate.id === itemId);
     const target = lists.find((candidate) => candidate.id === targetListId);
     if (!item || !target) return;
-    setOptimistic((previous) =>
-      previous.filter((candidate) => candidate.id !== itemId),
-    );
+    setOptimistic((previous) => previous.filter((candidate) => candidate.id !== itemId));
     run(
       () =>
         moveShoppingItemAction({
@@ -279,15 +272,10 @@ export function DbShoppingList({
         }),
       () =>
         toast.success(
-          t(
-            rememberRoute
-              ? "routing.toasts.routeSaved"
-              : "routing.toasts.moved",
-            {
-              item: item.item,
-              list: target.name,
-            },
-          ),
+          t(rememberRoute ? 'routing.toasts.routeSaved' : 'routing.toasts.moved', {
+            item: item.item,
+            list: target.name,
+          }),
         ),
     );
   }
@@ -296,14 +284,12 @@ export function DbShoppingList({
     const target = lists.find((candidate) => candidate.id === targetListId);
     if (!target) return;
     const previous = optimistic;
-    setOptimistic((items) =>
-      items.filter((item) => !itemIds.includes(item.id)),
-    );
+    setOptimistic((items) => items.filter((item) => !itemIds.includes(item.id)));
     run(
       () => bulkMoveShoppingItemsAction({ itemIds, targetListId }),
       (result) => {
         toast.success(
-          t("routing.bulk.toasts.moved", {
+          t('routing.bulk.toasts.moved', {
             count: itemIds.length,
             list: target.name,
           }),
@@ -311,12 +297,12 @@ export function DbShoppingList({
             ? {
                 duration: Infinity,
                 action: {
-                  label: t("history.undo"),
+                  label: t('history.undo'),
                   onClick: () => {
                     setOptimistic(previous);
                     run(
                       () => restoreShoppingListPointsAction(result.undoToken!),
-                      () => toast.success(t("history.toasts.undoComplete")),
+                      () => toast.success(t('history.toasts.undoComplete')),
                     );
                   },
                 },
@@ -340,15 +326,15 @@ export function DbShoppingList({
             restorePoints: references,
           }),
         (result) => {
-          toast.success(t("history.toasts.restored"), {
+          toast.success(t('history.toasts.restored'), {
             duration: Infinity,
             action: {
-              label: t("history.undo"),
+              label: t('history.undo'),
               onClick: () => {
                 setOptimistic(previous);
                 run(
                   () => restoreShoppingListPointsAction(result.undoToken),
-                  () => toast.success(t("history.toasts.undoComplete")),
+                  () => toast.success(t('history.toasts.undoComplete')),
                 );
               },
             },
@@ -364,10 +350,10 @@ export function DbShoppingList({
           restorePointId: references[0]!.restorePointId,
         }),
       (result) => {
-        toast.success(t("history.toasts.restored"), {
+        toast.success(t('history.toasts.restored'), {
           duration: Infinity,
           action: {
-            label: t("history.undo"),
+            label: t('history.undo'),
             onClick: () => {
               setOptimistic(previous);
               run(
@@ -376,7 +362,7 @@ export function DbShoppingList({
                     listId: selectedListId,
                     restorePointId: result.restorePointId,
                   }),
-                () => toast.success(t("history.toasts.undoComplete")),
+                () => toast.success(t('history.toasts.undoComplete')),
               );
             },
           },
@@ -396,7 +382,7 @@ export function DbShoppingList({
     if (!result.ok) {
       return { ok: false, error: friendlyError(result.error) };
     }
-    toast.success(t("package.saved"));
+    toast.success(t('package.saved'));
     router.refresh();
     return { ok: true };
   }
@@ -407,10 +393,10 @@ export function DbShoppingList({
     run(
       () => clearCheckedItemsAction({ listId: selectedListId }),
       (result) =>
-        toast.success(t("toasts.removedCompleted"), {
+        toast.success(t('toasts.removedCompleted'), {
           duration: Infinity,
           action: {
-            label: t("history.undo"),
+            label: t('history.undo'),
             onClick: () => {
               setOptimistic(previous);
               run(
@@ -419,7 +405,7 @@ export function DbShoppingList({
                     listId: selectedListId,
                     restorePointId: result.restorePointId,
                   }),
-                () => toast.success(t("history.toasts.undoComplete")),
+                () => toast.success(t('history.toasts.undoComplete')),
               );
             },
           },
@@ -428,21 +414,19 @@ export function DbShoppingList({
   }
 
   function onUncheckAll() {
-    setOptimistic((previous) =>
-      previous.map((item) => ({ ...item, checked: false })),
-    );
+    setOptimistic((previous) => previous.map((item) => ({ ...item, checked: false })));
     run(
       () => uncheckAllShoppingItemsAction({ listId: selectedListId }),
-      () => toast.success(t("toasts.uncheckedAll")),
+      () => toast.success(t('toasts.uncheckedAll')),
     );
   }
 
   async function onClearAll() {
     if (optimistic.length === 0) return;
     const accepted = await confirm({
-      title: t("confirm.clearAllSynced.title"),
-      description: t("confirm.clearAllSynced.description"),
-      confirmLabel: t("confirm.clearAll.confirmLabel"),
+      title: t('confirm.clearAllSynced.title'),
+      description: t('confirm.clearAllSynced.description'),
+      confirmLabel: t('confirm.clearAll.confirmLabel'),
     });
     if (!accepted) return;
     const previous = optimistic;
@@ -450,10 +434,10 @@ export function DbShoppingList({
     run(
       () => clearShoppingListAction({ listId: selectedListId }),
       (result) =>
-        toast.success(t("toasts.cleared"), {
+        toast.success(t('toasts.cleared'), {
           duration: Infinity,
           action: {
-            label: t("history.undo"),
+            label: t('history.undo'),
             onClick: () => {
               setOptimistic(previous);
               run(
@@ -462,7 +446,7 @@ export function DbShoppingList({
                     listId: selectedListId,
                     restorePointId: result.restorePointId,
                   }),
-                () => toast.success(t("history.toasts.undoComplete")),
+                () => toast.success(t('history.toasts.undoComplete')),
               );
             },
           },
@@ -489,7 +473,7 @@ export function DbShoppingList({
       />
       <ShoppingListView
         items={optimistic}
-        storageNote={t("storage.synced")}
+        storageNote={t('storage.synced')}
         avoidAllergens={avoidAllergens}
         disabled={pending}
         listOptions={listOptions}

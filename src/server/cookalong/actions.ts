@@ -1,33 +1,21 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import {
-  type ActionResult,
-  fail,
-  fromZodError,
-  ok,
-} from "~/server/action-result";
-import { messageForError } from "~/server/errors";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { type ActionResult, fail, fromZodError, ok } from '~/server/action-result';
+import { messageForError } from '~/server/errors';
 import {
   createCookAlongInput,
   deleteCookAlongInput,
   rsvpInput,
   updateCookAlongInput,
-} from "./validation";
-import {
-  createCookAlong,
-  deleteCookAlong,
-  setRsvp,
-  updateCookAlong,
-} from "./mutations";
+} from './validation';
+import { createCookAlong, deleteCookAlong, setRsvp, updateCookAlong } from './mutations';
 
 function dbGuard(): ActionResult | null {
-  return isDbConfigured()
-    ? null
-    : { ok: false, error: "Cook-alongs need a database connection." };
+  return isDbConfigured() ? null : { ok: false, error: 'Cook-alongs need a database connection.' };
 }
 
 /** Schedule a cook-along and invite the group (issue #353). */
@@ -54,7 +42,7 @@ export async function createCookAlongAction(input: {
       messageForError(
         error,
         {
-          FORBIDDEN: "Only members of this family can host a cook-along.",
+          FORBIDDEN: 'Only members of this family can host a cook-along.',
           NOT_FOUND: "Pick a recipe from this group's cookbook.",
         },
         "We couldn't schedule that cook-along.",
@@ -86,8 +74,8 @@ export async function updateCookAlongAction(input: {
       messageForError(
         error,
         {
-          FORBIDDEN: "Only the host or a group admin can edit this cook-along.",
-          NOT_FOUND: "That cook-along is no longer available.",
+          FORBIDDEN: 'Only the host or a group admin can edit this cook-along.',
+          NOT_FOUND: 'That cook-along is no longer available.',
         },
         "We couldn't update that cook-along.",
       ),
@@ -115,9 +103,8 @@ export async function deleteCookAlongAction(input: {
       messageForError(
         error,
         {
-          FORBIDDEN:
-            "Only the host or a group admin can cancel this cook-along.",
-          NOT_FOUND: "That cook-along is already gone.",
+          FORBIDDEN: 'Only the host or a group admin can cancel this cook-along.',
+          NOT_FOUND: 'That cook-along is already gone.',
         },
         "We couldn't cancel that cook-along.",
       ),
@@ -129,7 +116,7 @@ export async function deleteCookAlongAction(input: {
 export async function rsvpCookAlongAction(input: {
   groupSlug: string;
   cookAlongId: string;
-  status: "going" | "maybe" | "declined";
+  status: 'going' | 'maybe' | 'declined';
 }): Promise<ActionResult> {
   const guard = dbGuard();
   if (guard) return guard;
@@ -146,8 +133,8 @@ export async function rsvpCookAlongAction(input: {
       messageForError(
         error,
         {
-          FORBIDDEN: "Only members of this family can RSVP.",
-          NOT_FOUND: "That cook-along is no longer available.",
+          FORBIDDEN: 'Only members of this family can RSVP.',
+          NOT_FOUND: 'That cook-along is no longer available.',
         },
         "We couldn't save your RSVP.",
       ),

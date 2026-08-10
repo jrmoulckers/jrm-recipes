@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Recipe authoring journey (issue #234). The editor runs with the dev auth
@@ -9,45 +9,43 @@ import { expect, test, type Page } from "@playwright/test";
  * tests/e2e/offline.spec.ts).
  */
 const TITLE_PLACEHOLDER = "Grandma's Sunday Marinara";
-const STEP_PLACEHOLDER = "Whisk the dry ingredients together…";
+const STEP_PLACEHOLDER = 'Whisk the dry ingredients together…';
 
 async function openEditor(page: Page): Promise<boolean> {
-  await page.goto("/recipes/new");
+  await page.goto('/recipes/new');
   const title = page.getByPlaceholder(TITLE_PLACEHOLDER);
   if ((await title.count()) === 0) return false;
   await expect(title).toBeVisible();
   return true;
 }
 
-test("blocks saving a recipe with no title and surfaces an error", async ({
-  page,
-}) => {
+test('blocks saving a recipe with no title and surfaces an error', async ({ page }) => {
   const ready = await openEditor(page);
-  test.skip(!ready, "Editor unavailable (auth bypass disabled).");
+  test.skip(!ready, 'Editor unavailable (auth bypass disabled).');
 
   // Submit the empty form: client validation must stop it and announce the
   // problem via the accessible error summary, with no navigation or database.
-  await page.getByRole("button", { name: /save recipe/i }).click();
+  await page.getByRole('button', { name: /save recipe/i }).click();
 
   // Scope to the editor's error summary by its accessible name. A bare
   // getByRole("alert") also matches Next's empty route announcer
   // (#__next-route-announcer__, role="alert"), which trips strict mode.
-  await expect(page.getByRole("alert", { name: /please fix/i })).toBeVisible();
+  await expect(page.getByRole('alert', { name: /please fix/i })).toBeVisible();
   await expect(page).toHaveURL(/\/recipes\/new$/);
 });
 
-test("creates a recipe and lands on its detail page", async ({ page }) => {
+test('creates a recipe and lands on its detail page', async ({ page }) => {
   const ready = await openEditor(page);
-  test.skip(!ready, "Editor unavailable (auth bypass disabled).");
+  test.skip(!ready, 'Editor unavailable (auth bypass disabled).');
 
   const unique = `E2E Test Loaf ${Date.now()}`;
   await page.getByPlaceholder(TITLE_PLACEHOLDER).fill(unique);
   const step = page.getByPlaceholder(STEP_PLACEHOLDER).first();
   if ((await step.count()) > 0) {
-    await step.fill("Mix, proof, and bake until golden.");
+    await step.fill('Mix, proof, and bake until golden.');
   }
 
-  await page.getByRole("button", { name: /save recipe/i }).click();
+  await page.getByRole('button', { name: /save recipe/i }).click();
 
   // Success redirects to /recipes/<slug>. Without a seeded database the action
   // returns a DB error and stays on /recipes/new, so skip rather than fail.
@@ -55,9 +53,7 @@ test("creates a recipe and lands on its detail page", async ({ page }) => {
     .waitForURL(/\/recipes\/(?!new$)[\w-]+$/, { timeout: 15_000 })
     .then(() => true)
     .catch(() => false);
-  test.skip(!landed, "No seeded database: recipe could not be persisted.");
+  test.skip(!landed, 'No seeded database: recipe could not be persisted.');
 
-  await expect(
-    page.getByRole("heading", { name: unique, exact: false }).first(),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: unique, exact: false }).first()).toBeVisible();
 });

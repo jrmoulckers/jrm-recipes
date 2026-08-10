@@ -1,19 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Check, Languages } from "lucide-react";
+import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Check, Languages } from 'lucide-react';
 
-import {
-  SUPPORTED_LOCALES,
-  LOCALE_ENDONYMS,
-  localeDirection,
-  type Locale,
-} from "~/config/i18n";
-import { writeLocaleCookie } from "~/lib/locale-cookie";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { SUPPORTED_LOCALES, LOCALE_ENDONYMS, localeDirection, type Locale } from '~/config/i18n';
+import { writeLocaleCookie } from '~/lib/locale-cookie';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +16,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+} from '~/components/ui/dropdown-menu';
 
 /**
  * Language menu listing every {@link SUPPORTED_LOCALES} by its native endonym.
@@ -35,7 +30,7 @@ import {
  * checked on first paint.
  */
 export function LocaleSwitcher({ label }: { label?: string } = {}) {
-  const t = useTranslations("localeSwitcher");
+  const t = useTranslations('localeSwitcher');
   const activeLocale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
@@ -61,22 +56,17 @@ export function LocaleSwitcher({ label }: { label?: string } = {}) {
             {label}
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={t("trigger")}
-            disabled={isPending}
-          >
+          <Button variant="outline" size="icon" aria-label={t('trigger')} disabled={isPending}>
             <Languages className="size-5" />
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>{t("label")}</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('label')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={activeLocale}
           onValueChange={(value) => selectLocale(value as Locale)}
-          aria-label={t("label")}
+          aria-label={t('label')}
           className="grid gap-1 p-1"
         >
           {SUPPORTED_LOCALES.map((locale) => {
@@ -87,14 +77,11 @@ export function LocaleSwitcher({ label }: { label?: string } = {}) {
                 value={locale}
                 onSelect={(event) => event.preventDefault()}
                 className={cn(
-                  "gap-2 border border-transparent hover:bg-muted",
-                  active && "border-border bg-muted",
+                  'gap-2 border border-transparent hover:bg-muted',
+                  active && 'border-border bg-muted',
                 )}
               >
-                <span
-                  dir={localeDirection(locale)}
-                  className="min-w-0 flex-1 text-sm font-medium"
-                >
+                <span dir={localeDirection(locale)} className="min-w-0 flex-1 text-sm font-medium">
                   {LOCALE_ENDONYMS[locale]}
                 </span>
                 {active && <Check className="size-3.5 text-primary" />}

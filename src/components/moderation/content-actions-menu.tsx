@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Flag, MoreHorizontal, Trash2, UserX } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Flag, MoreHorizontal, Trash2, UserX } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { blockUserAction } from "~/server/moderation/actions";
-import { useFriendlyError } from "~/lib/error-copy";
-import { Button } from "~/components/ui/button";
+import { blockUserAction } from '~/server/moderation/actions';
+import { useFriendlyError } from '~/lib/error-copy';
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { ReportDialog, type ReportTargetType } from "./report-dialog";
+} from '~/components/ui/dropdown-menu';
+import { ReportDialog, type ReportTargetType } from './report-dialog';
 
 /**
  * The overflow menu shared by comments, reviews, and cook posts (#355/#356).
@@ -44,12 +44,11 @@ export function ContentActionsMenu({
 }) {
   const [reportOpen, setReportOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
-  const t = useTranslations("moderation");
+  const t = useTranslations('moderation');
   const friendlyError = useFriendlyError();
 
   const isOwnContent = authorId != null && authorId === currentUserId;
-  const canModerate =
-    currentUserId != null && !isOwnContent && authorId != null;
+  const canModerate = currentUserId != null && !isOwnContent && authorId != null;
   const showMenu = canDelete || canModerate;
   if (!showMenu) return null;
 
@@ -58,7 +57,7 @@ export function ContentActionsMenu({
     startTransition(async () => {
       const result = await blockUserAction({ blockedId: authorId });
       if (result.ok) {
-        toast.success(t("toasts.blocked", { name: authorName }));
+        toast.success(t('toasts.blocked', { name: authorName }));
         return;
       }
       toast.error(friendlyError(result.error));
@@ -74,7 +73,7 @@ export function ContentActionsMenu({
             variant="ghost"
             size="icon"
             disabled={disabled || pending}
-            aria-label={t("actions.more")}
+            aria-label={t('actions.more')}
             className="ms-auto size-8 text-muted-foreground"
           >
             <MoreHorizontal className="size-4" />
@@ -83,12 +82,12 @@ export function ContentActionsMenu({
         <DropdownMenuContent align="end">
           {canModerate ? (
             <DropdownMenuItem onSelect={() => setReportOpen(true)}>
-              <Flag /> {t("actions.report")}
+              <Flag /> {t('actions.report')}
             </DropdownMenuItem>
           ) : null}
           {canModerate ? (
             <DropdownMenuItem onSelect={block}>
-              <UserX /> {t("actions.block", { name: authorName })}
+              <UserX /> {t('actions.block', { name: authorName })}
             </DropdownMenuItem>
           ) : null}
           {canDelete && onDelete ? (
@@ -98,7 +97,7 @@ export function ContentActionsMenu({
                 onSelect={onDelete}
                 className="text-destructive focus:bg-destructive/10 focus:text-destructive"
               >
-                <Trash2 /> {t("actions.delete")}
+                <Trash2 /> {t('actions.delete')}
               </DropdownMenuItem>
             </>
           ) : null}

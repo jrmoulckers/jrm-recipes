@@ -1,25 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { SmilePlus } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { SmilePlus } from 'lucide-react';
 
-import { toggleReactionAction } from "~/server/engagement/actions";
-import type { ReactionTargetType } from "~/server/engagement/reactions";
+import { toggleReactionAction } from '~/server/engagement/actions';
+import type { ReactionTargetType } from '~/server/engagement/reactions';
 import {
   REACTION_EMOJI,
   reactionGlyph,
   toggleReactionState,
   type ReactionCount,
   type ReactionEmojiKey,
-} from "~/lib/reactions";
-import { cn } from "~/lib/utils";
-import { useServerAction } from "~/lib/use-server-action";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/lib/reactions';
+import { cn } from '~/lib/utils';
+import { useServerAction } from '~/lib/use-server-action';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 /**
  * The lightweight emoji reaction bar (#342). Reusable across comments, reviews,
@@ -44,7 +40,7 @@ export function ReactionBar({
 }) {
   const [counts, setCounts] = React.useState<ReactionCount[]>(initialCounts);
   const [pickerOpen, setPickerOpen] = React.useState(false);
-  const t = useTranslations("engagement.reactions");
+  const t = useTranslations('engagement.reactions');
 
   React.useEffect(() => {
     setCounts(initialCounts);
@@ -71,9 +67,7 @@ export function ReactionBar({
         const names = initialReactors[entry.emoji] ?? [];
         const label = t(`emoji.${entry.emoji}`);
         const title =
-          names.length > 0
-            ? t("titleWithNames", { label, names: names.join(", ") })
-            : label;
+          names.length > 0 ? t('titleWithNames', { label, names: names.join(', ') }) : label;
         return (
           <button
             key={entry.emoji}
@@ -81,18 +75,18 @@ export function ReactionBar({
             disabled={!canReact || action.pending}
             onClick={() => toggle(entry.emoji)}
             title={title}
-            aria-label={t("a11y.count", {
+            aria-label={t('a11y.count', {
               label,
               count: entry.count,
-              reacted: entry.reacted ? t("a11y.youReacted") : "",
+              reacted: entry.reacted ? t('a11y.youReacted') : '',
             })}
             aria-pressed={entry.reacted}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors",
+              'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
               entry.reacted
-                ? "bg-primary/12 border-primary/40 text-primary"
-                : "border-border bg-muted/40 text-foreground hover:bg-muted",
-              (!canReact || action.pending) && "cursor-default opacity-70",
+                ? 'bg-primary/12 border-primary/40 text-primary'
+                : 'border-border bg-muted/40 text-foreground hover:bg-muted',
+              (!canReact || action.pending) && 'cursor-default opacity-70',
             )}
           >
             <span aria-hidden>{reactionGlyph(entry.emoji)}</span>
@@ -106,7 +100,7 @@ export function ReactionBar({
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={t("a11y.add")}
+              aria-label={t('a11y.add')}
               className="inline-flex items-center rounded-full border border-dashed border-border p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <SmilePlus className="size-4" />

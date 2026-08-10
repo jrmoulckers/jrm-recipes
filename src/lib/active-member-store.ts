@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * The family member a cook is currently viewing recipes "for". Kept in one
@@ -25,6 +25,6 @@ export const useActiveMemberStore = create<ActiveMemberStore>()(
       activeMemberId: null,
       setActiveMemberId: (id) => set({ activeMemberId: id }),
     }),
-    { name: "heirloom-active-member" },
+    { name: 'heirloom-active-member' },
   ),
 );

@@ -1,4 +1,4 @@
-import { scaleQuantity, toWeight } from "~/lib/units";
+import { scaleQuantity, toWeight } from '~/lib/units';
 
 /**
  * Baker's percentages and batch-weight math (#384, #418). Everything here is
@@ -19,11 +19,11 @@ export type WeighedIngredient = {
 function tokenize(item: string | null | undefined): string[] {
   if (!item) return [];
   let s = item.toLowerCase();
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  s = s.replace(/\([^)]*\)/g, " ");
-  s = s.split(",")[0] ?? s;
-  s = s.replace(/[^a-z0-9]+/g, " ");
-  return s.split(" ").filter(Boolean);
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  s = s.replace(/\([^)]*\)/g, ' ');
+  s = s.split(',')[0] ?? s;
+  s = s.replace(/[^a-z0-9]+/g, ' ');
+  return s.split(' ').filter(Boolean);
 }
 
 function hasWord(tokens: string[], word: string): boolean {
@@ -32,7 +32,7 @@ function hasWord(tokens: string[], word: string): boolean {
 
 // Flours form the 100% base of a baker's formula. Match on the word "flour"
 // plus the common milled staples bakers weigh as flour.
-const FLOUR_WORDS = ["flour", "semolina", "cornmeal", "polenta"];
+const FLOUR_WORDS = ['flour', 'semolina', 'cornmeal', 'polenta'];
 
 /** True when an ingredient counts toward the total-flour (100%) base. */
 export function isFlour(item: string | null | undefined): boolean {
@@ -42,20 +42,20 @@ export function isFlour(item: string | null | undefined): boolean {
 
 // Liquids used for the hydration ratio (liquid weight ÷ flour weight).
 const LIQUID_WORDS = [
-  "water",
-  "milk",
-  "buttermilk",
-  "cream",
-  "yogurt",
-  "yoghurt",
-  "juice",
-  "coffee",
-  "beer",
-  "wine",
-  "stock",
-  "broth",
-  "kefir",
-  "whey",
+  'water',
+  'milk',
+  'buttermilk',
+  'cream',
+  'yogurt',
+  'yoghurt',
+  'juice',
+  'coffee',
+  'beer',
+  'wine',
+  'stock',
+  'broth',
+  'kefir',
+  'whey',
 ];
 
 /** True when an ingredient counts as liquid for hydration. */

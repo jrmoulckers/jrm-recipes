@@ -1,4 +1,4 @@
-import localFont from "next/font/local";
+import localFont from 'next/font/local';
 
 /**
  * Atkinson Hyperlegible. A hyperlegible typeface from the Braille Institute,
@@ -12,28 +12,28 @@ import localFont from "next/font/local";
  * src/styles/a11y.css maps onto --font-body / --font-display.
  */
 export const atkinson = localFont({
-  variable: "--font-atkinson",
-  display: "swap",
+  variable: '--font-atkinson',
+  display: 'swap',
   src: [
     {
-      path: "./atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2",
-      weight: "400",
-      style: "normal",
+      path: './atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2',
+      weight: '400',
+      style: 'normal',
     },
     {
-      path: "./atkinson-hyperlegible/AtkinsonHyperlegible-Italic.woff2",
-      weight: "400",
-      style: "italic",
+      path: './atkinson-hyperlegible/AtkinsonHyperlegible-Italic.woff2',
+      weight: '400',
+      style: 'italic',
     },
     {
-      path: "./atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2",
-      weight: "700",
-      style: "normal",
+      path: './atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2',
+      weight: '700',
+      style: 'normal',
     },
     {
-      path: "./atkinson-hyperlegible/AtkinsonHyperlegible-BoldItalic.woff2",
-      weight: "700",
-      style: "italic",
+      path: './atkinson-hyperlegible/AtkinsonHyperlegible-BoldItalic.woff2',
+      weight: '700',
+      style: 'italic',
     },
   ],
 });

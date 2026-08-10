@@ -1,17 +1,13 @@
-import "server-only";
+import 'server-only';
 
-import { eq } from "drizzle-orm";
-import type Stripe from "stripe";
+import { eq } from 'drizzle-orm';
+import type Stripe from 'stripe';
 
-import type { PlanId } from "~/config/plans";
-import { GIFT_CONFIG } from "~/config/plans";
-import { db, isDbConfigured } from "~/server/db";
-import {
-  billingCustomers,
-  subscriptions,
-  type SubscriptionStatus,
-} from "~/server/db/schema";
-import { mintGiftCode } from "./gifting";
+import type { PlanId } from '~/config/plans';
+import { GIFT_CONFIG } from '~/config/plans';
+import { db, isDbConfigured } from '~/server/db';
+import { billingCustomers, subscriptions, type SubscriptionStatus } from '~/server/db/schema';
+import { mintGiftCode } from './gifting';
 
 /**
  * Stripe → DB subscription sync (issue #304).
@@ -27,38 +23,34 @@ import { mintGiftCode } from "./gifting";
 /** Map a Stripe subscription status onto our narrower enum. */
 export function mapStatus(status: string): SubscriptionStatus {
   switch (status) {
-    case "active":
-      return "active";
-    case "trialing":
-      return "trialing";
-    case "past_due":
-    case "unpaid":
-      return "past_due";
-    case "incomplete":
-      return "incomplete";
+    case 'active':
+      return 'active';
+    case 'trialing':
+      return 'trialing';
+    case 'past_due':
+    case 'unpaid':
+      return 'past_due';
+    case 'incomplete':
+      return 'incomplete';
     // canceled, incomplete_expired, paused, and anything unknown → canceled: no
     // access, and the entitlements resolver treats it as Free.
     default:
-      return "canceled";
+      return 'canceled';
   }
 }
 
 /** Period-end seconds, tolerant of where the Stripe API version places it. */
 function periodEndSeconds(sub: Stripe.Subscription): number | undefined {
-  const top = (sub as unknown as { current_period_end?: number })
-    .current_period_end;
-  if (typeof top === "number") return top;
-  const item = sub.items?.data?.[0] as unknown as
-    { current_period_end?: number } | undefined;
+  const top = (sub as unknown as { current_period_end?: number }).current_period_end;
+  if (typeof top === 'number') return top;
+  const item = sub.items?.data?.[0] as unknown as { current_period_end?: number } | undefined;
   return item?.current_period_end;
 }
 
 /** The Stripe customer id off a subscription/invoice, whatever its shape. */
-function customerIdOf(
-  customer: string | { id: string } | null | undefined,
-): string | null {
+function customerIdOf(customer: string | { id: string } | null | undefined): string | null {
   if (!customer) return null;
-  return typeof customer === "string" ? customer : customer.id;
+  return typeof customer === 'string' ? customer : customer.id;
 }
 
 /**
@@ -98,9 +90,7 @@ async function ensureCustomerLink(
  * through here. A deleted subscription simply carries a `canceled` status).
  * No-op when the DB is unconfigured or we can't attribute an owner.
  */
-export async function syncSubscription(
-  sub: Stripe.Subscription,
-): Promise<void> {
+export async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
   if (!isDbConfigured()) return;
 
   const stripeCustomerId = customerIdOf(sub.customer);
@@ -119,7 +109,7 @@ export async function syncSubscription(
   const trialSeconds = sub.trial_end ?? null;
   // Only the Family plan is purchasable today, so any synced subscription is
   // Family. `stripePriceId` records exactly which price for future catalogs.
-  const planId: PlanId = "family";
+  const planId: PlanId = 'family';
 
   await db
     .insert(subscriptions)
@@ -151,20 +141,16 @@ export async function syncSubscription(
 }
 
 /** Ensure the customer link exists early, on Checkout completion. */
-async function handleCheckoutCompleted(
-  session: Stripe.Checkout.Session,
-): Promise<void> {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
   if (!isDbConfigured()) return;
 
   // A one-time gift purchase (#331): mint the single-use redemption code instead
   // of linking a customer. Keyed to the session id, so a retried event is a
   // no-op rather than a second code.
-  if (session.mode === "payment" && session.metadata?.kind === "gift") {
+  if (session.mode === 'payment' && session.metadata?.kind === 'gift') {
     const meta = session.metadata;
-    const planId: PlanId =
-      meta.giftPlanId === "family" ? "family" : GIFT_CONFIG.planId;
-    const durationMonths =
-      Number(meta.durationMonths) || GIFT_CONFIG.durationMonths;
+    const planId: PlanId = meta.giftPlanId === 'family' ? 'family' : GIFT_CONFIG.planId;
+    const durationMonths = Number(meta.durationMonths) || GIFT_CONFIG.durationMonths;
     await mintGiftCode({
       stripeSessionId: session.id,
       purchaserUserId: meta.purchaserUserId ?? null,
@@ -176,23 +162,19 @@ async function handleCheckoutCompleted(
 
   const stripeCustomerId = customerIdOf(session.customer);
   if (!stripeCustomerId) return;
-  await ensureCustomerLink(
-    stripeCustomerId,
-    session.metadata?.userId ?? undefined,
-  );
+  await ensureCustomerLink(stripeCustomerId, session.metadata?.userId ?? undefined);
 }
 
 /** Flag the subscription past-due when an invoice payment fails. */
 async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   if (!isDbConfigured()) return;
-  const subRef = (
-    invoice as unknown as { subscription?: string | { id: string } | null }
-  ).subscription;
+  const subRef = (invoice as unknown as { subscription?: string | { id: string } | null })
+    .subscription;
   const subId = customerIdOf(subRef);
   if (!subId) return;
   await db
     .update(subscriptions)
-    .set({ status: "past_due", updatedAt: new Date() })
+    .set({ status: 'past_due', updatedAt: new Date() })
     .where(eq(subscriptions.stripeSubscriptionId, subId));
 }
 
@@ -204,15 +186,15 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
  */
 export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted":
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
       await syncSubscription(event.data.object);
       return;
-    case "checkout.session.completed":
+    case 'checkout.session.completed':
       await handleCheckoutCompleted(event.data.object);
       return;
-    case "invoice.payment_failed":
+    case 'invoice.payment_failed':
       await handlePaymentFailed(event.data.object);
       return;
     default:

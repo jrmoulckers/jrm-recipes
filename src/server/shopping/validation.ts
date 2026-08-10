@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { SHOPPING_CATEGORIES } from "~/lib/shopping-list";
-import { dateParam } from "~/server/planner/validation";
+import { SHOPPING_CATEGORIES } from '~/lib/shopping-list';
+import { dateParam } from '~/server/planner/validation';
 
 /**
  * Validation contract for shopping-list input, shared by the client UI and the
@@ -22,8 +22,8 @@ const optionalNumber = z
   .union([z.string(), z.number()])
   .optional()
   .transform((v) => {
-    if (v === undefined || v === "" || v === null) return undefined;
-    const n = typeof v === "number" ? v : Number(v);
+    if (v === undefined || v === '' || v === null) return undefined;
+    const n = typeof v === 'number' ? v : Number(v);
     return Number.isFinite(n) ? n : undefined;
   });
 
@@ -31,12 +31,12 @@ const entityId = z
   .string()
   .trim()
   .length(24)
-  .regex(/^[a-z][a-z0-9]+$/, "Invalid identifier");
+  .regex(/^[a-z][a-z0-9]+$/, 'Invalid identifier');
 
 /** A manually added grocery line. */
 export const manualItemInput = z.object({
   listId: entityId,
-  item: z.string().trim().min(1, "Add an item").max(300),
+  item: z.string().trim().min(1, 'Add an item').max(300),
   quantity: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   quantityMax: optionalNumber.pipe(z.number().min(0).max(100000).optional()),
   unit: optionalString(40),
@@ -46,9 +46,7 @@ export const manualItemInput = z.object({
 /** Add a recipe's (optionally rescaled) ingredients to the list. */
 export const addRecipeToListInput = z.object({
   recipeId: entityId,
-  desiredServings: optionalNumber.pipe(
-    z.number().int().min(1).max(1000).optional(),
-  ),
+  desiredServings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
   /** Keep pantry staples (salt, oil, …) instead of skipping them (#412). */
   includeStaples: z.boolean().optional(),
 });
@@ -76,11 +74,7 @@ export const createShoppingListInput = z.object({
   /** Optional: a list may span zero, one, or many stores (#664). */
   storeIds: z.array(entityId).max(20).optional().default([]),
   /** Stores typed inline while creating the list; deduped against the library. */
-  newStoreNames: z
-    .array(z.string().trim().min(1).max(120))
-    .max(20)
-    .optional()
-    .default([]),
+  newStoreNames: z.array(z.string().trim().min(1).max(120)).max(20).optional().default([]),
 });
 
 export const renameShoppingListInput = createShoppingListInput.extend({
@@ -105,20 +99,18 @@ export const moveShoppingItemInput = z
     alternativeListIds: z.array(entityId).max(20).optional().default([]),
   })
   .superRefine((value, ctx) => {
-    if (
-      new Set(value.alternativeListIds).size !== value.alternativeListIds.length
-    ) {
+    if (new Set(value.alternativeListIds).size !== value.alternativeListIds.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["alternativeListIds"],
-        message: "Choose each alternative once.",
+        path: ['alternativeListIds'],
+        message: 'Choose each alternative once.',
       });
     }
     if (value.alternativeListIds.includes(value.targetListId)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["alternativeListIds"],
-        message: "The preferred list cannot also be an alternative.",
+        path: ['alternativeListIds'],
+        message: 'The preferred list cannot also be an alternative.',
       });
     }
   });
@@ -132,8 +124,8 @@ export const bulkMoveShoppingItemsInput = z
     if (new Set(value.itemIds).size !== value.itemIds.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["itemIds"],
-        message: "Choose each item once.",
+        path: ['itemIds'],
+        message: 'Choose each item once.',
       });
     }
   });
@@ -154,13 +146,12 @@ export const restoreShoppingListPointsInput = z
   })
   .superRefine((value, ctx) => {
     if (
-      new Set(value.restorePoints.map((point) => point.listId)).size !==
-      value.restorePoints.length
+      new Set(value.restorePoints.map((point) => point.listId)).size !== value.restorePoints.length
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["restorePoints"],
-        message: "Each list can only be restored once.",
+        path: ['restorePoints'],
+        message: 'Each list can only be restored once.',
       });
     }
     if (
@@ -169,21 +160,17 @@ export const restoreShoppingListPointsInput = z
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["restorePoints"],
-        message: "Each restore point can only be used once.",
+        path: ['restorePoints'],
+        message: 'Each restore point can only be used once.',
       });
     }
   });
 
 const packagePreferenceFields = {
-  packageAmount: optionalNumber.pipe(
-    z.number().positive().max(1_000_000).optional(),
-  ),
+  packageAmount: optionalNumber.pipe(z.number().positive().max(1_000_000).optional()),
   packageUnit: optionalString(40),
   packageLabel: optionalString(120),
-  packageRoundBehavior: z
-    .enum(["inherit", "enable", "disable"])
-    .default("inherit"),
+  packageRoundBehavior: z.enum(['inherit', 'enable', 'disable']).default('inherit'),
 };
 
 function validatePackagePreference(
@@ -199,15 +186,15 @@ function validatePackagePreference(
   if (hasAmount !== hasUnit) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: hasAmount ? ["packageUnit"] : ["packageAmount"],
-      message: "Add both a package amount and unit.",
+      path: hasAmount ? ['packageUnit'] : ['packageAmount'],
+      message: 'Add both a package amount and unit.',
     });
   }
   if (!hasAmount && value.packageLabel != null) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["packageLabel"],
-      message: "Add a package size before its label.",
+      path: ['packageLabel'],
+      message: 'Add a package size before its label.',
     });
   }
 }
@@ -237,15 +224,7 @@ export type CreateShoppingStoreInput = z.infer<typeof createShoppingStoreInput>;
 export type RenameShoppingStoreInput = z.infer<typeof renameShoppingStoreInput>;
 export type ShoppingStoreIdInput = z.infer<typeof shoppingStoreIdInput>;
 export type MoveShoppingItemInput = z.infer<typeof moveShoppingItemInput>;
-export type BulkMoveShoppingItemsInput = z.infer<
-  typeof bulkMoveShoppingItemsInput
->;
-export type RestoreShoppingListPointInput = z.infer<
-  typeof restoreShoppingListPointInput
->;
-export type RestoreShoppingListPointsInput = z.infer<
-  typeof restoreShoppingListPointsInput
->;
-export type SaveIngredientPackageInput = z.infer<
-  typeof saveIngredientPackageInput
->;
+export type BulkMoveShoppingItemsInput = z.infer<typeof bulkMoveShoppingItemsInput>;
+export type RestoreShoppingListPointInput = z.infer<typeof restoreShoppingListPointInput>;
+export type RestoreShoppingListPointsInput = z.infer<typeof restoreShoppingListPointsInput>;
+export type SaveIngredientPackageInput = z.infer<typeof saveIngredientPackageInput>;

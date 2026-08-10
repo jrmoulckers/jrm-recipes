@@ -5,9 +5,9 @@
  */
 export const RESOURCE_HINT_ORIGINS = {
   /** Serves the LCP recipe imagery (covers/hero/step) on image-bearing routes. */
-  cloudinary: "https://res.cloudinary.com",
+  cloudinary: 'https://res.cloudinary.com',
   /** Serves member/group avatars. Only when auth is configured. */
-  clerk: "https://img.clerk.com",
+  clerk: 'https://img.clerk.com',
 } as const;
 
 /**

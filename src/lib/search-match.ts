@@ -1,4 +1,4 @@
-import { expandQueryTerms, normalizeTerm } from "~/lib/search-synonyms";
+import { expandQueryTerms, normalizeTerm } from '~/lib/search-synonyms';
 
 /**
  * Explaining *why* a recipe surfaced for a text query. A recipe can match on its
@@ -11,13 +11,7 @@ import { expandQueryTerms, normalizeTerm } from "~/lib/search-synonyms";
  * server query and the client card, and unit-tested in isolation.
  */
 
-export const matchFieldValues = [
-  "title",
-  "ingredient",
-  "tag",
-  "cuisine",
-  "description",
-] as const;
+export const matchFieldValues = ['title', 'ingredient', 'tag', 'cuisine', 'description'] as const;
 export type MatchField = (typeof matchFieldValues)[number];
 
 export type RecipeMatchReason = {
@@ -49,7 +43,7 @@ function matchTermsFor(query: string): string[] {
     for (const expanded of expandQueryTerms(term)) terms.add(expanded);
   };
   add(whole);
-  for (const token of whole.split(" ")) add(token);
+  for (const token of whole.split(' ')) add(token);
   return [...terms];
 }
 
@@ -77,11 +71,11 @@ export function deriveMatchReason(
   if (terms.length === 0) return null;
 
   const haystacks: [MatchField, readonly string[]][] = [
-    ["title", [fields.title]],
-    ["ingredient", fields.ingredients ?? []],
-    ["tag", fields.tags ?? []],
-    ["cuisine", fields.cuisine ? [fields.cuisine] : []],
-    ["description", fields.description ? [fields.description] : []],
+    ['title', [fields.title]],
+    ['ingredient', fields.ingredients ?? []],
+    ['tag', fields.tags ?? []],
+    ['cuisine', fields.cuisine ? [fields.cuisine] : []],
+    ['description', fields.description ? [fields.description] : []],
   ];
 
   for (const [field, values] of haystacks) {
@@ -112,12 +106,10 @@ export function splitHighlight(text: string, term: string): HighlightSegment[] {
   for (;;) {
     const at = hay.indexOf(needle, cursor);
     if (at === -1) {
-      if (cursor < text.length)
-        segments.push({ text: text.slice(cursor), hit: false });
+      if (cursor < text.length) segments.push({ text: text.slice(cursor), hit: false });
       break;
     }
-    if (at > cursor)
-      segments.push({ text: text.slice(cursor, at), hit: false });
+    if (at > cursor) segments.push({ text: text.slice(cursor, at), hit: false });
     segments.push({ text: text.slice(at, at + term.length), hit: true });
     cursor = at + term.length;
   }

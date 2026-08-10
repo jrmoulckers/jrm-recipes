@@ -1,47 +1,41 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "~/lib/utils";
-import { Spinner } from "./spinner";
+import { cn } from '~/lib/utils';
+import { Spinner } from './spinner';
 
 const buttonVariants = cva(
-  "inline-flex touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium ring-offset-background transition-[background,color,box-shadow,transform] duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-[1.1em] [&_svg]:shrink-0",
+  'inline-flex touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium ring-offset-background transition-[background,color,box-shadow,transform] duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-[1.1em] [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-token hover:bg-primary/90",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        accent:
-          "bg-accent text-accent-foreground shadow-token hover:bg-accent/90",
-        outline:
-          "border border-input bg-transparent hover:bg-muted hover:text-foreground",
-        ghost: "hover:bg-muted hover:text-foreground",
+        default: 'bg-primary text-primary-foreground shadow-token hover:bg-primary/90',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        accent: 'bg-accent text-accent-foreground shadow-token hover:bg-accent/90',
+        outline: 'border border-input bg-transparent hover:bg-muted hover:text-foreground',
+        ghost: 'hover:bg-muted hover:text-foreground',
         destructive:
-          "bg-destructive text-destructive-foreground shadow-token hover:bg-destructive/90",
-        link: "text-primary underline-offset-4 hover:underline",
+          'bg-destructive text-destructive-foreground shadow-token hover:bg-destructive/90',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        sm: "h-11 px-3 text-sm",
-        default: "h-11 px-5 text-sm",
-        lg: "h-12 px-7 text-base",
-        xl: "h-14 px-8 text-lg",
-        icon: "h-11 w-11",
+        sm: 'h-11 px-3 text-sm',
+        default: 'h-11 px-5 text-sm',
+        lg: 'h-12 px-7 text-base',
+        xl: 'h-14 px-8 text-lg',
+        icon: 'h-11 w-11',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
   },
 );
 
 export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   /**
    * Show a spinner, mark the button `aria-busy`, and block interaction without
@@ -56,32 +50,23 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      loading = false,
-      disabled,
-      children,
-      ...props
-    },
+    { className, variant, size, asChild = false, loading = false, disabled, children, ...props },
     ref,
   ) => {
-    const Comp = asChild ? Slot : "button";
+    const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         className={cn(
           buttonVariants({ variant, size, className }),
           // Keep the spinner readable (no disabled dim) and give the overlay a
           // positioning context while loading.
-          loading && "relative disabled:opacity-100",
-          asChild && loading && "pointer-events-none",
+          loading && 'relative disabled:opacity-100',
+          asChild && loading && 'pointer-events-none',
         )}
         ref={ref}
-        data-variant={variant ?? "default"}
+        data-variant={variant ?? 'default'}
         aria-busy={loading || undefined}
-        data-loading={loading ? "" : undefined}
+        data-loading={loading ? '' : undefined}
         aria-disabled={asChild && loading ? true : undefined}
         {...(asChild ? {} : { disabled: Boolean(disabled) || loading })}
         {...props}
@@ -96,15 +81,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             >
               <Spinner />
             </span>
-            <span className="inline-flex items-center gap-2 opacity-0">
-              {children}
-            </span>
+            <span className="inline-flex items-center gap-2 opacity-0">{children}</span>
           </>
         )}
       </Comp>
     );
   },
 );
-Button.displayName = "Button";
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };

@@ -1,16 +1,16 @@
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { BookMarked, Users } from "lucide-react";
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { BookMarked, Users } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
-import { type CollectionSummary } from "~/server/collections/queries";
+import { cn } from '~/lib/utils';
+import { CloudinaryImage } from '~/components/ui/cloudinary-image';
+import { type CollectionSummary } from '~/server/collections/queries';
 
 const GRADIENTS = [
-  "from-primary/25 to-accent/20",
-  "from-accent/25 to-primary/15",
-  "from-secondary/30 to-primary/15",
-  "from-primary/20 to-secondary/25",
+  'from-primary/25 to-accent/20',
+  'from-accent/25 to-primary/15',
+  'from-secondary/30 to-primary/15',
+  'from-primary/20 to-secondary/25',
 ];
 
 function hashIndex(s: string, mod: number) {
@@ -19,12 +19,8 @@ function hashIndex(s: string, mod: number) {
   return h % mod;
 }
 
-export async function CollectionCard({
-  collection,
-}: {
-  collection: CollectionSummary;
-}) {
-  const t = await getTranslations("collections.card");
+export async function CollectionCard({ collection }: { collection: CollectionSummary }) {
+  const t = await getTranslations('collections.card');
   const gradient = GRADIENTS[hashIndex(collection.id, GRADIENTS.length)]!;
 
   return (
@@ -45,10 +41,7 @@ export async function CollectionCard({
           />
         ) : (
           <div
-            className={cn(
-              "flex size-full items-center justify-center bg-gradient-to-br",
-              gradient,
-            )}
+            className={cn('flex size-full items-center justify-center bg-gradient-to-br', gradient)}
           >
             <BookMarked className="size-10 text-foreground/25" />
           </div>
@@ -60,21 +53,19 @@ export async function CollectionCard({
           {collection.name}
         </h3>
         {collection.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {collection.description}
-          </p>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{collection.description}</p>
         )}
         <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-muted-foreground">
-          <span>{t("recipeCount", { count: collection.recipeCount })}</span>
+          <span>{t('recipeCount', { count: collection.recipeCount })}</span>
           {collection.sharedGroups.length > 0 ? (
             <span className="inline-flex items-center gap-1 text-primary">
               <Users className="size-3" aria-hidden="true" />
-              {t("sharedWith", { group: collection.sharedGroups[0]!.name })}
+              {t('sharedWith', { group: collection.sharedGroups[0]!.name })}
               {collection.sharedGroups.length > 1
-                ? t("sharedMore", {
+                ? t('sharedMore', {
                     count: collection.sharedGroups.length - 1,
                   })
-                : ""}
+                : ''}
             </span>
           ) : null}
         </div>

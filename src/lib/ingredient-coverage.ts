@@ -8,22 +8,22 @@
  * sync with the substitutions matcher.
  */
 
-import { normalizeIngredient } from "./substitutions";
+import { normalizeIngredient } from './substitutions';
 
 /** Naive English singularization. Enough to unify egg/eggs, tomato/tomatoes. */
 function singularize(token: string): string {
   if (token.length <= 3) return token;
-  if (token.endsWith("ies")) return `${token.slice(0, -3)}y`;
+  if (token.endsWith('ies')) return `${token.slice(0, -3)}y`;
   if (/(ches|shes|sses|xes|zes)$/.test(token)) return token.slice(0, -2);
-  if (token.endsWith("oes")) return token.slice(0, -2);
-  if (token.endsWith("s") && !token.endsWith("ss")) return token.slice(0, -1);
+  if (token.endsWith('oes')) return token.slice(0, -2);
+  if (token.endsWith('s') && !token.endsWith('ss')) return token.slice(0, -1);
   return token;
 }
 
 /** Normalize an ingredient/pantry string into a set of comparable word tokens. */
 export function ingredientTokens(item: string): string[] {
   return normalizeIngredient(item)
-    .split(" ")
+    .split(' ')
     .filter(Boolean)
     .map(singularize)
     .filter((t) => t.length >= 2);
@@ -37,21 +37,14 @@ export type Coverage = { matched: number; total: number; missing: number };
  * "chicken" covers "boneless chicken breast", and "olive oil" covers "extra
  * virgin olive oil", but "salt" never covers "salted butter".
  */
-function itemCovered(
-  ingredientTokenSet: Set<string>,
-  pantry: string[][],
-): boolean {
+function itemCovered(ingredientTokenSet: Set<string>, pantry: string[][]): boolean {
   return pantry.some(
-    (tokens) =>
-      tokens.length > 0 && tokens.every((t) => ingredientTokenSet.has(t)),
+    (tokens) => tokens.length > 0 && tokens.every((t) => ingredientTokenSet.has(t)),
   );
 }
 
 /** Coverage of a single recipe's ingredient list against a pantry token map. */
-export function coverageFor(
-  recipeIngredients: string[],
-  pantryTokenSets: string[][],
-): Coverage {
+export function coverageFor(recipeIngredients: string[], pantryTokenSets: string[][]): Coverage {
   const total = recipeIngredients.length;
   let matched = 0;
   for (const item of recipeIngredients) {
@@ -73,9 +66,7 @@ export function rankByCoverage<T extends CoverageInput>(
   recipes: T[],
   pantry: string[],
 ): WithCoverage<T>[] {
-  const pantryTokenSets = pantry
-    .map(ingredientTokens)
-    .filter((tokens) => tokens.length > 0);
+  const pantryTokenSets = pantry.map(ingredientTokens).filter((tokens) => tokens.length > 0);
   if (pantryTokenSets.length === 0) return [];
 
   return recipes

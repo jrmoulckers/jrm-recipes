@@ -1,35 +1,32 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import type { Route } from "next";
-import { Check, ChefHat, CookingPot, Users } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import Link from 'next/link';
+import type { Route } from 'next';
+import { Check, ChefHat, CookingPot, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { CloseButton } from "~/components/ui/close-button";
-import type { OnboardingProgress } from "~/server/onboarding/progress";
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { CloseButton } from '~/components/ui/close-button';
+import type { OnboardingProgress } from '~/server/onboarding/progress';
 
 /** localStorage flag, mirroring the welcome-card dismissal pattern (#78). */
-export const ONBOARDING_CHECKLIST_DISMISS_KEY =
-  "heirloom:onboarding-checklist-dismissed";
+export const ONBOARDING_CHECKLIST_DISMISS_KEY = 'heirloom:onboarding-checklist-dismissed';
 
 /** Whether the checklist has already been dismissed on this device. */
 export function onboardingChecklistDismissed(): boolean {
   try {
-    return (
-      window.localStorage.getItem(ONBOARDING_CHECKLIST_DISMISS_KEY) === "1"
-    );
+    return window.localStorage.getItem(ONBOARDING_CHECKLIST_DISMISS_KEY) === '1';
   } catch {
     return false;
   }
 }
 
 const STEP_ICONS = [ChefHat, CookingPot, Users] as const;
-const STEP_HREFS: readonly Route[] = ["/recipes/new", "/recipes", "/groups"];
+const STEP_HREFS: readonly Route[] = ['/recipes/new', '/recipes', '/groups'];
 /** Step order. Keys match `onboarding.checklist.steps` and the flags below. */
-const STEP_KEYS = ["create", "cook", "share"] as const;
+const STEP_KEYS = ['create', 'cook', 'share'] as const;
 
 /**
  * First-run onboarding checklist for the home dashboard (#78). It guides brand
@@ -41,12 +38,8 @@ const STEP_KEYS = ["create", "cook", "share"] as const;
  * under `onboarding.checklist`, and every color is token-driven so
  * it reads correctly across all five UI modes in light and dark.
  */
-export function OnboardingChecklist({
-  progress,
-}: {
-  progress: OnboardingProgress;
-}) {
-  const t = useTranslations("onboarding.checklist");
+export function OnboardingChecklist({ progress }: { progress: OnboardingProgress }) {
+  const t = useTranslations('onboarding.checklist');
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
   // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
@@ -65,7 +58,7 @@ export function OnboardingChecklist({
 
   const dismiss = React.useCallback(() => {
     try {
-      window.localStorage.setItem(ONBOARDING_CHECKLIST_DISMISS_KEY, "1");
+      window.localStorage.setItem(ONBOARDING_CHECKLIST_DISMISS_KEY, '1');
     } catch {
       // Storage unavailable (private mode). Just hide for this session.
     }
@@ -74,11 +67,7 @@ export function OnboardingChecklist({
     window.setTimeout(() => setMounted(false), 200);
   }, []);
 
-  const completion = [
-    progress.hasRecipe,
-    progress.hasCooked,
-    progress.hasShared,
-  ];
+  const completion = [progress.hasRecipe, progress.hasCooked, progress.hasShared];
   const doneCount = completion.filter(Boolean).length;
   const total = completion.length;
 
@@ -94,27 +83,23 @@ export function OnboardingChecklist({
     <section
       aria-labelledby="onboarding-checklist-heading"
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-6",
-        "transition-all duration-base ease-standard motion-reduce:transition-none",
+        'relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-token-sm sm:p-6',
+        'transition-all duration-base ease-standard motion-reduce:transition-none',
         entered
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
+          ? 'translate-y-0 opacity-100'
+          : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
       )}
     >
-      <CloseButton
-        onClick={dismiss}
-        label={t("dismiss")}
-        className="absolute end-3 top-3"
-      />
+      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute end-3 top-3" />
 
       <div className="max-w-xl pe-8">
         <h2
           id="onboarding-checklist-heading"
           className="font-display text-xl font-bold tracking-tight"
         >
-          {t("heading")}
+          {t('heading')}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subheading")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('subheading')}</p>
       </div>
 
       <div className="mt-5 flex items-center gap-3">
@@ -124,17 +109,14 @@ export function OnboardingChecklist({
           aria-valuenow={doneCount}
           aria-valuemin={0}
           aria-valuemax={total}
-          aria-label={t("progress", { done: doneCount, total })}
+          aria-label={t('progress', { done: doneCount, total })}
         >
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-500 ease-standard"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span
-          className="text-xs font-medium tabular-nums text-muted-foreground"
-          aria-hidden="true"
-        >
+        <span className="text-xs font-medium tabular-nums text-muted-foreground" aria-hidden="true">
           {doneCount}/{total}
         </span>
       </div>
@@ -143,60 +125,45 @@ export function OnboardingChecklist({
         {STEP_KEYS.map((stepKey, i) => {
           const done = completion[i] ?? false;
           const Icon = STEP_ICONS[i] ?? ChefHat;
-          const href = STEP_HREFS[i] ?? "/recipes/new";
+          const href = STEP_HREFS[i] ?? '/recipes/new';
           const isNext = i === nextStep;
           return (
             <li
               key={stepKey}
               className={cn(
-                "flex flex-col gap-3 rounded-xl p-3 transition-colors sm:flex-row sm:items-center sm:justify-between",
+                'flex flex-col gap-3 rounded-xl p-3 transition-colors sm:flex-row sm:items-center sm:justify-between',
                 // Only the recommended next step is lifted. A subtle tint plus
                 // an inset ring. So the card reads as one surface, not a stack
                 // of nested cards.
-                isNext && "bg-primary/5 ring-1 ring-inset ring-primary/15",
+                isNext && 'bg-primary/5 ring-1 ring-inset ring-primary/15',
               )}
             >
               <div className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "inline-flex size-8 shrink-0 items-center justify-center rounded-full",
-                    done
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary/12 text-primary",
+                    'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
+                    done ? 'bg-primary text-primary-foreground' : 'bg-primary/12 text-primary',
                   )}
                 >
-                  {done ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Icon className="size-4" />
-                  )}
+                  {done ? <Check className="size-4" /> : <Icon className="size-4" />}
                 </span>
                 <div>
-                  <p
-                    className={cn(
-                      "font-semibold",
-                      done && "text-muted-foreground line-through",
-                    )}
-                  >
+                  <p className={cn('font-semibold', done && 'text-muted-foreground line-through')}>
                     {t(`steps.${stepKey}.title`)}
                   </p>
                   {!done && (
-                    <p className="text-sm text-muted-foreground">
-                      {t(`steps.${stepKey}.body`)}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t(`steps.${stepKey}.body`)}</p>
                   )}
                 </div>
               </div>
               {done ? (
-                <span className="ms-11 text-xs font-medium text-primary sm:ms-0">
-                  {t("done")}
-                </span>
+                <span className="ms-11 text-xs font-medium text-primary sm:ms-0">{t('done')}</span>
               ) : (
                 <Button
                   asChild
                   size="sm"
-                  variant={isNext ? "default" : "outline"}
+                  variant={isNext ? 'default' : 'outline'}
                   className="ms-11 self-start sm:ms-0 sm:self-auto"
                 >
                   <Link href={href}>{t(`steps.${stepKey}.cta`)}</Link>

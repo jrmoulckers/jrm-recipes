@@ -1,10 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { canManage } from "~/server/groups/queries";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { canManage } from '~/server/groups/queries';
 import {
   comments,
   contentReports,
@@ -14,9 +14,9 @@ import {
   reviews,
   type ModerationTarget,
   type User,
-} from "~/server/db/schema";
-import type { DismissReportInput, HideContentInput } from "./validation";
-import { resolveTarget } from "./targets";
+} from '~/server/db/schema';
+import type { DismissReportInput, HideContentInput } from './validation';
+import { resolveTarget } from './targets';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -26,15 +26,12 @@ async function requireManager(tx: Tx, groupSlug: string, user: User) {
     where: eq(groups.slug, groupSlug),
     columns: { id: true },
   });
-  if (!group) throw new DomainError("NOT_FOUND");
+  if (!group) throw new DomainError('NOT_FOUND');
   const membership = await tx.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, group.id),
-      eq(groupMembers.userId, user.id),
-    ),
+    where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
     columns: { role: true },
   });
-  if (!canManage(membership?.role)) throw new DomainError("FORBIDDEN");
+  if (!canManage(membership?.role)) throw new DomainError('FORBIDDEN');
   return group;
 }
 
@@ -45,16 +42,10 @@ async function setHidden(
   hiddenBy: string | null,
 ) {
   const now = hiddenBy ? new Date() : null;
-  if (targetType === "comment") {
-    await tx
-      .update(comments)
-      .set({ hiddenAt: now, hiddenBy })
-      .where(eq(comments.id, targetId));
-  } else if (targetType === "review") {
-    await tx
-      .update(reviews)
-      .set({ hiddenAt: now, hiddenBy })
-      .where(eq(reviews.id, targetId));
+  if (targetType === 'comment') {
+    await tx.update(comments).set({ hiddenAt: now, hiddenBy }).where(eq(comments.id, targetId));
+  } else if (targetType === 'review') {
+    await tx.update(reviews).set({ hiddenAt: now, hiddenBy }).where(eq(reviews.id, targetId));
   } else {
     await tx
       .update(cookLogEntries)
@@ -68,23 +59,15 @@ async function setHidden(
  * `hiddenAt`/`hiddenBy` on the target row and resolves its open reports. The
  * target must belong to the moderator's group. Owner/admin only.
  */
-export async function hideContent(
-  input: HideContentInput,
-  user: User,
-): Promise<void> {
+export async function hideContent(input: HideContentInput, user: User): Promise<void> {
   await db.transaction(async (tx) => {
     const group = await requireManager(tx, input.groupSlug, user);
     const target = await resolveTarget(tx, input.targetType, input.targetId);
-    if (!target) throw new DomainError("NOT_FOUND");
-    if (target.recipe.groupId !== group.id) throw new DomainError("FORBIDDEN");
+    if (!target) throw new DomainError('NOT_FOUND');
+    if (target.recipe.groupId !== group.id) throw new DomainError('FORBIDDEN');
 
     await setHidden(tx, input.targetType, input.targetId, user.id);
-    await resolveReportsForTarget(
-      tx,
-      input.targetType,
-      input.targetId,
-      user.id,
-    );
+    await resolveReportsForTarget(tx, input.targetType, input.targetId, user.id);
   });
 }
 
@@ -92,16 +75,13 @@ export async function hideContent(
  * Dismiss the open reports on a target without hiding it (issue #357): the
  * content is fine, the report is closed. Owner/admin only.
  */
-export async function dismissReport(
-  input: DismissReportInput,
-  user: User,
-): Promise<void> {
+export async function dismissReport(input: DismissReportInput, user: User): Promise<void> {
   await db.transaction(async (tx) => {
     const group = await requireManager(tx, input.groupSlug, user);
     await tx
       .update(contentReports)
       .set({
-        status: "dismissed",
+        status: 'dismissed',
         resolvedById: user.id,
         resolvedAt: new Date(),
       })
@@ -110,7 +90,7 @@ export async function dismissReport(
           eq(contentReports.groupId, group.id),
           eq(contentReports.targetType, input.targetType),
           eq(contentReports.targetId, input.targetId),
-          eq(contentReports.status, "open"),
+          eq(contentReports.status, 'open'),
         ),
       );
   });
@@ -126,7 +106,7 @@ async function resolveReportsForTarget(
   await tx
     .update(contentReports)
     .set({
-      status: "resolved",
+      status: 'resolved',
       resolvedById,
       resolvedAt: new Date(),
     })
@@ -134,7 +114,7 @@ async function resolveReportsForTarget(
       and(
         eq(contentReports.targetType, targetType),
         eq(contentReports.targetId, targetId),
-        eq(contentReports.status, "open"),
+        eq(contentReports.status, 'open'),
       ),
     );
 }

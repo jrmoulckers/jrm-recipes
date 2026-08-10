@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { getCurrentUser } from "~/server/auth";
-import { getAllFlags, getFlag } from "~/lib/analytics/server";
-import { type FlagMap, type FlagValue } from "~/lib/analytics/flags-shared";
+import { getCurrentUser } from '~/server/auth';
+import { getAllFlags, getFlag } from '~/lib/analytics/server';
+import { type FlagMap, type FlagValue } from '~/lib/analytics/flags-shared';
 
 /**
  * Ergonomic server-side feature-flag helpers (issue #335) for Server Components
@@ -18,7 +18,7 @@ import { type FlagMap, type FlagValue } from "~/lib/analytics/flags-shared";
 /** The distinct id to evaluate flags against. The signed-in user, else anon. */
 async function flagDistinctId(): Promise<string> {
   const user = await getCurrentUser();
-  return user?.id ?? "anonymous";
+  return user?.id ?? 'anonymous';
 }
 
 /** Evaluate every flag for the current user (empty map = all control). */
@@ -27,9 +27,6 @@ export async function getUserFlags(): Promise<FlagMap> {
 }
 
 /** Evaluate a single flag for the current user, falling back to control. */
-export async function getUserFlag(
-  key: string,
-  fallback: FlagValue = false,
-): Promise<FlagValue> {
+export async function getUserFlag(key: string, fallback: FlagValue = false): Promise<FlagValue> {
   return getFlag(await flagDistinctId(), key, fallback);
 }

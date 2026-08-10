@@ -1,14 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import {
-  recipes,
-  usageCounters,
-  type UsageMetric,
-  type User,
-} from "~/server/db/schema";
+import { db, isDbConfigured } from '~/server/db';
+import { recipes, usageCounters, type UsageMetric, type User } from '~/server/db/schema';
 
 /**
  * Usage metering foundation (issue #301).
@@ -32,11 +27,11 @@ import {
 const LIFETIME_PERIOD = new Date(0);
 
 /** Metrics that reset at the start of each calendar month (UTC). */
-const MONTHLY_METRICS = new Set<UsageMetric>(["ai_credits"]);
+const MONTHLY_METRICS = new Set<UsageMetric>(['ai_credits']);
 
 /** The billing owner for a metric row. Personal usage is keyed to the user. */
-function ownerOf(user: User): { ownerId: string; ownerType: "user" } {
-  return { ownerId: user.id, ownerType: "user" };
+function ownerOf(user: User): { ownerId: string; ownerType: 'user' } {
+  return { ownerId: user.id, ownerType: 'user' };
 }
 
 /**
@@ -44,10 +39,7 @@ function ownerOf(user: User): { ownerId: string; ownerType: "user" } {
  * the 1st (UTC) so reads reset without any cron. Count metrics share a single
  * lifetime bucket.
  */
-export function currentPeriodStart(
-  metric: UsageMetric,
-  now: Date = new Date(),
-): Date {
+export function currentPeriodStart(metric: UsageMetric, now: Date = new Date()): Date {
   if (MONTHLY_METRICS.has(metric)) {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   }
@@ -61,10 +53,7 @@ export function currentPeriodStart(
  */
 export async function recomputeRecipeCount(user: User): Promise<number> {
   if (!isDbConfigured()) return 0;
-  return db.$count(
-    recipes,
-    and(eq(recipes.authorId, user.id), isNull(recipes.deletedAt)),
-  );
+  return db.$count(recipes, and(eq(recipes.authorId, user.id), isNull(recipes.deletedAt)));
 }
 
 /**
@@ -78,7 +67,7 @@ export async function getUsage(
   now: Date = new Date(),
 ): Promise<number> {
   if (!isDbConfigured()) return 0;
-  if (metric === "recipes") return recomputeRecipeCount(user);
+  if (metric === 'recipes') return recomputeRecipeCount(user);
 
   const { ownerId } = ownerOf(user);
   const row = await db.query.usageCounters.findFirst({
@@ -150,11 +139,7 @@ export async function incrementUsage(
     .insert(usageCounters)
     .values({ ownerId, ownerType, metric, periodStart, value: amount })
     .onConflictDoUpdate({
-      target: [
-        usageCounters.ownerId,
-        usageCounters.metric,
-        usageCounters.periodStart,
-      ],
+      target: [usageCounters.ownerId, usageCounters.metric, usageCounters.periodStart],
       set: {
         value: sql`${usageCounters.value} + ${amount}`,
         updatedAt: new Date(),

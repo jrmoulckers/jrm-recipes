@@ -1,6 +1,6 @@
 // @ts-check
 
-import { ALLOWED_MEDIA_HOSTS } from "./media-hosts.js";
+import { ALLOWED_MEDIA_HOSTS } from './media-hosts.js';
 
 /**
  * next/image optimizer settings.
@@ -14,7 +14,7 @@ import { ALLOWED_MEDIA_HOSTS } from "./media-hosts.js";
 export const imageConfig = {
   // Serve AVIF first (≈20-30% smaller than WebP for photos), then WebP, then the
   // browser's own fallback. Ordered by preference.
-  formats: ["image/avif", "image/webp"],
+  formats: ['image/avif', 'image/webp'],
   // Optimized variants are effectively immutable, so cache them at the
   // edge/browser for ~31 days instead of re-optimizing on near-every request.
   minimumCacheTTL: 2_678_400,

@@ -7,7 +7,7 @@
 function toHttpUrl(value: string): string | undefined {
   try {
     const url = new URL(value);
-    if (url.protocol === "http:" || url.protocol === "https:") {
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
       return url.toString();
     }
   } catch {
@@ -23,9 +23,7 @@ function toHttpUrl(value: string): string | undefined {
  * in order and also dig a bare URL out of free-form text. Only http/https is
  * accepted, so `javascript:`/`data:` URIs can't be smuggled into the importer.
  */
-export function pickSharedUrl(
-  ...candidates: (string | null | undefined)[]
-): string | undefined {
+export function pickSharedUrl(...candidates: (string | null | undefined)[]): string | undefined {
   for (const candidate of candidates) {
     if (!candidate) continue;
     const trimmed = candidate.trim();
@@ -45,7 +43,7 @@ export function pickSharedUrl(
 }
 
 /** Cloudinary host every uploaded recipe image is served from. */
-const CLOUDINARY_HOST = "res.cloudinary.com";
+const CLOUDINARY_HOST = 'res.cloudinary.com';
 
 /**
  * Cap on a shared photo we're willing to accept + upload (10 MB). Keeps a
@@ -60,11 +58,9 @@ export const SHARED_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
  * unit-testable. Any non-image MIME, empty file, or oversize payload is
  * rejected so the `/import` route degrades gracefully instead of uploading junk.
  */
-export function isShareableImage(
-  file: { type: string; size: number } | null | undefined,
-): boolean {
+export function isShareableImage(file: { type: string; size: number } | null | undefined): boolean {
   if (!file) return false;
-  if (!file.type.toLowerCase().startsWith("image/")) return false;
+  if (!file.type.toLowerCase().startsWith('image/')) return false;
   return file.size > 0 && file.size <= SHARED_IMAGE_MAX_BYTES;
 }
 
@@ -74,13 +70,11 @@ export function isShareableImage(
  * accept *only* an https URL on the Cloudinary host. This prevents the query
  * param from being abused to render an arbitrary attacker-chosen image.
  */
-export function safeSharedImageUrl(
-  value: string | null | undefined,
-): string | undefined {
+export function safeSharedImageUrl(value: string | null | undefined): string | undefined {
   if (!value) return undefined;
   try {
     const url = new URL(value);
-    if (url.protocol === "https:" && url.hostname === CLOUDINARY_HOST) {
+    if (url.protocol === 'https:' && url.hostname === CLOUDINARY_HOST) {
       return url.toString();
     }
   } catch {

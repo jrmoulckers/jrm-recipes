@@ -1,37 +1,30 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
-import {
-  displayLocalShoppingListName,
-  useShoppingStore,
-} from "~/lib/shopping-store";
-import { findIngredientRoute } from "~/lib/shopping-routing";
-import { useConfirm } from "~/components/ui/confirm-dialog";
-import { Skeleton } from "~/components/ui/skeleton";
+import { displayLocalShoppingListName, useShoppingStore } from '~/lib/shopping-store';
+import { findIngredientRoute } from '~/lib/shopping-routing';
+import { useConfirm } from '~/components/ui/confirm-dialog';
+import { Skeleton } from '~/components/ui/skeleton';
 import {
   ShoppingListNavigation,
   type ShoppingListSummary,
   type StoreSelection,
-} from "./shopping-list-navigation";
+} from './shopping-list-navigation';
 import {
   ShoppingListView,
   type ManualEntryDraft,
   type PackagePreferenceDraft,
   type PackagePreferenceResult,
   type ShoppingViewItem,
-} from "./shopping-list-view";
-import type { ShoppingHistoryEntry } from "./shopping-history";
+} from './shopping-list-view';
+import type { ShoppingHistoryEntry } from './shopping-history';
 
 /** DB-off shopping list, backed by the persisted zustand store. */
-export function LocalShoppingList({
-  selectedListId,
-}: {
-  selectedListId?: string;
-}) {
+export function LocalShoppingList({ selectedListId }: { selectedListId?: string }) {
   const router = useRouter();
   const lists = useShoppingStore((s) => s.lists);
   const stores = useShoppingStore((s) => s.stores);
@@ -51,9 +44,7 @@ export function LocalShoppingList({
   const deleteList = useShoppingStore((s) => s.deleteList);
   const moveItem = useShoppingStore((s) => s.moveItem);
   const bulkMoveItems = useShoppingStore((s) => s.bulkMoveItems);
-  const saveIngredientPackage = useShoppingStore(
-    (s) => s.saveIngredientPackage,
-  );
+  const saveIngredientPackage = useShoppingStore((s) => s.saveIngredientPackage);
   const setChecked = useShoppingStore((s) => s.setChecked);
   const setCategory = useShoppingStore((s) => s.setCategory);
   const remove = useShoppingStore((s) => s.remove);
@@ -61,17 +52,12 @@ export function LocalShoppingList({
   const uncheckAll = useShoppingStore((s) => s.uncheckAll);
   const clearAll = useShoppingStore((s) => s.clearAll);
   const restoreFromHistory = useShoppingStore((s) => s.restoreFromHistory);
-  const restoreMultipleFromHistory = useShoppingStore(
-    (s) => s.restoreMultipleFromHistory,
-  );
+  const restoreMultipleFromHistory = useShoppingStore((s) => s.restoreMultipleFromHistory);
   const confirm = useConfirm();
-  const t = useTranslations("shopping");
-  const generatedListName = t("lists.generatedName");
-  const displayListName = (list: {
-    id: string;
-    name: string;
-    generatedName?: boolean;
-  }) => displayLocalShoppingListName(list, generatedListName);
+  const t = useTranslations('shopping');
+  const generatedListName = t('lists.generatedName');
+  const displayListName = (list: { id: string; name: string; generatedName?: boolean }) =>
+    displayLocalShoppingListName(list, generatedListName);
 
   // The store hydrates from localStorage on the client only. Wait for mount so
   // the first render matches the server (empty) and avoids a hydration warning.
@@ -80,8 +66,7 @@ export function LocalShoppingList({
 
   const activeLists = lists.filter((list) => !list.archived);
   const urlList = activeLists.find((list) => list.id === selectedListId);
-  const fallbackList =
-    activeLists.find((list) => list.id === defaultListId) ?? activeLists[0];
+  const fallbackList = activeLists.find((list) => list.id === defaultListId) ?? activeLists[0];
   const routedList = urlList ?? fallbackList;
 
   React.useEffect(() => {
@@ -111,9 +96,7 @@ export function LocalShoppingList({
   if (!current) return null;
   const currentList = current;
 
-  const storeNamesById = new Map(
-    stores.map((store) => [store.id, store.name] as const),
-  );
+  const storeNamesById = new Map(stores.map((store) => [store.id, store.name] as const));
   const listOptions = activeLists.map((list) => ({
     id: list.id,
     name: displayListName(list),
@@ -150,10 +133,8 @@ export function LocalShoppingList({
       checked: i.checked,
       routePreferredListId: route?.preferredListId ?? null,
       routeAlternativeListIds:
-        route?.alternativeListIds.filter((id) =>
-          activeLists.some((list) => list.id === id),
-        ) ?? [],
-      packageRoundBehavior: route?.packageRoundBehavior ?? "inherit",
+        route?.alternativeListIds.filter((id) => activeLists.some((list) => list.id === id)) ?? [],
+      packageRoundBehavior: route?.packageRoundBehavior ?? 'inherit',
     };
   });
   const historyEntries = restorePoints
@@ -162,10 +143,7 @@ export function LocalShoppingList({
       ...point,
       restorePoints: point.operationGroupId
         ? restorePoints
-            .filter(
-              (candidate) =>
-                candidate.operationGroupId === point.operationGroupId,
-            )
+            .filter((candidate) => candidate.operationGroupId === point.operationGroupId)
             .map((candidate) => ({
               listId: candidate.listId,
               restorePointId: candidate.id,
@@ -192,13 +170,13 @@ export function LocalShoppingList({
   function resolveSelection(selection: StoreSelection): string[] {
     const created = selection.newStoreNames
       .map((name) => createStore(name))
-      .filter((id) => id !== "");
+      .filter((id) => id !== '');
     return [...selection.storeIds, ...created];
   }
 
   function onCreate(name: string, selection: StoreSelection) {
     navigateToList(createList(name, resolveSelection(selection)));
-    toast.success(t("lists.toasts.created", { name }));
+    toast.success(t('lists.toasts.created', { name }));
   }
 
   function navigateToList(listId: string) {
@@ -210,25 +188,25 @@ export function LocalShoppingList({
 
   function onRename(listId: string, name: string, selection: StoreSelection) {
     renameList(listId, name, resolveSelection(selection));
-    toast.success(t("lists.toasts.renamed", { name }));
+    toast.success(t('lists.toasts.renamed', { name }));
   }
 
   function onRenameStore(storeId: string, name: string) {
     renameStore(storeId, name);
-    toast.success(t("lists.stores.toasts.renamed", { name }));
+    toast.success(t('lists.stores.toasts.renamed', { name }));
   }
 
   async function onDeleteStore(storeId: string) {
     const store = stores.find((candidate) => candidate.id === storeId);
     if (!store) return false;
     const accepted = await confirm({
-      title: t("lists.stores.confirm.delete.title", { name: store.name }),
-      description: t("lists.stores.confirm.delete.description"),
-      confirmLabel: t("lists.stores.delete"),
+      title: t('lists.stores.confirm.delete.title', { name: store.name }),
+      description: t('lists.stores.confirm.delete.description'),
+      confirmLabel: t('lists.stores.delete'),
     });
     if (!accepted) return false;
     deleteStore(storeId);
-    toast.success(t("lists.stores.toasts.deleted", { name: store.name }));
+    toast.success(t('lists.stores.toasts.deleted', { name: store.name }));
     return true;
   }
 
@@ -236,16 +214,14 @@ export function LocalShoppingList({
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return;
     makeDefault(listId);
-    toast.success(
-      t("lists.toasts.madeDefault", { name: displayListName(list) }),
-    );
+    toast.success(t('lists.toasts.madeDefault', { name: displayListName(list) }));
   }
 
   function onRestore(listId: string) {
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return;
     restoreList(listId);
-    toast.success(t("lists.toasts.restored", { name: displayListName(list) }));
+    toast.success(t('lists.toasts.restored', { name: displayListName(list) }));
   }
 
   function onMove(
@@ -257,15 +233,9 @@ export function LocalShoppingList({
     const item = currentList.items.find((candidate) => candidate.id === itemId);
     const target = lists.find((candidate) => candidate.id === targetListId);
     if (!item || !target) return;
-    moveItem(
-      currentList.id,
-      itemId,
-      targetListId,
-      rememberRoute,
-      alternativeListIds,
-    );
+    moveItem(currentList.id, itemId, targetListId, rememberRoute, alternativeListIds);
     toast.success(
-      t(rememberRoute ? "routing.toasts.routeSaved" : "routing.toasts.moved", {
+      t(rememberRoute ? 'routing.toasts.routeSaved' : 'routing.toasts.moved', {
         item: item.item,
         list: displayListName(target),
       }),
@@ -277,14 +247,14 @@ export function LocalShoppingList({
     const result = bulkMoveItems(currentList.id, itemIds, targetListId);
     if (!target || !result) return;
     toast.success(
-      t("routing.bulk.toasts.moved", {
+      t('routing.bulk.toasts.moved', {
         count: itemIds.length,
         list: displayListName(target),
       }),
       {
         duration: Infinity,
         action: {
-          label: t("history.undo"),
+          label: t('history.undo'),
           onClick: () => {
             restoreMultipleFromHistory([
               {
@@ -296,7 +266,7 @@ export function LocalShoppingList({
                 restorePointId: result.targetRestorePointId,
               },
             ]);
-            toast.success(t("history.toasts.undoComplete"));
+            toast.success(t('history.toasts.undoComplete'));
           },
         },
       },
@@ -306,13 +276,13 @@ export function LocalShoppingList({
   function restoreSingleHistoryPoint(restorePointId: string) {
     const undoPointId = restoreFromHistory(currentList.id, restorePointId);
     if (!undoPointId) return;
-    toast.success(t("history.toasts.restored"), {
+    toast.success(t('history.toasts.restored'), {
       duration: Infinity,
       action: {
-        label: t("history.undo"),
+        label: t('history.undo'),
         onClick: () => {
           restoreFromHistory(currentList.id, undoPointId);
-          toast.success(t("history.toasts.undoComplete"));
+          toast.success(t('history.toasts.undoComplete'));
         },
       },
     });
@@ -328,13 +298,13 @@ export function LocalShoppingList({
     }
     const undoPoints = restoreMultipleFromHistory(references);
     if (!undoPoints) return;
-    toast.success(t("history.toasts.restored"), {
+    toast.success(t('history.toasts.restored'), {
       duration: Infinity,
       action: {
-        label: t("history.undo"),
+        label: t('history.undo'),
         onClick: () => {
           restoreMultipleFromHistory(undoPoints);
-          toast.success(t("history.toasts.undoComplete"));
+          toast.success(t('history.toasts.undoComplete'));
         },
       },
     });
@@ -343,10 +313,10 @@ export function LocalShoppingList({
   function onRemoveCompleted() {
     const restorePointId = removeCompleted(currentList.id);
     if (!restorePointId) return;
-    toast.success(t("toasts.removedCompleted"), {
+    toast.success(t('toasts.removedCompleted'), {
       duration: Infinity,
       action: {
-        label: t("history.undo"),
+        label: t('history.undo'),
         onClick: () => restoreSingleHistoryPoint(restorePointId),
       },
     });
@@ -354,7 +324,7 @@ export function LocalShoppingList({
 
   function onUncheckAll() {
     uncheckAll(currentList.id);
-    toast.success(t("toasts.uncheckedAll"));
+    toast.success(t('toasts.uncheckedAll'));
   }
 
   async function onSavePackage(
@@ -362,24 +332,24 @@ export function LocalShoppingList({
     draft: PackagePreferenceDraft,
   ): Promise<PackagePreferenceResult> {
     saveIngredientPackage({ itemId, ...draft });
-    toast.success(t("package.saved"));
+    toast.success(t('package.saved'));
     return { ok: true };
   }
 
   async function onClearAll() {
     if (currentList.items.length === 0) return;
     const ok = await confirm({
-      title: t("confirm.clearAllLocal.title"),
-      description: t("confirm.clearAllLocal.description"),
-      confirmLabel: t("confirm.clearAll.confirmLabel"),
+      title: t('confirm.clearAllLocal.title'),
+      description: t('confirm.clearAllLocal.description'),
+      confirmLabel: t('confirm.clearAll.confirmLabel'),
     });
     if (!ok) return;
     const restorePointId = clearAll(currentList.id);
     if (!restorePointId) return;
-    toast.success(t("toasts.cleared"), {
+    toast.success(t('toasts.cleared'), {
       duration: Infinity,
       action: {
-        label: t("history.undo"),
+        label: t('history.undo'),
         onClick: () => restoreSingleHistoryPoint(restorePointId),
       },
     });
@@ -389,15 +359,15 @@ export function LocalShoppingList({
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const ok = await confirm({
-      title: t("lists.confirm.archive.title", {
+      title: t('lists.confirm.archive.title', {
         name: displayListName(list),
       }),
-      description: t("lists.confirm.archive.description"),
-      confirmLabel: t("lists.archive"),
+      description: t('lists.confirm.archive.description'),
+      confirmLabel: t('lists.archive'),
     });
     if (!ok) return false;
     archiveList(listId);
-    toast.success(t("lists.toasts.archived", { name: displayListName(list) }));
+    toast.success(t('lists.toasts.archived', { name: displayListName(list) }));
     return true;
   }
 
@@ -405,13 +375,13 @@ export function LocalShoppingList({
     const list = lists.find((candidate) => candidate.id === listId);
     if (!list) return false;
     const ok = await confirm({
-      title: t("lists.confirm.delete.title", { name: displayListName(list) }),
-      description: t("lists.confirm.delete.description"),
-      confirmLabel: t("lists.delete"),
+      title: t('lists.confirm.delete.title', { name: displayListName(list) }),
+      description: t('lists.confirm.delete.description'),
+      confirmLabel: t('lists.delete'),
     });
     if (!ok) return false;
     deleteList(listId);
-    toast.success(t("lists.toasts.deleted", { name: displayListName(list) }));
+    toast.success(t('lists.toasts.deleted', { name: displayListName(list) }));
     return true;
   }
 
@@ -433,17 +403,13 @@ export function LocalShoppingList({
       />
       <ShoppingListView
         items={viewItems}
-        storageNote={t("storage.local")}
+        storageNote={t('storage.local')}
         listOptions={listOptions}
         currentListId={currentList.id}
         onAddManual={onAddManual}
-        onToggle={(itemId, checked) =>
-          setChecked(currentList.id, itemId, checked)
-        }
+        onToggle={(itemId, checked) => setChecked(currentList.id, itemId, checked)}
         onRemove={(itemId) => remove(currentList.id, itemId)}
-        onSetCategory={(itemId, category) =>
-          setCategory(currentList.id, itemId, category)
-        }
+        onSetCategory={(itemId, category) => setCategory(currentList.id, itemId, category)}
         onMove={onMove}
         onBulkMove={onBulkMove}
         onClearChecked={onRemoveCompleted}

@@ -13,7 +13,7 @@
  * `food_aliases`. The curated static dataset (`food-db.ts`) is the fallback.
  */
 
-import { canonicalFood, normalizeFoodText } from "./food-db";
+import { canonicalFood, normalizeFoodText } from './food-db';
 
 /** The alias width `food_aliases.alias` is stored at (mirrors the seed/miner). */
 const ALIAS_MAX = 160;
@@ -62,10 +62,7 @@ export function buildAliasIndex(rows: readonly AliasRow[]): AliasIndex {
  * canonicalFood}), which does whole-word phrase matching over the seeded dataset.
  * Pure + deterministic.
  */
-export function pickFoodId(
-  item: string | null | undefined,
-  aliasIndex: AliasIndex,
-): string | null {
+export function pickFoodId(item: string | null | undefined, aliasIndex: AliasIndex): string | null {
   const normalized = normalizeFoodText(item).slice(0, ALIAS_MAX);
   if (normalized) {
     const hit = aliasIndex.get(normalized);

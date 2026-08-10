@@ -1,15 +1,12 @@
-import "server-only";
+import 'server-only';
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { and, eq, isNull } from "drizzle-orm";
+import { revalidatePath, revalidateTag } from 'next/cache';
+import { and, eq, isNull } from 'drizzle-orm';
 
-import {
-  recipeRevalidationPaths,
-  type RecipeCreatorRef,
-} from "~/lib/recipe-path";
-import { db, isDbConfigured } from "~/server/db";
-import { recipeCreators, recipes } from "~/server/db/schema";
-import { recipeMutationTags } from "./cache-tags";
+import { recipeRevalidationPaths, type RecipeCreatorRef } from '~/lib/recipe-path';
+import { db, isDbConfigured } from '~/server/db';
+import { recipeCreators, recipes } from '~/server/db/schema';
+import { recipeMutationTags } from './cache-tags';
 
 /**
  * Invalidate the Next data-cache tags for a recipe write: the recipe entity
@@ -29,15 +26,10 @@ export function revalidateRecipeTags(id: string): void {
  * other access path uses, and a creator whose user slug is somehow missing is
  * skipped rather than emitting a broken path.
  */
-async function creatorNamespaces(
-  recipeId: string,
-): Promise<RecipeCreatorRef[]> {
+async function creatorNamespaces(recipeId: string): Promise<RecipeCreatorRef[]> {
   if (!isDbConfigured()) return [];
   const rows = await db.query.recipeCreators.findMany({
-    where: and(
-      eq(recipeCreators.recipeId, recipeId),
-      eq(recipeCreators.status, "accepted"),
-    ),
+    where: and(eq(recipeCreators.recipeId, recipeId), eq(recipeCreators.status, 'accepted')),
     columns: { slug: true },
     with: { user: { columns: { slug: true } } },
   });
@@ -69,12 +61,8 @@ export async function revalidateRecipePaths(
   },
   extraCreators: RecipeCreatorRef[] = [],
 ): Promise<void> {
-  const namespaces = [
-    ...(await creatorNamespaces(recipe.id)),
-    ...extraCreators,
-  ];
-  for (const path of recipeRevalidationPaths(recipe, namespaces))
-    revalidatePath(path);
+  const namespaces = [...(await creatorNamespaces(recipe.id)), ...extraCreators];
+  for (const path of recipeRevalidationPaths(recipe, namespaces)) revalidatePath(path);
 }
 
 /**
@@ -91,9 +79,7 @@ export async function revalidateRecipePaths(
  * A slug can also be held by a *co-creator* entry rather than a recipe row
  * (#668), so both sources are searched and de-duped by recipe id.
  */
-export async function revalidateRecipeSlugPaths(
-  recipeSlug: string,
-): Promise<void> {
+export async function revalidateRecipeSlugPaths(recipeSlug: string): Promise<void> {
   revalidatePath(`/recipes/${recipeSlug}`);
   if (!isDbConfigured()) return;
   const owned = await db.query.recipes.findMany({
@@ -102,10 +88,7 @@ export async function revalidateRecipeSlugPaths(
     with: { author: { columns: { slug: true } } },
   });
   const coCreated = await db.query.recipeCreators.findMany({
-    where: and(
-      eq(recipeCreators.slug, recipeSlug),
-      eq(recipeCreators.status, "accepted"),
-    ),
+    where: and(eq(recipeCreators.slug, recipeSlug), eq(recipeCreators.status, 'accepted')),
     columns: { id: true },
     with: {
       recipe: {
@@ -116,8 +99,7 @@ export async function revalidateRecipeSlugPaths(
   });
 
   const targets = new Map<string, { slug: string | null; cook?: string }>();
-  for (const row of owned)
-    targets.set(row.id, { slug: row.slug, cook: row.author?.slug });
+  for (const row of owned) targets.set(row.id, { slug: row.slug, cook: row.author?.slug });
   for (const row of coCreated) {
     const recipe = row.recipe;
     if (!recipe || recipe.deletedAt) continue;

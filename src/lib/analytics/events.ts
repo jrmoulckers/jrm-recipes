@@ -15,29 +15,29 @@
  */
 
 /** Recipe visibility, mirrored from the recipe validation enum. */
-export type RecipeVisibility = "private" | "group" | "unlisted" | "public";
+export type RecipeVisibility = 'private' | 'group' | 'unlisted' | 'public';
 
 /** How a recipe entered the app. */
-export type RecipeSource = "manual" | "import";
+export type RecipeSource = 'manual' | 'import';
 
 /** Cook Mode ingredient unit system. */
-export type CookUnitSystem = "original" | "us" | "metric" | "grams";
+export type CookUnitSystem = 'original' | 'us' | 'metric' | 'grams';
 
 /** How a recipe was shared. */
-export type ShareMethod = "native" | "file" | "copy_link" | "keepsake";
+export type ShareMethod = 'native' | 'file' | 'copy_link' | 'keepsake';
 
 /** Reel export shape + delivery. */
-export type ReelExportKind = "image" | "video";
-export type ReelExportMethod = "download" | "share";
+export type ReelExportKind = 'image' | 'video';
+export type ReelExportMethod = 'download' | 'share';
 
 /** Group roles that can be invited/assigned (never "owner"). */
-export type InviteRole = "admin" | "member" | "kid";
+export type InviteRole = 'admin' | 'member' | 'kid';
 
 /** Where a waitlist email was captured (mirrors the waitlist source enum). */
-export type WaitlistSource = "landing" | "hero" | "closing";
+export type WaitlistSource = 'landing' | 'hero' | 'closing';
 
 /** Coarse group-size buckets, keeping household size low-cardinality + non-identifying. */
-export type GroupSizeBucket = "1" | "2-5" | "6-10" | "11+";
+export type GroupSizeBucket = '1' | '2-5' | '6-10' | '11+';
 
 /**
  * Event name → property shape. Events with no properties map to
@@ -68,8 +68,8 @@ export interface EventProperties {
   recipe_forked: { recipeId: string; sourceId: string };
   recipe_reverted: { recipeId: string; versionNumber: number };
   recipe_imported: { ok: boolean };
-  editor_opened: { mode: "create" | "edit" };
-  editor_save_failed: { mode: "create" | "edit"; fieldCount: number };
+  editor_opened: { mode: 'create' | 'edit' };
+  editor_save_failed: { mode: 'create' | 'edit'; fieldCount: number };
 
   // --- Cook Mode lifecycle (#313) ---
   // householdId (#338): the recipe's owning group, or null for a personal

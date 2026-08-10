@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 // global-error replaces the ROOT layout, so the app's global stylesheet is not
 // otherwise applied here. Import it directly so design tokens + base styles
 // are available for the themed fallback below.
-import "~/styles/globals.css";
-import { DEFAULT_UI_THEME } from "~/config/themes";
-import { ErrorState } from "~/components/layout/error-state";
+import '~/styles/globals.css';
+import { DEFAULT_UI_THEME } from '~/config/themes';
+import { ErrorState } from '~/components/layout/error-state';
 
 /**
  * Root error boundary. This renders when the root layout itself throws, which

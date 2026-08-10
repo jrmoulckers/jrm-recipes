@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import dynamic from "next/dynamic";
-import { Clapperboard, Loader2 } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { Clapperboard, Loader2 } from 'lucide-react';
 
-import { type ReelRecipe } from "~/lib/reel/scenes";
-import { Button } from "~/components/ui/button";
+import { type ReelRecipe } from '~/lib/reel/scenes';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 
 /**
  * Shown inside the dialog while the reel-studio chunk downloads. It keeps a
@@ -22,19 +22,19 @@ import {
  * a11y warning during the brief load.
  */
 function ReelStudioLoading() {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   return (
     <>
       <DialogHeader>
         <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Clapperboard className="size-5" aria-hidden="true" />
         </div>
-        <DialogTitle>{t("reel.title")}</DialogTitle>
-        <DialogDescription>{t("reel.loadingStudio")}</DialogDescription>
+        <DialogTitle>{t('reel.title')}</DialogTitle>
+        <DialogDescription>{t('reel.loadingStudio')}</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
         <Loader2 className="size-6 animate-spin" aria-hidden="true" />
-        <span className="text-sm">{t("reel.justAMoment")}</span>
+        <span className="text-sm">{t('reel.justAMoment')}</span>
       </div>
     </>
   );
@@ -44,13 +44,13 @@ function ReelStudioLoading() {
 // heavy, interaction-only dependency. Load it as a client-only async chunk so it
 // stays out of the recipe-detail first-load JS and is fetched only when a viewer
 // actually opens the dialog (#200).
-const ReelStudio = dynamic(
-  () => import("./reel-studio").then((mod) => mod.ReelStudio),
-  { ssr: false, loading: () => <ReelStudioLoading /> },
-);
+const ReelStudio = dynamic(() => import('./reel-studio').then((mod) => mod.ReelStudio), {
+  ssr: false,
+  loading: () => <ReelStudioLoading />,
+});
 
 export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const [open, setOpen] = React.useState(false);
   // The studio mirrors its "rendering a video" busy state here so we can refuse
   // to close mid-render without importing any of the studio chunk ourselves.
@@ -65,7 +65,7 @@ export function CreateReelButton({ reel }: { reel: ReelRecipe }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <Clapperboard /> {t("reel.trigger")}
+          <Clapperboard /> {t('reel.trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

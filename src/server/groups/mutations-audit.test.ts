@@ -1,29 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { transactionMock, getGroupSeatLimitMock, recordAuditMock } = vi.hoisted(
-  () => ({
-    transactionMock: vi.fn(),
-    getGroupSeatLimitMock: vi.fn(),
-    recordAuditMock: vi.fn(async () => undefined),
-  }),
-);
+import type * as AuditModule from '~/server/audit';
 
-vi.mock("~/server/db", () => ({
+const { transactionMock, getGroupSeatLimitMock, recordAuditMock } = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  getGroupSeatLimitMock: vi.fn(),
+  recordAuditMock: vi.fn(async () => undefined),
+}));
+
+vi.mock('~/server/db', () => ({
   db: { transaction: transactionMock },
 }));
 
-vi.mock("~/server/billing/entitlements", () => ({
+vi.mock('~/server/billing/entitlements', () => ({
   getGroupSeatLimit: getGroupSeatLimitMock,
 }));
 
-vi.mock("~/server/audit", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("~/server/audit")>();
+vi.mock('~/server/audit', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuditModule>();
   return { ...actual, recordAudit: recordAuditMock };
 });
 
-import type { MemberRole, User } from "~/server/db/schema";
-import { AuditAction } from "~/server/audit";
-import { deleteGroup, transferOwnership, updateMemberRole } from "./mutations";
+import type { MemberRole, User } from '~/server/db/schema';
+import { AuditAction } from '~/server/audit';
+import { deleteGroup, transferOwnership, updateMemberRole } from './mutations';
 
 type Membership = {
   id: string;
@@ -32,7 +32,7 @@ type Membership = {
   groupId: string;
 } | null;
 
-const group = { id: "group_1", slug: "family", name: "Family" };
+const group = { id: 'group_1', slug: 'family', name: 'Family' };
 
 function fakeTx(opts: {
   memberships?: Membership[];
@@ -43,7 +43,7 @@ function fakeTx(opts: {
     set: vi.fn(() => chain),
     values: vi.fn(() => chain),
     where: vi.fn(() => chain),
-    returning: vi.fn(async () => [{ id: "row_1", slug: "family" }]),
+    returning: vi.fn(async () => [{ id: 'row_1', slug: 'family' }]),
   };
   const memberships = [...(opts.memberships ?? [])];
   return {
@@ -51,12 +51,12 @@ function fakeTx(opts: {
       groups: { findFirst: vi.fn(async () => group) },
       groupMembers: {
         findFirst: vi.fn(async (args?: { with?: unknown }) => {
-          if (args && "with" in args && args.with) {
+          if (args && 'with' in args && args.with) {
             return (
               opts.memberWithUser ?? {
-                id: "row_1",
-                role: "member",
-                user: { id: "u", name: "N", handle: "h", avatarUrl: null },
+                id: 'row_1',
+                role: 'member',
+                user: { id: 'u', name: 'N', handle: 'h', avatarUrl: null },
               }
             );
           }
@@ -81,45 +81,43 @@ beforeEach(() => {
   getGroupSeatLimitMock.mockResolvedValue(null);
 });
 
-const owner = { id: "owner_1" } as unknown as User;
+const owner = { id: 'owner_1' } as unknown as User;
 
-describe("group mutation audit logging (#219)", () => {
-  it("records an audit entry for a member role change", async () => {
+describe('group mutation audit logging (#219)', () => {
+  it('records an audit entry for a member role change', async () => {
     const tx = fakeTx({
       memberships: [
-        { id: "gm_owner", role: "owner", userId: owner.id, groupId: group.id },
+        { id: 'gm_owner', role: 'owner', userId: owner.id, groupId: group.id },
         {
-          id: "gm_target",
-          role: "member",
-          userId: "target_1",
+          id: 'gm_target',
+          role: 'member',
+          userId: 'target_1',
           groupId: group.id,
         },
       ],
     });
     runWith(tx);
 
-    await updateMemberRole(group.slug, owner, "target_1", "admin");
+    await updateMemberRole(group.slug, owner, 'target_1', 'admin');
 
     expect(recordAuditMock).toHaveBeenCalledWith(
       tx,
       expect.objectContaining({
         actorId: owner.id,
         action: AuditAction.GroupMemberRoleUpdated,
-        targetType: "group",
+        targetType: 'group',
         targetId: group.id,
         metadata: expect.objectContaining({
-          from: "member",
-          to: "admin",
+          from: 'member',
+          to: 'admin',
         }) as Record<string, unknown>,
       }),
     );
   });
 
-  it("records an audit entry when a group is deleted", async () => {
+  it('records an audit entry when a group is deleted', async () => {
     const tx = fakeTx({
-      memberships: [
-        { id: "gm_owner", role: "owner", userId: owner.id, groupId: group.id },
-      ],
+      memberships: [{ id: 'gm_owner', role: 'owner', userId: owner.id, groupId: group.id }],
     });
     runWith(tx);
 
@@ -130,23 +128,23 @@ describe("group mutation audit logging (#219)", () => {
       expect.objectContaining({
         actorId: owner.id,
         action: AuditAction.GroupDeleted,
-        targetType: "group",
+        targetType: 'group',
         targetId: group.id,
       }),
     );
   });
 
-  it("records an audit entry for ownership transfer", async () => {
+  it('records an audit entry for ownership transfer', async () => {
     const tx = fakeTx({
       memberships: [
-        { id: "gm_owner", role: "owner", userId: owner.id, groupId: group.id },
-        { id: "gm_target", role: "admin", userId: "new_1", groupId: group.id },
-        { id: "gm_owner2", role: "owner", userId: owner.id, groupId: group.id },
+        { id: 'gm_owner', role: 'owner', userId: owner.id, groupId: group.id },
+        { id: 'gm_target', role: 'admin', userId: 'new_1', groupId: group.id },
+        { id: 'gm_owner2', role: 'owner', userId: owner.id, groupId: group.id },
       ],
     });
     runWith(tx);
 
-    await transferOwnership(group.slug, owner, "new_1");
+    await transferOwnership(group.slug, owner, 'new_1');
 
     expect(recordAuditMock).toHaveBeenCalledWith(
       tx,

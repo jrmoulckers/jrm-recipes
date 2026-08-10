@@ -1,4 +1,4 @@
-import { ListRowSkeleton, Skeleton } from "~/components/ui/skeleton";
+import { ListRowSkeleton, Skeleton } from '~/components/ui/skeleton';
 
 /**
  * Shared fallback for the streamed recipe tab sections (#176). Mirrors the

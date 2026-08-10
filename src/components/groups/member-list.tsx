@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Crown, Settings, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Crown, Settings, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
 import {
   removeMemberAction,
   transferOwnershipAction,
   updateMemberRoleAction,
-} from "~/server/groups/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
+} from '~/server/groups/actions';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +21,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { useConfirm } from "~/components/ui/confirm-dialog";
-import { RoleBadge, type DisplayRole } from "./role-badge";
+} from '~/components/ui/dropdown-menu';
+import { useConfirm } from '~/components/ui/confirm-dialog';
+import { RoleBadge, type DisplayRole } from './role-badge';
 
-type ManageableRole = Exclude<DisplayRole, "owner">;
+type ManageableRole = Exclude<DisplayRole, 'owner'>;
 
 export type MemberListMember = {
   id: string;
@@ -40,16 +40,16 @@ export type MemberListMember = {
   };
 };
 
-const MANAGEABLE_ROLES: ManageableRole[] = ["admin", "member", "kid"];
+const MANAGEABLE_ROLES: ManageableRole[] = ['admin', 'member', 'kid'];
 
 function initials(name: string | null, handle: string | null) {
-  const source = name ?? handle ?? "Cook";
+  const source = name ?? handle ?? 'Cook';
   return source
     .split(/\s+/)
     .filter(Boolean)
     .map((part) => part[0])
     .slice(0, 2)
-    .join("")
+    .join('')
     .toUpperCase();
 }
 
@@ -58,9 +58,9 @@ function displayName(member: MemberListMember, fallback: string) {
 }
 
 function canRemove(viewerRole: DisplayRole | null, member: MemberListMember) {
-  if (member.role === "owner") return false;
-  if (viewerRole === "owner") return true;
-  if (viewerRole === "admin") return member.role !== "admin";
+  if (member.role === 'owner') return false;
+  if (viewerRole === 'owner') return true;
+  if (viewerRole === 'admin') return member.role !== 'admin';
   return false;
 }
 
@@ -74,19 +74,15 @@ export function MemberList({
   members: MemberListMember[];
 }) {
   const router = useRouter();
-  const t = useTranslations("groups.members");
+  const t = useTranslations('groups.members');
   const [pendingKey, setPendingKey] = React.useState<string | null>(null);
-  const [openMenuUserId, setOpenMenuUserId] = React.useState<string | null>(
-    null,
-  );
+  const [openMenuUserId, setOpenMenuUserId] = React.useState<string | null>(null);
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
 
   function runAction(
     key: string,
-    action: () => Promise<
-      { ok: true; slug?: string } | { ok: false; error: string }
-    >,
+    action: () => Promise<{ ok: true; slug?: string } | { ok: false; error: string }>,
     successMessage: string,
   ) {
     setPendingKey(key);
@@ -104,9 +100,7 @@ export function MemberList({
     });
   }
 
-  async function confirmAfterDropdownCloses(
-    options: Parameters<typeof confirm>[0],
-  ) {
+  async function confirmAfterDropdownCloses(options: Parameters<typeof confirm>[0]) {
     setOpenMenuUserId(null);
     await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     return confirm(options);
@@ -115,12 +109,11 @@ export function MemberList({
   return (
     <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
       {members.map((member) => {
-        const name = displayName(member, t("fallbackMember"));
+        const name = displayName(member, t('fallbackMember'));
         const roleName = (role: ManageableRole) => t(`roles.${role}`);
-        const canChangeRole = viewerRole === "owner" && member.role !== "owner";
-        const canTransfer = viewerRole === "owner" && member.role !== "owner";
-        const showActions =
-          canChangeRole || canTransfer || canRemove(viewerRole, member);
+        const canChangeRole = viewerRole === 'owner' && member.role !== 'owner';
+        const canTransfer = viewerRole === 'owner' && member.role !== 'owner';
+        const showActions = canChangeRole || canTransfer || canRemove(viewerRole, member);
 
         return (
           <div
@@ -132,16 +125,12 @@ export function MemberList({
                 {member.user.avatarUrl ? (
                   <AvatarImage src={member.user.avatarUrl} alt={name} />
                 ) : null}
-                <AvatarFallback>
-                  {initials(member.user.name, member.user.handle)}
-                </AvatarFallback>
+                <AvatarFallback>{initials(member.user.name, member.user.handle)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate font-medium">{name}</p>
                 <p className="truncate text-sm text-muted-foreground">
-                  {member.user.handle
-                    ? `@${member.user.handle}`
-                    : t("noHandle")}
+                  {member.user.handle ? `@${member.user.handle}` : t('noHandle')}
                 </p>
               </div>
             </div>
@@ -151,19 +140,15 @@ export function MemberList({
               {showActions ? (
                 <DropdownMenu
                   open={openMenuUserId === member.userId}
-                  onOpenChange={(open) =>
-                    setOpenMenuUserId(open ? member.userId : null)
-                  }
+                  onOpenChange={(open) => setOpenMenuUserId(open ? member.userId : null)}
                 >
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={t("a11y.manageMember", { name })}
-                      disabled={
-                        isPending && pendingKey?.startsWith(member.userId)
-                      }
+                      aria-label={t('a11y.manageMember', { name })}
+                      disabled={isPending && pendingKey?.startsWith(member.userId)}
                     >
                       <Settings />
                     </Button>
@@ -171,7 +156,7 @@ export function MemberList({
                   <DropdownMenuContent align="end">
                     {canChangeRole ? (
                       <>
-                        <DropdownMenuLabel>{t("changeRole")}</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('changeRole')}</DropdownMenuLabel>
                         {MANAGEABLE_ROLES.map((role) => (
                           <DropdownMenuItem
                             key={role}
@@ -183,7 +168,7 @@ export function MemberList({
                                   updateMemberRoleAction(slug, member.userId, {
                                     role,
                                   }),
-                                t("toast.roleChanged", {
+                                t('toast.roleChanged', {
                                   name,
                                   role: roleName(role).toLowerCase(),
                                 }),
@@ -203,9 +188,9 @@ export function MemberList({
                           onSelect={async (event) => {
                             event.preventDefault();
                             const ok = await confirmAfterDropdownCloses({
-                              title: t("confirm.transfer.title", { name }),
-                              description: t("confirm.transfer.description"),
-                              confirmLabel: t("confirm.transfer.confirmLabel"),
+                              title: t('confirm.transfer.title', { name }),
+                              description: t('confirm.transfer.description'),
+                              confirmLabel: t('confirm.transfer.confirmLabel'),
                               destructive: false,
                             });
                             if (!ok) return;
@@ -215,12 +200,12 @@ export function MemberList({
                                 transferOwnershipAction(slug, {
                                   newOwnerUserId: member.userId,
                                 }),
-                              t("toast.ownershipTransferred", { name }),
+                              t('toast.ownershipTransferred', { name }),
                             );
                           }}
                         >
                           <Crown />
-                          {t("transferOwnership")}
+                          {t('transferOwnership')}
                         </DropdownMenuItem>
                       </>
                     ) : null}
@@ -233,20 +218,20 @@ export function MemberList({
                           onSelect={async (event) => {
                             event.preventDefault();
                             const ok = await confirmAfterDropdownCloses({
-                              title: t("confirm.remove.title", { name }),
-                              description: t("confirm.remove.description"),
-                              confirmLabel: t("confirm.remove.confirmLabel"),
+                              title: t('confirm.remove.title', { name }),
+                              description: t('confirm.remove.description'),
+                              confirmLabel: t('confirm.remove.confirmLabel'),
                             });
                             if (!ok) return;
                             runAction(
                               `${member.userId}:remove`,
                               () => removeMemberAction(slug, member.userId),
-                              t("toast.removed", { name }),
+                              t('toast.removed', { name }),
                             );
                           }}
                         >
                           <Trash2 />
-                          {t("removeFromGroup")}
+                          {t('removeFromGroup')}
                         </DropdownMenuItem>
                       </>
                     ) : null}

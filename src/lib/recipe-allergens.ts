@@ -11,16 +11,9 @@
  * pure (the DB join lives in `src/server/recipes/allergens.ts`) makes the
  * union/fallback logic exhaustively unit-testable without a database.
  */
-import {
-  ALLERGENS,
-  detectAllergensForSafety,
-  isAllergen,
-  type Allergen,
-} from "./allergens";
+import { ALLERGENS, detectAllergensForSafety, isAllergen, type Allergen } from './allergens';
 
-const ALLERGEN_ORDER = new Map<Allergen, number>(
-  ALLERGENS.map((a, i) => [a, i]),
-);
+const ALLERGEN_ORDER = new Map<Allergen, number>(ALLERGENS.map((a, i) => [a, i]));
 
 function sortAllergens(list: Allergen[]): Allergen[] {
   return [...new Set(list)].sort(
@@ -58,8 +51,6 @@ export function ingredientAllergens(src: AllergenIngredientSource): Allergen[] {
  * sorted union of every line's allergens (structured where known, text where
  * not). An empty ingredient list yields `[]`.
  */
-export function unionIngredientAllergens(
-  srcs: readonly AllergenIngredientSource[],
-): Allergen[] {
+export function unionIngredientAllergens(srcs: readonly AllergenIngredientSource[]): Allergen[] {
   return sortAllergens(srcs.flatMap((src) => ingredientAllergens(src)));
 }

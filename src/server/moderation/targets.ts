@@ -1,15 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { eq } from "drizzle-orm";
-import type { PgColumn } from "drizzle-orm/pg-core";
+import { eq } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 
-import { type db } from "~/server/db";
-import {
-  comments,
-  reviews,
-  cookLogEntries,
-  type ModerationTarget,
-} from "~/server/db/schema";
+import { type db } from '~/server/db';
+import { comments, reviews, cookLogEntries, type ModerationTarget } from '~/server/db/schema';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db;
 
@@ -50,7 +45,7 @@ export async function resolveTarget(
   targetType: ModerationTarget,
   targetId: string,
 ): Promise<ResolvedTarget | null> {
-  if (targetType === "comment") {
+  if (targetType === 'comment') {
     const row = await exec.query.comments.findFirst({
       where: eqId(comments.id, targetId),
       columns: {
@@ -74,7 +69,7 @@ export async function resolveTarget(
     };
   }
 
-  if (targetType === "review") {
+  if (targetType === 'review') {
     const row = await exec.query.reviews.findFirst({
       where: eqId(reviews.id, targetId),
       columns: {
@@ -94,7 +89,7 @@ export async function resolveTarget(
       authorId: row.userId,
       recipeId: row.recipeId,
       recipe: row.recipe,
-      preview: row.title ?? row.body ?? "(review)",
+      preview: row.title ?? row.body ?? '(review)',
       hiddenAt: row.hiddenAt,
     };
   }
@@ -117,7 +112,7 @@ export async function resolveTarget(
     authorId: row.userId,
     recipeId: row.recipeId,
     recipe: row.recipe,
-    preview: row.note ?? "(cook photo)",
+    preview: row.note ?? '(cook photo)',
     hiddenAt: row.hiddenAt,
   };
 }

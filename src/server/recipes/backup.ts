@@ -1,9 +1,6 @@
-import {
-  recipeDownloadFilename,
-  serializeRecipeMarkdown,
-} from "~/components/print/export";
-import type { PrintRecipe } from "~/components/print/types";
-import { createZip, type ZipEntry } from "~/lib/zip";
+import { recipeDownloadFilename, serializeRecipeMarkdown } from '~/components/print/export';
+import type { PrintRecipe } from '~/components/print/types';
+import { createZip, type ZipEntry } from '~/lib/zip';
 
 export type CookbookArchive = {
   filename: string;
@@ -22,7 +19,7 @@ function isoDate(date: Date): string {
  * rows ever share one (or an empty slug falls back to a titled name).
  */
 function uniqueMarkdownName(recipe: PrintRecipe, taken: Set<string>): string {
-  const base = recipeDownloadFilename(recipe, "md").replace(/\.md$/, "");
+  const base = recipeDownloadFilename(recipe, 'md').replace(/\.md$/, '');
   let candidate = `${base}.md`;
   let n = 2;
   while (taken.has(candidate.toLowerCase())) {
@@ -35,23 +32,21 @@ function uniqueMarkdownName(recipe: PrintRecipe, taken: Set<string>): string {
 
 function readme(recipes: PrintRecipe[], date: Date): string {
   return [
-    "# Your Heirloom cookbook",
-    "",
-    `Exported ${isoDate(date)}. ${recipes.length} ${
-      recipes.length === 1 ? "recipe" : "recipes"
-    }.`,
-    "",
-    "This is your complete family cookbook, yours to keep. It needs no",
-    "account, app, or internet to read:",
-    "",
-    "- `recipes/`. One Markdown file per recipe (open in any text editor).",
-    "- `recipes.json`. The same recipes as structured data, so a future tool",
-    "  (or a future Heirloom) can read everything back in without loss.",
-    "",
-    "Stories, who a recipe was handed down from, and where it came from are all",
+    '# Your Heirloom cookbook',
+    '',
+    `Exported ${isoDate(date)}. ${recipes.length} ${recipes.length === 1 ? 'recipe' : 'recipes'}.`,
+    '',
+    'This is your complete family cookbook, yours to keep. It needs no',
+    'account, app, or internet to read:',
+    '',
+    '- `recipes/`. One Markdown file per recipe (open in any text editor).',
+    '- `recipes.json`. The same recipes as structured data, so a future tool',
+    '  (or a future Heirloom) can read everything back in without loss.',
+    '',
+    'Stories, who a recipe was handed down from, and where it came from are all',
     "included so nothing about your family's history is left behind.",
-    "",
-  ].join("\n");
+    '',
+  ].join('\n');
 }
 
 /**
@@ -68,9 +63,7 @@ export function buildCookbookArchive(
   now: Date = new Date(),
 ): CookbookArchive {
   const taken = new Set<string>();
-  const entries: ZipEntry[] = [
-    { name: "README.md", data: readme(recipes, now) },
-  ];
+  const entries: ZipEntry[] = [{ name: 'README.md', data: readme(recipes, now) }];
 
   for (const recipe of recipes) {
     entries.push({
@@ -80,12 +73,8 @@ export function buildCookbookArchive(
   }
 
   entries.push({
-    name: "recipes.json",
-    data: `${JSON.stringify(
-      { exportedAt: now.toISOString(), version: 1, recipes },
-      null,
-      2,
-    )}\n`,
+    name: 'recipes.json',
+    data: `${JSON.stringify({ exportedAt: now.toISOString(), version: 1, recipes }, null, 2)}\n`,
   });
 
   return {

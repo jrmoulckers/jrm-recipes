@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { ChefHat } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import Link from 'next/link';
+import { ChefHat } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { brand } from "~/config/brand";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { CloseButton } from "~/components/ui/close-button";
+import { brand } from '~/config/brand';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { CloseButton } from '~/components/ui/close-button';
 
 /** Step order for the welcome card. Keys match `onboarding.welcome.steps`. */
-const WELCOME_STEPS = ["create", "cook", "share"] as const;
+const WELCOME_STEPS = ['create', 'cook', 'share'] as const;
 
 /** localStorage flag, mirroring the install-prompt dismissal pattern. */
-export const WELCOME_DISMISS_KEY = "heirloom:welcome-dismissed";
+export const WELCOME_DISMISS_KEY = 'heirloom:welcome-dismissed';
 
 /** Whether the first-run welcome has already been dismissed on this device. */
 export function welcomeDismissed(): boolean {
   try {
-    return window.localStorage.getItem(WELCOME_DISMISS_KEY) === "1";
+    return window.localStorage.getItem(WELCOME_DISMISS_KEY) === '1';
   } catch {
     return false;
   }
@@ -34,7 +34,7 @@ export function welcomeDismissed(): boolean {
  * message catalogs under `onboarding.welcome`.
  */
 export function WelcomeChecklist() {
-  const t = useTranslations("onboarding.welcome");
+  const t = useTranslations('onboarding.welcome');
   // Start hidden and reveal after mount so the persisted-dismissal check runs
   // client-side only (no SSR/CSR flash of a card the user already dismissed).
   // `mounted` keeps the card in the DOM; `entered` drives a gentle fade/rise on
@@ -53,7 +53,7 @@ export function WelcomeChecklist() {
 
   const dismiss = React.useCallback(() => {
     try {
-      window.localStorage.setItem(WELCOME_DISMISS_KEY, "1");
+      window.localStorage.setItem(WELCOME_DISMISS_KEY, '1');
     } catch {
       // Storage unavailable (private mode). Just hide for this session.
     }
@@ -68,27 +68,23 @@ export function WelcomeChecklist() {
     <section
       aria-labelledby="welcome-checklist-heading"
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-token-sm sm:p-8",
-        "transition-all duration-base ease-standard motion-reduce:transition-none",
+        'relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-token-sm sm:p-8',
+        'transition-all duration-base ease-standard motion-reduce:transition-none',
         entered
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-1 opacity-0 motion-reduce:translate-y-0",
+          ? 'translate-y-0 opacity-100'
+          : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
       )}
     >
-      <CloseButton
-        onClick={dismiss}
-        label={t("dismiss")}
-        className="absolute end-3 top-3"
-      />
+      <CloseButton onClick={dismiss} label={t('dismiss')} className="absolute end-3 top-3" />
 
       <div className="max-w-xl">
         <h2
           id="welcome-checklist-heading"
           className="font-display text-2xl font-bold tracking-tight"
         >
-          {t("heading", { brand: brand.name })}
+          {t('heading', { brand: brand.name })}
         </h2>
-        <p className="mt-1 text-muted-foreground">{t("subheading")}</p>
+        <p className="mt-1 text-muted-foreground">{t('subheading')}</p>
       </div>
 
       <ol className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -97,20 +93,18 @@ export function WelcomeChecklist() {
             <span
               aria-hidden
               className={cn(
-                "inline-flex size-8 items-center justify-center rounded-full",
-                "bg-primary/12 font-semibold text-primary",
+                'inline-flex size-8 items-center justify-center rounded-full',
+                'bg-primary/12 font-semibold text-primary',
               )}
             >
               {i + 1}
             </span>
             <span className="font-semibold">{t(`steps.${step}.title`)}</span>
-            <span className="text-sm text-muted-foreground">
-              {t(`steps.${step}.body`)}
-            </span>
+            <span className="text-sm text-muted-foreground">{t(`steps.${step}.body`)}</span>
             {i === 0 && (
               <Button asChild size="sm" className="mt-1 self-start">
                 <Link href="/recipes/new">
-                  <ChefHat /> {t("cta")}
+                  <ChefHat /> {t('cta')}
                 </Link>
               </Button>
             )}

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { ChefHat, ListChecks, Check, UtensilsCrossed, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import Link from 'next/link';
+import { ChefHat, ListChecks, Check, UtensilsCrossed, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { Button } from "~/components/ui/button";
-import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
-import type { IngredientsPanelControls } from "~/components/recipe/ingredients-panel";
-import { cn } from "~/lib/utils";
-import { derivePrepTasks } from "~/lib/mise-en-place";
+import { Button } from '~/components/ui/button';
+import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
+import type { IngredientsPanelControls } from '~/components/recipe/ingredients-panel';
+import { cn } from '~/lib/utils';
+import { derivePrepTasks } from '~/lib/mise-en-place';
 
-import type { CookRecipe } from "./types";
+import type { CookRecipe } from './types';
 
 /**
  * Mise en place pre-cook screen (#402): "gather & prep everything before step
@@ -32,11 +32,8 @@ export function MiseEnPlaceScreen({
   largeTargets: boolean;
   onStart: () => void;
 }) {
-  const t = useTranslations("cook");
-  const prepTasks = React.useMemo(
-    () => derivePrepTasks(recipe.ingredients),
-    [recipe.ingredients],
-  );
+  const t = useTranslations('cook');
+  const prepTasks = React.useMemo(() => derivePrepTasks(recipe.ingredients), [recipe.ingredients]);
   const [prepDone, setPrepDone] = React.useState<Set<string>>(new Set());
 
   const ingredientCount = recipe.ingredients.length;
@@ -46,19 +43,12 @@ export function MiseEnPlaceScreen({
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-muted-foreground">
-              {t("miseEnPlace.subtitle")}
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">{t('miseEnPlace.subtitle')}</p>
             <h1 className="truncate font-display text-lg font-semibold tracking-tight sm:text-2xl">
               {recipe.title}
             </h1>
           </div>
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            aria-label={t("a11y.exit")}
-          >
+          <Button asChild variant="ghost" size="icon" aria-label={t('a11y.exit')}>
             <Link href={`/recipes/${recipe.slug}`}>
               <X />
             </Link>
@@ -72,10 +62,10 @@ export function MiseEnPlaceScreen({
             🧺
           </span>
           <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("miseEnPlace.heading")}
+            {t('miseEnPlace.heading')}
           </h2>
           <p className="max-w-prose text-muted-foreground">
-            {t("miseEnPlace.body", { count: ingredientCount })}
+            {t('miseEnPlace.body', { count: ingredientCount })}
           </p>
         </div>
 
@@ -83,7 +73,7 @@ export function MiseEnPlaceScreen({
           <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
             <h3 className="flex items-center gap-2 font-display text-xl font-semibold">
               <UtensilsCrossed className="size-5 text-primary" />
-              {t("miseEnPlace.prepAhead")}
+              {t('miseEnPlace.prepAhead')}
             </h3>
             <ul className="mt-4 flex flex-col gap-1.5">
               {prepTasks.map((task) => {
@@ -102,33 +92,26 @@ export function MiseEnPlaceScreen({
                         })
                       }
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-1 py-2 text-start text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        largeTargets && "py-3 text-lg",
+                        'flex w-full items-center gap-3 rounded-lg px-1 py-2 text-start text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        largeTargets && 'py-3 text-lg',
                       )}
                     >
                       <span
                         aria-hidden="true"
                         className={cn(
-                          "flex size-6 shrink-0 items-center justify-center rounded-md border border-input",
-                          isDone &&
-                            "border-primary bg-primary text-primary-foreground",
+                          'flex size-6 shrink-0 items-center justify-center rounded-md border border-input',
+                          isDone && 'border-primary bg-primary text-primary-foreground',
                         )}
                       >
                         {isDone && <Check className="size-4" />}
                       </span>
                       <span
-                        className={cn(
-                          "min-w-0",
-                          isDone && "text-muted-foreground line-through",
-                        )}
+                        className={cn('min-w-0', isDone && 'text-muted-foreground line-through')}
                       >
-                        <span className="font-medium text-foreground">
-                          {task.prep}
-                        </span>{" "}
-                        {task.item}
+                        <span className="font-medium text-foreground">{task.prep}</span> {task.item}
                         {task.optional && (
                           <span className="ms-1 text-sm text-muted-foreground">
-                            {t("miseEnPlace.optional")}
+                            {t('miseEnPlace.optional')}
                           </span>
                         )}
                       </span>
@@ -143,7 +126,7 @@ export function MiseEnPlaceScreen({
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-token">
           <h3 className="flex items-center gap-2 font-display text-xl font-semibold">
             <ListChecks className="size-5 text-primary" />
-            {t("miseEnPlace.gatherIngredients")}
+            {t('miseEnPlace.gatherIngredients')}
           </h3>
           <div className="mt-4">
             {ingredientCount > 0 ? (
@@ -155,9 +138,7 @@ export function MiseEnPlaceScreen({
                 nutrition={recipe.nutrition}
               />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("miseEnPlace.noIngredients")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('miseEnPlace.noIngredients')}</p>
             )}
           </div>
         </section>
@@ -171,12 +152,12 @@ export function MiseEnPlaceScreen({
             onClick={onStart}
             size="xl"
             className={cn(
-              "w-full gap-2 rounded-2xl font-bold",
-              largeTargets ? "h-[4.5rem] text-xl sm:h-20" : "h-16 text-lg",
+              'w-full gap-2 rounded-2xl font-bold',
+              largeTargets ? 'h-[4.5rem] text-xl sm:h-20' : 'h-16 text-lg',
             )}
           >
             <ChefHat aria-hidden="true" />
-            {t("miseEnPlace.startCooking")}
+            {t('miseEnPlace.startCooking')}
           </Button>
         </div>
       </footer>

@@ -1,25 +1,19 @@
-import { relations } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  pgTable,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { relations } from 'drizzle-orm';
+import { boolean, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-import { pk, fk, timestamps } from "./_shared";
-import { groupMembers } from "./groups";
-import { recipes } from "./recipes";
-import { comments, ratings } from "./engagement";
-import { reviews } from "./reviews";
-import { follows } from "./follows";
+import { pk, fk, timestamps } from './_shared';
+import { groupMembers } from './groups';
+import { recipes } from './recipes';
+import { comments, ratings } from './engagement';
+import { reviews } from './reviews';
+import { follows } from './follows';
 
 /**
  * Application users. Mirrors the identity provider (Clerk) but is the source of
  * truth for app data. `clerkId` is null for dev-bypass / seeded users.
  */
 export const users = pgTable(
-  "users",
+  'users',
   {
     id: pk(),
     clerkId: varchar({ length: 191 }).unique(),
@@ -58,7 +52,7 @@ export const users = pgTable(
     deletedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
-  (t) => [index("users_clerk_id_idx").on(t.clerkId)],
+  (t) => [index('users_clerk_id_idx').on(t.clerkId)],
 );
 
 /**
@@ -76,26 +70,23 @@ export const users = pgTable(
  * anonymized account stops leaking the personal slug it used to hold.
  */
 export const userSlugAliases = pgTable(
-  "user_slug_aliases",
+  'user_slug_aliases',
   {
     slug: varchar({ length: 60 }).primaryKey(),
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("user_slug_aliases_user_idx").on(t.userId)],
+  (t) => [index('user_slug_aliases_user_idx').on(t.userId)],
 );
 
-export const userSlugAliasesRelations = relations(
-  userSlugAliases,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [userSlugAliases.userId],
-      references: [users.id],
-    }),
+export const userSlugAliasesRelations = relations(userSlugAliases, ({ one }) => ({
+  user: one(users, {
+    fields: [userSlugAliases.userId],
+    references: [users.id],
   }),
-);
+}));
 
 export type UserSlugAlias = typeof userSlugAliases.$inferSelect;
 
@@ -105,8 +96,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   ratings: many(ratings),
   comments: many(comments),
   reviews: many(reviews),
-  following: many(follows, { relationName: "follower" }),
-  followers: many(follows, { relationName: "followee" }),
+  following: many(follows, { relationName: 'follower' }),
+  followers: many(follows, { relationName: 'followee' }),
   slugAliases: many(userSlugAliases),
 }));
 

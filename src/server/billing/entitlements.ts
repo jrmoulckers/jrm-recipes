@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or } from 'drizzle-orm';
 
 import {
   getPlanEntitlements,
@@ -9,8 +9,8 @@ import {
   type LimitKey,
   type LimitValue,
   type PlanId,
-} from "~/config/plans";
-import { db, isDbConfigured } from "~/server/db";
+} from '~/config/plans';
+import { db, isDbConfigured } from '~/server/db';
 import {
   billingCustomers,
   groupMembers,
@@ -18,9 +18,9 @@ import {
   type SubscriptionStatus,
   type UsageMetric,
   type User,
-} from "~/server/db/schema";
-import { getUsage } from "./usage";
-import { getActiveGiftPlanId } from "./gifting";
+} from '~/server/db/schema';
+import { getUsage } from './usage';
+import { getActiveGiftPlanId } from './gifting';
 
 /**
  * Entitlements resolver (issue #302). The single answer to "what may this user
@@ -38,10 +38,10 @@ import { getActiveGiftPlanId } from "./gifting";
  */
 
 /** Subscription statuses that grant their plan's entitlements. */
-const ENTITLED_STATUSES: readonly SubscriptionStatus[] = ["active", "trialing"];
+const ENTITLED_STATUSES: readonly SubscriptionStatus[] = ['active', 'trialing'];
 
 /** Message thrown by {@link requireEntitlement}. Distinct from UNAUTHENTICATED. */
-export const UPGRADE_REQUIRED = "UPGRADE_REQUIRED";
+export const UPGRADE_REQUIRED = 'UPGRADE_REQUIRED';
 
 /**
  * Thrown when a user lacks a required premium entitlement. Mirrors how
@@ -52,15 +52,13 @@ export class UpgradeRequiredError extends Error {
   readonly entitlement: FeatureFlagKey;
   constructor(entitlement: FeatureFlagKey) {
     super(UPGRADE_REQUIRED);
-    this.name = "UpgradeRequiredError";
+    this.name = 'UpgradeRequiredError';
     this.entitlement = entitlement;
   }
 }
 
 /** True for the error thrown by {@link requireEntitlement} (message-based too). */
-export function isUpgradeRequiredError(
-  error: unknown,
-): error is UpgradeRequiredError {
+export function isUpgradeRequiredError(error: unknown): error is UpgradeRequiredError {
   return error instanceof Error && error.message === UPGRADE_REQUIRED;
 }
 
@@ -70,11 +68,8 @@ export function isUpgradeRequiredError(
  * only active/trialing rows whose period hasn't lapsed, and lets any paid plan
  * win over Free. Falls back to Free on an unconfigured DB or no match.
  */
-export async function getEffectivePlanId(
-  user: User,
-  now: Date = new Date(),
-): Promise<PlanId> {
-  if (!isDbConfigured()) return "free";
+export async function getEffectivePlanId(user: User, now: Date = new Date()): Promise<PlanId> {
+  if (!isDbConfigured()) return 'free';
 
   const memberships = await db.query.groupMembers.findMany({
     where: eq(groupMembers.userId, user.id),
@@ -106,20 +101,17 @@ export async function getEffectivePlanId(
         (s.currentPeriodEnd === null || s.currentPeriodEnd > now),
     );
     // Only free/family exist today. Any paid plan beats Free.
-    if (active.some((s) => s.planId !== "free")) return "family";
+    if (active.some((s) => s.planId !== 'free')) return 'family';
   }
 
   // No entitling subscription. A redeemed, unexpired gift can still grant
   // Family (#331), resolved here so no feature call site special-cases gifts.
   const giftPlan = await getActiveGiftPlanId(user.id, now);
-  return giftPlan ?? "free";
+  return giftPlan ?? 'free';
 }
 
 /** The concrete entitlements for the caller's effective plan (Free by default). */
-export async function getEntitlements(
-  user: User,
-  now: Date = new Date(),
-): Promise<Entitlements> {
+export async function getEntitlements(user: User, now: Date = new Date()): Promise<Entitlements> {
   return getPlanEntitlements(await getEffectivePlanId(user, now));
 }
 
@@ -167,7 +159,7 @@ export async function requireEntitlement(
 export const USAGE_WARN_RATIO = 0.8;
 
 /** Where a user sits against a numeric cap. */
-export type LimitState = "ok" | "warn" | "blocked";
+export type LimitState = 'ok' | 'warn' | 'blocked';
 
 /** Live snapshot of usage vs. a plan limit, for soft-limit checks + meters. */
 export interface LimitStatus {
@@ -202,13 +194,12 @@ export async function getLimitStatus(
   ]);
 
   if (limit === null) {
-    return { limit: null, used, remaining: null, ratio: 0, state: "ok" };
+    return { limit: null, used, remaining: null, ratio: 0, state: 'ok' };
   }
 
   const remaining = Math.max(0, limit - used);
   const ratio = limit === 0 ? 1 : used / limit;
-  const state: LimitState =
-    used >= limit ? "blocked" : ratio >= USAGE_WARN_RATIO ? "warn" : "ok";
+  const state: LimitState = used >= limit ? 'blocked' : ratio >= USAGE_WARN_RATIO ? 'warn' : 'ok';
 
   return { limit, used, remaining, ratio, state };
 }
@@ -279,8 +270,8 @@ export async function getSubscriptionSnapshot(
   // Prefer a paid plan, then the furthest renewal, so the surface reflects the
   // subscription that actually grants the user's entitlements.
   const best = active.reduce((winner, s) => {
-    const winnerPaid = winner.planId !== "free";
-    const candidatePaid = s.planId !== "free";
+    const winnerPaid = winner.planId !== 'free';
+    const candidatePaid = s.planId !== 'free';
     if (candidatePaid !== winnerPaid) return candidatePaid ? s : winner;
     const winnerEnd = winner.currentPeriodEnd?.getTime() ?? 0;
     const candidateEnd = s.currentPeriodEnd?.getTime() ?? 0;
@@ -310,7 +301,7 @@ export async function getGroupSeatLimit(
   groupId: string,
   now: Date = new Date(),
 ): Promise<number | null> {
-  const freeLimit = getPlanEntitlements("free").maxFamilyMembers;
+  const freeLimit = getPlanEntitlements('free').maxFamilyMembers;
   if (!isDbConfigured()) return freeLimit;
 
   const customers = await db.query.billingCustomers.findMany({
@@ -338,9 +329,7 @@ export async function getGroupSeatLimit(
   );
   if (active.length === 0) return freeLimit;
 
-  const planId: PlanId = active.some((s) => s.planId !== "free")
-    ? "family"
-    : "free";
+  const planId: PlanId = active.some((s) => s.planId !== 'free') ? 'family' : 'free';
   const planMax = getPlanEntitlements(planId).maxFamilyMembers;
   if (planMax === null) return null;
 

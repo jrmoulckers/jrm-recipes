@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { getUnitInfo, type Dimension } from "~/lib/units";
+import { getUnitInfo, type Dimension } from '~/lib/units';
 
 /**
  * Validation contract for a user's unit preferences and custom units
@@ -11,11 +11,11 @@ import { getUnitInfo, type Dimension } from "~/lib/units";
  * the wrong dimension).
  */
 
-export const MEASUREMENT_SYSTEMS = ["us", "metric"] as const;
+export const MEASUREMENT_SYSTEMS = ['us', 'metric'] as const;
 export type MeasurementSystemValue = (typeof MEASUREMENT_SYSTEMS)[number];
 
 /** Dimensions a user can define a custom unit for (temperature is affine). */
-export const CUSTOM_UNIT_DIMENSIONS = ["volume", "mass", "count"] as const;
+export const CUSTOM_UNIT_DIMENSIONS = ['volume', 'mass', 'count'] as const;
 export type CustomUnitDimension = (typeof CUSTOM_UNIT_DIMENSIONS)[number];
 
 const optionalUnit = z
@@ -31,10 +31,7 @@ const optionalUnit = z
  * invalid only when it names a built-in unit of the *wrong* dimension (e.g. "g"
  * offered as a volume default).
  */
-function overrideMatchesDimension(
-  value: string | undefined,
-  dimension: Dimension,
-): boolean {
+function overrideMatchesDimension(value: string | undefined, dimension: Dimension): boolean {
   if (!value) return true;
   const info = getUnitInfo(value);
   return info == null || info.dimension === dimension;
@@ -42,7 +39,7 @@ function overrideMatchesDimension(
 
 export const unitPreferencesInput = z
   .object({
-    defaultSystem: z.enum(MEASUREMENT_SYSTEMS).default("metric"),
+    defaultSystem: z.enum(MEASUREMENT_SYSTEMS).default('metric'),
     volumeUnit: optionalUnit,
     liquidVolumeUnit: optionalUnit,
     dryVolumeUnit: optionalUnit,
@@ -54,34 +51,34 @@ export const unitPreferencesInput = z
   })
   .superRefine((val, ctx) => {
     for (const key of [
-      "volumeUnit",
-      "liquidVolumeUnit",
-      "dryVolumeUnit",
-      "smallVolumeUnit",
+      'volumeUnit',
+      'liquidVolumeUnit',
+      'dryVolumeUnit',
+      'smallVolumeUnit',
     ] as const) {
-      if (!overrideMatchesDimension(val[key], "volume")) {
+      if (!overrideMatchesDimension(val[key], 'volume')) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: [key],
-          message: "Pick a volume unit.",
+          message: 'Pick a volume unit.',
         });
       }
     }
-    if (!overrideMatchesDimension(val.massUnit, "mass")) {
+    if (!overrideMatchesDimension(val.massUnit, 'mass')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["massUnit"],
-        message: "Pick a weight unit.",
+        path: ['massUnit'],
+        message: 'Pick a weight unit.',
       });
     }
     // Temperature has no custom units, so an override must be a real temp unit.
     if (val.temperatureUnit) {
       const info = getUnitInfo(val.temperatureUnit);
-      if (info?.dimension !== "temperature") {
+      if (info?.dimension !== 'temperature') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["temperatureUnit"],
-          message: "Pick a temperature unit.",
+          path: ['temperatureUnit'],
+          message: 'Pick a temperature unit.',
         });
       }
     }
@@ -94,15 +91,15 @@ const optionalPositive = z
   .union([z.string(), z.number()])
   .optional()
   .transform((v) => {
-    if (v === undefined || v === "" || v === null) return undefined;
-    const n = typeof v === "number" ? v : Number(v);
+    if (v === undefined || v === '' || v === null) return undefined;
+    const n = typeof v === 'number' ? v : Number(v);
     return Number.isFinite(n) ? n : NaN;
   })
   .pipe(z.number().positive().max(1_000_000).optional());
 
 export const customUnitInput = z
   .object({
-    name: z.string().trim().min(1, "Name your unit").max(40),
+    name: z.string().trim().min(1, 'Name your unit').max(40),
     abbreviation: z
       .string()
       .trim()
@@ -121,8 +118,8 @@ export const customUnitInput = z
     if (hasUnit !== hasAmount) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: hasUnit ? ["baseAmount"] : ["baseUnit"],
-        message: "Add both a unit and an amount, or leave both blank.",
+        path: hasUnit ? ['baseAmount'] : ['baseUnit'],
+        message: 'Add both a unit and an amount, or leave both blank.',
       });
     }
     if (val.baseUnit) {
@@ -130,13 +127,13 @@ export const customUnitInput = z
       if (!info) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["baseUnit"],
-          message: "Pick a known unit to convert against.",
+          path: ['baseUnit'],
+          message: 'Pick a known unit to convert against.',
         });
       } else if (info.dimension !== val.dimension) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["baseUnit"],
+          path: ['baseUnit'],
           message: "The equivalent unit must match this unit's type.",
         });
       }

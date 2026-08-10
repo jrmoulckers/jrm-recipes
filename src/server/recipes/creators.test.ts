@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { dbMock, hiddenMock, notifyMock, uniqueSlugMock } = vi.hoisted(() => ({
   dbMock: {
@@ -17,12 +17,12 @@ const { dbMock, hiddenMock, notifyMock, uniqueSlugMock } = vi.hoisted(() => ({
   uniqueSlugMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({ db: dbMock, isDbConfigured: () => true }));
-vi.mock("~/server/moderation/blocks", () => ({
+vi.mock('~/server/db', () => ({ db: dbMock, isDbConfigured: () => true }));
+vi.mock('~/server/moderation/blocks', () => ({
   getHiddenAuthorIds: hiddenMock,
 }));
-vi.mock("~/server/notifications/notify", () => ({ notify: notifyMock }));
-vi.mock("./mutations", () => ({
+vi.mock('~/server/notifications/notify', () => ({ notify: notifyMock }));
+vi.mock('./mutations', () => ({
   uniqueSlug: uniqueSlugMock,
   // Pass-through: the retry wrapper's own behaviour is covered in mutations.test.
   withSlugConflictRetry: (op: () => Promise<unknown>) => op(),
@@ -34,17 +34,17 @@ import {
   inviteRecipeCreator,
   leaveRecipeAsCreator,
   removeRecipeCreator,
-} from "./creators";
+} from './creators';
 
-const OWNER = "user_owner";
-const INVITEE = "user_invitee";
+const OWNER = 'user_owner';
+const INVITEE = 'user_invitee';
 const RECIPE = {
-  id: "rec_1",
-  slug: "apple-pie",
-  title: "Apple Pie",
+  id: 'rec_1',
+  slug: 'apple-pie',
+  title: 'Apple Pie',
   authorId: OWNER,
   deletedAt: null,
-  author: { slug: "ada" },
+  author: { slug: 'ada' },
 };
 
 /** Capture what a mutation wrote, with a chainable tx double. */
@@ -52,14 +52,14 @@ function txDouble() {
   const inserted: Record<string, unknown>[] = [];
   const updated: Record<string, unknown>[] = [];
   let deleteResult: unknown[] = [];
-  let updateResult: unknown[] = [{ id: "rc_1" }];
+  let updateResult: unknown[] = [{ id: 'rc_1' }];
 
   const tx = {
     query: { recipeCreators: { findFirst: vi.fn() } },
     insert: () => ({
       values: (v: Record<string, unknown>) => {
         inserted.push(v);
-        return { returning: () => Promise.resolve([{ id: "rc_1" }]) };
+        return { returning: () => Promise.resolve([{ id: 'rc_1' }]) };
       },
     }),
     update: () => ({
@@ -73,9 +73,7 @@ function txDouble() {
     }),
   };
 
-  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
-    Promise.resolve(cb(tx)),
-  );
+  dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) => Promise.resolve(cb(tx)));
 
   return {
     tx,
@@ -93,18 +91,18 @@ function txDouble() {
 beforeEach(() => {
   vi.clearAllMocks();
   hiddenMock.mockResolvedValue(new Set<string>());
-  uniqueSlugMock.mockResolvedValue("apple-pie");
+  uniqueSlugMock.mockResolvedValue('apple-pie');
   dbMock.query.recipes.findFirst.mockResolvedValue(RECIPE);
   dbMock.query.users.findFirst.mockResolvedValue({
     id: INVITEE,
     deletedAt: null,
-    slug: "bo",
+    slug: 'bo',
   });
   dbMock.query.recipeCreators.findFirst.mockResolvedValue(undefined);
 });
 
-describe("inviteRecipeCreator (owner consent)", () => {
-  it("writes a pending row that carries no slug", async () => {
+describe('inviteRecipeCreator (owner consent)', () => {
+  it('writes a pending row that carries no slug', async () => {
     // The security property: an invitation grants nothing. The DB CHECK forbids
     // a slug on a pending row, so writing one here would fail loudly — this
     // asserts the mutation never tries.
@@ -117,13 +115,13 @@ describe("inviteRecipeCreator (owner consent)", () => {
         recipeId: RECIPE.id,
         userId: INVITEE,
         invitedById: OWNER,
-        status: "pending",
+        status: 'pending',
       },
     ]);
-    expect(inserted[0]).not.toHaveProperty("slug");
+    expect(inserted[0]).not.toHaveProperty('slug');
   });
 
-  it("notifies the invitee", async () => {
+  it('notifies the invitee', async () => {
     txDouble();
 
     await inviteRecipeCreator(RECIPE.id, OWNER, INVITEE);
@@ -133,92 +131,78 @@ describe("inviteRecipeCreator (owner consent)", () => {
       expect.objectContaining({
         recipientId: INVITEE,
         actorId: OWNER,
-        type: "recipe_creator_invite",
+        type: 'recipe_creator_invite',
         recipeId: RECIPE.id,
       }),
     );
   });
 
-  it("refuses a non-owner, and says NOT_FOUND rather than FORBIDDEN", async () => {
+  it('refuses a non-owner, and says NOT_FOUND rather than FORBIDDEN', async () => {
     // Reporting FORBIDDEN would confirm the recipe exists to anyone who guessed
     // an id, so a non-owner gets the same answer as for a missing recipe.
     txDouble();
 
-    await expect(
-      inviteRecipeCreator(RECIPE.id, "user_stranger", INVITEE),
-    ).rejects.toThrow("NOT_FOUND");
-  });
-
-  it("refuses to invite the owner to their own recipe", async () => {
-    txDouble();
-
-    await expect(inviteRecipeCreator(RECIPE.id, OWNER, OWNER)).rejects.toThrow(
-      "FORBIDDEN",
+    await expect(inviteRecipeCreator(RECIPE.id, 'user_stranger', INVITEE)).rejects.toThrow(
+      'NOT_FOUND',
     );
   });
 
-  it("refuses a deleted or unknown target", async () => {
+  it('refuses to invite the owner to their own recipe', async () => {
+    txDouble();
+
+    await expect(inviteRecipeCreator(RECIPE.id, OWNER, OWNER)).rejects.toThrow('FORBIDDEN');
+  });
+
+  it('refuses a deleted or unknown target', async () => {
     txDouble();
     dbMock.query.users.findFirst.mockResolvedValue(undefined);
 
-    await expect(
-      inviteRecipeCreator(RECIPE.id, OWNER, INVITEE),
-    ).rejects.toThrow("USER_NOT_FOUND");
+    await expect(inviteRecipeCreator(RECIPE.id, OWNER, INVITEE)).rejects.toThrow('USER_NOT_FOUND');
   });
 
-  it("refuses when either party has blocked the other", async () => {
+  it('refuses when either party has blocked the other', async () => {
     txDouble();
     hiddenMock.mockResolvedValue(new Set([INVITEE]));
 
-    await expect(
-      inviteRecipeCreator(RECIPE.id, OWNER, INVITEE),
-    ).rejects.toThrow("FORBIDDEN");
+    await expect(inviteRecipeCreator(RECIPE.id, OWNER, INVITEE)).rejects.toThrow('FORBIDDEN');
   });
 
-  it("refuses on a soft-deleted recipe", async () => {
+  it('refuses on a soft-deleted recipe', async () => {
     txDouble();
     dbMock.query.recipes.findFirst.mockResolvedValue(undefined);
 
-    await expect(
-      inviteRecipeCreator(RECIPE.id, OWNER, INVITEE),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(inviteRecipeCreator(RECIPE.id, OWNER, INVITEE)).rejects.toThrow('NOT_FOUND');
   });
 
-  it("reports an existing invitation rather than stacking rows", async () => {
+  it('reports an existing invitation rather than stacking rows', async () => {
     txDouble();
     dbMock.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
 
-    await expect(
-      inviteRecipeCreator(RECIPE.id, OWNER, INVITEE),
-    ).rejects.toThrow("ALREADY_INVITED");
+    await expect(inviteRecipeCreator(RECIPE.id, OWNER, INVITEE)).rejects.toThrow('ALREADY_INVITED');
   });
 });
 
-describe("acceptRecipeCreatorInvite (invitee consent)", () => {
+describe('acceptRecipeCreatorInvite (invitee consent)', () => {
   it("allocates the slug in the invitee's namespace, not the owner's", async () => {
     // The whole point of per-creator namespaces: perturbation happens inside
     // the accepting user's namespace and never disturbs the owner's slug.
     const { tx, updated } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
-    uniqueSlugMock.mockResolvedValue("apple-pie-2ab");
+    uniqueSlugMock.mockResolvedValue('apple-pie-2ab');
 
     const result = await acceptRecipeCreatorInvite(RECIPE.id, INVITEE);
 
-    expect(uniqueSlugMock).toHaveBeenCalledWith(
-      expect.anything(),
-      INVITEE,
-      "apple-pie",
-    );
-    expect(result.slug).toBe("apple-pie-2ab");
+    expect(uniqueSlugMock).toHaveBeenCalledWith(expect.anything(), INVITEE, 'apple-pie');
+    expect(result.slug).toBe('apple-pie-2ab');
     expect(updated[0]).toMatchObject({
-      status: "accepted",
-      slug: "apple-pie-2ab",
+      status: 'accepted',
+      slug: 'apple-pie-2ab',
     });
     expect(updated[0]!.acceptedAt).toBeInstanceOf(Date);
   });
@@ -245,64 +229,54 @@ describe("acceptRecipeCreatorInvite (invitee consent)", () => {
   it("bases the slug on the title, not the owner's perturbed slug", async () => {
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
     dbMock.query.recipes.findFirst.mockResolvedValue({
       ...RECIPE,
-      slug: "apple-pie-9zz",
+      slug: 'apple-pie-9zz',
     });
 
     await acceptRecipeCreatorInvite(RECIPE.id, INVITEE);
 
-    expect(uniqueSlugMock).toHaveBeenCalledWith(
-      expect.anything(),
-      INVITEE,
-      "apple-pie",
-    );
+    expect(uniqueSlugMock).toHaveBeenCalledWith(expect.anything(), INVITEE, 'apple-pie');
   });
 
-  it("refuses when there is no invitation", async () => {
+  it('refuses when there is no invitation', async () => {
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue(undefined);
 
-    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow(
-      "NOT_FOUND",
-    );
+    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow('NOT_FOUND');
   });
 
-  it("refuses to re-accept", async () => {
+  it('refuses to re-accept', async () => {
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "accepted",
+      id: 'rc_1',
+      status: 'accepted',
     });
 
-    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow(
-      "ALREADY_ACCEPTED",
-    );
+    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow('ALREADY_ACCEPTED');
   });
 
-  it("loses cleanly when a concurrent accept already won", async () => {
+  it('loses cleanly when a concurrent accept already won', async () => {
     // The UPDATE is guarded on `status = 'pending'`, so the loser of a race
     // updates zero rows rather than allocating a second slug.
     const { tx, setUpdateResult } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
     setUpdateResult([]);
 
-    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow(
-      "NOT_PENDING",
-    );
+    await expect(acceptRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow('NOT_PENDING');
   });
 
-  it("notifies the owner", async () => {
+  it('notifies the owner', async () => {
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
 
     await acceptRecipeCreatorInvite(RECIPE.id, INVITEE);
@@ -312,122 +286,112 @@ describe("acceptRecipeCreatorInvite (invitee consent)", () => {
       expect.objectContaining({
         recipientId: OWNER,
         actorId: INVITEE,
-        type: "recipe_creator_accepted",
+        type: 'recipe_creator_accepted',
       }),
     );
   });
 });
 
-describe("declineRecipeCreatorInvite", () => {
-  it("deletes the pending row", async () => {
+describe('declineRecipeCreatorInvite', () => {
+  it('deletes the pending row', async () => {
     dbMock.delete.mockReturnValue({
-      where: () => ({ returning: () => Promise.resolve([{ id: "rc_1" }]) }),
+      where: () => ({ returning: () => Promise.resolve([{ id: 'rc_1' }]) }),
     });
 
-    await expect(
-      declineRecipeCreatorInvite(RECIPE.id, INVITEE),
-    ).resolves.toBeUndefined();
+    await expect(declineRecipeCreatorInvite(RECIPE.id, INVITEE)).resolves.toBeUndefined();
   });
 
-  it("refuses when nothing was pending", async () => {
+  it('refuses when nothing was pending', async () => {
     dbMock.delete.mockReturnValue({
       where: () => ({ returning: () => Promise.resolve([]) }),
     });
 
-    await expect(
-      declineRecipeCreatorInvite(RECIPE.id, INVITEE),
-    ).rejects.toThrow("NOT_PENDING");
+    await expect(declineRecipeCreatorInvite(RECIPE.id, INVITEE)).rejects.toThrow('NOT_PENDING');
   });
 });
 
-describe("removeRecipeCreator (revocation)", () => {
-  it("returns the freed namespace so its cached page can be purged", async () => {
+describe('removeRecipeCreator (revocation)', () => {
+  it('returns the freed namespace so its cached page can be purged', async () => {
     // The row is gone by the time the caller revalidates, so the path it used
     // to serve has to be handed back — otherwise the revoked page keeps being
     // served from the App Router cache.
     const { setDeleteResult } = txDouble();
-    setDeleteResult([{ slug: "apple-pie", status: "accepted" }]);
+    setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);
     dbMock.query.users.findFirst.mockResolvedValue({
       id: INVITEE,
       deletedAt: null,
-      slug: "bo",
+      slug: 'bo',
     });
 
     const result = await removeRecipeCreator(RECIPE.id, OWNER, INVITEE);
 
-    expect(result.removed).toEqual({ cook: "bo", slug: "apple-pie" });
+    expect(result.removed).toEqual({ cook: 'bo', slug: 'apple-pie' });
     expect(result.recipe).toEqual({
       id: RECIPE.id,
-      slug: "apple-pie",
-      cook: "ada",
+      slug: 'apple-pie',
+      cook: 'ada',
     });
   });
 
-  it("writes no alias for the freed slug", async () => {
+  it('writes no alias for the freed slug', async () => {
     // Deliberate divergence from the alias-permanence rule: an ex-creator alias
     // would point across a revoked relationship. The transaction must only
     // delete — never insert.
     const { tx, setDeleteResult } = txDouble();
-    setDeleteResult([{ slug: "apple-pie", status: "accepted" }]);
-    const insertSpy = vi.spyOn(tx, "insert");
+    setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);
+    const insertSpy = vi.spyOn(tx, 'insert');
 
     await removeRecipeCreator(RECIPE.id, OWNER, INVITEE);
 
     expect(insertSpy).not.toHaveBeenCalled();
   });
 
-  it("reports no namespace for a rescinded pending invitation", async () => {
+  it('reports no namespace for a rescinded pending invitation', async () => {
     const { setDeleteResult } = txDouble();
-    setDeleteResult([{ slug: null, status: "pending" }]);
+    setDeleteResult([{ slug: null, status: 'pending' }]);
 
     const result = await removeRecipeCreator(RECIPE.id, OWNER, INVITEE);
 
     expect(result.removed).toBeNull();
   });
 
-  it("refuses a non-owner", async () => {
+  it('refuses a non-owner', async () => {
     txDouble();
 
-    await expect(
-      removeRecipeCreator(RECIPE.id, "user_stranger", INVITEE),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(removeRecipeCreator(RECIPE.id, 'user_stranger', INVITEE)).rejects.toThrow(
+      'NOT_FOUND',
+    );
   });
 
-  it("refuses to remove the owner from their own recipe", async () => {
+  it('refuses to remove the owner from their own recipe', async () => {
     // The zero-creator state must stay unreachable: the owner is the NOT NULL
     // `authorId`, not a removable row.
     txDouble();
 
-    await expect(removeRecipeCreator(RECIPE.id, OWNER, OWNER)).rejects.toThrow(
-      "FORBIDDEN",
-    );
+    await expect(removeRecipeCreator(RECIPE.id, OWNER, OWNER)).rejects.toThrow('FORBIDDEN');
   });
 });
 
-describe("leaveRecipeAsCreator", () => {
-  it("lets a creator step down and frees their slug", async () => {
+describe('leaveRecipeAsCreator', () => {
+  it('lets a creator step down and frees their slug', async () => {
     const { setDeleteResult } = txDouble();
-    setDeleteResult([{ slug: "apple-pie", status: "accepted" }]);
+    setDeleteResult([{ slug: 'apple-pie', status: 'accepted' }]);
 
     const result = await leaveRecipeAsCreator(RECIPE.id, INVITEE);
 
-    expect(result.removed).toEqual({ cook: "bo", slug: "apple-pie" });
+    expect(result.removed).toEqual({ cook: 'bo', slug: 'apple-pie' });
   });
 
-  it("refuses to let the owner leave", async () => {
+  it('refuses to let the owner leave', async () => {
     txDouble();
 
-    await expect(leaveRecipeAsCreator(RECIPE.id, OWNER)).rejects.toThrow(
-      "OWNER_CANT_LEAVE",
-    );
+    await expect(leaveRecipeAsCreator(RECIPE.id, OWNER)).rejects.toThrow('OWNER_CANT_LEAVE');
   });
 
-  it("refuses when there is no row to delete", async () => {
+  it('refuses when there is no row to delete', async () => {
     const { setDeleteResult } = txDouble();
     setDeleteResult([]);
 
-    await expect(leaveRecipeAsCreator(RECIPE.id, INVITEE)).rejects.toThrow(
-      "NOT_FOUND",
-    );
+    await expect(leaveRecipeAsCreator(RECIPE.id, INVITEE)).rejects.toThrow('NOT_FOUND');
   });
 });

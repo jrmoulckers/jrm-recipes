@@ -1,19 +1,15 @@
-import "server-only";
+import 'server-only';
 
-import { eq } from "drizzle-orm";
+import { eq } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
-import { memberDietaryProfiles } from "~/server/db/schema";
-import { isAllergen } from "~/lib/allergens";
-import { isDietaryTag } from "~/lib/substitutions";
-import {
-  memberPlanWarnings,
-  type PlanMember,
-  type PlanSafetyWarning,
-} from "~/lib/dietary-match";
-import { getRecipeAllergensBatch } from "~/server/recipes/allergens";
+import { db, isDbConfigured } from '~/server/db';
+import { memberDietaryProfiles } from '~/server/db/schema';
+import { isAllergen } from '~/lib/allergens';
+import { isDietaryTag } from '~/lib/substitutions';
+import { memberPlanWarnings, type PlanMember, type PlanSafetyWarning } from '~/lib/dietary-match';
+import { getRecipeAllergensBatch } from '~/server/recipes/allergens';
 
-export type { PlanSafetyWarning } from "~/lib/dietary-match";
+export type { PlanSafetyWarning } from '~/lib/dietary-match';
 
 /**
  * Proactive allergen/diet gating for planned meals. Cross-checks the given
@@ -52,10 +48,7 @@ export async function planWarningsForRecipes(
 
     const allergensByRecipe = await getRecipeAllergensBatch(ids);
     for (const id of ids) {
-      const warnings = memberPlanWarnings(
-        allergensByRecipe.get(id) ?? [],
-        members,
-      );
+      const warnings = memberPlanWarnings(allergensByRecipe.get(id) ?? [], members);
       if (warnings.length > 0) result.set(id, warnings);
     }
     return result;

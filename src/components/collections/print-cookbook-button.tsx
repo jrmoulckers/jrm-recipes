@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Printer } from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Printer } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import { KEEPSAKE_NOTE_MAX } from "~/lib/keepsake";
+} from '~/components/ui/dialog';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
+import { KEEPSAKE_NOTE_MAX } from '~/lib/keepsake';
 
 /**
  * Opens the printable booklet for a collection (issue #397), optionally with a
@@ -25,14 +25,10 @@ import { KEEPSAKE_NOTE_MAX } from "~/lib/keepsake";
  * round-trip). The print page turns "Print → Save as PDF" into a real family
  * cookbook.
  */
-export function PrintCookbookButton({
-  collectionId,
-}: {
-  collectionId: string;
-}) {
+export function PrintCookbookButton({ collectionId }: { collectionId: string }) {
   const router = useRouter();
-  const t = useTranslations("collections.print");
-  const [dedication, setDedication] = React.useState("");
+  const t = useTranslations('collections.print');
+  const [dedication, setDedication] = React.useState('');
 
   function openPrint() {
     const trimmed = dedication.trim();
@@ -48,22 +44,22 @@ export function PrintCookbookButton({
     <Dialog>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <Printer /> {t("trigger")}
+          <Printer /> {t('trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cookbook-dedication">{t("dedication.label")}</Label>
+          <Label htmlFor="cookbook-dedication">{t('dedication.label')}</Label>
           <Textarea
             id="cookbook-dedication"
             value={dedication}
             onChange={(event) => setDedication(event.target.value)}
-            placeholder={t("dedication.placeholder")}
+            placeholder={t('dedication.placeholder')}
             rows={3}
             maxLength={KEEPSAKE_NOTE_MAX}
           />
@@ -71,7 +67,7 @@ export function PrintCookbookButton({
 
         <DialogFooter>
           <Button type="button" onClick={openPrint}>
-            <Printer /> {t("openPrint")}
+            <Printer /> {t('openPrint')}
           </Button>
         </DialogFooter>
       </DialogContent>

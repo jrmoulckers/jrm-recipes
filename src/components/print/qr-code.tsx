@@ -1,8 +1,8 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { brand } from "~/config/brand";
-import { cn } from "~/lib/utils";
-import { buildQrCode } from "~/lib/qr";
+import { brand } from '~/config/brand';
+import { cn } from '~/lib/utils';
+import { buildQrCode } from '~/lib/qr';
 
 /**
  * A small, print-crisp QR code linking a printed recipe card back to its public
@@ -25,12 +25,7 @@ export function PrintQr({
   if (!qr.path) return null;
 
   return (
-    <figure
-      className={cn(
-        "flex shrink-0 flex-col items-center gap-1 text-center",
-        className,
-      )}
-    >
+    <figure className={cn('flex shrink-0 flex-col items-center gap-1 text-center', className)}>
       <svg
         viewBox={`0 0 ${qr.size} ${qr.size}`}
         width={size}

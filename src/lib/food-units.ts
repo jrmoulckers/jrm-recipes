@@ -14,18 +14,14 @@
  * literal tokens for the units layer / user's custom-units table to resolve.
  */
 
-import {
-  foodCategoryForItem,
-  type FoodCategory,
-  FOOD_CATEGORIES,
-} from "./food-db";
+import { foodCategoryForItem, type FoodCategory, FOOD_CATEGORIES } from './food-db';
 
 /**
  * The measurement dimension of a suggested unit. Mirrors `units.ts` `Dimension`
  * exactly (kept as a local declaration to avoid coupling this module to the
  * conversion library). The two are structurally interchangeable.
  */
-export type FoodDimension = "volume" | "mass" | "count" | "temperature";
+export type FoodDimension = 'volume' | 'mass' | 'count' | 'temperature';
 
 /** One suggested unit: its dimension plus a unit token (see module doc). */
 export type SuggestedUnit = {
@@ -44,161 +40,154 @@ export type SuggestedUnit = {
 // choice first, spanning both US and metric so the picker can respect the
 // user's system preference downstream.
 const VOLUME_LARGE: SuggestedUnit[] = [
-  { dimension: "volume", unit: "cup" },
-  { dimension: "volume", unit: "tbsp" },
-  { dimension: "volume", unit: "tsp" },
-  { dimension: "volume", unit: "fl oz" },
-  { dimension: "volume", unit: "ml" },
-  { dimension: "volume", unit: "l" },
+  { dimension: 'volume', unit: 'cup' },
+  { dimension: 'volume', unit: 'tbsp' },
+  { dimension: 'volume', unit: 'tsp' },
+  { dimension: 'volume', unit: 'fl oz' },
+  { dimension: 'volume', unit: 'ml' },
+  { dimension: 'volume', unit: 'l' },
 ];
 const MASS_FULL: SuggestedUnit[] = [
-  { dimension: "mass", unit: "g" },
-  { dimension: "mass", unit: "kg" },
-  { dimension: "mass", unit: "oz" },
-  { dimension: "mass", unit: "lb" },
+  { dimension: 'mass', unit: 'g' },
+  { dimension: 'mass', unit: 'kg' },
+  { dimension: 'mass', unit: 'oz' },
+  { dimension: 'mass', unit: 'lb' },
 ];
 const MASS_SMALL: SuggestedUnit[] = [
-  { dimension: "mass", unit: "g" },
-  { dimension: "mass", unit: "oz" },
+  { dimension: 'mass', unit: 'g' },
+  { dimension: 'mass', unit: 'oz' },
 ];
 const MASS_LARGE: SuggestedUnit[] = [
-  { dimension: "mass", unit: "lb" },
-  { dimension: "mass", unit: "oz" },
-  { dimension: "mass", unit: "g" },
-  { dimension: "mass", unit: "kg" },
+  { dimension: 'mass', unit: 'lb' },
+  { dimension: 'mass', unit: 'oz' },
+  { dimension: 'mass', unit: 'g' },
+  { dimension: 'mass', unit: 'kg' },
 ];
-const COUNT_EACH: SuggestedUnit[] = [{ dimension: "count", unit: "each" }];
+const COUNT_EACH: SuggestedUnit[] = [{ dimension: 'count', unit: 'each' }];
 
 /**
  * Ordered unit suggestions per food category. First entry is the most
  * appropriate default for that category. Callers may take the whole list (to
  * prioritize the picker) or just the head (as a smart default unit).
  */
-export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> =
-  {
-    // Liquids: measured by volume. Weight is a secondary option for bakers.
-    liquid: [...VOLUME_LARGE, { dimension: "mass", unit: "g" }],
-    // Dairy: milk/cream by volume, cheese often by weight. Offer both.
-    dairy: [...VOLUME_LARGE, ...MASS_SMALL],
-    // Baking staples: weight first (precision), then volume for cup-based recipes.
-    baking: [
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-      { dimension: "volume", unit: "cup" },
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-    ],
-    // Dry goods (pasta): by weight, sometimes by cup.
-    "dry-good": [...MASS_FULL, { dimension: "volume", unit: "cup" }],
-    grain: [
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-      { dimension: "mass", unit: "kg" },
-    ],
-    legume: [
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-      { dimension: "count", unit: "can" },
-    ],
-    // Whole produce: counted or weighed.
-    "produce-whole": [...COUNT_EACH, ...MASS_LARGE],
-    // Leafy greens: loose-packed by cup or weighed. Sold by the bunch.
-    "produce-leafy": [
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-      { dimension: "count", unit: "bunch" },
-    ],
-    // Fruit: often by the cup (berries) or counted.
-    "produce-fruit": [
-      { dimension: "count", unit: "each" },
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-    ],
-    // Fresh herbs: small volumes, weighed, or by the bunch/sprig.
-    herb: [
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "count", unit: "bunch" },
-      { dimension: "count", unit: "sprig" },
-      { dimension: "mass", unit: "g" },
-    ],
-    // Spices: tiny volumes and pinches. Grams for scale bakers.
-    spice: [
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "count", unit: "pinch" },
-      { dimension: "mass", unit: "g" },
-    ],
-    // Meat & seafood: by weight. Some seafood is counted.
-    meat: [...MASS_LARGE],
-    seafood: [...MASS_LARGE, { dimension: "count", unit: "each" }],
-    // Eggs: counted. Whites/yolks sometimes by volume.
-    egg: [
-      ...COUNT_EACH,
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-    ],
-    // Fats & oils: small-to-medium volumes, weighed for baking.
-    "fat-oil": [
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "volume", unit: "ml" },
-    ],
-    // Syrups & sugars-as-liquid: spoon/cup volumes, weighed for precision.
-    sweetener: [
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "volume", unit: "cup" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "volume", unit: "ml" },
-    ],
-    // Nuts & seeds: by cup or weight. Nut butters by spoon.
-    "nut-seed": [
-      { dimension: "volume", unit: "cup" },
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-    ],
-    // Condiments: spoon/cup volumes, weighed occasionally.
-    condiment: [
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "volume", unit: "cup" },
-      { dimension: "volume", unit: "ml" },
-      { dimension: "mass", unit: "g" },
-    ],
-    // Unknown: a broad, sensible default covering common measures.
-    other: [
-      { dimension: "volume", unit: "cup" },
-      { dimension: "volume", unit: "tbsp" },
-      { dimension: "volume", unit: "tsp" },
-      { dimension: "mass", unit: "g" },
-      { dimension: "mass", unit: "oz" },
-      { dimension: "count", unit: "each" },
-    ],
-  };
+export const CATEGORY_UNIT_SUGGESTIONS: Record<FoodCategory, SuggestedUnit[]> = {
+  // Liquids: measured by volume. Weight is a secondary option for bakers.
+  liquid: [...VOLUME_LARGE, { dimension: 'mass', unit: 'g' }],
+  // Dairy: milk/cream by volume, cheese often by weight. Offer both.
+  dairy: [...VOLUME_LARGE, ...MASS_SMALL],
+  // Baking staples: weight first (precision), then volume for cup-based recipes.
+  baking: [
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+  ],
+  // Dry goods (pasta): by weight, sometimes by cup.
+  'dry-good': [...MASS_FULL, { dimension: 'volume', unit: 'cup' }],
+  grain: [
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+    { dimension: 'mass', unit: 'kg' },
+  ],
+  legume: [
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+    { dimension: 'count', unit: 'can' },
+  ],
+  // Whole produce: counted or weighed.
+  'produce-whole': [...COUNT_EACH, ...MASS_LARGE],
+  // Leafy greens: loose-packed by cup or weighed. Sold by the bunch.
+  'produce-leafy': [
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+    { dimension: 'count', unit: 'bunch' },
+  ],
+  // Fruit: often by the cup (berries) or counted.
+  'produce-fruit': [
+    { dimension: 'count', unit: 'each' },
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+  ],
+  // Fresh herbs: small volumes, weighed, or by the bunch/sprig.
+  herb: [
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'count', unit: 'bunch' },
+    { dimension: 'count', unit: 'sprig' },
+    { dimension: 'mass', unit: 'g' },
+  ],
+  // Spices: tiny volumes and pinches. Grams for scale bakers.
+  spice: [
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'count', unit: 'pinch' },
+    { dimension: 'mass', unit: 'g' },
+  ],
+  // Meat & seafood: by weight. Some seafood is counted.
+  meat: [...MASS_LARGE],
+  seafood: [...MASS_LARGE, { dimension: 'count', unit: 'each' }],
+  // Eggs: counted. Whites/yolks sometimes by volume.
+  egg: [...COUNT_EACH, { dimension: 'volume', unit: 'cup' }, { dimension: 'mass', unit: 'g' }],
+  // Fats & oils: small-to-medium volumes, weighed for baking.
+  'fat-oil': [
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'volume', unit: 'ml' },
+  ],
+  // Syrups & sugars-as-liquid: spoon/cup volumes, weighed for precision.
+  sweetener: [
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'volume', unit: 'ml' },
+  ],
+  // Nuts & seeds: by cup or weight. Nut butters by spoon.
+  'nut-seed': [
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+  ],
+  // Condiments: spoon/cup volumes, weighed occasionally.
+  condiment: [
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'volume', unit: 'ml' },
+    { dimension: 'mass', unit: 'g' },
+  ],
+  // Unknown: a broad, sensible default covering common measures.
+  other: [
+    { dimension: 'volume', unit: 'cup' },
+    { dimension: 'volume', unit: 'tbsp' },
+    { dimension: 'volume', unit: 'tsp' },
+    { dimension: 'mass', unit: 'g' },
+    { dimension: 'mass', unit: 'oz' },
+    { dimension: 'count', unit: 'each' },
+  ],
+};
 
 // Guard against drift: every category must have at least one suggestion.
 if (
-  process.env.NODE_ENV !== "production" &&
+  process.env.NODE_ENV !== 'production' &&
   FOOD_CATEGORIES.some((c) => (CATEGORY_UNIT_SUGGESTIONS[c]?.length ?? 0) === 0)
 ) {
-  throw new Error("CATEGORY_UNIT_SUGGESTIONS is missing a food category");
+  throw new Error('CATEGORY_UNIT_SUGGESTIONS is missing a food category');
 }
 
 /**
  * The ordered unit suggestions for a known food category. Returns a fresh array
  * (safe for callers to sort/splice). Never empty for a valid category.
  */
-export function suggestedUnitsForCategory(
-  category: FoodCategory,
-): SuggestedUnit[] {
+export function suggestedUnitsForCategory(category: FoodCategory): SuggestedUnit[] {
   return [...(CATEGORY_UNIT_SUGGESTIONS[category] ?? [])];
 }
 
@@ -208,9 +197,7 @@ export function suggestedUnitsForCategory(
  * Returns `[]` when the ingredient can't be matched, so the caller can fall
  * back to its own default unit list. Pure + synchronous.
  */
-export function getSuggestedUnitsForFood(
-  item: string | null | undefined,
-): SuggestedUnit[] {
+export function getSuggestedUnitsForFood(item: string | null | undefined): SuggestedUnit[] {
   const category = foodCategoryForItem(item);
   return category ? suggestedUnitsForCategory(category) : [];
 }
@@ -225,34 +212,32 @@ export function getSuggestedUnitsForFood(
  * measure by the pinch/teaspoon (herbs, spices). Everything else scoops as a
  * dry good. Unknown ingredients fall back to "dry", the most common case.
  */
-export type FoodVolumeClass = "liquid" | "dry" | "small";
+export type FoodVolumeClass = 'liquid' | 'dry' | 'small';
 
 const CATEGORY_VOLUME_CLASS: Record<FoodCategory, FoodVolumeClass> = {
-  liquid: "liquid",
-  dairy: "liquid",
-  "fat-oil": "liquid",
-  condiment: "liquid",
-  herb: "small",
-  spice: "small",
-  baking: "dry",
-  "dry-good": "dry",
-  grain: "dry",
-  legume: "dry",
-  "produce-whole": "dry",
-  "produce-leafy": "dry",
-  "produce-fruit": "dry",
-  sweetener: "dry",
-  "nut-seed": "dry",
-  meat: "dry",
-  seafood: "dry",
-  egg: "dry",
-  other: "dry",
+  liquid: 'liquid',
+  dairy: 'liquid',
+  'fat-oil': 'liquid',
+  condiment: 'liquid',
+  herb: 'small',
+  spice: 'small',
+  baking: 'dry',
+  'dry-good': 'dry',
+  grain: 'dry',
+  legume: 'dry',
+  'produce-whole': 'dry',
+  'produce-leafy': 'dry',
+  'produce-fruit': 'dry',
+  sweetener: 'dry',
+  'nut-seed': 'dry',
+  meat: 'dry',
+  seafood: 'dry',
+  egg: 'dry',
+  other: 'dry',
 };
 
 /** The volume class for a category (liquids pour, seasonings pinch, else scoop). */
-export function volumeClassForCategory(
-  category: FoodCategory,
-): FoodVolumeClass {
+export function volumeClassForCategory(category: FoodCategory): FoodVolumeClass {
   return CATEGORY_VOLUME_CLASS[category];
 }
 
@@ -261,31 +246,22 @@ export function volumeClassForCategory(
  * can honor the viewer's per-class volume preference. Defaults to "dry" for
  * unmatched ingredients. Pure + synchronous.
  */
-export function volumeClassForItem(
-  item: string | null | undefined,
-): FoodVolumeClass {
+export function volumeClassForItem(item: string | null | undefined): FoodVolumeClass {
   const category = foodCategoryForItem(item);
-  return category ? CATEGORY_VOLUME_CLASS[category] : "dry";
+  return category ? CATEGORY_VOLUME_CLASS[category] : 'dry';
 }
 
 // --- Learned-unit merge (live graph enrichment) --------------------------
 
-const VOLUME_TOKENS: ReadonlySet<string> = new Set([
-  "cup",
-  "tbsp",
-  "tsp",
-  "fl oz",
-  "ml",
-  "l",
-]);
-const MASS_TOKENS: ReadonlySet<string> = new Set(["g", "kg", "oz", "lb"]);
+const VOLUME_TOKENS: ReadonlySet<string> = new Set(['cup', 'tbsp', 'tsp', 'fl oz', 'ml', 'l']);
+const MASS_TOKENS: ReadonlySet<string> = new Set(['g', 'kg', 'oz', 'lb']);
 const COUNT_TOKENS: ReadonlySet<string> = new Set([
-  "each",
-  "pinch",
-  "bunch",
-  "sprig",
-  "clove",
-  "can",
+  'each',
+  'pinch',
+  'bunch',
+  'sprig',
+  'clove',
+  'can',
 ]);
 
 /**
@@ -296,10 +272,10 @@ const COUNT_TOKENS: ReadonlySet<string> = new Set([
  */
 export function dimensionForUnit(unit: string): FoodDimension {
   const u = unit.trim().toLowerCase();
-  if (VOLUME_TOKENS.has(u)) return "volume";
-  if (MASS_TOKENS.has(u)) return "mass";
-  if (COUNT_TOKENS.has(u)) return "count";
-  return "count";
+  if (VOLUME_TOKENS.has(u)) return 'volume';
+  if (MASS_TOKENS.has(u)) return 'mass';
+  if (COUNT_TOKENS.has(u)) return 'count';
+  return 'count';
 }
 
 /** A unit the corpus has been observed using for a food, with its usage count. */
@@ -345,7 +321,7 @@ export function applyUnitPreference(
   units: readonly SuggestedUnit[],
   preferredUnit: string | null | undefined,
 ): SuggestedUnit[] {
-  const pref = (preferredUnit ?? "").trim();
+  const pref = (preferredUnit ?? '').trim();
   if (!pref) return [...units];
   const key = pref.toLowerCase();
   const rest = units.filter((u) => u.unit.trim().toLowerCase() !== key);
@@ -368,7 +344,7 @@ export function floatPreferredToFront<T>(
   value: string | null | undefined,
   keyOf: (item: T) => string,
 ): T[] {
-  const pref = (value ?? "").trim().toLowerCase();
+  const pref = (value ?? '').trim().toLowerCase();
   if (!pref) return [...items];
   const match = items.find((it) => keyOf(it).trim().toLowerCase() === pref);
   if (!match) return [...items];

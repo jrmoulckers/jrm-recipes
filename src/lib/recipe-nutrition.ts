@@ -15,9 +15,9 @@
  * the coverage numbers.
  */
 
-import { convertUnit, unitDimension } from "~/lib/units";
-import type { NutritionFacts } from "~/lib/food-nutrition";
-import type { Nutrition } from "~/lib/nutrition";
+import { convertUnit, unitDimension } from '~/lib/units';
+import type { NutritionFacts } from '~/lib/food-nutrition';
+import type { Nutrition } from '~/lib/nutrition';
 
 /**
  * One ingredient line ready for the roll-up. `facts` and `densityGPerMl` come
@@ -50,18 +50,14 @@ export function resolveLineGrams(
     return null;
   }
   const dimension = unitDimension(unit);
-  if (dimension === "mass") {
-    return convertUnit(quantity, unit!, "g");
+  if (dimension === 'mass') {
+    return convertUnit(quantity, unit!, 'g');
   }
-  if (dimension === "volume") {
-    if (
-      densityGPerMl == null ||
-      !Number.isFinite(densityGPerMl) ||
-      densityGPerMl <= 0
-    ) {
+  if (dimension === 'volume') {
+    if (densityGPerMl == null || !Number.isFinite(densityGPerMl) || densityGPerMl <= 0) {
       return null;
     }
-    const ml = convertUnit(quantity, unit!, "ml");
+    const ml = convertUnit(quantity, unit!, 'ml');
     return ml == null ? null : ml * densityGPerMl;
   }
   return null;
@@ -145,11 +141,7 @@ export function rollUpNutrition(
 
   for (const line of lines) {
     totalLines += 1;
-    const grams = resolveLineGrams(
-      line.quantity,
-      line.unit,
-      line.densityGPerMl,
-    );
+    const grams = resolveLineGrams(line.quantity, line.unit, line.densityGPerMl);
     if (grams != null) weighableGrams += grams;
 
     const facts = line.facts;

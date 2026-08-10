@@ -18,20 +18,20 @@ export const REEL_FPS = 30;
 
 /** Brand palette. Kept in lockstep with the share card. */
 export const REEL_COLORS = {
-  cream: "#fffaf3",
-  ink: "#3d2817",
-  terracotta: "#b45309",
-  terracottaDeep: "#7c3d06",
-  muted: "#6f5844",
+  cream: '#fffaf3',
+  ink: '#3d2817',
+  terracotta: '#b45309',
+  terracottaDeep: '#7c3d06',
+  muted: '#6f5844',
 } as const;
 
-export type ReelDifficulty = "easy" | "medium" | "hard";
+export type ReelDifficulty = 'easy' | 'medium' | 'hard';
 
 /** Difficulty dot colors, matching the share card. */
 export const DIFFICULTY_DOT: Record<ReelDifficulty, string> = {
-  easy: "#2f7d4f",
-  medium: "#b4690e",
-  hard: "#a23b2f",
+  easy: '#2f7d4f',
+  medium: '#b4690e',
+  hard: '#a23b2f',
 };
 
 /** Serializable ingredient line for the reel. */
@@ -85,7 +85,7 @@ export type ReelChip = { label: string; dot?: string };
 /** Discriminated union of every scene the renderer can draw. */
 export type ReelScene =
   | {
-      kind: "cover";
+      kind: 'cover';
       durationMs: number;
       title: string;
       byline: string | null;
@@ -93,20 +93,20 @@ export type ReelScene =
       imageUrl: string | null;
     }
   | {
-      kind: "ingredients";
+      kind: 'ingredients';
       durationMs: number;
       heading: string;
       items: ReelIngredient[];
       imageUrl: string | null;
     }
   | {
-      kind: "step";
+      kind: 'step';
       durationMs: number;
       step: ReelStep;
       imageUrl: string | null;
     }
   | {
-      kind: "outro";
+      kind: 'outro';
       durationMs: number;
       headline: string;
       title: string;
@@ -118,8 +118,7 @@ export type ReelScene =
  * reel shared from any environment (preview, self-host) stamps the right host,
  * falling back to the production domain when the var is unset.
  */
-export const REEL_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "heirloom.jrmoulckers.com";
+export const REEL_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'heirloom.jrmoulckers.com';
 
 /**
  * Browser capabilities relevant to exporting a reel. Kept as plain booleans so
@@ -149,13 +148,13 @@ export type ReelExportCapabilities = {
  */
 export function reelExportMode(caps: ReelExportCapabilities): ReelExportMode {
   if (caps.canvasCapture && caps.mediaRecorder && caps.webmMimeType) {
-    return "video";
+    return 'video';
   }
-  if (caps.canvasToBlob) return "image";
-  return "none";
+  if (caps.canvasToBlob) return 'image';
+  return 'none';
 }
 
-export type ReelExportMode = "video" | "image" | "none";
+export type ReelExportMode = 'video' | 'image' | 'none';
 
 /** Scene duration budget (ms). Tuned so the whole reel lands ~8–20s. */
 export const SCENE_MS = {
@@ -183,9 +182,9 @@ function tidyNumber(value: number): string {
  */
 export function formatIngredientLine(ing: ReelIngredientInput): string {
   const parts: string[] = [];
-  if (typeof ing.quantity === "number" && ing.quantity > 0) {
+  if (typeof ing.quantity === 'number' && ing.quantity > 0) {
     const min = tidyNumber(ing.quantity);
-    if (typeof ing.quantityMax === "number" && ing.quantityMax > ing.quantity) {
+    if (typeof ing.quantityMax === 'number' && ing.quantityMax > ing.quantity) {
       parts.push(`${min}\u2013${tidyNumber(ing.quantityMax)}`);
     } else {
       parts.push(min);
@@ -193,7 +192,7 @@ export function formatIngredientLine(ing: ReelIngredientInput): string {
   }
   if (ing.unit?.trim()) parts.push(ing.unit.trim());
   parts.push(ing.item.trim());
-  return parts.join(" ").replace(/\s+/g, " ").trim();
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /** Compact minutes formatter (e.g. 90 -> "1 hr 30 min", 45 -> "45 min"). */
@@ -236,7 +235,7 @@ export function coverByline(recipe: ReelRecipe): string | null {
   const group = recipe.group?.trim();
   if (author) parts.push(`by ${author}`);
   if (group) parts.push(group);
-  return parts.length ? parts.join("  \u00b7  ") : null;
+  return parts.length ? parts.join('  \u00b7  ') : null;
 }
 
 /**
@@ -294,10 +293,7 @@ export function selectKeySteps(recipe: ReelRecipe): ReelStep[] {
   const total = all.length;
   if (total === 0) return [];
 
-  const pickedIdx = evenlySpacedIndices(
-    total,
-    Math.min(REEL_LIMITS.maxSteps, total),
-  );
+  const pickedIdx = evenlySpacedIndices(total, Math.min(REEL_LIMITS.maxSteps, total));
 
   return pickedIdx.map((idx) => {
     const { step, number } = all[idx]!;
@@ -319,14 +315,12 @@ export function selectKeySteps(recipe: ReelRecipe): ReelStep[] {
  */
 export function buildReelScenes(recipe: ReelRecipe): ReelScene[] {
   const scenes: ReelScene[] = [];
-  const cover = recipe.coverImageUrl?.trim()
-    ? recipe.coverImageUrl.trim()
-    : null;
+  const cover = recipe.coverImageUrl?.trim() ? recipe.coverImageUrl.trim() : null;
 
   scenes.push({
-    kind: "cover",
+    kind: 'cover',
     durationMs: SCENE_MS.cover,
-    title: recipe.title.trim() || "Untitled recipe",
+    title: recipe.title.trim() || 'Untitled recipe',
     byline: coverByline(recipe),
     chips: metaChips(recipe),
     imageUrl: cover,
@@ -335,7 +329,7 @@ export function buildReelScenes(recipe: ReelRecipe): ReelScene[] {
   const ingredients = selectKeyIngredients(recipe);
   if (ingredients.length > 0) {
     scenes.push({
-      kind: "ingredients",
+      kind: 'ingredients',
       durationMs: SCENE_MS.ingredients,
       heading: "You'll need",
       items: ingredients,
@@ -345,7 +339,7 @@ export function buildReelScenes(recipe: ReelRecipe): ReelScene[] {
 
   for (const step of selectKeySteps(recipe)) {
     scenes.push({
-      kind: "step",
+      kind: 'step',
       durationMs: SCENE_MS.step,
       step,
       imageUrl: step.imageUrl,
@@ -353,10 +347,10 @@ export function buildReelScenes(recipe: ReelRecipe): ReelScene[] {
   }
 
   scenes.push({
-    kind: "outro",
+    kind: 'outro',
     durationMs: SCENE_MS.outro,
-    headline: "Family recipes, kept alive.",
-    title: recipe.title.trim() || "Untitled recipe",
+    headline: 'Family recipes, kept alive.',
+    title: recipe.title.trim() || 'Untitled recipe',
     siteUrl: REEL_SITE_URL,
   });
 
@@ -399,19 +393,17 @@ export function reelImageUrl(
   height: number = REEL_SIZE.height,
 ): string | null {
   if (!url) return null;
-  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) {
     return url;
   }
   const t = `f_auto,q_auto,w_${width},h_${height},c_fill,g_auto`;
-  return url.replace("/upload/", `/upload/${t}/`);
+  return url.replace('/upload/', `/upload/${t}/`);
 }
 
-const DIFFICULTIES: ReelDifficulty[] = ["easy", "medium", "hard"];
+const DIFFICULTIES: ReelDifficulty[] = ['easy', 'medium', 'hard'];
 
 function asDifficulty(value: unknown): ReelDifficulty | null {
-  return DIFFICULTIES.includes(value as ReelDifficulty)
-    ? (value as ReelDifficulty)
-    : null;
+  return DIFFICULTIES.includes(value as ReelDifficulty) ? (value as ReelDifficulty) : null;
 }
 
 /**
@@ -436,8 +428,7 @@ export function mapRecipeToReel(recipe: {
   steps: ReelStepInput[];
 }): ReelRecipe {
   const total =
-    recipe.totalMinutes ??
-    ((recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0) || null);
+    recipe.totalMinutes ?? ((recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0) || null);
 
   return {
     title: recipe.title,

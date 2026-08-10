@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
-import { formatQuantity } from "~/lib/units";
-import { Badge } from "~/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { useActiveMemberStore } from "~/lib/active-member-store";
+import { cn } from '~/lib/utils';
+import { formatQuantity } from '~/lib/units';
+import { Badge } from '~/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { useActiveMemberStore } from '~/lib/active-member-store';
 import {
   caloriePercentOfGoal,
   formatNutrient,
@@ -17,12 +17,12 @@ import {
   scaleNutrition,
   type Nutrition,
   type NutrientLevel,
-} from "~/lib/nutrition";
+} from '~/lib/nutrition';
 
-type Basis = "serving" | "whole";
+type Basis = 'serving' | 'whole';
 
 /** Toggle order for the per-serving / whole-recipe basis switch. */
-const BASIS_OPTIONS = ["serving", "whole"] as const;
+const BASIS_OPTIONS = ['serving', 'whole'] as const;
 
 /** A family member whose daily calorie goal a serving can be framed against. */
 export type CalorieMember = {
@@ -32,13 +32,10 @@ export type CalorieMember = {
 };
 
 /** Badge variant + level key for each dietary band (issue #416). */
-const LEVEL_STYLE: Record<
-  NutrientLevel,
-  { variant: "success" | "secondary" | "warning" }
-> = {
-  low: { variant: "success" },
-  moderate: { variant: "secondary" },
-  high: { variant: "warning" },
+const LEVEL_STYLE: Record<NutrientLevel, { variant: 'success' | 'secondary' | 'warning' }> = {
+  low: { variant: 'success' },
+  moderate: { variant: 'secondary' },
+  high: { variant: 'warning' },
 };
 
 /**
@@ -85,20 +82,18 @@ export function NutritionPanel({
   /** Ingredient lines considered (for the coverage caveat). */
   total?: number;
 }) {
-  const t = useTranslations("nutritionPanel");
-  const [basis, setBasis] = React.useState<Basis>("serving");
+  const t = useTranslations('nutritionPanel');
+  const [basis, setBasis] = React.useState<Basis>('serving');
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
   const setActiveMemberId = useActiveMemberStore((s) => s.setActiveMemberId);
 
   if (!hasNutrition(nutrition)) return null;
 
-  const wholeServings =
-    Number.isFinite(servings) && servings > 0 ? servings : 1;
-  const scaled =
-    basis === "whole" ? scaleNutrition(nutrition, wholeServings) : nutrition;
+  const wholeServings = Number.isFinite(servings) && servings > 0 ? servings : 1;
+  const scaled = basis === 'whole' ? scaleNutrition(nutrition, wholeServings) : nutrition;
   const rows = nutritionRows(scaled);
 
-  const noun = servingsNoun ?? t("servingsNoun");
+  const noun = servingsNoun ?? t('servingsNoun');
   const flags = nutritionFlags(nutrition);
 
   // The scaled whole-recipe total for the current (possibly reader-scaled)
@@ -112,63 +107,56 @@ export function NutritionPanel({
   // the cook having to pick one.
   const calorieCandidates = (members ?? []).filter(
     (m): m is CalorieMember & { calorieGoal: number } =>
-      typeof m.calorieGoal === "number" && m.calorieGoal > 0,
+      typeof m.calorieGoal === 'number' && m.calorieGoal > 0,
   );
   const activeMember =
-    calorieCandidates.find((m) => m.id === activeMemberId) ??
-    calorieCandidates[0] ??
-    null;
+    calorieCandidates.find((m) => m.id === activeMemberId) ?? calorieCandidates[0] ?? null;
   const caloriePercent = activeMember
     ? caloriePercentOfGoal(scaled.calories, activeMember.calorieGoal)
     : null;
 
   return (
     <section
-      aria-label={t("aria")}
-      className={cn(
-        "rounded-xl border border-border bg-surface/50 p-4",
-        className,
-      )}
+      aria-label={t('aria')}
+      className={cn('rounded-xl border border-border bg-surface/50 p-4', className)}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
-          {t("heading")}
+          {t('heading')}
         </h3>
         <ToggleGroup
-          aria-label={t("basisAria")}
+          aria-label={t('basisAria')}
           className="text-xs"
           value={basis}
           onValueChange={(next) => setBasis(next as Basis)}
         >
           {BASIS_OPTIONS.map((b) => (
             <ToggleGroupItem key={b} value={b} className="px-2 py-1">
-              {b === "serving" ? t("perServing") : t("wholeRecipe")}
+              {b === 'serving' ? t('perServing') : t('wholeRecipe')}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
       </div>
 
       <p className="mt-1 text-xs text-muted-foreground">
-        {basis === "whole"
-          ? t("wholeRecipeBasis", {
+        {basis === 'whole'
+          ? t('wholeRecipeBasis', {
               servings: formatQuantity(wholeServings),
               noun,
             })
-          : t("amountsPerServing")}
+          : t('amountsPerServing')}
       </p>
 
-      {basis === "serving" &&
-        typeof wholeCalories === "number" &&
+      {basis === 'serving' &&
+        typeof wholeCalories === 'number' &&
         Number.isFinite(wholeCalories) && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {t.rich("wholeRecipeTotal", {
+            {t.rich('wholeRecipeTotal', {
               servings: formatQuantity(wholeServings),
               noun,
               calories: formatNutrient(wholeCalories, 0),
               value: (chunks) => (
-                <span className="font-medium tabular-nums text-foreground">
-                  {chunks}
-                </span>
+                <span className="font-medium tabular-nums text-foreground">{chunks}</span>
               ),
             })}
           </p>
@@ -177,15 +165,12 @@ export function NutritionPanel({
       {caloriePercent != null && activeMember && (
         <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
           <span>
-            ≈{" "}
-            <span className="font-semibold tabular-nums text-foreground">
-              {caloriePercent}%
-            </span>{" "}
-            {t("ofDailyCaloriesFor")}
+            ≈ <span className="font-semibold tabular-nums text-foreground">{caloriePercent}%</span>{' '}
+            {t('ofDailyCaloriesFor')}
           </span>
           {calorieCandidates.length > 1 ? (
             <select
-              aria-label={t("memberSelectAria")}
+              aria-label={t('memberSelectAria')}
               value={activeMember.id}
               onChange={(e) => setActiveMemberId(e.target.value)}
               className="rounded-md border border-border bg-surface px-1.5 py-0.5 font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -197,22 +182,20 @@ export function NutritionPanel({
               ))}
             </select>
           ) : (
-            <span className="font-medium text-foreground">
-              {activeMember.name}
-            </span>
+            <span className="font-medium text-foreground">{activeMember.name}</span>
           )}
-          {basis === "whole" ? <span>{t("wholeRecipeSuffix")}</span> : null}
+          {basis === 'whole' ? <span>{t('wholeRecipeSuffix')}</span> : null}
         </p>
       )}
 
       {flags.length > 0 && (
-        <ul aria-label={t("flagsAria")} className="mt-3 flex flex-wrap gap-1.5">
+        <ul aria-label={t('flagsAria')} className="mt-3 flex flex-wrap gap-1.5">
           {flags.map((flag) => {
             const style = LEVEL_STYLE[flag.level];
             return (
               <li key={flag.key}>
                 <Badge variant={style.variant}>
-                  {t("flag", {
+                  {t('flag', {
                     level: t(`level.${flag.level}`),
                     nutrient: flag.label.toLowerCase(),
                     percent: flag.percentDV,
@@ -229,17 +212,15 @@ export function NutritionPanel({
           <div
             key={row.key}
             className={cn(
-              "flex items-baseline justify-between gap-3 py-1.5",
-              i > 0 && "border-t border-border/60",
-              row.key === "calories" && "font-semibold",
+              'flex items-baseline justify-between gap-3 py-1.5',
+              i > 0 && 'border-t border-border/60',
+              row.key === 'calories' && 'font-semibold',
             )}
           >
             <dt
               className={cn(
-                "text-sm",
-                row.key === "calories"
-                  ? "text-foreground"
-                  : "text-muted-foreground",
+                'text-sm',
+                row.key === 'calories' ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
               {row.label}
@@ -254,13 +235,10 @@ export function NutritionPanel({
 
       <p className="mt-3 text-xs text-muted-foreground">
         {estimated
-          ? typeof sourced === "number" &&
-            typeof total === "number" &&
-            total > 0 &&
-            sourced < total
-            ? t("estimatedPartial", { sourced, total })
-            : t("estimated")
-          : t("entered")}
+          ? typeof sourced === 'number' && typeof total === 'number' && total > 0 && sourced < total
+            ? t('estimatedPartial', { sourced, total })
+            : t('estimated')
+          : t('entered')}
       </p>
     </section>
   );

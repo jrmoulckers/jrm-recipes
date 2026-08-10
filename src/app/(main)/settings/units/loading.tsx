@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { Skeleton } from "~/components/ui/skeleton";
+import { Skeleton } from '~/components/ui/skeleton';
 
 export default function UnitsSettingsLoading() {
   return (

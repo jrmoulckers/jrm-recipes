@@ -1,10 +1,10 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Where a waitlist signup was captured. Kept to a small enum so the `source`
  * tag stays low-cardinality and non-identifying (issue #351).
  */
-export const WAITLIST_SOURCES = ["landing", "hero", "closing"] as const;
+export const WAITLIST_SOURCES = ['landing', 'hero', 'closing'] as const;
 
 export type WaitlistSource = (typeof WAITLIST_SOURCES)[number];
 
@@ -18,10 +18,10 @@ export const waitlistInput = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(1, "Enter your email")
-    .max(320, "That email is too long")
-    .email("Enter a valid email"),
-  source: z.enum(WAITLIST_SOURCES).default("landing"),
+    .min(1, 'Enter your email')
+    .max(320, 'That email is too long')
+    .email('Enter a valid email'),
+  source: z.enum(WAITLIST_SOURCES).default('landing'),
 });
 
 export type WaitlistInput = z.input<typeof waitlistInput>;

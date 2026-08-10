@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * Voice dictation for editor text fields (issue #373).
@@ -46,7 +46,7 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 function getRecognitionCtor(): SpeechRecognitionCtor | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   const scope = window as unknown as {
     SpeechRecognition?: SpeechRecognitionCtor;
     webkitSpeechRecognition?: SpeechRecognitionCtor;
@@ -56,7 +56,7 @@ function getRecognitionCtor(): SpeechRecognitionCtor | null {
 
 export function useSpeechInput({
   onResult,
-  lang = "en-US",
+  lang = 'en-US',
 }: {
   onResult: (text: string) => void;
   lang?: string;
@@ -87,7 +87,7 @@ export function useSpeechInput({
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.onresult = (event) => {
-      let chunk = "";
+      let chunk = '';
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
         if (result?.isFinal) chunk += result[0].transcript;
@@ -119,4 +119,4 @@ export function useSpeechInput({
 }
 
 /** Append dictated text to an existing value without wiping what's there. */
-export { appendDictation } from "~/lib/append-dictation";
+export { appendDictation } from '~/lib/append-dictation';

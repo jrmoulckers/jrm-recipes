@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Gift, PartyPopper } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Gift, PartyPopper } from 'lucide-react';
 
-import { redeemGiftAction } from "~/server/billing/actions";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+import { redeemGiftAction } from '~/server/billing/actions';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 
 /**
  * Client form for redeeming a gift code (issue #331). Calls `redeemGiftAction`,
@@ -18,8 +18,8 @@ import { Label } from "~/components/ui/label";
  * message on any error. No code validation logic lives here. The server owns
  * the single-use claim. This is purely the entry + feedback surface.
  */
-export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
-  const t = useTranslations("billing.redeem");
+export function RedeemForm({ initialCode = '' }: { initialCode?: string }) {
+  const t = useTranslations('billing.redeem');
   const router = useRouter();
   const [code, setCode] = React.useState(initialCode);
   const [pending, startTransition] = React.useTransition();
@@ -33,7 +33,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
       void redeemGiftAction(code).then((result) => {
         if (result.ok) {
           setSuccess({ months: result.durationMonths });
-          setCode("");
+          setCode('');
           router.refresh();
           return;
         }
@@ -51,15 +51,13 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
       >
         <PartyPopper className="size-8 text-success" aria-hidden="true" />
         <div className="flex flex-col gap-1">
-          <p className="font-display text-xl font-semibold">
-            {t("success.title")}
-          </p>
+          <p className="font-display text-xl font-semibold">{t('success.title')}</p>
           <p className="text-sm text-muted-foreground">
-            {t("success.description", { months: success.months })}
+            {t('success.description', { months: success.months })}
           </p>
         </div>
         <Button asChild>
-          <Link href="/recipes">{t("success.cta")}</Link>
+          <Link href="/recipes">{t('success.cta')}</Link>
         </Button>
       </div>
     );
@@ -68,7 +66,7 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="gift-code">{t("giftCode")}</Label>
+        <Label htmlFor="gift-code">{t('giftCode')}</Label>
         <Input
           id="gift-code"
           name="gift-code"
@@ -79,22 +77,18 @@ export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
           autoCapitalize="characters"
           spellCheck={false}
           aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "gift-code-error" : undefined}
+          aria-describedby={error ? 'gift-code-error' : undefined}
           className="font-mono tracking-wide"
         />
         {error ? (
-          <p
-            id="gift-code-error"
-            role="alert"
-            className="text-sm text-destructive"
-          >
+          <p id="gift-code-error" role="alert" className="text-sm text-destructive">
             {error}
           </p>
         ) : null}
       </div>
       <Button type="submit" loading={pending} disabled={!code.trim()}>
         <Gift className="size-4" aria-hidden="true" />
-        {t("submit")}
+        {t('submit')}
       </Button>
     </form>
   );

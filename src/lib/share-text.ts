@@ -1,4 +1,4 @@
-import { brand } from "~/config/brand";
+import { brand } from '~/config/brand';
 
 /**
  * Default share message that rides along with a shared recipe link (#143).
@@ -12,13 +12,7 @@ import { brand } from "~/config/brand";
  * which takes `url` separately). Use {@link shareMessageWithUrl} for the
  * clipboard fallback, where the link must be part of the copied text.
  */
-export function shareText({
-  title,
-  author,
-}: {
-  title: string;
-  author?: string | null;
-}): string {
+export function shareText({ title, author }: { title: string; author?: string | null }): string {
   const cook = author?.trim();
   if (cook) {
     return `${title}, from ${cook}'s kitchen. Made with ${brand.name}.`;

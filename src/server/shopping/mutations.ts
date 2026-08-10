@@ -1,20 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { createId } from "@paralleldrive/cuid2";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-  sql,
-} from "drizzle-orm";
+import { createId } from '@paralleldrive/cuid2';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 
-import { db } from "~/server/db";
+import { db } from '~/server/db';
 import {
   customUnits,
   mealPlanEntries,
@@ -30,9 +19,9 @@ import {
   type ShoppingListRestorePoint,
   userUnitPreferences,
   type User,
-} from "~/server/db/schema";
-import { getRecipe } from "~/server/recipes/queries";
-import { parseLeftoversNote } from "~/lib/planner-batch";
+} from '~/server/db/schema';
+import { getRecipe } from '~/server/recipes/queries';
+import { parseLeftoversNote } from '~/lib/planner-batch';
 import {
   isPantryStaple,
   mergeShoppingItems,
@@ -40,14 +29,14 @@ import {
   type ShoppingCategory,
   type ShoppingAggregationOptions,
   type ShoppingItemInput,
-} from "~/lib/shopping-list";
+} from '~/lib/shopping-list';
 import {
   findIngredientRoute,
   ingredientRouteIdentity,
   partitionShoppingItemsByDestination,
   type ShoppingIngredientRoute,
-} from "~/lib/shopping-routing";
-import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
+} from '~/lib/shopping-routing';
+import { toCustomUnitDefs, toUnitPrefs } from '~/lib/unit-prefs';
 import type {
   CreateShoppingListInput,
   CreateShoppingStoreInput,
@@ -58,14 +47,11 @@ import type {
   RenameShoppingStoreInput,
   RestoreShoppingListPointsInput,
   SaveIngredientPackageInput,
-} from "./validation";
-import {
-  planWarningsForRecipes,
-  type PlanSafetyWarning,
-} from "~/server/dietary/gating";
+} from './validation';
+import { planWarningsForRecipes, type PlanSafetyWarning } from '~/server/dietary/gating';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type RestoreOperation = ShoppingListRestorePoint["operation"];
+type RestoreOperation = ShoppingListRestorePoint['operation'];
 
 export const SHOPPING_RESTORE_POINT_LIMIT = 20;
 
@@ -92,7 +78,7 @@ async function ownedList(
     },
   });
   if (list?.userId !== userId || (activeOnly && list.archivedAt != null)) {
-    throw new Error("NOT_FOUND");
+    throw new Error('NOT_FOUND');
   }
   return list;
 }
@@ -116,9 +102,9 @@ async function lockOwnedList(
     })
     .from(shoppingLists)
     .where(and(eq(shoppingLists.id, listId), eq(shoppingLists.userId, userId)))
-    .for("update");
+    .for('update');
   if (!list || (activeOnly && list.archivedAt != null)) {
-    throw new Error("NOT_FOUND");
+    throw new Error('NOT_FOUND');
   }
   return list;
 }
@@ -156,7 +142,7 @@ async function createRestorePoint(
       createdAt: sql`clock_timestamp()`,
     })
     .returning({ id: shoppingListRestorePoints.id });
-  if (!restorePoint) throw new Error("NOT_FOUND");
+  if (!restorePoint) throw new Error('NOT_FOUND');
 
   if (items.length > 0) {
     await tx.insert(shoppingListRestorePointItems).values(
@@ -193,10 +179,7 @@ async function createRestorePoint(
         eq(shoppingListRestorePoints.userId, list.userId),
       ),
       columns: { id: true, operationGroupId: true },
-      orderBy: [
-        desc(shoppingListRestorePoints.createdAt),
-        desc(shoppingListRestorePoints.id),
-      ],
+      orderBy: [desc(shoppingListRestorePoints.createdAt), desc(shoppingListRestorePoints.id)],
       offset: SHOPPING_RESTORE_POINT_LIMIT,
     })) ?? [];
   if (stale.length > 0) {
@@ -236,7 +219,7 @@ async function ownedItem(tx: Tx, itemId: string, userId: string) {
     where: eq(shoppingListItems.id, itemId),
     with: { list: { columns: { userId: true } } },
   });
-  if (item?.list.userId !== userId) throw new Error("NOT_FOUND");
+  if (item?.list.userId !== userId) throw new Error('NOT_FOUND');
   return item;
 }
 
@@ -244,21 +227,21 @@ async function lockOwnedItemList(tx: Tx, itemId: string, userId: string) {
   const initialItem = await ownedItem(tx, itemId, userId);
   await lockOwnedList(tx, initialItem.listId, userId);
   const item = await ownedItem(tx, itemId, userId);
-  if (item.listId !== initialItem.listId) throw new Error("CONFLICT");
+  if (item.listId !== initialItem.listId) throw new Error('CONFLICT');
   return item;
 }
 
 async function createFallbackList(tx: Tx, userId: string) {
   const [created] = await tx
     .insert(shoppingLists)
-    .values({ userId, name: "Shopping list", isDefault: false })
+    .values({ userId, name: 'Shopping list', isDefault: false })
     .returning({
       id: shoppingLists.id,
       userId: shoppingLists.userId,
       isDefault: shoppingLists.isDefault,
       archivedAt: shoppingLists.archivedAt,
     });
-  if (!created) throw new Error("NOT_FOUND");
+  if (!created) throw new Error('NOT_FOUND');
   return created;
 }
 
@@ -287,7 +270,7 @@ async function loadOwnedRoutes(
 
   const alternatives = new Map<string, string[]>();
   for (const row of alternativeRows) {
-    if (!ownedListIds.has(row.listId)) throw new Error("NOT_FOUND");
+    if (!ownedListIds.has(row.listId)) throw new Error('NOT_FOUND');
     const ids = alternatives.get(row.routeId) ?? [];
     ids.push(row.listId);
     alternatives.set(row.routeId, ids);
@@ -295,7 +278,7 @@ async function loadOwnedRoutes(
 
   return routeRows.map((route) => {
     if (!ownedListIds.has(route.preferredListId)) {
-      throw new Error("NOT_FOUND");
+      throw new Error('NOT_FOUND');
     }
     return {
       id: route.id,
@@ -307,11 +290,7 @@ async function loadOwnedRoutes(
       packageUnit: route.packageUnit,
       packageLabel: route.packageLabel,
       packageRoundBehavior:
-        route.packageRounding == null
-          ? "inherit"
-          : route.packageRounding
-            ? "enable"
-            : "disable",
+        route.packageRounding == null ? 'inherit' : route.packageRounding ? 'enable' : 'disable',
     };
   });
 }
@@ -357,10 +336,7 @@ async function routingWorkspace(tx: Tx, userId: string) {
       .set({ isDefault: false })
       .where(eq(shoppingLists.userId, userId));
     const created = await createFallbackList(tx, userId);
-    await tx
-      .update(shoppingLists)
-      .set({ isDefault: true })
-      .where(eq(shoppingLists.id, created.id));
+    await tx.update(shoppingLists).set({ isDefault: true }).where(eq(shoppingLists.id, created.id));
     const defaultList = { ...created, isDefault: true };
     lists = [...lists, defaultList];
     active = [defaultList];
@@ -400,16 +376,16 @@ function touchList(tx: Tx, listId: string) {
 function itemInput(
   item: Pick<
     typeof shoppingListItems.$inferSelect,
-    | "item"
-    | "foodId"
-    | "quantity"
-    | "quantityMax"
-    | "unit"
-    | "requiredBaseQuantity"
-    | "requiredBaseQuantityMax"
-    | "requiredBaseUnit"
-    | "optional"
-    | "recipeId"
+    | 'item'
+    | 'foodId'
+    | 'quantity'
+    | 'quantityMax'
+    | 'unit'
+    | 'requiredBaseQuantity'
+    | 'requiredBaseQuantityMax'
+    | 'requiredBaseUnit'
+    | 'optional'
+    | 'recipeId'
   >,
 ): ShoppingItemInput {
   return {
@@ -435,13 +411,9 @@ async function mergeIntoList(
   const existing = await tx.query.shoppingListItems.findMany({
     where: eq(shoppingListItems.listId, listId),
   });
-  const pool = existing.filter(
-    (item) => !item.checked && (item.note ?? "").length === 0,
-  );
+  const pool = existing.filter((item) => !item.checked && (item.note ?? '').length === 0);
   const poolInputs = pool.map(itemInput);
-  const poolKeys = new Set(
-    mergeShoppingItems(poolInputs, options).map((item) => item.key),
-  );
+  const poolKeys = new Set(mergeShoppingItems(poolInputs, options).map((item) => item.key));
   let added = 0;
   let merged = 0;
   for (const line of mergeShoppingItems(contributions, options)) {
@@ -449,10 +421,7 @@ async function mergeIntoList(
     else added++;
   }
 
-  const consolidated = mergeShoppingItems(
-    [...poolInputs, ...contributions],
-    options,
-  );
+  const consolidated = mergeShoppingItems([...poolInputs, ...contributions], options);
   if (pool.length > 0) {
     await tx.delete(shoppingListItems).where(
       inArray(
@@ -505,30 +474,19 @@ async function routeContributions(
   );
   const lockedLists = await lockOwnedLists(tx, partitions.keys(), userId, true);
   const restorePoints: RestorePointReference[] = [];
-  const operationGroupId =
-    restoreOperation && lockedLists.length > 1 ? createId() : null;
+  const operationGroupId = restoreOperation && lockedLists.length > 1 ? createId() : null;
   if (restoreOperation) {
     for (const list of lockedLists) {
       restorePoints.push({
         listId: list.id,
-        restorePointId: await createRestorePoint(
-          tx,
-          list,
-          restoreOperation,
-          operationGroupId,
-        ),
+        restorePointId: await createRestorePoint(tx, list, restoreOperation, operationGroupId),
       });
     }
   }
   let added = 0;
   let merged = 0;
   for (const [listId, items] of partitions) {
-    const result = await mergeIntoList(
-      tx,
-      listId,
-      items,
-      workspace.aggregationOptions,
-    );
+    const result = await mergeIntoList(tx, listId, items, workspace.aggregationOptions);
     added += result.added;
     merged += result.merged;
   }
@@ -550,7 +508,7 @@ export async function addRecipeToList(
   includeStaples = false,
 ): Promise<void> {
   const recipe = await getRecipe(recipeId, user);
-  if (!recipe) throw new Error("NOT_FOUND");
+  if (!recipe) throw new Error('NOT_FOUND');
 
   const contributions = toShoppingItems({
     recipeId: recipe.id,
@@ -617,21 +575,15 @@ export async function buildListFromPlan(
 ): Promise<BuildFromPlanResult> {
   if (groupId != null) {
     const membership = await db.query.groupMembers.findFirst({
-      where: and(
-        eq(groupMembers.groupId, groupId),
-        eq(groupMembers.userId, user.id),
-      ),
+      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, user.id)),
       columns: { id: true },
     });
-    if (!membership) throw new Error("FORBIDDEN");
+    if (!membership) throw new Error('FORBIDDEN');
   }
   const scope =
     groupId != null
       ? eq(mealPlanEntries.groupId, groupId)
-      : and(
-          eq(mealPlanEntries.userId, user.id),
-          isNull(mealPlanEntries.groupId),
-        );
+      : and(eq(mealPlanEntries.userId, user.id), isNull(mealPlanEntries.groupId));
   const entries = await db.query.mealPlanEntries.findMany({
     where: and(
       scope,
@@ -668,10 +620,7 @@ export async function buildListFromPlan(
   // batch-cooked meal isn't shopped for twice. Cooking the same recipe on two
   // separate nights DOES contribute twice (quantities combine below).
   const cooking = entries.filter(
-    (e) =>
-      e.recipe != null &&
-      e.leftoverSourceId == null &&
-      parseLeftoversNote(e.note) == null,
+    (e) => e.recipe != null && e.leftoverSourceId == null && parseLeftoversNote(e.note) == null,
   );
   if (cooking.length === 0) {
     return {
@@ -709,9 +658,7 @@ export async function buildListFromPlan(
   // Proactive allergen/diet gating for the whole planned week: flag any cooked
   // recipe that conflicts with a saved family profile. Best-effort. Never blocks
   // building the list.
-  const warningsByRecipe = await planWarningsForRecipes(user.id, [
-    ...recipeIds,
-  ]);
+  const warningsByRecipe = await planWarningsForRecipes(user.id, [...recipeIds]);
   const warnings = [...warningsByRecipe.values()].flat();
 
   if (contributions.length === 0) {
@@ -730,7 +677,7 @@ export async function buildListFromPlan(
       tx,
       user.id,
       contributions,
-      "rebuild",
+      'rebuild',
     );
     return {
       recipesUsed: recipeIds.size,
@@ -744,10 +691,7 @@ export async function buildListFromPlan(
 }
 
 /** Append a single hand-typed grocery line. */
-export async function addManualItem(
-  user: User,
-  input: ManualItemInput,
-): Promise<void> {
+export async function addManualItem(user: User, input: ManualItemInput): Promise<void> {
   await db.transaction(async (tx) => {
     const list = await lockOwnedList(tx, input.listId, user.id, true);
     const workspace = await routingWorkspace(tx, user.id);
@@ -762,7 +706,7 @@ export async function addManualItem(
       ],
       workspace.aggregationOptions,
     );
-    if (!aggregated) throw new Error("INVALID_INPUT");
+    if (!aggregated) throw new Error('INVALID_INPUT');
     const [{ next } = { next: 0 }] = await tx
       .select({
         next: sql<number>`coalesce(max(${shoppingListItems.position}), -1) + 1`,
@@ -809,15 +753,12 @@ async function resolveStoreIds(
 
   if (storeIds.length > 0) {
     const owned = await tx.query.shoppingStores.findMany({
-      where: and(
-        eq(shoppingStores.userId, userId),
-        inArray(shoppingStores.id, storeIds),
-      ),
+      where: and(eq(shoppingStores.userId, userId), inArray(shoppingStores.id, storeIds)),
       columns: { id: true },
     });
     const ownedIds = new Set(owned.map((store) => store.id));
     for (const storeId of storeIds) {
-      if (!ownedIds.has(storeId)) throw new Error("NOT_FOUND");
+      if (!ownedIds.has(storeId)) throw new Error('NOT_FOUND');
       if (seen.has(storeId)) continue;
       seen.add(storeId);
       resolved.push(storeId);
@@ -837,19 +778,12 @@ async function resolveStoreIds(
 }
 
 /** Find (case-insensitively) or create one store in the user's library. */
-async function upsertStore(
-  tx: Tx,
-  userId: string,
-  name: string,
-): Promise<string> {
+async function upsertStore(tx: Tx, userId: string, name: string): Promise<string> {
   const [existing] = await tx
     .select({ id: shoppingStores.id })
     .from(shoppingStores)
     .where(
-      and(
-        eq(shoppingStores.userId, userId),
-        sql`lower(${shoppingStores.name}) = lower(${name})`,
-      ),
+      and(eq(shoppingStores.userId, userId), sql`lower(${shoppingStores.name}) = lower(${name})`),
     )
     .limit(1);
   if (existing) return existing.id;
@@ -857,7 +791,7 @@ async function upsertStore(
     .insert(shoppingStores)
     .values({ userId, name })
     .returning({ id: shoppingStores.id });
-  if (!created) throw new Error("NOT_FOUND");
+  if (!created) throw new Error('NOT_FOUND');
   return created.id;
 }
 
@@ -865,14 +799,8 @@ async function upsertStore(
  * Replace a list's store links. `shopping_lists.store_name` is dual-written
  * with the first store for the expand/contract window (see docs/migrations.md).
  */
-async function setListStores(
-  tx: Tx,
-  listId: string,
-  storeIds: string[],
-): Promise<void> {
-  await tx
-    .delete(shoppingListStores)
-    .where(eq(shoppingListStores.listId, listId));
+async function setListStores(tx: Tx, listId: string, storeIds: string[]): Promise<void> {
+  await tx.delete(shoppingListStores).where(eq(shoppingListStores.listId, listId));
   if (storeIds.length > 0) {
     await tx.insert(shoppingListStores).values(
       storeIds.map((storeId, position) => ({
@@ -913,7 +841,7 @@ export async function renameShoppingStore(
       where: eq(shoppingStores.id, input.storeId),
       columns: { id: true, userId: true },
     });
-    if (store?.userId !== user.id) throw new Error("NOT_FOUND");
+    if (store?.userId !== user.id) throw new Error('NOT_FOUND');
     const [clash] = await tx
       .select({ id: shoppingStores.id })
       .from(shoppingStores)
@@ -924,7 +852,7 @@ export async function renameShoppingStore(
         ),
       )
       .limit(1);
-    if (clash && clash.id !== store.id) throw new Error("CONFLICT");
+    if (clash && clash.id !== store.id) throw new Error('CONFLICT');
     await tx
       .update(shoppingStores)
       .set({ name: input.name, updatedAt: new Date() })
@@ -934,16 +862,13 @@ export async function renameShoppingStore(
 }
 
 /** Deleting a store unlinks it everywhere; lists and their items are kept. */
-export async function deleteShoppingStore(
-  user: User,
-  storeId: string,
-): Promise<void> {
+export async function deleteShoppingStore(user: User, storeId: string): Promise<void> {
   await db.transaction(async (tx) => {
     const store = await tx.query.shoppingStores.findFirst({
       where: eq(shoppingStores.id, storeId),
       columns: { id: true, userId: true },
     });
-    if (store?.userId !== user.id) throw new Error("NOT_FOUND");
+    if (store?.userId !== user.id) throw new Error('NOT_FOUND');
     await tx.delete(shoppingStores).where(eq(shoppingStores.id, store.id));
     await syncStoreNameMirror(tx, user.id);
   });
@@ -966,22 +891,11 @@ async function syncStoreNameMirror(tx: Tx, userId: string): Promise<void> {
     .where(eq(shoppingLists.userId, userId));
 }
 
-export async function createShoppingList(
-  user: User,
-  input: CreateShoppingListInput,
-) {
+export async function createShoppingList(user: User, input: CreateShoppingListInput) {
   return db.transaction(async (tx) => {
-    const storeIds = await resolveStoreIds(
-      tx,
-      user.id,
-      input.storeIds,
-      input.newStoreNames,
-    );
+    const storeIds = await resolveStoreIds(tx, user.id, input.storeIds, input.newStoreNames);
     const active = await tx.query.shoppingLists.findMany({
-      where: and(
-        eq(shoppingLists.userId, user.id),
-        isNull(shoppingLists.archivedAt),
-      ),
+      where: and(eq(shoppingLists.userId, user.id), isNull(shoppingLists.archivedAt)),
       columns: { id: true, isDefault: true },
     });
     const isDefault = !active.some((list) => list.isDefault);
@@ -999,7 +913,7 @@ export async function createShoppingList(
         isDefault,
       })
       .returning({ id: shoppingLists.id });
-    if (!created) throw new Error("NOT_FOUND");
+    if (!created) throw new Error('NOT_FOUND');
     await setListStores(tx, created.id, storeIds);
     return created;
   });
@@ -1011,12 +925,7 @@ export async function renameShoppingList(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     await ownedList(tx, input.listId, user.id);
-    const storeIds = await resolveStoreIds(
-      tx,
-      user.id,
-      input.storeIds,
-      input.newStoreNames,
-    );
+    const storeIds = await resolveStoreIds(tx, user.id, input.storeIds, input.newStoreNames);
     await tx
       .update(shoppingLists)
       .set({
@@ -1038,12 +947,7 @@ export async function makeShoppingListDefault(
       await tx
         .update(shoppingLists)
         .set({ isDefault: false })
-        .where(
-          and(
-            eq(shoppingLists.userId, user.id),
-            eq(shoppingLists.isDefault, true),
-          ),
-        );
+        .where(and(eq(shoppingLists.userId, user.id), eq(shoppingLists.isDefault, true)));
       await tx
         .update(shoppingLists)
         .set({ isDefault: true, updatedAt: new Date() })
@@ -1053,11 +957,7 @@ export async function makeShoppingListDefault(
   });
 }
 
-async function prepareListRemoval(
-  tx: Tx,
-  userId: string,
-  target: OwnedList,
-): Promise<string> {
+async function prepareListRemoval(tx: Tx, userId: string, target: OwnedList): Promise<string> {
   let lists = await tx.query.shoppingLists.findMany({
     where: eq(shoppingLists.userId, userId),
     orderBy: [asc(shoppingLists.name), asc(shoppingLists.id)],
@@ -1068,9 +968,7 @@ async function prepareListRemoval(
       archivedAt: true,
     },
   });
-  let activeFallbacks = lists.filter(
-    (list) => list.id !== target.id && list.archivedAt == null,
-  );
+  let activeFallbacks = lists.filter((list) => list.id !== target.id && list.archivedAt == null);
   if (activeFallbacks.length === 0) {
     const created = await createFallbackList(tx, userId);
     lists = [...lists, created];
@@ -1083,12 +981,7 @@ async function prepareListRemoval(
     await tx
       .update(shoppingLists)
       .set({ isDefault: false })
-      .where(
-        and(
-          eq(shoppingLists.userId, userId),
-          eq(shoppingLists.isDefault, true),
-        ),
-      );
+      .where(and(eq(shoppingLists.userId, userId), eq(shoppingLists.isDefault, true)));
     await tx
       .update(shoppingLists)
       .set({ isDefault: true })
@@ -1100,16 +993,12 @@ async function prepareListRemoval(
   const routes = await loadOwnedRoutes(tx, userId, ownedIds);
   for (const route of routes) {
     if (route.preferredListId !== target.id) continue;
-    const promoted =
-      route.alternativeListIds.find((id) => activeIds.has(id)) ?? fallback.id;
+    const promoted = route.alternativeListIds.find((id) => activeIds.has(id)) ?? fallback.id;
     await tx
       .update(shoppingIngredientRoutes)
       .set({ preferredListId: promoted, updatedAt: new Date() })
       .where(
-        and(
-          eq(shoppingIngredientRoutes.id, route.id),
-          eq(shoppingIngredientRoutes.userId, userId),
-        ),
+        and(eq(shoppingIngredientRoutes.id, route.id), eq(shoppingIngredientRoutes.userId, userId)),
       );
     await tx
       .delete(shoppingIngredientRouteAlternatives)
@@ -1144,10 +1033,7 @@ export async function archiveShoppingList(
   });
 }
 
-export async function restoreShoppingList(
-  user: User,
-  listId: string,
-): Promise<{ listId: string }> {
+export async function restoreShoppingList(user: User, listId: string): Promise<{ listId: string }> {
   return db.transaction(async (tx) => {
     const list = await ownedList(tx, listId, user.id);
     if (list.archivedAt != null) {
@@ -1175,7 +1061,7 @@ export async function deleteShoppingList(
 async function saveItemRoute(
   tx: Tx,
   userId: string,
-  item: Pick<typeof shoppingListItems.$inferSelect, "item" | "foodId">,
+  item: Pick<typeof shoppingListItems.$inferSelect, 'item' | 'foodId'>,
   preferredListId: string,
   alternativeListIds: string[],
 ) {
@@ -1183,11 +1069,7 @@ async function saveItemRoute(
     where: eq(shoppingLists.userId, userId),
     columns: { id: true },
   });
-  const routes = await loadOwnedRoutes(
-    tx,
-    userId,
-    new Set(lists.map((list) => list.id)),
-  );
+  const routes = await loadOwnedRoutes(tx, userId, new Set(lists.map((list) => list.id)));
   const identity = ingredientRouteIdentity(item);
   const existing = findIngredientRoute(item, routes);
   let routeId = existing?.id;
@@ -1202,10 +1084,7 @@ async function saveItemRoute(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(shoppingIngredientRoutes.id, routeId),
-          eq(shoppingIngredientRoutes.userId, userId),
-        ),
+        and(eq(shoppingIngredientRoutes.id, routeId), eq(shoppingIngredientRoutes.userId, userId)),
       );
     await tx
       .delete(shoppingIngredientRouteAlternatives)
@@ -1223,7 +1102,7 @@ async function saveItemRoute(
       .returning({ id: shoppingIngredientRoutes.id });
     routeId = created?.id;
   }
-  if (!routeId) throw new Error("NOT_FOUND");
+  if (!routeId) throw new Error('NOT_FOUND');
   if (alternativeListIds.length > 0) {
     await tx.insert(shoppingIngredientRouteAlternatives).values(
       alternativeListIds.map((alternativeListId, position) => ({
@@ -1250,7 +1129,7 @@ async function moveItemWithinTransaction(
     .from(shoppingListItems)
     .where(eq(shoppingListItems.listId, target.id));
 
-  if (!item.checked && (item.note ?? "").length === 0) {
+  if (!item.checked && (item.note ?? '').length === 0) {
     const destination = await tx.query.shoppingListItems.findMany({
       where: eq(shoppingListItems.listId, target.id),
     });
@@ -1258,23 +1137,16 @@ async function moveItemWithinTransaction(
     const compatible = destination.filter(
       (candidate) =>
         !candidate.checked &&
-        (candidate.note ?? "").length === 0 &&
-        mergeShoppingItems([itemInput(candidate)], options)[0]?.key ===
-          sourceKey,
+        (candidate.note ?? '').length === 0 &&
+        mergeShoppingItems([itemInput(candidate)], options)[0]?.key === sourceKey,
     );
     if (compatible.length > 0) {
-      const [merged] = mergeShoppingItems(
-        [...compatible.map(itemInput), itemInput(item)],
-        options,
-      );
-      if (!merged) throw new Error("NOT_FOUND");
+      const [merged] = mergeShoppingItems([...compatible.map(itemInput), itemInput(item)], options);
+      if (!merged) throw new Error('NOT_FOUND');
       await tx
         .delete(shoppingListItems)
         .where(
-          inArray(shoppingListItems.id, [
-            item.id,
-            ...compatible.map((candidate) => candidate.id),
-          ]),
+          inArray(shoppingListItems.id, [item.id, ...compatible.map((candidate) => candidate.id)]),
         );
       await tx.insert(shoppingListItems).values({
         listId: target.id,
@@ -1321,25 +1193,19 @@ export async function saveIngredientPackage(
   await db.transaction(async (tx) => {
     await ownedList(tx, input.listId, user.id);
     const item = await ownedItem(tx, input.itemId, user.id);
-    if (item.listId !== input.listId) throw new Error("NOT_FOUND");
+    if (item.listId !== input.listId) throw new Error('NOT_FOUND');
     const preferred = await ownedList(tx, input.preferredListId, user.id, true);
     const lists = await tx.query.shoppingLists.findMany({
       where: eq(shoppingLists.userId, user.id),
       columns: { id: true },
     });
-    const routes = await loadOwnedRoutes(
-      tx,
-      user.id,
-      new Set(lists.map((list) => list.id)),
-    );
+    const routes = await loadOwnedRoutes(tx, user.id, new Set(lists.map((list) => list.id)));
     const identity = ingredientRouteIdentity(item);
     const existing = findIngredientRoute(item, routes);
     const packageRoundBehavior =
-      input.packageAmount == null ? "inherit" : input.packageRoundBehavior;
+      input.packageAmount == null ? 'inherit' : input.packageRoundBehavior;
     const packageRounding =
-      packageRoundBehavior === "inherit"
-        ? null
-        : packageRoundBehavior === "enable";
+      packageRoundBehavior === 'inherit' ? null : packageRoundBehavior === 'enable';
     const fields = {
       foodId: identity.foodId,
       normalizedItem: identity.normalizedItem,
@@ -1378,15 +1244,14 @@ export async function saveIngredientPackage(
         .returning({ id: shoppingIngredientRoutes.id });
       routeId = created?.id;
     }
-    if (!routeId) throw new Error("NOT_FOUND");
+    if (!routeId) throw new Error('NOT_FOUND');
 
     const savedRoute: ShoppingIngredientRoute = {
       id: routeId,
       foodId: identity.foodId,
       normalizedItem: identity.normalizedItem,
       preferredListId: preferred.id,
-      alternativeListIds:
-        existing?.alternativeListIds.filter((id) => id !== preferred.id) ?? [],
+      alternativeListIds: existing?.alternativeListIds.filter((id) => id !== preferred.id) ?? [],
       packageAmount: input.packageAmount ?? null,
       packageUnit: input.packageUnit ?? null,
       packageLabel: input.packageLabel ?? null,
@@ -1397,7 +1262,7 @@ export async function saveIngredientPackage(
       : [...routes, savedRoute];
     const options = await loadAggregationOptions(tx, user.id, nextRoutes);
     const [aggregated] = mergeShoppingItems([itemInput(item)], options);
-    if (!aggregated) throw new Error("NOT_FOUND");
+    if (!aggregated) throw new Error('NOT_FOUND');
     await tx
       .update(shoppingListItems)
       .set({
@@ -1419,29 +1284,21 @@ export async function saveIngredientPackage(
   });
 }
 
-export async function moveShoppingItem(
-  user: User,
-  input: MoveShoppingItemInput,
-): Promise<void> {
+export async function moveShoppingItem(user: User, input: MoveShoppingItemInput): Promise<void> {
   await db.transaction(async (tx) => {
     const initialItem = await ownedItem(tx, input.itemId, user.id);
-    const locked = await lockOwnedLists(
-      tx,
-      [initialItem.listId, input.targetListId],
-      user.id,
-    );
+    const locked = await lockOwnedLists(tx, [initialItem.listId, input.targetListId], user.id);
     const target = locked.find((list) => list.id === input.targetListId);
-    if (!target || target.archivedAt != null) throw new Error("NOT_FOUND");
+    if (!target || target.archivedAt != null) throw new Error('NOT_FOUND');
     const item = await ownedItem(tx, input.itemId, user.id);
     if (!locked.some((list) => list.id === item.listId)) {
-      throw new Error("CONFLICT");
+      throw new Error('CONFLICT');
     }
     if (
-      new Set(input.alternativeListIds).size !==
-        input.alternativeListIds.length ||
+      new Set(input.alternativeListIds).size !== input.alternativeListIds.length ||
       input.alternativeListIds.includes(target.id)
     ) {
-      throw new Error("INVALID_INPUT");
+      throw new Error('INVALID_INPUT');
     }
     for (const alternativeId of input.alternativeListIds) {
       await ownedList(tx, alternativeId, user.id, true);
@@ -1451,13 +1308,7 @@ export async function moveShoppingItem(
     await moveItemWithinTransaction(tx, item, target, options);
 
     if (input.rememberRoute) {
-      await saveItemRoute(
-        tx,
-        user.id,
-        item,
-        target.id,
-        input.alternativeListIds,
-      );
+      await saveItemRoute(tx, user.id, item, target.id, input.alternativeListIds);
     }
   });
 }
@@ -1471,7 +1322,7 @@ export async function bulkMoveShoppingItems(
 }> {
   return db.transaction(async (tx) => {
     if (new Set(input.itemIds).size !== input.itemIds.length) {
-      throw new Error("INVALID_INPUT");
+      throw new Error('INVALID_INPUT');
     }
     const initialItems = await Promise.all(
       input.itemIds.map((itemId) => ownedItem(tx, itemId, user.id)),
@@ -1483,11 +1334,9 @@ export async function bulkMoveShoppingItems(
       true,
     );
     const target = locked.find((list) => list.id === input.targetListId);
-    if (!target) throw new Error("NOT_FOUND");
+    if (!target) throw new Error('NOT_FOUND');
 
-    const items = await Promise.all(
-      input.itemIds.map((itemId) => ownedItem(tx, itemId, user.id)),
-    );
+    const items = await Promise.all(input.itemIds.map((itemId) => ownedItem(tx, itemId, user.id)));
     if (
       items.some(
         (item, index) =>
@@ -1495,17 +1344,14 @@ export async function bulkMoveShoppingItems(
           !locked.some((list) => list.id === item.listId),
       )
     ) {
-      throw new Error("CONFLICT");
+      throw new Error('CONFLICT');
     }
     const movingItems = items.filter((item) => item.listId !== target.id);
     if (movingItems.length === 0) {
       return { restorePoints: [], undoToken: null };
     }
 
-    const affectedIds = new Set([
-      target.id,
-      ...movingItems.map((item) => item.listId),
-    ]);
+    const affectedIds = new Set([target.id, ...movingItems.map((item) => item.listId)]);
     const operationGroupId = createId();
     const restorePoints: RestorePointReference[] = [];
     for (const list of locked.filter((list) => affectedIds.has(list.id))) {
@@ -1514,7 +1360,7 @@ export async function bulkMoveShoppingItems(
         restorePointId: await createRestorePoint(
           tx,
           list,
-          list.id === target.id ? "bulk_move_destination" : "bulk_move_source",
+          list.id === target.id ? 'bulk_move_destination' : 'bulk_move_source',
           operationGroupId,
         ),
       });
@@ -1527,17 +1373,10 @@ export async function bulkMoveShoppingItems(
   });
 }
 
-export async function setItemChecked(
-  user: User,
-  itemId: string,
-  checked: boolean,
-): Promise<void> {
+export async function setItemChecked(user: User, itemId: string, checked: boolean): Promise<void> {
   await db.transaction(async (tx) => {
     await lockOwnedItemList(tx, itemId, user.id);
-    await tx
-      .update(shoppingListItems)
-      .set({ checked })
-      .where(eq(shoppingListItems.id, itemId));
+    await tx.update(shoppingListItems).set({ checked }).where(eq(shoppingListItems.id, itemId));
   });
 }
 
@@ -1553,10 +1392,7 @@ export async function setItemCategory(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     await lockOwnedItemList(tx, itemId, user.id);
-    await tx
-      .update(shoppingListItems)
-      .set({ category })
-      .where(eq(shoppingListItems.id, itemId));
+    await tx.update(shoppingListItems).set({ category }).where(eq(shoppingListItems.id, itemId));
   });
 }
 
@@ -1573,34 +1409,20 @@ export async function clearChecked(
 ): Promise<{ restorePointId: string }> {
   return db.transaction(async (tx) => {
     const list = await lockOwnedList(tx, listId, user.id);
-    const restorePointId = await createRestorePoint(
-      tx,
-      list,
-      "remove_completed",
-    );
+    const restorePointId = await createRestorePoint(tx, list, 'remove_completed');
     await tx
       .delete(shoppingListItems)
-      .where(
-        and(
-          eq(shoppingListItems.listId, list.id),
-          eq(shoppingListItems.checked, true),
-        ),
-      );
+      .where(and(eq(shoppingListItems.listId, list.id), eq(shoppingListItems.checked, true)));
     await touchList(tx, list.id);
     return { restorePointId };
   });
 }
 
-export async function clearList(
-  user: User,
-  listId: string,
-): Promise<{ restorePointId: string }> {
+export async function clearList(user: User, listId: string): Promise<{ restorePointId: string }> {
   return db.transaction(async (tx) => {
     const list = await lockOwnedList(tx, listId, user.id);
-    const restorePointId = await createRestorePoint(tx, list, "clear_all");
-    await tx
-      .delete(shoppingListItems)
-      .where(eq(shoppingListItems.listId, list.id));
+    const restorePointId = await createRestorePoint(tx, list, 'clear_all');
+    await tx.delete(shoppingListItems).where(eq(shoppingListItems.listId, list.id));
     await touchList(tx, list.id);
     return { restorePointId };
   });
@@ -1612,12 +1434,7 @@ export async function uncheckAll(user: User, listId: string): Promise<void> {
     await tx
       .update(shoppingListItems)
       .set({ checked: false, updatedAt: new Date() })
-      .where(
-        and(
-          eq(shoppingListItems.listId, list.id),
-          eq(shoppingListItems.checked, true),
-        ),
-      );
+      .where(and(eq(shoppingListItems.listId, list.id), eq(shoppingListItems.checked, true)));
     await touchList(tx, list.id);
   });
 }
@@ -1644,12 +1461,10 @@ export async function restoreShoppingListPoint(
         },
       },
     });
-    if (!point) throw new Error("NOT_FOUND");
+    if (!point) throw new Error('NOT_FOUND');
 
-    const currentRestorePointId = await createRestorePoint(tx, list, "restore");
-    await tx
-      .delete(shoppingListItems)
-      .where(eq(shoppingListItems.listId, list.id));
+    const currentRestorePointId = await createRestorePoint(tx, list, 'restore');
+    await tx.delete(shoppingListItems).where(eq(shoppingListItems.listId, list.id));
     if (point.items.length > 0) {
       await tx.insert(shoppingListItems).values(
         point.items.map((item, position) => ({
@@ -1702,7 +1517,7 @@ export async function restoreShoppingListPoints(
       new Set(listIds).size !== listIds.length ||
       new Set(pointIds).size !== pointIds.length
     ) {
-      throw new Error("INVALID_INPUT");
+      throw new Error('INVALID_INPUT');
     }
 
     const lists = await lockOwnedLists(tx, listIds, user.id);
@@ -1716,7 +1531,7 @@ export async function restoreShoppingListPoints(
 
     for (const reference of input.restorePoints) {
       const list = listsById.get(reference.listId);
-      if (!list) throw new Error("NOT_FOUND");
+      if (!list) throw new Error('NOT_FOUND');
       const point = await tx.query.shoppingListRestorePoints.findFirst({
         where: and(
           eq(shoppingListRestorePoints.id, reference.restorePointId),
@@ -1732,7 +1547,7 @@ export async function restoreShoppingListPoints(
           },
         },
       });
-      if (!point) throw new Error("NOT_FOUND");
+      if (!point) throw new Error('NOT_FOUND');
       snapshots.push({ list, point });
     }
 
@@ -1741,19 +1556,12 @@ export async function restoreShoppingListPoints(
     for (const list of lists) {
       restorePoints.push({
         listId: list.id,
-        restorePointId: await createRestorePoint(
-          tx,
-          list,
-          "restore",
-          operationGroupId,
-        ),
+        restorePointId: await createRestorePoint(tx, list, 'restore', operationGroupId),
       });
     }
 
     for (const { list, point } of snapshots) {
-      await tx
-        .delete(shoppingListItems)
-        .where(eq(shoppingListItems.listId, list.id));
+      await tx.delete(shoppingListItems).where(eq(shoppingListItems.listId, list.id));
       if (point.items.length > 0) {
         await tx.insert(shoppingListItems).values(
           point.items.map((item, position) => ({

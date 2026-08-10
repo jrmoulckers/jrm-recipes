@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { User } from "~/server/db/schema";
+import type { User } from '~/server/db/schema';
 
 const { state, db } = vi.hoisted(() => {
   const state = {
@@ -40,7 +40,7 @@ const { state, db } = vi.hoisted(() => {
   return { state, db };
 });
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db,
   isDbConfigured: () => state.configured,
 }));
@@ -51,9 +51,9 @@ import {
   getUsage,
   incrementUsage,
   recomputeRecipeCount,
-} from "./usage";
+} from './usage';
 
-const user = { id: "u1" } as unknown as User;
+const user = { id: 'u1' } as unknown as User;
 
 beforeEach(() => {
   state.configured = true;
@@ -65,132 +65,118 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("currentPeriodStart", () => {
-  it("buckets metered metrics into the first of the current UTC month", () => {
-    const jan = currentPeriodStart(
-      "ai_credits",
-      new Date("2025-01-17T09:00:00Z"),
-    );
-    expect(jan.toISOString()).toBe("2025-01-01T00:00:00.000Z");
+describe('currentPeriodStart', () => {
+  it('buckets metered metrics into the first of the current UTC month', () => {
+    const jan = currentPeriodStart('ai_credits', new Date('2025-01-17T09:00:00Z'));
+    expect(jan.toISOString()).toBe('2025-01-01T00:00:00.000Z');
   });
 
-  it("rolls metered metrics to a new bucket the next month", () => {
-    const jan = currentPeriodStart(
-      "ai_credits",
-      new Date("2025-01-31T23:59:59Z"),
-    );
-    const feb = currentPeriodStart(
-      "ai_credits",
-      new Date("2025-02-01T00:00:00Z"),
-    );
-    expect(jan.toISOString()).toBe("2025-01-01T00:00:00.000Z");
-    expect(feb.toISOString()).toBe("2025-02-01T00:00:00.000Z");
+  it('rolls metered metrics to a new bucket the next month', () => {
+    const jan = currentPeriodStart('ai_credits', new Date('2025-01-31T23:59:59Z'));
+    const feb = currentPeriodStart('ai_credits', new Date('2025-02-01T00:00:00Z'));
+    expect(jan.toISOString()).toBe('2025-01-01T00:00:00.000Z');
+    expect(feb.toISOString()).toBe('2025-02-01T00:00:00.000Z');
     expect(feb.getTime()).toBeGreaterThan(jan.getTime());
   });
 
-  it("uses a single lifetime bucket for count metrics", () => {
-    const a = currentPeriodStart("recipes", new Date("2025-01-01T00:00:00Z"));
-    const b = currentPeriodStart(
-      "storage_mb",
-      new Date("2030-06-01T00:00:00Z"),
-    );
+  it('uses a single lifetime bucket for count metrics', () => {
+    const a = currentPeriodStart('recipes', new Date('2025-01-01T00:00:00Z'));
+    const b = currentPeriodStart('storage_mb', new Date('2030-06-01T00:00:00Z'));
     expect(a.getTime()).toBe(0);
     expect(b.getTime()).toBe(0);
   });
 });
 
-describe("getUsage", () => {
-  it("reads zero for a fresh account (no counter row)", async () => {
+describe('getUsage', () => {
+  it('reads zero for a fresh account (no counter row)', async () => {
     state.counterRow = undefined;
-    expect(await getUsage(user, "ai_credits")).toBe(0);
+    expect(await getUsage(user, 'ai_credits')).toBe(0);
   });
 
-  it("returns the stored counter value when present", async () => {
+  it('returns the stored counter value when present', async () => {
     state.counterRow = { value: 42 };
-    expect(await getUsage(user, "storage_mb")).toBe(42);
+    expect(await getUsage(user, 'storage_mb')).toBe(42);
   });
 
-  it("derives the recipes metric live from the recipes table", async () => {
+  it('derives the recipes metric live from the recipes table', async () => {
     state.recipeCount = 7;
-    expect(await getUsage(user, "recipes")).toBe(7);
+    expect(await getUsage(user, 'recipes')).toBe(7);
     expect(db.$count).toHaveBeenCalledTimes(1);
     expect(db.query.usageCounters.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns 0 and touches no DB when unconfigured", async () => {
+  it('returns 0 and touches no DB when unconfigured', async () => {
     state.configured = false;
-    expect(await getUsage(user, "ai_credits")).toBe(0);
+    expect(await getUsage(user, 'ai_credits')).toBe(0);
     expect(db.query.usageCounters.findFirst).not.toHaveBeenCalled();
   });
 });
 
-describe("recomputeRecipeCount", () => {
+describe('recomputeRecipeCount', () => {
   it("counts the user's non-deleted recipes", async () => {
     state.recipeCount = 3;
     expect(await recomputeRecipeCount(user)).toBe(3);
   });
 
-  it("returns 0 when unconfigured", async () => {
+  it('returns 0 when unconfigured', async () => {
     state.configured = false;
     expect(await recomputeRecipeCount(user)).toBe(0);
     expect(db.$count).not.toHaveBeenCalled();
   });
 });
 
-describe("incrementUsage", () => {
-  it("upserts the counter for the active period", async () => {
-    await incrementUsage(user, "ai_credits", 5);
+describe('incrementUsage', () => {
+  it('upserts the counter for the active period', async () => {
+    await incrementUsage(user, 'ai_credits', 5);
     expect(db.insert).toHaveBeenCalledTimes(1);
     expect(state.lastInsertValues).toMatchObject({
-      ownerId: "u1",
-      ownerType: "user",
-      metric: "ai_credits",
+      ownerId: 'u1',
+      ownerType: 'user',
+      metric: 'ai_credits',
       value: 5,
     });
     // Conflict target is the (ownerId, metric, periodStart) unique key.
     expect(state.lastConflict?.targetLen).toBe(3);
   });
 
-  it("is a no-op for a zero amount", async () => {
-    await incrementUsage(user, "storage_mb", 0);
+  it('is a no-op for a zero amount', async () => {
+    await incrementUsage(user, 'storage_mb', 0);
     expect(db.insert).not.toHaveBeenCalled();
   });
 
-  it("is a no-op when unconfigured", async () => {
+  it('is a no-op when unconfigured', async () => {
     state.configured = false;
-    await incrementUsage(user, "storage_mb", 10);
+    await incrementUsage(user, 'storage_mb', 10);
     expect(db.insert).not.toHaveBeenCalled();
   });
 });
 
-describe("decrementUsage", () => {
-  it("subtracts from the counter, flooring at zero in SQL", async () => {
-    await decrementUsage(user, "storage_mb", 3);
+describe('decrementUsage', () => {
+  it('subtracts from the counter, flooring at zero in SQL', async () => {
+    await decrementUsage(user, 'storage_mb', 3);
     expect(db.update).toHaveBeenCalledTimes(1);
     // The floor is expressed as GREATEST(0, value - amount) in a single
     // statement so concurrent deletes can't race into a negative counter.
-    const chunks = (
-      state.lastUpdateValues?.value as { queryChunks?: unknown[] }
-    )?.queryChunks;
+    const chunks = (state.lastUpdateValues?.value as { queryChunks?: unknown[] })?.queryChunks;
     const literals = (chunks ?? [])
       .flatMap((chunk) =>
-        typeof chunk === "object" && chunk !== null && "value" in chunk
+        typeof chunk === 'object' && chunk !== null && 'value' in chunk
           ? (chunk as { value: unknown[] }).value
           : [],
       )
-      .join(" ");
-    expect(literals.toLowerCase()).toContain("greatest");
+      .join(' ');
+    expect(literals.toLowerCase()).toContain('greatest');
   });
 
-  it("is a no-op for a zero or negative amount", async () => {
-    await decrementUsage(user, "storage_mb", 0);
-    await decrementUsage(user, "storage_mb", -4);
+  it('is a no-op for a zero or negative amount', async () => {
+    await decrementUsage(user, 'storage_mb', 0);
+    await decrementUsage(user, 'storage_mb', -4);
     expect(db.update).not.toHaveBeenCalled();
   });
 
-  it("is a no-op when unconfigured", async () => {
+  it('is a no-op when unconfigured', async () => {
     state.configured = false;
-    await decrementUsage(user, "storage_mb", 10);
+    await decrementUsage(user, 'storage_mb', 10);
     expect(db.update).not.toHaveBeenCalled();
   });
 });

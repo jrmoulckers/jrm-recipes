@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Check,
@@ -12,33 +12,30 @@ import {
   Search,
   Trash2,
   UtensilsCrossed,
-} from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
 import {
   addEntryAction,
   addMealWithLeftoversAction,
   removeEntryAction,
-} from "~/server/planner/actions";
-import { logCookAction } from "~/server/cooklog/actions";
-import { MEAL_SLOTS, type MealSlotValue } from "~/server/planner/validation";
-import { cookTimestampForParam } from "~/server/planner/week";
-import { cn } from "~/lib/utils";
-import { parseLeftoversNote } from "~/lib/planner-batch";
-import { ALLERGEN_LABELS, type Allergen } from "~/lib/allergens";
-import {
-  allergenConflicts,
-  type ActiveMemberOption,
-} from "~/lib/dietary-match";
-import { useActiveMemberStore } from "~/lib/active-member-store";
-import { formatList } from "~/lib/i18n-format";
-import { formatPlanWarnings } from "~/lib/plan-safety-copy";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { NativeSelect } from "~/components/ui/native-select";
-import { Textarea } from "~/components/ui/textarea";
+} from '~/server/planner/actions';
+import { logCookAction } from '~/server/cooklog/actions';
+import { MEAL_SLOTS, type MealSlotValue } from '~/server/planner/validation';
+import { cookTimestampForParam } from '~/server/planner/week';
+import { cn } from '~/lib/utils';
+import { parseLeftoversNote } from '~/lib/planner-batch';
+import { ALLERGEN_LABELS, type Allergen } from '~/lib/allergens';
+import { allergenConflicts, type ActiveMemberOption } from '~/lib/dietary-match';
+import { useActiveMemberStore } from '~/lib/active-member-store';
+import { formatList } from '~/lib/i18n-format';
+import { formatPlanWarnings } from '~/lib/plan-safety-copy';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { NativeSelect } from '~/components/ui/native-select';
+import { Textarea } from '~/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -46,7 +43,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 
 export type BoardDay = {
   dateParam: string;
@@ -117,11 +114,10 @@ export function PlannerBoard({
    * this group and cards show their author (#363). */
   groupId?: string | null;
 }) {
-  const t = useTranslations("planner.board");
+  const t = useTranslations('planner.board');
   const [activeCell, setActiveCell] = React.useState<Cell | null>(null);
   const activeMemberId = useActiveMemberStore((s) => s.activeMemberId);
-  const avoidAllergens =
-    members.find((m) => m.id === activeMemberId)?.allergens ?? [];
+  const avoidAllergens = members.find((m) => m.id === activeMemberId)?.allergens ?? [];
 
   const entriesByCell = React.useMemo(() => {
     const map = new Map<string, BoardEntry[]>();
@@ -149,11 +145,7 @@ export function PlannerBoard({
   const legacyLeftoversByRecipeId = React.useMemo(() => {
     const map = new Map<string, BoardEntry>();
     for (const entry of entries) {
-      if (
-        entry.recipe &&
-        parseLeftoversNote(entry.note) &&
-        !map.has(entry.recipe.id)
-      ) {
+      if (entry.recipe && parseLeftoversNote(entry.note) && !map.has(entry.recipe.id)) {
         map.set(entry.recipe.id, entry);
       }
     }
@@ -166,11 +158,7 @@ export function PlannerBoard({
   );
 
   function legacyBatchFor(entry: BoardEntry): LegacyBatchBadge | undefined {
-    if (
-      !entry.recipe ||
-      entry.leftoverSourceId ||
-      parseLeftoversNote(entry.note)
-    ) {
+    if (!entry.recipe || entry.leftoverSourceId || parseLeftoversNote(entry.note)) {
       return undefined;
     }
     const link = legacyLeftoversByRecipeId.get(entry.recipe.id);
@@ -191,8 +179,8 @@ export function PlannerBoard({
           <section
             key={day.dateParam}
             className={cn(
-              "flex flex-col rounded-xl border border-border bg-card shadow-token",
-              day.isToday && "border-primary/50 ring-1 ring-primary/30",
+              'flex flex-col rounded-xl border border-border bg-card shadow-token',
+              day.isToday && 'border-primary/50 ring-1 ring-primary/30',
             )}
           >
             <header className="flex items-baseline justify-between gap-2 border-b border-border/70 px-3 py-2.5">
@@ -202,8 +190,8 @@ export function PlannerBoard({
                 </span>
                 <span
                   className={cn(
-                    "font-display text-lg font-semibold leading-none",
-                    day.isToday && "text-primary",
+                    'font-display text-lg font-semibold leading-none',
+                    day.isToday && 'text-primary',
                   )}
                 >
                   {day.dayNumber}
@@ -211,15 +199,14 @@ export function PlannerBoard({
               </div>
               {day.isToday && (
                 <span className="bg-primary/12 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                  {t("today")}
+                  {t('today')}
                 </span>
               )}
             </header>
 
             <div className="flex flex-1 flex-col gap-3 p-3">
               {MEAL_SLOTS.map((slot) => {
-                const cellEntries =
-                  entriesByCell.get(cellKey(day.dateParam, slot)) ?? [];
+                const cellEntries = entriesByCell.get(cellKey(day.dateParam, slot)) ?? [];
                 return (
                   <div key={slot} className="flex flex-col gap-1.5">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -233,8 +220,7 @@ export function PlannerBoard({
                         avoidAllergens={avoidAllergens}
                         leftovers={
                           entry.recipe != null &&
-                          (entry.leftoverSourceId != null ||
-                            parseLeftoversNote(entry.note) != null)
+                          (entry.leftoverSourceId != null || parseLeftoversNote(entry.note) != null)
                         }
                         allocations={allocationsBySourceId.get(entry.id) ?? []}
                         legacyBatch={legacyBatchFor(entry)}
@@ -251,13 +237,13 @@ export function PlannerBoard({
                         })
                       }
                       className="flex items-center gap-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={t("a11y.addToSlot", {
+                      aria-label={t('a11y.addToSlot', {
                         slot: t(`mealSlot.${slot}`),
                         day: day.fullLabel,
                       })}
                     >
                       <Plus className="size-3.5" />
-                      {t("add")}
+                      {t('add')}
                     </button>
                   </div>
                 );
@@ -293,7 +279,7 @@ function EntryChip({
 }) {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations("planner.board");
+  const t = useTranslations('planner.board');
   const [isPending, startTransition] = React.useTransition();
   const [isCooking, startCooking] = React.useTransition();
   const [cooked, setCooked] = React.useState(false);
@@ -321,8 +307,8 @@ function EntryChip({
       } else {
         toast.success(
           alsoLeftovers && (allocations.length > 0 || legacyBatch)
-            ? t("toast.removedMealAndLeftovers")
-            : t("toast.removedFromPlan"),
+            ? t('toast.removedMealAndLeftovers')
+            : t('toast.removedFromPlan'),
         );
         router.refresh();
       }
@@ -343,13 +329,11 @@ function EntryChip({
         recipeId: recipe.id,
         recipeSlug: recipe.slug,
         cookedAt: cookTimestampForParam(entry.dateParam).toISOString(),
-        ...(entry.servingsMade != null
-          ? { servingsMade: entry.servingsMade }
-          : {}),
+        ...(entry.servingsMade != null ? { servingsMade: entry.servingsMade } : {}),
       });
       if (result.ok) {
         setCooked(true);
-        toast.success(t("toast.loggedToJournal"));
+        toast.success(t('toast.loggedToJournal'));
         router.refresh();
       } else {
         toast.error(friendlyError(result.error));
@@ -357,14 +341,11 @@ function EntryChip({
     });
   }
 
-  const title = entry.recipe?.title ?? entry.note ?? t("untitled");
-  const alerts = allergenConflicts(
-    avoidAllergens,
-    entry.recipe?.allergens ?? [],
-  );
+  const title = entry.recipe?.title ?? entry.note ?? t('untitled');
+  const alerts = allergenConflicts(avoidAllergens, entry.recipe?.allergens ?? []);
   const alertText =
     alerts.length > 0
-      ? t("allergenContains", {
+      ? t('allergenContains', {
           allergens: formatList(
             alerts.map((a) => ALLERGEN_LABELS[a].toLowerCase()),
             locale,
@@ -376,12 +357,10 @@ function EntryChip({
     <>
       <div
         className={cn(
-          "group flex flex-col gap-1 rounded-lg border px-2 py-1.5 text-xs",
-          leftovers
-            ? "border-dashed border-border bg-muted/40"
-            : "border-border bg-surface/60",
-          isPending && "opacity-50",
-          alertText && "border-warning/60 bg-warning/10",
+          'group flex flex-col gap-1 rounded-lg border px-2 py-1.5 text-xs',
+          leftovers ? 'border-dashed border-border bg-muted/40' : 'border-border bg-surface/60',
+          isPending && 'opacity-50',
+          alertText && 'border-warning/60 bg-warning/10',
         )}
       >
         <div className="flex items-start gap-1.5">
@@ -389,14 +368,11 @@ function EntryChip({
             {leftovers && (
               <span className="mb-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 <Repeat className="size-3 shrink-0" aria-hidden />
-                {t("leftovers")}
+                {t('leftovers')}
               </span>
             )}
             <span
-              className={cn(
-                "font-medium",
-                leftovers ? "text-muted-foreground" : "text-foreground",
-              )}
+              className={cn('font-medium', leftovers ? 'text-muted-foreground' : 'text-foreground')}
             >
               {title}
             </span>
@@ -410,13 +386,13 @@ function EntryChip({
             ) : null}
             {entry.plannedServings != null && (
               <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                {t("servings", { count: entry.plannedServings })}
+                {t('servings', { count: entry.plannedServings })}
               </span>
             )}
             {alertText && (
               <span
                 className="mt-1 flex items-center gap-1 font-medium text-foreground"
-                title={t("allergenTitle")}
+                title={t('allergenTitle')}
               >
                 <AlertTriangle className="size-3 shrink-0" aria-hidden />
                 {alertText}
@@ -427,7 +403,7 @@ function EntryChip({
             type="button"
             onClick={onRemoveClick}
             disabled={isPending}
-            aria-label={t("a11y.removeFromPlan", { title })}
+            aria-label={t('a11y.removeFromPlan', { title })}
             className="rounded p-0.5 text-muted-foreground opacity-70 transition-opacity hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
           >
             <Trash2 className="size-3.5" />
@@ -439,17 +415,16 @@ function EntryChip({
             {allocations.length > 0 && entry.servingsMade != null && (
               <span
                 className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
-                title={t("servingPlan.summaryTitle", {
+                title={t('servingPlan.summaryTitle', {
                   total: entry.servingsMade,
                   meals: allocations.length + 1,
                 })}
               >
                 <Repeat className="size-3.5" aria-hidden />
-                {t("servingPlan.summary", {
+                {t('servingPlan.summary', {
                   total: entry.servingsMade,
                   allocationTotal: allocations.reduce(
-                    (total, allocation) =>
-                      total + (allocation.plannedServings ?? 0),
+                    (total, allocation) => total + (allocation.plannedServings ?? 0),
                     0,
                   ),
                 })}
@@ -460,24 +435,24 @@ function EntryChip({
                 className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-1.5 py-0.5 text-[11px] font-medium text-accent-foreground"
                 title={
                   legacyBatch.dayLabel
-                    ? t("batch.titleWithDay", {
+                    ? t('batch.titleWithDay', {
                         multiple: legacyBatch.multiple,
                         day: legacyBatch.dayLabel,
                       })
-                    : t("batch.titleWithoutDay", {
+                    : t('batch.titleWithoutDay', {
                         multiple: legacyBatch.multiple,
                       })
                 }
               >
                 <Repeat className="size-3.5" aria-hidden />
-                {t("batch.badge", { multiple: legacyBatch.multiple })}
-                {legacyBatch.dayLabel ? ` · ${legacyBatch.dayLabel}` : ""}
+                {t('batch.badge', { multiple: legacyBatch.multiple })}
+                {legacyBatch.dayLabel ? ` · ${legacyBatch.dayLabel}` : ''}
               </span>
             )}
             {cooked ? (
               <span className="inline-flex w-fit items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                 <CheckCircle2 className="size-3.5" aria-hidden />
-                {t("cooked")}
+                {t('cooked')}
               </span>
             ) : (
               <button
@@ -487,7 +462,7 @@ function EntryChip({
                 className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-70 group-hover:opacity-100 motion-reduce:opacity-100"
               >
                 <CheckCircle2 className="size-3.5" aria-hidden />
-                {isCooking ? t("logging") : t("cookedIt")}
+                {isCooking ? t('logging') : t('cookedIt')}
               </button>
             )}
           </div>
@@ -495,23 +470,20 @@ function EntryChip({
       </div>
 
       {(allocations.length > 0 || legacyBatch) && (
-        <Dialog
-          open={confirmOpen}
-          onOpenChange={(open) => !open && setConfirmOpen(false)}
-        >
+        <Dialog open={confirmOpen} onOpenChange={(open) => !open && setConfirmOpen(false)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>{t("removeBatch.title")}</DialogTitle>
+              <DialogTitle>{t('removeBatch.title')}</DialogTitle>
               <DialogDescription>
                 {allocations.length > 0
-                  ? t("removeServingPlan.description", {
+                  ? t('removeServingPlan.description', {
                       meals: allocations.length + 1,
                     })
                   : legacyBatch?.dayLabel
-                    ? t("removeBatch.descriptionWithDay", {
+                    ? t('removeBatch.descriptionWithDay', {
                         day: legacyBatch.dayLabel,
                       })
-                    : t("removeBatch.descriptionWithoutDay")}
+                    : t('removeBatch.descriptionWithoutDay')}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -521,7 +493,7 @@ function EntryChip({
                 onClick={() => removeEntries(false)}
                 disabled={isPending}
               >
-                {t("removeBatch.justThis")}
+                {t('removeBatch.justThis')}
               </Button>
               <Button
                 type="button"
@@ -530,10 +502,10 @@ function EntryChip({
                 disabled={isPending}
               >
                 {allocations.length > 0
-                  ? t("removeServingPlan.removeAll", {
+                  ? t('removeServingPlan.removeAll', {
                       meals: allocations.length + 1,
                     })
-                  : t("removeBatch.removeBoth")}
+                  : t('removeBatch.removeBoth')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -558,22 +530,21 @@ function AddEntryDialog({
 }) {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations("planner.board");
+  const t = useTranslations('planner.board');
   const noteId = React.useId();
   const searchId = React.useId();
   const mealServingsId = React.useId();
   const allocationBaseId = React.useId();
   const nextAllocationId = React.useRef(0);
   const [isPending, startTransition] = React.useTransition();
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [note, setNote] = React.useState("");
+  const [note, setNote] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
-  const [mealServings, setMealServings] = React.useState("4");
+  const [mealServings, setMealServings] = React.useState('4');
   const [allocations, setAllocations] = React.useState<DraftAllocation[]>([]);
 
-  const selectedRecipe =
-    recipes.find((recipe) => recipe.id === selectedId) ?? null;
+  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedId) ?? null;
   const allocationCells = React.useMemo(
     () =>
       cell
@@ -589,20 +560,17 @@ function AddEntryDialog({
     [cell, days],
   );
   const allocationDates = React.useMemo(
-    () =>
-      days.filter((day) =>
-        allocationCells.some((option) => option.date === day.dateParam),
-      ),
+    () => days.filter((day) => allocationCells.some((option) => option.date === day.dateParam)),
     [allocationCells, days],
   );
 
   React.useEffect(() => {
     if (cell) {
-      setQuery("");
+      setQuery('');
       setSelectedId(null);
-      setNote("");
+      setNote('');
       setError(null);
-      setMealServings("4");
+      setMealServings('4');
       setAllocations([]);
       nextAllocationId.current = 0;
     }
@@ -623,18 +591,15 @@ function AddEntryDialog({
 
   function addAllocation() {
     if (!cell) return;
-    const used = new Set(
-      allocations.map((allocation) => `${allocation.date}|${allocation.slot}`),
-    );
+    const used = new Set(allocations.map((allocation) => `${allocation.date}|${allocation.slot}`));
     const available = allocationCells.filter(
       (option) => !used.has(`${option.date}|${option.slot}`),
     );
     const preferred =
-      available.find(
-        (option) => option.date > cell.dateParam && option.slot === cell.slot,
-      ) ?? available[0];
+      available.find((option) => option.date > cell.dateParam && option.slot === cell.slot) ??
+      available[0];
     if (!preferred) {
-      setError(t("validation.noMoreMeals"));
+      setError(t('validation.noMoreMeals'));
       return;
     }
     setAllocations((current) => [
@@ -643,16 +608,13 @@ function AddEntryDialog({
         id: nextAllocationId.current++,
         date: preferred.date,
         slot: preferred.slot,
-        servings: "1",
+        servings: '1',
       },
     ]);
     setError(null);
   }
 
-  function updateAllocation(
-    id: number,
-    update: Partial<Omit<DraftAllocation, "id">>,
-  ) {
+  function updateAllocation(id: number, update: Partial<Omit<DraftAllocation, 'id'>>) {
     setAllocations((current) =>
       current.map((allocation) =>
         allocation.id === id ? { ...allocation, ...update } : allocation,
@@ -693,7 +655,7 @@ function AddEntryDialog({
 
     const trimmedNote = note.trim();
     if (!selectedId && trimmedNote.length === 0) {
-      setError(t("validation.pickRecipeOrNote"));
+      setError(t('validation.pickRecipeOrNote'));
       return;
     }
 
@@ -704,7 +666,7 @@ function AddEntryDialog({
         parsedMealServings < 1 ||
         parsedMealServings > 100000)
     ) {
-      setError(t("validation.enterServings"));
+      setError(t('validation.enterServings'));
       return;
     }
     const parsedAllocations = allocations.map((allocation) => ({
@@ -720,18 +682,18 @@ function AddEntryDialog({
           allocation.servings > 100000,
       )
     ) {
-      setError(t("validation.enterServings"));
+      setError(t('validation.enterServings'));
       return;
     }
     const destinations = new Set<string>();
     for (const allocation of parsedAllocations) {
       const destination = `${allocation.date}|${allocation.slot}`;
       if (destination === `${cell.dateParam}|${cell.slot}`) {
-        setError(t("validation.pickDifferentMeal"));
+        setError(t('validation.pickDifferentMeal'));
         return;
       }
       if (destinations.has(destination)) {
-        setError(t("validation.duplicateLeftoverMeal"));
+        setError(t('validation.duplicateLeftoverMeal'));
         return;
       }
       destinations.add(destination);
@@ -761,9 +723,7 @@ function AddEntryDialog({
 
       if (result.ok) {
         toast.success(
-          parsedAllocations.length > 0
-            ? t("toast.addedWithLeftovers")
-            : t("toast.addedToPlan"),
+          parsedAllocations.length > 0 ? t('toast.addedWithLeftovers') : t('toast.addedToPlan'),
         );
         const warning = formatPlanWarnings(result.warnings ?? [], locale);
         if (warning) {
@@ -784,21 +744,19 @@ function AddEntryDialog({
         {cell && (
           <form onSubmit={submit} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>
-                {t("dialog.title", { slot: t(`mealSlot.${cell.slot}`) })}
-              </DialogTitle>
+              <DialogTitle>{t('dialog.title', { slot: t(`mealSlot.${cell.slot}`) })}</DialogTitle>
               <DialogDescription>{cell.dayLabel}</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor={searchId}>{t("dialog.recipeLabel")}</Label>
+              <Label htmlFor={searchId}>{t('dialog.recipeLabel')}</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id={searchId}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t("dialog.searchPlaceholder")}
+                  placeholder={t('dialog.searchPlaceholder')}
                   className="ps-9"
                   autoComplete="off"
                 />
@@ -807,11 +765,11 @@ function AddEntryDialog({
               <div className="max-h-56 overflow-y-auto rounded-lg border border-border">
                 {recipes.length === 0 ? (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                    {t("empty.noRecipes")}
+                    {t('empty.noRecipes')}
                   </p>
                 ) : filtered.length === 0 ? (
                   <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                    {t("empty.noRecipeMatches", { query })}
+                    {t('empty.noRecipeMatches', { query })}
                   </p>
                 ) : (
                   <ul className="divide-y divide-border/70">
@@ -823,31 +781,29 @@ function AddEntryDialog({
                             type="button"
                             onClick={() => selectRecipe(recipe, selected)}
                             className={cn(
-                              "flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
-                              selected && "bg-primary/10 text-foreground",
+                              'flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none',
+                              selected && 'bg-primary/10 text-foreground',
                             )}
                             aria-pressed={selected}
                           >
                             <span
                               className={cn(
-                                "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                                'flex size-4 shrink-0 items-center justify-center rounded-full border',
                                 selected
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-muted-foreground/40",
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-muted-foreground/40',
                               )}
                             >
                               {selected && <Check className="size-3" />}
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="line-clamp-1 block">
-                                {recipe.title}
-                              </span>
+                              <span className="line-clamp-1 block">{recipe.title}</span>
                               <span className="block text-xs text-muted-foreground">
                                 {recipe.lastServings != null
-                                  ? t("servingPlan.lastUsed", {
+                                  ? t('servingPlan.lastUsed', {
                                       count: recipe.lastServings,
                                     })
-                                  : t("servingPlan.recipeDefault", {
+                                  : t('servingPlan.recipeDefault', {
                                       count: recipe.defaultServings ?? 4,
                                     })}
                               </span>
@@ -863,16 +819,14 @@ function AddEntryDialog({
 
             <div className="grid gap-2">
               <Label htmlFor={noteId}>
-                {t("dialog.noteLabel")}{" "}
-                <span className="font-normal text-muted-foreground">
-                  {t("optional")}
-                </span>
+                {t('dialog.noteLabel')}{' '}
+                <span className="font-normal text-muted-foreground">{t('optional')}</span>
               </Label>
               <Textarea
                 id={noteId}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder={t("dialog.notePlaceholder")}
+                placeholder={t('dialog.notePlaceholder')}
                 rows={2}
                 maxLength={300}
               />
@@ -883,23 +837,21 @@ function AddEntryDialog({
                 <div>
                   <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
                     <Repeat className="size-4 text-primary" aria-hidden />
-                    {t("servingPlan.title")}
+                    {t('servingPlan.title')}
                   </h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {selectedRecipe.lastServings != null
-                      ? t("servingPlan.lastUsedDetail", {
+                      ? t('servingPlan.lastUsedDetail', {
                           count: selectedRecipe.lastServings,
                         })
-                      : t("servingPlan.recipeDefaultDetail", {
+                      : t('servingPlan.recipeDefaultDetail', {
                           count: selectedRecipe.defaultServings ?? 4,
                         })}
                   </p>
                 </div>
 
                 <div className="grid gap-1.5 sm:max-w-48">
-                  <Label htmlFor={mealServingsId}>
-                    {t("servingPlan.thisMealLabel")}
-                  </Label>
+                  <Label htmlFor={mealServingsId}>{t('servingPlan.thisMealLabel')}</Label>
                   <Input
                     id={mealServingsId}
                     type="number"
@@ -924,20 +876,15 @@ function AddEntryDialog({
                       className="grid gap-2 border-t border-border/70 pt-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_6rem_auto]"
                     >
                       <legend className="sr-only">
-                        {t("servingPlan.allocation", { number: index + 1 })}
+                        {t('servingPlan.allocation', { number: index + 1 })}
                       </legend>
                       <div className="grid gap-1.5">
-                        <Label htmlFor={dateId}>
-                          {t("servingPlan.dateLabel")}
-                        </Label>
+                        <Label htmlFor={dateId}>{t('servingPlan.dateLabel')}</Label>
                         <NativeSelect
                           id={dateId}
                           value={allocation.date}
                           onChange={(event) =>
-                            updateAllocationDate(
-                              allocation.id,
-                              event.target.value,
-                            )
+                            updateAllocationDate(allocation.id, event.target.value)
                           }
                         >
                           {allocationDates.map((day) => (
@@ -948,9 +895,7 @@ function AddEntryDialog({
                         </NativeSelect>
                       </div>
                       <div className="grid gap-1.5">
-                        <Label htmlFor={slotId}>
-                          {t("servingPlan.mealLabel")}
-                        </Label>
+                        <Label htmlFor={slotId}>{t('servingPlan.mealLabel')}</Label>
                         <NativeSelect
                           id={slotId}
                           value={allocation.slot}
@@ -968,9 +913,7 @@ function AddEntryDialog({
                         </NativeSelect>
                       </div>
                       <div className="grid gap-1.5">
-                        <Label htmlFor={servingsId}>
-                          {t("servingPlan.servingsLabel")}
-                        </Label>
+                        <Label htmlFor={servingsId}>{t('servingPlan.servingsLabel')}</Label>
                         <Input
                           id={servingsId}
                           type="number"
@@ -992,7 +935,7 @@ function AddEntryDialog({
                             current.filter((item) => item.id !== allocation.id),
                           )
                         }
-                        aria-label={t("servingPlan.removeAllocation", {
+                        aria-label={t('servingPlan.removeAllocation', {
                           number: index + 1,
                         })}
                         className="self-end rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1012,18 +955,14 @@ function AddEntryDialog({
                     disabled={allocations.length >= allocationCells.length}
                   >
                     <Plus aria-hidden />
-                    {t("servingPlan.addAllocation")}
+                    {t('servingPlan.addAllocation')}
                   </Button>
-                  <p
-                    className="text-sm font-semibold text-foreground"
-                    aria-live="polite"
-                  >
-                    {t("servingPlan.total", {
+                  <p className="text-sm font-semibold text-foreground" aria-live="polite">
+                    {t('servingPlan.total', {
                       count:
                         (Number(mealServings) || 0) +
                         allocations.reduce(
-                          (total, allocation) =>
-                            total + (Number(allocation.servings) || 0),
+                          (total, allocation) => total + (Number(allocation.servings) || 0),
                           0,
                         ),
                     })}
@@ -1035,16 +974,11 @@ function AddEntryDialog({
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isPending}
-              >
-                {t("cancel")}
+              <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+                {t('cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? t("adding") : t("addToPlan")}
+                {isPending ? t('adding') : t('addToPlan')}
               </Button>
             </DialogFooter>
           </form>
@@ -1054,12 +988,8 @@ function AddEntryDialog({
   );
 }
 
-export function PlannerEmptyState({
-  groupName = null,
-}: {
-  groupName?: string | null;
-}) {
-  const t = useTranslations("planner.board");
+export function PlannerEmptyState({ groupName = null }: { groupName?: string | null }) {
+  const t = useTranslations('planner.board');
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 py-14 text-center">
       <span className="bg-primary/12 inline-flex size-14 items-center justify-center rounded-2xl text-primary">
@@ -1068,17 +998,15 @@ export function PlannerEmptyState({
       <p className="max-w-sm text-sm text-muted-foreground">
         {groupName ? (
           <>
-            {t("empty.groupPrefix")}{" "}
-            <span className="font-medium text-foreground">{groupName}</span>{" "}
-            {t("empty.groupMiddle")}{" "}
-            <span className="font-medium text-foreground">{t("add")}</span>{" "}
-            {t("empty.groupSuffix")}
+            {t('empty.groupPrefix')}{' '}
+            <span className="font-medium text-foreground">{groupName}</span>{' '}
+            {t('empty.groupMiddle')} <span className="font-medium text-foreground">{t('add')}</span>{' '}
+            {t('empty.groupSuffix')}
           </>
         ) : (
           <>
-            {t("empty.soloPrefix")}{" "}
-            <span className="font-medium text-foreground">{t("add")}</span>{" "}
-            {t("empty.soloSuffix")}
+            {t('empty.soloPrefix')} <span className="font-medium text-foreground">{t('add')}</span>{' '}
+            {t('empty.soloSuffix')}
           </>
         )}
       </p>

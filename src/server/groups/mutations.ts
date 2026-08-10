@@ -1,13 +1,13 @@
-import "server-only";
+import 'server-only';
 
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
 
-import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 
-import { slugify } from "~/lib/utils";
-import { SEAT_RULES } from "~/config/plans";
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
+import { slugify } from '~/lib/utils';
+import { SEAT_RULES } from '~/config/plans';
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
 import {
   groupInvitations,
   groupInviteLinks,
@@ -17,38 +17,38 @@ import {
   users,
   type MemberRole,
   type User,
-} from "~/server/db/schema";
-import { getGroupSeatLimit } from "~/server/billing/entitlements";
-import { AuditAction, recordAudit } from "~/server/audit";
+} from '~/server/db/schema';
+import { getGroupSeatLimit } from '~/server/billing/entitlements';
+import { AuditAction, recordAudit } from '~/server/audit';
 import {
   type CreateInviteLinkInput,
   createInviteLinkInput,
   type GroupInput,
   type InviteInput,
   inviteInput,
-} from "./validation";
+} from './validation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const MANAGER_ROLES = new Set<MemberRole>(["owner", "admin"]);
+const MANAGER_ROLES = new Set<MemberRole>(['owner', 'admin']);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Opaque, URL-safe bearer token for an invitation's accept link (issue #181). */
 function generateInviteToken(): string {
-  return randomBytes(24).toString("base64url");
+  return randomBytes(24).toString('base64url');
 }
 
 /** Strip a leading `@` and l-case a handle so it matches the stored form. */
 function normalizeHandle(handle: string | undefined): string | null {
   if (!handle) return null;
-  const normalized = handle.replace(/^@/, "").toLowerCase();
+  const normalized = handle.replace(/^@/, '').toLowerCase();
   return normalized.length ? normalized : null;
 }
 
 function groupSlug(name: string): string {
   const base = slugify(name).slice(0, 72);
-  return base || "group";
+  return base || 'group';
 }
 
 async function uniqueSlug(tx: Tx, base: string): Promise<string> {
@@ -76,29 +76,26 @@ async function findGroup(tx: Tx, slugOrId: string) {
 async function membershipFor(tx: Tx, groupId: string, userId: string) {
   return (
     (await tx.query.groupMembers.findFirst({
-      where: and(
-        eq(groupMembers.groupId, groupId),
-        eq(groupMembers.userId, userId),
-      ),
+      where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)),
     })) ?? null
   );
 }
 
 async function requireActorRole(tx: Tx, groupId: string, actor: User) {
   const membership = await membershipFor(tx, groupId, actor.id);
-  if (!membership) throw new DomainError("FORBIDDEN");
+  if (!membership) throw new DomainError('FORBIDDEN');
   return membership.role;
 }
 
 async function requireManager(tx: Tx, groupId: string, actor: User) {
   const role = await requireActorRole(tx, groupId, actor);
-  if (!MANAGER_ROLES.has(role)) throw new DomainError("FORBIDDEN");
+  if (!MANAGER_ROLES.has(role)) throw new DomainError('FORBIDDEN');
   return role;
 }
 
 async function requireOwner(tx: Tx, groupId: string, actor: User) {
   const role = await requireActorRole(tx, groupId, actor);
-  if (role !== "owner") throw new DomainError("FORBIDDEN");
+  if (role !== 'owner') throw new DomainError('FORBIDDEN');
   return role;
 }
 
@@ -110,12 +107,8 @@ async function requireOwner(tx: Tx, groupId: string, actor: User) {
  * they're at the seat limit. Fail-open by design: any error resolving the limit
  * (e.g. a billing hiccup) lets the add through rather than blocking a family.
  */
-async function assertSeatAvailable(
-  tx: Tx,
-  groupId: string,
-  newRole: MemberRole,
-): Promise<void> {
-  if (newRole === "kid" && !SEAT_RULES.kidsCountAsSeats) return;
+async function assertSeatAvailable(tx: Tx, groupId: string, newRole: MemberRole): Promise<void> {
+  if (newRole === 'kid' && !SEAT_RULES.kidsCountAsSeats) return;
 
   let limit: number | null;
   try {
@@ -131,14 +124,14 @@ async function assertSeatAvailable(
   });
   const consuming = SEAT_RULES.kidsCountAsSeats
     ? members.length
-    : members.filter((m) => m.role !== "kid").length;
+    : members.filter((m) => m.role !== 'kid').length;
 
-  if (consuming >= limit) throw new DomainError("SEAT_LIMIT_REACHED");
+  if (consuming >= limit) throw new DomainError('SEAT_LIMIT_REACHED');
 }
 
 async function findUserByIdentifier(tx: Tx, identifier: string) {
   const trimmed = identifier.trim();
-  const normalizedHandle = trimmed.replace(/^@/, "").toLowerCase();
+  const normalizedHandle = trimmed.replace(/^@/, '').toLowerCase();
   const normalizedEmail = trimmed.toLowerCase();
 
   return (
@@ -189,32 +182,25 @@ export async function createGroup(input: GroupInput, user: User) {
       })
       .returning({ id: groups.id, slug: groups.slug });
 
-    if (!group) throw new DomainError("CONFLICT");
+    if (!group) throw new DomainError('CONFLICT');
 
     await tx.insert(groupMembers).values({
       groupId: group.id,
       userId: user.id,
-      role: "owner",
+      role: 'owner',
     });
 
     return group;
   });
 }
 
-export async function updateGroup(
-  slugOrId: string,
-  input: GroupInput,
-  user: User,
-) {
+export async function updateGroup(slugOrId: string, input: GroupInput, user: User) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, slugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     await requireManager(tx, group.id, user);
-    await tx
-      .update(groups)
-      .set(groupFields(input))
-      .where(eq(groups.id, group.id));
+    await tx.update(groups).set(groupFields(input)).where(eq(groups.id, group.id));
 
     return { slug: group.slug };
   });
@@ -228,20 +214,20 @@ export async function addMember(
 ) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     const actorRole = await requireManager(tx, group.id, actor);
     // Only an owner may hand out elevated roles. Admins can add regular
     // members and kids, but must not be able to mint fellow admins (or owners).
-    if (role === "owner" || (role === "admin" && actorRole !== "owner")) {
-      throw new DomainError("FORBIDDEN");
+    if (role === 'owner' || (role === 'admin' && actorRole !== 'owner')) {
+      throw new DomainError('FORBIDDEN');
     }
 
     const target = await findUserByIdentifier(tx, identifier);
-    if (!target) throw new DomainError("USER_NOT_FOUND");
+    if (!target) throw new DomainError('USER_NOT_FOUND');
 
     const existing = await membershipFor(tx, group.id, target.id);
-    if (existing) throw new DomainError("ALREADY_MEMBER");
+    if (existing) throw new DomainError('ALREADY_MEMBER');
 
     // Seat enforcement (#325): block adds beyond the group's Family seats with a
     // typed error the UI turns into an upgrade prompt. Runs after the role and
@@ -253,15 +239,15 @@ export async function addMember(
       .values({ groupId: group.id, userId: target.id, role })
       .returning({ id: groupMembers.id });
 
-    if (!inserted) throw new DomainError("CONFLICT");
+    if (!inserted) throw new DomainError('CONFLICT');
 
     const member = await memberWithUser(tx, inserted.id);
-    if (!member) throw new DomainError("CONFLICT");
+    if (!member) throw new DomainError('CONFLICT');
 
     await recordAudit(tx, {
       actorId: actor.id,
       action: AuditAction.GroupMemberAdded,
-      targetType: "group",
+      targetType: 'group',
       targetId: group.id,
       metadata: { memberUserId: target.id, role },
     });
@@ -284,14 +270,14 @@ export async function updateMemberRole(
 ) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     await requireOwner(tx, group.id, actor);
-    if (role === "owner") throw new DomainError("FORBIDDEN");
+    if (role === 'owner') throw new DomainError('FORBIDDEN');
 
     const target = await membershipFor(tx, group.id, memberUserId);
-    if (!target) throw new DomainError("NOT_FOUND");
-    if (target.role === "owner") throw new DomainError("FORBIDDEN");
+    if (!target) throw new DomainError('NOT_FOUND');
+    if (target.role === 'owner') throw new DomainError('FORBIDDEN');
 
     const [updated] = await tx
       .update(groupMembers)
@@ -299,41 +285,33 @@ export async function updateMemberRole(
       .where(eq(groupMembers.id, target.id))
       .returning({ id: groupMembers.id });
 
-    if (!updated) throw new DomainError("NOT_FOUND");
+    if (!updated) throw new DomainError('NOT_FOUND');
 
     await recordAudit(tx, {
       actorId: actor.id,
       action: AuditAction.GroupMemberRoleUpdated,
-      targetType: "group",
+      targetType: 'group',
       targetId: group.id,
       metadata: { memberUserId, from: target.role, to: role },
     });
 
     const member = await memberWithUser(tx, updated.id);
-    if (!member) throw new DomainError("NOT_FOUND");
+    if (!member) throw new DomainError('NOT_FOUND');
     return member;
   });
 }
 
-export async function removeMember(
-  groupSlugOrId: string,
-  actor: User,
-  memberUserId: string,
-) {
+export async function removeMember(groupSlugOrId: string, actor: User, memberUserId: string) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     const actorRole = await requireManager(tx, group.id, actor);
     const target = await membershipFor(tx, group.id, memberUserId);
-    if (!target) throw new DomainError("NOT_FOUND");
-    if (target.role === "owner") throw new DomainError("FORBIDDEN");
-    if (
-      actorRole !== "owner" &&
-      target.role === "admin" &&
-      target.userId !== actor.id
-    ) {
-      throw new DomainError("FORBIDDEN");
+    if (!target) throw new DomainError('NOT_FOUND');
+    if (target.role === 'owner') throw new DomainError('FORBIDDEN');
+    if (actorRole !== 'owner' && target.role === 'admin' && target.userId !== actor.id) {
+      throw new DomainError('FORBIDDEN');
     }
 
     await tx.delete(groupMembers).where(eq(groupMembers.id, target.id));
@@ -341,7 +319,7 @@ export async function removeMember(
     await recordAudit(tx, {
       actorId: actor.id,
       action: AuditAction.GroupMemberRemoved,
-      targetType: "group",
+      targetType: 'group',
       targetId: group.id,
       metadata: { memberUserId, role: target.role },
     });
@@ -353,20 +331,17 @@ export async function removeMember(
 export async function leaveGroup(groupSlugOrId: string, user: User) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     const membership = await membershipFor(tx, group.id, user.id);
-    if (!membership) throw new DomainError("NOT_FOUND");
+    if (!membership) throw new DomainError('NOT_FOUND');
 
-    if (membership.role === "owner") {
+    if (membership.role === 'owner') {
       const owners = await tx.query.groupMembers.findMany({
-        where: and(
-          eq(groupMembers.groupId, group.id),
-          eq(groupMembers.role, "owner"),
-        ),
+        where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.role, 'owner')),
         columns: { id: true },
       });
-      if (owners.length <= 1) throw new DomainError("OWNER_CANT_LEAVE");
+      if (owners.length <= 1) throw new DomainError('OWNER_CANT_LEAVE');
     }
 
     await tx.delete(groupMembers).where(eq(groupMembers.id, membership.id));
@@ -377,7 +352,7 @@ export async function leaveGroup(groupSlugOrId: string, user: User) {
 export async function deleteGroup(groupSlugOrId: string, user: User) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     await requireOwner(tx, group.id, user);
 
@@ -387,22 +362,20 @@ export async function deleteGroup(groupSlugOrId: string, user: User) {
     // group) in the same transaction so their owners keep access.
     await tx
       .update(recipes)
-      .set({ visibility: "private", groupId: null })
-      .where(
-        and(eq(recipes.groupId, group.id), eq(recipes.visibility, "group")),
-      );
+      .set({ visibility: 'private', groupId: null })
+      .where(and(eq(recipes.groupId, group.id), eq(recipes.visibility, 'group')));
 
     const [deleted] = await tx
       .delete(groups)
       .where(eq(groups.id, group.id))
       .returning({ slug: groups.slug });
 
-    if (!deleted) throw new DomainError("NOT_FOUND");
+    if (!deleted) throw new DomainError('NOT_FOUND');
 
     await recordAudit(tx, {
       actorId: user.id,
       action: AuditAction.GroupDeleted,
-      targetType: "group",
+      targetType: 'group',
       targetId: group.id,
       metadata: { slug: deleted.slug },
     });
@@ -418,31 +391,28 @@ export async function transferOwnership(
 ) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
-    if (owner.id === newOwnerUserId) throw new DomainError("CONFLICT");
+    if (!group) throw new DomainError('NOT_FOUND');
+    if (owner.id === newOwnerUserId) throw new DomainError('CONFLICT');
 
     await requireOwner(tx, group.id, owner);
 
     const target = await membershipFor(tx, group.id, newOwnerUserId);
-    if (!target) throw new DomainError("NOT_FOUND");
-    if (target.role === "owner") throw new DomainError("CONFLICT");
+    if (!target) throw new DomainError('NOT_FOUND');
+    if (target.role === 'owner') throw new DomainError('CONFLICT');
 
-    await tx
-      .update(groupMembers)
-      .set({ role: "owner" })
-      .where(eq(groupMembers.id, target.id));
+    await tx.update(groupMembers).set({ role: 'owner' }).where(eq(groupMembers.id, target.id));
 
     const currentOwner = await membershipFor(tx, group.id, owner.id);
-    if (!currentOwner) throw new DomainError("FORBIDDEN");
+    if (!currentOwner) throw new DomainError('FORBIDDEN');
     await tx
       .update(groupMembers)
-      .set({ role: "admin" })
+      .set({ role: 'admin' })
       .where(eq(groupMembers.id, currentOwner.id));
 
     await recordAudit(tx, {
       actorId: owner.id,
       action: AuditAction.GroupOwnershipTransferred,
-      targetType: "group",
+      targetType: 'group',
       targetId: group.id,
       metadata: { newOwnerUserId, previousOwnerUserId: owner.id },
     });
@@ -459,44 +429,38 @@ export async function transferOwnership(
  * duplicate *pending* invite for the same contact is refused (also enforced at
  * the DB for email via the partial unique index).
  */
-export async function createInvitation(
-  groupSlugOrId: string,
-  actor: User,
-  input: InviteInput,
-) {
+export async function createInvitation(groupSlugOrId: string, actor: User, input: InviteInput) {
   const data = inviteInput.parse(input);
   const email = data.email ?? null;
   const handle = normalizeHandle(data.handle);
-  if (!email && !handle) throw new DomainError("INVALID");
+  if (!email && !handle) throw new DomainError('INVALID');
 
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     const actorRole = await requireManager(tx, group.id, actor);
     // Mirror addMember: an admin can invite members/kids but not fellow admins.
-    if (data.role === "admin" && actorRole !== "owner") {
-      throw new DomainError("FORBIDDEN");
+    if (data.role === 'admin' && actorRole !== 'owner') {
+      throw new DomainError('FORBIDDEN');
     }
 
     // Pre-link an existing account (and reject inviting a current member).
     const target = await findUserByIdentifier(tx, email ?? handle!);
     if (target) {
       const existingMember = await membershipFor(tx, group.id, target.id);
-      if (existingMember) throw new DomainError("ALREADY_MEMBER");
+      if (existingMember) throw new DomainError('ALREADY_MEMBER');
     }
 
     const duplicate = await tx.query.groupInvitations.findFirst({
       where: and(
         eq(groupInvitations.groupId, group.id),
-        eq(groupInvitations.status, "pending"),
-        email
-          ? eq(groupInvitations.email, email)
-          : eq(groupInvitations.handle, handle!),
+        eq(groupInvitations.status, 'pending'),
+        email ? eq(groupInvitations.email, email) : eq(groupInvitations.handle, handle!),
       ),
       columns: { id: true },
     });
-    if (duplicate) throw new DomainError("ALREADY_INVITED");
+    if (duplicate) throw new DomainError('ALREADY_INVITED');
 
     const [invitation] = await tx
       .insert(groupInvitations)
@@ -508,7 +472,7 @@ export async function createInvitation(
         handle,
         role: data.role,
         token: generateInviteToken(),
-        status: "pending",
+        status: 'pending',
         expiresAt: new Date(Date.now() + data.expiresInDays * DAY_MS),
       })
       .returning({
@@ -518,7 +482,7 @@ export async function createInvitation(
         expiresAt: groupInvitations.expiresAt,
       });
 
-    if (!invitation) throw new DomainError("CONFLICT");
+    if (!invitation) throw new DomainError('CONFLICT');
     return invitation;
   });
 }
@@ -534,28 +498,23 @@ export async function acceptInvitation(token: string, user: User) {
     const invitation = await tx.query.groupInvitations.findFirst({
       where: eq(groupInvitations.token, token),
     });
-    if (!invitation) throw new DomainError("NOT_FOUND");
-    if (invitation.status === "revoked") throw new DomainError("REVOKED");
+    if (!invitation) throw new DomainError('NOT_FOUND');
+    if (invitation.status === 'revoked') throw new DomainError('REVOKED');
 
-    const overdue =
-      invitation.expiresAt != null &&
-      invitation.expiresAt.getTime() <= Date.now();
-    if (
-      invitation.status === "expired" ||
-      (invitation.status === "pending" && overdue)
-    ) {
-      if (invitation.status === "pending") {
+    const overdue = invitation.expiresAt != null && invitation.expiresAt.getTime() <= Date.now();
+    if (invitation.status === 'expired' || (invitation.status === 'pending' && overdue)) {
+      if (invitation.status === 'pending') {
         await tx
           .update(groupInvitations)
-          .set({ status: "expired" })
+          .set({ status: 'expired' })
           .where(eq(groupInvitations.id, invitation.id));
       }
-      throw new DomainError("EXPIRED");
+      throw new DomainError('EXPIRED');
     }
 
     const existing = await membershipFor(tx, invitation.groupId, user.id);
 
-    if (invitation.status === "accepted") {
+    if (invitation.status === 'accepted') {
       // Already consumed. Idempotent only if this user is still the member it
       // produced. Otherwise the (single-use) token can't mint a new membership.
       if (existing) {
@@ -565,14 +524,14 @@ export async function acceptInvitation(token: string, user: User) {
           alreadyMember: true,
         };
       }
-      throw new DomainError("ALREADY_ACCEPTED");
+      throw new DomainError('ALREADY_ACCEPTED');
     }
 
     // status === "pending"
     if (existing) {
       await tx
         .update(groupInvitations)
-        .set({ status: "accepted", userId: user.id })
+        .set({ status: 'accepted', userId: user.id })
         .where(eq(groupInvitations.id, invitation.id));
       return {
         groupId: invitation.groupId,
@@ -594,7 +553,7 @@ export async function acceptInvitation(token: string, user: User) {
     });
     await tx
       .update(groupInvitations)
-      .set({ status: "accepted", userId: user.id })
+      .set({ status: 'accepted', userId: user.id })
       .where(eq(groupInvitations.id, invitation.id));
 
     return {
@@ -609,33 +568,26 @@ export async function acceptInvitation(token: string, user: User) {
  * Revoke a pending invitation (issue #181). Owner/admin only. Idempotent for an
  * already-revoked invite. Refuses to revoke one that's been accepted/expired.
  */
-export async function revokeInvitation(
-  groupSlugOrId: string,
-  actor: User,
-  invitationId: string,
-) {
+export async function revokeInvitation(groupSlugOrId: string, actor: User, invitationId: string) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
     await requireManager(tx, group.id, actor);
 
     const invitation = await tx.query.groupInvitations.findFirst({
-      where: and(
-        eq(groupInvitations.id, invitationId),
-        eq(groupInvitations.groupId, group.id),
-      ),
+      where: and(eq(groupInvitations.id, invitationId), eq(groupInvitations.groupId, group.id)),
     });
-    if (!invitation) throw new DomainError("NOT_FOUND");
-    if (invitation.status === "revoked") {
-      return { id: invitation.id, status: "revoked" as const };
+    if (!invitation) throw new DomainError('NOT_FOUND');
+    if (invitation.status === 'revoked') {
+      return { id: invitation.id, status: 'revoked' as const };
     }
-    if (invitation.status !== "pending") throw new DomainError("NOT_PENDING");
+    if (invitation.status !== 'pending') throw new DomainError('NOT_PENDING');
 
     await tx
       .update(groupInvitations)
-      .set({ status: "revoked" })
+      .set({ status: 'revoked' })
       .where(eq(groupInvitations.id, invitation.id));
-    return { id: invitation.id, status: "revoked" as const };
+    return { id: invitation.id, status: 'revoked' as const };
   });
 }
 
@@ -655,7 +607,7 @@ export async function createInviteLink(
 
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     await requireManager(tx, group.id, actor);
 
@@ -667,9 +619,7 @@ export async function createInviteLink(
         role: data.role,
         token: generateInviteToken(),
         expiresAt:
-          data.expiresInDays != null
-            ? new Date(Date.now() + data.expiresInDays * DAY_MS)
-            : null,
+          data.expiresInDays != null ? new Date(Date.now() + data.expiresInDays * DAY_MS) : null,
         maxUses: data.maxUses ?? null,
       })
       .returning({
@@ -680,7 +630,7 @@ export async function createInviteLink(
         maxUses: groupInviteLinks.maxUses,
       });
 
-    if (!link) throw new DomainError("CONFLICT");
+    if (!link) throw new DomainError('CONFLICT');
     return { ...link, groupId: group.id, slug: group.slug };
   });
 }
@@ -698,17 +648,17 @@ export async function acceptInviteLink(token: string, user: User) {
     const link = await tx.query.groupInviteLinks.findFirst({
       where: eq(groupInviteLinks.token, token),
     });
-    if (!link) throw new DomainError("NOT_FOUND");
-    if (link.revokedAt != null) throw new DomainError("REVOKED");
+    if (!link) throw new DomainError('NOT_FOUND');
+    if (link.revokedAt != null) throw new DomainError('REVOKED');
     if (link.expiresAt != null && link.expiresAt.getTime() <= Date.now()) {
-      throw new DomainError("EXPIRED");
+      throw new DomainError('EXPIRED');
     }
 
     const group = await tx.query.groups.findFirst({
       where: eq(groups.id, link.groupId),
       columns: { id: true, slug: true },
     });
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
 
     const existing = await membershipFor(tx, link.groupId, user.id);
     if (existing) {
@@ -737,10 +687,7 @@ export async function acceptInviteLink(token: string, user: User) {
         and(
           eq(groupInviteLinks.id, link.id),
           isNull(groupInviteLinks.revokedAt),
-          or(
-            isNull(groupInviteLinks.expiresAt),
-            gt(groupInviteLinks.expiresAt, now),
-          ),
+          or(isNull(groupInviteLinks.expiresAt), gt(groupInviteLinks.expiresAt, now)),
           or(
             isNull(groupInviteLinks.maxUses),
             lt(groupInviteLinks.useCount, groupInviteLinks.maxUses),
@@ -748,7 +695,7 @@ export async function acceptInviteLink(token: string, user: User) {
         ),
       )
       .returning({ id: groupInviteLinks.id });
-    if (claimed.length === 0) throw new DomainError("EXHAUSTED");
+    if (claimed.length === 0) throw new DomainError('EXHAUSTED');
 
     // Seat enforcement (#325): re-check Family seats AFTER the use-claim but
     // BEFORE seating, so a seat rejection throws and rolls the useCount bump back
@@ -777,24 +724,17 @@ export async function acceptInviteLink(token: string, user: User) {
  * an already-revoked link keeps its original timestamp and succeeds, so a
  * double-tap never errors.
  */
-export async function revokeInviteLink(
-  groupSlugOrId: string,
-  actor: User,
-  token: string,
-) {
+export async function revokeInviteLink(groupSlugOrId: string, actor: User, token: string) {
   return db.transaction(async (tx) => {
     const group = await findGroup(tx, groupSlugOrId);
-    if (!group) throw new DomainError("NOT_FOUND");
+    if (!group) throw new DomainError('NOT_FOUND');
     await requireManager(tx, group.id, actor);
 
     const link = await tx.query.groupInviteLinks.findFirst({
-      where: and(
-        eq(groupInviteLinks.token, token),
-        eq(groupInviteLinks.groupId, group.id),
-      ),
+      where: and(eq(groupInviteLinks.token, token), eq(groupInviteLinks.groupId, group.id)),
       columns: { id: true, revokedAt: true },
     });
-    if (!link) throw new DomainError("NOT_FOUND");
+    if (!link) throw new DomainError('NOT_FOUND');
     if (link.revokedAt != null) {
       return { id: link.id, slug: group.slug };
     }

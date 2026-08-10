@@ -1,5 +1,5 @@
-import { isValid, parse } from "date-fns";
-import { z } from "zod";
+import { isValid, parse } from 'date-fns';
+import { z } from 'zod';
 
 /**
  * Validation contract for the weekly meal planner. Shared by the client picker
@@ -8,16 +8,16 @@ import { z } from "zod";
  */
 
 /** Meal slots in display order. Mirrors the `meal_slot` pg enum. */
-export const MEAL_SLOTS = ["breakfast", "lunch", "dinner", "snack"] as const;
+export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 export type MealSlotValue = (typeof MEAL_SLOTS)[number];
 
 export const mealSlotSchema = z.enum(MEAL_SLOTS);
 
 export const MEAL_SLOT_LABELS: Record<MealSlotValue, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snack",
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snack',
 };
 
 const idInput = z.string().trim().min(1).max(24);
@@ -26,9 +26,9 @@ const idInput = z.string().trim().min(1).max(24);
 export const dateParam = z
   .string()
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
-  .refine((value) => isValid(parse(value, "yyyy-MM-dd", new Date())), {
-    message: "Enter a valid date",
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a YYYY-MM-DD date')
+  .refine((value) => isValid(parse(value, 'yyyy-MM-dd', new Date())), {
+    message: 'Enter a valid date',
   });
 
 const noteInput = z
@@ -36,9 +36,7 @@ const noteInput = z
   .trim()
   .max(300)
   .optional()
-  .transform((value) =>
-    value == null || value.length === 0 ? undefined : value,
-  );
+  .transform((value) => (value == null || value.length === 0 ? undefined : value));
 
 const positionInput = z.number().int().min(0).max(1000).optional();
 export const servingsInput = z.number().int().min(1).max(100000);
@@ -54,12 +52,12 @@ export const addEntryInput = z
     servings: servingsInput.optional(),
   })
   .refine((value) => Boolean(value.recipeId) || Boolean(value.note), {
-    message: "Pick a recipe or add a note",
-    path: ["recipeId"],
+    message: 'Pick a recipe or add a note',
+    path: ['recipeId'],
   })
   .refine((value) => value.servings == null || Boolean(value.recipeId), {
-    message: "Servings require a recipe",
-    path: ["servings"],
+    message: 'Servings require a recipe',
+    path: ['servings'],
   });
 
 export const moveEntryInput = z.object({
@@ -103,20 +101,19 @@ export const mealWithLeftoversInput = z
       const destination = `${allocation.date}|${allocation.slot}`;
       const isAfterSource =
         allocation.date > value.date ||
-        (allocation.date === value.date &&
-          MEAL_SLOTS.indexOf(allocation.slot) > sourceSlotIndex);
+        (allocation.date === value.date && MEAL_SLOTS.indexOf(allocation.slot) > sourceSlotIndex);
       if (!isAfterSource) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Schedule leftovers after the source meal",
-          path: ["leftovers", index, "date"],
+          message: 'Schedule leftovers after the source meal',
+          path: ['leftovers', index, 'date'],
         });
       }
       if (destinations.has(destination)) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Each leftovers meal must be unique",
-          path: ["leftovers", index, "date"],
+          message: 'Each leftovers meal must be unique',
+          path: ['leftovers', index, 'date'],
         });
       }
       destinations.add(destination);

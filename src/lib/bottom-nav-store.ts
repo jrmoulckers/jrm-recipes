@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 import {
   DEFAULT_MOBILE_PINNED,
@@ -9,7 +9,7 @@ import {
   isPinnableKey,
   normalizePinned,
   type NavKey,
-} from "~/config/nav";
+} from '~/config/nav';
 
 /**
  * Device-scoped preference for the customizable mobile bottom bar (the 5th slot
@@ -67,8 +67,7 @@ export const useBottomNavStore = create<BottomNavStore>()(
           }
           return { pinned: [...state.pinned, key] };
         }),
-      unpin: (key) =>
-        set((state) => ({ pinned: state.pinned.filter((k) => k !== key) })),
+      unpin: (key) => set((state) => ({ pinned: state.pinned.filter((k) => k !== key) })),
       toggle: (key) =>
         set((state) => {
           if (state.pinned.includes(key)) {
@@ -79,22 +78,18 @@ export const useBottomNavStore = create<BottomNavStore>()(
           }
           return { pinned: [...state.pinned, key] };
         }),
-      moveUp: (key) =>
-        set((state) => ({ pinned: move(state.pinned, key, -1) })),
-      moveDown: (key) =>
-        set((state) => ({ pinned: move(state.pinned, key, 1) })),
+      moveUp: (key) => set((state) => ({ pinned: move(state.pinned, key, -1) })),
+      moveDown: (key) => set((state) => ({ pinned: move(state.pinned, key, 1) })),
       reset: () => set({ pinned: [...DEFAULT_MOBILE_PINNED] }),
     }),
     {
-      name: "heirloom-bottom-nav",
+      name: 'heirloom-bottom-nav',
       partialize: (state) => ({ pinned: state.pinned }),
       // Drop any stale/invalid keys persisted from an older nav config.
       merge: (persisted, current) => {
         const saved = (persisted as { pinned?: unknown } | undefined)?.pinned;
         const pinned = Array.isArray(saved)
-          ? normalizePinned(
-              saved.filter((k): k is string => typeof k === "string"),
-            )
+          ? normalizePinned(saved.filter((k): k is string => typeof k === 'string'))
           : current.pinned;
         return { ...current, pinned };
       },

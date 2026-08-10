@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { Download, Link2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Download, Link2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { friendlyError } from "~/lib/error-copy";
-import { importRecipeFromUrlAction } from "~/server/recipes/actions";
-import { type ImportedRecipe } from "~/server/recipes/import";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { PasteImportPanel } from "~/components/recipe/paste-import-panel";
+import { friendlyError } from '~/lib/error-copy';
+import { importRecipeFromUrlAction } from '~/server/recipes/actions';
+import { type ImportedRecipe } from '~/server/recipes/import';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { PasteImportPanel } from '~/components/recipe/paste-import-panel';
 
 /**
  * "Import a recipe" import affordance. Create mode only (#294,
@@ -28,11 +28,11 @@ export function ImportRecipePanel({
   /** A URL shared into the PWA to pre-fill and auto-import on mount (#50/#55). */
   initialUrl?: string;
 }) {
-  const t = useTranslations("recipe");
-  const [importUrl, setImportUrl] = React.useState(initialUrl ?? "");
+  const t = useTranslations('recipe');
+  const [importUrl, setImportUrl] = React.useState(initialUrl ?? '');
   const [importing, setImporting] = React.useState(false);
   // "Import from a link" vs. "Paste text" (#370).
-  const [importMode, setImportMode] = React.useState<"url" | "text">("url");
+  const [importMode, setImportMode] = React.useState<'url' | 'text'>('url');
 
   const onImportedRef = React.useRef(onImported);
   onImportedRef.current = onImported;
@@ -48,15 +48,15 @@ export function ImportRecipePanel({
           onImportedRef.current(res.recipe);
           toast.success(
             res.recipe.title
-              ? t("import.toast.importedNamed", { title: res.recipe.title })
-              : t("import.toast.imported"),
+              ? t('import.toast.importedNamed', { title: res.recipe.title })
+              : t('import.toast.imported'),
           );
-          setImportUrl("");
+          setImportUrl('');
         } else {
           toast.error(friendlyError(res.error));
         }
       } catch {
-        toast.error(t("import.toast.linkError"));
+        toast.error(t('import.toast.linkError'));
       } finally {
         setImporting(false);
       }
@@ -82,42 +82,34 @@ export function ImportRecipePanel({
     <section className="rounded-xl border border-border bg-muted/40 p-4">
       <div className="flex items-center gap-2">
         <Link2 className="size-4 text-primary" />
-        <h2 className="font-display text-base font-semibold">
-          {t("import.title")}
-        </h2>
+        <h2 className="font-display text-base font-semibold">{t('import.title')}</h2>
       </div>
-      <div
-        className="mt-3 flex gap-2"
-        role="tablist"
-        aria-label={t("import.methodAria")}
-      >
+      <div className="mt-3 flex gap-2" role="tablist" aria-label={t('import.methodAria')}>
         <Button
           type="button"
           size="sm"
-          variant={importMode === "url" ? "default" : "outline"}
+          variant={importMode === 'url' ? 'default' : 'outline'}
           role="tab"
-          aria-selected={importMode === "url"}
-          onClick={() => setImportMode("url")}
+          aria-selected={importMode === 'url'}
+          onClick={() => setImportMode('url')}
         >
-          {t("import.fromLink")}
+          {t('import.fromLink')}
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={importMode === "text" ? "default" : "outline"}
+          variant={importMode === 'text' ? 'default' : 'outline'}
           role="tab"
-          aria-selected={importMode === "text"}
-          onClick={() => setImportMode("text")}
+          aria-selected={importMode === 'text'}
+          onClick={() => setImportMode('text')}
         >
-          {t("import.pasteText")}
+          {t('import.pasteText')}
         </Button>
       </div>
 
-      {importMode === "url" ? (
+      {importMode === 'url' ? (
         <>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("import.urlHelp")}
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{t('import.urlHelp')}</p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Input
               type="url"
@@ -125,7 +117,7 @@ export function ImportRecipePanel({
               value={importUrl}
               onChange={(e) => setImportUrl(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === 'Enter') {
                   e.preventDefault();
                   void handleImport();
                 }
@@ -141,7 +133,7 @@ export function ImportRecipePanel({
               className="shrink-0"
             >
               {importing ? <Loader2 className="animate-spin" /> : <Download />}
-              {importing ? t("import.importing") : t("import.import")}
+              {importing ? t('import.importing') : t('import.import')}
             </Button>
           </div>
         </>

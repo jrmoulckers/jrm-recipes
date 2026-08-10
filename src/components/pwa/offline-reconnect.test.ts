@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 
-import { RECONNECT_DELAY_MS, scheduleReconnect } from "./offline-reconnect";
+import { RECONNECT_DELAY_MS, scheduleReconnect } from './offline-reconnect';
 
-describe("scheduleReconnect", () => {
-  it("schedules a reload and reports retrying when online", () => {
+describe('scheduleReconnect', () => {
+  it('schedules a reload and reports retrying when online', () => {
     const onRetrying = vi.fn();
     const reload = vi.fn();
     const setTimer = vi.fn<(cb: () => void, ms: number) => number>(() => 42);
@@ -15,7 +15,7 @@ describe("scheduleReconnect", () => {
     expect(id).toBe(42);
   });
 
-  it("schedules nothing when offline", () => {
+  it('schedules nothing when offline', () => {
     const onRetrying = vi.fn();
     const reload = vi.fn();
     const setTimer = vi.fn();
@@ -27,7 +27,7 @@ describe("scheduleReconnect", () => {
     expect(setTimer).not.toHaveBeenCalled();
   });
 
-  it("honors a custom delay", () => {
+  it('honors a custom delay', () => {
     const setTimer = vi.fn<(cb: () => void, ms: number) => number>(() => 1);
 
     scheduleReconnect(

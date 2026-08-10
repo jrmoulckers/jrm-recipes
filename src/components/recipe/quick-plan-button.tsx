@@ -1,26 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { CalendarPlus } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { CalendarPlus } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import { addEntryAction } from "~/server/planner/actions";
-import {
-  MEAL_SLOTS,
-  MEAL_SLOT_LABELS,
-  type MealSlotValue,
-} from "~/server/planner/validation";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { NativeSelect } from "~/components/ui/native-select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { addEntryAction } from '~/server/planner/actions';
+import { MEAL_SLOTS, MEAL_SLOT_LABELS, type MealSlotValue } from '~/server/planner/validation';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { NativeSelect } from '~/components/ui/native-select';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 /** A selectable day in the current planner week for the quick-plan picker. */
 export type QuickPlanDay = {
@@ -41,14 +33,14 @@ type QuickPlanButtonProps = {
    * `overlay` is the compact round pill floated over a card cover (browse grid);
    * `button` is a labelled action for the "Back in the rotation" rail.
    */
-  variant?: "overlay" | "button";
+  variant?: 'overlay' | 'button';
   /** Popover heading. Defaults to the this-week copy used by browse cards. */
   heading?: string;
   className?: string;
 };
 
 const OVERLAY_CLASSES =
-  "inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none";
+  'inline-flex size-9 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-token backdrop-blur transition-[color,transform] duration-150 hover:scale-105 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none';
 
 /**
  * Quick "add to this week's plan" control for recipe cards (#379). Opens a small
@@ -62,15 +54,15 @@ export function QuickPlanButton({
   recipeTitle,
   days,
   defaultDate,
-  variant = "overlay",
+  variant = 'overlay',
   heading = undefined,
   className,
 }: QuickPlanButtonProps) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState(defaultDate);
-  const [slot, setSlot] = React.useState<MealSlotValue>("dinner");
+  const [slot, setSlot] = React.useState<MealSlotValue>('dinner');
   const [pending, startTransition] = React.useTransition();
 
   // Re-sync the default day whenever the week's occupancy changes under us.
@@ -81,7 +73,7 @@ export function QuickPlanButton({
   function onOpenChange(next: boolean) {
     if (next) {
       setDate(defaultDate);
-      setSlot("dinner");
+      setSlot('dinner');
     }
     setOpen(next);
   }
@@ -92,10 +84,9 @@ export function QuickPlanButton({
     startTransition(async () => {
       const result = await addEntryAction({ date, slot, recipeId });
       if (result.ok) {
-        const dayLabel =
-          days.find((d) => d.value === date)?.label ?? t("quickPlan.yourPlan");
+        const dayLabel = days.find((d) => d.value === date)?.label ?? t('quickPlan.yourPlan');
         toast.success(
-          t("quickPlan.toast.added", {
+          t('quickPlan.toast.added', {
             title: recipeTitle,
             day: dayLabel,
             meal: MEAL_SLOT_LABELS[slot].toLowerCase(),
@@ -110,39 +101,30 @@ export function QuickPlanButton({
   }
 
   const trigger =
-    variant === "overlay" ? (
+    variant === 'overlay' ? (
       <button
         type="button"
-        aria-label={t("quickPlan.addThisWeek")}
-        title={t("quickPlan.addThisWeek")}
+        aria-label={t('quickPlan.addThisWeek')}
+        title={t('quickPlan.addThisWeek')}
         className={cn(OVERLAY_CLASSES, className)}
       >
         <CalendarPlus className="size-5" />
       </button>
     ) : (
       <Button type="button" variant="outline" size="sm" className={className}>
-        <CalendarPlus /> {t("quickPlan.addToPlan")}
+        <CalendarPlus /> {t('quickPlan.addToPlan')}
       </Button>
     );
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-64"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <PopoverContent align="end" className="w-64" onClick={(event) => event.stopPropagation()}>
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <p className="text-sm font-medium">
-            {heading ?? t("quickPlan.addThisWeek")}
-          </p>
+          <p className="text-sm font-medium">{heading ?? t('quickPlan.addThisWeek')}</p>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            {t("quickPlan.day")}
-            <NativeSelect
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            >
+            {t('quickPlan.day')}
+            <NativeSelect value={date} onChange={(event) => setDate(event.target.value)}>
               {days.map((day) => (
                 <option key={day.value} value={day.value}>
                   {day.label}
@@ -151,7 +133,7 @@ export function QuickPlanButton({
             </NativeSelect>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
-            {t("quickPlan.meal")}
+            {t('quickPlan.meal')}
             <NativeSelect
               value={slot}
               onChange={(event) => setSlot(event.target.value as MealSlotValue)}
@@ -163,12 +145,8 @@ export function QuickPlanButton({
               ))}
             </NativeSelect>
           </label>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={pending || days.length === 0}
-          >
-            {pending ? t("quickPlan.adding") : t("quickPlan.addToPlan")}
+          <Button type="submit" size="sm" disabled={pending || days.length === 0}>
+            {pending ? t('quickPlan.adding') : t('quickPlan.addToPlan')}
           </Button>
         </form>
       </PopoverContent>

@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { BookmarkPlus, Check, Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { BookmarkPlus, Check, Loader2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
 import {
   addRecipeToCollectionAction,
   createCollectionAction,
   removeRecipeFromCollectionAction,
-} from "~/server/collections/actions";
-import { type CollectionMembership } from "~/server/collections/queries";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+} from '~/server/collections/actions';
+import { type CollectionMembership } from '~/server/collections/queries';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
 
 export function SaveToCollectionButton({
   recipeId,
@@ -35,11 +35,11 @@ export function SaveToCollectionButton({
   canSave: boolean;
 }) {
   const router = useRouter();
-  const t = useTranslations("saveToCollection");
+  const t = useTranslations('saveToCollection');
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<CollectionMembership[]>(collections);
   const [pendingId, setPendingId] = React.useState<string | null>(null);
-  const [newName, setNewName] = React.useState("");
+  const [newName, setNewName] = React.useState('');
   const [creating, setCreating] = React.useState(false);
 
   React.useEffect(() => {
@@ -48,7 +48,7 @@ export function SaveToCollectionButton({
 
   function onOpenChange(next: boolean) {
     if (!canSave) {
-      toast(t("signInToSave"));
+      toast(t('signInToSave'));
       return;
     }
     setOpen(next);
@@ -58,9 +58,7 @@ export function SaveToCollectionButton({
     if (pendingId) return;
     setPendingId(collectionId);
     setItems((prev) =>
-      prev.map((c) =>
-        c.id === collectionId ? { ...c, contains: !contains } : c,
-      ),
+      prev.map((c) => (c.id === collectionId ? { ...c, contains: !contains } : c)),
     );
 
     void (async () => {
@@ -71,9 +69,7 @@ export function SaveToCollectionButton({
       if (result.ok) {
         router.refresh();
       } else {
-        setItems((prev) =>
-          prev.map((c) => (c.id === collectionId ? { ...c, contains } : c)),
-        );
+        setItems((prev) => prev.map((c) => (c.id === collectionId ? { ...c, contains } : c)));
         toast.error(friendlyError(result.error));
       }
       setPendingId(null);
@@ -103,9 +99,9 @@ export function SaveToCollectionButton({
         return;
       }
       setItems((prev) => [{ id: created.id, name, contains: true }, ...prev]);
-      setNewName("");
+      setNewName('');
       setCreating(false);
-      toast.success(t("toast.savedTo", { name }));
+      toast.success(t('toast.savedTo', { name }));
       router.refresh();
     })();
   }
@@ -114,43 +110,36 @@ export function SaveToCollectionButton({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <BookmarkPlus /> {t("trigger")}
+          <BookmarkPlus /> {t('trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         {items.length > 0 && (
-          <ul
-            aria-label={t("list")}
-            className="grid max-h-64 gap-1 overflow-y-auto"
-          >
+          <ul aria-label={t('list')} className="grid max-h-64 gap-1 overflow-y-auto">
             {items.map((collection) => (
               <li key={collection.id}>
                 <button
                   type="button"
-                  onClick={() =>
-                    toggleMembership(collection.id, collection.contains)
-                  }
+                  onClick={() => toggleMembership(collection.id, collection.contains)}
                   disabled={pendingId === collection.id}
                   aria-pressed={collection.contains}
-                  aria-label={t(collection.contains ? "remove" : "add", {
+                  aria-label={t(collection.contains ? 'remove' : 'add', {
                     name: collection.name,
                   })}
                   className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-start text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                 >
-                  <span className="line-clamp-1 font-medium">
-                    {collection.name}
-                  </span>
+                  <span className="line-clamp-1 font-medium">{collection.name}</span>
                   <span
                     className={cn(
-                      "flex size-5 shrink-0 items-center justify-center rounded-full border",
+                      'flex size-5 shrink-0 items-center justify-center rounded-full border',
                       collection.contains
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border text-transparent",
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border text-transparent',
                     )}
                   >
                     {pendingId === collection.id ? (
@@ -169,10 +158,10 @@ export function SaveToCollectionButton({
           <Input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder={t("newNameField")}
+            placeholder={t('newNameField')}
             maxLength={120}
             disabled={creating}
-            aria-label={t("newNameField")}
+            aria-label={t('newNameField')}
           />
           <Button
             type="submit"
@@ -180,7 +169,7 @@ export function SaveToCollectionButton({
             disabled={creating || newName.trim().length === 0}
           >
             {creating ? <Loader2 className="animate-spin" /> : <Plus />}
-            {t("create")}
+            {t('create')}
           </Button>
         </form>
       </DialogContent>

@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import { unstable_cache } from "next/cache";
+import { unstable_cache } from 'next/cache';
 
 import {
   and,
@@ -18,25 +18,21 @@ import {
   or,
   sql,
   type SQL,
-} from "drizzle-orm";
+} from 'drizzle-orm';
 
-import { QueryBuilder } from "drizzle-orm/pg-core";
+import { QueryBuilder } from 'drizzle-orm/pg-core';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   excludeOwnerRatings,
   ratingSummary,
   TOP_RATED_PRIOR_COUNT,
   TOP_RATED_PRIOR_MEAN,
   type RatingSort,
-} from "~/lib/ratings";
-import {
-  summarizeAllergensForSafety,
-  isAllergen,
-  type Allergen,
-} from "~/lib/allergens";
-import { isDietaryTag } from "~/lib/substitutions";
-import { hasAllergenConflict } from "~/lib/dietary-match";
+} from '~/lib/ratings';
+import { summarizeAllergensForSafety, isAllergen, type Allergen } from '~/lib/allergens';
+import { isDietaryTag } from '~/lib/substitutions';
+import { hasAllergenConflict } from '~/lib/dietary-match';
 import {
   groupMembers,
   memberDietaryProfiles,
@@ -56,9 +52,9 @@ import {
   foodItems,
   foodRecipeLinks,
   type User,
-} from "~/server/db/schema";
-import { resolveFoodId } from "~/server/db/resolve-food";
-import { recipeInput, type RecipeInput } from "./validation";
+} from '~/server/db/schema';
+import { resolveFoodId } from '~/server/db/resolve-food';
+import { recipeInput, type RecipeInput } from './validation';
 import {
   clampPageSize,
   DISCOVER_PAGE_SIZE,
@@ -69,15 +65,15 @@ import {
   TIMELINE_EVENT_PAGE_SIZE,
   VERSION_HISTORY_PAGE_SIZE,
   type Paginated,
-} from "./pagination";
-import { expandQueryTerms } from "~/lib/search-synonyms";
-import { deriveMatchReason } from "~/lib/search-match";
-import { rankBySimilarity, tokenizeIngredients } from "~/lib/related-recipes";
-import { rankByCoverage } from "~/lib/ingredient-coverage";
-import { tagFilterSlug, type RecipeSearch, type RecipeSort } from "./search";
-import { assembleTimeline, type TimelineEntry } from "./timeline";
-import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from "./cache";
-import { todayParam } from "~/server/planner/week";
+} from './pagination';
+import { expandQueryTerms } from '~/lib/search-synonyms';
+import { deriveMatchReason } from '~/lib/search-match';
+import { rankBySimilarity, tokenizeIngredients } from '~/lib/related-recipes';
+import { rankByCoverage } from '~/lib/ingredient-coverage';
+import { tagFilterSlug, type RecipeSearch, type RecipeSort } from './search';
+import { assembleTimeline, type TimelineEntry } from './timeline';
+import { PUBLIC_RECIPES_REVALIDATE_SECONDS, PUBLIC_RECIPES_TAG } from './cache';
+import { todayParam } from '~/server/planner/week';
 
 /**
  * Shared predicate excluding soft-deleted recipes (issue #165). Every recipe
@@ -116,22 +112,14 @@ function idOrSlugOrder(idOrSlug: string): SQL[] {
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
 export type RecipeListItem = Awaited<ReturnType<typeof listMyRecipes>>[number];
-export type PublicRecipeListItem = Awaited<
-  ReturnType<typeof listPublicRecipes>
->["items"][number];
-export type RecipeSearchResult = Awaited<
-  ReturnType<typeof searchRecipes>
->["items"][number];
-export type LibraryListItem = Awaited<
-  ReturnType<typeof listLibrary>
->["items"][number];
-export type CookWithResult = Awaited<
-  ReturnType<typeof searchByIngredients>
->[number];
+export type PublicRecipeListItem = Awaited<ReturnType<typeof listPublicRecipes>>['items'][number];
+export type RecipeSearchResult = Awaited<ReturnType<typeof searchRecipes>>['items'][number];
+export type LibraryListItem = Awaited<ReturnType<typeof listLibrary>>['items'][number];
+export type CookWithResult = Awaited<ReturnType<typeof searchByIngredients>>[number];
 export type RecipeFacets = Awaited<ReturnType<typeof listRecipeFacets>>;
 /** One page of a recipe's saved versions, newest first (#159). */
 export type VersionHistoryPage = Awaited<ReturnType<typeof getRecipeVersions>>;
-export type VersionListItem = VersionHistoryPage["items"][number];
+export type VersionListItem = VersionHistoryPage['items'][number];
 
 /** Re-exported for recipe detail pages that import it from the query module. */
 export { excludeOwnerRatings, ratingSummary };
@@ -195,12 +183,7 @@ export function relevanceScoreSql(like: string): SQL {
     qb
       .select({ one: sql`1` })
       .from(recipeIngredients)
-      .where(
-        and(
-          eq(recipeIngredients.recipeId, recipes.id),
-          ilike(recipeIngredients.item, like),
-        ),
-      ),
+      .where(and(eq(recipeIngredients.recipeId, recipes.id), ilike(recipeIngredients.item, like))),
   );
   return sql`(
     (case when ${recipes.title} ilike ${like} then 5 else 0 end)
@@ -280,9 +263,7 @@ export function popularOrderBy(): SQL[] {
 }
 
 /** Groups a user belongs to (for the editor's visibility picker). */
-export async function listUserGroups(
-  userId: string,
-): Promise<{ id: string; name: string }[]> {
+export async function listUserGroups(userId: string): Promise<{ id: string; name: string }[]> {
   if (!isDbConfigured()) return [];
   const rows = await db.query.groupMembers.findMany({
     where: eq(groupMembers.userId, userId),
@@ -318,9 +299,7 @@ export async function listMyRecipes(userId: string) {
  * On-demand only (never a hot path), so loading full relations in one findMany
  * is acceptable.
  */
-export async function listOwnedRecipesForBackup(
-  userId: string,
-): Promise<FullRecipe[]> {
+export async function listOwnedRecipesForBackup(userId: string): Promise<FullRecipe[]> {
   if (!isDbConfigured()) return [];
   return db.query.recipes.findMany({
     where: and(notDeleted, eq(recipes.authorId, userId)),
@@ -355,13 +334,9 @@ export async function listOwnedRecipesForBackup(
 const fetchPublicRecipes = unstable_cache(
   async (limit: number, offset: number, sort: RatingSort) => {
     const rows = await db.query.recipes.findMany({
-      where: and(
-        notDeleted,
-        eq(recipes.visibility, "public"),
-        eq(recipes.status, "published"),
-      ),
+      where: and(notDeleted, eq(recipes.visibility, 'public'), eq(recipes.status, 'published')),
       orderBy:
-        sort === "top-rated"
+        sort === 'top-rated'
           ? topRatedOrderBy()
           : [desc(recipes.publishedAt), desc(recipes.updatedAt)],
       limit,
@@ -379,7 +354,7 @@ const fetchPublicRecipes = unstable_cache(
       nextOffset: nextPageOffset(offset, rows.length, limit),
     };
   },
-  ["recipes:public-list"],
+  ['recipes:public-list'],
   {
     revalidate: PUBLIC_RECIPES_REVALIDATE_SECONDS,
     tags: [PUBLIC_RECIPES_TAG],
@@ -396,7 +371,7 @@ const fetchPublicRecipes = unstable_cache(
 export async function listPublicRecipes({
   limit = DISCOVER_PAGE_SIZE,
   offset = 0,
-  sort = "recent",
+  sort = 'recent',
 }: { limit?: number; offset?: number; sort?: RatingSort } = {}) {
   if (!isDbConfigured()) return { items: [], nextOffset: null };
   return fetchPublicRecipes(limit, offset, sort);
@@ -415,8 +390,8 @@ export async function getPublicRecipeCard(idOrSlug: string) {
     where: and(
       notDeleted,
       or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
-      eq(recipes.visibility, "public"),
-      eq(recipes.status, "published"),
+      eq(recipes.visibility, 'public'),
+      eq(recipes.status, 'published'),
     ),
     orderBy: idOrSlugOrder(idOrSlug),
     columns: {
@@ -439,9 +414,7 @@ export async function getPublicRecipeCard(idOrSlug: string) {
   return recipe ?? null;
 }
 
-export type PublicRecipeCard = NonNullable<
-  Awaited<ReturnType<typeof getPublicRecipeCard>>
->;
+export type PublicRecipeCard = NonNullable<Awaited<ReturnType<typeof getPublicRecipeCard>>>;
 
 /**
  * Slim projection for the sitemap (issue #323): the slug and `updatedAt` of
@@ -463,13 +436,7 @@ export async function listPublicRecipeSlugs(): Promise<
     })
     .from(recipes)
     .innerJoin(users, eq(users.id, recipes.authorId))
-    .where(
-      and(
-        notDeleted,
-        eq(recipes.visibility, "public"),
-        eq(recipes.status, "published"),
-      ),
-    )
+    .where(and(notDeleted, eq(recipes.visibility, 'public'), eq(recipes.status, 'published')))
     .orderBy(desc(recipes.updatedAt));
 }
 
@@ -481,9 +448,7 @@ export async function listPublicRecipeSlugs(): Promise<
  * badge, planner roll-up, and the "safe for" filter so there's one query and
  * one detector path.
  */
-async function recipeIngredientItems(
-  recipeIds: string[],
-): Promise<Map<string, string[]>> {
+async function recipeIngredientItems(recipeIds: string[]): Promise<Map<string, string[]>> {
   const byRecipe = new Map<string, string[]>();
   const ids = [...new Set(recipeIds)];
   if (ids.length === 0 || !isDbConfigured()) return byRecipe;
@@ -511,9 +476,7 @@ async function recipeIngredientItems(
  * an empty list. Callers that warn (planner) simply show no warning, and never
  * assert safety off an empty list.
  */
-export async function recipeAllergenMap(
-  recipeIds: string[],
-): Promise<Map<string, Allergen[]>> {
+export async function recipeAllergenMap(recipeIds: string[]): Promise<Map<string, Allergen[]>> {
   const result = new Map<string, Allergen[]>();
   const ids = [...new Set(recipeIds)];
   if (ids.length === 0 || !isDbConfigured()) return result;
@@ -545,8 +508,7 @@ export async function attachCardAllergens<T extends { id: string }>(
     return {
       ...row,
       // No ingredient rows → not analyzable → null, never an affirmative "safe".
-      allergens:
-        items && items.length > 0 ? summarizeAllergensForSafety(items) : null,
+      allergens: items && items.length > 0 ? summarizeAllergensForSafety(items) : null,
     };
   });
 }
@@ -561,10 +523,7 @@ export async function attachCardAllergens<T extends { id: string }>(
 export async function recipeCreatorIds(recipeId: string): Promise<string[]> {
   if (!isDbConfigured()) return [];
   const rows = await db.query.recipeCreators.findMany({
-    where: and(
-      eq(recipeCreators.recipeId, recipeId),
-      eq(recipeCreators.status, "accepted"),
-    ),
+    where: and(eq(recipeCreators.recipeId, recipeId), eq(recipeCreators.status, 'accepted')),
     columns: { userId: true },
   });
   return rows.map((r) => r.userId);
@@ -578,16 +537,13 @@ export async function recipeCreatorIds(recipeId: string): Promise<string[]> {
  * round trip to a single indexed lookup that is skipped entirely whenever the
  * viewer already passes on another ground.
  */
-export async function isRecipeCreator(
-  recipeId: string,
-  userId: string,
-): Promise<boolean> {
+export async function isRecipeCreator(recipeId: string, userId: string): Promise<boolean> {
   if (!isDbConfigured()) return false;
   const row = await db.query.recipeCreators.findFirst({
     where: and(
       eq(recipeCreators.recipeId, recipeId),
       eq(recipeCreators.userId, userId),
-      eq(recipeCreators.status, "accepted"),
+      eq(recipeCreators.status, 'accepted'),
     ),
     columns: { id: true },
   });
@@ -616,14 +572,10 @@ export function canView(
   // recipe is reachable by a non-owner only through its unguessable share token
   // (see {@link getRecipeByShareToken}), never by its guessable slug/id, so
   // this slug/id-scoped predicate must not grant anonymous access to it.
-  if (recipe.visibility === "public") return true;
+  if (recipe.visibility === 'public') return true;
   if (recipe.authorId === viewer?.id) return true;
   if (viewer && creatorIds.includes(viewer.id)) return true;
-  if (
-    recipe.visibility === "group" &&
-    recipe.groupId &&
-    groupIds.includes(recipe.groupId)
-  )
+  if (recipe.visibility === 'group' && recipe.groupId && groupIds.includes(recipe.groupId))
     return true;
   return false;
 }
@@ -660,17 +612,10 @@ export async function canViewRecipe(
  * intentionally left dynamic rather than wrapped in `unstable_cache`. Only the
  * non-personalized public feed ({@link listPublicRecipes}) is cached (#160).
  */
-export async function getRecipe(
-  idOrSlug: string,
-  viewer: User | null,
-  shareToken?: string | null,
-) {
+export async function getRecipe(idOrSlug: string, viewer: User | null, shareToken?: string | null) {
   if (!isDbConfigured()) return null;
   const recipe = await db.query.recipes.findFirst({
-    where: and(
-      notDeleted,
-      or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
-    ),
+    where: and(notDeleted, or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug))),
     orderBy: idOrSlugOrder(idOrSlug),
     with: {
       author: true,
@@ -711,7 +656,7 @@ function viewerHoldsShareLink(
   shareToken: string | null | undefined,
 ): boolean {
   return (
-    recipe.visibility === "unlisted" &&
+    recipe.visibility === 'unlisted' &&
     recipe.shareLinkEnabled &&
     !!recipe.shareToken &&
     !!shareToken &&
@@ -731,7 +676,7 @@ export async function getRecipeByShareToken(token: string) {
     where: and(
       notDeleted,
       eq(recipes.shareToken, token),
-      eq(recipes.visibility, "unlisted"),
+      eq(recipes.visibility, 'unlisted'),
       eq(recipes.shareLinkEnabled, true),
     ),
     with: {
@@ -812,7 +757,7 @@ export async function getEditableRecipe(recipeId: string, userId: string) {
 export async function listLibrary(
   viewer: User | null,
   {
-    sort = "recent",
+    sort = 'recent',
     limit = LIBRARY_PAGE_SIZE,
     offset = 0,
   }: { sort?: RatingSort; limit?: number; offset?: number } = {},
@@ -825,8 +770,7 @@ export async function listLibrary(
       : eq(recipes.authorId, viewer.id);
   const rows = await db.query.recipes.findMany({
     where: and(notDeleted, scope),
-    orderBy:
-      sort === "top-rated" ? topRatedOrderBy() : [desc(recipes.updatedAt)],
+    orderBy: sort === 'top-rated' ? topRatedOrderBy() : [desc(recipes.updatedAt)],
     limit,
     offset,
     with: { author: true, tags: { with: { tag: true } } },
@@ -844,9 +788,7 @@ export async function listLibrary(
  * each "Load more" no longer re-hydrates every library recipe's tags and ratings
  * just to build an exclusion set. Empty without a database or user.
  */
-export async function listLibraryRecipeIds(
-  viewer: User | null,
-): Promise<string[]> {
+export async function listLibraryRecipeIds(viewer: User | null): Promise<string[]> {
   if (!isDbConfigured() || !viewer) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope =
@@ -871,7 +813,7 @@ export type DinnerCandidate = {
   cuisine: string | null;
   tags: string[];
   totalMinutes: number | null;
-  difficulty: "easy" | "medium" | "hard" | null;
+  difficulty: 'easy' | 'medium' | 'hard' | null;
 };
 
 /** Longest dinner a "quick" candidate may take before it loses the bias (#375). */
@@ -895,7 +837,7 @@ export async function listDinnerCandidates(
       : eq(recipes.authorId, viewer.id);
   const [rows, todaysDinner] = await Promise.all([
     db.query.recipes.findMany({
-      where: and(notDeleted, eq(recipes.status, "published"), scope),
+      where: and(notDeleted, eq(recipes.status, 'published'), scope),
       columns: {
         id: true,
         slug: true,
@@ -913,25 +855,22 @@ export async function listDinnerCandidates(
     db.query.mealPlanEntries.findMany({
       where: and(
         eq(mealPlanEntries.userId, viewer.id),
-        eq(mealPlanEntries.slot, "dinner"),
+        eq(mealPlanEntries.slot, 'dinner'),
         eq(mealPlanEntries.date, today),
       ),
       columns: { recipeId: true },
     }),
   ]);
   const planned = new Set(
-    todaysDinner
-      .map((entry) => entry.recipeId)
-      .filter((id): id is string => id != null),
+    todaysDinner.map((entry) => entry.recipeId).filter((id): id is string => id != null),
   );
   const available = rows.filter((recipe) => !planned.has(recipe.id));
   // Soft bias: quick (or untimed) and not "hard". Fall back to the full pool so
   // a cook whose recipes are all long/hard still gets a suggestion.
   const preferred = available.filter(
     (recipe) =>
-      (recipe.totalMinutes == null ||
-        recipe.totalMinutes <= QUICK_DINNER_MINUTES) &&
-      recipe.difficulty !== "hard",
+      (recipe.totalMinutes == null || recipe.totalMinutes <= QUICK_DINNER_MINUTES) &&
+      recipe.difficulty !== 'hard',
   );
   const pool = preferred.length > 0 ? preferred : available;
   return pool.slice(0, limit).map(({ tags, author, ...recipe }) => ({
@@ -950,13 +889,10 @@ function visibleRecipesScope(viewer: User | null, groupIds: string[]): SQL {
   return and(
     notDeleted,
     or(
-      and(eq(recipes.visibility, "public"), eq(recipes.status, "published")),
+      and(eq(recipes.visibility, 'public'), eq(recipes.status, 'published')),
       viewer ? eq(recipes.authorId, viewer.id) : undefined,
       groupIds.length > 0
-        ? and(
-            eq(recipes.visibility, "group"),
-            inArray(recipes.groupId, groupIds),
-          )
+        ? and(eq(recipes.visibility, 'group'), inArray(recipes.groupId, groupIds))
         : undefined,
     ),
   )!;
@@ -983,10 +919,7 @@ function recipeMatchesTermSql(like: string): SQL {
         .select({ one: sql`1` })
         .from(recipeIngredients)
         .where(
-          and(
-            eq(recipeIngredients.recipeId, recipes.id),
-            ilike(recipeIngredients.item, like),
-          ),
+          and(eq(recipeIngredients.recipeId, recipes.id), ilike(recipeIngredients.item, like)),
         ),
     ),
     exists(
@@ -994,9 +927,7 @@ function recipeMatchesTermSql(like: string): SQL {
         .select({ one: sql`1` })
         .from(recipeTags)
         .innerJoin(tags, eq(recipeTags.tagId, tags.id))
-        .where(
-          and(eq(recipeTags.recipeId, recipes.id), ilike(tags.name, like)),
-        ),
+        .where(and(eq(recipeTags.recipeId, recipes.id), ilike(tags.name, like))),
     ),
   )!;
 }
@@ -1004,15 +935,15 @@ function recipeMatchesTermSql(like: string): SQL {
 /** ORDER BY clause for a sort option. NULL times/omissions sort last. */
 function recipeOrderBy(sort: RecipeSort): SQL[] {
   switch (sort) {
-    case "quickest":
+    case 'quickest':
       // Postgres sorts NULLs last for ASC, so timeless recipes trail.
       return [asc(recipes.totalMinutes), asc(sql`lower(${recipes.title})`)];
-    case "az":
+    case 'az':
       return [asc(sql`lower(${recipes.title})`)];
     // "top-rated" orders by the SQL weighted score (topRatedOrderBy) in the
     // caller. Fall through to the newest base ordering for every other sort.
-    case "top-rated":
-    case "newest":
+    case 'top-rated':
+    case 'newest':
     default:
       return [
         desc(sql`coalesce(${recipes.publishedAt}, ${recipes.createdAt})`),
@@ -1034,7 +965,7 @@ const RECIPE_SEARCH_LIMIT = 60;
  * a single constant so the query and the generated `search_vector` column (see
  * the FTS migration) always agree on the dictionary.
  */
-const RECIPE_FTS_CONFIG = "english";
+const RECIPE_FTS_CONFIG = 'english';
 
 /**
  * Does a recipe's full-text `search_vector` match a user query? Uses
@@ -1085,22 +1016,14 @@ export function recipeUsesFoodConditionSql(foodId: string): SQL {
         .select({ one: sql`1` })
         .from(recipeIngredients)
         .where(
-          and(
-            eq(recipeIngredients.recipeId, recipes.id),
-            eq(recipeIngredients.foodId, foodId),
-          ),
+          and(eq(recipeIngredients.recipeId, recipes.id), eq(recipeIngredients.foodId, foodId)),
         ),
     ),
     exists(
       qb
         .select({ one: sql`1` })
         .from(foodRecipeLinks)
-        .where(
-          and(
-            eq(foodRecipeLinks.recipeId, recipes.id),
-            eq(foodRecipeLinks.foodId, foodId),
-          ),
-        ),
+        .where(and(eq(foodRecipeLinks.recipeId, recipes.id), eq(foodRecipeLinks.foodId, foodId))),
     ),
   )!;
 }
@@ -1120,7 +1043,7 @@ export function recipeUsesFoodConditionSql(foodId: string): SQL {
 export function searchFilterConditions(
   search: RecipeSearch,
   opts: {
-    skip?: "cuisine" | "meal" | "tag";
+    skip?: 'cuisine' | 'meal' | 'tag';
     ingredientFoodId?: string | null;
   } = {},
 ): SQL[] {
@@ -1131,15 +1054,11 @@ export function searchFilterConditions(
     // stemming. "Tomatoes" finds "tomato") plus a synonym-expanded substring
     // match ("coriander" also finds "cilantro"). Relevance ordering still ranks
     // the literal query first (see relevanceOrderBy).
-    const likes = expandQueryTerms(search.q).map(
-      (term) => `%${escapeLike(term)}%`,
-    );
-    conditions.push(
-      or(recipeSearchMatchSql(search.q), ...likes.map(recipeMatchesTermSql)),
-    );
+    const likes = expandQueryTerms(search.q).map((term) => `%${escapeLike(term)}%`);
+    conditions.push(or(recipeSearchMatchSql(search.q), ...likes.map(recipeMatchesTermSql)));
   }
 
-  if (opts.skip !== "cuisine" && search.cuisines.length > 0) {
+  if (opts.skip !== 'cuisine' && search.cuisines.length > 0) {
     const cuisineSlugs = search.cuisines.map(tagFilterSlug);
     conditions.push(
       or(
@@ -1152,7 +1071,7 @@ export function searchFilterConditions(
             .where(
               and(
                 eq(recipeTags.recipeId, recipes.id),
-                eq(tags.category, "cuisine"),
+                eq(tags.category, 'cuisine'),
                 inArray(tags.slug, cuisineSlugs),
               ),
             ),
@@ -1161,7 +1080,7 @@ export function searchFilterConditions(
     );
   }
 
-  if (opts.skip !== "meal" && search.meals.length > 0) {
+  if (opts.skip !== 'meal' && search.meals.length > 0) {
     conditions.push(
       exists(
         qb
@@ -1171,21 +1090,19 @@ export function searchFilterConditions(
           .where(
             and(
               eq(recipeTags.recipeId, recipes.id),
-              eq(tags.category, "meal"),
+              eq(tags.category, 'meal'),
               inArray(tags.slug, search.meals.map(tagFilterSlug)),
             ),
           ),
       ),
     );
   }
-  if (search.difficulty)
-    conditions.push(eq(recipes.difficulty, search.difficulty));
-  if (search.maxTime != null)
-    conditions.push(lte(recipes.totalMinutes, search.maxTime));
+  if (search.difficulty) conditions.push(eq(recipes.difficulty, search.difficulty));
+  if (search.maxTime != null) conditions.push(lte(recipes.totalMinutes, search.maxTime));
 
   // Tags narrow conjunctively: a recipe must carry *every* selected tag, so each
   // becomes its own EXISTS. Cuisines above are disjunctive (any-of).
-  if (opts.skip !== "tag") {
+  if (opts.skip !== 'tag') {
     for (const tag of search.tags) {
       const slug = tagFilterSlug(tag);
       conditions.push(
@@ -1213,10 +1130,7 @@ export function searchFilterConditions(
   // would be wrong for mixed sources, e.g. dairy-free derived + vegan declared.)
   for (const diet of search.diets) {
     conditions.push(
-      or(
-        arrayContains(recipes.dietaryTags, [diet]),
-        arrayContains(recipes.dietaryFlags, [diet]),
-      ),
+      or(arrayContains(recipes.dietaryTags, [diet]), arrayContains(recipes.dietaryFlags, [diet])),
     );
   }
 
@@ -1226,9 +1140,7 @@ export function searchFilterConditions(
   // ignoring the filter.
   if (opts.ingredientFoodId !== undefined) {
     conditions.push(
-      opts.ingredientFoodId
-        ? recipeUsesFoodConditionSql(opts.ingredientFoodId)
-        : sql`false`,
+      opts.ingredientFoodId ? recipeUsesFoodConditionSql(opts.ingredientFoodId) : sql`false`,
     );
   }
 
@@ -1243,9 +1155,7 @@ export function searchFilterConditions(
  * when it's set but resolves to no known food (caller then forces empty), or the
  * resolved id string.
  */
-async function resolveIngredientFilter(
-  search: RecipeSearch,
-): Promise<string | null | undefined> {
+async function resolveIngredientFilter(search: RecipeSearch): Promise<string | null | undefined> {
   if (!search.ingredient) return undefined;
   return resolveFoodId(search.ingredient);
 }
@@ -1265,13 +1175,9 @@ async function resolveIngredientFilter(
 export async function searchRecipes(
   viewer: User | null,
   search: RecipeSearch,
-  {
-    limit = RECIPE_SEARCH_LIMIT,
-    offset = 0,
-  }: { limit?: number; offset?: number } = {},
+  { limit = RECIPE_SEARCH_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
 ) {
-  if (!isDbConfigured())
-    return { items: [], nextOffset: null } as Paginated<never>;
+  if (!isDbConfigured()) return { items: [], nextOffset: null } as Paginated<never>;
   const groupIds = await viewerGroupIds(viewer);
   const ingredientFoodId = await resolveIngredientFilter(search);
 
@@ -1323,11 +1229,11 @@ export async function searchRecipes(
   // "Best match" ranks by the weighted field-match score, but only makes sense
   // with a text query. Without one it falls through to the newest ordering.
   const orderBy =
-    search.sort === "relevance" && like != null
+    search.sort === 'relevance' && like != null
       ? relevanceOrderBy(like)
-      : search.sort === "top-rated"
+      : search.sort === 'top-rated'
         ? topRatedOrderBy()
-        : search.sort === "popular"
+        : search.sort === 'popular'
           ? popularOrderBy()
           : recipeOrderBy(search.sort);
 
@@ -1364,10 +1270,7 @@ export async function searchRecipes(
     safeRows = rows.filter((row) => {
       const items = itemsByRecipe.get(row.id);
       if (!items || items.length === 0) return false;
-      return !hasAllergenConflict(
-        avoidAllergens,
-        summarizeAllergensForSafety(items),
-      );
+      return !hasAllergenConflict(avoidAllergens, summarizeAllergensForSafety(items));
     });
   }
 
@@ -1425,10 +1328,7 @@ async function foodNodeIdFor(idOrSlug: string): Promise<string | null> {
 export async function getRecipesUsingFood(
   foodIdOrSlug: string,
   viewer: User | null,
-  {
-    limit = RECIPE_SEARCH_LIMIT,
-    offset = 0,
-  }: { limit?: number; offset?: number } = {},
+  { limit = RECIPE_SEARCH_LIMIT, offset = 0 }: { limit?: number; offset?: number } = {},
 ): Promise<Paginated<RecipeSearchResult>> {
   if (!isDbConfigured()) return { items: [], nextOffset: null };
   const foodId = await foodNodeIdFor(foodIdOrSlug);
@@ -1436,11 +1336,8 @@ export async function getRecipesUsingFood(
 
   const groupIds = await viewerGroupIds(viewer);
   const rows = await db.query.recipes.findMany({
-    where: and(
-      visibleRecipesScope(viewer, groupIds),
-      recipeUsesFoodConditionSql(foodId),
-    ),
-    orderBy: recipeOrderBy("newest"),
+    where: and(visibleRecipesScope(viewer, groupIds), recipeUsesFoodConditionSql(foodId)),
+    orderBy: recipeOrderBy('newest'),
     limit,
     offset,
     with: {
@@ -1601,23 +1498,16 @@ export async function listRecipeFacets(
   const scope = visibleRecipesScope(viewer, groupIds);
   // Facet counts must reflect the active ingredient filter too, so resolve it
   // once and thread it into both facet queries (it's never the skipped facet).
-  const ingredientFoodId = search
-    ? await resolveIngredientFilter(search)
-    : undefined;
+  const ingredientFoodId = search ? await resolveIngredientFilter(search) : undefined;
 
   // OR facets exclude themselves so alternatives stay visible. General tags use
   // AND semantics, so their counts retain selected tags and show intersections.
-  const facetRecipeIds = (skip?: "cuisine" | "meal") =>
+  const facetRecipeIds = (skip?: 'cuisine' | 'meal') =>
     db
       .select({ id: recipes.id })
       .from(recipes)
       .where(
-        and(
-          scope,
-          ...(search
-            ? searchFilterConditions(search, { skip, ingredientFoodId })
-            : []),
-        ),
+        and(scope, ...(search ? searchFilterConditions(search, { skip, ingredientFoodId }) : [])),
       );
 
   const [cuisineRows, mealRows, tagRows] = await Promise.all([
@@ -1629,10 +1519,7 @@ export async function listRecipeFacets(
       .from(tags)
       .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
       .where(
-        and(
-          eq(tags.category, "cuisine"),
-          inArray(recipeTags.recipeId, facetRecipeIds("cuisine")),
-        ),
+        and(eq(tags.category, 'cuisine'), inArray(recipeTags.recipeId, facetRecipeIds('cuisine'))),
       )
       .groupBy(tags.slug, tags.name)
       .orderBy(asc(tags.name)),
@@ -1644,12 +1531,7 @@ export async function listRecipeFacets(
       })
       .from(tags)
       .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-      .where(
-        and(
-          eq(tags.category, "meal"),
-          inArray(recipeTags.recipeId, facetRecipeIds("meal")),
-        ),
-      )
+      .where(and(eq(tags.category, 'meal'), inArray(recipeTags.recipeId, facetRecipeIds('meal'))))
       .groupBy(tags.slug, tags.name)
       .orderBy(asc(tags.name)),
     db
@@ -1660,12 +1542,7 @@ export async function listRecipeFacets(
       })
       .from(tags)
       .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-      .where(
-        and(
-          eq(tags.category, "general"),
-          inArray(recipeTags.recipeId, facetRecipeIds()),
-        ),
-      )
+      .where(and(eq(tags.category, 'general'), inArray(recipeTags.recipeId, facetRecipeIds())))
       .groupBy(tags.slug, tags.name)
       .orderBy(asc(tags.name)),
   ]);
@@ -1691,17 +1568,11 @@ export async function listRecipeFacets(
   }
   for (const selected of search?.meals ?? []) {
     const slug = tagFilterSlug(selected);
-    if (!meals.some((meal) => meal.slug === slug))
-      meals.push({ slug, name: selected, count: 0 });
+    if (!meals.some((meal) => meal.slug === slug)) meals.push({ slug, name: selected, count: 0 });
   }
   for (const selected of search?.tags ?? []) {
     const slug = tagFilterSlug(selected);
-    if (
-      !tags_.some(
-        (t) =>
-          t.slug === slug || t.name.toLowerCase() === selected.toLowerCase(),
-      )
-    )
+    if (!tags_.some((t) => t.slug === slug || t.name.toLowerCase() === selected.toLowerCase()))
       tags_.push({ slug, name: selected, count: 0 });
   }
   cuisines.sort((a, b) => a.value.localeCompare(b.value));
@@ -1759,11 +1630,7 @@ const SIMILAR_CANDIDATE_LIMIT = 60;
  * The current recipe is excluded and the result is bounded by `limit`. Candidates
  * are pre-filtered to those sharing a tag or the cuisine so the scan stays cheap.
  */
-export async function listSimilarRecipes(
-  viewer: User | null,
-  recipeId: string,
-  limit = 6,
-) {
+export async function listSimilarRecipes(viewer: User | null, recipeId: string, limit = 6) {
   if (!isDbConfigured()) return [];
   const groupIds = await viewerGroupIds(viewer);
   const scope = visibleRecipesScope(viewer, groupIds);
@@ -1784,15 +1651,11 @@ export async function listSimilarRecipes(
 
   const sourceSignals = {
     tagSlugs: source.tags
-      .filter((t) => t.tag.category === "general" || t.tag.category === "meal")
+      .filter((t) => t.tag.category === 'general' || t.tag.category === 'meal')
       .map((t) => t.tag.slug),
     cuisine: source.cuisine,
-    cuisines: source.tags
-      .filter((t) => t.tag.category === "cuisine")
-      .map((t) => t.tag.name),
-    ingredientTokens: tokenizeIngredients(
-      source.ingredients.map((i) => i.item),
-    ),
+    cuisines: source.tags.filter((t) => t.tag.category === 'cuisine').map((t) => t.tag.name),
+    ingredientTokens: tokenizeIngredients(source.ingredients.map((i) => i.item)),
   };
 
   const sharesTag = sourceSignals.tagSlugs.length
@@ -1802,18 +1665,13 @@ export async function listSimilarRecipes(
           .from(recipeTags)
           .innerJoin(tags, eq(recipeTags.tagId, tags.id))
           .where(
-            and(
-              eq(recipeTags.recipeId, recipes.id),
-              inArray(tags.slug, sourceSignals.tagSlugs),
-            ),
+            and(eq(recipeTags.recipeId, recipes.id), inArray(tags.slug, sourceSignals.tagSlugs)),
           ),
       )
     : undefined;
-  const sharesLegacyCuisine = source.cuisine
-    ? ilike(recipes.cuisine, source.cuisine)
-    : undefined;
+  const sharesLegacyCuisine = source.cuisine ? ilike(recipes.cuisine, source.cuisine) : undefined;
   const sourceCuisineSlugs = source.tags
-    .filter((link) => link.tag.category === "cuisine")
+    .filter((link) => link.tag.category === 'cuisine')
     .map((link) => link.tag.slug);
   const sharesCuisineTag = sourceCuisineSlugs.length
     ? exists(
@@ -1824,7 +1682,7 @@ export async function listSimilarRecipes(
           .where(
             and(
               eq(recipeTags.recipeId, recipes.id),
-              eq(tags.category, "cuisine"),
+              eq(tags.category, 'cuisine'),
               inArray(tags.slug, sourceCuisineSlugs),
             ),
           ),
@@ -1853,17 +1711,11 @@ export async function listSimilarRecipes(
         recipe,
         signals: {
           tagSlugs: recipe.tags
-            .filter(
-              (t) => t.tag.category === "general" || t.tag.category === "meal",
-            )
+            .filter((t) => t.tag.category === 'general' || t.tag.category === 'meal')
             .map((t) => t.tag.slug),
           cuisine: recipe.cuisine,
-          cuisines: recipe.tags
-            .filter((t) => t.tag.category === "cuisine")
-            .map((t) => t.tag.name),
-          ingredientTokens: tokenizeIngredients(
-            recipe.ingredients.map((i) => i.item),
-          ),
+          cuisines: recipe.tags.filter((t) => t.tag.category === 'cuisine').map((t) => t.tag.name),
+          ingredientTokens: tokenizeIngredients(recipe.ingredients.map((i) => i.item)),
         },
       })),
     limit,
@@ -1881,10 +1733,7 @@ export async function listSimilarRecipes(
  * so re-viewing just bumps `viewedAt`. Safe to call on every detail-page render.
  * a no-op when the database isn't configured.
  */
-export async function recordRecipeView(
-  userId: string,
-  recipeId: string,
-): Promise<void> {
+export async function recordRecipeView(userId: string, recipeId: string): Promise<void> {
   if (!isDbConfigured()) return;
   await db
     .insert(recipeViews)
@@ -1927,9 +1776,7 @@ export async function listRecentlyViewed(viewer: User | null, limit = 6) {
     with: { author: true, tags: { with: { tag: true } }, ratings: true },
   });
 
-  return rows
-    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
-    .slice(0, limit);
+  return rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)).slice(0, limit);
 }
 
 /**
@@ -1942,7 +1789,7 @@ export async function listRecentlyViewed(viewer: User | null, limit = 6) {
  */
 export function parseSnapshot(snapshot: unknown): RecipeInput | null {
   let value: unknown = snapshot;
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     try {
       value = JSON.parse(value);
     } catch {
@@ -1990,10 +1837,7 @@ export async function getRecipeVersions(
 }
 
 /** A single saved recipe version, usually for previewing a snapshot. */
-export async function getRecipeVersion(
-  recipeId: string,
-  versionNumber: number,
-) {
+export async function getRecipeVersion(recipeId: string, versionNumber: number) {
   if (!isDbConfigured()) return null;
   return (
     (await db.query.recipeVersions.findFirst({
@@ -2188,9 +2032,7 @@ export async function getRecipeFamilyTree(
   // Walk down from the current recipe, breadth-first, fanning out adaptations.
   let nodeCount = ancestorDepth + 1;
   let descendantDepth = 0;
-  const queue: { node: FamilyTreeNode; depth: number }[] = [
-    { node: currentNode, depth: 0 },
-  ];
+  const queue: { node: FamilyTreeNode; depth: number }[] = [{ node: currentNode, depth: 0 }];
   while (queue.length > 0) {
     const { node, depth } = queue.shift()!;
     if (depth >= TREE_MAX_DOWN) continue;
@@ -2211,10 +2053,7 @@ export async function getRecipeFamilyTree(
     );
 
     for (const fork of visibleForks) {
-      if (
-        node.children.length >= TREE_CHILD_CAP ||
-        nodeCount >= TREE_MAX_NODES
-      ) {
+      if (node.children.length >= TREE_CHILD_CAP || nodeCount >= TREE_MAX_NODES) {
         node.hiddenChildren += 1;
         truncated = true;
         continue;
@@ -2298,10 +2137,7 @@ export async function getRecipeTimeline(
         cursor
           ? or(
               gt(recipeEvents.createdAt, cursor.createdAt),
-              and(
-                eq(recipeEvents.createdAt, cursor.createdAt),
-                gt(recipeEvents.id, cursor.id),
-              ),
+              and(eq(recipeEvents.createdAt, cursor.createdAt), gt(recipeEvents.id, cursor.id)),
             )
           : undefined,
       ),
@@ -2364,65 +2200,52 @@ export async function getRecipeTimeline(
 
   // Only surface descendant forks the viewer may see. A private adaptation (and
   // its fork note) must stay hidden on a public recipe's timeline.
-  const visibleChildren = children.filter((child) =>
-    canView(child, viewer, groupIds),
-  );
+  const visibleChildren = children.filter((child) => canView(child, viewer, groupIds));
 
   const entries: TimelineEntry[] = [];
   for (const event of events) {
     // A source-side `adapted` event points forward to a descendant fork.
     const isForwardFork =
-      event.type === "adapted" &&
+      event.type === 'adapted' &&
       event.relatedRecipeId != null &&
       event.relatedRecipeId !== recipe.forkedFromId;
     // Drop forward-fork entries (title, slug, and the forker's note) when the
     // viewer isn't allowed to see the fork they point at.
-    if (
-      isForwardFork &&
-      !(event.related && canView(event.related, viewer, groupIds))
-    ) {
+    if (isForwardFork && !(event.related && canView(event.related, viewer, groupIds))) {
       continue;
     }
     entries.push({
       id: event.id,
-      kind: isForwardFork ? "adaptation" : event.type,
+      kind: isForwardFork ? 'adaptation' : event.type,
       note: event.note,
       createdAt: event.createdAt,
       actor: event.actor ?? null,
-      related: event.related
-        ? { slug: event.related.slug, title: event.related.title }
-        : null,
+      related: event.related ? { slug: event.related.slug, title: event.related.title } : null,
     });
   }
 
   // Back-fill for recipes created before the events log existed. Only the
   // opening page can begin the story, so a continuation never invents an
   // origin milestone the earlier page already showed (#159).
-  const hasOrigin = entries.some(
-    (e) => e.kind === "created" || e.kind === "adapted",
-  );
+  const hasOrigin = entries.some((e) => e.kind === 'created' || e.kind === 'adapted');
   if (isFirstPage && !hasOrigin) {
     entries.push({
       id: `synth-origin-${recipe.id}`,
-      kind: parentRecipe ? "adapted" : "created",
+      kind: parentRecipe ? 'adapted' : 'created',
       note: null,
       createdAt: recipe.createdAt,
       actor: parentRecipe?.author ?? null,
-      related: parentRecipe
-        ? { slug: parentRecipe.slug, title: parentRecipe.title }
-        : null,
+      related: parentRecipe ? { slug: parentRecipe.slug, title: parentRecipe.title } : null,
     });
   }
   const linkedChildIds = new Set(
-    entries
-      .filter((e) => e.kind === "adaptation" && e.related)
-      .map((e) => e.related!.slug),
+    entries.filter((e) => e.kind === 'adaptation' && e.related).map((e) => e.related!.slug),
   );
   for (const child of visibleChildren) {
     if (linkedChildIds.has(child.slug)) continue;
     entries.push({
       id: `synth-child-${child.id}`,
-      kind: "adaptation",
+      kind: 'adaptation',
       note: null,
       createdAt: child.createdAt,
       actor: child.author ?? null,

@@ -24,35 +24,36 @@ model. Every tag has one category:
 
 A central taxonomy canonicalizes known names and aliases to a stable slug, display name, and
 category. Unknown values remain allowed, use a normalized display name, and retain the category
-supplied by the authoring surface. The globally unique tag slug keeps existing tag URLs stable and
-prevents case-only duplicates. If an unknown slug already exists in another category, later writes
-preserve its established category instead of reclassifying every recipe that shares it. Controlled
-vocabulary categories are deterministic and migration aliases are merged into their canonical row.
+supplied by the authoring surface. The globally unique tag slug keeps existing tag URLs stable
+and prevents case-only duplicates. If an unknown slug already exists in another category, later
+writes preserve its established category instead of reclassifying every recipe that shares it.
+Controlled vocabulary categories are deterministic and migration aliases are merged into their
+canonical row.
 
-The editor and imports accept multiple meals and cuisines. Search composes categories with `AND`;
-multiple meals or cuisines within their category use `OR`, while multiple general or dietary
-filters use `AND`.
+The editor and imports accept multiple meals and cuisines. Search composes categories with
+`AND`; multiple meals or cuisines within their category use `OR`, while multiple general or
+dietary filters use `AND`.
 
 ## Compatibility
 
 The nullable `recipes.cuisine` column remains as a temporary first-cuisine projection for older
-readers. Writes store every cuisine through `recipe_tags` and mirror the canonical display name of
-the first cuisine into the legacy column. Reads fall back to that column only when no classified
-cuisine link exists.
+readers. Writes store every cuisine through `recipe_tags` and mirror the canonical display name
+of the first cuisine into the legacy column. Reads fall back to that column only when no
+classified cuisine link exists.
 
-The migration is additive: it adds the category enum and column, canonicalizes known existing tag
-labels, creates cuisine links from legacy values, and adds indexes for category facets. Existing
-tag routes and recipe records remain valid.
+The migration is additive: it adds the category enum and column, canonicalizes known existing
+tag labels, creates cuisine links from legacy values, and adds indexes for category facets.
+Existing tag routes and recipe records remain valid.
 
 ## Dietary Trust Boundary
 
-`recipes.dietary_flags` contains explicit author declarations, and `recipes.dietary_tags` contains
-claims derived from ingredient analysis. These remain the only sources used by dietary safety
-filters. A free-form tag whose text resembles a dietary claim does not become a declaration and
-does not satisfy a dietary safety filter. Persisted tag links use general tag filtering even when
-their controlled label is dietary; only trusted declared or derived badges link to dietary safety
-filters. Classification presentation may organize the controlled vocabulary, but it must not erase
-that provenance distinction.
+`recipes.dietary_flags` contains explicit author declarations, and `recipes.dietary_tags`
+contains claims derived from ingredient analysis. These remain the only sources used by dietary
+safety filters. A free-form tag whose text resembles a dietary claim does not become a
+declaration and does not satisfy a dietary safety filter. Persisted tag links use general tag
+filtering even when their controlled label is dietary; only trusted declared or derived badges
+link to dietary safety filters. Classification presentation may organize the controlled
+vocabulary, but it must not erase that provenance distinction.
 
 ## Consequences
 

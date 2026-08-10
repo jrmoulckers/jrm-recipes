@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { RecipeCardSkeleton, Skeleton } from "~/components/ui/skeleton";
+import { RecipeCardSkeleton, Skeleton } from '~/components/ui/skeleton';
 
 export default function DiscoverLoading() {
   return (

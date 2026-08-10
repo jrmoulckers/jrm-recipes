@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { ChefHat, GitFork, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { ChefHat, GitFork, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { createAdaptationAction } from "~/server/recipes/actions";
-import { recipeEditPath } from "~/lib/recipe-path";
-import { useServerAction } from "~/lib/use-server-action";
-import { Button } from "~/components/ui/button";
+import { createAdaptationAction } from '~/server/recipes/actions';
+import { recipeEditPath } from '~/lib/recipe-path';
+import { useServerAction } from '~/lib/use-server-action';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -19,9 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
+} from '~/components/ui/dialog';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
 
 export function AdaptButton({
   sourceId,
@@ -32,12 +32,12 @@ export function AdaptButton({
   sourceTitle: string;
   canAdapt: boolean;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
-  const [note, setNote] = React.useState("");
+  const [note, setNote] = React.useState('');
   const adapt = useServerAction(createAdaptationAction, {
-    successToast: t("adapt.toast.created"),
+    successToast: t('adapt.toast.created'),
     errorToast: true,
     onSuccess: (result) => {
       setOpen(false);
@@ -47,7 +47,7 @@ export function AdaptButton({
   const pending = adapt.pending;
 
   function onSignedOutClick() {
-    toast(t("adapt.toast.signIn"));
+    toast(t('adapt.toast.signIn'));
   }
 
   function onAdapt() {
@@ -58,7 +58,7 @@ export function AdaptButton({
   if (!canAdapt) {
     return (
       <Button type="button" variant="outline" onClick={onSignedOutClick}>
-        <GitFork /> {t("adapt.trigger")}
+        <GitFork /> {t('adapt.trigger')}
       </Button>
     );
   }
@@ -67,7 +67,7 @@ export function AdaptButton({
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline">
-          <GitFork /> {t("adapt.trigger")}
+          <GitFork /> {t('adapt.trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -75,34 +75,32 @@ export function AdaptButton({
           <div className="mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ChefHat className="size-5" aria-hidden="true" />
           </div>
-          <DialogTitle>{t("adapt.title")}</DialogTitle>
-          <DialogDescription>
-            {t("adapt.description", { title: sourceTitle })}
-          </DialogDescription>
+          <DialogTitle>{t('adapt.title')}</DialogTitle>
+          <DialogDescription>{t('adapt.description', { title: sourceTitle })}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Label htmlFor="fork-note">{t("adapt.noteLabel")}</Label>
+          <Label htmlFor="fork-note">{t('adapt.noteLabel')}</Label>
           <Textarea
             id="fork-note"
             value={note}
             onChange={(event) => setNote(event.target.value)}
             maxLength={300}
-            placeholder={t("adapt.notePlaceholder")}
+            placeholder={t('adapt.notePlaceholder')}
             disabled={pending}
           />
-          <p className="text-xs text-muted-foreground">{t("adapt.noteHint")}</p>
+          <p className="text-xs text-muted-foreground">{t('adapt.noteHint')}</p>
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="ghost" disabled={pending}>
-              {t("common.cancel")}
+              {t('common.cancel')}
             </Button>
           </DialogClose>
           <Button type="button" onClick={onAdapt} disabled={pending}>
             {pending ? <Loader2 className="animate-spin" /> : <GitFork />}
-            {pending ? t("adapt.creating") : t("adapt.create")}
+            {pending ? t('adapt.creating') : t('adapt.create')}
           </Button>
         </DialogFooter>
       </DialogContent>

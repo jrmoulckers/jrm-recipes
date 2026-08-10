@@ -1,16 +1,10 @@
-import { relations, sql } from "drizzle-orm";
-import {
-  index,
-  pgEnum,
-  pgTable,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { relations, sql } from 'drizzle-orm';
+import { index, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { recipes } from "./recipes";
-import { groups } from "./groups";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { recipes } from './recipes';
+import { groups } from './groups';
 
 /**
  * The social event a notification represents (issue #348). Kept broad enough to
@@ -18,23 +12,23 @@ import { groups } from "./groups";
  * cooks, reactions, group membership, cook-along invites/reminders, and
  * moderation reports.
  */
-export const notificationType = pgEnum("notification_type", [
-  "mention",
-  "comment_reply",
-  "suggestion",
-  "review",
-  "cook",
-  "reaction",
-  "group_invite",
-  "group_join",
-  "cook_along_invite",
-  "cook_along_reminder",
-  "report",
-  "follow",
+export const notificationType = pgEnum('notification_type', [
+  'mention',
+  'comment_reply',
+  'suggestion',
+  'review',
+  'cook',
+  'reaction',
+  'group_invite',
+  'group_join',
+  'cook_along_invite',
+  'cook_along_reminder',
+  'report',
+  'follow',
   // Multi-creator recipes (issue #668). The invite is the *only* signal a
   // pending invitation produces — the row itself grants nothing.
-  "recipe_creator_invite",
-  "recipe_creator_accepted",
+  'recipe_creator_invite',
+  'recipe_creator_accepted',
 ]);
 
 /**
@@ -46,16 +40,16 @@ export const notificationType = pgEnum("notification_type", [
  * has to re-join every source table to draw a row.
  */
 export const notifications = pgTable(
-  "notifications",
+  'notifications',
   {
     id: pk(),
     recipientId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    actorId: fk().references(() => users.id, { onDelete: "set null" }),
+      .references(() => users.id, { onDelete: 'cascade' }),
+    actorId: fk().references(() => users.id, { onDelete: 'set null' }),
     type: notificationType().notNull(),
-    recipeId: fk().references(() => recipes.id, { onDelete: "cascade" }),
-    groupId: fk().references(() => groups.id, { onDelete: "cascade" }),
+    recipeId: fk().references(() => recipes.id, { onDelete: 'cascade' }),
+    groupId: fk().references(() => groups.id, { onDelete: 'cascade' }),
     // Opaque id of the comment/review/cook-along/etc. the notification points at.
     entityId: fk(),
     // Short, pre-rendered context (e.g. a recipe title) for the inbox row.
@@ -65,15 +59,15 @@ export const notifications = pgTable(
   },
   (t) => [
     // "My recent notifications, newest first". The inbox + bell dropdown read.
-    index("notifications_recipient_idx").on(t.recipientId, t.createdAt),
+    index('notifications_recipient_idx').on(t.recipientId, t.createdAt),
     // Partial index backing the unread-count badge without scanning read rows.
-    index("notifications_recipient_unread_idx")
+    index('notifications_recipient_unread_idx')
       .on(t.recipientId)
       .where(sql`${t.readAt} is null`),
     // Covering indexes for the FK cascades (#153 convention).
-    index("notifications_actor_idx").on(t.actorId),
-    index("notifications_recipe_idx").on(t.recipeId),
-    index("notifications_group_idx").on(t.groupId),
+    index('notifications_actor_idx').on(t.actorId),
+    index('notifications_recipe_idx').on(t.recipeId),
+    index('notifications_group_idx').on(t.groupId),
   ],
 );
 
@@ -81,12 +75,12 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   recipient: one(users, {
     fields: [notifications.recipientId],
     references: [users.id],
-    relationName: "recipient",
+    relationName: 'recipient',
   }),
   actor: one(users, {
     fields: [notifications.actorId],
     references: [users.id],
-    relationName: "actor",
+    relationName: 'actor',
   }),
   recipe: one(recipes, {
     fields: [notifications.recipeId],

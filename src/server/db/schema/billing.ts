@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   check,
@@ -10,11 +10,11 @@ import {
   unique,
   uniqueIndex,
   varchar,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
-import { fk, pk, timestamps } from "./_shared";
-import { users } from "./users";
-import { groups } from "./groups";
+import { fk, pk, timestamps } from './_shared';
+import { users } from './users';
+import { groups } from './groups';
 
 /**
  * Billing schema. Who is paying, for which plan, and the live state of their
@@ -33,29 +33,25 @@ import { groups } from "./groups";
  */
 
 /** Which plan a paid subscription grants. Mirrors ids in src/config/plans.ts. */
-export const planEnum = pgEnum("plan_id", ["free", "family"]);
+export const planEnum = pgEnum('plan_id', ['free', 'family']);
 
 /** Stripe subscription lifecycle states we sync and gate on. */
-export const subscriptionStatus = pgEnum("subscription_status", [
-  "trialing",
-  "active",
-  "past_due",
-  "canceled",
-  "incomplete",
+export const subscriptionStatus = pgEnum('subscription_status', [
+  'trialing',
+  'active',
+  'past_due',
+  'canceled',
+  'incomplete',
 ]);
 
 /** Billing can be owned by a single user (personal) or a group (family). */
-export const billingOwnerType = pgEnum("billing_owner_type", ["user", "group"]);
+export const billingOwnerType = pgEnum('billing_owner_type', ['user', 'group']);
 
 /** Metered/counted resources tracked in `usage_counters` (#301). */
-export const usageMetric = pgEnum("usage_metric", [
-  "recipes",
-  "storage_mb",
-  "ai_credits",
-]);
+export const usageMetric = pgEnum('usage_metric', ['recipes', 'storage_mb', 'ai_credits']);
 
 /** Gift-code lifecycle: issued at purchase, then redeemed once (#331). */
-export const giftStatus = pgEnum("gift_status", ["issued", "redeemed"]);
+export const giftStatus = pgEnum('gift_status', ['issued', 'redeemed']);
 
 /**
  * Maps a billing owner to their Stripe customer. Exactly one of `userId` /
@@ -64,24 +60,24 @@ export const giftStatus = pgEnum("gift_status", ["issued", "redeemed"]);
  * customers for the same account.
  */
 export const billingCustomers = pgTable(
-  "billing_customers",
+  'billing_customers',
   {
     id: pk(),
-    userId: fk().references(() => users.id, { onDelete: "cascade" }),
-    groupId: fk().references(() => groups.id, { onDelete: "cascade" }),
+    userId: fk().references(() => users.id, { onDelete: 'cascade' }),
+    groupId: fk().references(() => groups.id, { onDelete: 'cascade' }),
     stripeCustomerId: varchar({ length: 255 }).notNull(),
     ...timestamps(),
   },
   (t) => [
-    unique("billing_customers_stripe_customer_uq").on(t.stripeCustomerId),
+    unique('billing_customers_stripe_customer_uq').on(t.stripeCustomerId),
     // At most one billing customer per user and per group. Postgres treats NULLs
     // as distinct, so group-owned rows (userId NULL) don't collide, and vice
     // versa. The unique indexes double as the FK cover indexes (#153).
-    uniqueIndex("billing_customers_user_uq").on(t.userId),
-    uniqueIndex("billing_customers_group_uq").on(t.groupId),
+    uniqueIndex('billing_customers_user_uq').on(t.userId),
+    uniqueIndex('billing_customers_group_uq').on(t.groupId),
     // Exactly one owner: a user XOR a group.
     check(
-      "billing_customers_owner_check",
+      'billing_customers_owner_check',
       sql`(${t.userId} is not null) <> (${t.groupId} is not null)`,
     ),
   ],
@@ -93,15 +89,15 @@ export const billingCustomers = pgTable(
  * *absence* of an active row, never a stored row.
  */
 export const subscriptions = pgTable(
-  "subscriptions",
+  'subscriptions',
   {
     id: pk(),
     customerId: fk()
       .notNull()
-      .references(() => billingCustomers.id, { onDelete: "cascade" }),
+      .references(() => billingCustomers.id, { onDelete: 'cascade' }),
     stripeSubscriptionId: varchar({ length: 255 }).notNull(),
     stripePriceId: varchar({ length: 255 }),
-    planId: planEnum().notNull().default("family"),
+    planId: planEnum().notNull().default('family'),
     status: subscriptionStatus().notNull(),
     currentPeriodEnd: timestamp({ withTimezone: true }),
     trialEnd: timestamp({ withTimezone: true }),
@@ -110,9 +106,9 @@ export const subscriptions = pgTable(
     ...timestamps(),
   },
   (t) => [
-    unique("subscriptions_stripe_subscription_uq").on(t.stripeSubscriptionId),
-    index("subscriptions_customer_idx").on(t.customerId),
-    index("subscriptions_status_idx").on(t.status),
+    unique('subscriptions_stripe_subscription_uq').on(t.stripeSubscriptionId),
+    index('subscriptions_customer_idx').on(t.customerId),
+    index('subscriptions_status_idx').on(t.status),
   ],
 );
 
@@ -124,7 +120,7 @@ export const subscriptions = pgTable(
  * (hence no `references`). `ownerType` records which it is.
  */
 export const usageCounters = pgTable(
-  "usage_counters",
+  'usage_counters',
   {
     id: pk(),
     ownerId: fk().notNull(),
@@ -135,12 +131,8 @@ export const usageCounters = pgTable(
     ...timestamps(),
   },
   (t) => [
-    uniqueIndex("usage_counters_owner_metric_period_uq").on(
-      t.ownerId,
-      t.metric,
-      t.periodStart,
-    ),
-    index("usage_counters_owner_idx").on(t.ownerId),
+    uniqueIndex('usage_counters_owner_metric_period_uq').on(t.ownerId, t.metric, t.periodStart),
+    index('usage_counters_owner_idx').on(t.ownerId),
   ],
 );
 
@@ -151,47 +143,44 @@ export const usageCounters = pgTable(
  * (or their group).
  */
 export const giftCodes = pgTable(
-  "gift_codes",
+  'gift_codes',
   {
     id: pk(),
     code: varchar({ length: 32 }).notNull(),
-    planId: planEnum().notNull().default("family"),
+    planId: planEnum().notNull().default('family'),
     durationMonths: integer().notNull().default(12),
-    purchaserUserId: fk().references(() => users.id, { onDelete: "set null" }),
+    purchaserUserId: fk().references(() => users.id, { onDelete: 'set null' }),
     stripeSessionId: varchar({ length: 255 }),
-    status: giftStatus().notNull().default("issued"),
-    redeemedByUserId: fk().references(() => users.id, { onDelete: "set null" }),
+    status: giftStatus().notNull().default('issued'),
+    redeemedByUserId: fk().references(() => users.id, { onDelete: 'set null' }),
     redeemedByGroupId: fk().references(() => groups.id, {
-      onDelete: "set null",
+      onDelete: 'set null',
     }),
     redeemedAt: timestamp({ withTimezone: true }),
     ...timestamps(),
   },
   (t) => [
-    unique("gift_codes_code_uq").on(t.code),
+    unique('gift_codes_code_uq').on(t.code),
     // One gift row per Stripe Checkout session → idempotent webhook creation.
-    unique("gift_codes_stripe_session_uq").on(t.stripeSessionId),
+    unique('gift_codes_stripe_session_uq').on(t.stripeSessionId),
     // FK cover indexes (#153) for the set-null cascades on user/group delete.
-    index("gift_codes_purchaser_idx").on(t.purchaserUserId),
-    index("gift_codes_redeemed_by_user_idx").on(t.redeemedByUserId),
-    index("gift_codes_redeemed_by_group_idx").on(t.redeemedByGroupId),
+    index('gift_codes_purchaser_idx').on(t.purchaserUserId),
+    index('gift_codes_redeemed_by_user_idx').on(t.redeemedByUserId),
+    index('gift_codes_redeemed_by_group_idx').on(t.redeemedByGroupId),
   ],
 );
 
-export const billingCustomersRelations = relations(
-  billingCustomers,
-  ({ one, many }) => ({
-    user: one(users, {
-      fields: [billingCustomers.userId],
-      references: [users.id],
-    }),
-    group: one(groups, {
-      fields: [billingCustomers.groupId],
-      references: [groups.id],
-    }),
-    subscriptions: many(subscriptions),
+export const billingCustomersRelations = relations(billingCustomers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [billingCustomers.userId],
+    references: [users.id],
   }),
-);
+  group: one(groups, {
+    fields: [billingCustomers.groupId],
+    references: [groups.id],
+  }),
+  subscriptions: many(subscriptions),
+}));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   customer: one(billingCustomers, {
@@ -204,12 +193,12 @@ export const giftCodesRelations = relations(giftCodes, ({ one }) => ({
   purchaser: one(users, {
     fields: [giftCodes.purchaserUserId],
     references: [users.id],
-    relationName: "giftPurchaser",
+    relationName: 'giftPurchaser',
   }),
   redeemedByUser: one(users, {
     fields: [giftCodes.redeemedByUserId],
     references: [users.id],
-    relationName: "giftRedeemer",
+    relationName: 'giftRedeemer',
   }),
   redeemedByGroup: one(groups, {
     fields: [giftCodes.redeemedByGroupId],

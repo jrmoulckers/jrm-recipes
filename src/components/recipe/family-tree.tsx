@@ -1,11 +1,8 @@
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { GitFork } from "lucide-react";
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { GitFork } from 'lucide-react';
 
-import type {
-  FamilyTreeNode,
-  RecipeFamilyTree,
-} from "~/server/recipes/queries";
+import type { FamilyTreeNode, RecipeFamilyTree } from '~/server/recipes/queries';
 
 /**
  * Multi-generation adaptation tree for a recipe (#359): renders the ancestor
@@ -15,50 +12,43 @@ import type {
  * is true. A single-generation recipe uses the simpler `RecipeLineage` view.
  */
 export function RecipeFamilyTree({ tree }: { tree: RecipeFamilyTree }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   return (
     <section
       className="rounded-xl border border-border bg-card p-4 shadow-token"
-      aria-label={t("familyTree.aria")}
+      aria-label={t('familyTree.aria')}
     >
       <h3 className="flex items-center gap-2 text-sm font-semibold">
         <GitFork className="size-4 text-primary" aria-hidden="true" />
-        {t("familyTree.title")}
+        {t('familyTree.title')}
       </h3>
       <ul className="mt-3">
         <TreeNode node={tree.root} depth={0} />
       </ul>
       {tree.truncated && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          {t("familyTree.truncated")}
-        </p>
+        <p className="mt-3 text-xs text-muted-foreground">{t('familyTree.truncated')}</p>
       )}
     </section>
   );
 }
 
 function TreeNode({ node, depth }: { node: FamilyTreeNode; depth: number }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const label = (
     <span className="inline-flex min-w-0 flex-col">
       <span className="truncate font-medium">{node.title}</span>
       {node.author?.name && (
         <span className="truncate text-xs text-muted-foreground">
-          {t("familyTree.by", { name: node.author.name })}
+          {t('familyTree.by', { name: node.author.name })}
         </span>
       )}
     </span>
   );
 
   return (
-    <li
-      className={depth > 0 ? "mt-2 border-l border-border/70 pl-4" : undefined}
-    >
+    <li className={depth > 0 ? 'mt-2 border-l border-border/70 pl-4' : undefined}>
       <div className="flex items-center gap-2">
-        <GitFork
-          className="size-3.5 shrink-0 text-muted-foreground"
-          aria-hidden="true"
-        />
+        <GitFork className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         {node.isCurrent ? (
           <span
             className="inline-flex min-w-0 items-center gap-2 rounded-md bg-primary/10 px-2 py-1 text-primary"
@@ -83,7 +73,7 @@ function TreeNode({ node, depth }: { node: FamilyTreeNode; depth: number }) {
           ))}
           {node.hiddenChildren > 0 && (
             <li className="mt-2 border-l border-border/70 pl-4 text-xs text-muted-foreground">
-              {t("familyTree.hiddenMore", { count: node.hiddenChildren })}
+              {t('familyTree.hiddenMore', { count: node.hiddenChildren })}
             </li>
           )}
         </ul>

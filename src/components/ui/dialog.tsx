@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cva, type VariantProps } from "class-variance-authority";
-import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { useTranslations } from 'next-intl';
+import { X } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { OVERLAY_PADDING, OVERLAY_SURFACE } from "./overlay-surface";
-import { Heading, Text } from "./typography";
+import { cn } from '~/lib/utils';
+import { OVERLAY_PADDING, OVERLAY_SURFACE } from './overlay-surface';
+import { Heading, Text } from './typography';
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -22,7 +22,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in",
+      'fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in',
       className,
     )}
     {...props}
@@ -31,15 +31,15 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const dialogContentVariants = cva(
-  "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain",
+  'fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain',
   {
     variants: {
       // Content-driven widths; `lg` preserves the historical default.
       size: {
-        sm: "max-w-sm",
-        md: "max-w-md",
-        lg: "max-w-lg",
-        xl: "max-w-3xl",
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-3xl',
       },
       // Enter/exit motion. `center` scales from the middle (the default for
       // every centered dialog); `sheet` slides from the inline-end edge so a
@@ -50,13 +50,12 @@ const dialogContentVariants = cva(
       // explicit dir, so exactly one variant applies). The `sheet` positioning
       // itself is supplied by the caller's className.
       variant: {
-        center:
-          "data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in",
+        center: 'data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
         sheet:
-          "ltr:data-[state=closed]:animate-slide-out-to-right ltr:data-[state=open]:animate-slide-in-from-right rtl:data-[state=closed]:animate-slide-out-to-left rtl:data-[state=open]:animate-slide-in-from-left",
+          'ltr:data-[state=closed]:animate-slide-out-to-right ltr:data-[state=open]:animate-slide-in-from-right rtl:data-[state=closed]:animate-slide-out-to-left rtl:data-[state=open]:animate-slide-in-from-left',
       },
     },
-    defaultVariants: { size: "lg", variant: "center" },
+    defaultVariants: { size: 'lg', variant: 'center' },
   },
 );
 
@@ -65,7 +64,7 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
     VariantProps<typeof dialogContentVariants>
 >(({ className, children, size, variant, ...props }, ref) => {
-  const t = useTranslations("common");
+  const t = useTranslations('common');
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -76,7 +75,7 @@ const DialogContent = React.forwardRef<
           OVERLAY_SURFACE,
           OVERLAY_PADDING.dialog,
           // Clear the home indicator on notched phones (issue #291).
-          "pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+          'pb-[calc(1.5rem+env(safe-area-inset-bottom))]',
           className,
         )}
         {...props}
@@ -84,7 +83,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close className="absolute end-4 top-4 inline-flex items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity duration-fast ease-standard hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <X className="size-4" />
-          <span className="sr-only">{t("close")}</span>
+          <span className="sr-only">{t('close')}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
@@ -92,31 +91,16 @@ const DialogContent = React.forwardRef<
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-function DialogHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-1.5 text-center sm:text-start",
-        className,
-      )}
-      {...props}
-    />
+    <div className={cn('flex flex-col gap-1.5 text-center sm:text-start', className)} {...props} />
   );
 }
 
-function DialogFooter({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className,
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );

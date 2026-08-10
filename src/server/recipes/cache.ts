@@ -8,7 +8,7 @@
  * `unstable_cache`.
  */
 
-export { PUBLIC_RECIPES_TAG } from "./cache-tags";
+export { PUBLIC_RECIPES_TAG } from './cache-tags';
 
 /**
  * Upper bound (seconds) on how long a cached public recipe page may be served

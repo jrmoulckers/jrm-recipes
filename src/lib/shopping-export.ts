@@ -1,13 +1,13 @@
-import { brand } from "~/config/brand";
-import { localeDirection, type Direction } from "~/config/i18n";
-import { formatList } from "~/lib/i18n-format";
+import { brand } from '~/config/brand';
+import { localeDirection, type Direction } from '~/config/i18n';
+import { formatList } from '~/lib/i18n-format';
 import {
   formatShoppingListItemLine,
   formatShoppingListText,
   SHOPPING_CATEGORIES,
   type ShoppingCategory,
   type ShoppingTextItem,
-} from "~/lib/shopping-list";
+} from '~/lib/shopping-list';
 
 export const MAX_MAILTO_LENGTH = 1_900;
 
@@ -42,16 +42,16 @@ export type ShoppingExportCapabilitySource = {
 };
 
 export type ShoppingExportErrorCode =
-  | "clipboard-unavailable"
-  | "download-unavailable"
-  | "image-unavailable"
-  | "image-too-large"
-  | "popup-blocked";
+  | 'clipboard-unavailable'
+  | 'download-unavailable'
+  | 'image-unavailable'
+  | 'image-too-large'
+  | 'popup-blocked';
 
 export class ShoppingExportError extends Error {
   constructor(readonly code: ShoppingExportErrorCode) {
     super(code);
-    this.name = "ShoppingExportError";
+    this.name = 'ShoppingExportError';
   }
 }
 
@@ -63,7 +63,7 @@ export function createShoppingExportDocument({
   categoryLabels,
   items,
   includeChecked,
-}: Omit<ShoppingExportDocument, "direction">): ShoppingExportDocument {
+}: Omit<ShoppingExportDocument, 'direction'>): ShoppingExportDocument {
   const seen = new Set<string>();
   return {
     listName: listName.trim(),
@@ -88,21 +88,14 @@ export function createShoppingExportDocument({
  * the list has no stores.
  */
 export function shoppingExportStoreLine(
-  document: Pick<
-    ShoppingExportDocument,
-    "storeNames" | "storeLabel" | "locale"
-  >,
+  document: Pick<ShoppingExportDocument, 'storeNames' | 'storeLabel' | 'locale'>,
 ): string | null {
   if (document.storeNames.length === 0) return null;
   return `${document.storeLabel}: ${formatList(document.storeNames, document.locale)}`;
 }
 
-export function visibleShoppingExportItems(
-  document: ShoppingExportDocument,
-): ShoppingTextItem[] {
-  return document.items.filter(
-    (item) => document.includeChecked || !item.checked,
-  );
+export function visibleShoppingExportItems(document: ShoppingExportDocument): ShoppingTextItem[] {
+  return document.items.filter((item) => document.includeChecked || !item.checked);
 }
 
 export function groupShoppingExportItems(
@@ -117,9 +110,7 @@ export function groupShoppingExportItems(
   })).filter((group) => group.items.length > 0);
 }
 
-export function serializeShoppingExportText(
-  document: ShoppingExportDocument,
-): string {
+export function serializeShoppingExportText(document: ShoppingExportDocument): string {
   return formatShoppingListText(document.items, {
     includeChecked: document.includeChecked,
     title: document.listName,
@@ -130,23 +121,22 @@ export function serializeShoppingExportText(
 }
 
 export function shoppingExportFilename(
-  document: Pick<ShoppingExportDocument, "listName">,
-  extension: "png" | "txt",
+  document: Pick<ShoppingExportDocument, 'listName'>,
+  extension: 'png' | 'txt',
 ): string {
   const base =
     document.listName
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 80) || "shopping-list";
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'shopping-list';
   return `${base}.${extension}`;
 }
 
 export type MailtoResult =
-  | { ok: true; href: string }
-  | { ok: false; reason: "too-long"; length: number };
+  { ok: true; href: string } | { ok: false; reason: 'too-long'; length: number };
 
 export function buildShoppingListMailto(
   subject: string,
@@ -155,7 +145,7 @@ export function buildShoppingListMailto(
 ): MailtoResult {
   const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   if (href.length > maxLength) {
-    return { ok: false, reason: "too-long", length: href.length };
+    return { ok: false, reason: 'too-long', length: href.length };
   }
   return { ok: true, href };
 }
@@ -165,28 +155,19 @@ export function detectShoppingExportCapabilities(
 ): ShoppingExportCapabilities {
   const detected: ShoppingExportCapabilitySource = source ?? {
     clipboardWrite:
-      typeof navigator !== "undefined" &&
-      typeof navigator.clipboard?.writeText === "function",
-    createElement:
-      typeof document !== "undefined" &&
-      typeof document.createElement === "function",
-    createObjectURL:
-      typeof URL !== "undefined" && typeof URL.createObjectURL === "function",
-    revokeObjectURL:
-      typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function",
+      typeof navigator !== 'undefined' && typeof navigator.clipboard?.writeText === 'function',
+    createElement: typeof document !== 'undefined' && typeof document.createElement === 'function',
+    createObjectURL: typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function',
+    revokeObjectURL: typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function',
     canvasToBlob:
-      typeof HTMLCanvasElement !== "undefined" &&
-      typeof HTMLCanvasElement.prototype.toBlob === "function",
-    nativeShare:
-      typeof navigator !== "undefined" && typeof navigator.share === "function",
-    openWindow:
-      typeof window !== "undefined" && typeof window.open === "function",
+      typeof HTMLCanvasElement !== 'undefined' &&
+      typeof HTMLCanvasElement.prototype.toBlob === 'function',
+    nativeShare: typeof navigator !== 'undefined' && typeof navigator.share === 'function',
+    openWindow: typeof window !== 'undefined' && typeof window.open === 'function',
   };
-  const available = (value: unknown) =>
-    value === true || typeof value === "function";
+  const available = (value: unknown) => value === true || typeof value === 'function';
   const hasDocument = available(detected.createElement);
-  const hasUrl =
-    available(detected.createObjectURL) && available(detected.revokeObjectURL);
+  const hasUrl = available(detected.createObjectURL) && available(detected.revokeObjectURL);
   const hasCanvas = available(detected.canvasToBlob);
 
   return {
@@ -199,27 +180,24 @@ export function detectShoppingExportCapabilities(
 }
 
 export async function copyShoppingExportText(text: string): Promise<void> {
-  if (
-    typeof navigator === "undefined" ||
-    typeof navigator.clipboard?.writeText !== "function"
-  ) {
-    throw new ShoppingExportError("clipboard-unavailable");
+  if (typeof navigator === 'undefined' || typeof navigator.clipboard?.writeText !== 'function') {
+    throw new ShoppingExportError('clipboard-unavailable');
   }
   await navigator.clipboard.writeText(text);
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
   if (
-    typeof document === "undefined" ||
-    typeof URL === "undefined" ||
-    typeof URL.createObjectURL !== "function" ||
-    typeof URL.revokeObjectURL !== "function"
+    typeof document === 'undefined' ||
+    typeof URL === 'undefined' ||
+    typeof URL.createObjectURL !== 'function' ||
+    typeof URL.revokeObjectURL !== 'function'
   ) {
-    throw new ShoppingExportError("download-unavailable");
+    throw new ShoppingExportError('download-unavailable');
   }
 
   const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
+  const anchor = document.createElement('a');
   anchor.href = objectUrl;
   anchor.download = filename;
   document.body.append(anchor);
@@ -228,14 +206,12 @@ function downloadBlob(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
-export function downloadShoppingExportText(
-  document: ShoppingExportDocument,
-): void {
+export function downloadShoppingExportText(document: ShoppingExportDocument): void {
   downloadBlob(
     new Blob([`${serializeShoppingExportText(document)}\n`], {
-      type: "text/plain;charset=utf-8",
+      type: 'text/plain;charset=utf-8',
     }),
-    shoppingExportFilename(document, "txt"),
+    shoppingExportFilename(document, 'txt'),
   );
 }
 
@@ -244,11 +220,11 @@ function escapeHtml(value: string): string {
     /[&<>"']/g,
     (character) =>
       ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
       })[character]!,
   );
 }
@@ -259,9 +235,7 @@ export function buildShoppingListPrintHtml(
 ): string {
   const groups = groupShoppingExportItems(document);
   const storeLine = shoppingExportStoreLine(document);
-  const store = storeLine
-    ? `<p class="store">${escapeHtml(storeLine)}</p>`
-    : "";
+  const store = storeLine ? `<p class="store">${escapeHtml(storeLine)}</p>` : '';
   const sections = groups
     .map(
       (group) => `<section>
@@ -269,12 +243,12 @@ export function buildShoppingListPrintHtml(
         <ul>${group.items
           .map(
             (item) =>
-              `<li${item.checked ? ' class="completed"' : ""}><span class="box" aria-hidden="true">${item.checked ? "✓" : ""}</span><span>${escapeHtml(formatShoppingListItemLine(item, document.locale))}${item.checked ? ` <span class="status">(${escapeHtml(labels.completed)})</span>` : ""}</span></li>`,
+              `<li${item.checked ? ' class="completed"' : ''}><span class="box" aria-hidden="true">${item.checked ? '✓' : ''}</span><span>${escapeHtml(formatShoppingListItemLine(item, document.locale))}${item.checked ? ` <span class="status">(${escapeHtml(labels.completed)})</span>` : ''}</span></li>`,
           )
-          .join("")}</ul>
+          .join('')}</ul>
       </section>`,
     )
-    .join("");
+    .join('');
 
   return `<!doctype html>
 <html lang="${escapeHtml(document.locale)}" dir="${document.direction}">
@@ -330,27 +304,27 @@ export function openShoppingListPrintView(
   document: ShoppingExportDocument,
   labels: { print: string; close: string; completed: string },
 ): void {
-  if (typeof window === "undefined" || typeof window.open !== "function") {
-    throw new ShoppingExportError("popup-blocked");
+  if (typeof window === 'undefined' || typeof window.open !== 'function') {
+    throw new ShoppingExportError('popup-blocked');
   }
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) throw new ShoppingExportError("popup-blocked");
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) throw new ShoppingExportError('popup-blocked');
   printWindow.opener = null;
   printWindow.document.open();
   printWindow.document.write(buildShoppingListPrintHtml(document, labels));
   printWindow.document.close();
   printWindow.document
-    .getElementById("print-list")
-    ?.addEventListener("click", () => printWindow.print());
+    .getElementById('print-list')
+    ?.addEventListener('click', () => printWindow.print());
   printWindow.document
-    .getElementById("close-print-view")
-    ?.addEventListener("click", () => printWindow.close());
+    .getElementById('close-print-view')
+    ?.addEventListener('click', () => printWindow.close());
   printWindow.focus();
 }
 
 type CanvasLine = {
   text: string;
-  kind: "category" | "item" | "note";
+  kind: 'category' | 'item' | 'note';
   checked?: boolean;
 };
 
@@ -365,7 +339,7 @@ function wrapCanvasText(
     .flatMap((word) => {
       if (context.measureText(word).width <= maxWidth) return [word];
       const chunks: string[] = [];
-      let chunk = "";
+      let chunk = '';
       for (const character of Array.from(word)) {
         const candidate = `${chunk}${character}`;
         if (chunk && context.measureText(candidate).width > maxWidth) {
@@ -378,7 +352,7 @@ function wrapCanvasText(
       if (chunk) chunks.push(chunk);
       return chunks;
     });
-  if (words.length === 0) return [""];
+  if (words.length === 0) return [''];
   const lines: string[] = [];
   let line = words[0]!;
   for (const word of words.slice(1)) {
@@ -398,8 +372,8 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new ShoppingExportError("image-unavailable"));
-    }, "image/png");
+      else reject(new ShoppingExportError('image-unavailable'));
+    }, 'image/png');
   });
 }
 
@@ -407,18 +381,18 @@ export async function renderShoppingListImage(
   exportDocument: ShoppingExportDocument,
 ): Promise<Blob> {
   if (
-    typeof window === "undefined" ||
-    typeof document === "undefined" ||
-    typeof HTMLCanvasElement === "undefined" ||
-    typeof HTMLCanvasElement.prototype.toBlob !== "function"
+    typeof window === 'undefined' ||
+    typeof document === 'undefined' ||
+    typeof HTMLCanvasElement === 'undefined' ||
+    typeof HTMLCanvasElement.prototype.toBlob !== 'function'
   ) {
-    throw new ShoppingExportError("image-unavailable");
+    throw new ShoppingExportError('image-unavailable');
   }
 
   await document.fonts?.ready;
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  if (!context) throw new ShoppingExportError("image-unavailable");
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) throw new ShoppingExportError('image-unavailable');
 
   const width = 1_200;
   const padding = 84;
@@ -426,21 +400,15 @@ export async function renderShoppingListImage(
   const textWidth = contentWidth - 48;
   const lines: CanvasLine[] = [];
   context.font = '700 58px Georgia, "Times New Roman", serif';
-  const titleLines = wrapCanvasText(
-    context,
-    exportDocument.listName,
-    contentWidth,
-  );
+  const titleLines = wrapCanvasText(context, exportDocument.listName, contentWidth);
   context.font = '500 28px system-ui, -apple-system, "Segoe UI", sans-serif';
   const storeSubtitle = shoppingExportStoreLine(exportDocument);
-  const storeLines = storeSubtitle
-    ? wrapCanvasText(context, storeSubtitle, contentWidth)
-    : [];
+  const storeLines = storeSubtitle ? wrapCanvasText(context, storeSubtitle, contentWidth) : [];
 
   for (const group of groupShoppingExportItems(exportDocument)) {
     lines.push({
       text: exportDocument.categoryLabels[group.category],
-      kind: "category",
+      kind: 'category',
     });
     context.font = '600 34px system-ui, -apple-system, "Segoe UI", sans-serif';
     for (const item of group.items) {
@@ -452,43 +420,41 @@ export async function renderShoppingListImage(
       wrapped.forEach((text, index) =>
         lines.push({
           text,
-          kind: index === 0 ? "item" : "note",
+          kind: index === 0 ? 'item' : 'note',
           checked: item.checked,
         }),
       );
     }
   }
 
-  const headerHeight =
-    130 + titleLines.length * 68 + storeLines.length * 40 + 48;
+  const headerHeight = 130 + titleLines.length * 68 + storeLines.length * 40 + 48;
   const contentHeight = lines.reduce(
-    (height, line) =>
-      height + (line.kind === "category" ? 82 : line.kind === "item" ? 54 : 44),
+    (height, line) => height + (line.kind === 'category' ? 82 : line.kind === 'item' ? 54 : 44),
     0,
   );
   const height = headerHeight + contentHeight + 140;
-  if (height > 30_000) throw new ShoppingExportError("image-too-large");
+  if (height > 30_000) throw new ShoppingExportError('image-too-large');
 
   canvas.width = width;
   canvas.height = Math.max(720, height);
-  const x = exportDocument.direction === "rtl" ? width - padding : padding;
+  const x = exportDocument.direction === 'rtl' ? width - padding : padding;
   context.direction = exportDocument.direction;
-  context.textAlign = "start";
-  context.textBaseline = "top";
+  context.textAlign = 'start';
+  context.textBaseline = 'top';
 
-  context.fillStyle = "#fffaf3";
+  context.fillStyle = '#fffaf3';
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#b45309";
+  context.fillStyle = '#b45309';
   context.fillRect(
-    exportDocument.direction === "rtl" ? canvas.width - 18 : 0,
+    exportDocument.direction === 'rtl' ? canvas.width - 18 : 0,
     0,
     18,
     canvas.height,
   );
-  context.fillStyle = "#92400e";
+  context.fillStyle = '#92400e';
   context.font = '800 24px system-ui, -apple-system, "Segoe UI", sans-serif';
   context.fillText(brand.name.toUpperCase(), x, 68);
-  context.fillStyle = "#292524";
+  context.fillStyle = '#292524';
   context.font = '700 58px Georgia, "Times New Roman", serif';
   let y = 112;
   for (const line of titleLines) {
@@ -496,55 +462,53 @@ export async function renderShoppingListImage(
     y += 68;
   }
   if (storeLines.length > 0) {
-    context.fillStyle = "#57534e";
+    context.fillStyle = '#57534e';
     context.font = '500 28px system-ui, -apple-system, "Segoe UI", sans-serif';
     for (const line of storeLines) {
       context.fillText(line, x, y);
       y += 40;
     }
   }
-  context.fillStyle = "#b45309";
+  context.fillStyle = '#b45309';
   context.fillRect(padding, y, contentWidth, 3);
   y += 42;
 
   for (const line of lines) {
-    if (line.kind === "category") {
+    if (line.kind === 'category') {
       y += 20;
-      context.fillStyle = "#92400e";
-      context.font =
-        '800 23px system-ui, -apple-system, "Segoe UI", sans-serif';
+      context.fillStyle = '#92400e';
+      context.font = '800 23px system-ui, -apple-system, "Segoe UI", sans-serif';
       context.fillText(line.text.toUpperCase(), x, y, contentWidth);
       y += 62;
       continue;
     }
-    context.fillStyle = line.checked ? "#78716c" : "#292524";
+    context.fillStyle = line.checked ? '#78716c' : '#292524';
     context.font =
-      line.kind === "item"
+      line.kind === 'item'
         ? '600 34px system-ui, -apple-system, "Segoe UI", sans-serif'
         : '500 30px system-ui, -apple-system, "Segoe UI", sans-serif';
-    const textX = exportDocument.direction === "rtl" ? x - 48 : x + 48;
-    if (line.kind === "item") {
-      const boxX = exportDocument.direction === "rtl" ? x - 30 : x;
-      context.strokeStyle = "#78716c";
+    const textX = exportDocument.direction === 'rtl' ? x - 48 : x + 48;
+    if (line.kind === 'item') {
+      const boxX = exportDocument.direction === 'rtl' ? x - 30 : x;
+      context.strokeStyle = '#78716c';
       context.lineWidth = 3;
       context.strokeRect(boxX, y + 3, 28, 28);
       if (line.checked) {
-        context.fillStyle = "#78716c";
+        context.fillStyle = '#78716c';
         context.save();
-        context.direction = "ltr";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.font =
-          '700 20px system-ui, -apple-system, "Segoe UI", sans-serif';
-        context.fillText("✓", boxX + 14, y + 17);
+        context.direction = 'ltr';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.font = '700 20px system-ui, -apple-system, "Segoe UI", sans-serif';
+        context.fillText('✓', boxX + 14, y + 17);
         context.restore();
       }
     }
     context.fillText(line.text, textX, y, textWidth);
-    y += line.kind === "item" ? 54 : 44;
+    y += line.kind === 'item' ? 54 : 44;
   }
 
-  context.fillStyle = "#78716c";
+  context.fillStyle = '#78716c';
   context.font = '500 20px system-ui, -apple-system, "Segoe UI", sans-serif';
   context.fillText(`${brand.name} · ${brand.tagline}`, x, canvas.height - 70);
   return canvasToBlob(canvas);
@@ -554,5 +518,5 @@ export async function downloadShoppingListImage(
   exportDocument: ShoppingExportDocument,
 ): Promise<void> {
   const blob = await renderShoppingListImage(exportDocument);
-  downloadBlob(blob, shoppingExportFilename(exportDocument, "png"));
+  downloadBlob(blob, shoppingExportFilename(exportDocument, 'png'));
 }

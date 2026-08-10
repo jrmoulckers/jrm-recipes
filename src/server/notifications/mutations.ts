@@ -1,15 +1,12 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { notifications, type User } from "~/server/db/schema";
+import { db } from '~/server/db';
+import { notifications, type User } from '~/server/db/schema';
 
 /** Mark one of the user's notifications read. No-op if it isn't theirs. */
-export async function markNotificationRead(
-  notificationId: string,
-  user: User,
-): Promise<void> {
+export async function markNotificationRead(notificationId: string, user: User): Promise<void> {
   await db
     .update(notifications)
     .set({ readAt: new Date() })
@@ -27,7 +24,5 @@ export async function markAllNotificationsRead(user: User): Promise<void> {
   await db
     .update(notifications)
     .set({ readAt: new Date() })
-    .where(
-      and(eq(notifications.recipientId, user.id), isNull(notifications.readAt)),
-    );
+    .where(and(eq(notifications.recipientId, user.id), isNull(notifications.readAt)));
 }

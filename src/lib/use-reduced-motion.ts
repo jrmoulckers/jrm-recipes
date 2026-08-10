@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 /**
  * Resolve the *effective* reduced-motion state from the live OS media query plus
@@ -18,11 +18,11 @@ const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  *   • Otherwise follow the OS `prefers-reduced-motion`.
  */
 function computeReduced(osReduced: boolean): boolean {
-  if (typeof document === "undefined") return osReduced;
+  if (typeof document === 'undefined') return osReduced;
   const { motion, theme } = document.documentElement.dataset;
-  if (theme === "barebones") return true;
-  if (motion === "reduced") return true;
-  if (motion === "off") return false;
+  if (theme === 'barebones') return true;
+  if (motion === 'reduced') return true;
+  if (motion === 'off') return false;
   return osReduced;
 }
 
@@ -43,22 +43,22 @@ export function useReducedMotion(): boolean {
   const [reduced, setReduced] = React.useState(false);
 
   React.useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (typeof window === 'undefined' || !window.matchMedia) return;
     const mql = window.matchMedia(MOTION_QUERY);
     const sync = () => setReduced(computeReduced(mql.matches));
     sync();
 
-    mql.addEventListener("change", sync);
+    mql.addEventListener('change', sync);
     // The in-app toggle and Simple mode flip <html> data-attributes. Observe
     // them so the hook updates the instant a user changes a setting.
     const observer = new MutationObserver(sync);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-motion", "data-theme"],
+      attributeFilter: ['data-motion', 'data-theme'],
     });
 
     return () => {
-      mql.removeEventListener("change", sync);
+      mql.removeEventListener('change', sync);
       observer.disconnect();
     };
   }, []);
@@ -74,6 +74,6 @@ export function useReducedMotion(): boolean {
  * `window`/`matchMedia`.
  */
 export function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || !window.matchMedia) return false;
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
   return computeReduced(window.matchMedia(MOTION_QUERY).matches);
 }

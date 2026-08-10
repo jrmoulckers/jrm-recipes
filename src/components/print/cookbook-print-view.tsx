@@ -1,11 +1,11 @@
-import Link from "next/link";
-import { BookMarked } from "lucide-react";
-import { useTranslations } from "next-intl";
+import Link from 'next/link';
+import { BookMarked } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { RecipePrintBody } from "~/components/print/recipe-print-body";
-import { PrintNowButton } from "~/components/print/print-now-button";
-import type { PrintRecipe } from "~/components/print/types";
-import { buttonVariants } from "~/components/ui/button";
+import { RecipePrintBody } from '~/components/print/recipe-print-body';
+import { PrintNowButton } from '~/components/print/print-now-button';
+import type { PrintRecipe } from '~/components/print/types';
+import { buttonVariants } from '~/components/ui/button';
 
 export type CookbookPrintData = {
   id: string;
@@ -30,7 +30,7 @@ export function CookbookPrintView({
   collection: CookbookPrintData;
   dedication: string | null;
 }) {
-  const t = useTranslations("print");
+  const t = useTranslations('print');
   const { recipes } = collection;
 
   if (recipes.length === 0) {
@@ -40,16 +40,16 @@ export function CookbookPrintView({
           <BookMarked className="size-7" aria-hidden="true" />
         </span>
         <h1 className="font-display text-2xl font-bold tracking-tight">
-          {t("cookbook.empty.heading")}
+          {t('cookbook.empty.heading')}
         </h1>
         <p className="text-muted-foreground">
-          {t("cookbook.empty.body", { name: collection.name })}
+          {t('cookbook.empty.body', { name: collection.name })}
         </p>
         <Link
           href={`/collections/${collection.id}`}
-          className={buttonVariants({ variant: "outline" })}
+          className={buttonVariants({ variant: 'outline' })}
         >
-          {t("cookbook.empty.back")}
+          {t('cookbook.empty.back')}
         </Link>
       </div>
     );
@@ -60,11 +60,11 @@ export function CookbookPrintView({
       <div className="mb-8 flex items-center justify-between gap-4 print:hidden">
         <Link
           href={`/collections/${collection.id}`}
-          className={buttonVariants({ variant: "ghost" })}
+          className={buttonVariants({ variant: 'ghost' })}
         >
-          {t("cookbook.empty.back")}
+          {t('cookbook.empty.back')}
         </Link>
-        <PrintNowButton label={t("actions.print")} />
+        <PrintNowButton label={t('actions.print')} />
       </div>
 
       {/* Cover page */}
@@ -82,15 +82,13 @@ export function CookbookPrintView({
           </span>
         )}
         <p className="font-display text-sm uppercase tracking-[0.25em] text-muted-foreground">
-          {t("cookbook.cover.subtitle")}
+          {t('cookbook.cover.subtitle')}
         </p>
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
           {collection.name}
         </h1>
         {collection.description ? (
-          <p className="mt-4 max-w-xl text-muted-foreground">
-            {collection.description}
-          </p>
+          <p className="mt-4 max-w-xl text-muted-foreground">{collection.description}</p>
         ) : null}
         {dedication ? (
           <p className="mx-auto mt-8 max-w-lg whitespace-pre-line font-display text-xl italic leading-relaxed">
@@ -99,29 +97,22 @@ export function CookbookPrintView({
         ) : null}
         {collection.ownerName ? (
           <p className="mt-8 text-sm text-muted-foreground">
-            {t("cookbook.cover.collectedBy", { name: collection.ownerName })}
+            {t('cookbook.cover.collectedBy', { name: collection.ownerName })}
           </p>
         ) : null}
         <p className="mt-2 text-sm text-muted-foreground">
-          {t("cookbook.cover.recipeCount", { count: recipes.length })}
+          {t('cookbook.cover.recipeCount', { count: recipes.length })}
         </p>
       </section>
 
       {/* Table of contents */}
       <section className="break-after-page">
-        <h2 className="font-display text-2xl font-bold tracking-tight">
-          {t("cookbook.toc")}
-        </h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">{t('cookbook.toc')}</h2>
         <ol className="mt-4 divide-y divide-border">
           {recipes.map((recipe, index) => (
-            <li
-              key={recipe.id}
-              className="flex items-baseline justify-between gap-4 py-2"
-            >
+            <li key={recipe.id} className="flex items-baseline justify-between gap-4 py-2">
               <span>
-                <span className="font-display font-semibold text-primary">
-                  {index + 1}.
-                </span>{" "}
+                <span className="font-display font-semibold text-primary">{index + 1}.</span>{' '}
                 {recipe.title}
               </span>
             </li>
@@ -131,10 +122,7 @@ export function CookbookPrintView({
 
       {/* Recipes, each on its own page */}
       {recipes.map((recipe) => (
-        <article
-          key={recipe.id}
-          className="break-before-page pt-8 first:pt-0 print:pt-0"
-        >
+        <article key={recipe.id} className="break-before-page pt-8 first:pt-0 print:pt-0">
           <RecipePrintBody recipe={recipe} />
         </article>
       ))}

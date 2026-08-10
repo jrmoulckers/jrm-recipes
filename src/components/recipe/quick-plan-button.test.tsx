@@ -1,16 +1,11 @@
-import {
-  cleanup,
-  render as rtlRender,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { cleanup, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { QuickPlanButton } from "./quick-plan-button";
-import { addEntryAction } from "~/server/planner/actions";
-import type { ReactElement } from "react";
-import { IntlWrapper } from "~/test/intl";
+import { QuickPlanButton } from './quick-plan-button';
+import { addEntryAction } from '~/server/planner/actions';
+import type { ReactElement } from 'react';
+import { IntlWrapper } from '~/test/intl';
 
 function render(ui: ReactElement) {
   return rtlRender(<IntlWrapper>{ui}</IntlWrapper>);
@@ -18,18 +13,18 @@ function render(ui: ReactElement) {
 
 type ActionResult = { ok: boolean; error?: string };
 
-vi.mock("~/server/planner/actions", () => ({
+vi.mock('~/server/planner/actions', () => ({
   addEntryAction: vi.fn<(input: unknown) => Promise<ActionResult>>(),
 }));
 
 const refresh = vi.fn();
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh }),
 }));
 
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: (m: string) => {
       toastSuccess(m);
@@ -57,9 +52,9 @@ afterEach(() => {
 });
 
 const DAYS = [
-  { value: "2026-07-06", label: "Mon, Jul 6" },
-  { value: "2026-07-07", label: "Tue, Jul 7" },
-  { value: "2026-07-08", label: "Wed, Jul 8" },
+  { value: '2026-07-06', label: 'Mon, Jul 6' },
+  { value: '2026-07-07', label: 'Tue, Jul 7' },
+  { value: '2026-07-08', label: 'Wed, Jul 8' },
 ];
 
 function renderButton() {
@@ -73,67 +68,59 @@ function renderButton() {
   );
 }
 
-describe("QuickPlanButton (#379)", () => {
-  it("renders a compact add-to-plan trigger", () => {
+describe('QuickPlanButton (#379)', () => {
+  it('renders a compact add-to-plan trigger', () => {
     renderButton();
-    expect(
-      screen.getByRole("button", { name: /add to this week's plan/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add to this week's plan/i })).toBeInTheDocument();
   });
 
-  it("submits the pre-selected next-empty dinner via addEntryAction", async () => {
+  it('submits the pre-selected next-empty dinner via addEntryAction', async () => {
     const user = userEvent.setup();
     mockedAddEntry.mockResolvedValue({ ok: true });
     renderButton();
 
-    await user.click(
-      screen.getByRole("button", { name: /add to this week's plan/i }),
-    );
+    await user.click(screen.getByRole('button', { name: /add to this week's plan/i }));
     // Default day is the passed-in next empty dinner. Slot defaults to dinner.
-    await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
+    await user.click(screen.getByRole('button', { name: /^add to plan$/i }));
 
     await waitFor(() => expect(mockedAddEntry).toHaveBeenCalledTimes(1));
     expect(mockedAddEntry).toHaveBeenCalledWith({
-      date: "2026-07-07",
-      slot: "dinner",
-      recipeId: "r1",
+      date: '2026-07-07',
+      slot: 'dinner',
+      recipeId: 'r1',
     });
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledTimes(1));
     expect(toastSuccess.mock.calls[0]![0]).toMatch(/Tue, Jul 7 dinner/);
   });
 
-  it("honors a changed day and meal slot", async () => {
+  it('honors a changed day and meal slot', async () => {
     const user = userEvent.setup();
     mockedAddEntry.mockResolvedValue({ ok: true });
     renderButton();
 
-    await user.click(
-      screen.getByRole("button", { name: /add to this week's plan/i }),
-    );
-    await user.selectOptions(screen.getByLabelText("Day"), "2026-07-06");
-    await user.selectOptions(screen.getByLabelText("Meal"), "lunch");
-    await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
+    await user.click(screen.getByRole('button', { name: /add to this week's plan/i }));
+    await user.selectOptions(screen.getByLabelText('Day'), '2026-07-06');
+    await user.selectOptions(screen.getByLabelText('Meal'), 'lunch');
+    await user.click(screen.getByRole('button', { name: /^add to plan$/i }));
 
     await waitFor(() =>
       expect(mockedAddEntry).toHaveBeenCalledWith({
-        date: "2026-07-06",
-        slot: "lunch",
-        recipeId: "r1",
+        date: '2026-07-06',
+        slot: 'lunch',
+        recipeId: 'r1',
       }),
     );
   });
 
-  it("surfaces the action error without closing on failure", async () => {
+  it('surfaces the action error without closing on failure', async () => {
     const user = userEvent.setup();
-    mockedAddEntry.mockResolvedValue({ ok: false, error: "Nope" });
+    mockedAddEntry.mockResolvedValue({ ok: false, error: 'Nope' });
     renderButton();
 
-    await user.click(
-      screen.getByRole("button", { name: /add to this week's plan/i }),
-    );
-    await user.click(screen.getByRole("button", { name: /^add to plan$/i }));
+    await user.click(screen.getByRole('button', { name: /add to this week's plan/i }));
+    await user.click(screen.getByRole('button', { name: /^add to plan$/i }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Nope"));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith('Nope'));
     expect(toastSuccess).not.toHaveBeenCalled();
   });
 });

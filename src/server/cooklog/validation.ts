@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Validation contract for the "Cooked it" journal. The log dialog (client) and
@@ -10,8 +10,7 @@ const idInput = z.string().trim().min(1);
 /** Max length for a cook-journal note. Imported by the UI counter (#144). */
 export const COOK_NOTE_MAX_LENGTH = 2000;
 /** Over-limit message. Kept in sync with the field counter. */
-export const COOK_NOTE_TOO_LONG_MESSAGE =
-  "Keep your note under 2,000 characters";
+export const COOK_NOTE_TOO_LONG_MESSAGE = 'Keep your note under 2,000 characters';
 
 /** A trimmed, optional string that collapses empty input to `undefined`. */
 const optionalNote = z
@@ -28,15 +27,15 @@ const optionalPhotoUrl = z
   .url()
   .max(2048)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal('').transform(() => undefined));
 
 /** A nullable, coercible positive integer from a possibly-empty form field. */
 const optionalServings = z
   .union([z.string(), z.number()])
   .optional()
   .transform((v) => {
-    if (v === undefined || v === "" || v === null) return undefined;
-    const n = typeof v === "number" ? v : Number(v);
+    if (v === undefined || v === '' || v === null) return undefined;
+    const n = typeof v === 'number' ? v : Number(v);
     return Number.isFinite(n) ? n : undefined;
   })
   .pipe(z.number().int().min(1).max(100000).optional());
@@ -47,8 +46,7 @@ const optionalServings = z
  */
 const COOK_DATE_MIN_MS = Date.UTC(2000, 0, 1);
 /** Out-of-range message. Kept friendly for the log dialog. */
-export const COOK_DATE_OUT_OF_RANGE_MESSAGE =
-  "Enter a cook date between 2000 and today";
+export const COOK_DATE_OUT_OF_RANGE_MESSAGE = 'Enter a cook date between 2000 and today';
 
 /** A bare calendar date with no time or zone, e.g. `2026-08-09`. */
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -69,8 +67,8 @@ const optionalCookedAt = z
   .union([z.string(), z.date()])
   .optional()
   .transform((v) => {
-    if (v == null || v === "") return undefined;
-    if (typeof v === "string" && DATE_ONLY_PATTERN.test(v.trim())) {
+    if (v == null || v === '') return undefined;
+    if (typeof v === 'string' && DATE_ONLY_PATTERN.test(v.trim())) {
       const noon = new Date(`${v.trim()}T12:00:00`);
       if (Number.isNaN(noon.getTime())) return undefined;
       // Today before noon would otherwise fail the "not in the future" bound.
@@ -80,9 +78,7 @@ const optionalCookedAt = z
     return Number.isNaN(d.getTime()) ? undefined : d;
   })
   .refine(
-    (d) =>
-      d === undefined ||
-      (d.getTime() >= COOK_DATE_MIN_MS && d.getTime() <= Date.now()),
+    (d) => d === undefined || (d.getTime() >= COOK_DATE_MIN_MS && d.getTime() <= Date.now()),
     { message: COOK_DATE_OUT_OF_RANGE_MESSAGE },
   );
 

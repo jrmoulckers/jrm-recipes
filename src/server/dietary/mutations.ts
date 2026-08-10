@@ -1,14 +1,10 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import {
-  groupMembers,
-  memberDietaryProfiles,
-  type User,
-} from "~/server/db/schema";
-import { type MemberProfileInput } from "./validation";
+import { db } from '~/server/db';
+import { groupMembers, memberDietaryProfiles, type User } from '~/server/db/schema';
+import { type MemberProfileInput } from './validation';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -24,13 +20,10 @@ async function resolveGroupId(
 ): Promise<string | null> {
   if (!groupId) return null;
   const membership = await tx.query.groupMembers.findFirst({
-    where: and(
-      eq(groupMembers.groupId, groupId),
-      eq(groupMembers.userId, user.id),
-    ),
+    where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, user.id)),
     columns: { id: true },
   });
-  if (!membership) throw new Error("FORBIDDEN");
+  if (!membership) throw new Error('FORBIDDEN');
   return groupId;
 }
 
@@ -47,50 +40,35 @@ function profileFields(input: MemberProfileInput, groupId: string | null) {
 /** Load a profile the user owns, or throw NOT_FOUND. */
 async function requireOwnedProfile(tx: Tx, id: string, user: User) {
   const profile = await tx.query.memberDietaryProfiles.findFirst({
-    where: and(
-      eq(memberDietaryProfiles.id, id),
-      eq(memberDietaryProfiles.userId, user.id),
-    ),
+    where: and(eq(memberDietaryProfiles.id, id), eq(memberDietaryProfiles.userId, user.id)),
     columns: { id: true },
   });
-  if (!profile) throw new Error("NOT_FOUND");
+  if (!profile) throw new Error('NOT_FOUND');
   return profile;
 }
 
-export async function createMemberProfile(
-  input: MemberProfileInput,
-  user: User,
-) {
+export async function createMemberProfile(input: MemberProfileInput, user: User) {
   return db.transaction(async (tx) => {
     const groupId = await resolveGroupId(tx, input.groupId, user);
     const [row] = await tx
       .insert(memberDietaryProfiles)
       .values({ ...profileFields(input, groupId), userId: user.id })
       .returning({ id: memberDietaryProfiles.id });
-    if (!row) throw new Error("CONFLICT");
+    if (!row) throw new Error('CONFLICT');
     return row;
   });
 }
 
-export async function updateMemberProfile(
-  id: string,
-  input: MemberProfileInput,
-  user: User,
-) {
+export async function updateMemberProfile(id: string, input: MemberProfileInput, user: User) {
   return db.transaction(async (tx) => {
     await requireOwnedProfile(tx, id, user);
     const groupId = await resolveGroupId(tx, input.groupId, user);
     const [row] = await tx
       .update(memberDietaryProfiles)
       .set(profileFields(input, groupId))
-      .where(
-        and(
-          eq(memberDietaryProfiles.id, id),
-          eq(memberDietaryProfiles.userId, user.id),
-        ),
-      )
+      .where(and(eq(memberDietaryProfiles.id, id), eq(memberDietaryProfiles.userId, user.id)))
       .returning({ id: memberDietaryProfiles.id });
-    if (!row) throw new Error("NOT_FOUND");
+    if (!row) throw new Error('NOT_FOUND');
     return row;
   });
 }
@@ -98,13 +76,8 @@ export async function updateMemberProfile(
 export async function deleteMemberProfile(id: string, user: User) {
   const [row] = await db
     .delete(memberDietaryProfiles)
-    .where(
-      and(
-        eq(memberDietaryProfiles.id, id),
-        eq(memberDietaryProfiles.userId, user.id),
-      ),
-    )
+    .where(and(eq(memberDietaryProfiles.id, id), eq(memberDietaryProfiles.userId, user.id)))
     .returning({ id: memberDietaryProfiles.id });
-  if (!row) throw new Error("NOT_FOUND");
+  if (!row) throw new Error('NOT_FOUND');
   return row;
 }

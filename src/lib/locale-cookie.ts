@@ -1,4 +1,4 @@
-import { LOCALE_COOKIE, resolveLocale, type Locale } from "~/config/i18n";
+import { LOCALE_COOKIE, resolveLocale, type Locale } from '~/config/i18n';
 
 /** One year, in seconds. How long a chosen locale persists. */
 const ONE_YEAR = 60 * 60 * 24 * 365;

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import * as React from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 
-import { track } from "~/lib/analytics";
-import { normalizePathname } from "~/lib/analytics/pageview";
+import { track } from '~/lib/analytics';
+import { normalizePathname } from '~/lib/analytics/pageview';
 
 /**
  * Emits a `$pageview` on initial load and on every App Router client navigation.
@@ -18,13 +18,13 @@ function PageviewTrackerInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // Track query changes without emitting their (potentially sensitive) values.
-  const query = searchParams?.toString() ?? "";
+  const query = searchParams?.toString() ?? '';
 
   React.useEffect(() => {
     if (!pathname) return;
     const normalized = normalizePathname(pathname);
-    const origin = typeof window === "undefined" ? "" : window.location.origin;
-    track("$pageview", {
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    track('$pageview', {
       pathname: normalized,
       $current_url: `${origin}${normalized}`,
     });

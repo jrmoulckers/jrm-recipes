@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { CornerDownLeft, Search } from "lucide-react";
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { CornerDownLeft, Search } from 'lucide-react';
 
-import { cn } from "~/lib/utils";
-import { primaryNav } from "~/config/nav";
-import { recipeSearchToQueryString } from "~/server/recipes/search";
-import { pathnameWithQuery } from "~/lib/routes";
-import { filterNavCommands, wrapIndex } from "~/lib/command-menu";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { OVERLAY_SURFACE } from "~/components/ui/overlay-surface";
-import type { CommandRecipeResult } from "~/app/api/recipes/search/route";
+import { cn } from '~/lib/utils';
+import { primaryNav } from '~/config/nav';
+import { recipeSearchToQueryString } from '~/server/recipes/search';
+import { pathnameWithQuery } from '~/lib/routes';
+import { filterNavCommands, wrapIndex } from '~/lib/command-menu';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { OVERLAY_SURFACE } from '~/components/ui/overlay-surface';
+import type { CommandRecipeResult } from '~/app/api/recipes/search/route';
 
 /** Debounce before hitting the recipe search API as the user types. */
 const SEARCH_DEBOUNCE_MS = 200;
@@ -23,21 +23,21 @@ const MIN_QUERY_LENGTH = 2;
 type Command =
   | {
       index: number;
-      group: "nav";
+      group: 'nav';
       label: string;
       href: string;
       labelKey: string;
     }
-  | { index: number; group: "recipe"; kind: "all"; label: string }
+  | { index: number; group: 'recipe'; kind: 'all'; label: string }
   | {
       index: number;
-      group: "recipe";
-      kind: "recipe";
+      group: 'recipe';
+      kind: 'recipe';
       recipe: CommandRecipeResult;
     };
 
 function isMacPlatform(): boolean {
-  if (typeof navigator === "undefined") return false;
+  if (typeof navigator === 'undefined') return false;
   const source = `${navigator.platform} ${navigator.userAgent}`;
   return /mac|iphone|ipad|ipod/i.test(source);
 }
@@ -54,11 +54,11 @@ function isMacPlatform(): boolean {
  */
 export function CommandMenu() {
   const router = useRouter();
-  const t = useTranslations("search");
-  const tNav = useTranslations("nav");
+  const t = useTranslations('search');
+  const tNav = useTranslations('nav');
 
   const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const [results, setResults] = React.useState<CommandRecipeResult[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -72,19 +72,19 @@ export function CommandMenu() {
   // ⌘K / Ctrl-K toggles the palette from anywhere in the app.
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
+      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         setOpen((prev) => !prev);
       }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   // Reset transient state whenever the palette closes so it reopens clean.
   React.useEffect(() => {
     if (!open) {
-      setQuery("");
+      setQuery('');
       setResults([]);
       setLoading(false);
       setActiveIndex(0);
@@ -112,7 +112,7 @@ export function CommandMenu() {
           setLoading(false);
         })
         .catch((error: unknown) => {
-          if ((error as { name?: string }).name !== "AbortError") {
+          if ((error as { name?: string }).name !== 'AbortError') {
             setResults([]);
             setLoading(false);
           }
@@ -135,10 +135,7 @@ export function CommandMenu() {
     [tNav],
   );
 
-  const navMatches = React.useMemo(
-    () => filterNavCommands(navItems, query),
-    [navItems, query],
-  );
+  const navMatches = React.useMemo(() => filterNavCommands(navItems, query), [navItems, query]);
 
   // Flat, ordered command list. The source of truth for arrow-key navigation.
   // Render order (Navigate, then Recipes) mirrors these indexes exactly.
@@ -148,7 +145,7 @@ export function CommandMenu() {
     for (const item of navMatches) {
       out.push({
         index: index++,
-        group: "nav",
+        group: 'nav',
         label: item.label,
         href: item.href,
         labelKey: item.labelKey,
@@ -157,22 +154,20 @@ export function CommandMenu() {
     if (trimmed.length > 0) {
       out.push({
         index: index++,
-        group: "recipe",
-        kind: "all",
-        label: t("allResults", { q: trimmed }),
+        group: 'recipe',
+        kind: 'all',
+        label: t('allResults', { q: trimmed }),
       });
     }
     for (const recipe of results) {
-      out.push({ index: index++, group: "recipe", kind: "recipe", recipe });
+      out.push({ index: index++, group: 'recipe', kind: 'recipe', recipe });
     }
     return out;
   }, [navMatches, results, trimmed, t]);
 
   // Keep the active index in range as the list grows/shrinks with the query.
   React.useEffect(() => {
-    setActiveIndex((prev) =>
-      commands.length === 0 ? 0 : Math.min(prev, commands.length - 1),
-    );
+    setActiveIndex((prev) => (commands.length === 0 ? 0 : Math.min(prev, commands.length - 1)));
   }, [commands.length]);
 
   const optionId = (index: number) => `${listId}-option-${index}`;
@@ -181,22 +176,17 @@ export function CommandMenu() {
   React.useEffect(() => {
     if (!open) return;
     const el = document.getElementById(optionId(activeIndex));
-    el?.scrollIntoView({ block: "nearest" });
+    el?.scrollIntoView({ block: 'nearest' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, open]);
 
   const run = React.useCallback(
     (command: Command | undefined) => {
       if (!command) return;
-      if (command.group === "nav") {
+      if (command.group === 'nav') {
         router.push(pathnameWithQuery(command.href));
-      } else if (command.kind === "all") {
-        router.push(
-          pathnameWithQuery(
-            "/recipes",
-            recipeSearchToQueryString({ q: trimmed }),
-          ),
-        );
+      } else if (command.kind === 'all') {
+        router.push(pathnameWithQuery('/recipes', recipeSearchToQueryString({ q: trimmed })));
       } else {
         router.push(pathnameWithQuery(`/recipes/${command.recipe.slug}`));
       }
@@ -206,23 +196,23 @@ export function CommandMenu() {
   );
 
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowDown") {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
       setActiveIndex((prev) => wrapIndex(prev + 1, commands.length));
-    } else if (event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActiveIndex((prev) => wrapIndex(prev - 1, commands.length));
-    } else if (event.key === "Enter") {
+    } else if (event.key === 'Enter') {
       event.preventDefault();
       run(commands[activeIndex]);
     }
   };
 
   const navCommands = commands.filter(
-    (c): c is Extract<Command, { group: "nav" }> => c.group === "nav",
+    (c): c is Extract<Command, { group: 'nav' }> => c.group === 'nav',
   );
   const recipeCommands = commands.filter(
-    (c): c is Extract<Command, { group: "recipe" }> => c.group === "recipe",
+    (c): c is Extract<Command, { group: 'recipe' }> => c.group === 'recipe',
   );
   const showEmpty =
     trimmed.length >= MIN_QUERY_LENGTH &&
@@ -243,9 +233,9 @@ export function CommandMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={t("triggerAria")}
+        aria-label={t('triggerAria')}
         aria-keyshortcuts="Meta+K Control+K"
-        title={t("triggerTitle", { shortcut: isMac ? "⌘K" : "Ctrl K" })}
+        title={t('triggerTitle', { shortcut: isMac ? '⌘K' : 'Ctrl K' })}
         className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Search className="size-5" aria-hidden />
@@ -257,20 +247,15 @@ export function CommandMenu() {
           <DialogPrimitive.Content
             aria-describedby={undefined}
             className={cn(
-              "fixed inset-x-4 top-[10vh] z-50 mx-auto flex max-h-[70vh] w-auto max-w-xl flex-col overflow-hidden p-0",
+              'fixed inset-x-4 top-[10vh] z-50 mx-auto flex max-h-[70vh] w-auto max-w-xl flex-col overflow-hidden p-0',
               OVERLAY_SURFACE,
-              "data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in",
+              'data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in',
             )}
           >
-            <DialogPrimitive.Title className="sr-only">
-              {t("title")}
-            </DialogPrimitive.Title>
+            <DialogPrimitive.Title className="sr-only">{t('title')}</DialogPrimitive.Title>
 
             <div className="flex items-center gap-2 border-b border-border px-4">
-              <Search
-                className="size-4 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
+              <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <input
                 type="text"
                 role="combobox"
@@ -287,7 +272,7 @@ export function CommandMenu() {
                   setActiveIndex(0);
                 }}
                 onKeyDown={onInputKeyDown}
-                placeholder={t("placeholder")}
+                placeholder={t('placeholder')}
                 className="h-12 w-full border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 md:text-sm"
               />
             </div>
@@ -295,19 +280,17 @@ export function CommandMenu() {
             <ul
               id={listId}
               role="listbox"
-              aria-label={t("title")}
+              aria-label={t('title')}
               className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
             >
               {navCommands.length > 0 && (
                 <li role="presentation">
                   <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                    {t("navHeading")}
+                    {t('navHeading')}
                   </p>
                   <ul role="presentation">
                     {navCommands.map((command) => {
-                      const item = navItems.find(
-                        (n) => n.labelKey === command.labelKey,
-                      );
+                      const item = navItems.find((n) => n.labelKey === command.labelKey);
                       const Icon = item?.icon ?? Search;
                       const active = command.index === activeIndex;
                       return (
@@ -319,19 +302,12 @@ export function CommandMenu() {
                           onMouseMove={() => setActiveIndex(command.index)}
                           onClick={() => run(command)}
                           className={cn(
-                            "flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm",
-                            active
-                              ? "bg-muted text-foreground"
-                              : "text-foreground/90",
+                            'flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm',
+                            active ? 'bg-muted text-foreground' : 'text-foreground/90',
                           )}
                         >
-                          <Icon
-                            className="size-4 shrink-0 text-muted-foreground"
-                            aria-hidden
-                          />
-                          <span className="flex-1 truncate">
-                            {command.label}
-                          </span>
+                          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                          <span className="flex-1 truncate">{command.label}</span>
                         </li>
                       );
                     })}
@@ -342,12 +318,12 @@ export function CommandMenu() {
               {(recipeCommands.length > 0 || loading || showEmpty) && (
                 <li role="presentation">
                   <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                    {t("recipesHeading")}
+                    {t('recipesHeading')}
                   </p>
                   <ul role="presentation">
                     {recipeCommands.map((command) => {
                       const active = command.index === activeIndex;
-                      if (command.kind === "all") {
+                      if (command.kind === 'all') {
                         return (
                           <li
                             key="all-results"
@@ -357,19 +333,12 @@ export function CommandMenu() {
                             onMouseMove={() => setActiveIndex(command.index)}
                             onClick={() => run(command)}
                             className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm",
-                              active
-                                ? "bg-muted text-foreground"
-                                : "text-foreground/90",
+                              'flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm',
+                              active ? 'bg-muted text-foreground' : 'text-foreground/90',
                             )}
                           >
-                            <Search
-                              className="size-4 shrink-0 text-muted-foreground"
-                              aria-hidden
-                            />
-                            <span className="flex-1 truncate">
-                              {command.label}
-                            </span>
+                            <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                            <span className="flex-1 truncate">{command.label}</span>
                             <CornerDownLeft
                               className="size-3.5 shrink-0 text-muted-foreground"
                               aria-hidden
@@ -387,10 +356,8 @@ export function CommandMenu() {
                           onMouseMove={() => setActiveIndex(command.index)}
                           onClick={() => run(command)}
                           className={cn(
-                            "flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm",
-                            active
-                              ? "bg-muted text-foreground"
-                              : "text-foreground/90",
+                            'flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm',
+                            active ? 'bg-muted text-foreground' : 'text-foreground/90',
                           )}
                         >
                           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
@@ -410,18 +377,13 @@ export function CommandMenu() {
                               className="size-9 object-cover"
                             />
                           </span>
-                          <span className="flex-1 truncate">
-                            {recipe.title}
-                          </span>
+                          <span className="flex-1 truncate">{recipe.title}</span>
                         </li>
                       );
                     })}
                     {loading && recipeCommands.length <= 1 && (
-                      <li
-                        role="presentation"
-                        className="px-2 py-2 text-sm text-muted-foreground"
-                      >
-                        {t("loading")}
+                      <li role="presentation" className="px-2 py-2 text-sm text-muted-foreground">
+                        {t('loading')}
                       </li>
                     )}
                   </ul>
@@ -433,7 +395,7 @@ export function CommandMenu() {
                   role="presentation"
                   className="px-2 py-6 text-center text-sm text-muted-foreground"
                 >
-                  {t("empty", { q: trimmed })}
+                  {t('empty', { q: trimmed })}
                 </li>
               )}
             </ul>

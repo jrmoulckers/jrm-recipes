@@ -79,7 +79,7 @@ export function buildWeeklyDigest(input: {
   for (const recipe of input.recipes) {
     // Tenant + visibility scoping. The core no-leakage guard.
     if (recipe.groupId == null || !groupIds.has(recipe.groupId)) continue;
-    if (recipe.visibility !== "group" && recipe.visibility !== "public") {
+    if (recipe.visibility !== 'group' && recipe.visibility !== 'public') {
       continue;
     }
 
@@ -91,7 +91,7 @@ export function buildWeeklyDigest(input: {
     if (!summary) {
       summary = {
         groupId: recipe.groupId,
-        groupName: nameById.get(recipe.groupId) ?? "Your group",
+        groupName: nameById.get(recipe.groupId) ?? 'Your group',
         newRecipes: [],
         updatedCount: 0,
       };
@@ -112,11 +112,7 @@ export function buildWeeklyDigest(input: {
 
   const groups = [...summaries.values()]
     .filter((s) => s.newRecipes.length > 0 || s.updatedCount > 0)
-    .sort(
-      (a, b) =>
-        b.newRecipes.length - a.newRecipes.length ||
-        b.updatedCount - a.updatedCount,
-    );
+    .sort((a, b) => b.newRecipes.length - a.newRecipes.length || b.updatedCount - a.updatedCount);
 
   const totalNew = groups.reduce((n, g) => n + g.newRecipes.length, 0);
   const totalUpdated = groups.reduce((n, g) => n + g.updatedCount, 0);

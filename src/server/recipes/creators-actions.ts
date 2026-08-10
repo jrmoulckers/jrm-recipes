@@ -1,11 +1,11 @@
-"use server";
+'use server';
 
-import { z } from "zod";
+import { z } from 'zod';
 
-import { authedAction } from "~/server/action";
-import { type ActionResult, fail, ok } from "~/server/action-result";
-import { messageForError } from "~/server/errors";
-import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
+import { authedAction } from '~/server/action';
+import { type ActionResult, fail, ok } from '~/server/action-result';
+import { messageForError } from '~/server/errors';
+import { checkRateLimit, RATE_LIMITED_MESSAGE } from '~/server/rate-limit';
 import {
   acceptRecipeCreatorInvite,
   declineRecipeCreatorInvite,
@@ -14,8 +14,8 @@ import {
   leaveRecipeAsCreator,
   removeRecipeCreator,
   type CreatorRemoval,
-} from "./creators";
-import { revalidateRecipePaths, revalidateRecipeTags } from "./revalidate";
+} from './creators';
+import { revalidateRecipePaths, revalidateRecipeTags } from './revalidate';
 
 /**
  * Server actions for the co-creator lifecycle (issue #668).
@@ -31,10 +31,10 @@ import { revalidateRecipePaths, revalidateRecipeTags } from "./revalidate";
 const MESSAGES = {
   NOT_FOUND: "We couldn't find that recipe.",
   FORBIDDEN: "Only the recipe's owner can manage co-creators.",
-  USER_NOT_FOUND: "No cook found with that handle. Ask them to sign up first.",
+  USER_NOT_FOUND: 'No cook found with that handle. Ask them to sign up first.',
   ALREADY_INVITED: "They've already been invited to co-create this recipe.",
   ALREADY_ACCEPTED: "They're already a co-creator of this recipe.",
-  NOT_PENDING: "That invitation is no longer pending.",
+  NOT_PENDING: 'That invitation is no longer pending.',
   OWNER_CANT_LEAVE: "You own this recipe, so you can't step down from it.",
 } as const;
 
@@ -56,10 +56,7 @@ async function fanOut(removal: CreatorRemoval): Promise<void> {
   // The removed creator's namespace is passed explicitly because their row is
   // already gone and can no longer be discovered — and it is precisely the page
   // that must stop being served.
-  await revalidateRecipePaths(
-    removal.recipe,
-    removal.removed ? [removal.removed] : [],
-  );
+  await revalidateRecipePaths(removal.recipe, removal.removed ? [removal.removed] : []);
   revalidateRecipeTags(removal.recipe.id);
 }
 
@@ -67,8 +64,7 @@ async function fanOut(removal: CreatorRemoval): Promise<void> {
 export const inviteRecipeCreatorAction = authedAction({
   input: inviteInput,
   handler: async (data, user): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       const target = await findCreatorTarget(data.identifier);
       await inviteRecipeCreator(data.recipeId, user.id, target.id);
@@ -83,8 +79,7 @@ export const inviteRecipeCreatorAction = authedAction({
 export const acceptRecipeCreatorAction = authedAction({
   input: recipeOnlyInput,
   handler: async (data, user): Promise<ActionResult<{ slug: string }>> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       const { recipe, slug } = await acceptRecipeCreatorInvite(
         data.recipeId,
@@ -107,8 +102,7 @@ export const acceptRecipeCreatorAction = authedAction({
 export const declineRecipeCreatorAction = authedAction({
   input: recipeOnlyInput,
   handler: async (data, user): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       await declineRecipeCreatorInvite(data.recipeId, user.id);
       return ok();
@@ -122,12 +116,9 @@ export const declineRecipeCreatorAction = authedAction({
 export const removeRecipeCreatorAction = authedAction({
   input: recipeCreatorInput,
   handler: async (data, user): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
-      await fanOut(
-        await removeRecipeCreator(data.recipeId, user.id, data.userId),
-      );
+      await fanOut(await removeRecipeCreator(data.recipeId, user.id, data.userId));
       return ok();
     } catch (error) {
       return fail(messageForError(error, MESSAGES));
@@ -139,8 +130,7 @@ export const removeRecipeCreatorAction = authedAction({
 export const leaveRecipeAsCreatorAction = authedAction({
   input: recipeOnlyInput,
   handler: async (data, user): Promise<ActionResult> => {
-    if (!checkRateLimit("recipeWrite", user.id).ok)
-      return fail(RATE_LIMITED_MESSAGE);
+    if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
       await fanOut(await leaveRecipeAsCreator(data.recipeId, user.id));
       return ok();

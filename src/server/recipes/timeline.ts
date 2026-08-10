@@ -3,10 +3,10 @@
  * `server-only` so the fork-cloning shape and timeline ordering can be unit
  * tested without a database.
  */
-import type { RecipeEventType } from "~/server/db/schema";
-import type { RecipeInput } from "./validation";
-import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
-import type { TagCategory } from "~/lib/tag-taxonomy";
+import type { RecipeEventType } from '~/server/db/schema';
+import type { RecipeInput } from './validation';
+import { DIETARY_TAGS, type DietaryTag } from '~/lib/substitutions';
+import type { TagCategory } from '~/lib/tag-taxonomy';
 
 /** A source recipe with the related rows needed to deep-clone it into a fork. */
 export type AdaptationSource = {
@@ -21,7 +21,7 @@ export type AdaptationSource = {
   restMinutes?: number | null;
   makeAheadNote?: string | null;
   equipment?: string[] | null;
-  difficulty?: RecipeInput["difficulty"] | null;
+  difficulty?: RecipeInput['difficulty'] | null;
   cuisine?: string | null;
   sourceName?: string | null;
   sourceUrl?: string | null;
@@ -51,7 +51,7 @@ export type AdaptationSource = {
   tags: { tag: { name: string; category?: TagCategory } }[];
 };
 
-const ADAPTATION_MARKER = "(Adaptation)";
+const ADAPTATION_MARKER = '(Adaptation)';
 
 /**
  * Title for a freshly-forked recipe: the source title plus a gentle marker so
@@ -75,17 +75,14 @@ export function adaptationTitle(sourceTitle: string): string {
  */
 export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
   const cuisines = source.tags
-    .filter(({ tag }) => tag.category === "cuisine")
+    .filter(({ tag }) => tag.category === 'cuisine')
     .map(({ tag }) => tag.name);
   const mealTypes = source.tags
-    .filter(({ tag }) => tag.category === "meal")
+    .filter(({ tag }) => tag.category === 'meal')
     .map(({ tag }) => tag.name);
   const generalTags = source.tags
     .filter(
-      ({ tag }) =>
-        tag.category == null ||
-        tag.category === "general" ||
-        tag.category === "dietary",
+      ({ tag }) => tag.category == null || tag.category === 'general' || tag.category === 'dietary',
     )
     .map(({ tag }) => tag.name);
 
@@ -103,8 +100,7 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
     equipment: source.equipment ?? [],
     difficulty: source.difficulty ?? undefined,
     cuisine: source.cuisine ?? undefined,
-    cuisines:
-      cuisines.length > 0 ? cuisines : source.cuisine ? [source.cuisine] : [],
+    cuisines: cuisines.length > 0 ? cuisines : source.cuisine ? [source.cuisine] : [],
     mealTypes,
     sourceName: source.sourceName ?? undefined,
     sourceUrl: source.sourceUrl ?? undefined,
@@ -112,8 +108,8 @@ export function buildAdaptationInput(source: AdaptationSource): RecipeInput {
     dietaryFlags: (source.dietaryFlags ?? []).filter((t): t is DietaryTag =>
       (DIETARY_TAGS as readonly string[]).includes(t),
     ),
-    visibility: "private",
-    status: "draft",
+    visibility: 'private',
+    status: 'draft',
     groupId: undefined,
     ingredients: source.ingredients.map((ing) => ({
       section: ing.section ?? undefined,
@@ -154,7 +150,7 @@ export function recipeToInput(source: AdaptationSource): RecipeInput {
 export type TimelineEntry = {
   id: string;
   /** `adaptation` = a descendant fork of this recipe (a child link). */
-  kind: RecipeEventType | "adaptation";
+  kind: RecipeEventType | 'adaptation';
   note: string | null;
   createdAt: Date;
   actor: {
@@ -166,7 +162,7 @@ export type TimelineEntry = {
   related: { slug: string; title: string } | null;
 };
 
-const KIND_ORDER: Record<TimelineEntry["kind"], number> = {
+const KIND_ORDER: Record<TimelineEntry['kind'], number> = {
   created: 0,
   adapted: 0,
   updated: 1,

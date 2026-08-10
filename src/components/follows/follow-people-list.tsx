@@ -1,45 +1,32 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Users } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Users } from 'lucide-react';
 
-import type { FollowPerson } from "~/server/follows/queries";
-import {
-  loadFollowersAction,
-  loadFollowingAction,
-} from "~/server/follows/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
-import { useServerAction } from "~/lib/use-server-action";
+import type { FollowPerson } from '~/server/follows/queries';
+import { loadFollowersAction, loadFollowingAction } from '~/server/follows/actions';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
+import { useServerAction } from '~/lib/use-server-action';
 
 function personName(person: FollowPerson, fallback: string) {
   return person.name ?? (person.handle ? `@${person.handle}` : fallback);
 }
 
-function PersonRow({
-  person,
-  fallbackName,
-}: {
-  person: FollowPerson;
-  fallbackName: string;
-}) {
+function PersonRow({ person, fallbackName }: { person: FollowPerson; fallbackName: string }) {
   const name = personName(person, fallbackName);
   const row = (
     <div className="flex items-center gap-3">
       <Avatar className="size-10">
-        {person.avatarUrl ? (
-          <AvatarImage src={person.avatarUrl} alt={name} />
-        ) : null}
+        {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={name} /> : null}
         <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-foreground">{name}</p>
         {person.handle ? (
-          <p className="truncate text-xs text-muted-foreground">
-            @{person.handle}
-          </p>
+          <p className="truncate text-xs text-muted-foreground">@{person.handle}</p>
         ) : null}
       </div>
     </div>
@@ -74,25 +61,21 @@ export function FollowPeopleList({
   emptyLabel,
 }: {
   userId: string;
-  direction: "followers" | "following";
+  direction: 'followers' | 'following';
   initialPeople: FollowPerson[];
   initialCursor: string | null;
   emptyLabel: string;
 }) {
-  const t = useTranslations("follows.list");
+  const t = useTranslations('follows.list');
   const [people, setPeople] = React.useState(initialPeople);
   const [cursor, setCursor] = React.useState(initialCursor);
 
-  const onSuccess = (result: {
-    people: FollowPerson[];
-    nextCursor: string | null;
-  }) => {
+  const onSuccess = (result: { people: FollowPerson[]; nextCursor: string | null }) => {
     setPeople((prev) => [...prev, ...result.people]);
     setCursor(result.nextCursor);
   };
 
-  const action =
-    direction === "followers" ? loadFollowersAction : loadFollowingAction;
+  const action = direction === 'followers' ? loadFollowersAction : loadFollowingAction;
   const load = useServerAction(action, { errorToast: true, onSuccess });
 
   if (people.length === 0) {
@@ -108,11 +91,7 @@ export function FollowPeopleList({
     <div className="flex flex-col gap-3">
       <ul className="flex flex-col gap-2">
         {people.map((person) => (
-          <PersonRow
-            key={person.id}
-            person={person}
-            fallbackName={t("fallbackName")}
-          />
+          <PersonRow key={person.id} person={person} fallbackName={t('fallbackName')} />
         ))}
       </ul>
       {cursor ? (
@@ -123,7 +102,7 @@ export function FollowPeopleList({
             disabled={load.pending}
             onClick={() => load.run({ userId, before: cursor })}
           >
-            {load.pending ? t("loading") : t("loadMore")}
+            {load.pending ? t('loading') : t('loadMore')}
           </Button>
         </div>
       ) : null}

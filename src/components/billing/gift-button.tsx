@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "~/lib/utils";
-import { createGiftCheckoutSessionAction } from "~/server/billing/actions";
-import { Button, type ButtonProps } from "~/components/ui/button";
+import { cn } from '~/lib/utils';
+import { createGiftCheckoutSessionAction } from '~/server/billing/actions';
+import { Button, type ButtonProps } from '~/components/ui/button';
 
 /**
  * Client entry point for buying a gift (issue #331). Mirrors `CheckoutButton`:
@@ -36,7 +36,7 @@ export function GiftButton({ children, className, ...props }: ButtonProps) {
         type="button"
         onClick={startGiftCheckout}
         loading={pending}
-        className={cn("w-full", className)}
+        className={cn('w-full', className)}
         {...props}
       >
         {children}

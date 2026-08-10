@@ -11,11 +11,11 @@ import {
   type CustomUnitDef,
   type Dimension,
   type UnitPrefs,
-} from "./units";
+} from './units';
 
 /** The subset of a `user_unit_preferences` row display needs. */
 export type UnitPreferencesRow = {
-  defaultSystem: "us" | "metric";
+  defaultSystem: 'us' | 'metric';
   volumeUnit: string | null;
   liquidVolumeUnit: string | null;
   dryVolumeUnit: string | null;
@@ -48,9 +48,7 @@ export function toUnitPrefs(
   if (!row) {
     return {
       ...DEFAULT_UNIT_PREFS,
-      defaultSystem: locale
-        ? defaultSystemForLocale(locale)
-        : DEFAULT_UNIT_PREFS.defaultSystem,
+      defaultSystem: locale ? defaultSystemForLocale(locale) : DEFAULT_UNIT_PREFS.defaultSystem,
     };
   }
   return {

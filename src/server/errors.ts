@@ -1,4 +1,4 @@
-import "server-only";
+import 'server-only';
 
 /**
  * Typed domain errors and the single user-message mapper (#168).
@@ -17,24 +17,24 @@ import "server-only";
 
 /** Every domain error code thrown across recipes, groups, and engagement. */
 export const DOMAIN_CODES = [
-  "NOT_FOUND",
-  "FORBIDDEN",
-  "CONFLICT",
-  "INVALID",
-  "UNAUTHENTICATED",
-  "USER_NOT_FOUND",
-  "ALREADY_MEMBER",
-  "ALREADY_INVITED",
-  "ALREADY_ACCEPTED",
-  "NOT_PENDING",
-  "OWNER_CANT_LEAVE",
-  "SEAT_LIMIT_REACHED",
-  "REVOKED",
-  "EXPIRED",
-  "EXHAUSTED",
-  "SELF_RATING",
-  "ALREADY_APPLIED",
-  "BAD_SNAPSHOT",
+  'NOT_FOUND',
+  'FORBIDDEN',
+  'CONFLICT',
+  'INVALID',
+  'UNAUTHENTICATED',
+  'USER_NOT_FOUND',
+  'ALREADY_MEMBER',
+  'ALREADY_INVITED',
+  'ALREADY_ACCEPTED',
+  'NOT_PENDING',
+  'OWNER_CANT_LEAVE',
+  'SEAT_LIMIT_REACHED',
+  'REVOKED',
+  'EXPIRED',
+  'EXHAUSTED',
+  'SELF_RATING',
+  'ALREADY_APPLIED',
+  'BAD_SNAPSHOT',
 ] as const;
 
 /** A typed domain error code. */
@@ -44,7 +44,7 @@ const CODE_SET: ReadonlySet<string> = new Set(DOMAIN_CODES);
 
 /** Type guard: is this string one of the known domain codes? */
 export function isDomainCode(value: unknown): value is DomainCode {
-  return typeof value === "string" && CODE_SET.has(value);
+  return typeof value === 'string' && CODE_SET.has(value);
 }
 
 /**
@@ -56,7 +56,7 @@ export class DomainError extends Error {
   readonly code: DomainCode;
   constructor(code: DomainCode) {
     super(code);
-    this.name = "DomainError";
+    this.name = 'DomainError';
     this.code = code;
   }
 }
@@ -72,15 +72,14 @@ export function raise(code: DomainCode): never {
  */
 export function domainCodeOf(error: unknown): DomainCode | null {
   if (error instanceof DomainError) return error.code;
-  if (error instanceof Error && isDomainCode(error.message))
-    return error.message;
+  if (error instanceof Error && isDomainCode(error.message)) return error.message;
   return null;
 }
 
 /** Per-call overrides so a caller can tailor copy for a specific code. */
 export type DomainMessages = Partial<Record<DomainCode, string>>;
 
-const GENERIC_FALLBACK = "Something went wrong. Please try again.";
+const GENERIC_FALLBACK = 'Something went wrong. Please try again.';
 
 /**
  * Generic, exhaustive default copy for every code. The single source of truth.
@@ -92,20 +91,19 @@ export const DEFAULT_MESSAGES: Record<DomainCode, string> = {
   FORBIDDEN: "You don't have permission to do that.",
   CONFLICT: "That change couldn't be completed. Please refresh and try again.",
   INVALID: "That doesn't look right. Please check and try again.",
-  UNAUTHENTICATED: "Please sign in to continue.",
-  USER_NOT_FOUND:
-    "No cook found with that handle or email. Ask them to sign up first.",
+  UNAUTHENTICATED: 'Please sign in to continue.',
+  USER_NOT_FOUND: 'No cook found with that handle or email. Ask them to sign up first.',
   ALREADY_MEMBER: "They're already in this group.",
   ALREADY_INVITED: "They've already been invited.",
-  ALREADY_ACCEPTED: "That invitation was already accepted.",
-  NOT_PENDING: "That invitation is no longer pending.",
-  OWNER_CANT_LEAVE: "Transfer ownership or delete the group first.",
-  SEAT_LIMIT_REACHED: "This group is full for its current plan.",
-  REVOKED: "This invite link has been turned off. Ask for a fresh one.",
-  EXPIRED: "This invite link has expired. Ask for a fresh one.",
-  EXHAUSTED: "This invite link has reached its limit. Ask for a fresh one.",
+  ALREADY_ACCEPTED: 'That invitation was already accepted.',
+  NOT_PENDING: 'That invitation is no longer pending.',
+  OWNER_CANT_LEAVE: 'Transfer ownership or delete the group first.',
+  SEAT_LIMIT_REACHED: 'This group is full for its current plan.',
+  REVOKED: 'This invite link has been turned off. Ask for a fresh one.',
+  EXPIRED: 'This invite link has expired. Ask for a fresh one.',
+  EXHAUSTED: 'This invite link has reached its limit. Ask for a fresh one.',
   SELF_RATING: "You can't rate your own recipe.",
-  ALREADY_APPLIED: "That suggestion was already applied.",
+  ALREADY_APPLIED: 'That suggestion was already applied.',
   BAD_SNAPSHOT: "That saved version can't be restored.",
 };
 

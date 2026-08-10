@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Pencil, Plus, Ruler, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Pencil, Plus, Ruler, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { friendlyError } from "~/lib/error-copy";
-import { useShoppingStore } from "~/lib/shopping-store";
+import { friendlyError } from '~/lib/error-copy';
+import { useShoppingStore } from '~/lib/shopping-store';
 import {
   createCustomUnitAction,
   deleteCustomUnitAction,
   saveUnitPreferencesAction,
   updateCustomUnitAction,
-} from "~/server/units/actions";
+} from '~/server/units/actions';
 import {
   CUSTOM_UNIT_DIMENSIONS,
   type CustomUnitDimension,
@@ -21,35 +21,30 @@ import {
   type MeasurementSystemValue,
   type UnitPreferencesInputRaw,
   customUnitInput,
-} from "~/server/units/validation";
-import {
-  defaultUnitFor,
-  formatQuantity,
-  unitsForDimension,
-  type Dimension,
-} from "~/lib/units";
-import { unitLabel } from "~/lib/unit-labels";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
+} from '~/server/units/validation';
+import { defaultUnitFor, formatQuantity, unitsForDimension, type Dimension } from '~/lib/units';
+import { unitLabel } from '~/lib/unit-labels';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Switch } from '~/components/ui/switch';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+} from '~/components/ui/dialog';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { useConfirm } from "~/components/ui/confirm-dialog";
+} from '~/components/ui/select';
+import { useConfirm } from '~/components/ui/confirm-dialog';
 
 export type UnitPreferencesView = {
   defaultSystem: MeasurementSystemValue;
@@ -74,7 +69,7 @@ export type CustomUnitView = {
 };
 
 const DEFAULT_PREFS: UnitPreferencesView = {
-  defaultSystem: "metric",
+  defaultSystem: 'metric',
   volumeUnit: null,
   liquidVolumeUnit: null,
   dryVolumeUnit: null,
@@ -86,9 +81,9 @@ const DEFAULT_PREFS: UnitPreferencesView = {
 };
 
 /** Sentinel for "follow my system default" in a Radix Select (no empty value). */
-const FOLLOW = "__follow__";
+const FOLLOW = '__follow__';
 
-const SYSTEMS: MeasurementSystemValue[] = ["metric", "us"];
+const SYSTEMS: MeasurementSystemValue[] = ['metric', 'us'];
 
 /** Options for a per-dimension default: built-ins + the user's custom units. */
 function dimensionOptions(
@@ -116,26 +111,26 @@ type CustomDraft = {
 };
 
 const EMPTY_CUSTOM: CustomDraft = {
-  name: "",
-  abbreviation: "",
-  dimension: "volume",
-  baseUnit: "",
-  baseAmount: "",
+  name: '',
+  abbreviation: '',
+  dimension: 'volume',
+  baseUnit: '',
+  baseAmount: '',
   displayAsTrue: false,
 };
 
 function toCustomDraft(unit: CustomUnitView): CustomDraft {
   return {
     name: unit.name,
-    abbreviation: unit.abbreviation ?? "",
+    abbreviation: unit.abbreviation ?? '',
     dimension: unit.dimension,
-    baseUnit: unit.baseUnit ?? "",
-    baseAmount: unit.baseAmount != null ? String(unit.baseAmount) : "",
+    baseUnit: unit.baseUnit ?? '',
+    baseAmount: unit.baseAmount != null ? String(unit.baseAmount) : '',
     displayAsTrue: unit.displayAsTrue,
   };
 }
 
-type Editing = { kind: "add" } | { kind: "edit"; id: string };
+type Editing = { kind: 'add' } | { kind: 'edit'; id: string };
 
 export function UnitPreferencesManager({
   preferences,
@@ -146,20 +141,14 @@ export function UnitPreferencesManager({
   customUnits: CustomUnitView[];
   offline?: boolean;
 }) {
-  const t = useTranslations("settings.units");
+  const t = useTranslations('settings.units');
   const router = useRouter();
-  const [prefs, setPrefs] = React.useState<UnitPreferencesView>(
-    preferences ?? DEFAULT_PREFS,
-  );
+  const [prefs, setPrefs] = React.useState<UnitPreferencesView>(preferences ?? DEFAULT_PREFS);
   const [savingPrefs, startPrefsTransition] = React.useTransition();
   const localPreferences = useShoppingStore((state) => state.unitPreferences);
-  const localPackageRounding = useShoppingStore(
-    (state) => state.packageRounding,
-  );
+  const localPackageRounding = useShoppingStore((state) => state.packageRounding);
   const localCustomUnits = useShoppingStore((state) => state.customUnits);
-  const setLocalPreferences = useShoppingStore(
-    (state) => state.setUnitPreferences,
-  );
+  const setLocalPreferences = useShoppingStore((state) => state.setUnitPreferences);
   const visibleCustomUnits = offline ? localCustomUnits : customUnits;
 
   React.useEffect(() => {
@@ -217,12 +206,12 @@ export function UnitPreferencesManager({
 
   const setOverride = (
     key:
-      | "volumeUnit"
-      | "liquidVolumeUnit"
-      | "dryVolumeUnit"
-      | "smallVolumeUnit"
-      | "massUnit"
-      | "temperatureUnit",
+      | 'volumeUnit'
+      | 'liquidVolumeUnit'
+      | 'dryVolumeUnit'
+      | 'smallVolumeUnit'
+      | 'massUnit'
+      | 'temperatureUnit',
     value: string,
   ) => savePrefs({ ...prefs, [key]: value === FOLLOW ? null : value });
 
@@ -231,11 +220,9 @@ export function UnitPreferencesManager({
       {/* Batch default + auto-convert. */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
         <h2 className="font-display text-lg font-semibold tracking-tight">
-          {t("defaultSystem.title")}
+          {t('defaultSystem.title')}
         </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {t("defaultSystem.description")}
-        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t('defaultSystem.description')}</p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {SYSTEMS.map((sys) => {
             const active = prefs.defaultSystem === sys;
@@ -247,16 +234,12 @@ export function UnitPreferencesManager({
                 onClick={() => savePrefs({ ...prefs, defaultSystem: sys })}
                 disabled={savingPrefs}
                 className={cn(
-                  "flex min-h-11 flex-col rounded-xl border p-4 text-start transition-colors",
-                  active
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:bg-muted",
+                  'flex min-h-11 flex-col rounded-xl border p-4 text-start transition-colors',
+                  active ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted',
                 )}
               >
                 <span className="font-medium">{t(`systems.${sys}.label`)}</span>
-                <span className="text-sm text-muted-foreground">
-                  {t(`systems.${sys}.hint`)}
-                </span>
+                <span className="text-sm text-muted-foreground">{t(`systems.${sys}.hint`)}</span>
               </button>
             );
           })}
@@ -264,41 +247,35 @@ export function UnitPreferencesManager({
 
         <label className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <span>
-            <span className="block font-medium">{t("autoConvert.label")}</span>
+            <span className="block font-medium">{t('autoConvert.label')}</span>
             <span className="block text-sm text-muted-foreground">
-              {t("autoConvert.description")}
+              {t('autoConvert.description')}
             </span>
           </span>
           <Switch
             checked={prefs.autoConvert}
-            onCheckedChange={(checked) =>
-              savePrefs({ ...prefs, autoConvert: checked })
-            }
-            aria-label={t("autoConvert.ariaLabel")}
+            onCheckedChange={(checked) => savePrefs({ ...prefs, autoConvert: checked })}
+            aria-label={t('autoConvert.ariaLabel')}
             disabled={savingPrefs}
           />
         </label>
         <label className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-border p-4">
           <span>
-            <span className="block font-medium">
-              {t("packageRounding.label")}
-            </span>
+            <span className="block font-medium">{t('packageRounding.label')}</span>
             <span className="block text-sm text-muted-foreground">
-              {t("packageRounding.description")}
+              {t('packageRounding.description')}
             </span>
           </span>
           <Switch
             checked={prefs.packageRounding}
-            onCheckedChange={(checked) =>
-              savePrefs({ ...prefs, packageRounding: checked })
-            }
-            aria-label={t("packageRounding.ariaLabel")}
+            onCheckedChange={(checked) => savePrefs({ ...prefs, packageRounding: checked })}
+            aria-label={t('packageRounding.ariaLabel')}
             disabled={savingPrefs}
           />
         </label>
         {offline ? (
           <p className="mt-3 text-sm text-muted-foreground" role="status">
-            {t("offlineNote")}
+            {t('offlineNote')}
           </p>
         ) : null}
       </section>
@@ -306,72 +283,64 @@ export function UnitPreferencesManager({
       {/* Per-dimension overrides. */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
         <h2 className="font-display text-lg font-semibold tracking-tight">
-          {t("preferred.title")}
+          {t('preferred.title')}
         </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {t("preferred.description")}
-        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t('preferred.description')}</p>
         <div
           className={cn(
-            "mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
-            savingPrefs && "opacity-70",
+            'mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
+            savingPrefs && 'opacity-70',
           )}
         >
           <DimensionPicker
-            label={t("preferred.liquidVolume.label")}
-            hint={t("preferred.liquidVolume.hint")}
+            label={t('preferred.liquidVolume.label')}
+            hint={t('preferred.liquidVolume.hint')}
             value={prefs.liquidVolumeUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor(
-              "volume",
-              prefs.defaultSystem,
-              "liquid",
+            defaultUnit={defaultUnitFor('volume', prefs.defaultSystem, 'liquid')}
+            options={dimensionOptions('volume', visibleCustomUnits, (name) =>
+              t('custom.optionCustom', { name }),
             )}
-            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
-              t("custom.optionCustom", { name }),
-            )}
-            onChange={(v) => setOverride("liquidVolumeUnit", v)}
+            onChange={(v) => setOverride('liquidVolumeUnit', v)}
           />
           <DimensionPicker
-            label={t("preferred.dryVolume.label")}
-            hint={t("preferred.dryVolume.hint")}
+            label={t('preferred.dryVolume.label')}
+            hint={t('preferred.dryVolume.hint')}
             value={prefs.dryVolumeUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "dry")}
-            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
-              t("custom.optionCustom", { name }),
+            defaultUnit={defaultUnitFor('volume', prefs.defaultSystem, 'dry')}
+            options={dimensionOptions('volume', visibleCustomUnits, (name) =>
+              t('custom.optionCustom', { name }),
             )}
-            onChange={(v) => setOverride("dryVolumeUnit", v)}
+            onChange={(v) => setOverride('dryVolumeUnit', v)}
           />
           <DimensionPicker
-            label={t("preferred.smallAmounts.label")}
-            hint={t("preferred.smallAmounts.hint")}
+            label={t('preferred.smallAmounts.label')}
+            hint={t('preferred.smallAmounts.hint')}
             value={prefs.smallVolumeUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor("volume", prefs.defaultSystem, "small")}
-            options={dimensionOptions("volume", visibleCustomUnits, (name) =>
-              t("custom.optionCustom", { name }),
+            defaultUnit={defaultUnitFor('volume', prefs.defaultSystem, 'small')}
+            options={dimensionOptions('volume', visibleCustomUnits, (name) =>
+              t('custom.optionCustom', { name }),
             )}
-            onChange={(v) => setOverride("smallVolumeUnit", v)}
+            onChange={(v) => setOverride('smallVolumeUnit', v)}
           />
           <DimensionPicker
-            label={t("preferred.weight.label")}
-            hint={t("preferred.weight.hint")}
+            label={t('preferred.weight.label')}
+            hint={t('preferred.weight.hint')}
             value={prefs.massUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor("mass", prefs.defaultSystem)}
-            options={dimensionOptions("mass", visibleCustomUnits, (name) =>
-              t("custom.optionCustom", { name }),
+            defaultUnit={defaultUnitFor('mass', prefs.defaultSystem)}
+            options={dimensionOptions('mass', visibleCustomUnits, (name) =>
+              t('custom.optionCustom', { name }),
             )}
-            onChange={(v) => setOverride("massUnit", v)}
+            onChange={(v) => setOverride('massUnit', v)}
           />
           <DimensionPicker
-            label={t("preferred.temperature.label")}
-            hint={t("preferred.temperature.hint")}
+            label={t('preferred.temperature.label')}
+            hint={t('preferred.temperature.hint')}
             value={prefs.temperatureUnit ?? FOLLOW}
-            defaultUnit={defaultUnitFor("temperature", prefs.defaultSystem)}
-            options={dimensionOptions(
-              "temperature",
-              visibleCustomUnits,
-              (name) => t("custom.optionCustom", { name }),
+            defaultUnit={defaultUnitFor('temperature', prefs.defaultSystem)}
+            options={dimensionOptions('temperature', visibleCustomUnits, (name) =>
+              t('custom.optionCustom', { name }),
             )}
-            onChange={(v) => setOverride("temperatureUnit", v)}
+            onChange={(v) => setOverride('temperatureUnit', v)}
           />
         </div>
       </section>
@@ -396,21 +365,19 @@ function DimensionPicker({
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }) {
-  const t = useTranslations("settings.units");
+  const t = useTranslations('settings.units');
   const id = React.useId();
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      {hint ? (
-        <span className="text-xs text-muted-foreground">{hint}</span>
-      ) : null}
+      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id={id}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={FOLLOW}>
-            {t("preferred.defaultOption", { unit: unitLabel(defaultUnit) })}
+            {t('preferred.defaultOption', { unit: unitLabel(defaultUnit) })}
           </SelectItem>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
@@ -430,24 +397,16 @@ function CustomUnitsSection({
   customUnits: CustomUnitView[];
   offline: boolean;
 }) {
-  const t = useTranslations("settings.units");
+  const t = useTranslations('settings.units');
   const router = useRouter();
   const [editing, setEditing] = React.useState<Editing | null>(null);
   const [draft, setDraft] = React.useState<CustomDraft>(EMPTY_CUSTOM);
-  const [fieldErrors, setFieldErrors] = React.useState<
-    Record<string, string[]>
-  >({});
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isPending, startTransition] = React.useTransition();
   const confirm = useConfirm();
-  const createLocalCustomUnit = useShoppingStore(
-    (state) => state.createCustomUnit,
-  );
-  const updateLocalCustomUnit = useShoppingStore(
-    (state) => state.updateCustomUnit,
-  );
-  const deleteLocalCustomUnit = useShoppingStore(
-    (state) => state.deleteCustomUnit,
-  );
+  const createLocalCustomUnit = useShoppingStore((state) => state.createCustomUnit);
+  const updateLocalCustomUnit = useShoppingStore((state) => state.updateCustomUnit);
+  const deleteLocalCustomUnit = useShoppingStore((state) => state.deleteCustomUnit);
 
   const nameId = React.useId();
   const abbrId = React.useId();
@@ -456,13 +415,13 @@ function CustomUnitsSection({
   function openAdd() {
     setDraft(EMPTY_CUSTOM);
     setFieldErrors({});
-    setEditing({ kind: "add" });
+    setEditing({ kind: 'add' });
   }
 
   function openEdit(unit: CustomUnitView) {
     setDraft(toCustomDraft(unit));
     setFieldErrors({});
-    setEditing({ kind: "edit", id: unit.id });
+    setEditing({ kind: 'edit', id: unit.id });
   }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -477,7 +436,7 @@ function CustomUnitsSection({
       displayAsTrue: draft.displayAsTrue,
     };
     setFieldErrors({});
-    const isAdd = editing.kind === "add";
+    const isAdd = editing.kind === 'add';
     const parsed = customUnitInput.safeParse(input);
     if (!parsed.success) {
       setFieldErrors(parsed.error.flatten().fieldErrors);
@@ -487,12 +446,11 @@ function CustomUnitsSection({
       offline &&
       customUnits.some(
         (unit) =>
-          unit.name.trim().toLocaleLowerCase() ===
-            parsed.data.name.toLocaleLowerCase() &&
-          (editing.kind === "add" || unit.id !== editing.id),
+          unit.name.trim().toLocaleLowerCase() === parsed.data.name.toLocaleLowerCase() &&
+          (editing.kind === 'add' || unit.id !== editing.id),
       )
     ) {
-      setFieldErrors({ name: [t("custom.validation.duplicate")] });
+      setFieldErrors({ name: [t('custom.validation.duplicate')] });
       return;
     }
     if (offline) {
@@ -504,27 +462,21 @@ function CustomUnitsSection({
         baseAmount: parsed.data.baseAmount ?? null,
         displayAsTrue: parsed.data.displayAsTrue,
       };
-      if (editing.kind === "add") createLocalCustomUnit(unit);
+      if (editing.kind === 'add') createLocalCustomUnit(unit);
       else updateLocalCustomUnit(editing.id, unit);
-      toast.success(
-        isAdd ? t("custom.toasts.added") : t("custom.toasts.updated"),
-      );
+      toast.success(isAdd ? t('custom.toasts.added') : t('custom.toasts.updated'));
       setEditing(null);
       return;
     }
     startTransition(() => {
-      const run = isAdd
-        ? createCustomUnitAction(input)
-        : updateCustomUnitAction(editing.id, input);
+      const run = isAdd ? createCustomUnitAction(input) : updateCustomUnitAction(editing.id, input);
       void run.then((result) => {
         if (!result.ok) {
           setFieldErrors(result.fieldErrors ?? {});
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(
-          isAdd ? t("custom.toasts.added") : t("custom.toasts.updated"),
-        );
+        toast.success(isAdd ? t('custom.toasts.added') : t('custom.toasts.updated'));
         setEditing(null);
         router.refresh();
       });
@@ -533,14 +485,14 @@ function CustomUnitsSection({
 
   async function onDelete(unit: CustomUnitView) {
     const ok = await confirm({
-      title: t("custom.deleteConfirm.title", { name: unit.name }),
-      description: t("custom.deleteConfirm.description"),
-      confirmLabel: t("custom.deleteConfirm.confirmLabel"),
+      title: t('custom.deleteConfirm.title', { name: unit.name }),
+      description: t('custom.deleteConfirm.description'),
+      confirmLabel: t('custom.deleteConfirm.confirmLabel'),
     });
     if (!ok) return;
     if (offline) {
       deleteLocalCustomUnit(unit.id);
-      toast.success(t("custom.toasts.deleted"));
+      toast.success(t('custom.toasts.deleted'));
       return;
     }
     startTransition(() => {
@@ -549,17 +501,14 @@ function CustomUnitsSection({
           toast.error(friendlyError(result.error));
           return;
         }
-        toast.success(t("custom.toasts.deleted"));
+        toast.success(t('custom.toasts.deleted'));
         router.refresh();
       });
     });
   }
 
   // Base-unit options depend on the chosen dimension.
-  const baseOptions = React.useMemo(
-    () => unitsForDimension(draft.dimension),
-    [draft.dimension],
-  );
+  const baseOptions = React.useMemo(() => unitsForDimension(draft.dimension), [draft.dimension]);
 
   // Live preview of the equivalence a cook is defining ("1 pinch = 1/16 tsp").
   const preview = React.useMemo(() => {
@@ -567,7 +516,7 @@ function CustomUnitsSection({
     if (!draft.name.trim() || !draft.baseUnit || !Number.isFinite(amount)) {
       return null;
     }
-    return t("custom.preview", {
+    return t('custom.preview', {
       name: draft.name.trim(),
       amount: formatQuantity(amount, draft.baseUnit),
       unit: draft.baseUnit,
@@ -579,29 +528,25 @@ function CustomUnitsSection({
     abbreviation: t(`custom.examples.${draft.dimension}.abbreviation`),
     amount: t(`custom.examples.${draft.dimension}.amount`),
   };
-  const unitName = draft.name.trim() || t("custom.fallbackUnitName");
+  const unitName = draft.name.trim() || t('custom.fallbackUnitName');
   const displayAsTrueHint =
     preview != null
-      ? t("custom.displayAsTrue.hintWithPreview", {
+      ? t('custom.displayAsTrue.hintWithPreview', {
           amount: formatQuantity(Number(draft.baseAmount), draft.baseUnit),
           unit: draft.baseUnit,
           name: unitName,
         })
-      : t("custom.displayAsTrue.hint", { name: unitName });
+      : t('custom.displayAsTrue.hint', { name: unitName });
 
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-token">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-semibold tracking-tight">
-            {t("custom.title")}
-          </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {t("custom.description")}
-          </p>
+          <h2 className="font-display text-lg font-semibold tracking-tight">{t('custom.title')}</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t('custom.description')}</p>
         </div>
         <Button onClick={openAdd} size="sm" className="shrink-0">
-          <Plus /> {t("custom.addButton")}
+          <Plus /> {t('custom.addButton')}
         </Button>
       </div>
 
@@ -610,9 +555,7 @@ function CustomUnitsSection({
           <span className="bg-primary/12 inline-flex size-12 items-center justify-center rounded-2xl text-primary">
             <Ruler className="size-6" aria-hidden="true" />
           </span>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            {t("custom.empty")}
-          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">{t('custom.empty')}</p>
         </div>
       ) : (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -627,18 +570,16 @@ function CustomUnitsSection({
                   {unit.abbreviation ? (
                     <Badge variant="secondary">{unit.abbreviation}</Badge>
                   ) : null}
-                  <Badge variant="outline">
-                    {t(`custom.dimensions.${unit.dimension}`)}
-                  </Badge>
+                  <Badge variant="outline">{t(`custom.dimensions.${unit.dimension}`)}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {unit.baseUnit && unit.baseAmount != null
-                    ? t("custom.preview", {
+                    ? t('custom.preview', {
                         name: unit.name,
                         amount: formatQuantity(unit.baseAmount, unit.baseUnit),
                         unit: unit.baseUnit,
                       })
-                    : t("custom.displayOnly")}
+                    : t('custom.displayOnly')}
                 </p>
               </div>
               <div className="flex gap-1">
@@ -646,7 +587,7 @@ function CustomUnitsSection({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={t("custom.editAria", { name: unit.name })}
+                  aria-label={t('custom.editAria', { name: unit.name })}
                   onClick={() => openEdit(unit)}
                 >
                   <Pencil className="size-4" />
@@ -655,7 +596,7 @@ function CustomUnitsSection({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={t("custom.deleteAria", { name: unit.name })}
+                  aria-label={t('custom.deleteAria', { name: unit.name })}
                   onClick={() => onDelete(unit)}
                 >
                   <Trash2 className="size-4" />
@@ -666,54 +607,45 @@ function CustomUnitsSection({
         </ul>
       )}
 
-      <Dialog
-        open={editing !== null}
-        onOpenChange={(open) => !open && setEditing(null)}
-      >
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
               <DialogTitle>
-                {editing?.kind === "add"
-                  ? t("custom.dialog.addTitle")
-                  : t("custom.dialog.editTitle")}
+                {editing?.kind === 'add'
+                  ? t('custom.dialog.addTitle')
+                  : t('custom.dialog.editTitle')}
               </DialogTitle>
             </DialogHeader>
 
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label htmlFor={nameId}>{t("custom.fields.name")}</Label>
+                <Label htmlFor={nameId}>{t('custom.fields.name')}</Label>
                 <Input
                   id={nameId}
                   value={draft.name}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, name: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                   placeholder={example.name}
                   aria-invalid={Boolean(fieldErrors.name)}
                   autoFocus
                 />
                 {fieldErrors.name?.[0] ? (
-                  <p className="text-sm text-destructive">
-                    {fieldErrors.name[0]}
-                  </p>
+                  <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
                 ) : null}
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor={abbrId}>{t("custom.fields.shortLabel")}</Label>
+                <Label htmlFor={abbrId}>{t('custom.fields.shortLabel')}</Label>
                 <Input
                   id={abbrId}
                   value={draft.abbreviation}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, abbreviation: e.target.value }))
-                  }
+                  onChange={(e) => setDraft((d) => ({ ...d, abbreviation: e.target.value }))}
                   placeholder={example.abbreviation}
                 />
               </div>
             </div>
 
             <div className="grid gap-1.5">
-              <Label>{t("custom.fields.measures")}</Label>
+              <Label>{t('custom.fields.measures')}</Label>
               <div className="flex flex-wrap gap-2">
                 {CUSTOM_UNIT_DIMENSIONS.map((dim) => {
                   const active = draft.dimension === dim;
@@ -727,14 +659,14 @@ function CustomUnitsSection({
                           ...d,
                           dimension: dim,
                           // Reset the base unit. It must match the new dimension.
-                          baseUnit: "",
+                          baseUnit: '',
                         }))
                       }
                       className={cn(
-                        "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                        'rounded-full border px-3 py-1.5 text-sm transition-colors',
                         active
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted",
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:bg-muted',
                       )}
                     >
                       {t(`custom.dimensions.${dim}`)}
@@ -744,49 +676,39 @@ function CustomUnitsSection({
               </div>
             </div>
 
-            {draft.dimension !== "count" ? (
+            {draft.dimension !== 'count' ? (
               <>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="grid gap-1.5">
-                    <Label htmlFor={amountId}>
-                      {t("custom.fields.equalTo")}
-                    </Label>
+                    <Label htmlFor={amountId}>{t('custom.fields.equalTo')}</Label>
                     <Input
                       id={amountId}
                       value={draft.baseAmount}
-                      onChange={(e) =>
-                        setDraft((d) => ({ ...d, baseAmount: e.target.value }))
-                      }
+                      onChange={(e) => setDraft((d) => ({ ...d, baseAmount: e.target.value }))}
                       inputMode="decimal"
                       placeholder={example.amount}
                       aria-invalid={Boolean(fieldErrors.baseAmount)}
                     />
                     {fieldErrors.baseAmount?.[0] ? (
-                      <p className="text-sm text-destructive">
-                        {fieldErrors.baseAmount[0]}
-                      </p>
+                      <p className="text-sm text-destructive">{fieldErrors.baseAmount[0]}</p>
                     ) : null}
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>{t("custom.fields.ofUnit")}</Label>
+                    <Label>{t('custom.fields.ofUnit')}</Label>
                     <Select
                       value={draft.baseUnit || FOLLOW}
                       onValueChange={(v) =>
                         setDraft((d) => ({
                           ...d,
-                          baseUnit: v === FOLLOW ? "" : v,
+                          baseUnit: v === FOLLOW ? '' : v,
                         }))
                       }
                     >
-                      <SelectTrigger
-                        aria-invalid={Boolean(fieldErrors.baseUnit)}
-                      >
-                        <SelectValue placeholder={t("custom.chooseUnit")} />
+                      <SelectTrigger aria-invalid={Boolean(fieldErrors.baseUnit)}>
+                        <SelectValue placeholder={t('custom.chooseUnit')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={FOLLOW}>
-                          {t("custom.noneDisplayOnly")}
-                        </SelectItem>
+                        <SelectItem value={FOLLOW}>{t('custom.noneDisplayOnly')}</SelectItem>
                         {baseOptions.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {unitLabel(u.id)}
@@ -795,9 +717,7 @@ function CustomUnitsSection({
                       </SelectContent>
                     </Select>
                     {fieldErrors.baseUnit?.[0] ? (
-                      <p className="text-sm text-destructive">
-                        {fieldErrors.baseUnit[0]}
-                      </p>
+                      <p className="text-sm text-destructive">{fieldErrors.baseUnit[0]}</p>
                     ) : null}
                   </div>
                 </div>
@@ -811,25 +731,21 @@ function CustomUnitsSection({
                 <label className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
                   <span className="space-y-0.5">
                     <span className="block text-sm font-medium">
-                      {t("custom.displayAsTrue.label")}
+                      {t('custom.displayAsTrue.label')}
                     </span>
-                    <span className="block text-xs text-muted-foreground">
-                      {displayAsTrueHint}
-                    </span>
+                    <span className="block text-xs text-muted-foreground">{displayAsTrueHint}</span>
                   </span>
                   <Switch
                     checked={draft.displayAsTrue}
                     onCheckedChange={(checked) =>
                       setDraft((d) => ({ ...d, displayAsTrue: checked }))
                     }
-                    aria-label={t("custom.displayAsTrue.ariaLabel")}
+                    aria-label={t('custom.displayAsTrue.ariaLabel')}
                   />
                 </label>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {t("custom.countNote")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('custom.countNote')}</p>
             )}
 
             <DialogFooter>
@@ -839,14 +755,14 @@ function CustomUnitsSection({
                 onClick={() => setEditing(null)}
                 disabled={isPending}
               >
-                {t("custom.cancel")}
+                {t('custom.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
-                  ? t("custom.saving")
-                  : editing?.kind === "add"
-                    ? t("custom.addButton")
-                    : t("custom.saveChanges")}
+                  ? t('custom.saving')
+                  : editing?.kind === 'add'
+                    ? t('custom.addButton')
+                    : t('custom.saveChanges')}
               </Button>
             </DialogFooter>
           </form>

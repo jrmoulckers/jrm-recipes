@@ -4,10 +4,10 @@
  * build-from-plan button can render the same "heads up" message. Warnings are
  * advisory. The wording flags the conflict without implying the action failed.
  */
-import { ALLERGEN_LABELS } from "./allergens";
-import { DIETARY_TAG_LABELS } from "./substitutions";
-import { type PlanSafetyWarning } from "./dietary-match";
-import { formatList } from "./i18n-format";
+import { ALLERGEN_LABELS } from './allergens';
+import { DIETARY_TAG_LABELS } from './substitutions';
+import { type PlanSafetyWarning } from './dietary-match';
+import { formatList } from './i18n-format';
 
 /** Aggregate warnings by member (union across recipes), preserving first-seen order. */
 function byMember(warnings: readonly PlanSafetyWarning[]): PlanSafetyWarning[] {
@@ -15,9 +15,7 @@ function byMember(warnings: readonly PlanSafetyWarning[]): PlanSafetyWarning[] {
   for (const w of warnings) {
     const existing = map.get(w.memberId);
     if (existing) {
-      existing.allergens = [
-        ...new Set([...existing.allergens, ...w.allergens]),
-      ];
+      existing.allergens = [...new Set([...existing.allergens, ...w.allergens])];
       existing.diets = [...new Set([...existing.diets, ...w.diets])];
     } else {
       map.set(w.memberId, {

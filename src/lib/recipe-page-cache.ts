@@ -12,10 +12,10 @@
  * re-opened offline instead of falling back to the generic `/~offline` page.
  */
 
-import { isReservedRecipeSlug } from "./recipe-reserved-slugs";
+import { isReservedRecipeSlug } from './recipe-reserved-slugs';
 
 /** Dedicated cache for recipe page documents + RSC payloads. */
-export const RECIPE_PAGE_CACHE_NAME = "heirloom-recipes";
+export const RECIPE_PAGE_CACHE_NAME = 'heirloom-recipes';
 
 /**
  * Bound the cache so it can't grow without limit. Comfortably holds a good
@@ -45,18 +45,18 @@ export interface RecipePageRequest {
   /** Absolute request URL (`url.href` from the Serwist route matcher). */
   url: string;
   /** `RequestDestination`. `"document"` for top-level page navigations. */
-  destination: Request["destination"];
+  destination: Request['destination'];
   /** Whether the request carries Next.js's `RSC: 1` header (soft navigation). */
   rscHeader: boolean;
 }
 
 /** Recipe sub-routes that are never cached as recipe pages. */
-const EXCLUDED_SUB_ROUTES = new Set(["edit", "print", "keepsake"]);
+const EXCLUDED_SUB_ROUTES = new Set(['edit', 'print', 'keepsake']);
 
 /** Whether a same-origin pathname is a recipe detail or cook-mode page. */
 function isRecipePagePath(pathname: string): boolean {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments[0] !== "recipes") return false;
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] !== 'recipes') return false;
 
   // Canonical recipe URLs are `/recipes/<cook>/<slug>` with an optional `/cook`
   // sub-route (#666), and the pre-namespacing flat `/recipes/<slug>` shape still
@@ -69,7 +69,7 @@ function isRecipePagePath(pathname: string): boolean {
   // Only the detail document itself, or its Cook Mode sub-route. The editor and
   // the print/keepsake views are deliberately excluded.
   const tail = segments[segments.length - 1]!;
-  if (segments.length === 4) return tail === "cook";
+  if (segments.length === 4) return tail === 'cook';
   if (segments.length === 3) return !EXCLUDED_SUB_ROUTES.has(tail);
 
   return true;
@@ -98,8 +98,8 @@ export function isRecipePageRequest(request: RecipePageRequest): boolean {
     return false;
   }
 
-  const isRsc = request.rscHeader || url.searchParams.has("_rsc");
-  if (request.destination !== "document" && !isRsc) {
+  const isRsc = request.rscHeader || url.searchParams.has('_rsc');
+  if (request.destination !== 'document' && !isRsc) {
     return false;
   }
 

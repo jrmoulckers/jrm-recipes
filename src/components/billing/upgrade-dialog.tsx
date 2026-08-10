@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { Check, Sparkles } from "lucide-react";
+import * as React from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Check, Sparkles } from 'lucide-react';
 
-import { getPlan, type FeatureFlagKey } from "~/config/plans";
-import { Button } from "~/components/ui/button";
+import { getPlan, type FeatureFlagKey } from '~/config/plans';
+import { Button } from '~/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
+} from '~/components/ui/dialog';
 
 /**
  * Upgrade prompt dialog (issue #311).
@@ -29,7 +29,7 @@ import {
  * benefits all come from `src/config/plans.ts`. Nothing here hard-codes a price.
  */
 
-const FAMILY = getPlan("family");
+const FAMILY = getPlan('family');
 
 export type UpgradeDialogProps = {
   /** The gated feature, used to tailor the explanatory copy. */
@@ -52,12 +52,12 @@ export function UpgradeDialog({
   title,
   description,
 }: UpgradeDialogProps) {
-  const t = useTranslations("billing.upgrade");
-  const featureLabel = feature ? t(`features.${feature}`) : t("thisFeature");
-  const heading = title ?? t("title", { plan: FAMILY.name });
+  const t = useTranslations('billing.upgrade');
+  const featureLabel = feature ? t(`features.${feature}`) : t('thisFeature');
+  const heading = title ?? t('title', { plan: FAMILY.name });
   const body =
     description ??
-    t("description", {
+    t('description', {
       feature: featureLabel,
       plan: FAMILY.name,
       tagline: FAMILY.tagline,
@@ -77,20 +77,17 @@ export function UpgradeDialog({
         <ul className="flex flex-col gap-2 text-sm">
           {FAMILY.highlights.slice(0, 4).map((highlight) => (
             <li key={highlight} className="flex items-start gap-2">
-              <Check
-                className="mt-0.5 size-4 shrink-0 text-primary"
-                aria-hidden="true"
-              />
+              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
               <span>{highlight}</span>
             </li>
           ))}
         </ul>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost">{t("notNow")}</Button>
+            <Button variant="ghost">{t('notNow')}</Button>
           </DialogClose>
           <Button asChild>
-            <Link href="/pricing">{t("seePlans")}</Link>
+            <Link href="/pricing">{t('seePlans')}</Link>
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -110,9 +107,7 @@ export function UpgradeDialog({
  */
 export function useUpgradePrompt(feature?: FeatureFlagKey) {
   const [open, setOpen] = React.useState(false);
-  const dialog = (
-    <UpgradeDialog feature={feature} open={open} onOpenChange={setOpen} />
-  );
+  const dialog = <UpgradeDialog feature={feature} open={open} onOpenChange={setOpen} />;
   return {
     open,
     setOpen,

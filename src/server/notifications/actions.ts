@@ -1,12 +1,12 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
-import { authedAction } from "~/server/action";
-import { ok, type ActionResult } from "~/server/action-result";
-import { listNotifications, type NotificationPage } from "./queries";
-import { markAllNotificationsRead, markNotificationRead } from "./mutations";
+import { authedAction } from '~/server/action';
+import { ok, type ActionResult } from '~/server/action-result';
+import { listNotifications, type NotificationPage } from './queries';
+import { markAllNotificationsRead, markNotificationRead } from './mutations';
 
 const markReadInput = z.object({ notificationId: z.string().trim().min(1) });
 
@@ -15,7 +15,7 @@ export const markNotificationReadAction = authedAction({
   input: markReadInput,
   handler: async (data, user): Promise<ActionResult> => {
     await markNotificationRead(data.notificationId, user);
-    revalidatePath("/notifications");
+    revalidatePath('/notifications');
     return ok();
   },
 });
@@ -25,7 +25,7 @@ export const markAllNotificationsReadAction = authedAction({
   input: z.object({}).optional().default({}),
   handler: async (_data, user): Promise<ActionResult> => {
     await markAllNotificationsRead(user);
-    revalidatePath("/notifications");
+    revalidatePath('/notifications');
     return ok();
   },
 });

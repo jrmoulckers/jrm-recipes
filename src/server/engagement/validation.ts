@@ -1,26 +1,26 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { isCloudinaryUrl } from "~/lib/cloudinary-loader";
+import { isCloudinaryUrl } from '~/lib/cloudinary-loader';
 
 const idInput = z.string().trim().min(1);
 
 /** Max length for a comment/suggestion body. Imported by the UI counter (#144). */
 export const COMMENT_MAX_LENGTH = 4000;
 /** Over-limit message. Kept in sync with the field counter. */
-export const COMMENT_TOO_LONG_MESSAGE = "Keep comments under 4,000 characters";
+export const COMMENT_TOO_LONG_MESSAGE = 'Keep comments under 4,000 characters';
 
 export const commentInput = z.object({
   recipeId: idInput,
   recipeSlug: idInput,
   parentId: idInput.optional(),
-  kind: z.enum(["comment", "suggestion"]).default("comment"),
+  kind: z.enum(['comment', 'suggestion']).default('comment'),
   body: z
     .string()
     .trim()
-    .min(1, "Write a comment before posting")
+    .min(1, 'Write a comment before posting')
     .max(COMMENT_MAX_LENGTH, COMMENT_TOO_LONG_MESSAGE),
   // Anchored suggestions (#346): tie a suggestion to a specific ingredient/step.
-  anchorType: z.enum(["ingredient", "step"]).optional(),
+  anchorType: z.enum(['ingredient', 'step']).optional(),
   anchorId: idInput.optional(),
   anchorLabel: z.string().trim().max(200).optional(),
 });
@@ -58,11 +58,7 @@ export const reviewInput = z.object({
   recipeSlug: idInput,
   rating: z.number().int().min(1).max(5),
   title: z.string().trim().max(200).optional(),
-  body: z
-    .string()
-    .trim()
-    .max(4000, "Keep reviews under 4,000 characters")
-    .optional(),
+  body: z.string().trim().max(4000, 'Keep reviews under 4,000 characters').optional(),
   // A review photo must be an uploaded Cloudinary delivery URL (#341/#355):
   // require a real https URL on our image host so an arbitrary/off-host URL
   // can't be stored and rendered as a tracking beacon against viewers.
@@ -71,9 +67,9 @@ export const reviewInput = z.object({
     .trim()
     .url()
     .max(2048)
-    .refine(isCloudinaryUrl, "Upload a photo instead of pasting a link")
+    .refine(isCloudinaryUrl, 'Upload a photo instead of pasting a link')
     .optional()
-    .or(z.literal("").transform(() => undefined)),
+    .or(z.literal('').transform(() => undefined)),
 });
 
 export const deleteReviewInput = z.object({
@@ -82,9 +78,9 @@ export const deleteReviewInput = z.object({
 });
 
 export const reactionInput = z.object({
-  targetType: z.enum(["comment", "review", "cook_log"]),
+  targetType: z.enum(['comment', 'review', 'cook_log']),
   targetId: idInput,
-  emoji: z.enum(["love", "yum", "clap", "wow", "fire", "party"]),
+  emoji: z.enum(['love', 'yum', 'clap', 'wow', 'fire', 'party']),
   recipeSlug: idInput,
 });
 

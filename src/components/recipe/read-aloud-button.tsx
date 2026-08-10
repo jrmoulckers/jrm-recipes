@@ -1,21 +1,13 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import {
-  Pause,
-  Play,
-  RotateCcw,
-  SkipBack,
-  SkipForward,
-  Square,
-  Volume2,
-} from "lucide-react";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Pause, Play, RotateCcw, SkipBack, SkipForward, Square, Volume2 } from 'lucide-react';
 
-import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
-import { useReducedMotion } from "~/lib/use-reduced-motion";
-import { useReadAloud } from "~/lib/use-read-aloud";
+import { Button } from '~/components/ui/button';
+import { cn } from '~/lib/utils';
+import { useReducedMotion } from '~/lib/use-reduced-motion';
+import { useReadAloud } from '~/lib/use-read-aloud';
 
 /**
  * "Read this to me" control (issue #387).
@@ -37,43 +29,34 @@ export function ReadAloudButton({
   anchorPrefix: string;
   className?: string;
 }) {
-  const t = useTranslations("recipe");
+  const t = useTranslations('recipe');
   const reduced = useReducedMotion();
-  const {
-    supported,
-    status,
-    index,
-    play,
-    pause,
-    stop,
-    replay,
-    next,
-    previous,
-  } = useReadAloud(steps);
+  const { supported, status, index, play, pause, stop, replay, next, previous } =
+    useReadAloud(steps);
 
   // Outline the step currently being read and bring it into view.
   React.useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (typeof document === 'undefined') return;
     document
-      .querySelectorAll("[data-reading-step]")
-      .forEach((el) => el.removeAttribute("data-reading-step"));
+      .querySelectorAll('[data-reading-step]')
+      .forEach((el) => el.removeAttribute('data-reading-step'));
     if (index < 0) return;
     const el = document.getElementById(`${anchorPrefix}${index}`);
     if (!el) return;
-    el.setAttribute("data-reading-step", "");
+    el.setAttribute('data-reading-step', '');
     el.scrollIntoView({
-      block: "center",
-      behavior: reduced ? "auto" : "smooth",
+      block: 'center',
+      behavior: reduced ? 'auto' : 'smooth',
     });
   }, [index, anchorPrefix, reduced]);
 
   // Clear any lingering highlight if this control unmounts mid-read.
   React.useEffect(() => {
     return () => {
-      if (typeof document === "undefined") return;
+      if (typeof document === 'undefined') return;
       document
-        .querySelectorAll("[data-reading-step]")
-        .forEach((el) => el.removeAttribute("data-reading-step"));
+        .querySelectorAll('[data-reading-step]')
+        .forEach((el) => el.removeAttribute('data-reading-step'));
     };
   }, []);
 
@@ -82,38 +65,30 @@ export function ReadAloudButton({
   if (!supported) {
     return (
       <div
-        className={cn(
-          "text-sm text-muted-foreground",
-          "inline-flex items-center gap-2",
-          className,
-        )}
+        className={cn('text-sm text-muted-foreground', 'inline-flex items-center gap-2', className)}
       >
         <Volume2 className="size-4 shrink-0" aria-hidden="true" />
-        <span>{t("readAloud.unavailable")}</span>
+        <span>{t('readAloud.unavailable')}</span>
       </div>
     );
   }
 
-  const active = status !== "idle";
+  const active = status !== 'idle';
 
   return (
     <div
       role="group"
-      aria-label={t("readAloud.groupAria")}
-      className={cn("flex flex-wrap items-center gap-2", className)}
+      aria-label={t('readAloud.groupAria')}
+      className={cn('flex flex-wrap items-center gap-2', className)}
     >
-      {status === "playing" ? (
+      {status === 'playing' ? (
         <Button type="button" onClick={pause}>
-          <Pause aria-hidden="true" /> {t("readAloud.pause")}
+          <Pause aria-hidden="true" /> {t('readAloud.pause')}
         </Button>
       ) : (
-        <Button
-          type="button"
-          variant={active ? "default" : "outline"}
-          onClick={play}
-        >
+        <Button type="button" variant={active ? 'default' : 'outline'} onClick={play}>
           <Play aria-hidden="true" />
-          {status === "paused" ? t("readAloud.resume") : t("readAloud.start")}
+          {status === 'paused' ? t('readAloud.resume') : t('readAloud.start')}
         </Button>
       )}
 
@@ -125,7 +100,7 @@ export function ReadAloudButton({
             size="icon"
             onClick={previous}
             disabled={index <= 0}
-            aria-label={t("readAloud.previousStep")}
+            aria-label={t('readAloud.previousStep')}
           >
             <SkipBack aria-hidden="true" />
           </Button>
@@ -134,7 +109,7 @@ export function ReadAloudButton({
             variant="ghost"
             size="icon"
             onClick={replay}
-            aria-label={t("readAloud.reReadStep")}
+            aria-label={t('readAloud.reReadStep')}
           >
             <RotateCcw aria-hidden="true" />
           </Button>
@@ -144,7 +119,7 @@ export function ReadAloudButton({
             size="icon"
             onClick={next}
             disabled={index >= steps.length - 1}
-            aria-label={t("readAloud.nextStep")}
+            aria-label={t('readAloud.nextStep')}
           >
             <SkipForward aria-hidden="true" />
           </Button>
@@ -153,12 +128,12 @@ export function ReadAloudButton({
             variant="ghost"
             size="icon"
             onClick={stop}
-            aria-label={t("readAloud.stopReading")}
+            aria-label={t('readAloud.stopReading')}
           >
             <Square aria-hidden="true" />
           </Button>
           <span className="text-sm text-muted-foreground" aria-live="polite">
-            {t("readAloud.progress", {
+            {t('readAloud.progress', {
               current: index + 1,
               total: steps.length,
             })}

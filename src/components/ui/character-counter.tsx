@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 /**
  * Live character counter for length-limited fields (#144).
@@ -34,7 +34,7 @@ export function CharacterCounter({
   threshold?: number;
   className?: string;
 }) {
-  const t = useTranslations("characterCounter");
+  const t = useTranslations('characterCounter');
   const remaining = max - value;
   const visible = value >= max * threshold;
   const over = remaining < 0;
@@ -43,18 +43,18 @@ export function CharacterCounter({
     <p
       aria-live="polite"
       className={cn(
-        "text-xs tabular-nums transition-opacity",
-        over ? "text-destructive" : "text-muted-foreground",
-        visible ? "opacity-100" : "opacity-0",
+        'text-xs tabular-nums transition-opacity',
+        over ? 'text-destructive' : 'text-muted-foreground',
+        visible ? 'opacity-100' : 'opacity-0',
         className,
       )}
     >
       {/* Empty (but present) while hidden so the region can announce on change. */}
       {visible
         ? over
-          ? t("over", { count: -remaining, message: overMessage })
-          : t("remaining", { count: remaining })
-        : ""}
+          ? t('over', { count: -remaining, message: overMessage })
+          : t('remaining', { count: remaining })
+        : ''}
     </p>
   );
 }

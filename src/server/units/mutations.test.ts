@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PgDialect } from "drizzle-orm/pg-core";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 
-vi.mock("server-only", () => ({}));
+vi.mock('server-only', () => ({}));
 
 const { transactionMock } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: {
     transaction: transactionMock,
   },
@@ -19,34 +19,30 @@ import {
   shoppingListItems,
   type ShoppingListItem,
   type User,
-} from "~/server/db/schema";
-import {
-  createCustomUnit,
-  deleteCustomUnit,
-  updateCustomUnit,
-} from "./mutations";
+} from '~/server/db/schema';
+import { createCustomUnit, deleteCustomUnit, updateCustomUnit } from './mutations';
 
-const user = { id: "user_1" } as User;
+const user = { id: 'user_1' } as User;
 const oldUnit = {
-  id: "unit_1",
+  id: 'unit_1',
   userId: user.id,
-  name: "scoop",
-  abbreviation: "scp",
-  dimension: "volume" as const,
-  baseUnit: "cup",
+  name: 'scoop',
+  abbreviation: 'scp',
+  dimension: 'volume' as const,
+  baseUnit: 'cup',
   baseAmount: 0.5,
   displayAsTrue: false,
-  createdAt: new Date("2026-01-01"),
-  updatedAt: new Date("2026-01-01"),
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-01'),
 };
 const legacyItem: ShoppingListItem = {
-  id: "item_1",
-  listId: "list_1",
-  item: "Flour",
+  id: 'item_1',
+  listId: 'list_1',
+  item: 'Flour',
   foodId: null,
   quantity: 2,
   quantityMax: null,
-  unit: "scoop",
+  unit: 'scoop',
   requiredBaseQuantity: null,
   requiredBaseQuantityMax: null,
   requiredBaseUnit: null,
@@ -56,14 +52,14 @@ const legacyItem: ShoppingListItem = {
   packageAmount: null,
   packageUnit: null,
   packageLabel: null,
-  category: "Pantry",
+  category: 'Pantry',
   note: null,
   optional: false,
   checked: false,
   recipeId: null,
   position: 0,
-  createdAt: new Date("2026-01-01"),
-  updatedAt: new Date("2026-01-01"),
+  createdAt: new Date('2026-01-01'),
+  updatedAt: new Date('2026-01-01'),
 };
 
 function fakeTx(
@@ -90,7 +86,7 @@ function fakeTx(
       writeWheres.push(condition);
       return writeChain;
     }),
-    returning: vi.fn(async () => [{ id: "unit_1" }]),
+    returning: vi.fn(async () => [{ id: 'unit_1' }]),
   };
   const selectChain = {
     from: vi.fn(() => selectChain),
@@ -116,10 +112,10 @@ function fakeTx(
       },
       userUnitPreferences: {
         findFirst: vi.fn().mockResolvedValue({
-          defaultSystem: "metric",
-          volumeUnit: "scoop",
+          defaultSystem: 'metric',
+          volumeUnit: 'scoop',
           liquidVolumeUnit: null,
-          dryVolumeUnit: "scoop",
+          dryVolumeUnit: 'scoop',
           smallVolumeUnit: null,
           massUnit: null,
           temperatureUnit: null,
@@ -128,12 +124,10 @@ function fakeTx(
         }),
       },
       shoppingIngredientRoutes: {
-        findMany: vi
-          .fn()
-          .mockImplementation(async (config?: { where?: unknown }) => {
-            routeFindWheres.push(config?.where);
-            return routeRows;
-          }),
+        findMany: vi.fn().mockImplementation(async (config?: { where?: unknown }) => {
+          routeFindWheres.push(config?.where);
+          return routeRows;
+        }),
       },
     },
     select: vi.fn(() => selectChain),
@@ -164,8 +158,8 @@ function fakeTx(
 }
 
 function runWith(tx: ReturnType<typeof fakeTx>) {
-  transactionMock.mockImplementation(
-    async (callback: (value: typeof tx) => unknown) => callback(tx),
+  transactionMock.mockImplementation(async (callback: (value: typeof tx) => unknown) =>
+    callback(tx),
   );
 }
 
@@ -173,22 +167,22 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("custom-unit shopping quantity preservation", () => {
-  it("canonicalizes an unknown persisted unit when its definition is created", async () => {
+describe('custom-unit shopping quantity preservation', () => {
+  it('canonicalizes an unknown persisted unit when its definition is created', async () => {
     const unknownItem = {
       ...legacyItem,
       requiredBaseQuantity: 2,
-      requiredBaseUnit: "scoop",
+      requiredBaseUnit: 'scoop',
     };
     const tx = fakeTx([oldUnit], [unknownItem]);
     runWith(tx);
 
     await createCustomUnit(
       {
-        name: "scoop",
-        abbreviation: "scp",
-        dimension: "volume",
-        baseUnit: "cup",
+        name: 'scoop',
+        abbreviation: 'scp',
+        dimension: 'volume',
+        baseUnit: 'cup',
         baseAmount: 0.5,
         displayAsTrue: false,
       },
@@ -202,13 +196,13 @@ describe("custom-unit shopping quantity preservation", () => {
     ]);
     expect(tx.operations[1]?.values).toMatchObject({
       requiredBaseQuantity: 236.588,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
     const dialect = new PgDialect();
     expect(dialect.sqlToQuery(tx.joins[0] as never).params).toContain(user.id);
   });
 
-  it("rejects an update by a non-owner before touching shopping rows", async () => {
+  it('rejects an update by a non-owner before touching shopping rows', async () => {
     const tx = fakeTx([]);
     tx.query.customUnits.findFirst.mockResolvedValue(null);
     runWith(tx);
@@ -217,26 +211,26 @@ describe("custom-unit shopping quantity preservation", () => {
       updateCustomUnit(
         oldUnit.id,
         {
-          name: "scoop",
-          abbreviation: "scp",
-          dimension: "volume",
-          baseUnit: "cup",
+          name: 'scoop',
+          abbreviation: 'scp',
+          dimension: 'volume',
+          baseUnit: 'cup',
           baseAmount: 1,
           displayAsTrue: false,
         },
         user,
       ),
-    ).rejects.toThrow("NOT_FOUND");
+    ).rejects.toThrow('NOT_FOUND');
     expect(tx.select).not.toHaveBeenCalled();
     expect(tx.update).not.toHaveBeenCalled();
   });
 
-  it("canonicalizes with the old definition before an authorized update", async () => {
+  it('canonicalizes with the old definition before an authorized update', async () => {
     const updatedUnit = { ...oldUnit, baseAmount: 1 };
     const persistedCustomItem = {
       ...legacyItem,
       requiredBaseQuantity: 2,
-      requiredBaseUnit: "scoop",
+      requiredBaseUnit: 'scoop',
     };
     const tx = fakeTx([updatedUnit], [persistedCustomItem]);
     runWith(tx);
@@ -244,10 +238,10 @@ describe("custom-unit shopping quantity preservation", () => {
     await updateCustomUnit(
       oldUnit.id,
       {
-        name: "scoop",
-        abbreviation: "scp",
-        dimension: "volume",
-        baseUnit: "cup",
+        name: 'scoop',
+        abbreviation: 'scp',
+        dimension: 'volume',
+        baseUnit: 'cup',
         baseAmount: 1,
         displayAsTrue: false,
       },
@@ -262,31 +256,31 @@ describe("custom-unit shopping quantity preservation", () => {
     expect(tx.operations[0]?.values).toMatchObject({
       requiredBaseQuantity: 236.588,
       requiredBaseQuantityMax: null,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
     expect(tx.operations[2]?.values).toMatchObject({
       quantity: 1,
-      unit: "scoop",
+      unit: 'scoop',
       requiredBaseQuantity: 236.588,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
 
     const dialect = new PgDialect();
     expect(dialect.sqlToQuery(tx.joins[0] as never).params).toContain(user.id);
     expect(dialect.sqlToQuery(tx.selectWheres[0] as never).params).toEqual([
-      "scoop",
-      "scp",
-      "scoop",
-      "scp",
+      'scoop',
+      'scp',
+      'scoop',
+      'scp',
     ]);
   });
 
-  it("matches an old abbreviation before deletion and preserves its quantity", async () => {
+  it('matches an old abbreviation before deletion and preserves its quantity', async () => {
     const abbreviatedItem = {
       ...legacyItem,
-      unit: "scp",
+      unit: 'scp',
       requiredBaseQuantity: 3,
-      requiredBaseUnit: "SCP",
+      requiredBaseUnit: 'SCP',
     };
     const tx = fakeTx([], [abbreviatedItem]);
     runWith(tx);
@@ -299,56 +293,54 @@ describe("custom-unit shopping quantity preservation", () => {
     ]);
     expect(tx.operations[0]?.values).toMatchObject({
       requiredBaseQuantity: 354.882,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
     expect(tx.operations[2]?.values).toMatchObject({
       quantity: 354.882,
-      unit: "ml",
+      unit: 'ml',
       requiredBaseQuantity: 354.882,
-      requiredBaseUnit: "ml",
+      requiredBaseUnit: 'ml',
     });
   });
 
-  it("rejects deletion by a non-owner without touching foreign shopping rows", async () => {
+  it('rejects deletion by a non-owner without touching foreign shopping rows', async () => {
     const foreignTx = fakeTx([]);
     foreignTx.query.customUnits.findFirst.mockResolvedValue(null);
     runWith(foreignTx);
 
-    await expect(deleteCustomUnit(oldUnit.id, user)).rejects.toThrow(
-      "NOT_FOUND",
-    );
+    await expect(deleteCustomUnit(oldUnit.id, user)).rejects.toThrow('NOT_FOUND');
     expect(foreignTx.select).not.toHaveBeenCalled();
     expect(foreignTx.delete).not.toHaveBeenCalled();
   });
 
   it.each([
-    ["name", "bottle"],
-    ["abbreviation", "btl"],
+    ['name', 'bottle'],
+    ['abbreviation', 'btl'],
   ])(
-    "normalizes a previously unknown package route matched by %s on creation",
+    'normalizes a previously unknown package route matched by %s on creation',
     async (_match, packageUnit) => {
       const route = {
-        id: "route_1",
+        id: 'route_1',
         userId: user.id,
-        foodId: "juice",
-        normalizedItem: "juice",
-        displayItem: "Juice",
-        preferredListId: "list_1",
+        foodId: 'juice',
+        normalizedItem: 'juice',
+        displayItem: 'Juice',
+        preferredListId: 'list_1',
         packageAmount: 1,
         packageUnit,
-        packageLabel: "glass bottle",
+        packageLabel: 'glass bottle',
         packageRounding: true,
-        createdAt: new Date("2026-01-01"),
-        updatedAt: new Date("2026-01-01"),
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-01-01'),
       };
       const juice = {
         ...legacyItem,
-        item: "Juice",
-        foodId: "juice",
+        item: 'Juice',
+        foodId: 'juice',
         quantity: 1,
-        unit: "l",
+        unit: 'l',
         requiredBaseQuantity: 1000,
-        requiredBaseUnit: "ml",
+        requiredBaseUnit: 'ml',
       };
       const tx = fakeTx([oldUnit], [juice], [route]);
       tx.insert.mockImplementation((table: unknown) => {
@@ -362,7 +354,7 @@ describe("custom-unit shopping quantity preservation", () => {
                 {
                   ...oldUnit,
                   ...values,
-                  id: "unit_1",
+                  id: 'unit_1',
                   userId: user.id,
                 },
               ]),
@@ -374,10 +366,10 @@ describe("custom-unit shopping quantity preservation", () => {
 
       await createCustomUnit(
         {
-          name: "bottle",
-          abbreviation: "btl",
-          dimension: "volume",
-          baseUnit: "ml",
+          name: 'bottle',
+          abbreviation: 'btl',
+          dimension: 'volume',
+          baseUnit: 'ml',
           baseAmount: 750,
           displayAsTrue: true,
         },
@@ -386,115 +378,100 @@ describe("custom-unit shopping quantity preservation", () => {
 
       expect(route).toMatchObject({
         packageAmount: 750,
-        packageUnit: "ml",
-        packageLabel: "glass bottle",
+        packageUnit: 'ml',
+        packageLabel: 'glass bottle',
         packageRounding: true,
-        preferredListId: "list_1",
+        preferredListId: 'list_1',
       });
-      const itemWrites = tx.operations.filter(
-        (operation) => operation.table === shoppingListItems,
-      );
+      const itemWrites = tx.operations.filter((operation) => operation.table === shoppingListItems);
       expect(itemWrites.at(-1)?.values).toMatchObject({
         requiredBaseQuantity: 1000,
         packageCount: 2,
         purchaseQuantity: 1500,
-        purchaseUnit: "ml",
+        purchaseUnit: 'ml',
       });
       const dialect = new PgDialect();
       const routeLookup = tx.routeFindWheres[0];
-      expect(dialect.sqlToQuery(routeLookup as never).params).toContain(
-        user.id,
-      );
+      expect(dialect.sqlToQuery(routeLookup as never).params).toContain(user.id);
       const routeWrite = tx.operations.find(
         (operation) => operation.table === shoppingIngredientRoutes,
       );
       expect(routeWrite?.values).toEqual(
-        expect.objectContaining({ packageAmount: 750, packageUnit: "ml" }),
+        expect.objectContaining({ packageAmount: 750, packageUnit: 'ml' }),
       );
       expect(
-        tx.writeWheres.some((where) =>
-          dialect.sqlToQuery(where as never).params.includes(user.id),
-        ),
+        tx.writeWheres.some((where) => dialect.sqlToQuery(where as never).params.includes(user.id)),
       ).toBe(true);
     },
   );
 
   it.each([
-    ["rename/update", "update"],
-    ["delete", "delete"],
-  ])(
-    "keeps a canonical 750 ml package route stable through %s",
-    async (_label, operation) => {
-      const route = {
-        id: "route_1",
-        userId: user.id,
-        foodId: "juice",
-        normalizedItem: "juice",
-        displayItem: "Juice",
-        preferredListId: "list_1",
-        packageAmount: 1,
-        packageUnit: "btl",
-        packageLabel: "glass bottle",
-        packageRounding: true,
-        createdAt: new Date("2026-01-01"),
-        updatedAt: new Date("2026-01-01"),
-      };
-      const juice = {
-        ...legacyItem,
-        item: "Juice",
-        foodId: "juice",
-        quantity: 1,
-        unit: "l",
-        requiredBaseQuantity: 1000,
-        requiredBaseUnit: "ml",
-      };
-      const tx = fakeTx(
-        operation === "update" ? [{ ...oldUnit }] : [],
-        [juice],
-        [route],
-      );
-      tx.query.customUnits.findFirst.mockResolvedValue({
-        ...oldUnit,
-        name: "bottle",
-        abbreviation: "btl",
-        baseUnit: "ml",
-        baseAmount: 750,
-      });
-      runWith(tx);
+    ['rename/update', 'update'],
+    ['delete', 'delete'],
+  ])('keeps a canonical 750 ml package route stable through %s', async (_label, operation) => {
+    const route = {
+      id: 'route_1',
+      userId: user.id,
+      foodId: 'juice',
+      normalizedItem: 'juice',
+      displayItem: 'Juice',
+      preferredListId: 'list_1',
+      packageAmount: 1,
+      packageUnit: 'btl',
+      packageLabel: 'glass bottle',
+      packageRounding: true,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+    };
+    const juice = {
+      ...legacyItem,
+      item: 'Juice',
+      foodId: 'juice',
+      quantity: 1,
+      unit: 'l',
+      requiredBaseQuantity: 1000,
+      requiredBaseUnit: 'ml',
+    };
+    const tx = fakeTx(operation === 'update' ? [{ ...oldUnit }] : [], [juice], [route]);
+    tx.query.customUnits.findFirst.mockResolvedValue({
+      ...oldUnit,
+      name: 'bottle',
+      abbreviation: 'btl',
+      baseUnit: 'ml',
+      baseAmount: 750,
+    });
+    runWith(tx);
 
-      if (operation === "update") {
-        await updateCustomUnit(
-          oldUnit.id,
-          {
-            name: "flask",
-            abbreviation: "fl",
-            dimension: "volume",
-            baseUnit: "l",
-            baseAmount: 1,
-            displayAsTrue: false,
-          },
-          user,
-        );
-      } else {
-        await deleteCustomUnit(oldUnit.id, user);
-      }
-
-      expect(route).toMatchObject({
-        packageAmount: 750,
-        packageUnit: "ml",
-        packageLabel: "glass bottle",
-        packageRounding: true,
-        preferredListId: "list_1",
-      });
-      const itemWrites = tx.operations.filter(
-        (candidate) => candidate.table === shoppingListItems,
+    if (operation === 'update') {
+      await updateCustomUnit(
+        oldUnit.id,
+        {
+          name: 'flask',
+          abbreviation: 'fl',
+          dimension: 'volume',
+          baseUnit: 'l',
+          baseAmount: 1,
+          displayAsTrue: false,
+        },
+        user,
       );
-      expect(itemWrites.at(-1)?.values).toMatchObject({
-        requiredBaseQuantity: 1000,
-        packageCount: 2,
-        purchaseQuantity: 1500,
-        purchaseUnit: "ml",
-      });
-    },
-  );
+    } else {
+      await deleteCustomUnit(oldUnit.id, user);
+    }
+
+    expect(route).toMatchObject({
+      packageAmount: 750,
+      packageUnit: 'ml',
+      packageLabel: 'glass bottle',
+      packageRounding: true,
+      preferredListId: 'list_1',
+    });
+    const itemWrites = tx.operations.filter((candidate) => candidate.table === shoppingListItems);
+    expect(itemWrites.at(-1)?.values).toMatchObject({
+      requiredBaseQuantity: 1000,
+      packageCount: 2,
+      purchaseQuantity: 1500,
+      purchaseUnit: 'ml',
+    });
+  });
 });

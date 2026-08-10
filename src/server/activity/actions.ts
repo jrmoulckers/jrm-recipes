@@ -1,14 +1,10 @@
-"use server";
+'use server';
 
-import { getCurrentUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { getMembership } from "~/server/groups/queries";
-import { ok, type ActionResult } from "~/server/action-result";
-import {
-  getGroupActivity,
-  getPersonalActivity,
-  type ActivityPage,
-} from "./queries";
+import { getCurrentUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { getMembership } from '~/server/groups/queries';
+import { ok, type ActionResult } from '~/server/action-result';
+import { getGroupActivity, getPersonalActivity, type ActivityPage } from './queries';
 
 const EMPTY: ActivityPage = { events: [], nextCursor: null };
 

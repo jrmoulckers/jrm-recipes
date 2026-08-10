@@ -1,8 +1,8 @@
 # Family group roles & permissions
 
-How membership works inside a Heirloom family group: the four roles, exactly what
-each one can do, and the rules the server enforces on every change. This is the
-canonical reference for the group role model (issues #372 and #344).
+How membership works inside a Heirloom family group: the four roles, exactly what each one can
+do, and the rules the server enforces on every change. This is the canonical reference for the
+group role model (issues #372 and #344).
 
 The source of truth is the code, not this page:
 
@@ -17,9 +17,8 @@ The source of truth is the code, not this page:
 
 ## The four roles
 
-A group is a family or shared space that recipes belong to and members
-collaborate in. Every membership carries exactly one role, stored on
-`group_members.role` and defaulting to `member`.
+A group is a family or shared space that recipes belong to and members collaborate in. Every
+membership carries exactly one role, stored on `group_members.role` and defaulting to `member`.
 
 | Role       | Who they are                                                                                                |
 | ---------- | ----------------------------------------------------------------------------------------------------------- |
@@ -28,12 +27,12 @@ collaborate in. Every membership carries exactly one role, stored on
 | **Member** | A regular family member: reads the shared cookbook and adds recipes.                                        |
 | **Kid**    | A child account with the kid-safe experience. Rides free, never consumes a paid seat.                       |
 
-Roles are ordered `owner → admin → member → kid` (see `ROLE_ORDER` in
-`queries.ts`), which is only used for sorting the member list.
+Roles are ordered `owner → admin → member → kid` (see `ROLE_ORDER` in `queries.ts`), which is
+only used for sorting the member list.
 
-`owner` and `admin` are the **manager** roles (`MANAGER_ROLES` in
-`mutations.ts`). `canManage(role)` returns true for exactly these two and is what
-the UI uses to decide whether to show management surfaces.
+`owner` and `admin` are the **manager** roles (`MANAGER_ROLES` in `mutations.ts`).
+`canManage(role)` returns true for exactly these two and is what the UI uses to decide whether
+to show management surfaces.
 
 ## Capability matrix
 
@@ -56,71 +55,67 @@ Legend: ✅ allowed · ⚠️ allowed with limits (see notes) · ❌ not allowed
 
 ## The enforcement rules (what the server guarantees)
 
-Every mutation runs inside a transaction and re-checks the actor's role from the
-database. The UI never gets to decide permissions. Failures raise a typed
-`DomainError` (`FORBIDDEN`, `OWNER_CANT_LEAVE`, `SEAT_LIMIT_REACHED`, …).
+Every mutation runs inside a transaction and re-checks the actor's role from the database. The
+UI never gets to decide permissions. Failures raise a typed `DomainError` (`FORBIDDEN`,
+`OWNER_CANT_LEAVE`, `SEAT_LIMIT_REACHED`, …).
 
 - **Managing settings** (`updateGroup`) requires a manager (owner or admin).
 - **Inviting** (`createInvitation`, `createInviteLink`) requires a manager. But:
-  - Only an **owner** may invite/add someone as an **admin**. An admin who tries
-    to mint a fellow admin is rejected (`addMember` / `createInvitation`).
-  - **Shareable invite links** can only ever grant `member` or `kid`
-    (`inviteLinkRole` in `validation.ts`). A forwardable link that mints admins
-    is a footgun, so it's impossible.
-- **Changing a role** (`updateMemberRole`) is **owner-only**. You cannot set
-  someone to `owner` this way (use ownership transfer), and you cannot change an
-  existing owner's role.
+  - Only an **owner** may invite/add someone as an **admin**. An admin who tries to mint a
+    fellow admin is rejected (`addMember` / `createInvitation`).
+  - **Shareable invite links** can only ever grant `member` or `kid` (`inviteLinkRole` in
+    `validation.ts`). A forwardable link that mints admins is a footgun, so it's impossible.
+- **Changing a role** (`updateMemberRole`) is **owner-only**. You cannot set someone to `owner`
+  this way (use ownership transfer), and you cannot change an existing owner's role.
 - **Removing a member** (`removeMember`) requires a manager, with guards:
   - An owner can never be removed.
-  - An admin cannot remove **another** admin. Only an owner can. (An admin may
-    remove themselves.)
-- **Leaving** (`leaveGroup`) is open to any member, except the **last owner**: a
-  group must always have an owner, so the sole owner is blocked with
-  `OWNER_CANT_LEAVE` and must transfer ownership or delete the group first.
-- **Transferring ownership** (`transferOwnership`) is owner-only. It promotes the
-  target to `owner` and demotes the previous owner to `admin` in the same
-  transaction, so control is handed over atomically.
-- **Deleting the group** (`deleteGroup`) is owner-only. Deleting a group cascades
-  to its memberships, invitations, and invite links (see the `onDelete: "cascade"`
-  foreign keys in `groups.ts`).
+  - An admin cannot remove **another** admin. Only an owner can. (An admin may remove
+    themselves.)
+- **Leaving** (`leaveGroup`) is open to any member, except the **last owner**: a group must
+  always have an owner, so the sole owner is blocked with `OWNER_CANT_LEAVE` and must transfer
+  ownership or delete the group first.
+- **Transferring ownership** (`transferOwnership`) is owner-only. It promotes the target to
+  `owner` and demotes the previous owner to `admin` in the same transaction, so control is
+  handed over atomically.
+- **Deleting the group** (`deleteGroup`) is owner-only. Deleting a group cascades to its
+  memberships, invitations, and invite links (see the `onDelete: "cascade"` foreign keys in
+  `groups.ts`).
 
-Every one of these changes is written to the audit log (`recordAudit`) so group
-management is fully traceable.
+Every one of these changes is written to the audit log (`recordAudit`) so group management is
+fully traceable.
 
 ## Seats & the "kids ride free" rule
 
-Paid **Family** plans are seat-limited (see
-[`src/config/plans.ts`](../src/config/plans.ts) and
-[`../docs/pricing-and-packaging.md`](./pricing-and-packaging.md)). When adding or
-accepting a member, `assertSeatAvailable` counts seat-consuming members against
-the plan's limit and rejects with `SEAT_LIMIT_REACHED` once full.
+Paid **Family** plans are seat-limited (see [`src/config/plans.ts`](../src/config/plans.ts) and
+[`../docs/pricing-and-packaging.md`](./pricing-and-packaging.md)). When adding or accepting a
+member, `assertSeatAvailable` counts seat-consuming members against the plan's limit and rejects
+with `SEAT_LIMIT_REACHED` once full.
 
-`kid`-role members do **not** consume a seat (`SEAT_RULES.kidsCountAsSeats =
-false`), so a family is never nudged to leave a child off the account. Seat
-enforcement also fails **open**: if the seat limit can't be resolved (e.g. a
-billing hiccup), the add is allowed rather than blocking a family.
+`kid`-role members do **not** consume a seat (`SEAT_RULES.kidsCountAsSeats = false`), so a
+family is never nudged to leave a child off the account. Seat enforcement also fails **open**:
+if the seat limit can't be resolved (e.g. a billing hiccup), the add is allowed rather than
+blocking a family.
 
 ## Invitations vs. invite links
 
 There are two ways to bring someone in, both manager-only:
 
-- **Targeted invitation** (`group_invitations`): keyed to an email and/or handle,
-  carries the role the invitee will get on accept, an opaque accept-link `token`,
-  and an optional expiry. At most one _pending_ invite per (group, email).
-- **Shareable invite link** (`group_invite_links`): carries no invitee. Anyone
-  who opens the URL joins at the link's role. Capped to `member`/`kid`, and can be
-  time-limited (`expiresAt`), use-limited (`maxUses`), or revoked (`revokedAt`).
+- **Targeted invitation** (`group_invitations`): keyed to an email and/or handle, carries the
+  role the invitee will get on accept, an opaque accept-link `token`, and an optional expiry. At
+  most one _pending_ invite per (group, email).
+- **Shareable invite link** (`group_invite_links`): carries no invitee. Anyone who opens the URL
+  joins at the link's role. Capped to `member`/`kid`, and can be time-limited (`expiresAt`),
+  use-limited (`maxUses`), or revoked (`revokedAt`).
 
 ## Recipe visibility inside a group
 
-Role governs _management_. Recipe **visibility** governs what shows up in the
-cookbook (`canListInGroupCookbook` in `queries.ts`):
+Role governs _management_. Recipe **visibility** governs what shows up in the cookbook
+(`canListInGroupCookbook` in `queries.ts`):
 
 - Authors always see their own recipes.
-- Members see recipes shared to the group (`group`) plus `public` ones, but never
-  a fellow member's `private` (author-only) or `unlisted` (share-token-only)
-  recipes.
-- Non-members (the public cookbook view) only ever see recipes that are both
-  `public` and `published`.
+- Members see recipes shared to the group (`group`) plus `public` ones, but never a fellow
+  member's `private` (author-only) or `unlisted` (share-token-only) recipes.
+- Non-members (the public cookbook view) only ever see recipes that are both `public` and
+  `published`.
 
 _Related issues: #372, #344._

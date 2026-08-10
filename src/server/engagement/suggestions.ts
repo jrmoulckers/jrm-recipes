@@ -7,7 +7,7 @@
  * contributor. To the recipe's notes, which the owner can then refine.
  */
 
-const FALLBACK_CONTRIBUTOR = "a family cook";
+const FALLBACK_CONTRIBUTOR = 'a family cook';
 
 /** Normalise a contributor's display name, falling back when it's blank. */
 export function contributorLabel(
@@ -32,7 +32,7 @@ export function mergeSuggestionIntoNotes(
   contributor: string,
 ): string {
   const suggestion = suggestionBody.trim();
-  const base = existingNotes?.trim() ?? "";
+  const base = existingNotes?.trim() ?? '';
   if (!suggestion) return base;
 
   const who = contributor.trim() || FALLBACK_CONTRIBUTOR;

@@ -1,6 +1,6 @@
-import { index, pgTable, varchar } from "drizzle-orm/pg-core";
+import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
 
-import { pk, timestamps } from "./_shared";
+import { pk, timestamps } from './_shared';
 
 /**
  * Landing-page email / waitlist capture for cold-traffic conversion (issue
@@ -10,15 +10,15 @@ import { pk, timestamps } from "./_shared";
  * beyond the email itself.
  */
 export const waitlistSignups = pgTable(
-  "waitlist_signups",
+  'waitlist_signups',
   {
     id: pk(),
     // Unique so a repeat submission is a no-op dedupe, not a duplicate row.
     email: varchar({ length: 320 }).notNull().unique(),
-    source: varchar({ length: 60 }).notNull().default("landing"),
+    source: varchar({ length: 60 }).notNull().default('landing'),
     ...timestamps(),
   },
-  (t) => [index("waitlist_signups_created_idx").on(t.createdAt)],
+  (t) => [index('waitlist_signups_created_idx').on(t.createdAt)],
 );
 
 export type WaitlistSignup = typeof waitlistSignups.$inferSelect;

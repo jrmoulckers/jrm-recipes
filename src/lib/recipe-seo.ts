@@ -7,10 +7,10 @@
  * result in a `<script type="application/ld+json">` for publicly viewable
  * recipes only, so private/group/unlisted details are never exposed.
  */
-import { absoluteUrl } from "~/lib/utils";
-import { displayUnit, formatQuantity } from "~/lib/units";
-import { canonicalizeTag, type TagCategory } from "~/lib/tag-taxonomy";
-import { recipeDetailPath } from "~/lib/recipe-path";
+import { absoluteUrl } from '~/lib/utils';
+import { displayUnit, formatQuantity } from '~/lib/units';
+import { canonicalizeTag, type TagCategory } from '~/lib/tag-taxonomy';
+import { recipeDetailPath } from '~/lib/recipe-path';
 
 export type SeoIngredient = {
   quantity: number | null;
@@ -76,16 +76,14 @@ export type SeoRecipe = {
  * what schema.org's time fields expect. Returns `undefined` for empty/invalid
  * input so callers can simply omit the field.
  */
-export function minutesToIsoDuration(
-  minutes: number | null | undefined,
-): string | undefined {
+export function minutesToIsoDuration(minutes: number | null | undefined): string | undefined {
   if (minutes == null || !Number.isFinite(minutes) || minutes <= 0) {
     return undefined;
   }
   const whole = Math.round(minutes);
   const hours = Math.floor(whole / 60);
   const mins = whole % 60;
-  let out = "PT";
+  let out = 'PT';
   if (hours > 0) out += `${hours}H`;
   if (mins > 0) out += `${mins}M`;
   return out;
@@ -124,13 +122,12 @@ function ingredientToText(ing: SeoIngredient): string {
   const amount: string[] = [];
   const qty = formatQuantity(ing.quantity);
   if (qty) {
-    const qtyMax =
-      ing.quantityMax != null ? formatQuantity(ing.quantityMax) : "";
+    const qtyMax = ing.quantityMax != null ? formatQuantity(ing.quantityMax) : '';
     amount.push(qtyMax ? `${qty}\u2013${qtyMax}` : qty);
   }
   const unit = displayUnit(ing.unit, ing.quantity);
   if (unit) amount.push(unit);
-  const head = amount.join(" ").trim();
+  const head = amount.join(' ').trim();
   const base = head ? `${head} ${ing.item}` : ing.item;
   const line = base.trim();
   return ing.note ? `${line}, ${ing.note}` : line;
@@ -157,13 +154,12 @@ function recipeImages(recipe: SeoRecipe): string[] {
  */
 function buildVideo(recipe: SeoRecipe): Record<string, unknown> | undefined {
   const withVideo = recipe.steps.find(
-    (step) =>
-      typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0,
+    (step) => typeof step.videoUrl === 'string' && step.videoUrl.trim().length > 0,
   );
   if (!withVideo?.videoUrl) return undefined;
 
   const video: Record<string, unknown> = {
-    "@type": "VideoObject",
+    '@type': 'VideoObject',
     name: recipe.title,
     description: recipe.description ?? recipe.title,
     contentUrl: withVideo.videoUrl.trim(),
@@ -187,21 +183,19 @@ function trimNumber(value: number): string {
  * `undefined` when the recipe carries no nutrition data so the caller can omit
  * the field entirely (issue #307).
  */
-function buildNutrition(
-  recipe: SeoNutrition,
-): Record<string, unknown> | undefined {
+function buildNutrition(recipe: SeoNutrition): Record<string, unknown> | undefined {
   const nutrition: Record<string, unknown> = {};
 
   if (recipe.calories != null && Number.isFinite(recipe.calories)) {
     nutrition.calories = `${Math.round(recipe.calories)} calories`;
   }
   const grams: [keyof SeoNutrition, string][] = [
-    ["proteinGrams", "proteinContent"],
-    ["carbsGrams", "carbohydrateContent"],
-    ["fatGrams", "fatContent"],
-    ["saturatedFatGrams", "saturatedFatContent"],
-    ["sugarGrams", "sugarContent"],
-    ["fiberGrams", "fiberContent"],
+    ['proteinGrams', 'proteinContent'],
+    ['carbsGrams', 'carbohydrateContent'],
+    ['fatGrams', 'fatContent'],
+    ['saturatedFatGrams', 'saturatedFatContent'],
+    ['sugarGrams', 'sugarContent'],
+    ['fiberGrams', 'fiberContent'],
   ];
   for (const [field, prop] of grams) {
     const value = recipe[field];
@@ -215,8 +209,8 @@ function buildNutrition(
 
   if (Object.keys(nutrition).length === 0) return undefined;
   return {
-    "@type": "NutritionInformation",
-    servingSize: "1 serving",
+    '@type': 'NutritionInformation',
+    servingSize: '1 serving',
     ...nutrition,
   };
 }
@@ -243,8 +237,8 @@ function cleanTagNames(recipe: SeoRecipe): string[] {
  */
 export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   const jsonLd: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Recipe",
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
     name: recipe.title,
     url: absoluteUrl(
       recipeDetailPath({
@@ -259,22 +253,20 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   const images = recipeImages(recipe);
   if (images.length > 0) jsonLd.image = images;
   if (recipe.author?.name) {
-    jsonLd.author = { "@type": "Person", name: recipe.author.name };
+    jsonLd.author = { '@type': 'Person', name: recipe.author.name };
   }
   if (recipe.publishedAt) {
     jsonLd.datePublished = recipe.publishedAt.toISOString();
   }
 
-  const ingredients = recipe.ingredients
-    .map(ingredientToText)
-    .filter((line) => line.length > 0);
+  const ingredients = recipe.ingredients.map(ingredientToText).filter((line) => line.length > 0);
   if (ingredients.length > 0) jsonLd.recipeIngredient = ingredients;
 
   const instructions = recipe.steps
     .filter((step) => step.instruction.trim().length > 0)
     .map((step) => {
       const entry: Record<string, unknown> = {
-        "@type": "HowToStep",
+        '@type': 'HowToStep',
         text: step.instruction,
       };
       if (step.section) entry.name = step.section;
@@ -290,45 +282,36 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
   if (total) jsonLd.totalTime = total;
 
   if (recipe.servings != null) {
-    jsonLd.recipeYield = `${recipe.servings} ${recipe.servingsNoun ?? "servings"}`;
+    jsonLd.recipeYield = `${recipe.servings} ${recipe.servingsNoun ?? 'servings'}`;
   }
 
   const tagNames = cleanTagNames(recipe);
-  if (tagNames.length > 0) jsonLd.keywords = tagNames.join(", ");
+  if (tagNames.length > 0) jsonLd.keywords = tagNames.join(', ');
   const classified = recipe.tags
     .map((entry) =>
-      entry.tag
-        ? canonicalizeTag(entry.tag.name, entry.tag.category ?? "general")
-        : null,
+      entry.tag ? canonicalizeTag(entry.tag.name, entry.tag.category ?? 'general') : null,
     )
     .filter((tag): tag is NonNullable<typeof tag> => tag != null);
   const cuisines = [
     ...new Map(
-      classified
-        .filter((tag) => tag.category === "cuisine")
-        .map((tag) => [tag.slug, tag.name]),
+      classified.filter((tag) => tag.category === 'cuisine').map((tag) => [tag.slug, tag.name]),
     ).values(),
   ];
-  if (cuisines.length === 0 && recipe.cuisine?.trim())
-    cuisines.push(recipe.cuisine.trim());
-  if (cuisines.length > 0)
-    jsonLd.recipeCuisine = cuisines.length === 1 ? cuisines[0] : cuisines;
+  if (cuisines.length === 0 && recipe.cuisine?.trim()) cuisines.push(recipe.cuisine.trim());
+  if (cuisines.length > 0) jsonLd.recipeCuisine = cuisines.length === 1 ? cuisines[0] : cuisines;
 
   const categories = [
     ...new Map(
-      classified
-        .filter((tag) => tag.category === "meal")
-        .map((tag) => [tag.slug, tag.name]),
+      classified.filter((tag) => tag.category === 'meal').map((tag) => [tag.slug, tag.name]),
     ).values(),
   ];
   if (categories.length > 0)
-    jsonLd.recipeCategory =
-      categories.length === 1 ? categories[0] : categories;
+    jsonLd.recipeCategory = categories.length === 1 ? categories[0] : categories;
 
   const { average, count } = aggregateRatings(recipe.ratings, recipe.authorId);
   if (count > 0) {
     jsonLd.aggregateRating = {
-      "@type": "AggregateRating",
+      '@type': 'AggregateRating',
       ratingValue: average,
       ratingCount: count,
       reviewCount: count,
@@ -354,11 +337,11 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
  * JSON-LD `<script>` gated to public recipes, exactly like the Recipe JSON-LD.
  */
 export function buildBreadcrumbJsonLd(
-  recipe: Pick<SeoRecipe, "slug" | "title" | "author">,
+  recipe: Pick<SeoRecipe, 'slug' | 'title' | 'author'>,
 ): Record<string, unknown> {
   const crumbs: { name: string; path: string }[] = [
-    { name: "Home", path: "/" },
-    { name: "Recipes", path: "/recipes" },
+    { name: 'Home', path: '/' },
+    { name: 'Recipes', path: '/recipes' },
     {
       name: recipe.title,
       path: recipeDetailPath({
@@ -369,10 +352,10 @@ export function buildBreadcrumbJsonLd(
     },
   ];
   return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
     itemListElement: crumbs.map((crumb, index) => ({
-      "@type": "ListItem",
+      '@type': 'ListItem',
       position: index + 1,
       name: crumb.name,
       item: absoluteUrl(crumb.path),
@@ -385,5 +368,5 @@ export function buildBreadcrumbJsonLd(
  * so a value can never break out of the element (`</script>` injection).
  */
 export function serializeJsonLd(data: unknown): string {
-  return JSON.stringify(data).replace(/</g, "\\u003c");
+  return JSON.stringify(data).replace(/</g, '\\u003c');
 }

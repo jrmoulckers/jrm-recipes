@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import type { TypeOf, ZodTypeAny } from "zod";
+import type { TypeOf, ZodTypeAny } from 'zod';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import type { User } from "~/server/db/schema";
-import { type ActionResult, fail, fromZodError } from "~/server/action-result";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import type { User } from '~/server/db/schema';
+import { type ActionResult, fail, fromZodError } from '~/server/action-result';
 
 /**
  * Composable server-action wrapper (#169).
@@ -22,7 +22,7 @@ import { type ActionResult, fail, fromZodError } from "~/server/action-result";
 
 /** Centralized copy shown when an action needs a database but none is configured. */
 export const NEEDS_DATABASE =
-  "Recipes need a database. Set DATABASE_URL (see .env.example) to start saving.";
+  'Recipes need a database. Set DATABASE_URL (see .env.example) to start saving.';
 
 /**
  * Handler invoked once the guards pass. Receives the parsed `data`, the
@@ -45,11 +45,7 @@ type ActionHandler<In, T, Ctx extends unknown[]> = (
  * argument, and `Ctx`/`T` are inferred from the handler, so call sites and
  * results stay fully typed with no `any`.
  */
-export function authedAction<
-  S extends ZodTypeAny,
-  T,
-  Ctx extends unknown[] = [],
->(config: {
+export function authedAction<S extends ZodTypeAny, T, Ctx extends unknown[] = []>(config: {
   input: S;
   handler: ActionHandler<TypeOf<S>, T, Ctx>;
   /** Override the default DB-guard copy for this action. */

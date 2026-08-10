@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { Users } from "lucide-react";
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Users } from 'lucide-react';
 
-import { CloudinaryImage } from "~/components/ui/cloudinary-image";
-import { type MyGroup } from "~/server/groups/queries";
-import { RoleBadge } from "./role-badge";
+import { CloudinaryImage } from '~/components/ui/cloudinary-image';
+import { type MyGroup } from '~/server/groups/queries';
+import { RoleBadge } from './role-badge';
 
 function initials(name: string) {
   return name
@@ -12,12 +12,12 @@ function initials(name: string) {
     .filter(Boolean)
     .map((part) => part[0])
     .slice(0, 2)
-    .join("")
+    .join('')
     .toUpperCase();
 }
 
 export async function GroupCard({ group }: { group: MyGroup }) {
-  const t = await getTranslations("groups.card");
+  const t = await getTranslations('groups.card');
 
   return (
     <Link
@@ -47,16 +47,16 @@ export async function GroupCard({ group }: { group: MyGroup }) {
           {group.name}
         </h2>
         <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
-          {group.description ?? t("defaultDescription")}
+          {group.description ?? t('defaultDescription')}
         </p>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-4" aria-hidden="true" />
-          {t("memberCount", { count: group.memberCount })}
+          {t('memberCount', { count: group.memberCount })}
         </span>
-        <span>{t("recipeCount", { count: group.recipeCount })}</span>
+        <span>{t('recipeCount', { count: group.recipeCount })}</span>
       </div>
     </Link>
   );

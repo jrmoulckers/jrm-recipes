@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useLocale } from "next-intl";
+import { useLocale } from 'next-intl';
 
-import { formatRelativeTime } from "~/lib/dates";
+import { formatRelativeTime } from '~/lib/dates';
 
 /**
  * A locale-aware relative timestamp (e.g. "3 days ago" / "hace 3 días"),
@@ -13,20 +13,10 @@ import { formatRelativeTime } from "~/lib/dates";
  * `suppressHydrationWarning` absorbs the expected server/client text difference
  * as the wall clock advances between render and hydration.
  */
-export function RelativeTime({
-  value,
-  className,
-}: {
-  value: Date;
-  className?: string;
-}) {
+export function RelativeTime({ value, className }: { value: Date; className?: string }) {
   const locale = useLocale();
   return (
-    <time
-      dateTime={value.toISOString()}
-      suppressHydrationWarning
-      className={className}
-    >
+    <time dateTime={value.toISOString()} suppressHydrationWarning className={className}>
       {formatRelativeTime(value, locale)}
     </time>
   );

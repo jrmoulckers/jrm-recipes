@@ -1,9 +1,9 @@
-import type { MetadataRoute } from "next";
+import type { MetadataRoute } from 'next';
 
-import { absoluteUrl } from "~/lib/utils";
-import { recipeDetailPath } from "~/lib/recipe-path";
-import { listPublicRecipeSlugs } from "~/server/recipes/queries";
-import { listPublicCookHandles } from "~/server/users/queries";
+import { absoluteUrl } from '~/lib/utils';
+import { recipeDetailPath } from '~/lib/recipe-path';
+import { listPublicRecipeSlugs } from '~/server/recipes/queries';
+import { listPublicCookHandles } from '~/server/users/queries';
 
 /**
  * Dynamic sitemap (issue #323): the static entry points plus every public,
@@ -14,19 +14,16 @@ import { listPublicCookHandles } from "~/server/users/queries";
  * Private/group/unlisted/draft recipes are never listed.
  * `listPublicRecipeSlugs` filters to `public` + `published` only.
  */
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
-    { url: absoluteUrl("/discover"), changeFrequency: "daily", priority: 0.9 },
-    { url: absoluteUrl("/recipes"), changeFrequency: "daily", priority: 0.8 },
+    { url: absoluteUrl('/'), changeFrequency: 'weekly', priority: 1 },
+    { url: absoluteUrl('/discover'), changeFrequency: 'daily', priority: 0.9 },
+    { url: absoluteUrl('/recipes'), changeFrequency: 'daily', priority: 0.8 },
   ];
 
-  const [recipes, handles] = await Promise.all([
-    listPublicRecipeSlugs(),
-    listPublicCookHandles(),
-  ]);
+  const [recipes, handles] = await Promise.all([listPublicRecipeSlugs(), listPublicCookHandles()]);
 
   // Owner paths only. A recipe with co-creators also resolves under each of
   // their namespaces (#668), but those are mirrors: they render with
@@ -41,13 +38,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ),
     lastModified: recipe.updatedAt,
-    changeFrequency: "weekly",
+    changeFrequency: 'weekly',
     priority: 0.7,
   }));
 
   const cookRoutes: MetadataRoute.Sitemap = handles.map((handle) => ({
     url: absoluteUrl(`/cooks/${handle}`),
-    changeFrequency: "weekly",
+    changeFrequency: 'weekly',
     priority: 0.5,
   }));
 

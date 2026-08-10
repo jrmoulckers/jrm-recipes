@@ -1,18 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import {
-  type ConsentStatus,
-  ANALYTICS_CONSENT_COOKIE,
-  serializeConsent,
-} from "~/config/consent";
-import { getClientBackend } from "~/lib/analytics/backend";
-import {
-  configureConsent,
-  detectPrivacySignal,
-  isCaptureAllowed,
-} from "~/lib/analytics/consent";
+import { type ConsentStatus, ANALYTICS_CONSENT_COOKIE, serializeConsent } from '~/config/consent';
+import { getClientBackend } from '~/lib/analytics/backend';
+import { configureConsent, detectPrivacySignal, isCaptureAllowed } from '~/lib/analytics/consent';
 
 type ConsentContextValue = {
   /** The user's explicit choice (or "unset"). */
@@ -52,7 +44,7 @@ function persist(status: ConsentStatus) {
  */
 export function ConsentProvider({
   children,
-  initialStatus = "unset",
+  initialStatus = 'unset',
   requireConsent = false,
 }: {
   children: React.ReactNode;
@@ -66,8 +58,8 @@ export function ConsentProvider({
   React.useEffect(() => {
     setPrivacySignal(
       detectPrivacySignal(
-        typeof navigator === "undefined" ? undefined : navigator,
-        typeof window === "undefined"
+        typeof navigator === 'undefined' ? undefined : navigator,
+        typeof window === 'undefined'
           ? undefined
           : {
               doNotTrack: (window as { doNotTrack?: string | null }).doNotTrack,
@@ -85,13 +77,13 @@ export function ConsentProvider({
   }, [requireConsent, status, privacySignal]);
 
   const grant = React.useCallback(() => {
-    persist("granted");
-    setStatus("granted");
+    persist('granted');
+    setStatus('granted');
   }, []);
 
   const deny = React.useCallback(() => {
-    persist("denied");
-    setStatus("denied");
+    persist('denied');
+    setStatus('denied');
     // Stop the SDK immediately and clear any identity from this device.
     const backend = getClientBackend();
     backend.optOut();
@@ -99,9 +91,7 @@ export function ConsentProvider({
   }, []);
 
   const captureAllowed =
-    !privacySignal &&
-    status !== "denied" &&
-    (!requireConsent || status === "granted");
+    !privacySignal && status !== 'denied' && (!requireConsent || status === 'granted');
 
   const value = React.useMemo<ConsentContextValue>(
     () => ({
@@ -109,20 +99,18 @@ export function ConsentProvider({
       requireConsent,
       privacySignal,
       captureAllowed,
-      needsChoice: requireConsent && status === "unset" && !privacySignal,
+      needsChoice: requireConsent && status === 'unset' && !privacySignal,
       grant,
       deny,
     }),
     [status, requireConsent, privacySignal, captureAllowed, grant, deny],
   );
 
-  return (
-    <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>
-  );
+  return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
 }
 
 export function useConsent() {
   const ctx = React.useContext(ConsentContext);
-  if (!ctx) throw new Error("useConsent must be used within <ConsentProvider>");
+  if (!ctx) throw new Error('useConsent must be used within <ConsentProvider>');
   return ctx;
 }

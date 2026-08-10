@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { asc, eq } from "drizzle-orm";
+import { asc, eq } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { customUnits, userUnitPreferences } from "~/server/db/schema";
+import { db } from '~/server/db';
+import { customUnits, userUnitPreferences } from '~/server/db/schema';
 
 /**
  * A user's saved unit preferences, or null when they've never set any (callers

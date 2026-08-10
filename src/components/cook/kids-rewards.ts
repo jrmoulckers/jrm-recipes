@@ -20,37 +20,24 @@ export type KidBadge = {
   earnedAt: number;
 };
 
-const BADGES_KEY = "heirloom-kids-badges";
-const COUNT_KEY = "heirloom-kids-cook-count";
+const BADGES_KEY = 'heirloom-kids-badges';
+const COUNT_KEY = 'heirloom-kids-cook-count';
 
-const STICKER_EMOJI = [
-  "🍪",
-  "🧁",
-  "🥞",
-  "🍕",
-  "🌮",
-  "🥗",
-  "🍜",
-  "🍰",
-  "🥧",
-  "🍞",
-  "🍳",
-  "🥪",
-];
+const STICKER_EMOJI = ['🍪', '🧁', '🥞', '🍕', '🌮', '🥗', '🍜', '🍰', '🥧', '🍞', '🍳', '🥪'];
 
 const MILESTONES: ReadonlyArray<{
   count: number;
   name: string;
   emoji: string;
 }> = [
-  { count: 3, name: "3 Recipes Cooked!", emoji: "🥉" },
-  { count: 5, name: "5 Recipes Cooked!", emoji: "🥈" },
-  { count: 10, name: "10 Recipes Cooked!", emoji: "🥇" },
+  { count: 3, name: '3 Recipes Cooked!', emoji: '🥉' },
+  { count: 5, name: '5 Recipes Cooked!', emoji: '🥈' },
+  { count: 10, name: '10 Recipes Cooked!', emoji: '🥇' },
 ];
 
 function safeLocal(): Storage | null {
   try {
-    if (typeof window === "undefined" || !window.localStorage) return null;
+    if (typeof window === 'undefined' || !window.localStorage) return null;
     return window.localStorage;
   } catch {
     return null;
@@ -58,13 +45,13 @@ function safeLocal(): Storage | null {
 }
 
 function isBadge(value: unknown): value is KidBadge {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== 'object') return false;
   const b = value as Record<string, unknown>;
   return (
-    typeof b.id === "string" &&
-    typeof b.name === "string" &&
-    typeof b.emoji === "string" &&
-    typeof b.earnedAt === "number"
+    typeof b.id === 'string' &&
+    typeof b.name === 'string' &&
+    typeof b.emoji === 'string' &&
+    typeof b.earnedAt === 'number'
   );
 }
 
@@ -99,7 +86,7 @@ function stickerEmoji(slug: string): string {
   for (let i = 0; i < slug.length; i += 1) {
     hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
   }
-  return STICKER_EMOJI[hash % STICKER_EMOJI.length] ?? "🍽️";
+  return STICKER_EMOJI[hash % STICKER_EMOJI.length] ?? '🍽️';
 }
 
 /**
@@ -121,9 +108,9 @@ export function awardForCompletion(
   const candidates: KidBadge[] = [];
   if (priorCount === 0) {
     candidates.push({
-      id: "first-cook",
-      name: "First Cook!",
-      emoji: "⭐",
+      id: 'first-cook',
+      name: 'First Cook!',
+      emoji: '⭐',
       earnedAt: now,
     });
   }

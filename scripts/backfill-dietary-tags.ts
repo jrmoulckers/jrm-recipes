@@ -14,9 +14,9 @@
  * Connection: prefers a direct (non-pooled) URL for the DML, mirroring
  * `scripts/migrate.mjs` and `scripts/backfill-tag-taxonomy.ts`.
  */
-import postgres from "postgres";
+import postgres from 'postgres';
 
-import { deriveDietaryTags } from "../src/lib/dietary-derive";
+import { deriveDietaryTags } from '../src/lib/dietary-derive';
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ??
@@ -24,7 +24,7 @@ const url =
   process.env.DATABASE_URL;
 
 if (!url) {
-  console.log("[backfill-dietary] No database URL set, nothing to do.");
+  console.log('[backfill-dietary] No database URL set, nothing to do.');
   process.exit(0);
 }
 
@@ -71,16 +71,14 @@ async function main() {
     updated++;
   }
 
-  console.log(
-    `[backfill-dietary] Scanned ${recipes.length} recipe(s); updated ${updated}.`,
-  );
+  console.log(`[backfill-dietary] Scanned ${recipes.length} recipe(s); updated ${updated}.`);
 }
 
 main()
   .then(() => sql.end())
   .then(() => process.exit(0))
   .catch(async (error) => {
-    console.error("[backfill-dietary] Failed:", error);
+    console.error('[backfill-dietary] Failed:', error);
     await sql.end({ timeout: 5 }).catch(() => {});
     process.exit(1);
   });

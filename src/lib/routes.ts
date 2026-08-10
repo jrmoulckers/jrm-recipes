@@ -1,4 +1,4 @@
-import type { Route } from "next";
+import type { Route } from 'next';
 
 /**
  * Build an href for the *current* pathname with an optional query string.

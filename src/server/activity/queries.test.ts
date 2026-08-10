@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { findManyMocks, getHiddenAuthorIdsMock } = vi.hoisted(() => ({
   findManyMocks: {
@@ -11,7 +11,7 @@ const { findManyMocks, getHiddenAuthorIdsMock } = vi.hoisted(() => ({
   getHiddenAuthorIdsMock: vi.fn(),
 }));
 
-vi.mock("~/server/db", () => ({
+vi.mock('~/server/db', () => ({
   db: {
     query: {
       recipes: { findMany: findManyMocks.recipes },
@@ -23,13 +23,13 @@ vi.mock("~/server/db", () => ({
   },
   isDbConfigured: () => true,
 }));
-vi.mock("~/server/moderation/blocks", () => ({
+vi.mock('~/server/moderation/blocks', () => ({
   getHiddenAuthorIds: getHiddenAuthorIdsMock,
 }));
 
-import { getGroupActivity, getPersonalActivity } from "./queries";
+import { getGroupActivity, getPersonalActivity } from './queries';
 
-const actor = { id: "u1", name: "Grandma", handle: null, avatarUrl: null };
+const actor = { id: 'u1', name: 'Grandma', handle: null, avatarUrl: null };
 
 function at(iso: string) {
   return new Date(iso);
@@ -45,137 +45,133 @@ beforeEach(() => {
   findManyMocks.groupMembers.mockResolvedValue([]);
 });
 
-describe("getGroupActivity membership gate (#349)", () => {
-  it("returns an empty page for a non-member (no role) without querying", async () => {
-    const page = await getGroupActivity("group_1", { id: "u1", role: null });
+describe('getGroupActivity membership gate (#349)', () => {
+  it('returns an empty page for a non-member (no role) without querying', async () => {
+    const page = await getGroupActivity('group_1', { id: 'u1', role: null });
     expect(page).toEqual({ events: [], nextCursor: null });
     expect(findManyMocks.recipes).not.toHaveBeenCalled();
   });
 });
 
-describe("getGroupActivity aggregation (#349)", () => {
-  it("unions sources newest-first with the right kinds", async () => {
+describe('getGroupActivity aggregation (#349)', () => {
+  it('unions sources newest-first with the right kinds', async () => {
     findManyMocks.recipes.mockResolvedValue([
       {
-        id: "r1",
-        slug: "ragu",
-        title: "Sunday Ragù",
+        id: 'r1',
+        slug: 'ragu',
+        title: 'Sunday Ragù',
         coverImageUrl: null,
-        createdAt: at("2026-01-01T10:00:00Z"),
+        createdAt: at('2026-01-01T10:00:00Z'),
         author: actor,
       },
     ]);
     findManyMocks.cookLogEntries.mockResolvedValue([
       {
-        id: "c1",
-        note: "So good",
+        id: 'c1',
+        note: 'So good',
         photoUrl: null,
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-03T10:00:00Z"),
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-03T10:00:00Z'),
         user: actor,
       },
     ]);
     findManyMocks.reviews.mockResolvedValue([
       {
-        id: "rev1",
-        title: "Perfect",
+        id: 'rev1',
+        title: 'Perfect',
         body: null,
         rating: 5,
-        recipeId: "r1",
-        userId: "u2",
-        createdAt: at("2026-01-02T10:00:00Z"),
-        user: { id: "u2", name: "Dad", handle: null, avatarUrl: null },
+        recipeId: 'r1',
+        userId: 'u2',
+        createdAt: at('2026-01-02T10:00:00Z'),
+        user: { id: 'u2', name: 'Dad', handle: null, avatarUrl: null },
       },
     ]);
 
-    const page = await getGroupActivity("group_1", {
-      id: "u1",
-      role: "member",
+    const page = await getGroupActivity('group_1', {
+      id: 'u1',
+      role: 'member',
     });
 
     expect(page.events.map((e) => e.kind)).toEqual([
-      "cook_shared", // Jan 3
-      "review", // Jan 2
-      "recipe_added", // Jan 1
+      'cook_shared', // Jan 3
+      'review', // Jan 2
+      'recipe_added', // Jan 1
     ]);
     expect(page.nextCursor).toBeNull();
   });
 
-  it("paginates: caps at the limit and returns a cursor when more remain", async () => {
+  it('paginates: caps at the limit and returns a cursor when more remain', async () => {
     findManyMocks.recipes.mockResolvedValue([
       {
-        id: "r1",
-        slug: "a",
-        title: "A",
+        id: 'r1',
+        slug: 'a',
+        title: 'A',
         coverImageUrl: null,
-        createdAt: at("2026-01-01T00:00:00Z"),
+        createdAt: at('2026-01-01T00:00:00Z'),
         author: actor,
       },
     ]);
     findManyMocks.reviews.mockResolvedValue([
       {
-        id: "rev1",
-        title: "b",
+        id: 'rev1',
+        title: 'b',
         body: null,
         rating: 4,
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-02T00:00:00Z"),
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-02T00:00:00Z'),
         user: actor,
       },
     ]);
     findManyMocks.comments.mockResolvedValue([
       {
-        id: "cm1",
-        kind: "comment",
-        body: "c",
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-03T00:00:00Z"),
+        id: 'cm1',
+        kind: 'comment',
+        body: 'c',
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-03T00:00:00Z'),
         user: actor,
       },
     ]);
 
-    const page = await getGroupActivity(
-      "group_1",
-      { id: "u1", role: "member" },
-      { limit: 2 },
-    );
+    const page = await getGroupActivity('group_1', { id: 'u1', role: 'member' }, { limit: 2 });
 
     expect(page.events).toHaveLength(2);
-    expect(page.events[0]!.kind).toBe("comment"); // Jan 3 newest
-    expect(page.nextCursor).toBe(at("2026-01-02T00:00:00Z").toISOString());
+    expect(page.events[0]!.kind).toBe('comment'); // Jan 3 newest
+    expect(page.nextCursor).toBe(at('2026-01-02T00:00:00Z').toISOString());
   });
 
-  it("filters out events authored by blocked users", async () => {
-    getHiddenAuthorIdsMock.mockResolvedValue(new Set(["blocked"]));
+  it('filters out events authored by blocked users', async () => {
+    getHiddenAuthorIdsMock.mockResolvedValue(new Set(['blocked']));
     findManyMocks.cookLogEntries.mockResolvedValue([
       {
-        id: "c1",
-        note: "hidden",
+        id: 'c1',
+        note: 'hidden',
         photoUrl: null,
-        recipeId: "r1",
-        userId: "blocked",
-        createdAt: at("2026-01-03T10:00:00Z"),
-        user: { id: "blocked", name: "Nope", handle: null, avatarUrl: null },
+        recipeId: 'r1',
+        userId: 'blocked',
+        createdAt: at('2026-01-03T10:00:00Z'),
+        user: { id: 'blocked', name: 'Nope', handle: null, avatarUrl: null },
       },
     ]);
 
-    const page = await getGroupActivity("group_1", {
-      id: "u1",
-      role: "member",
+    const page = await getGroupActivity('group_1', {
+      id: 'u1',
+      role: 'member',
     });
     expect(page.events).toHaveLength(0);
   });
 });
 
-describe("getPersonalActivity (cross-group home feed)", () => {
-  it("returns an empty page for a user in no groups, without querying activity", async () => {
+describe('getPersonalActivity (cross-group home feed)', () => {
+  it('returns an empty page for a user in no groups, without querying activity', async () => {
     // No memberships resolved for the viewer.
     findManyMocks.groupMembers.mockResolvedValueOnce([]);
 
-    const page = await getPersonalActivity("u1");
+    const page = await getPersonalActivity('u1');
 
     expect(page).toEqual({ events: [], nextCursor: null });
     // Isolation: with no memberships we never touch group activity tables, so
@@ -184,143 +180,137 @@ describe("getPersonalActivity (cross-group home feed)", () => {
     expect(findManyMocks.cookLogEntries).not.toHaveBeenCalled();
   });
 
-  it("aggregates activity across every group the viewer belongs to, newest-first", async () => {
+  it('aggregates activity across every group the viewer belongs to, newest-first', async () => {
     // Viewer belongs to two groups.
-    findManyMocks.groupMembers.mockResolvedValueOnce([
-      { groupId: "g1" },
-      { groupId: "g2" },
-    ]);
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: 'g1' }, { groupId: 'g2' }]);
     // Recipes live in both groups. Unioned by the aggregation.
     findManyMocks.recipes.mockResolvedValue([
       {
-        id: "r1",
-        slug: "ragu",
-        title: "Sunday Ragù",
+        id: 'r1',
+        slug: 'ragu',
+        title: 'Sunday Ragù',
         coverImageUrl: null,
-        createdAt: at("2026-01-01T10:00:00Z"),
+        createdAt: at('2026-01-01T10:00:00Z'),
         author: actor,
       },
       {
-        id: "r2",
-        slug: "pie",
-        title: "Apple Pie",
+        id: 'r2',
+        slug: 'pie',
+        title: 'Apple Pie',
         coverImageUrl: null,
-        createdAt: at("2026-01-04T10:00:00Z"),
+        createdAt: at('2026-01-04T10:00:00Z'),
         author: actor,
       },
     ]);
     findManyMocks.cookLogEntries.mockResolvedValue([
       {
-        id: "c1",
-        note: "So good",
+        id: 'c1',
+        note: 'So good',
         photoUrl: null,
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-03T10:00:00Z"),
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-03T10:00:00Z'),
         user: actor,
       },
     ]);
     // Second groupMembers.findMany call (member_joined events) resolves empty.
     findManyMocks.groupMembers.mockResolvedValueOnce([]);
 
-    const page = await getPersonalActivity("u1");
+    const page = await getPersonalActivity('u1');
 
     expect(page.events.map((e) => e.id)).toEqual([
-      "recipe:r2", // Jan 4
-      "cook:c1", // Jan 3
-      "recipe:r1", // Jan 1
+      'recipe:r2', // Jan 4
+      'cook:c1', // Jan 3
+      'recipe:r1', // Jan 1
     ]);
     // A single aggregated recipe query, not one per group (no leakage loop).
     expect(findManyMocks.recipes).toHaveBeenCalledTimes(1);
     expect(page.nextCursor).toBeNull();
   });
 
-  it("filters out events authored by blocked users", async () => {
-    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: "g1" }]);
-    getHiddenAuthorIdsMock.mockResolvedValue(new Set(["blocked"]));
+  it('filters out events authored by blocked users', async () => {
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: 'g1' }]);
+    getHiddenAuthorIdsMock.mockResolvedValue(new Set(['blocked']));
     findManyMocks.cookLogEntries.mockResolvedValue([
       {
-        id: "c1",
-        note: "hidden",
+        id: 'c1',
+        note: 'hidden',
         photoUrl: null,
-        recipeId: "r1",
-        userId: "blocked",
-        createdAt: at("2026-01-03T10:00:00Z"),
-        user: { id: "blocked", name: "Nope", handle: null, avatarUrl: null },
+        recipeId: 'r1',
+        userId: 'blocked',
+        createdAt: at('2026-01-03T10:00:00Z'),
+        user: { id: 'blocked', name: 'Nope', handle: null, avatarUrl: null },
       },
     ]);
     findManyMocks.groupMembers.mockResolvedValueOnce([]);
 
-    const page = await getPersonalActivity("u1");
+    const page = await getPersonalActivity('u1');
     expect(page.events).toHaveLength(0);
   });
 
-  it("paginates: caps at the limit and returns a cursor when more remain", async () => {
-    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: "g1" }]);
+  it('paginates: caps at the limit and returns a cursor when more remain', async () => {
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: 'g1' }]);
     findManyMocks.recipes.mockResolvedValue([
       {
-        id: "r1",
-        slug: "a",
-        title: "A",
+        id: 'r1',
+        slug: 'a',
+        title: 'A',
         coverImageUrl: null,
-        createdAt: at("2026-01-01T00:00:00Z"),
+        createdAt: at('2026-01-01T00:00:00Z'),
         author: actor,
       },
     ]);
     findManyMocks.reviews.mockResolvedValue([
       {
-        id: "rev1",
-        title: "b",
+        id: 'rev1',
+        title: 'b',
         body: null,
         rating: 4,
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-02T00:00:00Z"),
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-02T00:00:00Z'),
         user: actor,
       },
     ]);
     findManyMocks.comments.mockResolvedValue([
       {
-        id: "cm1",
-        kind: "comment",
-        body: "c",
-        recipeId: "r1",
-        userId: "u1",
-        createdAt: at("2026-01-03T00:00:00Z"),
+        id: 'cm1',
+        kind: 'comment',
+        body: 'c',
+        recipeId: 'r1',
+        userId: 'u1',
+        createdAt: at('2026-01-03T00:00:00Z'),
         user: actor,
       },
     ]);
     findManyMocks.groupMembers.mockResolvedValueOnce([]);
 
-    const page = await getPersonalActivity("u1", { limit: 2 });
+    const page = await getPersonalActivity('u1', { limit: 2 });
 
     expect(page.events).toHaveLength(2);
-    expect(page.events[0]!.kind).toBe("comment"); // Jan 3 newest
-    expect(page.nextCursor).toBe(at("2026-01-02T00:00:00Z").toISOString());
+    expect(page.events[0]!.kind).toBe('comment'); // Jan 3 newest
+    expect(page.nextCursor).toBe(at('2026-01-02T00:00:00Z').toISOString());
   });
 
-  it("dedupes group ids resolved from memberships", async () => {
+  it('dedupes group ids resolved from memberships', async () => {
     // A viewer could have duplicate membership rows across queries. The scope
     // should collapse to a single group so activity isn't double-counted.
-    findManyMocks.groupMembers.mockResolvedValueOnce([
-      { groupId: "g1" },
-      { groupId: "g1" },
-    ]);
+    findManyMocks.groupMembers.mockResolvedValueOnce([{ groupId: 'g1' }, { groupId: 'g1' }]);
     findManyMocks.recipes.mockResolvedValue([
       {
-        id: "r1",
-        slug: "ragu",
-        title: "Sunday Ragù",
+        id: 'r1',
+        slug: 'ragu',
+        title: 'Sunday Ragù',
         coverImageUrl: null,
-        createdAt: at("2026-01-01T10:00:00Z"),
+        createdAt: at('2026-01-01T10:00:00Z'),
         author: actor,
       },
     ]);
     findManyMocks.groupMembers.mockResolvedValueOnce([]);
 
-    const page = await getPersonalActivity("u1");
+    const page = await getPersonalActivity('u1');
 
-    expect(page.events.map((e) => e.id)).toEqual(["recipe:r1"]);
+    expect(page.events.map((e) => e.id)).toEqual(['recipe:r1']);
     expect(findManyMocks.recipes).toHaveBeenCalledTimes(1);
   });
 });

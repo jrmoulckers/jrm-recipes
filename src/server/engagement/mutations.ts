@@ -1,11 +1,11 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
-import { db } from "~/server/db";
-import { DomainError } from "~/server/errors";
-import { assertKidAllowed } from "~/server/groups/kid-safe";
-import { canViewRecipe } from "~/server/recipes/queries";
+import { db } from '~/server/db';
+import { DomainError } from '~/server/errors';
+import { assertKidAllowed } from '~/server/groups/kid-safe';
+import { canViewRecipe } from '~/server/recipes/queries';
 import {
   comments,
   groupMembers,
@@ -17,14 +17,14 @@ import {
   type Comment,
   type Rating,
   type User,
-} from "~/server/db/schema";
-import type { CommentInput, RatingInput } from "./validation";
-import { contributorLabel, mergeSuggestionIntoNotes } from "./suggestions";
-import { loadMentionCandidates } from "./mention-targets";
-import { notify } from "~/server/notifications/notify";
-import { resolveMentions } from "~/lib/mentions";
-import { journal } from "~/server/recipes/mutations";
-import { recipeToInput } from "~/server/recipes/timeline";
+} from '~/server/db/schema';
+import type { CommentInput, RatingInput } from './validation';
+import { contributorLabel, mergeSuggestionIntoNotes } from './suggestions';
+import { loadMentionCandidates } from './mention-targets';
+import { notify } from '~/server/notifications/notify';
+import { resolveMentions } from '~/lib/mentions';
+import { journal } from '~/server/recipes/mutations';
+import { recipeToInput } from '~/server/recipes/timeline';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -48,10 +48,7 @@ async function collectDescendantIds(tx: Tx, parentIds: string[]) {
   return descendants;
 }
 
-export async function createComment(
-  input: CommentInput,
-  user: User,
-): Promise<Comment> {
+export async function createComment(input: CommentInput, user: User): Promise<Comment> {
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
@@ -63,20 +60,16 @@ export async function createComment(
         groupId: true,
       },
     });
-    if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user)))
-      throw new DomainError("FORBIDDEN");
+    if (!recipe) throw new DomainError('NOT_FOUND');
+    if (!(await canViewRecipe(recipe, user))) throw new DomainError('FORBIDDEN');
 
     let parentAuthorId: string | null = null;
     if (input.parentId) {
       const parent = await tx.query.comments.findFirst({
-        where: and(
-          eq(comments.id, input.parentId),
-          eq(comments.recipeId, input.recipeId),
-        ),
+        where: and(eq(comments.id, input.parentId), eq(comments.recipeId, input.recipeId)),
         columns: { id: true, userId: true },
       });
-      if (!parent) throw new DomainError("NOT_FOUND");
+      if (!parent) throw new DomainError('NOT_FOUND');
       parentAuthorId = parent.userId;
     }
 
@@ -84,12 +77,10 @@ export async function createComment(
     // suggestions. A plain comment is always whole-recipe. The label is a
     // snapshot so the reference still reads sensibly if the target is later
     // edited or removed.
-    const isSuggestion = input.kind === "suggestion";
-    const anchorType =
-      isSuggestion && input.anchorType ? input.anchorType : null;
+    const isSuggestion = input.kind === 'suggestion';
+    const anchorType = isSuggestion && input.anchorType ? input.anchorType : null;
     const anchorId = anchorType && input.anchorId ? input.anchorId : null;
-    const anchorLabel =
-      anchorType && input.anchorLabel ? input.anchorLabel : null;
+    const anchorLabel = anchorType && input.anchorLabel ? input.anchorLabel : null;
 
     const [created] = await tx
       .insert(comments)
@@ -107,17 +98,14 @@ export async function createComment(
 
     // Social notifications (#340/#348), written in the same tx so they land
     // atomically with the comment. notify() no-ops on self-actions.
-    const mentioned = resolveMentions(
-      input.body,
-      await loadMentionCandidates(tx, input.recipeId),
-    );
+    const mentioned = resolveMentions(input.body, await loadMentionCandidates(tx, input.recipeId));
     const mentionedIds = new Set<string>();
     for (const target of mentioned) {
       mentionedIds.add(target.id);
       await notify(tx, {
         recipientId: target.id,
         actorId: user.id,
-        type: "mention",
+        type: 'mention',
         recipeId: input.recipeId,
         entityId: created!.id,
         context: recipe.title,
@@ -129,7 +117,7 @@ export async function createComment(
       await notify(tx, {
         recipientId: parentAuthorId,
         actorId: user.id,
-        type: "comment_reply",
+        type: 'comment_reply',
         recipeId: input.recipeId,
         entityId: created!.id,
         context: recipe.title,
@@ -140,10 +128,7 @@ export async function createComment(
   });
 }
 
-export async function deleteComment(
-  commentId: string,
-  user: User,
-): Promise<void> {
+export async function deleteComment(commentId: string, user: User): Promise<void> {
   await db.transaction(async (tx) => {
     const comment = await tx.query.comments.findFirst({
       where: eq(comments.id, commentId),
@@ -159,12 +144,12 @@ export async function deleteComment(
       },
     });
 
-    if (!comment) throw new DomainError("NOT_FOUND");
+    if (!comment) throw new DomainError('NOT_FOUND');
     if (!(await canViewRecipe(comment.recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
     if (comment.userId !== user.id && comment.recipe.authorId !== user.id) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
     // Kid-safe (issue #345): the kid role can comment but never delete, not even
     // their own, so a child can't quietly erase family conversation.
@@ -176,7 +161,7 @@ export async function deleteComment(
         ),
         columns: { role: true },
       });
-      if (membership) assertKidAllowed(membership.role, "delete_comment");
+      if (membership) assertKidAllowed(membership.role, 'delete_comment');
     }
 
     const descendants = await collectDescendantIds(tx, [commentId]);
@@ -207,18 +192,17 @@ export async function resolveComment(
       },
     });
 
-    if (!comment) throw new DomainError("NOT_FOUND");
+    if (!comment) throw new DomainError('NOT_FOUND');
     if (!(await canViewRecipe(comment.recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
-    if (comment.kind !== "suggestion" || comment.recipe.authorId !== user.id) {
-      throw new DomainError("FORBIDDEN");
+    if (comment.kind !== 'suggestion' || comment.recipe.authorId !== user.id) {
+      throw new DomainError('FORBIDDEN');
     }
 
     // A suggestion that's already been folded into the recipe can't be reopened
     // (resolved=false). Doing so would leave an applied-but-unresolved entry.
-    if (!resolved && comment.appliedAt)
-      throw new DomainError("ALREADY_APPLIED");
+    if (!resolved && comment.appliedAt) throw new DomainError('ALREADY_APPLIED');
 
     await tx
       .update(comments)
@@ -245,10 +229,7 @@ export async function applySuggestion(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const suggestion = await tx.query.comments.findFirst({
-      where: and(
-        eq(comments.id, input.suggestionId),
-        eq(comments.recipeId, input.recipeId),
-      ),
+      where: and(eq(comments.id, input.suggestionId), eq(comments.recipeId, input.recipeId)),
       columns: {
         id: true,
         kind: true,
@@ -270,17 +251,14 @@ export async function applySuggestion(
       },
     });
 
-    if (!suggestion) throw new DomainError("NOT_FOUND");
+    if (!suggestion) throw new DomainError('NOT_FOUND');
     if (!(await canViewRecipe(suggestion.recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
-    if (
-      suggestion.kind !== "suggestion" ||
-      suggestion.recipe.authorId !== user.id
-    ) {
-      throw new DomainError("FORBIDDEN");
+    if (suggestion.kind !== 'suggestion' || suggestion.recipe.authorId !== user.id) {
+      throw new DomainError('FORBIDDEN');
     }
-    if (suggestion.appliedAt) throw new DomainError("ALREADY_APPLIED");
+    if (suggestion.appliedAt) throw new DomainError('ALREADY_APPLIED');
 
     const contributor = contributorLabel(suggestion.user);
     const mergedNotes = mergeSuggestionIntoNotes(
@@ -313,13 +291,13 @@ export async function applySuggestion(
         tags: { with: { tag: true } },
       },
     });
-    if (!full) throw new DomainError("NOT_FOUND");
+    if (!full) throw new DomainError('NOT_FOUND');
     await journal(
       tx,
       suggestion.recipe.id,
       user.id,
       { ...recipeToInput(full), notes: mergedNotes },
-      "Suggestion applied",
+      'Suggestion applied',
     );
 
     // Attribute the contributor (not the applying owner) so the timeline credits
@@ -327,16 +305,13 @@ export async function applySuggestion(
     await tx.insert(recipeEvents).values({
       recipeId: suggestion.recipe.id,
       actorId: suggestion.userId,
-      type: "suggestion_applied",
+      type: 'suggestion_applied',
       note: suggestion.body,
     });
   });
 }
 
-export async function setRating(
-  input: RatingInput,
-  user: User,
-): Promise<Rating | undefined> {
+export async function setRating(input: RatingInput, user: User): Promise<Rating | undefined> {
   return db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, input.recipeId),
@@ -347,21 +322,17 @@ export async function setRating(
         groupId: true,
       },
     });
-    if (!recipe) throw new DomainError("NOT_FOUND");
-    if (!(await canViewRecipe(recipe, user)))
-      throw new DomainError("FORBIDDEN");
+    if (!recipe) throw new DomainError('NOT_FOUND');
+    if (!(await canViewRecipe(recipe, user))) throw new DomainError('FORBIDDEN');
     // Integrity: authors can't rate their own recipe. A self-rating would
     // inflate both the average and the JSON-LD aggregateRating.
-    if (recipe.authorId === user.id) throw new DomainError("SELF_RATING");
+    if (recipe.authorId === user.id) throw new DomainError('SELF_RATING');
 
     // Read the caller's prior rating (if any) so we can move the denormalized
     // aggregates by the exact delta (issue #154): a brand-new vote bumps count
     // and sum. Changing an existing vote only shifts the sum.
     const previous = await tx.query.ratings.findFirst({
-      where: and(
-        eq(ratings.recipeId, input.recipeId),
-        eq(ratings.userId, user.id),
-      ),
+      where: and(eq(ratings.recipeId, input.recipeId), eq(ratings.userId, user.id)),
       columns: { value: true },
     });
 
@@ -394,10 +365,7 @@ export async function setRating(
   });
 }
 
-export async function removeRating(
-  recipeId: string,
-  user: User,
-): Promise<void> {
+export async function removeRating(recipeId: string, user: User): Promise<void> {
   await db.transaction(async (tx) => {
     const recipe = await tx.query.recipes.findFirst({
       where: eq(recipes.id, recipeId),
@@ -409,7 +377,7 @@ export async function removeRating(
       },
     });
     if (recipe && !(await canViewRecipe(recipe, user))) {
-      throw new DomainError("FORBIDDEN");
+      throw new DomainError('FORBIDDEN');
     }
 
     // Find the caller's rating first so removing it can decrement the aggregates

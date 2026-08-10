@@ -30,12 +30,12 @@
  *   node scripts/i18n-english-leak.mjs           # exits 1 on a suspected leak
  *   node scripts/i18n-english-leak.mjs --json
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { flatten, readLocaleConfig } from "./i18n-validate.mjs";
-import { repoRoot } from "./lib/walk-source.mjs";
+import { flatten, readLocaleConfig } from './i18n-validate.mjs';
+import { repoRoot } from './lib/walk-source.mjs';
 
 /**
  * Function words that are unambiguously English and are not also words in the
@@ -43,57 +43,57 @@ import { repoRoot } from "./lib/walk-source.mjs";
  * because those are what a half-finished translation leaves behind.
  */
 const ENGLISH_WORDS = [
-  "the",
-  "and",
-  "with",
-  "your",
-  "you",
-  "this",
-  "that",
-  "from",
-  "have",
-  "when",
-  "what",
-  "will",
-  "each",
-  "into",
-  "them",
-  "they",
-  "these",
-  "there",
-  "again",
-  "back",
-  "about",
-  "before",
-  "after",
-  "every",
-  "some",
-  "only",
-  "still",
-  "which",
-  "would",
-  "could",
-  "should",
-  "been",
-  "were",
-  "does",
-  "add",
-  "added",
-  "save",
-  "saved",
-  "cook",
-  "cooking",
-  "step",
-  "steps",
-  "recipe",
-  "ingredients",
-  "done",
-  "close",
-  "open",
-  "next",
+  'the',
+  'and',
+  'with',
+  'your',
+  'you',
+  'this',
+  'that',
+  'from',
+  'have',
+  'when',
+  'what',
+  'will',
+  'each',
+  'into',
+  'them',
+  'they',
+  'these',
+  'there',
+  'again',
+  'back',
+  'about',
+  'before',
+  'after',
+  'every',
+  'some',
+  'only',
+  'still',
+  'which',
+  'would',
+  'could',
+  'should',
+  'been',
+  'were',
+  'does',
+  'add',
+  'added',
+  'save',
+  'saved',
+  'cook',
+  'cooking',
+  'step',
+  'steps',
+  'recipe',
+  'ingredients',
+  'done',
+  'close',
+  'open',
+  'next',
 ];
 
-const ENGLISH_RE = new RegExp(`\\b(${ENGLISH_WORDS.join("|")})\\b`, "i");
+const ENGLISH_RE = new RegExp(`\\b(${ENGLISH_WORDS.join('|')})\\b`, 'i');
 
 /** Example addresses, bare domains, and URLs are identifiers, not prose. */
 const IDENTIFIER_LIKE = /^\S+@\S+\.\S+$|^(?:https?:\/\/)?\S+\.[a-z]{2,}$/;
@@ -104,9 +104,7 @@ const IDENTIFIER_LIKE = /^\S+@\S+\.\S+$|^(?:https?:\/\/)?\S+\.[a-z]{2,}$/;
  * between tags is preserved, so real English inside a tag is still caught.
  */
 export function stripNonProse(value) {
-  return value
-    .replace(/\{[^{}]*\}/g, " ")
-    .replace(/<\/?[a-zA-Z][\w-]*\s*\/?>/g, " ");
+  return value.replace(/\{[^{}]*\}/g, ' ').replace(/<\/?[a-zA-Z][\w-]*\s*\/?>/g, ' ');
 }
 
 /**
@@ -119,7 +117,7 @@ export function stripNonProse(value) {
 export function findEnglishLeaks(sourceFlat, targetFlat) {
   const leaks = [];
   for (const [key, value] of Object.entries(targetFlat)) {
-    if (typeof value !== "string") continue;
+    if (typeof value !== 'string') continue;
     if (IDENTIFIER_LIKE.test(value.trim())) continue;
 
     const prose = stripNonProse(value);
@@ -127,10 +125,10 @@ export function findEnglishLeaks(sourceFlat, targetFlat) {
     if (!match) continue;
 
     const source = sourceFlat[key];
-    if (typeof source !== "string") continue;
+    if (typeof source !== 'string') continue;
 
     const word = match[1].toLowerCase();
-    if (!new RegExp(`\\b${word}\\b`, "i").test(stripNonProse(source))) continue;
+    if (!new RegExp(`\\b${word}\\b`, 'i').test(stripNonProse(source))) continue;
 
     leaks.push({ key, word, source, value });
   }
@@ -139,19 +137,14 @@ export function findEnglishLeaks(sourceFlat, targetFlat) {
 
 function loadFlat(locale) {
   return flatten(
-    JSON.parse(
-      readFileSync(
-        resolve(repoRoot, "src", "messages", `${locale}.json`),
-        "utf8",
-      ),
-    ),
+    JSON.parse(readFileSync(resolve(repoRoot, 'src', 'messages', `${locale}.json`), 'utf8')),
   );
 }
 
 function main() {
-  const asJson = process.argv.includes("--json");
+  const asJson = process.argv.includes('--json');
   const { locales, defaultLocale } = readLocaleConfig(
-    readFileSync(resolve(repoRoot, "src", "config", "i18n.ts"), "utf8"),
+    readFileSync(resolve(repoRoot, 'src', 'config', 'i18n.ts'), 'utf8'),
   );
 
   const sourceFlat = loadFlat(defaultLocale);
@@ -196,12 +189,9 @@ function main() {
     );
     process.exit(1);
   }
-  console.log("\ni18n: no English leakage detected.");
+  console.log('\ni18n: no English leakage detected.');
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

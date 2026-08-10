@@ -1,4 +1,4 @@
-import { type Nutrition } from "~/lib/nutrition";
+import { type Nutrition } from '~/lib/nutrition';
 
 export type CookIngredient = {
   id: string;

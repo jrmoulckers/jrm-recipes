@@ -25,37 +25,37 @@ module.exports = {
   ci: {
     collect: {
       numberOfRuns: 3,
-      startServerCommand: "pnpm start",
+      startServerCommand: 'pnpm start',
       // Next.js prints "✓ Ready in <n>ms" once `next start` is serving.
-      startServerReadyPattern: "Ready in",
+      startServerReadyPattern: 'Ready in',
       startServerReadyTimeout: 60000,
       url: [
-        "http://localhost:3000/",
-        "http://localhost:3000/recipes",
+        'http://localhost:3000/',
+        'http://localhost:3000/recipes',
         // The canonical namespaced URL (#666). `home-cook` is the seed's dev
         // user slug; the flat legacy path would only redirect here, and the
         // extra hop would distort the lab metrics.
-        "http://localhost:3000/recipes/home-cook/nonnas-sunday-gravy",
+        'http://localhost:3000/recipes/home-cook/nonnas-sunday-gravy',
       ],
       settings: {
-        preset: "desktop",
+        preset: 'desktop',
         // Required for Chrome on CI runners/containers.
-        chromeFlags: "--no-sandbox --disable-gpu",
+        chromeFlags: '--no-sandbox --disable-gpu',
       },
     },
     assert: {
       assertions: {
-        "categories:performance": ["warn", { minScore: 0.8 }],
-        "largest-contentful-paint": ["warn", { maxNumericValue: 2500 }],
-        "cumulative-layout-shift": ["warn", { maxNumericValue: 0.1 }],
-        "total-blocking-time": ["warn", { maxNumericValue: 200 }],
+        'categories:performance': ['warn', { minScore: 0.8 }],
+        'largest-contentful-paint': ['warn', { maxNumericValue: 2500 }],
+        'cumulative-layout-shift': ['warn', { maxNumericValue: 0.1 }],
+        'total-blocking-time': ['warn', { maxNumericValue: 200 }],
       },
     },
     upload: {
       // Write HTML/JSON reports locally. CI publishes them as build artifacts.
-      target: "filesystem",
-      outputDir: ".lighthouseci",
-      reportFilenamePattern: "%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%",
+      target: 'filesystem',
+      outputDir: '.lighthouseci',
+      reportFilenamePattern: '%%PATHNAME%%-%%DATETIME%%.report.%%EXTENSION%%',
     },
   },
 };

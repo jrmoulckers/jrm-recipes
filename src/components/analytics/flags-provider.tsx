@@ -1,17 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 
-import { track } from "~/lib/analytics";
-import {
-  getClientBackend,
-  onClientBackendChange,
-} from "~/lib/analytics/backend";
-import {
-  type FlagMap,
-  type FlagValue,
-  resolveFlag,
-} from "~/lib/analytics/flags";
+import { track } from '~/lib/analytics';
+import { getClientBackend, onClientBackendChange } from '~/lib/analytics/backend';
+import { type FlagMap, type FlagValue, resolveFlag } from '~/lib/analytics/flags';
 
 const FlagsContext = React.createContext<FlagMap>({});
 
@@ -54,9 +47,7 @@ export function FlagsProvider({
     return onClientBackendChange(refresh);
   }, []);
 
-  return (
-    <FlagsContext.Provider value={flags}>{children}</FlagsContext.Provider>
-  );
+  return <FlagsContext.Provider value={flags}>{children}</FlagsContext.Provider>;
 }
 
 /**
@@ -64,10 +55,7 @@ export function FlagsProvider({
  * for experiment analysis (deduped per key/value, and consent-gated by `track`).
  * Returns `fallback` (control) when the flag is unset or analytics is off.
  */
-export function useFeatureFlag(
-  key: string,
-  fallback: FlagValue = false,
-): FlagValue {
+export function useFeatureFlag(key: string, fallback: FlagValue = false): FlagValue {
   const flags = React.useContext(FlagsContext);
   const value = resolveFlag(flags, key, fallback);
 
@@ -75,7 +63,7 @@ export function useFeatureFlag(
   React.useEffect(() => {
     if (lastExposed.current === value) return;
     lastExposed.current = value;
-    track("$feature_flag_called", {
+    track('$feature_flag_called', {
       $feature_flag: key,
       $feature_flag_response: value,
     });

@@ -13,10 +13,7 @@ export interface RateLimiter {
   hit(now?: number): boolean;
 }
 
-export function createRateLimiter(
-  limit: number,
-  windowMs: number,
-): RateLimiter {
+export function createRateLimiter(limit: number, windowMs: number): RateLimiter {
   const hits: number[] = [];
   return {
     hit(now = Date.now()) {

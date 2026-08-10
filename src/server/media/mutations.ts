@@ -1,13 +1,13 @@
-import "server-only";
+import 'server-only';
 
-import { and, eq, isNull } from "drizzle-orm";
-import { v2 as cloudinary } from "cloudinary";
+import { and, eq, isNull } from 'drizzle-orm';
+import { v2 as cloudinary } from 'cloudinary';
 
-import { env } from "~/env";
-import { db, isDbConfigured } from "~/server/db";
-import { decrementUsage, incrementUsage } from "~/server/billing/usage";
-import { mediaAssets, type MediaAsset, type User } from "~/server/db/schema";
-import { type RecordUploadInput } from "./validation";
+import { env } from '~/env';
+import { db, isDbConfigured } from '~/server/db';
+import { decrementUsage, incrementUsage } from '~/server/billing/usage';
+import { mediaAssets, type MediaAsset, type User } from '~/server/db/schema';
+import { type RecordUploadInput } from './validation';
 
 /**
  * Write side of the media library (issue #657, epic #655).
@@ -78,7 +78,7 @@ export async function recordUpload(
     .insert(mediaAssets)
     .values({
       userId: user.id,
-      provider: input.publicId ? "cloudinary" : "external",
+      provider: input.publicId ? 'cloudinary' : 'external',
       publicId: input.publicId ?? null,
       url: input.url,
       altText: input.altText ?? null,
@@ -93,11 +93,7 @@ export async function recordUpload(
   // Only our own uploads consume our Cloudinary quota. A pasted external URL
   // costs us nothing, so it must not count against the user's storage cap.
   if (created && input.publicId && input.bytes && input.bytes > 0) {
-    await incrementUsage(
-      user,
-      "storage_mb",
-      Math.ceil(input.bytes / BYTES_PER_MB),
-    );
+    await incrementUsage(user, 'storage_mb', Math.ceil(input.bytes / BYTES_PER_MB));
   }
 
   return created ?? null;
@@ -112,7 +108,7 @@ async function requireOwnedAsset(id: string, user: User): Promise<MediaAsset> {
       isNull(mediaAssets.deletedAt),
     ),
   });
-  if (!asset) throw new Error("NOT_FOUND");
+  if (!asset) throw new Error('NOT_FOUND');
   return asset;
 }
 
@@ -122,7 +118,7 @@ export async function updateAltText(
   altText: string | undefined,
   user: User,
 ): Promise<MediaAsset> {
-  if (!isDbConfigured()) throw new Error("NOT_FOUND");
+  if (!isDbConfigured()) throw new Error('NOT_FOUND');
 
   const asset = await requireOwnedAsset(id, user);
   const [updated] = await db
@@ -144,15 +140,15 @@ export async function updateAltText(
  * than cascading a delete through a user's recipes.
  */
 export async function deleteAsset(id: string, user: User): Promise<void> {
-  if (!isDbConfigured()) throw new Error("NOT_FOUND");
+  if (!isDbConfigured()) throw new Error('NOT_FOUND');
 
   const asset = await requireOwnedAsset(id, user);
 
-  if (asset.provider === "cloudinary" && asset.publicId) {
+  if (asset.provider === 'cloudinary' && asset.publicId) {
     if (!cloudinaryConfigured()) {
       // We can't destroy the bytes, so refuse rather than tombstone the only
       // record of an asset that still exists and still costs storage.
-      throw new Error("NOT_CONFIGURED");
+      throw new Error('NOT_CONFIGURED');
     }
 
     cloudinary.config({
@@ -164,14 +160,14 @@ export async function deleteAsset(id: string, user: User): Promise<void> {
 
     const result = (await cloudinary.uploader.destroy(asset.publicId, {
       invalidate: true,
-      resource_type: "image",
+      resource_type: 'image',
     })) as { result?: string };
 
     // `not found` means the asset is already gone (a prior half-completed
     // delete, or removal in the Cloudinary console). That is the desired end
     // state, so tombstone the row instead of stranding it forever.
-    if (result.result !== "ok" && result.result !== "not found") {
-      throw new Error("PROVIDER_ERROR");
+    if (result.result !== 'ok' && result.result !== 'not found') {
+      throw new Error('PROVIDER_ERROR');
     }
   }
 
@@ -182,11 +178,7 @@ export async function deleteAsset(id: string, user: User): Promise<void> {
 
   // Reclaim the allowance. Only metered (Cloudinary) uploads ever incremented
   // it, so only they give anything back.
-  if (asset.provider === "cloudinary" && asset.bytes && asset.bytes > 0) {
-    await decrementUsage(
-      user,
-      "storage_mb",
-      Math.ceil(asset.bytes / BYTES_PER_MB),
-    );
+  if (asset.provider === 'cloudinary' && asset.bytes && asset.bytes > 0) {
+    await decrementUsage(user, 'storage_mb', Math.ceil(asset.bytes / BYTES_PER_MB));
   }
 }
