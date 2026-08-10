@@ -1,0 +1,10 @@
+# studio:base:start
+# Normalize every detected text file to LF in the index and working tree.
+# Git's automatic text detection leaves binary files byte-for-byte unchanged.
+* text=auto eol=lf
+# studio:base:end
+
+# Repo-specific overrides go BELOW the managed region above: in .gitattributes the
+# last matching line wins, so a more-specific rule must follow the * wildcard to
+# take effect. Keeping the managed region first also lets the studio sync engine
+# replace it in place instead of appending a * rule that would override these.
