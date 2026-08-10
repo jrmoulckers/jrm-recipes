@@ -356,6 +356,15 @@ export const recipeSteps = pgTable(
  * `versions.test.ts` enforces this at source level (#699): the only sanctioned
  * deletes are the erasure path and the dev-only seed, so a pruning sweep fails
  * a test rather than passing review on the strength of nobody reading this.
+ *
+ * Pruning is not the only way to lose the evidence, and the other two ways do
+ * not mention this table at all (#711). `recipeId` is `ON DELETE cascade`, so
+ * hard-deleting a *recipe* takes its whole history with it — note that
+ * `deleteRecipe` is a soft delete, which makes a future "empty the trash"
+ * job the likeliest form this arrives in. `authorId` is `ON DELETE set null`,
+ * so hard-deleting a *user* severs attribution on every surviving row: no row
+ * and no text is lost, only the record of who wrote it, leaving a table that
+ * still looks fully populated. The guard covers all three.
  */
 export const recipeVersions = pgTable(
   "recipe_versions",
