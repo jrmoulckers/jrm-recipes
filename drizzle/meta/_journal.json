@@ -302,6 +302,13 @@
       "when": 1786322060867,
       "tag": "0042_legal_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1786332981149,
+      "tag": "0043_supreme_wildside",
+      "breakpoints": true
     }
   ]
 }

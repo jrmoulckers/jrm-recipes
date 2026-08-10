@@ -452,6 +452,142 @@ export const recipeSlugAliasesRelations = relations(
   }),
 );
 
+/**
+ * Role a non-owner creator holds on a recipe (issue #668).
+ *
+ * `owner` is deliberately **absent**. The owner is `recipes.authorId` and never
+ * has a row here: that FK is `notNull`, so exactly one owner is guaranteed for
+ * the life of the recipe, and a second representation of the same fact could
+ * only ever drift out of step with it. This table is strictly additive on top of
+ * a guaranteed owner.
+ */
+export const recipeCreatorRole = pgEnum("recipe_creator_role", ["creator"]);
+
+/**
+ * Whether a creator invitation has been taken up (issue #668).
+ *
+ * `pending` grants **nothing**: no access, no slug, no URL. Only `accepted`
+ * rows are ever consulted by `canView`, by write-access checks, or by URL
+ * resolution. Being invited is not the same as being a creator, because adding
+ * someone publishes a recipe under *their* public namespace — it changes their
+ * identity, not just their permissions, so it needs their consent too.
+ */
+export const recipeCreatorStatus = pgEnum("recipe_creator_status", [
+  "pending",
+  "accepted",
+]);
+
+/**
+ * Co-creators of a recipe, and the slug the recipe answers on inside each of
+ * their namespaces (issue #668).
+ *
+ * A recipe with creators resolves under every accepted creator's namespace as
+ * well as its owner's: `/recipes/jrmoulckers/blueberry-muffins` *and*
+ * `/recipes/john/blueberry-muffins` are the same document. The owner's path is
+ * canonical; creator paths render with `rel=canonical` pointing at it.
+ *
+ * `slug` is allocated **per namespace, on accept**, not copied from the owner's.
+ * John may already hold `blueberry-muffins`, so his entry for someone else's
+ * recipe perturbs within his own namespace (`blueberry-muffins-2k9x`) and never
+ * disturbs the owner's slug. It is also deliberately *not* re-slugged when the
+ * owner renames the recipe: a creator's URL is stable once allocated, which
+ * keeps rename O(1) instead of writing an alias per creator.
+ *
+ * ## Removal frees the slug and leaves no alias
+ *
+ * This is a deliberate exception to the alias-permanence rule that governs
+ * {@link recipeSlugAliases}, and the difference is a trust boundary. A rename
+ * alias stays *within one owner*: the same person still holds the recipe, so the
+ * redirect is honest and permanent retention costs nothing. A removed creator's
+ * alias would instead point across a relationship that was just revoked, and
+ * would either leak the recipe's continued existence and current canonical URL
+ * to anyone holding the old link, or permanently burn a slug in the ex-creator's
+ * own namespace as a side effect of losing access. Removal therefore hard-stops:
+ * the row is deleted, no alias is written, the slug is immediately free again,
+ * and the path 404s exactly as if it had never resolved. Anything less means
+ * removal does not actually revoke.
+ *
+ * No ambiguity is introduced by freeing it. The alias-occupancy rule exists so a
+ * released slug can't start resolving to *someone else's* content; here the only
+ * party who can re-claim the freed slug is the ex-creator themselves, inside
+ * their own namespace.
+ */
+export const recipeCreators = pgTable(
+  "recipe_creators",
+  {
+    id: pk(),
+    recipeId: fk()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    userId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: recipeCreatorRole().notNull().default("creator"),
+    status: recipeCreatorStatus().notNull().default("pending"),
+    // NULL until accepted. Allocated inside the accepting transaction against
+    // the *invitee's* namespace. See `uniqueSlug` in server/recipes/mutations.ts.
+    slug: varchar({ length: 96 }),
+    // Who extended the invitation. Always the owner at invite time; retained for
+    // audit even if they later transfer or delete the account.
+    invitedById: fk().references(() => users.id, { onDelete: "set null" }),
+    invitedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    acceptedAt: timestamp({ withTimezone: true }),
+    ...timestamps(),
+  },
+  (t) => [
+    // One invitation/membership per person per recipe. Re-inviting someone who
+    // is already pending or accepted must collide rather than stack up rows.
+    unique("recipe_creators_recipe_user_uq").on(t.recipeId, t.userId),
+    // A creator's slug is unique inside their own namespace. Postgres treats
+    // NULLs as distinct, so the many `pending` rows (slug NULL) never collide —
+    // exactly the intent, since a pending invite occupies nothing.
+    //
+    // This constraint alone is NOT sufficient for namespace uniqueness: a
+    // namespace is shared with the user's own live recipes and retained aliases,
+    // which carry their own separate constraints, and Postgres has no
+    // cross-table unique. `slugTaken` closes that gap by taking a per-namespace
+    // advisory lock before probing all three.
+    unique("recipe_creators_user_slug_uq").on(t.userId, t.slug),
+    // Resolution reads `(userId, slug)` — covered by the unique above. These two
+    // back the reverse lookups: "recipes I co-create" and "who co-creates this".
+    // Partial on `accepted` because every access path filters on it, so pending
+    // invitations never bloat the hot indexes.
+    index("recipe_creators_user_idx")
+      .on(t.userId)
+      .where(sql`${t.status} = 'accepted'`),
+    index("recipe_creators_recipe_idx")
+      .on(t.recipeId)
+      .where(sql`${t.status} = 'accepted'`),
+    // Covering index for the `invitedById` FK (issue #153).
+    index("recipe_creators_invited_by_idx").on(t.invitedById),
+    // The status/slug invariant, enforced by the DB rather than trusted from the
+    // mutation layer: an accepted row always holds a namespace slug and an
+    // acceptance timestamp, and a pending row holds neither. This is what makes
+    // "pending grants nothing" checkable rather than merely intended.
+    check(
+      "recipe_creators_status_check",
+      sql`(${t.status} = 'accepted' and ${t.slug} is not null and ${t.acceptedAt} is not null) or (${t.status} = 'pending' and ${t.slug} is null and ${t.acceptedAt} is null)`,
+    ),
+  ],
+);
+
+export const recipeCreatorsRelations = relations(recipeCreators, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeCreators.recipeId],
+    references: [recipes.id],
+  }),
+  user: one(users, {
+    fields: [recipeCreators.userId],
+    references: [users.id],
+    relationName: "recipeCreator",
+  }),
+  invitedBy: one(users, {
+    fields: [recipeCreators.invitedById],
+    references: [users.id],
+    relationName: "recipeCreatorInviter",
+  }),
+}));
+
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(users, {
     fields: [recipes.authorId],
@@ -477,6 +613,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   comments: many(comments),
   reviews: many(reviews),
   slugAliases: many(recipeSlugAliases),
+  creators: many(recipeCreators),
 }));
 
 export const recipeIngredientsRelations = relations(
@@ -534,6 +671,11 @@ export type RecipeEvent = typeof recipeEvents.$inferSelect;
 export type NewRecipeEvent = typeof recipeEvents.$inferInsert;
 export type RecipeSlugAlias = typeof recipeSlugAliases.$inferSelect;
 export type NewRecipeSlugAlias = typeof recipeSlugAliases.$inferInsert;
+export type RecipeCreator = typeof recipeCreators.$inferSelect;
+export type NewRecipeCreator = typeof recipeCreators.$inferInsert;
+export type RecipeCreatorRole = (typeof recipeCreatorRole.enumValues)[number];
+export type RecipeCreatorStatus =
+  (typeof recipeCreatorStatus.enumValues)[number];
 export type RecipeEventType = (typeof recipeEventType.enumValues)[number];
 export type RecipeVisibility = (typeof recipeVisibility.enumValues)[number];
 export type RecipeStatus = (typeof recipeStatus.enumValues)[number];

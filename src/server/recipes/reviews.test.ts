@@ -8,6 +8,9 @@ const { dbMock } = vi.hoisted(() => ({
       recipes: { findFirst: vi.fn() },
       reviews: { findMany: vi.fn() },
       groupMembers: { findMany: vi.fn() },
+      // Co-creator access check (issue #668). Defaults to "not a creator" so
+      // these cases keep asserting the pre-existing grounds.
+      recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     insert: vi.fn(),
   },

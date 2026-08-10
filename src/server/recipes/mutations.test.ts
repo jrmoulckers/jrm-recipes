@@ -58,6 +58,16 @@ function aliasConflict(): Error {
   );
 }
 
+/** A Postgres unique-violation on the recipe_creators (user_id, slug) constraint. */
+function creatorSlugConflict(): Error {
+  return Object.assign(
+    new Error(
+      'duplicate key value violates unique constraint "recipe_creators_user_slug_uq"',
+    ),
+    { code: "23505", constraint: "recipe_creators_user_slug_uq" },
+  );
+}
+
 /** A Postgres unique-violation on the recipe_versions (recipe_id, version_number) constraint. */
 function versionConflict(): Error {
   return Object.assign(
@@ -70,16 +80,22 @@ function versionConflict(): Error {
 
 /**
  * Minimal transaction stand-in exposing just the surface `uniqueSlug` reads: the
- * caller's live recipes and their retained slug aliases.
+ * caller's live recipes, their retained slug aliases, and the recipes they
+ * co-create (issue #668), plus the `execute` used to take the per-namespace
+ * advisory lock.
  */
 function fakeTx(
   findFirst: ReturnType<typeof vi.fn>,
   findAlias: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined),
+  findCreator: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined),
+  execute: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined),
 ) {
   return {
+    execute,
     query: {
       recipes: { findFirst },
       recipeSlugAliases: { findFirst: findAlias },
+      recipeCreators: { findFirst: findCreator },
     },
   } as unknown as Parameters<typeof uniqueSlug>[0];
 }
@@ -181,6 +197,62 @@ describe("uniqueSlug", () => {
     expect(slug).toBe("apple-pie");
   });
 
+  it("treats a co-created recipe as occupying the namespace (#668)", async () => {
+    // John already answers on `apple-pie` for someone *else's* recipe he
+    // co-creates. His own new recipe must perturb around it, or his namespace
+    // would resolve one slug to two different documents.
+    const findCreator = vi
+      .fn()
+      .mockResolvedValueOnce({ id: "creator_1" })
+      .mockResolvedValueOnce(undefined);
+    const slug = await uniqueSlug(
+      fakeTx(vi.fn().mockResolvedValue(undefined), undefined, findCreator),
+      OWNER,
+      "apple-pie",
+    );
+    expect(slug).not.toBe("apple-pie");
+    expect(slug.startsWith("apple-pie-")).toBe(true);
+  });
+
+  it("takes a per-namespace advisory lock before probing (#668)", async () => {
+    // Three tables now share a namespace, each with its own unique constraint,
+    // and Postgres has no cross-table unique. Without serializing on the
+    // namespace, a creator-accept and a recipe-create can both probe a
+    // candidate as free and both commit it, in different tables, with no
+    // constraint violated and so no retry. The lock closes that window, and it
+    // is taken here (not at each call site) so no caller can forget it.
+    const calls: string[] = [];
+    const execute = vi.fn().mockImplementation(() => {
+      calls.push("lock");
+      return Promise.resolve(undefined);
+    });
+    const findFirst = vi.fn().mockImplementation(() => {
+      calls.push("probe");
+      return Promise.resolve(undefined);
+    });
+    await uniqueSlug(
+      fakeTx(findFirst, undefined, undefined, execute),
+      OWNER,
+      "apple-pie",
+    );
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(calls[0]).toBe("lock");
+  });
+
+  it("does not lock for a reserved base it rejects without a probe", async () => {
+    // The reserved-slug rejection short-circuits before any DB work, so it must
+    // not serialize the namespace either.
+    const execute = vi.fn().mockResolvedValue(undefined);
+    const findFirst = vi.fn().mockResolvedValue(undefined);
+    await uniqueSlug(
+      fakeTx(findFirst, undefined, undefined, execute),
+      OWNER,
+      "new",
+    );
+    // One lock for the single perturbed candidate that *is* probed, not two.
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
   it("perturbs a reserved base so it can't shadow a sibling route", async () => {
     // "new" is free in the DB, but `/recipes/new` is the editor route. A recipe
     // slugged "new" would be unreachable at its legacy flat URL, so uniqueSlug
@@ -220,6 +292,19 @@ describe("isSlugConflict", () => {
         code: "23505",
         message:
           'violates unique constraint "recipe_slug_aliases_owner_slug_uq"',
+      }),
+    ).toBe(true);
+  });
+
+  it("matches a collision on the co-creator namespace constraint (#668)", () => {
+    // A creator's namespace slug races the same way an owner's does, and the
+    // three tables share one namespace, so this constraint must trigger the
+    // retry too — otherwise accepting an invite fails hard on a lost race.
+    expect(isSlugConflict(creatorSlugConflict())).toBe(true);
+    expect(
+      isSlugConflict({
+        code: "23505",
+        message: 'violates unique constraint "recipe_creators_user_slug_uq"',
       }),
     ).toBe(true);
   });
@@ -441,7 +526,10 @@ function createTx(opts: { member: boolean }) {
       },
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
+    // Slug allocation serializes on the author's namespace (issue #668).
+    execute: vi.fn().mockResolvedValue(undefined),
     insert,
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({
