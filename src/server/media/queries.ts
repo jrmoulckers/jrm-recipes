@@ -180,7 +180,9 @@ export async function getAssetUsage(
       db
         .select({ value: count() })
         .from(groups)
-        .where(and(eq(groups.avatarUrl, url), inArray(groups.id, visibleGroups))),
+        .where(
+          and(eq(groups.avatarUrl, url), inArray(groups.id, visibleGroups)),
+        ),
     ),
     countRows(() =>
       db
