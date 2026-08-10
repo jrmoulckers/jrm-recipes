@@ -30,10 +30,30 @@ const readCode = (relative: string) =>
 const GLOBALS_CSS = read("src/styles/globals.css");
 const SONNER = readCode("src/components/ui/sonner.tsx");
 
+/**
+ * The Sonner prop that must stay off (#732).
+ *
+ * The check below is two negatives with no positive beside it, and setting this
+ * prop removes nothing, so nothing anchors the literal: a typo would leave that
+ * test asserting nothing at all, silently, forever.
+ *
+ * So it is anchored to Sonner's own published types. That also makes the check
+ * fail if the prop is renamed or removed upstream — at which point the ban is
+ * meaningless and should be revisited rather than quietly kept.
+ */
+const RICH_COLORS = "richColors";
+
 describe("toast surface", () => {
+  it("bans a prop Sonner really has, so the ban cannot rot", () => {
+    expect(
+      readFileSync(join(root, "node_modules/sonner/dist/index.d.ts"), "utf8"),
+      `Sonner declares no "${RICH_COLORS}" prop, so the check below can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
+    ).toContain(`${RICH_COLORS}?:`);
+  });
+
   it("never turns on rich colors. Tone is a tinted icon badge, not a fill", () => {
-    expect(readCode("src/app/providers.tsx")).not.toContain("richColors");
-    expect(SONNER).not.toContain("richColors");
+    expect(readCode("src/app/providers.tsx")).not.toContain(RICH_COLORS);
+    expect(SONNER).not.toContain(RICH_COLORS);
   });
 
   it("owns placement and dismissal centrally so call sites cannot drift", () => {
