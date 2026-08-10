@@ -59,14 +59,15 @@ called out here because it is where someone looking to reclaim storage would rea
 `recipe_versions` is append-only and grows without bound, which makes it an obvious pruning
 candidate. It must not be pruned while it is load-bearing for account erasure.
 
-Since #685 an accepted co-creator can edit a recipe they do not own, so a departing user's prose can
-end up inside another user's `recipes.story`, `notes` and step text, reachable by no author-scoped
-delete. `recipe_versions.authorId` plus the full per-save `snapshot` is the only record of which
-words belonged to whom, and therefore the only basis for computing what to back out. See #678.
+Since #685 an accepted co-creator can edit a recipe they do not own, so a departing user's prose
+can end up inside another user's `recipes.story`, `notes` and step text, reachable by no
+author-scoped delete. `recipe_versions.authorId` plus the full per-save `snapshot` is the only
+record of which words belonged to whom, and therefore the only basis for computing what to back
+out. See #678.
 
-Pruning it fails silently and in the dangerous direction: erasure would continue to report success
-while leaving a departed user's text on the site. If versions ever need capping, the erasure remedy
-has to be settled first, not afterwards.
+Pruning it fails silently and in the dangerous direction: erasure would continue to report
+success while leaving a departed user's text on the site. If versions ever need capping, the
+erasure remedy has to be settled first, not afterwards.
 
 ## RPO/RTO targets
 
