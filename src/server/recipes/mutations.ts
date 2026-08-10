@@ -50,8 +50,16 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
  * Postgres advisory locks share one global space, so the two-argument form is
  * used with this constant as the class id to keep these locks from colliding
  * with any other advisory lock the app might take later. The object id is
- * `hashtext(ownerId)`; a hash collision between two different namespaces costs
- * nothing but a little extra serialization.
+ * `hashtext(ownerId)`.
+ *
+ * A `hashtext` collision between two different namespaces is **benign, and must
+ * stay that way**: it makes two unrelated users' allocations serialize against
+ * each other, which costs a little throughput and nothing else. The failure
+ * direction matters — collisions can only ever over-serialize, never
+ * under-lock, so they cannot produce a duplicate slug. Do not "fix" this by
+ * reaching for an unhashed or wider-typed owner id: the two-argument form takes
+ * two int4s, and anything that silently truncates a value into that space
+ * *would* turn false sharing into missed locks, which is a correctness bug.
  */
 const SLUG_NAMESPACE_LOCK_CLASS = 668;
 
@@ -258,6 +266,21 @@ async function slugTaken(
  * `ignoreRecipeId` lets a recipe keep, or re-claim, a slug it already holds (or
  * once held), so re-saving an unchanged title is a no-op rather than a
  * collision.
+ *
+ * ## Invariant: this is the only way to allocate a recipe-namespace slug
+ *
+ * The per-namespace advisory lock that makes cross-table occupancy safe lives in
+ * {@link slugTaken}, so it is only taken by callers that come through here. Any
+ * new code path that writes `recipes.slug`, `recipe_slug_aliases.slug`, or
+ * `recipe_creators.slug` must derive that value from this function, inside the
+ * same transaction as the write. A hard-coded or externally supplied slug
+ * bypasses the lock and reopens the race.
+ *
+ * As of #668 the complete set of allocation sites is: `applyRecipeInput`
+ * (re-slug on rename, whose `retireSlug` alias write inherits the same
+ * transaction and therefore the same lock), `createRecipe`, the fork path, and
+ * `acceptRecipeCreatorInvitation`. `src/server/db/seed.ts` writes slugs directly
+ * but is a development-only script that runs against an empty database.
  */
 export async function uniqueSlug(
   tx: Tx,
