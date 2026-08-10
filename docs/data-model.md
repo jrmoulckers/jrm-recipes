@@ -30,7 +30,7 @@ Recipe deletion is a tombstone, not a hard delete. [`recipes`](../src/server/db/
 
 The read layer mirrors this convention: [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) defines a shared `notDeleted = isNull(recipes.deletedAt)` predicate and applies it to recipe list/detail/search/timeline reads.
 
-Users also have a soft-delete-style tombstone in [`users`](../src/server/db/schema/users.ts): Clerk deletion stamps `deletedAt` and anonymizes PII in [`src/server/auth/index.ts`](../src/server/auth/index.ts), keeping the row so authored recipes and group history remain referentially intact.
+Users used to have a soft-delete-style tombstone in [`users`](../src/server/db/schema/users.ts). That is no longer how account deletion works: since issue #678 ([ADR 0003](./architecture/0003-account-erasure.md)) deletion is a **full erasure** — the `users` row is deleted outright and the cascading foreign keys remove everything hanging off it. `users.deletedAt` is retained only as a transitional column. See [Account erasure](#account-erasure-issue-678) below.
 
 ### Cascade and set-null convention
 
@@ -38,6 +38,7 @@ The schema generally uses:
 
 - `onDelete: "cascade"` for rows that are owned by the parent and should disappear with it, such as `group_members` under `groups`, `recipe_ingredients` under `recipes`, `collection_recipes` under `collections`, `shopping_list_items` under `shopping_lists`, and shopping ingredient routes under their preferred lists.
 - `onDelete: "set null"` for authorship, attribution, and optional scope columns where the record should survive parent deletion. Examples include `groups.createdById`, `group_invitations.invitedById`, `recipe_versions.authorId`, `recipe_events.actorId`, `shopping_list_items.foodId`, `shopping_ingredient_routes.foodId`, and `audit_log.actorId`.
+- `onDelete: "restrict"` for the two columns where a cascade would destroy the only handle on data that lives outside Postgres, or would pre-empt logic that has to run first. `recipes.authorId` and `media_assets.userId` are both `restrict` so that account erasure can destroy the Cloudinary bytes and resolve co-created recipes before any row disappears. Cascading `media_assets` in particular would drop the only record that an uploaded image exists, stranding it on the CDN forever with nothing pointing at it. `restrict` turns a missed erasure step into a loud foreign-key violation instead of silent, irreversible loss.
 
 Some relationships are intentionally not database FKs. For example, [`audit_log.targetId`](../src/server/db/schema/audit.ts), [`reactions.targetId`](../src/server/db/schema/reactions.ts), and [`usage_counters.ownerId`](../src/server/db/schema/billing.ts) are polymorphic or cross-table identifiers, so the schema stores the id plus a type instead of a single FK.
 
@@ -61,7 +62,7 @@ Recipe URLs are namespaced by their author (issue #666, [ADR 0002](./architectur
 - `recipes.slug` is unique per author (`recipes_author_slug_uq`), so two cooks can each hold `blueberry-muffins`.
 - `user_slug_aliases` and `recipe_slug_aliases` retain every released slug forever, and an alias counts as _occupied_ when allocating a new slug. That is what keeps redirects honest: a released slug can never be re-claimed by someone else, so an old link can never silently resolve to different content. Redirects are still issued only after the viewer passes the normal visibility check, so an alias never reveals a recipe they cannot see.
 - `recipe_slug_aliases.legacy` marks the rows seeded by the namespacing migration from the pre-namespacing globally-unique slugs. A partial unique index over those rows keeps a flat `/recipes/<slug>` link resolving to exactly one recipe forever.
-- Renaming a recipe regenerates its slug and retains the outgoing one. Account deletion instead _rotates_ `users.slug` to an opaque value and drops that user's aliases: privacy beats link retention there.
+- Renaming a recipe regenerates its slug and retains the outgoing one. Account **deletion** is different again: since #678 the `users` row, its slug and all its aliases are deleted outright, so those URLs 404 (not 410 — a 410 would confirm a recipe once existed there) and the slugs become claimable by someone else. That is consistent with the alias-occupancy rule above: an alias _row_ occupies a slug, and after erasure there is no row. The residual link-hijack risk is an accepted trade-off recorded in [ADR 0003](./architecture/0003-account-erasure.md).
 
 ### Co-creator namespaces (issue #668)
 
@@ -72,6 +73,14 @@ A recipe can also resolve inside a co-creator's namespace, so `/recipes/ada/blue
 - A creator's slug is allocated on accept from the recipe's _title_ slug and perturbs strictly within the accepting user's namespace, so the owner's slug is never disturbed. It is also not re-slugged when the owner renames the recipe: a creator's URL is stable once allocated, which keeps rename O(1) instead of writing an alias per creator.
 - **Removal writes no alias**, deliberately diverging from the alias-permanence rule above. The difference is a trust boundary: a rename alias stays within one owner, so the redirect is honest. An ex-creator's alias would point across a relationship that was just revoked, and would either leak the recipe's continued existence and current canonical URL to anyone holding the old link, or permanently burn a slug in the ex-creator's own namespace as a side effect of losing access. Removal therefore hard-stops — the row goes, the slug is free again, and the path 404s as if it had never resolved. The only party who can re-claim that freed slug is the ex-creator themselves, inside their own namespace, so no ambiguity is introduced.
 - A namespace is shared by three tables — `recipes`, `recipe_slug_aliases`, `recipe_creators` — each with its _own_ unique constraint, and Postgres has no cross-table unique. Two transactions could otherwise both probe a candidate as free and both commit it in different tables, violating nothing and so never retrying. `slugTaken` takes a transaction-scoped advisory lock on the namespace before probing all three, which closes that window. The lock supplements the constraints; they remain the source of truth.
+
+## Account erasure (issue #678)
+
+Account deletion deletes; it does not anonymize. See [ADR 0003](./architecture/0003-account-erasure.md) for the reasoning and the accepted risks.
+
+- `deletion_records` is the tombstone that outlives the erased row, and exists for two jobs: evidencing that the erasure happened, and telling the backup runbook _who_ to re-erase after a restore. It stores **salted hashes and counts only** — never an email, name, handle, slug, raw id, or any free text — because a record rich enough to be useful would otherwise re-create the profile the erasure just removed. The salt comes from `DELETION_HASH_SALT`; without it no record is written, rather than one with a guessable digest.
+- A recipe survives only if it has another **accepted** creator. A `pending` invitation is not a creator for survival purposes. When the _owner_ leaves, the recipe is deleted rather than retained: the whole body is their personal data, so keeping it under someone else's namespace would be pseudonymization. Ownership transfer is offered before confirmation instead.
+- Ordering is enforced by `restrict` foreign keys: destroy Cloudinary bytes → abort the whole erasure if any survived → delete rows in one transaction → delete `users` → assert nothing remains → write the tombstone.
 
 ## Main tables
 

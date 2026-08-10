@@ -60,13 +60,19 @@ passed the same `canView` check the canonical route applies. An unauthorized vie
 existing `notFound()`. Without this ordering, a redirect would confirm that a recipe exists and leak
 its current owner and title to someone who has lost access to it.
 
-### Account deletion rotates the namespace
+### Account deletion rotates the namespace — **SUPERSEDED by ADR 0003**
 
-`applyClerkUserDeletion` anonymizes personal data. A user-chosen public slug is personal data, so
+> **Void.** This decision was reversed twice and no longer describes the system. Account deletion is
+> now a full erasure, not anonymization: the `users` row, its slug and all its aliases are deleted
+> outright, so those URLs **404**. Nothing is left to rotate. See
+> [ADR 0003](./0003-account-erasure.md) and issue #678. The original text is kept below for the
+> record.
+
+~~`applyClerkUserDeletion` anonymizes personal data. A user-chosen public slug is personal data, so
 deletion rotates `users.slug` to an opaque `cook-<random>` and drops that user's retained aliases.
 This is the one place where link retention loses: keeping the old namespace resolving would defeat the
 deletion request. Recipes remain reachable under the rotated namespace, so nothing that a viewer
-could still legitimately see disappears.
+could still legitimately see disappears.~~
 
 ### Renaming a recipe re-slugs it
 

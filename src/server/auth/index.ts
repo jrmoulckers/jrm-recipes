@@ -12,7 +12,8 @@ import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { buildIdentityTraits } from "~/lib/analytics/identity";
 import { captureServer, identifyServer } from "~/lib/analytics/server";
-import { allocateUserSlug, anonymizeUserSlug } from "~/server/users/slug";
+import { allocateUserSlug } from "~/server/users/slug";
+import { eraseUserAccount } from "~/server/users/erasure";
 
 /**
  * Heirloom auth module.
@@ -270,37 +271,26 @@ export async function applyClerkUserUpdate(
 }
 
 /**
- * Apply a Clerk `user.deleted` event (issue #217): soft-delete and anonymize the
- * local row. The row is *kept* so authored recipes and group history stay
- * referentially intact (their FKs point here), but every piece of PII, email,
- * name, handle, avatar, and the `clerkId` link itself, is scrubbed, and
- * `deletedAt` is stamped so the account can no longer authenticate (the
- * clerkId+deletedAt-filtered lookup in `syncClerkUser` will never resurrect it).
- * Idempotent: a repeat delete simply re-scrubs an already-anonymized row.
+ * Apply a Clerk `user.deleted` event (issue #678, superseding #217).
+ *
+ * This used to soft-delete and anonymize: the row survived with a stable id and
+ * every foreign key still pointing at it. That is pseudonymization, not
+ * anonymization — the data remained personal data under GDPR Recital 26 — so
+ * the erasure request went unremedied. It now performs a real erasure; see
+ * `eraseUserAccount` for the policy and ordering.
+ *
+ * Idempotent in both directions: an event for an unknown `clerkId` is a no-op,
+ * and a repeat event after a successful erasure is recognised via the hashed
+ * tombstone, so Clerk's retries converge instead of redelivering forever.
  */
 export async function applyClerkUserDeletion(clerkId: string): Promise<void> {
   if (!isDbConfigured() || !clerkId) return;
-  await db.transaction(async (tx) => {
-    const existing = await tx.query.users.findFirst({
-      where: eq(users.clerkId, clerkId),
-      columns: { id: true },
-    });
-    if (!existing) return;
-    // A user-chosen public slug is personal data, so it is rotated to an
-    // opaque value and every retained alias is dropped (issue #666). Link
-    // retention deliberately loses to privacy here: keeping the old namespace
-    // resolving would defeat the deletion request.
-    await anonymizeUserSlug(tx, existing.id);
-    await tx
-      .update(users)
-      .set({
-        deletedAt: new Date(),
-        clerkId: null,
-        email: null,
-        name: "Deleted user",
-        handle: null,
-        avatarUrl: null,
-      })
-      .where(eq(users.id, existing.id));
+
+  const existing = await db.query.users.findFirst({
+    where: eq(users.clerkId, clerkId),
+    columns: { id: true },
   });
+  if (!existing) return;
+
+  await eraseUserAccount(existing.id, { trigger: "clerk_webhook" });
 }

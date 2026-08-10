@@ -25,3 +25,4 @@ export * from "./ingredients";
 export * from "./waitlist";
 export * from "./billing";
 export * from "./audit";
+export * from "./deletion";
