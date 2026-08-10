@@ -12,6 +12,7 @@ import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { buildIdentityTraits } from "~/lib/analytics/identity";
 import { captureServer, identifyServer } from "~/lib/analytics/server";
+import { allocateUserSlug, anonymizeUserSlug } from "~/server/users/slug";
 
 /**
  * Heirloom auth module.
@@ -77,6 +78,7 @@ async function getOrCreateDevUser(): Promise<User> {
       email: DEV_USER.email,
       name: DEV_USER.name,
       handle: DEV_USER.handle,
+      slug: DEV_USER.slug,
     })
     .onConflictDoNothing()
     .returning();
@@ -114,6 +116,13 @@ async function syncClerkUser(clerkId: string): Promise<User | null> {
       email,
       name,
       handle: profile.username ?? null,
+      // The app-owned URL namespace (issue #666). Derived from the Clerk
+      // handle, else the display name, else an opaque `cook-…`, and resolved
+      // against live slugs and retained aliases so it is unique on arrival.
+      slug: await allocateUserSlug(db, {
+        handle: profile.username ?? null,
+        name,
+      }),
       avatarUrl: profile.imageUrl ?? null,
     })
     .onConflictDoNothing({ target: users.clerkId })
@@ -271,15 +280,27 @@ export async function applyClerkUserUpdate(
  */
 export async function applyClerkUserDeletion(clerkId: string): Promise<void> {
   if (!isDbConfigured() || !clerkId) return;
-  await db
-    .update(users)
-    .set({
-      deletedAt: new Date(),
-      clerkId: null,
-      email: null,
-      name: "Deleted user",
-      handle: null,
-      avatarUrl: null,
-    })
-    .where(eq(users.clerkId, clerkId));
+  await db.transaction(async (tx) => {
+    const existing = await tx.query.users.findFirst({
+      where: eq(users.clerkId, clerkId),
+      columns: { id: true },
+    });
+    if (!existing) return;
+    // A user-chosen public slug is personal data, so it is rotated to an
+    // opaque value and every retained alias is dropped (issue #666). Link
+    // retention deliberately loses to privacy here: keeping the old namespace
+    // resolving would defeat the deletion request.
+    await anonymizeUserSlug(tx, existing.id);
+    await tx
+      .update(users)
+      .set({
+        deletedAt: new Date(),
+        clerkId: null,
+        email: null,
+        name: "Deleted user",
+        handle: null,
+        avatarUrl: null,
+      })
+      .where(eq(users.id, existing.id));
+  });
 }

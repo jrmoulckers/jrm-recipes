@@ -7,7 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { pk, timestamps } from "./_shared";
+import { pk, fk, timestamps } from "./_shared";
 import { groupMembers } from "./groups";
 import { recipes } from "./recipes";
 import { comments, ratings } from "./engagement";
@@ -26,6 +26,13 @@ export const users = pgTable(
     email: varchar({ length: 320 }),
     name: varchar({ length: 120 }),
     handle: varchar({ length: 60 }).unique(),
+    // The app-owned public namespace (issue #666). Distinct from `handle`,
+    // which mirrors Clerk's username: Clerk overwrites `handle` on every
+    // `user.updated` and nulls it on deletion, so it can never be a stable URL
+    // key. `slug` is the first segment of every canonical recipe URL
+    // (`/recipes/<slug>/<recipeSlug>`), so it is NOT NULL and unique. It stays
+    // user-changeable; `userSlugAliases` keeps old values resolving.
+    slug: varchar({ length: 60 }).notNull().unique(),
     avatarUrl: varchar({ length: 2048 }),
     // Opt-in (default off) for the weekly family recipe digest email (#354).
     // Off by default so we never email anyone who hasn't asked for it.
@@ -46,6 +53,44 @@ export const users = pgTable(
   (t) => [index("users_clerk_id_idx").on(t.clerkId)],
 );
 
+/**
+ * Every slug a user has ever held (issue #666). A user slug is the first
+ * segment of every canonical recipe URL, so renaming it would silently kill
+ * every link anyone ever shared to any of that user's recipes. Each retired
+ * slug is retained here forever and 308-redirects to the current one.
+ *
+ * The primary key is the slug itself, which is what makes an alias *occupied*:
+ * `uniqueUserSlug` refuses any slug held by a live user OR an alias, so a
+ * released slug can never be claimed by a different account and silently
+ * redirect old links to a stranger's recipes.
+ *
+ * Rows are deleted (not retained) when an account is deleted, so an
+ * anonymized account stops leaking the personal slug it used to hold.
+ */
+export const userSlugAliases = pgTable(
+  "user_slug_aliases",
+  {
+    slug: varchar({ length: 60 }).primaryKey(),
+    userId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("user_slug_aliases_user_idx").on(t.userId)],
+);
+
+export const userSlugAliasesRelations = relations(
+  userSlugAliases,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userSlugAliases.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export type UserSlugAlias = typeof userSlugAliases.$inferSelect;
+
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(groupMembers),
   recipes: many(recipes),
@@ -54,6 +99,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   reviews: many(reviews),
   following: many(follows, { relationName: "follower" }),
   followers: many(follows, { relationName: "followee" }),
+  slugAliases: many(userSlugAliases),
 }));
 
 export type User = typeof users.$inferSelect;

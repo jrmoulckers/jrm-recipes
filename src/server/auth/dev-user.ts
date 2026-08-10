@@ -11,6 +11,7 @@ export const DEV_USER: User = {
   email: "cook@heirloom.local",
   name: "Home Cook",
   handle: "home-cook",
+  slug: "home-cook",
   avatarUrl: null,
   weeklyDigestOptIn: false,
   publicActivityOptIn: false,
