@@ -10,53 +10,111 @@ const mutations = readFileSync(
 );
 
 /**
- * Guard on the one thing #668 deliberately did **not** ship: co-creators can
- * read a recipe, but they still cannot write to it.
+ * Guard on how far co-creator authority is allowed to reach inside this module.
  *
- * This is not caution for its own sake. Today every recipe has exactly one
- * author, so "delete the recipes where `author_id = U`" provably erases all of
- * U's free text — which is what #678's right-to-erasure work relies on. The
- * moment a creator can edit a recipe they do not own, their prose lands in
- * somebody else's `recipes.story`/`notes` *and* in every `recipe_versions`
- * snapshot, where no column-level scrub can find it. Widening writes therefore
- * has to happen together with contribution provenance, not before it.
+ * This test was originally written to assert that co-creators could read a
+ * recipe but never write to it. #685 deliberately widened that: an accepted
+ * co-creator may now edit the recipe body. The guard is narrowed to the
+ * properties that survived rather than deleted, because the reason it existed
+ * has not gone away, it has changed shape.
  *
- * The check is deliberately source-level: the property is "no write path
- * consults `recipeCreators`", and the only way to assert absence across every
- * mutation is to look at the module rather than at one call. It is meant to
- * fail loudly during the change that widens writes, as a prompt to revisit
- * #678, not to make that change hard.
+ * What it was protecting: while every recipe had exactly one author, "delete the
+ * recipes where `author_id = U`" provably erased all of U's free text, which is
+ * what the erasure path in `~/server/users/erasure.ts` relies on. Now that a
+ * co-creator can edit a recipe they do not own, U's prose can live in somebody
+ * else's `recipes.story`/`notes` and in `recipe_versions` snapshots authored by
+ * other people, where an author-scoped delete cannot reach it. That gap is real
+ * and is tracked on #678. It is a known outstanding item, not something this
+ * file can assert away.
+ *
+ * What this file still asserts, and what a later change must not quietly break:
+ *
+ * 1. There is exactly **one** creator-based write gate. Every reference to
+ *    `recipeCreators` in this module lives either in the namespace-occupancy
+ *    probe or in `assertRecipeEditAccess`. A new write path that grows its own
+ *    inline creator lookup is what makes authority impossible to audit, and it
+ *    fails here.
+ * 2. Widening stopped at the recipe body. Deletion, restore, share-link
+ *    rotation and version reverts are still owner-only, expressed as an
+ *    `authorId` predicate in SQL. Those are the operations where a co-creator
+ *    acting alone would be destructive or would push the recipe outward.
+ *
+ * The check is deliberately source-level: the property is "no *other* write path
+ * consults `recipeCreators`", and the only way to assert an absence across every
+ * mutation is to read the module rather than one call.
  */
+
+/** Top-level function spans in `mutations.ts`, keyed by name. */
+const spans = (() => {
+  const declaration = /\n(?:export )?(?:async )?function (\w+)/g;
+  const found: { name: string; at: number }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = declaration.exec(mutations)) !== null) {
+    found.push({ name: match[1]!, at: match.index });
+  }
+  return new Map(
+    found.map(({ name, at }, index) => [
+      name,
+      { start: at, end: found[index + 1]?.at ?? mutations.length },
+    ]),
+  );
+})();
+
+function spanOf(name: string) {
+  const span = spans.get(name);
+  expect(span, `expected mutations.ts to declare ${name}`).toBeDefined();
+  return span!;
+}
+
+function bodyOf(name: string): string {
+  const span = spanOf(name);
+  return mutations.slice(span.start, span.end);
+}
+
 describe("co-creator write escalation", () => {
-  it("only reads recipeCreators for slug occupancy, never as a write gate", () => {
-    // The one legitimate reference is the namespace-occupancy probe inside
-    // `slugTaken` (#679): a creator's slug occupies their namespace, so
-    // allocation must see it. Anywhere else in this module would mean a
-    // creator had been let into a write path.
-    const slugTaken = mutations.indexOf("async function slugTaken");
-    const nextFn = mutations.indexOf("\nexport async function ", slugTaken);
+  it("confines every recipeCreators reference to the two sanctioned gates", () => {
+    // `slugTaken` (#679) must see a creator's slug because it occupies that
+    // creator's namespace, and `assertRecipeEditAccess` (#685) is the single
+    // place a co-creator is admitted to a write path. Anywhere else means some
+    // mutation grew a private notion of who counts as a creator.
+    const sanctioned = ["slugTaken", "assertRecipeEditAccess"].map(spanOf);
     const importsEnd = mutations.indexOf('from "~/server/db/schema"');
     const occurrences = [...mutations.matchAll(/recipeCreators/g)]
       .map((match) => match.index)
       .filter((at) => at > importsEnd);
+
     expect(occurrences.length).toBeGreaterThan(0);
     for (const at of occurrences) {
-      expect(at).toBeGreaterThan(slugTaken);
-      expect(at).toBeLessThan(nextFn);
+      expect(
+        sanctioned.some((span) => at >= span.start && at < span.end),
+        `recipeCreators referenced outside slugTaken and assertRecipeEditAccess at index ${at}`,
+      ).toBe(true);
     }
   });
 
+  it("admits co-creators to the recipe body through the shared gate only", () => {
+    const body = bodyOf("updateRecipe");
+    expect(body).toContain("assertRecipeEditAccess(");
+    // The gate is a lookup rather than a filter, so `updateRecipe` no longer
+    // carries an `authorId` predicate. Dropping the gate must not silently
+    // leave the row unguarded, so assert the two together.
+    expect(body).not.toContain("eq(recipes.authorId,");
+  });
+
+  it("requires an accepted creator row, never a pending invitation", () => {
+    const body = bodyOf("assertRecipeEditAccess");
+    expect(body).toContain('eq(recipeCreators.status, "accepted")');
+    // An unauthorised editor is indistinguishable from a missing recipe, so the
+    // failure cannot be used to probe which recipe ids exist.
+    expect(body).toContain('DomainError("NOT_FOUND")');
+  });
+
   it.each([
-    ["updateRecipe", "content edits"],
     ["revertRecipe", "version reverts"],
     ["deleteRecipe", "deletion"],
     ["restoreRecipe", "restore"],
-    ["setShareLinkState", "share-token rotation"],
-  ])("still scopes %s (%s) to the author", (fn) => {
-    const start = mutations.indexOf(`export async function ${fn}`);
-    expect(start).toBeGreaterThan(-1);
-    const next = mutations.indexOf("\nexport async function ", start + 1);
-    const body = mutations.slice(start, next === -1 ? undefined : next);
-    expect(body).toContain("eq(recipes.authorId,");
+    ["setShareLinkState", "share-link rotation"],
+  ])("still scopes %s (%s) to the owner", (fn) => {
+    expect(bodyOf(fn)).toContain("eq(recipes.authorId,");
   });
 });
