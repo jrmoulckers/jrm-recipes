@@ -18,7 +18,7 @@
  * file is executed directly.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -53,23 +53,48 @@ export function parseFirstLoadJs(output) {
 }
 
 /**
+ * Headroom below which a passing route is reported as NEAR (issue #778).
+ *
+ * `next build` prints First Load JS as whole kB at this magnitude, so a route
+ * with less than a kilobyte of margin can be tipped over by a sub-kB change —
+ * including one that adds no code, when webpack redistributes shared modules.
+ * Linux CI also reads ~1 kB above a local Windows build. Two kilobytes covers
+ * both effects, so NEAR fires before the surprise rather than after it.
+ */
+export const NEAR_KB = 2;
+
+/**
  * Compare measured first-load sizes against the per-route budgets. Returns the
  * rows to print and whether the gate failed (over budget or a tracked route was
  * not found in the build output).
+ *
+ * NEAR is advisory and MUST NOT affect `failed`: the point of #778 is to make
+ * budget pressure visible *before* it turns a PR red, not to add a second way
+ * for an unrelated PR to fail. Three of the four tracked routes sat at exactly
+ * zero headroom when this was written, and three separate incidents had already
+ * produced a wrong-but-durable diagnosis written into bundle-budgets.json.
  */
-export function evaluateBudgets(measured, budgets) {
+export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
   const rows = [];
   let failed = false;
   for (const [route, budget] of Object.entries(budgets)) {
     const actual = measured.get(route);
     if (actual === undefined) {
-      rows.push({ route, actual: undefined, budget, status: "MISSING" });
+      rows.push({
+        route,
+        actual: undefined,
+        budget,
+        headroom: undefined,
+        status: "MISSING",
+      });
       failed = true;
       continue;
     }
+    const headroom = budget - actual;
     const ok = actual <= budget;
     if (!ok) failed = true;
-    rows.push({ route, actual, budget, status: ok ? "ok" : "OVER" });
+    const status = !ok ? "OVER" : headroom < nearKb ? "NEAR" : "ok";
+    rows.push({ route, actual, budget, headroom, status });
   }
   return { rows, failed };
 }
@@ -103,6 +128,34 @@ function getBuildOutput() {
   return output;
 }
 
+/**
+ * Surface NEAR routes in the GitHub Actions job summary, so budget pressure is
+ * visible on a green run without anyone opening the build log. No-ops locally,
+ * and never throws: a warning must not be able to fail the gate it warns about.
+ */
+function writeStepSummary(near) {
+  const path = process.env.GITHUB_STEP_SUMMARY;
+  if (!path) return;
+  const lines = [
+    `### ⚠ Bundle budget: ${near.length} route(s) within ${NEAR_KB} kB`,
+    "",
+    "| Route | First Load JS | Budget | Headroom |",
+    "| --- | ---: | ---: | ---: |",
+    ...near.map(
+      (r) =>
+        `| \`${r.route}\` | ${r.actual.toFixed(1)} kB | ${r.budget} kB | ${r.headroom.toFixed(1)} kB |`,
+    ),
+    "",
+    "Advisory, not a failure. A route this close can be turned red by an unrelated PR — see #778.",
+    "",
+  ];
+  try {
+    appendFileSync(path, `${lines.join("\n")}\n`);
+  } catch (err) {
+    console.warn(`Could not write job summary: ${err.message}`);
+  }
+}
+
 function main() {
   const budgets = JSON.parse(
     readFileSync(resolve(repoRoot, "bundle-budgets.json"), "utf8"),
@@ -112,18 +165,36 @@ function main() {
   const { rows, failed } = evaluateBudgets(measured, budgets);
 
   console.log("\nFirst-load JS budget check (#206)");
-  console.log("─".repeat(64));
+  console.log("─".repeat(72));
   for (const r of rows) {
-    const flag = r.status === "ok" ? "✓" : "✗";
+    const flag = { ok: "✓", NEAR: "⚠", OVER: "✗", MISSING: "✗" }[r.status];
     const actual = r.actual === undefined ? "n/a" : `${r.actual.toFixed(1)} kB`;
     const budgetLabel = `${r.budget} kB`;
+    const headroom =
+      r.headroom === undefined ? "" : `${r.headroom.toFixed(1)} kB free`;
     console.log(
       `${flag} ${r.route.padEnd(28)} ${actual.padStart(10)} / ${budgetLabel.padStart(
         7,
-      )}  ${r.status}`,
+      )}  ${r.status.padEnd(7)} ${headroom}`,
     );
   }
-  console.log("─".repeat(64));
+  console.log("─".repeat(72));
+
+  const near = rows.filter((r) => r.status === "NEAR");
+  if (near.length > 0) {
+    // Advisory only — deliberately printed before the failure branch so it is
+    // visible on red runs too, and deliberately does not touch the exit code.
+    console.warn(
+      `\n⚠ ${near.length} route(s) within ${NEAR_KB} kB of budget: ` +
+        `${near.map((r) => r.route).join(", ")}.\n` +
+        "  This is a warning, not a failure. A route this close can be tipped " +
+        "red by an\n  unrelated PR, because `next build` reports whole kB and " +
+        "Linux CI reads ~1 kB\n  above a local Windows build. When that happens " +
+        "the red route is usually not\n  the cause — measure which modules " +
+        "entered the route before bumping (#778).",
+    );
+    writeStepSummary(near);
+  }
 
   if (failed) {
     console.error(
