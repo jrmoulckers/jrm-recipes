@@ -46,7 +46,7 @@ describe("getNamespacedRecipeForViewer", () => {
   it("returns a canonical hit without consulting the legacy fallback", async () => {
     resolveNamespacedRecipeMock.mockResolvedValue({
       recipeId: "rec_1",
-      canonical: true,
+      disposition: "canonical",
     });
 
     await expect(
@@ -54,10 +54,29 @@ describe("getNamespacedRecipeForViewer", () => {
     ).resolves.toEqual({
       user: viewer,
       recipe,
-      canonical: true,
+      disposition: "canonical",
       legacySubRoute: null,
     });
     expect(resolveFlatRecipeMock).not.toHaveBeenCalled();
+  });
+
+  it("passes a co-creator mirror through untouched (#668)", async () => {
+    // The route must be able to tell "render with rel=canonical" apart from
+    // "308"; folding mirror into either would be wrong, so the loader forwards
+    // the disposition verbatim rather than reducing it to a boolean.
+    resolveNamespacedRecipeMock.mockResolvedValue({
+      recipeId: "rec_1",
+      disposition: "mirror",
+    });
+
+    await expect(
+      getNamespacedRecipeForViewer("john", "apple-pie"),
+    ).resolves.toEqual({
+      user: viewer,
+      recipe,
+      disposition: "mirror",
+      legacySubRoute: null,
+    });
   });
 
   it.each(["cook", "print", "keepsake", "edit"])(
@@ -65,7 +84,7 @@ describe("getNamespacedRecipeForViewer", () => {
     async (subRoute) => {
       resolveFlatRecipeMock.mockResolvedValue({
         recipeId: "rec_1",
-        canonical: false,
+        disposition: "alias",
       });
 
       await expect(
@@ -73,7 +92,7 @@ describe("getNamespacedRecipeForViewer", () => {
       ).resolves.toEqual({
         user: viewer,
         recipe,
-        canonical: false,
+        disposition: "alias",
         legacySubRoute: subRoute,
       });
       expect(resolveFlatRecipeMock).toHaveBeenCalledWith("apple-pie");
@@ -83,13 +102,13 @@ describe("getNamespacedRecipeForViewer", () => {
   it("lets a real recipe slugged like a sub-route win over the fallback", async () => {
     resolveNamespacedRecipeMock.mockResolvedValue({
       recipeId: "rec_cook",
-      canonical: true,
+      disposition: "canonical",
     });
 
     const result = await getNamespacedRecipeForViewer("ada", "cook");
 
     expect(result.legacySubRoute).toBeNull();
-    expect(result.canonical).toBe(true);
+    expect(result.disposition).toBe("canonical");
     expect(resolveFlatRecipeMock).not.toHaveBeenCalled();
   });
 
@@ -99,7 +118,7 @@ describe("getNamespacedRecipeForViewer", () => {
     ).resolves.toEqual({
       user: viewer,
       recipe: null,
-      canonical: true,
+      disposition: "canonical",
       legacySubRoute: null,
     });
     expect(resolveFlatRecipeMock).not.toHaveBeenCalled();

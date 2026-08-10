@@ -28,6 +28,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     listPublicCookHandles(),
   ]);
 
+  // Owner paths only. A recipe with co-creators also resolves under each of
+  // their namespaces (#668), but those are mirrors: they render with
+  // `rel=canonical` pointing here, so listing them would submit duplicate URLs
+  // that the canonical tag immediately asks the crawler to discard.
   const recipeRoutes: MetadataRoute.Sitemap = recipes.map((recipe) => ({
     url: absoluteUrl(
       recipeDetailPath({

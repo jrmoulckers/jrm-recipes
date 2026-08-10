@@ -178,13 +178,18 @@ export default async function RecipePage({
   shareToken?: string;
 }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
-  const { user, recipe, canonical, legacySubRoute } =
+  const { user, recipe, disposition, legacySubRoute } =
     await getNamespacedRecipeForViewer(cook, recipeSegment, shareToken);
   if (!recipe) notFound();
   // Only redirect once the viewer has passed `canView` above, so an alias can
   // never confirm that a recipe exists to somebody who may not see it (#666).
   // Skipped for share-token renders, which are served under `/r/<token>`.
-  if (!canonical && !shareToken) {
+  //
+  // `mirror` — a co-creator's namespace (#668) — deliberately does not redirect.
+  // It renders here, and `generateMetadata` already points `rel=canonical` at
+  // the owner's path, so the creator keeps their own URL while search engines
+  // still see one indexable address.
+  if (disposition === "alias" && !shareToken) {
     const ref = {
       id: recipe.id,
       slug: recipe.slug,

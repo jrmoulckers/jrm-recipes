@@ -7,6 +7,7 @@ import { getRecipe } from "~/server/recipes/queries";
 import {
   resolveFlatRecipe,
   resolveNamespacedRecipe,
+  type RecipeUrlDisposition,
 } from "~/server/recipes/resolve";
 
 /**
@@ -35,14 +36,15 @@ export type RecipeForViewer = Awaited<ReturnType<typeof getRecipeForViewer>>;
 
 /**
  * Same as {@link getRecipeForViewer}, but keyed by the canonical URL segments
- * `/recipes/<cook>/<recipe>` (#666).
+ * `/recipes/<cook>/<recipe>` (#666, #668).
  *
- * `canonical` is false when the request arrived on a retained alias — a renamed
- * recipe or a renamed cook. The route only acts on it *after* checking that
- * `recipe` is non-null, i.e. after the viewer has passed `canView`, so an alias
- * can never redirect (and thereby confirm the existence of) a recipe the
- * requester is not allowed to see. An unauthorized viewer gets the same
- * `notFound()` they would get for a slug that never existed.
+ * `disposition` says what the route owes the URL it arrived on: render it,
+ * render it with `rel=canonical` (a co-creator's namespace), or 308. The route
+ * only acts on it *after* checking that `recipe` is non-null, i.e. after the
+ * viewer has passed `canView`, so a non-canonical URL can never redirect (and
+ * thereby confirm the existence of) a recipe the requester is not allowed to
+ * see. An unauthorized viewer gets the same `notFound()` they would get for a
+ * slug that never existed.
  */
 /**
  * Sub-routes that used to hang off the flat `/recipes/<slug>` URL and now sit a
@@ -63,7 +65,7 @@ export const getNamespacedRecipeForViewer = cache(
       const loaded = await getRecipeForViewer(resolved.recipeId, shareToken);
       return {
         ...loaded,
-        canonical: resolved.canonical,
+        disposition: resolved.disposition,
         legacySubRoute: null as string | null,
       };
     }
@@ -72,14 +74,18 @@ export const getNamespacedRecipeForViewer = cache(
       const flat = await resolveFlatRecipe(cook);
       if (flat) {
         const loaded = await getRecipeForViewer(flat.recipeId, shareToken);
-        return { ...loaded, canonical: false, legacySubRoute: recipe };
+        return {
+          ...loaded,
+          disposition: "alias" as RecipeUrlDisposition,
+          legacySubRoute: recipe,
+        };
       }
     }
 
     return {
       user: await getCurrentUser(),
       recipe: null,
-      canonical: true,
+      disposition: "canonical" as RecipeUrlDisposition,
       legacySubRoute: null as string | null,
     };
   },

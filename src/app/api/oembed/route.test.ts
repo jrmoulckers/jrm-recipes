@@ -54,7 +54,7 @@ describe("GET /api/oembed", () => {
   it("resolves a canonical namespaced url through the cook's namespace", async () => {
     resolveNamespacedRecipe.mockResolvedValue({
       recipeId: "rec_apple",
-      canonical: true,
+      disposition: "canonical",
     });
     getPublicRecipeCard.mockResolvedValue({
       id: "rec_apple",

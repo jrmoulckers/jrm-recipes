@@ -9,6 +9,7 @@ const { dbMock, resolveUserSlugMock } = vi.hoisted(() => ({
     query: {
       recipes: { findFirst: vi.fn() },
       recipeSlugAliases: { findFirst: vi.fn() },
+      recipeCreators: { findFirst: vi.fn() },
     },
   },
   resolveUserSlugMock: vi.fn(),
@@ -34,6 +35,7 @@ beforeEach(() => {
   resolveUserSlugMock.mockResolvedValue(owner);
   dbMock.query.recipes.findFirst.mockResolvedValue(undefined);
   dbMock.query.recipeSlugAliases.findFirst.mockResolvedValue(undefined);
+  dbMock.query.recipeCreators.findFirst.mockResolvedValue(undefined);
 });
 
 describe("resolveNamespacedRecipe", () => {
@@ -42,7 +44,7 @@ describe("resolveNamespacedRecipe", () => {
 
     await expect(resolveNamespacedRecipe("ada", "apple-pie")).resolves.toEqual({
       recipeId: "rec_1",
-      canonical: true,
+      disposition: "canonical",
     });
     expect(dbMock.query.recipeSlugAliases.findFirst).not.toHaveBeenCalled();
   });
@@ -53,7 +55,7 @@ describe("resolveNamespacedRecipe", () => {
 
     await expect(
       resolveNamespacedRecipe("ada-old", "apple-pie"),
-    ).resolves.toEqual({ recipeId: "rec_1", canonical: false });
+    ).resolves.toEqual({ recipeId: "rec_1", disposition: "alias" });
   });
 
   it("prefers a live slug over an alias holding the same segment", async () => {
@@ -66,7 +68,7 @@ describe("resolveNamespacedRecipe", () => {
 
     await expect(resolveNamespacedRecipe("ada", "apple-pie")).resolves.toEqual({
       recipeId: "rec_live",
-      canonical: true,
+      disposition: "canonical",
     });
   });
 
@@ -78,7 +80,7 @@ describe("resolveNamespacedRecipe", () => {
     await expect(resolveNamespacedRecipe("ada", "apple-tart")).resolves.toEqual(
       {
         recipeId: "rec_1",
-        canonical: false,
+        disposition: "alias",
       },
     );
   });
@@ -90,8 +92,78 @@ describe("resolveNamespacedRecipe", () => {
 
     await expect(resolveNamespacedRecipe("ada", "rec_1")).resolves.toEqual({
       recipeId: "rec_1",
-      canonical: false,
+      disposition: "alias",
     });
+  });
+
+  it("resolves a co-creator's namespace as a mirror, not a redirect (#668)", async () => {
+    // The recipe answers inside John's namespace because he accepted an
+    // invitation. It renders in place with rel=canonical pointing at the
+    // owner's path — a 308 here would take the creator off their own URL.
+    dbMock.query.recipeCreators.findFirst.mockResolvedValueOnce({
+      recipeId: "rec_1",
+    });
+
+    await expect(resolveNamespacedRecipe("john", "apple-pie")).resolves.toEqual(
+      {
+        recipeId: "rec_1",
+        disposition: "mirror",
+      },
+    );
+    // Mirrors are found before aliases are consulted.
+    expect(dbMock.query.recipeSlugAliases.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("prefers the namespace holder's own live recipe over a creator entry", async () => {
+    // Allocation makes this state unreachable (both occupy one namespace under
+    // one lock). If it ever occurred, the URL must stay with the recipe the
+    // namespace holder actually owns.
+    dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: "rec_own" });
+    dbMock.query.recipeCreators.findFirst.mockResolvedValue({
+      recipeId: "rec_other",
+    });
+
+    await expect(resolveNamespacedRecipe("john", "apple-pie")).resolves.toEqual(
+      {
+        recipeId: "rec_own",
+        disposition: "canonical",
+      },
+    );
+  });
+
+  it("degrades a creator mirror reached through a retired user slug to a redirect", async () => {
+    resolveUserSlugMock.mockResolvedValue({ ...owner, redirect: true });
+    dbMock.query.recipeCreators.findFirst.mockResolvedValueOnce({
+      recipeId: "rec_1",
+    });
+
+    await expect(
+      resolveNamespacedRecipe("john-old", "apple-pie"),
+    ).resolves.toEqual({ recipeId: "rec_1", disposition: "alias" });
+  });
+
+  it("filters creator lookups to accepted rows, so a pending invite resolves nothing", async () => {
+    await expect(
+      resolveNamespacedRecipe("john", "apple-pie"),
+    ).resolves.toBeNull();
+
+    const call = dbMock.query.recipeCreators.findFirst.mock.calls[0]?.[0] as {
+      where: unknown;
+    };
+    // The predicate is a drizzle SQL tree (self-referential, so it can't be
+    // serialized); collect the bound parameter values out of it instead.
+    const params: unknown[] = [];
+    const seen = new Set<unknown>();
+    const walk = (node: unknown): void => {
+      if (node === null || typeof node !== "object" || seen.has(node)) return;
+      seen.add(node);
+      const record = node as Record<string, unknown>;
+      if ("value" in record && !("table" in record)) params.push(record.value);
+      const chunks = record.queryChunks;
+      if (Array.isArray(chunks)) chunks.forEach(walk);
+    };
+    walk(call.where);
+    expect(params).toContain("accepted");
   });
 
   it("returns null for an unknown cook without querying recipes", async () => {
@@ -118,7 +190,7 @@ describe("resolveFlatRecipe", () => {
 
     await expect(resolveFlatRecipe("rec_1")).resolves.toEqual({
       recipeId: "rec_1",
-      canonical: false,
+      disposition: "alias",
     });
   });
 
@@ -129,7 +201,7 @@ describe("resolveFlatRecipe", () => {
 
     await expect(resolveFlatRecipe("apple-pie")).resolves.toEqual({
       recipeId: "rec_1",
-      canonical: false,
+      disposition: "alias",
     });
   });
 
@@ -140,7 +212,7 @@ describe("resolveFlatRecipe", () => {
 
     await expect(resolveFlatRecipe("apple-pie")).resolves.toEqual({
       recipeId: "rec_2",
-      canonical: false,
+      disposition: "alias",
     });
   });
 
@@ -148,7 +220,7 @@ describe("resolveFlatRecipe", () => {
     dbMock.query.recipes.findFirst.mockResolvedValueOnce({ id: "rec_1" });
 
     const resolved = await resolveFlatRecipe("rec_1");
-    expect(resolved?.canonical).toBe(false);
+    expect(resolved?.disposition).toBe("alias");
   });
 
   it("returns null when nothing matches", async () => {
