@@ -2874,6 +2874,39 @@
       "signIn": {
         "title": "Melde dich an, um deine Rezepte zu laden",
         "body": "Die Sicherung enthält jedes Rezept deines Kontos, deshalb müssen wir wissen, dass du es bist."
+      },
+      "delete": {
+        "title": "Mein Konto löschen",
+        "description": "Damit werden dein Konto und alles darin entfernt. Wir verstecken deine Rezepte nicht und behalten auch keine Kopie. Sie sind endgültig gelöscht.",
+        "consequences": {
+          "title": "Das passiert genau",
+          "recipes": "{count, plural, =0 {Du hast keine eigenen Rezepte, die gelöscht werden.} one {Dein # Rezept wird endgültig gelöscht, samt Geschichte, Notizen und Fotos.} other {Alle # Rezepte von dir werden endgültig gelöscht, samt Geschichten, Notizen und Fotos.}}",
+          "cooking": "Dein Kochverlauf geht ebenfalls: {cookLogs, plural, one {# Eintrag im Kochtagebuch} other {# Einträge im Kochtagebuch}}, {reviews, plural, one {# Bewertung} other {# Bewertungen}} und {collections, plural, one {# Sammlung} other {# Sammlungen}}.",
+          "photos": "Jedes Foto, das du hochgeladen hast, wird aus unserem Bildspeicher gelöscht, nicht nur ausgeblendet.",
+          "coCreated": "{count, plural, one {# Rezept, um das du dich mitkümmerst, gehört jemand anderem. Es bleibt dort, und dein Name verschwindet davon.} other {# Rezepte, um die du dich mitkümmerst, gehören anderen. Sie bleiben bei ihren Besitzern, und dein Name verschwindet davon.}}",
+          "pendingInvites": "{count, plural, one {# Einladung, ein Rezept mitzugestalten, wird zurückgezogen.} other {# Einladungen, Rezepte mitzugestalten, werden zurückgezogen.}}",
+          "subscription": "Dein Abo wird gekündigt. Den laufenden Zeitraum können wir nach der Löschung nicht mehr erstatten.",
+          "links": "Geteilte Rezeptlinks funktionieren nicht mehr. Dein Kochname wird für andere wieder frei.",
+          "irreversible": "Es gibt kein Rückgängig, keine Schonfrist und keine Möglichkeit für uns, etwas davon zurückzuholen."
+        },
+        "groups": {
+          "title": "Du bist die einzige Inhaberin oder der einzige Inhaber einer Familiengruppe",
+          "body": "{groups} bliebe ohne Inhaberschaft zurück. Mach bitte vorher jemand anderen zur Inhaberin oder zum Inhaber, sonst können die Mitglieder die Gruppe nicht mehr verwalten."
+        },
+        "export": {
+          "body": "Nimm dein Kochbuch vorher mit. Der Download ist dieselbe vollständige Sicherung und funktioniert für immer offline.",
+          "cta": "Erst mein Kochbuch herunterladen"
+        },
+        "start": "Mein Konto löschen",
+        "confirm": {
+          "label": "Tippe {phrase}, um zu bestätigen",
+          "help": "Sobald du den Knopf drückst, wird alles oben Genannte sofort gelöscht.",
+          "cta": "Alles endgültig löschen",
+          "cancel": "Mein Konto behalten"
+        },
+        "toasts": {
+          "deleted": "Dein Konto und alles darin wurde gelöscht. Mach's gut."
+        }
       }
     }
   },
