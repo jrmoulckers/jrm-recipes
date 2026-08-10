@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import ar from "~/messages/ar.json";
-import de from "~/messages/de.json";
-import en from "~/messages/en.json";
-import es from "~/messages/es.json";
+import ar from '~/messages/ar.json';
+import de from '~/messages/de.json';
+import en from '~/messages/en.json';
+import es from '~/messages/es.json';
 
 /**
  * Pin the co-creator disclosure in every locale.
@@ -28,36 +28,32 @@ const catalogs = { en, de, es, ar } as const;
 
 /** A phrase each locale uses for "what you wrote stays". */
 const disclosure: Record<keyof typeof catalogs, string> = {
-  en: "Anything you wrote",
-  de: "Was du darin geschrieben hast",
-  es: "Lo que hayas escrito",
-  ar: "ويبقى ما كتبته فيها",
+  en: 'Anything you wrote',
+  de: 'Was du darin geschrieben hast',
+  es: 'Lo que hayas escrito',
+  ar: 'ويبقى ما كتبته فيها',
 };
 
-describe("co-created recipe disclosure", () => {
+describe('co-created recipe disclosure', () => {
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    "tells %s readers that their contributions stay behind",
+    'tells %s readers that their contributions stay behind',
     (locale) => {
-      const message =
-        catalogs[locale].settings.dataPage.delete.consequences.coCreated;
+      const message = catalogs[locale].settings.dataPage.delete.consequences.coCreated;
       expect(message).toContain(disclosure[locale]);
     },
   );
 
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    "keeps the disclosure in every non-zero plural form for %s",
+    'keeps the disclosure in every non-zero plural form for %s',
     (locale) => {
-      const message =
-        catalogs[locale].settings.dataPage.delete.consequences.coCreated;
+      const message = catalogs[locale].settings.dataPage.delete.consequences.coCreated;
       // Plural arms look like `one {...}`. The `=0` arm says the user has no
       // co-created recipes at all, so it has nothing to disclose.
-      const arms = [...message.matchAll(/(?:^|\s)(=0|\w+) \{/g)].map(
-        (match) => match[1]!,
-      );
+      const arms = [...message.matchAll(/(?:^|\s)(=0|\w+) \{/g)].map((match) => match[1]!);
       expect(arms.length).toBeGreaterThan(1);
 
       const occurrences = message.split(disclosure[locale]).length - 1;
-      const expected = arms.filter((arm) => arm !== "=0").length;
+      const expected = arms.filter((arm) => arm !== '=0').length;
       expect(occurrences).toBe(expected);
     },
   );
