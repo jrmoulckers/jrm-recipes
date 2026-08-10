@@ -49,6 +49,8 @@
  *    exactly one schema literal in this file and one scan, so a rot in either
  *    takes the control down with it.
  */
+import { pathToFileURL } from "node:url";
+
 import postgres from "postgres";
 
 /**
@@ -75,6 +77,78 @@ type RuleRow = { table_name: string; name: string };
 
 function describe(rows: readonly { table_name: string; name: string }[]) {
   return rows.map((row) => `${row.table_name}.${row.name}`).sort();
+}
+
+export type Verdict = {
+  /** True when the scan cannot support any conclusion; see `internalCount`. */
+  vacuous: boolean;
+  problems: string[];
+};
+
+/**
+ * Decide the verdict from an already-performed scan (issue #764).
+ *
+ * Pure, so the decision can be tested without Docker. Everything this guard
+ * does was verified by hand against a live `postgres:16-alpine` on #761, and
+ * hand verification rots: nothing re-checked it, and the CI step only ever
+ * exercises a clean database, which is the case that says least. In particular
+ * the allowlist paths are dead code until the first legitimate trigger lands,
+ * and a broken allowlist then blocks a contributor whose obvious remedy is to
+ * weaken the guard.
+ *
+ * Same split, and the same reason, as `parseFirstLoadJs`/`evaluateBudgets` in
+ * scripts/check-bundle-budget.mjs.
+ *
+ * `internalCount` is the anti-vacuity control, and it is counted from the same
+ * scan as `triggers` rather than asked as a second question -- see the note at
+ * the top of this file for why that distinction is load-bearing.
+ */
+export function evaluate({
+  triggers,
+  rules,
+  internalCount,
+  allowedTriggers = ALLOWED_TRIGGERS,
+  allowedRules = ALLOWED_RULES,
+}: {
+  triggers: readonly { table_name: string; name: string }[];
+  rules: readonly { table_name: string; name: string }[];
+  internalCount: number;
+  allowedTriggers?: readonly string[];
+  allowedRules?: readonly string[];
+}): Verdict {
+  if (internalCount === 0) return { vacuous: true, problems: [] };
+
+  const deployedTriggers = describe(triggers);
+  const deployedRules = describe(rules);
+  const problems: string[] = [];
+
+  for (const name of deployedTriggers) {
+    if (!allowedTriggers.includes(name)) {
+      problems.push(`unexpected trigger: ${name}`);
+    }
+  }
+  for (const name of deployedRules) {
+    if (!allowedRules.includes(name)) {
+      problems.push(`unexpected rule: ${name}`);
+    }
+  }
+  /**
+   * The other direction. An allowlist entry whose object is gone is a stale
+   * exemption that would silently pre-approve the next object to take that
+   * name, so it fails rather than being ignored.
+   */
+  for (const name of allowedTriggers) {
+    if (!deployedTriggers.includes(name)) {
+      problems.push(`allowlisted but not deployed: ${name}`);
+    }
+  }
+  for (const name of allowedRules) {
+    if (!deployedRules.includes(name)) {
+      problems.push(`allowlisted but not deployed: ${name}`);
+    }
+  }
+
+  return { vacuous: false, problems };
 }
 
 async function main(): Promise<void> {
@@ -110,17 +184,12 @@ async function main(): Promise<void> {
       where n.nspname = ${SCHEMA} and r.rulename <> '_RETURN'
     `;
 
-    /**
-     * Anti-vacuity, read off the same scan as the check. Enforcing a foreign
-     * key installs internal triggers, so a migrated database has many; this one
-     * reported 460. Zero means the connection, the schema filter or the join is
-     * broken, or the migration chain was never applied -- in every case the
-     * partition below proves nothing, so fail rather than pass empty.
-     */
     const internalCount = allTriggers.filter((row) => row.internal).length;
     const triggers = allTriggers.filter((row) => !row.internal);
 
-    if (internalCount === 0) {
+    const { vacuous, problems } = evaluate({ triggers, rules, internalCount });
+
+    if (vacuous) {
       console.error(
         "check-db-triggers: the scan found no internal triggers at all. " +
           "Enforcing a foreign key installs them, so either the migration " +
@@ -132,35 +201,12 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    const unexpectedTriggers = describe(triggers).filter(
-      (name) => !ALLOWED_TRIGGERS.includes(name),
-    );
-    const unexpectedRules = describe(rules).filter(
-      (name) => !ALLOWED_RULES.includes(name),
-    );
-    const missing = [...ALLOWED_TRIGGERS, ...ALLOWED_RULES].filter(
-      (name) =>
-        !describe(triggers).includes(name) && !describe(rules).includes(name),
-    );
-
-    if (
-      unexpectedTriggers.length > 0 ||
-      unexpectedRules.length > 0 ||
-      missing.length > 0
-    ) {
+    if (problems.length > 0) {
       console.error(
         "check-db-triggers: the deployed database does not match the " +
           "allowlist in scripts/check-db-triggers.ts.\n",
       );
-      for (const name of unexpectedTriggers) {
-        console.error(`  - unexpected trigger: ${name}`);
-      }
-      for (const name of unexpectedRules) {
-        console.error(`  - unexpected rule: ${name}`);
-      }
-      for (const name of missing) {
-        console.error(`  - allowlisted but not deployed: ${name}`);
-      }
+      for (const problem of problems) console.error(`  - ${problem}`);
       console.error(
         "\nA trigger or rule decides what a write does without being a " +
           "foreign key and without changing any call site, so db:check-fks, " +
@@ -185,4 +231,14 @@ async function main(): Promise<void> {
   }
 }
 
-await main();
+/**
+ * CLI only when executed directly, so importing `evaluate` in a unit test does
+ * not open a connection or call `process.exit`. Same guard, same reason, as
+ * scripts/check-bundle-budget.mjs.
+ */
+if (
+  process.argv[1] &&
+  pathToFileURL(process.argv[1]).href === import.meta.url
+) {
+  await main();
+}
