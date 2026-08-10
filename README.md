@@ -256,7 +256,8 @@ git reset --hard
 `pnpm format:check` should then pass. Clones created after `.gitattributes` landed
 are unaffected.
 
-On every PR and push to `main`, GitHub Actions runs:
+On **every** pull request — whatever branch it is based on — and on pushes to
+`main`, GitHub Actions runs:
 
 - **Canonical CI callers** (`.github/workflows/ci.yml`): reviewed shared
   workflows provide security, semantic PR-title, format, lint, typecheck, unit,
@@ -267,9 +268,16 @@ On every PR and push to `main`, GitHub Actions runs:
   Next/Serwist asset checks, and seeded Lighthouse coverage. E2E and Lighthouse
   reuse the canonical build archive; database jobs use ephemeral Postgres and
   Lighthouse reports remain private. No application secrets are required.
+- **Signal integrity**: a `Base freshness` job reports when the merge ref being
+  tested is older than the base branch, and a single `Quality gate` job fails
+  unless every other job succeeded.
 - **Release PR CI**: Release Please PRs created with `GITHUB_TOKEN` do not emit
   the usual PR event. The release workflow explicitly dispatches the same CI at
   its verified in-repository bot branch; arbitrary manual refs fail closed.
+
+Stacking a PR on another branch no longer skips the gate. See
+[docs/ci.md](docs/ci.md) for what runs, and for the three cases where a green
+check list still is not a passing gate.
 
 **Dependabot** (`.github/dependabot.yml`) opens weekly PRs to keep npm packages
 and GitHub Actions current, each one gated by CI.
