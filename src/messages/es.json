@@ -3639,7 +3639,7 @@
   },
   "recipeCreators": {
     "title": "Cocreadores",
-    "description": "Los cocreadores pueden ver esta receta, y también vive en su propia dirección. Tú sigues siendo la persona propietaria: solo tú puedes invitar, quitar, eliminar o cambiar quién la ve.",
+    "description": "Quienes cocrean pueden ver y editar esta receta, y además vive en su propia dirección. Tú sigues siendo quien la posee: solo tú puedes invitar, quitar, eliminar o cambiar quién puede verla.",
     "empty": "Aún no hay cocreadores.",
     "unknownCook": "Cocinero sin nombre",
     "pendingHint": "Invitado. No tiene acceso hasta que acepte.",
@@ -3671,6 +3671,19 @@
       "toast": {
         "accepted": "Ya eres cocreador.",
         "declined": "Invitación rechazada."
+      }
+    },
+    "byline": {
+      "with": "con {names}"
+    },
+    "leave": {
+      "action": "Salir de esta receta",
+      "pending": "Saliendo…",
+      "toast": "Has salido de esta receta.",
+      "confirm": {
+        "title": "¿Salir de esta receta?",
+        "description": "Perderás el acceso y tu enlace dejará de funcionar. Solo quien la posee puede volver a añadirte.",
+        "confirmLabel": "Salir"
       }
     }
   }

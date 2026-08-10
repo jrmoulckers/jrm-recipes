@@ -30,7 +30,6 @@ import {
   listSimilarRecipes,
   recordRecipeView,
   excludeOwnerRatings,
-  isRecipeCreator,
   ratingSummary,
 } from "~/server/recipes/queries";
 import { getRecipeIngredientAllergens } from "~/server/recipes/allergens";
@@ -88,6 +87,7 @@ import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleto
 import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
 import { listRecipeCreators } from "~/server/recipes/creators";
 import { RecipeCreatorManager } from "~/components/recipe/creator-manager";
+import { LeaveRecipeButton } from "~/components/recipe/leave-recipe-button";
 import { computeRecipeNutrition } from "~/server/recipes/nutrition";
 import { getMembership } from "~/server/groups/queries";
 import { isKid } from "~/server/groups/kid-safe";
@@ -221,6 +221,7 @@ export default async function RecipePage({
   }
 
   const t = await getTranslations("recipeDetail");
+  const tCreators = await getTranslations("recipeCreators");
   const tNav = await getTranslations("nav");
   // Every in-page link to this recipe's own sub-routes is built from the one
   // canonical reference, so the namespaced segments can't drift apart (#666).
@@ -246,10 +247,31 @@ export default async function RecipePage({
       : undefined;
 
   const isOwner = Boolean(user?.id === recipe.authorId);
+  const dbEnabled = isDbConfigured();
+  // Co-creators (#668). Previously read only for the owner's management panel,
+  // but the byline names them to *every* reader — attribution is the visible
+  // point of a multi-creator recipe — so the roster is now loaded for all
+  // viewers. It is one indexed lookup, and it also answers "may this viewer
+  // edit, and may they leave?" without the separate `isRecipeCreator` probe
+  // this replaces.
+  const creatorRows = dbEnabled ? await listRecipeCreators(recipe.id) : [];
+  const creators = creatorRows.map((entry) => ({
+    userId: entry.userId,
+    status: entry.status,
+    slug: entry.slug,
+    name: entry.user?.name ?? null,
+    handle: null,
+    cook: entry.user?.slug ?? null,
+  }));
+  const acceptedCreators = creatorRows.filter(
+    (entry) => entry.status === "accepted",
+  );
   // An accepted co-creator may rewrite the recipe body, but not delete it or
   // change who can see it (#668), so edit and owner affordances are separate.
-  const canEdit =
-    isOwner || Boolean(user && (await isRecipeCreator(recipe.id, user.id)));
+  const viewerIsCreator = Boolean(
+    user && acceptedCreators.some((entry) => entry.userId === user.id),
+  );
+  const canEdit = isOwner || viewerIsCreator;
   // Kid-safe UI (issue #367): a kid-role member of the recipe's group must never
   // see the Delete control. The server rejects the delete regardless (see
   // `deleteRecipe`), but hiding it here keeps a child from hitting a dead button.
@@ -259,20 +281,6 @@ export default async function RecipePage({
       ? ((await getMembership(recipe.groupId, user.id))?.role ?? null)
       : null;
   const viewerIsKid = isKid(viewerRole);
-  const dbEnabled = isDbConfigured();
-  // Co-creators (#668). Only the owner manages them, so only the owner pays for
-  // the query; everyone else's render is unchanged.
-  const creators =
-    isOwner && dbEnabled
-      ? (await listRecipeCreators(recipe.id)).map((entry) => ({
-          userId: entry.userId,
-          status: entry.status,
-          slug: entry.slug,
-          name: entry.user?.name ?? null,
-          handle: null,
-          cook: entry.user?.slug ?? null,
-        }))
-      : [];
   // Two-week add-to-plan picker for signed-in viewers (#362), reusing the quick
   // planner action so a cook can plan a recipe the moment they decide to make it.
   const addToPlanContext = user && dbEnabled ? buildTwoWeekPlanContext() : null;
@@ -505,6 +513,23 @@ export default async function RecipePage({
                     {recipe.author.name}
                   </span>
                 )}
+                {/* Co-creators are named next to the owner rather than in a
+                    separate block (#668): they wrote part of this recipe, and
+                    the byline is where a reader looks to find out who did. The
+                    owner stays first — theirs is the canonical namespace. */}
+                {acceptedCreators.length > 0 && (
+                  <>
+                    {" "}
+                    {tCreators("byline.with", {
+                      names: acceptedCreators
+                        .map(
+                          (entry) =>
+                            entry.user?.name ?? tCreators("unknownCook"),
+                        )
+                        .join(", "),
+                    })}
+                  </>
+                )}
               </span>
             )}
             {meta.map((m, i) => (
@@ -630,6 +655,12 @@ export default async function RecipePage({
                       slug={recipe.slug}
                       title={recipe.title}
                     />
+                  )}
+                  {/* A co-creator's counterpart to Delete: removal is otherwise
+                      entirely the owner's call, so this is their only way to end
+                      an attachment that is public under their own name (#668). */}
+                  {viewerIsCreator && (
+                    <LeaveRecipeButton recipeId={recipe.id} />
                   )}
                 </GrownUpControls>
               )}

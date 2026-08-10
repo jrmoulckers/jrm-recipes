@@ -3639,7 +3639,7 @@
   },
   "recipeCreators": {
     "title": "Mitautor:innen",
-    "description": "Mitautor:innen können dieses Rezept sehen, und es ist auch unter ihrer eigenen Adresse erreichbar. Du bleibst Eigentümer:in: Nur du kannst einladen, entfernen, löschen oder die Sichtbarkeit ändern.",
+    "description": "Mitgestaltende können dieses Rezept sehen und bearbeiten, und es liegt zusätzlich unter ihrer eigenen Adresse. Die Rechte bleiben bei dir: Nur du kannst einladen, entfernen, löschen oder die Sichtbarkeit ändern.",
     "empty": "Noch keine Mitautor:innen.",
     "unknownCook": "Unbenannte:r Koch/Köchin",
     "pendingHint": "Eingeladen. Ohne Zusage besteht kein Zugriff.",
@@ -3671,6 +3671,19 @@
       "toast": {
         "accepted": "Du bist jetzt Mitautor:in.",
         "declined": "Einladung abgelehnt."
+      }
+    },
+    "byline": {
+      "with": "mit {names}"
+    },
+    "leave": {
+      "action": "Rezept verlassen",
+      "pending": "Wird verlassen…",
+      "toast": "Du hast dieses Rezept verlassen.",
+      "confirm": {
+        "title": "Rezept verlassen?",
+        "description": "Du verlierst den Zugriff und dein Link funktioniert nicht mehr. Nur die besitzende Person kann dich wieder hinzufügen.",
+        "confirmLabel": "Verlassen"
       }
     }
   }

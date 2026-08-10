@@ -3639,7 +3639,7 @@
   },
   "recipeCreators": {
     "title": "Co-creators",
-    "description": "Co-creators can see this recipe, and it also lives at their own address. You stay the owner: only you can invite, remove, delete, or change who can see it.",
+    "description": "Co-creators can see and edit this recipe, and it also lives at their own address. You stay the owner: only you can invite, remove, delete, or change who can see it.",
     "empty": "No co-creators yet.",
     "unknownCook": "Unnamed cook",
     "pendingHint": "Invited. They get no access until they accept.",
@@ -3671,6 +3671,19 @@
       "toast": {
         "accepted": "You're now a co-creator.",
         "declined": "Invitation declined."
+      }
+    },
+    "byline": {
+      "with": "with {names}"
+    },
+    "leave": {
+      "action": "Leave this recipe",
+      "pending": "Leaving…",
+      "toast": "You've left this recipe.",
+      "confirm": {
+        "title": "Leave this recipe?",
+        "description": "You lose access and your link to it stops working. Only the owner can add you back.",
+        "confirmLabel": "Leave"
       }
     }
   }

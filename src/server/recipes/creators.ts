@@ -7,6 +7,7 @@ import { DomainError } from "~/server/errors";
 import { getHiddenAuthorIds } from "~/server/moderation/blocks";
 import { notify } from "~/server/notifications/notify";
 import { recipeCreators, recipes, users } from "~/server/db/schema";
+import type { RecipeDetailRef } from "~/lib/recipe-path";
 import { recipeSlug } from "./validation";
 import { uniqueSlug, withSlugConflictRetry } from "./mutations";
 
@@ -172,11 +173,17 @@ export async function inviteRecipeCreator(
  * `apple-pie`), the invitee should still get the clean `apple-pie` when their
  * namespace is free. Allocation perturbs strictly within the invitee's
  * namespace, so the owner's slug is never touched.
+ *
+ * Returns the accepted `slug` **and** the owner's canonical namespace, because
+ * the caller has to bust both: the newly served creator path, and the owner's
+ * page, whose byline has just gained a co-creator. The caller only holds a
+ * recipe id, so without this it cannot name the canonical path at all and can
+ * only revalidate the `/recipes/<id>` form nobody links to.
  */
 export async function acceptRecipeCreatorInvite(
   recipeId: string,
   userId: string,
-): Promise<{ cook: string | null; slug: string }> {
+): Promise<{ recipe: RecipeDetailRef; slug: string }> {
   const recipe = await loadRecipe(recipeId);
 
   return await withSlugConflictRetry(() =>
@@ -221,7 +228,14 @@ export async function acceptRecipeCreatorInvite(
         context: recipe.title,
       });
 
-      return { cook: null, slug };
+      return {
+        recipe: {
+          id: recipe.id,
+          slug: recipe.slug,
+          cook: recipe.author?.slug ?? null,
+        },
+        slug,
+      };
     }),
   );
 }

@@ -86,10 +86,15 @@ export const acceptRecipeCreatorAction = authedAction({
     if (!checkRateLimit("recipeWrite", user.id).ok)
       return fail(RATE_LIMITED_MESSAGE);
     try {
-      const { slug } = await acceptRecipeCreatorInvite(data.recipeId, user.id);
-      // The new creator path has to start being served immediately, so the
-      // whole fan-out runs rather than just the canonical path.
-      await revalidateRecipePaths({ id: data.recipeId, slug: null });
+      const { recipe, slug } = await acceptRecipeCreatorInvite(
+        data.recipeId,
+        user.id,
+      );
+      // Both halves matter: the new creator path has to start being served, and
+      // the owner's canonical page has just gained a co-creator in its byline.
+      // Passing the owner's real namespace rather than a slug-less stub is what
+      // makes the second half happen — a stub only busts `/recipes/<id>`.
+      await revalidateRecipePaths(recipe);
       revalidateRecipeTags(data.recipeId);
       return ok({ slug });
     } catch (error) {
