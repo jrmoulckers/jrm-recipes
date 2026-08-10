@@ -225,7 +225,24 @@ describe("media picker upload tab", () => {
   it("records the upload once and never meters storage twice", () => {
     // `recordUploadAction` meters storage itself, so the old direct
     // `recordStorageUsageAction` call must be gone or the cap is billed twice.
+    //
+    // #726: the assertion below is a NEGATIVE over source text, so a typo in
+    // the literal makes it pass forever — a misspelled string is always absent.
+    // The positive beside it is no anchor, because re-adding the forbidden call
+    // does not remove `recordUploadAction(`; coexisting is precisely the bug.
+    // So anchor the literal against the module that really exports it: if the
+    // name is misspelled here, this fails loudly instead of going quiet.
+    const forbidden = "recordStorageUsageAction";
+    const usageActions = readFileSync(
+      resolve(process.cwd(), "src/server/billing/usage-actions.ts"),
+      "utf8",
+    );
+    expect(
+      usageActions,
+      `${forbidden} is not exported by src/server/billing/usage-actions.ts. Either it was renamed — in which case update this literal, since the absence check below is now vacuous — or the literal is misspelled.`,
+    ).toContain(`export async function ${forbidden}(`);
+
     expect(src).toMatch(/recordUploadAction\(/);
-    expect(src).not.toMatch(/recordStorageUsageAction\(/);
+    expect(src).not.toMatch(new RegExp(`${forbidden}\\(`));
   });
 });
