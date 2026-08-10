@@ -42,9 +42,32 @@
  *
  * ## Scope
  *
- * Every foreign key in the schema barrel, not a curated list — a named list
- * needs editing whenever a table is added and silently stops covering whatever
- * nobody remembered to add. Compares `ON DELETE` and `ON UPDATE`.
+ * Every foreign key in the schema barrel, and every foreign key in the database
+ * — the comparison runs in **both** directions (issue #744).
+ *
+ * Declared-to-deployed alone left two ways to violate the property while the run
+ * printed a match and exited 0:
+ *
+ *   - Postgres allows two foreign keys on the same column with *different*
+ *     actions, and enforces both. Keying deployed rows by (table, columns,
+ *     referenced table) collapses such a pair, so one of them is compared to
+ *     nothing. Which one survives is decided by physical order — and dropping
+ *     and re-adding the canonical constraint, which is what a migration
+ *     correcting an action does, moves it last and hides the stray.
+ *   - A constraint with no declaration at all was never looked at, so a table
+ *     missing from the barrel below took its foreign keys out of scope silently.
+ *
+ * Both were demonstrated on the real migration chain: a second `cascade` key on
+ * `recipe_versions.author_id` destroyed a co-creator's version row on account
+ * deletion — the diff basis erasure reads — while this check reported 115 keys
+ * matching and every other gate stayed green.
+ *
+ * Sweeping the deployed side is also what makes "every foreign key" true rather
+ * than aspirational. The barrel is a hand-written list of `export *` lines, so
+ * the declared side is only as complete as that file; requiring every deployed
+ * key to be declared no longer depends on it.
+ *
+ * Compares `ON DELETE` and `ON UPDATE`.
  *
  * Runs against the throwaway database in the `Migrations` CI job, after the
  * chain has been applied.
@@ -177,33 +200,73 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    const deployed = new Map<string, DeployedRow>();
+    // Collect *all* rows per key rather than one. Two constraints can share a
+    // key (same columns, same target, different action) and Postgres enforces
+    // both, so keeping one would silently discard the other (#744).
+    const deployed = new Map<string, DeployedRow[]>();
     for (const row of rows) {
-      deployed.set(
-        keyFor(row.table_name, row.columns ?? [], row.foreign_table),
-        row,
-      );
+      const key = keyFor(row.table_name, row.columns ?? [], row.foreign_table);
+      const bucket = deployed.get(key);
+      if (bucket) bucket.push(row);
+      else deployed.set(key, [row]);
     }
 
     const problems: string[] = [];
+    const matched = new Set<string>();
     for (const fk of declared) {
-      const row = deployed.get(fk.key);
-      if (!row) {
+      const bucket = deployed.get(fk.key);
+      if (!bucket) {
         problems.push(
           `${fk.label}: declared in the schema but no matching constraint exists in the database`,
         );
         continue;
       }
-      const onDelete = ACTION_BY_CODE[row.del] ?? row.del;
-      const onUpdate = ACTION_BY_CODE[row.upd] ?? row.upd;
-      if (onDelete !== fk.onDelete) {
+      matched.add(fk.key);
+
+      if (bucket.length > 1) {
+        const detail = bucket
+          .map((row) => {
+            const del = ACTION_BY_CODE[row.del] ?? row.del;
+            return `${row.constraint_name} (ON DELETE ${del})`;
+          })
+          .join(", ");
         problems.push(
-          `${row.table_name}.${row.constraint_name}: schema declares ON DELETE ${fk.onDelete}, database has ${onDelete}`,
+          `${fk.label}: ${bucket.length} constraints cover the same columns and target — ${detail}. ` +
+            "Postgres enforces every one of them, so the effective behaviour is not the declared " +
+            "action: a cascade alongside a set null deletes the row",
         );
       }
-      if (onUpdate !== fk.onUpdate) {
+
+      // Every constraint on the key must agree; checking one would make the
+      // result depend on which row the scan happened to yield first.
+      for (const row of bucket) {
+        const onDelete = ACTION_BY_CODE[row.del] ?? row.del;
+        const onUpdate = ACTION_BY_CODE[row.upd] ?? row.upd;
+        if (onDelete !== fk.onDelete) {
+          problems.push(
+            `${row.table_name}.${row.constraint_name}: schema declares ON DELETE ${fk.onDelete}, database has ${onDelete}`,
+          );
+        }
+        if (onUpdate !== fk.onUpdate) {
+          problems.push(
+            `${row.table_name}.${row.constraint_name}: schema declares ON UPDATE ${fk.onUpdate}, database has ${onUpdate}`,
+          );
+        }
+      }
+    }
+
+    // The other direction. A constraint the schema never declares is not
+    // covered by the loop above at all, and the most likely cause is a table
+    // missing from the schema barrel — which takes all of its foreign keys out
+    // of scope without changing this count (#744).
+    for (const [key, bucket] of deployed) {
+      if (matched.has(key)) continue;
+      for (const row of bucket) {
+        const del = ACTION_BY_CODE[row.del] ?? row.del;
         problems.push(
-          `${row.table_name}.${row.constraint_name}: schema declares ON UPDATE ${fk.onUpdate}, database has ${onUpdate}`,
+          `${row.table_name}.${row.constraint_name}: exists in the database (ON DELETE ${del}) ` +
+            "but the schema declares no such foreign key. Either it was added by a hand-written " +
+            "migration, or its table is missing from src/server/db/schema/index.ts",
         );
       }
     }
@@ -226,7 +289,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `check-fk-actions: ${declared.length} foreign key(s) match the schema.`,
+      `check-fk-actions: ${declared.length} declared and ${rows.length} deployed foreign key(s) match.`,
     );
   } finally {
     await sql.end({ timeout: 5 });
