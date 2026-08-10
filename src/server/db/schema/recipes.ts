@@ -335,6 +335,23 @@ export const recipeSteps = pgTable(
 /**
  * Immutable snapshots capturing how a recipe evolved over time (Phase 2
  * timelines). Schema is present now so edits can be journaled from day one.
+ *
+ * **This table is load-bearing for account erasure. Do not prune it without
+ * reading this first.**
+ *
+ * Since #685, an accepted co-creator can edit a recipe they do not own, so a
+ * departing user's prose can end up inside somebody else's `recipes.story`,
+ * `notes` and step text. No author-scoped delete reaches it. `authorId` plus a
+ * full `snapshot` per save is the only record of which words were whose, so
+ * diffing a user's versions against their predecessors is what makes it
+ * possible to compute the text they introduced and back it out. See #678.
+ *
+ * A retention sweep here is a natural idea: the table is append-only and grows
+ * without bound. But pruning it removes the evidence erasure depends on, and
+ * the failure is silent and in the dangerous direction, because erasure would
+ * still report success while leaving a departed user's text on the site. If
+ * versions must be capped, the erasure story has to be settled first, not
+ * afterwards.
  */
 export const recipeVersions = pgTable(
   "recipe_versions",
