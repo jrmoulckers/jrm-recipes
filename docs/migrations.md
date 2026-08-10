@@ -95,6 +95,31 @@ constraint, confirm:
 - [ ] The seed (`pnpm db:seed`) still succeeds against the new schema.
 - [ ] For large-table rewrites, the operation won't hold a long exclusive lock
       (prefer `ADD COLUMN` + backfill over table rewrites).
+- [ ] The migration adds **no trigger or rule**. If it must, add it to the
+      allowlist in `scripts/check-db-triggers.ts` in the same PR (see below).
+
+## What CI asserts about the deployed database
+
+`pnpm db:generate` drift proves the migrations match the schema _as drizzle-kit
+generates them_, and the double `node scripts/migrate.mjs` proves they apply and
+are idempotent. Neither compares the resulting **database** to the schema, so the
+`Migrations` job runs two assertions that do:
+
+| step                     | asserts                                                                  | why it exists                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm db:check-fks`      | every deployed foreign key matches its declaration, in both directions   | a hand-written migration can alter a referential action, changing what a delete does without touching a call site (#738, #744)                                         |
+| `pnpm db:check-triggers` | the database installs no triggers or rules outside an explicit allowlist | referential actions are not the only such mechanism — a `BEFORE DELETE` trigger reaches the same state without being a foreign key, and passes every other gate (#761) |
+
+The second was measured, not assumed: with a six-line trigger installed,
+`db:check-fks` reported `115 declared and 115 deployed ... match`, both migration
+passes exited 0, drift was clean and the schema unit tests passed 27/27 — while
+the trigger destroyed the `recipe_versions` rows that account erasure reads as
+its diff basis (`src/server/users/erasure.ts`).
+
+The allowlist is deliberately **not** derived by scanning `drizzle/*.sql`. A
+hand-written migration is the arrival route, so a derived expectation would learn
+about the trigger from the same migration that adds it and pass. Requiring an
+edit to the script is the review moment.
 
 ## Rollback / repair runbook
 
