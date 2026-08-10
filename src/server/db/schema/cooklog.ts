@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -50,6 +50,10 @@ export const cookLogEntries = pgTable(
     index("cook_log_entries_user_cooked_idx").on(t.userId, t.cookedAt),
     // Fast "cooks shared to this family" feed for the group activity view.
     index("cook_log_entries_shared_group_idx").on(t.sharedToGroupId),
+    // Media-library usage lookup (issue #658). Partial: most cooks have no photo.
+    index("cook_log_entries_photo_url_idx")
+      .on(t.photoUrl)
+      .where(sql`${t.photoUrl} is not null`),
   ],
 );
 

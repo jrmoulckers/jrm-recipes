@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -64,7 +64,14 @@ export const collections = pgTable(
     shareToken: varchar({ length: 24 }).unique(),
     ...timestamps(),
   },
-  (t) => [index("collections_user_idx").on(t.userId)],
+  (t) => [
+    index("collections_user_idx").on(t.userId),
+    // Media-library usage lookup (issue #658). Partial: most collections have
+    // no cover image.
+    index("collections_cover_image_url_idx")
+      .on(t.coverImageUrl)
+      .where(sql`${t.coverImageUrl} is not null`),
+  ],
 );
 
 /** Membership of a recipe in a collection, ordered by `position`. */
