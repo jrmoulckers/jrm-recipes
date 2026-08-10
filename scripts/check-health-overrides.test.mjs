@@ -80,7 +80,9 @@ describe("community health file overrides", () => {
 
   it("finds the health files this repo is known to override", () => {
     // Concrete expected value: cannot be satisfied by an empty or broken enumeration.
-    expect(found.map((f) => f.rel).sort()).toEqual([...EXPECTED_OVERRIDES].sort());
+    expect(found.map((f) => f.rel).sort()).toEqual(
+      [...EXPECTED_OVERRIDES].sort(),
+    );
   });
 
   it("marks every present health file as a deliberate override", () => {
