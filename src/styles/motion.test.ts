@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import defaultTheme from "tailwindcss/defaultTheme";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -27,18 +28,64 @@ const TAILWIND = read("tailwind.config.ts");
  * tokens asserted positively alongside it, so those assertions pass with the
  * violation present. A negative over source text passes whenever the literal is
  * absent, and a misspelled literal is always absent.
+ *
+ * Three of these have an upstream referent, so their probe samples are built
+ * from Tailwind's default theme rather than typed out here (#756). That matters
+ * because these classes are banned precisely *because* Tailwind still ships
+ * them: `tailwind.config.ts` uses `extend`, so the untokenized defaults stay
+ * reachable beside our tokens. If a key were renamed or dropped upstream the
+ * class could no longer be written, the ban would forbid nothing, and a
+ * hand-typed sample would keep passing forever. Deriving the sample means that
+ * case fails loudly and gets revisited instead of quietly retyped.
+ *
+ * `transform:` has no referent — it is a CSS property, not an API — so it keeps
+ * a hand-written probe. That is the third category from #732, and it is the
+ * only tool available for it.
  */
-const HARDCODED_EASE = "ease-out";
+const EASE_OUT_KEY = "out";
+const DURATION_150_KEY = "150";
+const DURATION_200_KEY = "200";
+
+const upstreamEasing = (key: string) => {
+  expect(
+    Object.keys(defaultTheme.transitionTimingFunction ?? {}),
+    `Tailwind no longer defines the "${key}" easing, so the ease-${key} ban can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
+  ).toContain(key);
+  return `ease-${key}`;
+};
+
+const upstreamDuration = (key: string) => {
+  expect(
+    Object.keys(defaultTheme.transitionDuration ?? {}),
+    `Tailwind no longer defines the "${key}" duration, so the duration-${key} ban can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
+  ).toContain(key);
+  return `duration-${key}`;
+};
+
+const HARDCODED_EASE = `ease-${EASE_OUT_KEY}`;
 const RAW_TRANSFORM = "transform:";
-const DURATION_150 = /duration-150\b/;
-const DURATION_200 = /duration-200\b/;
+const DURATION_150 = new RegExp(`duration-${DURATION_150_KEY}\\b`);
+const DURATION_200 = new RegExp(`duration-${DURATION_200_KEY}\\b`);
 
 describe("motion bans (issue #750)", () => {
   it("still matches hard-coded easing and durations, so the bans can fire", () => {
-    expect('animation: "fade-in 0.2s ease-out"').toContain(HARDCODED_EASE);
+    // Samples built from the upstream keys, so they cannot go stale (#756).
+    expect(
+      `animation: "fade-in 0.2s ${upstreamEasing(EASE_OUT_KEY)}"`,
+    ).toContain(HARDCODED_EASE);
+    expect(
+      DURATION_150.test(
+        `transition-colors ${upstreamDuration(DURATION_150_KEY)}`,
+      ),
+    ).toBe(true);
+    expect(
+      DURATION_200.test(
+        `transition-shadow ${upstreamDuration(DURATION_200_KEY)}`,
+      ),
+    ).toBe(true);
+    // No referent: a CSS property, not an API. Hand-written sample is the only
+    // option here.
     expect('"pop-in": { transform: "scale(0.96)" }').toContain(RAW_TRANSFORM);
-    expect(DURATION_150.test("transition-colors duration-150")).toBe(true);
-    expect(DURATION_200.test("transition-shadow duration-200")).toBe(true);
   });
 });
 
