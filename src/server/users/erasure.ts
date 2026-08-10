@@ -184,7 +184,16 @@ export async function eraseUserAccount(
 
     // Recipes the user owns. These are deleted; recipes where they are merely
     // an accepted creator are not, and their creator row cascades away with the
-    // account, which is what removes their attribution and mirrored namespace.
+    // account, which removes their attribution and mirrored namespace.
+    //
+    // Removing the attribution is not the same as removing the contribution.
+    // Since #685 an accepted creator can edit the body of a recipe they do not
+    // own, so what survives here is their prose in someone else's `story`,
+    // `notes` and step text with their name detached from it — pseudonymized,
+    // which is the same failure this file rejects a few statements below when a
+    // cascade would do it to `recipe_versions`. `retainedRecipeCount` counts the
+    // recipes this applies to and is persisted on the tombstone, so the scale is
+    // recorded even though the residue is not addressed. See #694 and #678.
     const owned = await t
       .select({ id: recipes.id })
       .from(recipes)
@@ -387,12 +396,21 @@ export async function eraseUserAccount(
 }
 
 /**
- * Fail loudly if anything survived.
+ * Fail loudly if any row that *names* the user survived.
  *
  * An erasure that silently half-succeeded is the worst outcome available: the
  * user is told their data is gone, the tombstone says so, and the residue is
  * never looked at again. This runs after the transaction commits, so it reads
  * the real post-state rather than the transaction's own view.
+ *
+ * Read the guarantee narrowly. This checks for surviving *rows keyed to the
+ * user*; it cannot check for surviving *text*. Free text the user contributed to
+ * a recipe someone else owns has no column naming them once their creator row
+ * cascades away, so it passes this check by construction — the exact scenario
+ * the paragraph above calls the worst outcome available. That is a known gap
+ * (#694), not something this function can be tightened to catch: detecting it
+ * requires the contribution revert that #678 has to decide on. Do not treat a
+ * clean return here as evidence that no personal data remains.
  */
 export async function assertUserErased(userId: string): Promise<void> {
   const [remaining] = await db
