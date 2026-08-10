@@ -54,6 +54,7 @@ export function isProductionDeploy(vars = process.env) {
  * @param {{
  *   NODE_ENV?: string;
  *   NEXT_PUBLIC_DEV_AUTH_BYPASS?: string;
+ *   E2E_IDENTITY_SELECTOR?: string;
  *   CLERK_SECRET_KEY?: string;
  *   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
  * }} vars
@@ -68,6 +69,20 @@ export function findProductionAuthIssues(vars) {
     issues.push(
       'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production: dev-bypass ' +
         "auth is a local/test-only affordance.",
+    );
+  }
+  // The dev-identity selector (#783/#786). Condition 3 is "nothing outside
+  // CI's e2e job sets this", which until now was a property of our deployment
+  // config rather than something the app enforced -- and #783 exists precisely
+  // because a condition asserted only in prose turned out never to have been
+  // implemented. Refusing to boot makes it checkable. Harmless in isolation
+  // (the selector is read only inside the dev-bypass branch, which already
+  // cannot run here), so this is the outer layer failing loudly rather than
+  // the last line of defence.
+  if (vars.E2E_IDENTITY_SELECTOR === "1") {
+    issues.push(
+      'E2E_IDENTITY_SELECTOR must not be "1" in production: the dev-identity ' +
+        "selector is a CI-only test affordance.",
     );
   }
   if (!vars.CLERK_SECRET_KEY || !vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
@@ -206,6 +221,7 @@ if (isProductionDeploy() && typeof window === "undefined") {
   const result = z
     .object({
       NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
+      E2E_IDENTITY_SELECTOR: z.string().optional(),
       CLERK_SECRET_KEY: z.string().optional(),
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
     })
@@ -223,8 +239,8 @@ if (isProductionDeploy() && typeof window === "undefined") {
     const messages = result.error.issues.map((issue) => issue.message);
     console.error("❌ Invalid environment variables:\n" + messages.join("\n"));
     throw new Error(
-      "Invalid environment variables: dev-bypass auth cannot be enabled in " +
-        "production. " +
+      "Invalid environment variables: test-only auth affordances cannot be " +
+        "enabled in production. " +
         messages.join(" "),
     );
   }
