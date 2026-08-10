@@ -213,8 +213,8 @@ describe('acceptRecipeCreatorInvite (invitee consent)', () => {
     // silently degrade the fan-out to `/recipes/<id>`, which nothing links to.
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({
-      id: "rc_1",
-      status: "pending",
+      id: 'rc_1',
+      status: 'pending',
     });
 
     const result = await acceptRecipeCreatorInvite(RECIPE.id, INVITEE);
@@ -222,7 +222,7 @@ describe('acceptRecipeCreatorInvite (invitee consent)', () => {
     expect(result.recipe).toEqual({
       id: RECIPE.id,
       slug: RECIPE.slug,
-      cook: "ada",
+      cook: 'ada',
     });
   });
 

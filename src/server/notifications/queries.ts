@@ -61,7 +61,7 @@ function hrefFor(row: {
   recipe: { slug: string } | null;
   group: { slug: string } | null;
 }): Route | null {
-  if (row.type === "recipe_creator_invite") return "/notifications";
+  if (row.type === 'recipe_creator_invite') return '/notifications';
   if (row.recipe) return `/recipes/${row.recipe.slug}` as Route;
   if (row.group) return `/groups/${row.group.slug}` as Route;
   return null;

@@ -81,10 +81,7 @@ export const acceptRecipeCreatorAction = authedAction({
   handler: async (data, user): Promise<ActionResult<{ slug: string }>> => {
     if (!checkRateLimit('recipeWrite', user.id).ok) return fail(RATE_LIMITED_MESSAGE);
     try {
-      const { recipe, slug } = await acceptRecipeCreatorInvite(
-        data.recipeId,
-        user.id,
-      );
+      const { recipe, slug } = await acceptRecipeCreatorInvite(data.recipeId, user.id);
       // Both halves matter: the new creator path has to start being served, and
       // the owner's canonical page has just gained a co-creator in its byline.
       // Passing the owner's real namespace rather than a slug-less stub is what
