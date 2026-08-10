@@ -6,7 +6,11 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
 import { groupMembers, recipes, users, type User } from "~/server/db/schema";
-import { DEV_USER, DEV_IDENTITY_COOKIE, resolveDevIdentity } from "~/server/auth/dev-user";
+import {
+  DEV_USER,
+  DEV_IDENTITY_COOKIE,
+  resolveDevIdentity,
+} from "~/server/auth/dev-user";
 import { getEntitlements } from "~/server/billing/entitlements";
 import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -58,7 +62,6 @@ async function selectDevIdentity(): Promise<User> {
     return DEV_USER;
   }
 }
-
 
 /**
  * Fail closed: the shared dev-bypass user must never be served in production.

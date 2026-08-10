@@ -236,9 +236,7 @@ test.describe.serial("co-creation across two identities (#698)", () => {
     // the owner's, so reading it back beats assuming they match.
     await expect(async () => {
       await owner.goto(ownerPath);
-      await expect(
-        creatorPanel(owner).getByText(/^Co-creator$/),
-      ).toBeVisible();
+      await expect(creatorPanel(owner).getByText(/^Co-creator$/)).toBeVisible();
     }).toPass({ timeout: 20_000 });
 
     const link = creatorPanel(owner).getByRole("link", {

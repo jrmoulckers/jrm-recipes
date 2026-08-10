@@ -1,4 +1,4 @@
-﻿import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 // Several worktrees of this repo are often checked out at once, and each may be
 // running its own `pnpm start`. With a hardcoded port, `reuseExistingServer`

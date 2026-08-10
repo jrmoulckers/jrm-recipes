@@ -46,12 +46,14 @@ describe("revocation fan-out wiring", () => {
   it("passes the removed creator's namespace to the path revalidation", () => {
     // Not a bare `removal.removed`: the point is that it reaches the
     // revalidation call, not merely that the field is read somewhere.
-    const call = code.match(
-      /revalidateRecipePaths\(([\s\S]{0,200}?)\)\s*;/,
+    const call = /revalidateRecipePaths\(([\s\S]{0,200}?)\)\s*;/.exec(
+      code,
     )?.[1];
 
-    expect(call, `no revalidateRecipePaths call found in ${SOURCE_PATH}`).
-      toBeDefined();
+    expect(
+      call,
+      `no revalidateRecipePaths call found in ${SOURCE_PATH}`,
+    ).toBeDefined();
     expect(call).toContain("removal.removed");
   });
 

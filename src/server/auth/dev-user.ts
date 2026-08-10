@@ -67,5 +67,7 @@ export const DEV_IDENTITY_COOKIE = "heirloom_dev_identity";
  */
 export function resolveDevIdentity(requested: string | undefined | null): User {
   if (!requested) return DEV_USER;
-  return DEV_IDENTITIES.find((identity) => identity.id === requested) ?? DEV_USER;
+  return (
+    DEV_IDENTITIES.find((identity) => identity.id === requested) ?? DEV_USER
+  );
 }
