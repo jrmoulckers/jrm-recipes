@@ -40,11 +40,27 @@ describe("forced-colors bans (issue #750)", () => {
   });
 
   it.each(SYSTEM_COLORS)(
-    "still matches a leaked %s, so the ban can fire",
+    "is a keyword the stylesheet really uses, so the ban can fire (%s)",
     (keyword) => {
-      expect(`:root { border-color: ${keyword}; }`).toContain(keyword);
+      // Anchored to real content, not to an interpolated sample. A probe that
+      // builds its haystack from the needle -- `expect(`...${keyword}...`)
+      // .toContain(keyword)` -- is satisfied by every possible string including
+      // a misspelled one, so it anchors nothing (#754). Elements 1 and 2 were
+      // separately pinned by the positives below, which left element 0 free to
+      // rot: with `ButtonText` misspelled here, a real `ButtonText` leak outside
+      // the media blocks went from 1 failed to 8 passed.
+      expect(block(A11Y_CSS, "@media (forced-colors: active)")).toContain(
+        keyword,
+      );
     },
   );
+
+  it("has a probe per keyword, so the table cannot empty unnoticed", () => {
+    // `it.each([])` registers zero tests and passes with no error or warning,
+    // and `:110` iterates this same array, so emptying it would make the ban
+    // and its own probe vacuous together from a single edit (#754).
+    expect(SYSTEM_COLORS.length).toBeGreaterThan(0);
+  });
 });
 
 function block(css: string, atRule: string): string {

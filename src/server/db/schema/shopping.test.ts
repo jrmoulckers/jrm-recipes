@@ -89,6 +89,13 @@ describe("migration bans (issue #750)", () => {
       expect(pattern.test(probe)).toBe(true);
     },
   );
+
+  it("has a probe per ban, so the table cannot empty unnoticed", () => {
+    // `it.each([])` registers zero tests and passes with no error or warning,
+    // so an emptied table silently removes every anchor while the bans below
+    // keep referencing the constants directly (#754).
+    expect(BANS.length).toBeGreaterThan(0);
+  });
 });
 
 const drizzleDir = join(process.cwd(), "drizzle");

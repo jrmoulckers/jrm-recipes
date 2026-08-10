@@ -66,6 +66,15 @@ describe("focus-visible bans (issue #750)", () => {
       expect(pattern.test(probe)).toBe(true);
     },
   );
+
+  it("has a probe per ban, so the table cannot empty unnoticed", () => {
+    // `it.each([])` registers zero tests and passes with no error or warning,
+    // so emptying this table removes the whole anchor layer while the bans at
+    // the call sites still reference the constants directly. Measured: the file
+    // goes from 6 tests to 4 with nothing failing, and a pattern rot after that
+    // is silent again (#754).
+    expect(BANS.length).toBeGreaterThan(0);
+  });
 });
 
 describe("focus-visible standardization (issue #85)", () => {
