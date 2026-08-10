@@ -3603,5 +3603,42 @@
       "body": "Únete a un grupo familiar o crea uno para ver qué cocina cada quien, todo en un sitio.",
       "cta": "Encuentra a tu familia"
     }
+  },
+  "recipeCreators": {
+    "title": "Cocreadores",
+    "description": "Los cocreadores pueden ver esta receta, y también vive en su propia dirección. Tú sigues siendo la persona propietaria: solo tú puedes invitar, quitar, eliminar o cambiar quién la ve.",
+    "empty": "Aún no hay cocreadores.",
+    "unknownCook": "Cocinero sin nombre",
+    "pendingHint": "Invitado. No tiene acceso hasta que acepte.",
+    "status": {
+      "pending": "Invitado",
+      "accepted": "Cocreador"
+    },
+    "actions": {
+      "invite": "Invitar",
+      "inviting": "Invitando…",
+      "remove": "Quitar",
+      "rescind": "Cancelar invitación"
+    },
+    "invite": {
+      "label": "Invitar a alguien",
+      "placeholder": "Usuario o correo"
+    },
+    "toast": {
+      "invited": "Invitación enviada.",
+      "removed": "Cocreador eliminado."
+    },
+    "invites": {
+      "title": "Invitaciones de recetas",
+      "empty": "No hay invitaciones por ahora.",
+      "from": "De {name}",
+      "someone": "otra persona",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "toast": {
+        "accepted": "Ya eres cocreador.",
+        "declined": "Invitación rechazada."
+      }
+    }
   }
 }

@@ -85,6 +85,8 @@ import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-dis
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
 import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
+import { listRecipeCreators } from "~/server/recipes/creators";
+import { RecipeCreatorManager } from "~/components/recipe/creator-manager";
 import { computeRecipeNutrition } from "~/server/recipes/nutrition";
 import { getMembership } from "~/server/groups/queries";
 import { isKid } from "~/server/groups/kid-safe";
@@ -253,6 +255,19 @@ export default async function RecipePage({
       : null;
   const viewerIsKid = isKid(viewerRole);
   const dbEnabled = isDbConfigured();
+  // Co-creators (#668). Only the owner manages them, so only the owner pays for
+  // the query; everyone else's render is unchanged.
+  const creators =
+    isOwner && dbEnabled
+      ? (await listRecipeCreators(recipe.id)).map((entry) => ({
+          userId: entry.userId,
+          status: entry.status,
+          slug: entry.slug,
+          name: entry.user?.name ?? null,
+          handle: null,
+          cook: entry.user?.slug ?? null,
+        }))
+      : [];
   // Two-week add-to-plan picker for signed-in viewers (#362), reusing the quick
   // planner action so a cook can plan a recipe the moment they decide to make it.
   const addToPlanContext = user && dbEnabled ? buildTwoWeekPlanContext() : null;
@@ -921,6 +936,16 @@ export default async function RecipePage({
                   ]}
                   className="pt-2"
                 />
+
+                {/* Co-creator management (#668). Owner-only in the UI, and
+                    owner-only again in every action it calls — this render
+                    condition is a convenience, never the gate. */}
+                {isOwner && (
+                  <RecipeCreatorManager
+                    recipeId={recipe.id}
+                    creators={creators}
+                  />
+                )}
               </div>
             </div>
           </TabsContent>

@@ -65,7 +65,7 @@ Recipe URLs are namespaced by their author (issue #666, [ADR 0002](./architectur
 
 ### Co-creator namespaces (issue #668)
 
-A recipe can also resolve inside a co-creator's namespace, so `/recipes/ada/blueberry-muffins` and `/recipes/john/blueberry-muffins` can be the same document. The owner's path stays canonical.
+A recipe can also resolve inside a co-creator's namespace, so `/recipes/ada/blueberry-muffins` and `/recipes/john/blueberry-muffins` can be the same document. The owner's path stays canonical. See [ADR 0003](./architecture/0003-multi-creator-recipes.md).
 
 - `recipe_creators` holds one row per co-creator, with the slug the recipe answers on inside _that user's_ namespace. The owner is deliberately absent from the table: it is `recipes.authorId`, a `NOT NULL` FK, so exactly one owner is guaranteed and a second representation could only drift. That also makes the zero-creator state unreachable.
 - `status` is `pending` until the invitee accepts. A pending row grants **nothing** — no access, no slug, no URL — and a DB CHECK ties `slug`/`accepted_at` to the status so a half-applied acceptance isn't representable. Adding a creator publishes a recipe under _their_ public namespace, so it needs the invitee's consent as well as the owner's.

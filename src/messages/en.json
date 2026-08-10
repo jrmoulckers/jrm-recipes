@@ -3603,5 +3603,42 @@
       "body": "Join or create a family group to see what everyone's cooking, all in one place.",
       "cta": "Find your family"
     }
+  },
+  "recipeCreators": {
+    "title": "Co-creators",
+    "description": "Co-creators can see this recipe, and it also lives at their own address. You stay the owner: only you can invite, remove, delete, or change who can see it.",
+    "empty": "No co-creators yet.",
+    "unknownCook": "Unnamed cook",
+    "pendingHint": "Invited. They get no access until they accept.",
+    "status": {
+      "pending": "Invited",
+      "accepted": "Co-creator"
+    },
+    "actions": {
+      "invite": "Invite",
+      "inviting": "Inviting…",
+      "remove": "Remove",
+      "rescind": "Cancel invite"
+    },
+    "invite": {
+      "label": "Invite a cook",
+      "placeholder": "Handle or email"
+    },
+    "toast": {
+      "invited": "Invitation sent.",
+      "removed": "Co-creator removed."
+    },
+    "invites": {
+      "title": "Recipe invitations",
+      "empty": "No invitations right now.",
+      "from": "From {name}",
+      "someone": "another cook",
+      "accept": "Accept",
+      "decline": "Decline",
+      "toast": {
+        "accepted": "You're now a co-creator.",
+        "declined": "Invitation declined."
+      }
+    }
   }
 }
