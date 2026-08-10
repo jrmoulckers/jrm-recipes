@@ -55,13 +55,27 @@ rather than a silent default.
 A `pending` invitation grants nothing and has no slug, so it never makes a recipe "co-created" for
 survival purposes.
 
-**Precondition on widening writes.** If cross-owner editing ever ships, this reasoning expires:
-the departing user's prose would live inside someone else's `recipes.story` / `notes` and,
-invisibly, in every `recipe_versions.snapshot` jsonb — reachable by no author-scoped delete. The
-separability mechanism is derived provenance: `recipe_versions` carries `authorId` plus a full
-snapshot per save, so diffing a user's versions against their predecessors yields exactly the text
-they introduced, with no new attribution table. **Ordering hazard:** erasure deletes those version
-rows, which destroys the diff basis. Any future revert must be computed and applied _first_.
+**Precondition on widening writes, and its breach.** This reasoning depended on cross-owner editing
+not existing. It now does: #685 shipped after this ADR was written and lets an accepted co-creator
+edit the recipe body, so the precondition recorded here has been crossed rather than held.
+
+The consequence is live. The departing user's prose can sit inside someone else's
+`recipes.story` / `notes` and step text, and invisibly in every `recipe_versions.snapshot` jsonb
+written by other users after that edit. No author-scoped delete reaches either, so erasure does not
+fully remove a departing user's free text from recipes it retains.
+
+This is disclosed rather than concealed: the pre-confirmation notice tells the user that anything
+they wrote in someone else's recipe stays, because their edits cannot be reliably told apart from
+the owner's. Informed consent is the part that must not wait for a remedy.
+
+The separability mechanism, if the remedy is built, is derived provenance: `recipe_versions`
+carries `authorId` plus a full snapshot per save, so diffing a user's versions against their
+predecessors yields exactly the text they introduced, with no new attribution table. **Ordering
+hazard:** erasure deletes those version rows, which destroys the diff basis. Any revert must be
+computed and applied _first_, and once a deletion has run the remedy is gone for that user
+permanently. Four candidate remedies and this ordering constraint are tracked on #678; none is
+implemented, because each changes what erasure means and that is a product and legal decision
+rather than an implementation detail.
 
 ### Ordering is enforced by the schema, not by discipline
 
@@ -138,6 +152,12 @@ The co-creator sentence is shown **only when the user actually has co-created re
 behaviour that does not apply to the reader is its own transparency problem, and the count comes
 from the same `accepted`-only query that decides survival, so the notice cannot promise something
 the erasure will not do.
+
+That sentence also states that anything the user wrote in someone else's recipe stays, and says why:
+their edits cannot be reliably told apart from the owner's. This is deliberately worded as a
+limitation rather than a courtesy. Since #685, the erasure genuinely leaves that text in place, and
+a notice that mentioned only the byline coming off would describe an erasure the system does not
+perform. The disclosure is the honest floor while the remedy is undecided, not a substitute for it.
 
 Sole ownership of a family group is called out by name, because deleting the account cascades the
 membership away and leaves a group other people still use without an owner.

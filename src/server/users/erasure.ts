@@ -59,13 +59,21 @@ import {
  * owner is offered ownership transfer *before* confirming, so retention becomes
  * their consented act rather than a silent default. See PR B for that notice.
  *
- * If cross-owner editing ever ships, this reasoning expires: U's prose would
- * live inside someone else's recipe and in every `recipe_versions.snapshot`,
- * reachable by no author-scoped delete. `recipe_versions` carries `authorId`
- * plus a full snapshot per save, so the introduced text is derivable by diffing
- * U's versions against their predecessors — but note the ordering hazard: this
- * function deletes U's version rows, which destroys that diff basis. Any future
- * revert must be computed and applied *before* that delete.
+ * **Cross-owner editing has shipped, and this reasoning has expired.** #685 lets
+ * an accepted co-creator edit the recipe body, so U's prose can now live inside
+ * a recipe someone else owns: in `recipes.story`, `notes` and step text, and
+ * invisibly in every `recipe_versions.snapshot` written by other users after
+ * U's edit. No author-scoped delete reaches either, so this function does not
+ * fully erase U's free text from recipes it retains. That is a known gap,
+ * tracked on #678 with four candidate remedies, and the pre-confirmation notice
+ * discloses it rather than claiming an erasure that does not happen.
+ *
+ * `recipe_versions` carries `authorId` plus a full snapshot per save, so the
+ * text U introduced is derivable by diffing U's versions against their
+ * predecessors. Note the ordering hazard: this function deletes U's version
+ * rows, which destroys that diff basis. Any revert must be computed and applied
+ * *before* that delete, and once a deletion has run the remedy is unavailable
+ * for that user forever.
  *
  * **Pending creators are not creators.** A `pending` invitation grants nothing
  * and has no slug, so it never makes a recipe "co-created" for survival
