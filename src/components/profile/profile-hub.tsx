@@ -50,7 +50,7 @@ const SETTINGS_LINKS: SettingsLink[] = [
   { href: "/settings/units", labelKey: "units", icon: Ruler },
   { href: "/settings/notifications", labelKey: "notifications", icon: Bell },
   { href: "/settings/following", labelKey: "following", icon: UserPlus },
-  { href: "/settings/photos" as Route, labelKey: "photos", icon: Images },
+  { href: "/settings/photos", labelKey: "photos", icon: Images },
   { href: "/settings/blocked", labelKey: "blocked", icon: ShieldBan },
   { href: "/settings/data", labelKey: "data", icon: Database },
   { href: "/settings/billing", labelKey: "billing", icon: CreditCard },
