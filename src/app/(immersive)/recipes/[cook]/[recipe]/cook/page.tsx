@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getLocale } from "next-intl/server";
 
-import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
 import { toCookRecipe } from "~/server/recipes/serialize";
 import { CookExperience } from "~/components/cook/cook-experience";
 import { UnitPrefsProvider } from "~/components/recipe/unit-prefs-context";
@@ -17,8 +17,8 @@ export async function generateMetadata({
 }: {
   params: Promise<RecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await parseRecipeParams(params);
-  const { recipe } = await getRecipeForViewer(id);
+  const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
+  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   return {
     title: recipe ? `Cook · ${recipe.title}` : "Cook mode",
     robots: { index: false, follow: false },
@@ -30,8 +30,8 @@ export default async function CookPage({
 }: {
   params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await parseRecipeParams(params);
-  const { user, recipe } = await getRecipeForViewer(id);
+  const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
+  const { user, recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   if (!recipe) notFound();
 
   // Auto-convert amounts to the cook's saved units while they cook (#…). Fetched

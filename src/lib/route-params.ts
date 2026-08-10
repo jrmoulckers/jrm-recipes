@@ -29,12 +29,28 @@ export function firstSearchParam(
 }
 
 /**
- * Dynamic segment for a recipe route. The value may be a recipe **id or slug**,
- * and the loader resolves either, so it is deliberately not narrowed further here.
+ * Dynamic segments for a canonical recipe route: `/recipes/<cook>/<recipe>`.
+ *
+ * `cook` is the author's user slug (live or a retained alias) and `recipe` is a
+ * slug inside that namespace, a retained alias, or a recipe id. The resolver
+ * (`~/server/recipes/resolve`) accepts all of those, so neither is narrowed
+ * further here (#666).
  */
-export type RecipeRouteParams = { id: string };
+export type RecipeRouteParams = { cook: string; recipe: string };
+/**
+ * Single dynamic segment for the legacy flat recipe route, `/recipes/<x>`. The
+ * value is a pre-namespacing global slug or a recipe id; the route resolves it
+ * and 308s to the canonical namespaced URL.
+ */
+export type FlatRecipeRouteParams = { cook: string };
 /** Dynamic segment for a saved collection, keyed by id. */
 export type CollectionRouteParams = { id: string };
+/**
+ * Dynamic segment for the public embed card, keyed by recipe **id**. The embed
+ * iframe src is built from the id rather than the slug because slugs are only
+ * unique inside a cook's namespace (#666).
+ */
+export type EmbedRecipeRouteParams = { id: string };
 /** Dynamic segment for a group route, keyed by its human slug. */
 export type SlugRouteParams = { slug: string };
 /** Dynamic segment for a public cook profile, keyed by handle. */
@@ -43,17 +59,32 @@ export type HandleRouteParams = { handle: string };
 export type TokenRouteParams = { token: string };
 
 const segment = z.string().min(1);
-const recipeParamsSchema = z.object({ id: segment });
+const recipeParamsSchema = z.object({ cook: segment, recipe: segment });
+const flatRecipeParamsSchema = z.object({ cook: segment });
 const collectionParamsSchema = z.object({ id: segment });
 const slugParamsSchema = z.object({ slug: segment });
 const handleParamsSchema = z.object({ handle: segment });
 const tokenParamsSchema = z.object({ token: segment });
 
-/** Await + validate a recipe route's `{ id }` (id or slug) segment. */
+/** Await + validate a recipe route's `{ cook, recipe }` segments. */
 export async function parseRecipeParams(
   params: Promise<RecipeRouteParams>,
 ): Promise<RecipeRouteParams> {
   return recipeParamsSchema.parse(await params);
+}
+
+/** Await + validate the legacy flat recipe route's single `{ cook }` segment. */
+export async function parseFlatRecipeParams(
+  params: Promise<FlatRecipeRouteParams>,
+): Promise<FlatRecipeRouteParams> {
+  return flatRecipeParamsSchema.parse(await params);
+}
+
+/** Await + validate the embed card's `{ id }` segment. */
+export async function parseEmbedRecipeParams(
+  params: Promise<EmbedRecipeRouteParams>,
+): Promise<EmbedRecipeRouteParams> {
+  return collectionParamsSchema.parse(await params);
 }
 
 /** Await + validate a collection route's `{ id }` segment. */

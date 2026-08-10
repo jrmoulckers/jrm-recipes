@@ -21,9 +21,12 @@ export default function robots(): MetadataRoute.Robots {
         "/design",
         "/recipes/new",
         "/recipes/cook-with",
-        "/recipes/*/edit",
-        "/recipes/*/cook",
-        "/recipes/*/print",
+        // Recipe sub-routes moved a segment deeper when recipe URLs became
+        // `/recipes/<cook>/<slug>` (#666).
+        "/recipes/*/*/edit",
+        "/recipes/*/*/cook",
+        "/recipes/*/*/print",
+        "/recipes/*/*/keepsake",
         "/settings",
         "/plan",
         "/shopping",

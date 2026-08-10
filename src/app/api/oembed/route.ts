@@ -1,5 +1,6 @@
-import { buildRecipeOembed, recipeSlugFromUrl } from "~/lib/oembed";
+import { buildRecipeOembed, recipeRefFromUrl } from "~/lib/oembed";
 import { getPublicRecipeCard } from "~/server/recipes/queries";
+import { resolveNamespacedRecipe } from "~/server/recipes/resolve";
 
 // Reuses the pooled Postgres query, so keep it on the Node runtime. Always
 // resolved per-request (a recipe can be unpublished/made private at any time).
@@ -38,12 +39,22 @@ export async function GET(request: Request) {
     );
   }
 
-  const slug = recipeSlugFromUrl(url);
-  if (!slug) {
+  const ref = recipeRefFromUrl(url);
+  if (!ref) {
     return Response.json({ error: "Not found." }, { status: 404 });
   }
 
-  const recipe = await getPublicRecipeCard(slug);
+  // A namespaced URL is resolved through the cook's namespace (which also
+  // honours retained aliases); the legacy flat form falls through to the
+  // id-or-slug lookup, which is deterministic for those older links.
+  const lookup = ref.cook
+    ? ((await resolveNamespacedRecipe(ref.cook, ref.recipe))?.recipeId ?? null)
+    : ref.recipe;
+  if (!lookup) {
+    return Response.json({ error: "Not found." }, { status: 404 });
+  }
+
+  const recipe = await getPublicRecipeCard(lookup);
   if (!recipe) {
     return Response.json({ error: "Not found." }, { status: 404 });
   }

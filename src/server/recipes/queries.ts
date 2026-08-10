@@ -49,6 +49,7 @@ import {
   recipes,
   mealPlanEntries,
   tags,
+  users,
   cookLogEntries,
   favorites,
   foodItems,
@@ -430,7 +431,7 @@ export async function getPublicRecipeCard(idOrSlug: string) {
       difficulty: true,
     },
     with: {
-      author: { columns: { name: true, handle: true } },
+      author: { columns: { name: true, handle: true, slug: true } },
       tags: { with: { tag: { columns: { name: true } } } },
     },
   });
@@ -448,12 +449,19 @@ export type PublicRecipeCard = NonNullable<
  * unconfigured so the sitemap still renders its static routes.
  */
 export async function listPublicRecipeSlugs(): Promise<
-  { slug: string; updatedAt: Date }[]
+  { slug: string; cook: string; updatedAt: Date }[]
 > {
   if (!isDbConfigured()) return [];
   return db
-    .select({ slug: recipes.slug, updatedAt: recipes.updatedAt })
+    .select({
+      slug: recipes.slug,
+      // The sitemap must advertise the canonical namespaced URL, not the flat
+      // legacy one that only redirects to it (#666).
+      cook: users.slug,
+      updatedAt: recipes.updatedAt,
+    })
     .from(recipes)
+    .innerJoin(users, eq(users.id, recipes.authorId))
     .where(
       and(
         notDeleted,

@@ -10,6 +10,7 @@
 import { absoluteUrl } from "~/lib/utils";
 import { displayUnit, formatQuantity } from "~/lib/units";
 import { canonicalizeTag, type TagCategory } from "~/lib/tag-taxonomy";
+import { recipeDetailPath } from "~/lib/recipe-path";
 
 export type SeoIngredient = {
   quantity: number | null;
@@ -60,7 +61,7 @@ export type SeoRecipe = {
   cookMinutes: number | null;
   totalMinutes: number | null;
   authorId: string;
-  author: { name: string | null } | null;
+  author: { name: string | null; slug?: string } | null;
   ingredients: SeoIngredient[];
   steps: SeoStep[];
   tags: {
@@ -245,7 +246,13 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
     "@context": "https://schema.org",
     "@type": "Recipe",
     name: recipe.title,
-    url: absoluteUrl(`/recipes/${recipe.slug}`),
+    url: absoluteUrl(
+      recipeDetailPath({
+        id: recipe.slug,
+        slug: recipe.slug,
+        cook: recipe.author?.slug,
+      }),
+    ),
   };
 
   if (recipe.description) jsonLd.description = recipe.description;
@@ -347,12 +354,19 @@ export function buildRecipeJsonLd(recipe: SeoRecipe): Record<string, unknown> {
  * JSON-LD `<script>` gated to public recipes, exactly like the Recipe JSON-LD.
  */
 export function buildBreadcrumbJsonLd(
-  recipe: Pick<SeoRecipe, "slug" | "title">,
+  recipe: Pick<SeoRecipe, "slug" | "title" | "author">,
 ): Record<string, unknown> {
   const crumbs: { name: string; path: string }[] = [
     { name: "Home", path: "/" },
     { name: "Recipes", path: "/recipes" },
-    { name: recipe.title, path: `/recipes/${recipe.slug}` },
+    {
+      name: recipe.title,
+      path: recipeDetailPath({
+        id: recipe.slug,
+        slug: recipe.slug,
+        cook: recipe.author?.slug,
+      }),
+    },
   ];
   return {
     "@context": "https://schema.org",

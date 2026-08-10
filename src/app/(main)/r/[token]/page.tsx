@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { brand } from "~/config/brand";
 import { getRecipeByShareToken } from "~/server/recipes/queries";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
-import RecipePage from "../../recipes/[id]/page";
+import RecipePage from "../../recipes/[cook]/[recipe]/page";
 
 const sharedRecipeRobots = { index: false, follow: false };
 
@@ -53,7 +53,10 @@ export default async function SharedRecipePage({
 
   return (
     <RecipePage
-      params={Promise.resolve({ id: recipe.slug })}
+      params={Promise.resolve({
+        cook: recipe.author.slug,
+        recipe: recipe.slug,
+      })}
       shareToken={token}
     />
   );

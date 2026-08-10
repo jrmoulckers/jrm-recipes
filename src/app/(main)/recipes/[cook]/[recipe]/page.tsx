@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import {
   BookOpen,
@@ -84,24 +84,36 @@ import { RecipeCookedSection } from "~/components/recipe/sections/recipe-cooked-
 import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-discussion-section";
 import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
 import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
-import { getRecipeForViewer } from "~/server/recipes/loaders";
+import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
 import { computeRecipeNutrition } from "~/server/recipes/nutrition";
 import { getMembership } from "~/server/groups/queries";
 import { isKid } from "~/server/groups/kid-safe";
 import { buildTwoWeekPlanContext } from "~/server/planner/quick-plan";
 import { getAnchoredSuggestions } from "~/server/engagement/queries";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import {
+  recipeCookPath,
+  recipeDetailPath,
+  recipeEditPath,
+  recipePrintPath,
+} from "~/lib/recipe-path";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<RecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await parseRecipeParams(params);
-  const { recipe } = await getRecipeForViewer(id);
+  const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
+  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   if (!recipe) return { title: "Recipe not found" };
   const description = recipe.description ?? `A family recipe on ${brand.name}.`;
-  const canonical = absoluteUrl(`/recipes/${recipe.slug}`);
+  const canonical = absoluteUrl(
+    recipeDetailPath({
+      id: recipe.id,
+      slug: recipe.slug,
+      cook: recipe.author.slug,
+    }),
+  );
   const isPublic = recipe.visibility === "public";
   return {
     title: recipe.title,
@@ -158,12 +170,35 @@ export default async function RecipePage({
   // back to the share UI so "Copy link" hands out the token URL, not the slug.
   shareToken?: string;
 }) {
-  const { id } = await parseRecipeParams(params);
-  const { user, recipe } = await getRecipeForViewer(id, shareToken);
+  const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
+  const { user, recipe, canonical } = await getNamespacedRecipeForViewer(
+    cook,
+    recipeSegment,
+    shareToken,
+  );
   if (!recipe) notFound();
+  // Only redirect once the viewer has passed `canView` above, so an alias can
+  // never confirm that a recipe exists to somebody who may not see it (#666).
+  // Skipped for share-token renders, which are served under `/r/<token>`.
+  if (!canonical && !shareToken) {
+    permanentRedirect(
+      recipeDetailPath({
+        id: recipe.id,
+        slug: recipe.slug,
+        cook: recipe.author.slug,
+      }),
+    );
+  }
 
   const t = await getTranslations("recipeDetail");
   const tNav = await getTranslations("nav");
+  // Every in-page link to this recipe's own sub-routes is built from the one
+  // canonical reference, so the namespaced segments can't drift apart (#666).
+  const pathRef = {
+    id: recipe.id,
+    slug: recipe.slug,
+    cook: recipe.author.slug,
+  };
   const classifications = groupRecipeClassifications(
     recipe.tags,
     recipe.cuisine,
@@ -461,13 +496,13 @@ export default async function RecipePage({
               ].filter((src): src is string => Boolean(src))}
             />
             <Button asChild size="lg">
-              <Link href={`/recipes/${recipe.slug}/cook`}>
+              <Link href={recipeCookPath(pathRef)}>
                 <Play /> {t("actions.cook")}
               </Link>
             </Button>
             <RecipeActionsMenu>
               <Button asChild size="lg" variant="outline">
-                <Link href={`/recipes/${recipe.slug}/print`}>
+                <Link href={recipePrintPath(pathRef)}>
                   <Printer /> {t("actions.print")}
                 </Link>
               </Button>
@@ -534,7 +569,7 @@ export default async function RecipePage({
               {isOwner && (
                 <GrownUpControls>
                   <Button asChild size="lg" variant="outline">
-                    <Link href={`/recipes/${recipe.slug}/edit`}>
+                    <Link href={recipeEditPath(pathRef)}>
                       <Pencil /> {t("actions.edit")}
                     </Link>
                   </Button>
@@ -672,7 +707,7 @@ export default async function RecipePage({
                     {t("method.heading")}
                   </h2>
                   <Button asChild variant="ghost" size="sm">
-                    <Link href={`/recipes/${recipe.slug}/cook`}>
+                    <Link href={recipeCookPath(pathRef)}>
                       <ChefHat /> {t("actions.cookMode")}
                     </Link>
                   </Button>
@@ -784,7 +819,7 @@ export default async function RecipePage({
                         size="sm"
                         className="mt-3"
                       >
-                        <Link href={`/recipes/${recipe.slug}/edit`}>
+                        <Link href={recipeEditPath(pathRef)}>
                           <Pencil /> {t("method.editRecipe")}
                         </Link>
                       </Button>

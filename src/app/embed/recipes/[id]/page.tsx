@@ -7,7 +7,11 @@ import { brand } from "~/config/brand";
 import { RecipeImage } from "~/components/recipe/recipe-image";
 import { absoluteUrl, formatMinutes } from "~/lib/utils";
 import { getPublicRecipeCard } from "~/server/recipes/queries";
-import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import {
+  parseEmbedRecipeParams,
+  type EmbedRecipeRouteParams,
+} from "~/lib/route-params";
+import { recipeDetailPath } from "~/lib/recipe-path";
 
 // A recipe can be unpublished/made private at any time, so never cache the
 // public/private decision at build time.
@@ -16,9 +20,9 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<RecipeRouteParams>;
+  params: Promise<EmbedRecipeRouteParams>;
 }): Promise<Metadata> {
-  const { id } = await parseRecipeParams(params);
+  const { id } = await parseEmbedRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   return {
     title: recipe ? `${recipe.title} · Embed` : "Recipe",
@@ -37,15 +41,21 @@ export async function generateMetadata({
 export default async function EmbedRecipePage({
   params,
 }: {
-  params: Promise<RecipeRouteParams>;
+  params: Promise<EmbedRecipeRouteParams>;
 }) {
-  const { id } = await parseRecipeParams(params);
+  const { id } = await parseEmbedRecipeParams(params);
   const recipe = await getPublicRecipeCard(id);
   if (!recipe) notFound();
 
   const t = await getTranslations("embed");
   const tRecipe = await getTranslations("recipeDetail");
-  const href = absoluteUrl(`/recipes/${recipe.slug}`);
+  const href = absoluteUrl(
+    recipeDetailPath({
+      id: recipe.id,
+      slug: recipe.slug,
+      cook: recipe.author?.slug,
+    }),
+  );
   const authorName = recipe.author?.name?.trim();
   const facts = [
     recipe.totalMinutes != null && recipe.totalMinutes > 0

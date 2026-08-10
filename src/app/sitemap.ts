@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { absoluteUrl } from "~/lib/utils";
+import { recipeDetailPath } from "~/lib/recipe-path";
 import { listPublicRecipeSlugs } from "~/server/recipes/queries";
 import { listPublicCookHandles } from "~/server/users/queries";
 
@@ -28,7 +29,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const recipeRoutes: MetadataRoute.Sitemap = recipes.map((recipe) => ({
-    url: absoluteUrl(`/recipes/${recipe.slug}`),
+    url: absoluteUrl(
+      recipeDetailPath({
+        id: recipe.slug,
+        slug: recipe.slug,
+        cook: recipe.cook,
+      }),
+    ),
     lastModified: recipe.updatedAt,
     changeFrequency: "weekly",
     priority: 0.7,

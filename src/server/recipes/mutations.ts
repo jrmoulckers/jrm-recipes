@@ -14,6 +14,7 @@ import {
   recipeVersions,
   recipes,
   tags,
+  users,
   type RecipeEventType,
   type User,
 } from "~/server/db/schema";
@@ -736,9 +737,21 @@ export async function forkRecipe(
         note: trimmedNote,
         relatedRecipeId: recipe.id,
       });
-      // Expose the source's slug so the action can revalidate the source's
-      // (slug-based) detail page, whose lineage now includes this adaptation.
-      return { ...recipe, source: { id: source.id, slug: source.slug } };
+      // Expose the source's canonical segments so the action can revalidate the
+      // source's detail page, whose lineage now includes this adaptation. The
+      // author slug is needed because that path is namespaced (#666).
+      const sourceAuthor = await tx.query.users.findFirst({
+        where: eq(users.id, source.authorId),
+        columns: { slug: true },
+      });
+      return {
+        ...recipe,
+        source: {
+          id: source.id,
+          slug: source.slug,
+          cook: sourceAuthor?.slug ?? null,
+        },
+      };
     }),
   );
   return result;

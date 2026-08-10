@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import type { Route } from "next";
 
 import { getCurrentUser } from "~/server/auth";
 import { getOwnedRecipe, listUserGroups } from "~/server/recipes/queries";
@@ -12,6 +13,7 @@ import { isDbConfigured } from "~/server/db";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 import { groupRecipeClassifications } from "~/lib/recipe-classifications";
+import { resolveNamespacedRecipe } from "~/server/recipes/resolve";
 
 export const metadata = { title: "Edit recipe" };
 
@@ -20,11 +22,16 @@ export default async function EditRecipePage({
 }: {
   params: Promise<RecipeRouteParams>;
 }) {
-  const { id } = await parseRecipeParams(params);
+  const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const user = await getCurrentUser();
-  if (!user) redirect(`/recipes/${id}`);
+  // A signed-out visitor is bounced to the detail view, which applies the
+  // normal visibility rules (and 404s if they may not see it at all).
+  if (!user) redirect(`/recipes/${cook}/${recipeSegment}` as Route);
 
-  const recipe = await getOwnedRecipe(id, user.id);
+  const resolved = await resolveNamespacedRecipe(cook, recipeSegment);
+  if (!resolved) notFound();
+
+  const recipe = await getOwnedRecipe(resolved.recipeId, user.id);
   if (!recipe) notFound();
 
   const groups = await listUserGroups(user.id);

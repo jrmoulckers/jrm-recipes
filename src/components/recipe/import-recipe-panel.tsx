@@ -16,7 +16,7 @@ import { PasteImportPanel } from "~/components/recipe/paste-import-panel";
  * "Import a recipe" import affordance. Create mode only (#294,
  * #370). Extracted into its own module so the editor can `next/dynamic` it,
  * keeping the URL + paste import UI out of the recipe editor's first-load JS
- * (it never renders on the budget-tracked /recipes/[id]/edit route).
+ * (it never renders on the budget-tracked /recipes/[cook]/[recipe]/edit route).
  */
 export function ImportRecipePanel({
   onImported,
