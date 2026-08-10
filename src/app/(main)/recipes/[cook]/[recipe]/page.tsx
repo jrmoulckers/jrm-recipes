@@ -95,8 +95,10 @@ import {
   recipeCookPath,
   recipeDetailPath,
   recipeEditPath,
+  recipeKeepsakePath,
   recipePrintPath,
 } from "~/lib/recipe-path";
+import type { Route } from "next";
 
 export async function generateMetadata({
   params,
@@ -183,24 +185,31 @@ export default async function RecipePage({
   // never confirm that a recipe exists to somebody who may not see it (#666).
   // Skipped for share-token renders, which are served under `/r/<token>`.
   if (!canonical && !shareToken) {
-    const target = recipeDetailPath({
+    const ref = {
       id: recipe.id,
       slug: recipe.slug,
       cook: recipe.author.slug,
-    });
+    };
     // A pre-cutover sub-route link (`/recipes/<slug>/cook`) keeps its sub-route
     // and its query, so a shared keepsake link still arrives with its note.
+    const target =
+      legacySubRoute === "cook"
+        ? recipeCookPath(ref)
+        : legacySubRoute === "print"
+          ? recipePrintPath(ref)
+          : legacySubRoute === "keepsake"
+            ? recipeKeepsakePath(ref)
+            : legacySubRoute === "edit"
+              ? recipeEditPath(ref)
+              : recipeDetailPath(ref);
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries((await searchParams) ?? {})) {
       if (typeof value === "string") query.set(key, value);
-      else if (Array.isArray(value) && value[0] != null) query.set(key, value[0]);
+      else if (Array.isArray(value) && value[0] != null)
+        query.set(key, value[0]);
     }
     const suffix = query.toString();
-    permanentRedirect(
-      (legacySubRoute
-        ? `${target}/${legacySubRoute}${suffix ? `?${suffix}` : ""}`
-        : target) as typeof target,
-    );
+    permanentRedirect(suffix ? (`${target}?${suffix}` as Route) : target);
   }
 
   const t = await getTranslations("recipeDetail");
