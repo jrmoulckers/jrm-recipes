@@ -260,6 +260,14 @@ export async function eraseUserAccount(
     // `recipe_events.actorId` are `set null`, so a cascade would leave the
     // user's prose sitting in a jsonb snapshot with the attribution removed —
     // pseudonymized, not erased, and invisible to any column-level scrub.
+    //
+    // ORDERING CONSTRAINT (#678): these rows are the only record of which words
+    // this user introduced into a recipe someone else owns, and deleting them
+    // destroys the basis for computing that. If a contribution revert is ever
+    // added, it must be computed AND applied above this line. Placing it below
+    // would diff against rows that no longer exist and silently revert nothing,
+    // which reports success while leaving the text in place. Every deletion that
+    // runs without such a step forecloses the remedy for that user permanently.
     counts.recipe_versions = await deleteCounted(t, () =>
       t
         .delete(recipeVersions)

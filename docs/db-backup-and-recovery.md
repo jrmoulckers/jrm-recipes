@@ -42,6 +42,23 @@ Fill in the final retention policy for the chosen managed Postgres host.
 | Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                            |
 | Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage. |
 
+### `recipe_versions` is not eligible for a retention sweep
+
+Backup retention above is about copies of the database. This is about the live table, and it is
+called out here because it is where someone looking to reclaim storage would reasonably start.
+
+`recipe_versions` is append-only and grows without bound, which makes it an obvious pruning
+candidate. It must not be pruned while it is load-bearing for account erasure.
+
+Since #685 an accepted co-creator can edit a recipe they do not own, so a departing user's prose can
+end up inside another user's `recipes.story`, `notes` and step text, reachable by no author-scoped
+delete. `recipe_versions.authorId` plus the full per-save `snapshot` is the only record of which
+words belonged to whom, and therefore the only basis for computing what to back out. See #678.
+
+Pruning it fails silently and in the dangerous direction: erasure would continue to report success
+while leaving a departed user's text on the site. If versions ever need capping, the erasure remedy
+has to be settled first, not afterwards.
+
 ## RPO/RTO targets
 
 These are recommended targets to confirm with product and operations owners.
