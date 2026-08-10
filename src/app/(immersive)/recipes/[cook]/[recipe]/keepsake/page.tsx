@@ -26,7 +26,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const token = firstParam((await searchParams).t);
-  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
+  const { recipe } = await getNamespacedRecipeForViewer(
+    cook,
+    recipeSegment,
+    token,
+  );
   return {
     title: recipe ? `A keepsake · ${recipe.title}` : "A keepsake recipe",
     // Personal keepsakes are private gifts, not content to index.
@@ -51,7 +55,11 @@ export default async function KeepsakePage({
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const sp = await searchParams;
   const token = firstParam(sp.t);
-  const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment, token);
+  const { recipe } = await getNamespacedRecipeForViewer(
+    cook,
+    recipeSegment,
+    token,
+  );
   if (!recipe) notFound();
 
   const { from, note } = parseKeepsakeMessage({ from: sp.from, note: sp.note });

@@ -31,7 +31,10 @@ export default async function CookPage({
   params: Promise<RecipeRouteParams>;
 }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
-  const { user, recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
+  const { user, recipe } = await getNamespacedRecipeForViewer(
+    cook,
+    recipeSegment,
+  );
   if (!recipe) notFound();
 
   // Auto-convert amounts to the cook's saved units while they cook (#…). Fetched
