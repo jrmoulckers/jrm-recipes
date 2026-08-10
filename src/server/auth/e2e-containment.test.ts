@@ -32,13 +32,13 @@ describe("condition 3: the selector is off unless explicitly enabled", () => {
     expect(isIdentitySelectorEnabled(undefined)).toBe(false);
   });
 
-  it("is disabled for every value other than exactly \"1\"", () => {
+  it('is disabled for every value other than exactly "1"', () => {
     for (const value of ["", "0", "true", "yes", "2", " 1", "1 ", "TRUE"]) {
       expect(isIdentitySelectorEnabled(value)).toBe(false);
     }
   });
 
-  it("is enabled only by \"1\"", () => {
+  it('is enabled only by "1"', () => {
     expect(isIdentitySelectorEnabled("1")).toBe(true);
   });
 
