@@ -256,10 +256,17 @@ export async function eraseUserAccount(
       );
     }
 
-    // Free text on *other people's* recipes. `recipe_versions.authorId` and
-    // `recipe_events.actorId` are `set null`, so a cascade would leave the
-    // user's prose sitting in a jsonb snapshot with the attribution removed —
-    // pseudonymized, not erased, and invisible to any column-level scrub.
+    // Snapshot copies of the user's free text on *other people's* recipes.
+    // `recipe_versions.authorId` and `recipe_events.actorId` are `set null`, so a
+    // cascade would leave the user's prose sitting in a jsonb snapshot with the
+    // attribution removed — pseudonymized, not erased, and invisible to any
+    // column-level scrub.
+    //
+    // Read the scope narrowly: this deletes the *versions*, not the text the user
+    // merged into the live row. Since #685 an accepted co-creator can edit a
+    // recipe they do not own, so their words can sit in another user's
+    // `recipes.story`, `notes` and step text, which nothing below reaches. This
+    // statement does not remedy that and must not be read as if it does (#694).
     //
     // ORDERING CONSTRAINT (#678): these rows are the only record of which words
     // this user introduced into a recipe someone else owns, and deleting them
