@@ -6,7 +6,11 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
 import { groupMembers, recipes, users, type User } from "~/server/db/schema";
-import { DEV_USER } from "~/server/auth/dev-user";
+import {
+  DEV_USER,
+  DEV_IDENTITY_COOKIE,
+  resolveDevIdentity,
+} from "~/server/auth/dev-user";
 import { getEntitlements } from "~/server/billing/entitlements";
 import type { Entitlements } from "~/config/plans";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -31,6 +35,33 @@ import { eraseUserAccount, type ErasureResult } from "~/server/users/erasure";
  */
 
 export { DEV_USER };
+
+/**
+ * Which dev identity this request is, per the selector cookie (issue #698).
+ *
+ * Called only from {@link getOrCreateDevUser}, i.e. strictly inside the branch
+ * `assertDevBypassAllowed` has already refused to enter in production. That
+ * placement is deliberate and is the whole security argument: the selector is
+ * not a second way in, because it is unreachable everywhere the bypass itself
+ * is. It cannot widen access, only choose among identities the bypass was
+ * already willing to serve unconditionally.
+ *
+ * Reading a cookie costs nothing in render semantics here — the root layout
+ * already calls `cookies()` for the theme and CSP nonce, so every route is
+ * dynamic regardless (issue #193).
+ *
+ * Falls back to `DEV_USER` when there is no request scope at all, so a script
+ * or a non-request caller behaves exactly as it did before this existed.
+ */
+async function selectDevIdentity(): Promise<User> {
+  try {
+    const { cookies } = await import("next/headers");
+    const requested = (await cookies()).get(DEV_IDENTITY_COOKIE)?.value;
+    return resolveDevIdentity(requested);
+  } catch {
+    return DEV_USER;
+  }
+}
 
 /**
  * Fail closed: the shared dev-bypass user must never be served in production.
@@ -67,23 +98,24 @@ export type AuthState = {
 };
 
 async function getOrCreateDevUser(): Promise<User> {
-  if (!isDbConfigured()) return DEV_USER;
+  const identity = await selectDevIdentity();
+  if (!isDbConfigured()) return identity;
   const existing = await db.query.users.findFirst({
-    where: eq(users.id, DEV_USER.id),
+    where: eq(users.id, identity.id),
   });
   if (existing) return existing;
   const [created] = await db
     .insert(users)
     .values({
-      id: DEV_USER.id,
-      email: DEV_USER.email,
-      name: DEV_USER.name,
-      handle: DEV_USER.handle,
-      slug: DEV_USER.slug,
+      id: identity.id,
+      email: identity.email,
+      name: identity.name,
+      handle: identity.handle,
+      slug: identity.slug,
     })
     .onConflictDoNothing()
     .returning();
-  return created ?? DEV_USER;
+  return created ?? identity;
 }
 
 /** Fetch (and lazily sync) the app user for a signed-in Clerk account. */

@@ -59,7 +59,7 @@ import {
   users,
   type User,
 } from "~/server/db/schema";
-import { DEV_USER } from "~/server/auth/dev-user";
+import { DEV_USER, DEV_CO_COOK } from "~/server/auth/dev-user";
 import type { RecipeInput } from "~/server/recipes/validation";
 import {
   buildCollectionRecipeRows,
@@ -152,11 +152,13 @@ const DEMO_USERS = [
     email: "lucia@heirloom.local",
   },
   {
-    id: "seed_usr_rosa",
-    name: "Aunt Rosa",
-    handle: "aunt-rosa",
-    slug: "aunt-rosa",
-    email: "rosa@heirloom.local",
+    // The dev-bypass co-cook identity (#698). Imported rather than restated so
+    // the harness and the seed cannot drift into being two different people.
+    id: DEV_CO_COOK.id,
+    name: DEV_CO_COOK.name!,
+    handle: DEV_CO_COOK.handle!,
+    slug: DEV_CO_COOK.slug,
+    email: DEV_CO_COOK.email!,
   },
   {
     id: "seed_usr_mateo",
