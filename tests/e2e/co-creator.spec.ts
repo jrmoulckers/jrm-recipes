@@ -277,7 +277,7 @@ test.describe.serial("co-creation across two identities (#698)", () => {
     expect(new URL(ownerCanonical!).pathname).toBe(ownerPath);
   });
 
-  test("removal revokes the mirror with a 404, never a redirect", async () => {
+  test("removal revokes the mirror, and never redirects", async () => {
     await owner.goto(ownerPath);
     await creatorPanel(owner)
       .getByRole("button", { name: /^Remove$/ })

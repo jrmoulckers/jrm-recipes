@@ -99,12 +99,12 @@ describe("selector placement", () => {
     );
   });
 
-  it("still fails closed in production, which the selector cannot bypass", async () => {
-    const { assertDevBypassAllowed } = await import("~/server/auth");
-    expect(() => assertDevBypassAllowed("production", false)).toThrow(
-      /Refusing to serve the shared dev-bypass user in production/,
-    );
-  });
+  // Production fail-closed is *not* re-asserted here: `dev-bypass-guard.test.ts`
+  // already covers `assertDevBypassAllowed` across all four cases, and it does
+  // so by importing the module directly. A second copy added no coverage, only
+  // a heavy dynamic import that timed out under a loaded full-suite run. What
+  // this file uniquely owns is the *placement* assertion above — that the
+  // selector sits strictly inside the branch that guard already protects.
 
   it("names the cookie it reads, so the harness and the server agree", () => {
     expect(DEV_IDENTITY_COOKIE).toBe("heirloom_dev_identity");
