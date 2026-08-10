@@ -2,10 +2,17 @@
  * PII-scrubbing guard (issue #305).
  *
  * The taxonomy in `./events` is already designed to be PII-free, but this is the
- * defense-in-depth net applied to *every* property bag before it leaves the app,
+ * defense-in-depth net applied to every property bag *this module dispatches*,
  * so a careless call site can never leak private family data into the analytics
  * tool. It drops keys whose names look identifying and redacts values that look
  * like emails or phone numbers.
+ *
+ * Coverage is by convention, not by construction: it holds because `track()`
+ * (`./index`) and `captureServer()` (`./server`) are the only capture paths, and
+ * both call this. Events the vendor SDK generates internally never traverse
+ * either, so they are *not* scrubbed — which is why autocapture is explicitly
+ * disabled in `./posthog-client` (#703). Anything that re-enables an SDK-internal
+ * capture path is outside this net and has to be assessed on its own.
  */
 
 /** Substrings that mark a property key as identifying (matched case-insensitively). */

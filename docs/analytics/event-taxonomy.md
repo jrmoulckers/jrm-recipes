@@ -35,6 +35,15 @@ paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
 Scrubbing drops keys that look identifying, except allowlisted PostHog fields,
 and redacts email- or phone-like string values.
 
+That coverage depends on those two functions being the only capture paths.
+Events the PostHog SDK generates by itself do not pass through either, so they
+are not scrubbed. Autocapture is therefore disabled explicitly in
+`src/lib/analytics/posthog-client.ts` (#703): it would otherwise send `$el_text`
+for clicked elements, which here means recipe titles, cook names, and group
+names. Session recording is disabled for the same reason. Turning on any
+SDK-internal capture path puts data outside the scrubber and needs its own
+review.
+
 Capture is gated by consent before data leaves the app. The browser gate is
 `isCaptureAllowed()` in `src/lib/analytics/consent.ts`: DNT/GPC always blocks,
 explicit denial blocks, opt-in mode requires explicit grant, and opt-out mode
