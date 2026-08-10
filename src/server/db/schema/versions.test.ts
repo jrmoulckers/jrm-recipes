@@ -51,6 +51,72 @@ describe("recipe_versions version-number uniqueness (issue #151)", () => {
 });
 
 /**
+ * Issue #716. The #699 guard below asserts *who* may perform each mechanism. It
+ * never asserts that a mechanism is still what it says it is — and two of the
+ * three rest on foreign-key actions declared in `./recipes.ts`, which nothing
+ * else in the repo pins.
+ *
+ * The dangerous direction is `authorId`. Most sibling foreign keys in that file
+ * are `cascade`, so flipping this one to match reads as a consistency cleanup
+ * and contradicts nothing at review time. If it flips, the *sanctioned*
+ * `.delete(users)` already sitting in `erasure.ts` silently starts hard-deleting
+ * every version row the departing user authored — including versions of recipes
+ * owned by other people, which is precisely the diff basis #678's remedy
+ * consumes. The guard below stays green throughout, because `.delete(users)`
+ * still appears only where it is allowed to. Erasure's blast radius widens and
+ * the guard keeps reporting the property as protected.
+ *
+ * `recipeId` matters in reverse: if `cascade` became `restrict` or `set null`,
+ * the second mechanism's stated harm would simply be false, and erasure's recipe
+ * delete would start failing or orphaning rows.
+ *
+ * There is a secondary reason to pin both. The failure messages name these
+ * actions in prose, so an unpinned change leaves the guard emitting a message
+ * that misdescribes its own mechanism — worse than a generic one, because it
+ * sends the next reader looking for a cascade that no longer exists.
+ *
+ * Asserted against the schema rather than `drizzle/*.sql` because the schema is
+ * the source of truth, and the Migration drift CI job already fails when
+ * generated migrations diverge from it.
+ */
+describe("recipe_versions foreign-key actions (issue #716)", () => {
+  /** The premises the #699 mechanisms rely on, in writing. */
+  const PREMISES = [
+    {
+      column: "recipeId",
+      onDelete: "cascade",
+      relied: "mechanism 2 (hard-deleting recipes takes the whole history)",
+    },
+    {
+      column: "authorId",
+      onDelete: "set null",
+      relied:
+        "mechanism 3 (hard-deleting users severs attribution but deletes no row). " +
+        "If this becomes `cascade`, the sanctioned .delete(users) in erasure.ts " +
+        "begins destroying version rows on other people's recipes",
+    },
+  ];
+
+  it.each(PREMISES)(
+    "$column is ON DELETE $onDelete",
+    ({ column, onDelete, relied }) => {
+      const fk = getTableConfig(recipeVersions).foreignKeys.find((f) =>
+        f
+          .reference()
+          .columns.map((c) => c.name)
+          .includes(column),
+      );
+
+      expect(fk, `expected a foreign key on ${column}`).toBeDefined();
+      expect(
+        fk?.onDelete,
+        `${column} ON DELETE changed. The #699 guard states this action in prose and ${relied} depends on it. Changing it does not trip that guard — it changes what the guard is guarding. Read the #716 note above before updating this expectation.`,
+      ).toBe(onDelete);
+    },
+  );
+});
+
+/**
  * Issue #699. Enforcement for the retention constraint stated on
  * `recipeVersions` in `./recipes.ts`, and in `docs/db-backup-and-recovery.md`.
  * Read the schema comment for *why* version history is load-bearing for account
