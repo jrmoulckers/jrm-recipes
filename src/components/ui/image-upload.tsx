@@ -59,7 +59,9 @@ export function ImageUploadField({
 
   // A pasted URL can be a typo, a hotlink-blocked host, or a since-deleted
   // image. Track load failures so we can swap the browser's broken-image glyph
-  // for a readable fallback (and re-surface the URL input to fix it inline).
+  // for a readable fallback. Recovery runs through the picker's Link tab via
+  // the "Change" button below, so no inline URL input is needed when Cloudinary
+  // is configured.
   const [errored, setErrored] = React.useState(false);
   React.useEffect(() => {
     setErrored(false);
