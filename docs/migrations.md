@@ -18,7 +18,11 @@ Two consequences drive the conventions below:
 
 Never make a breaking schema change in a single migration. Split it across
 **separate deploys** so that at every moment the running code and the live
-schema are compatible.
+schema are compatible. This is how Heirloom satisfies
+[`ENG-BUILD-008`](https://github.com/jrmoulckers/engineering/blob/main/principles/operations/build-and-release.md)
+(rollback-compatible releases) and
+[`ENG-DATA-001`](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/data-systems.md)
+(owned durable integrity) on a forward-only migration runner.
 
 | Phase        | What ships                                                                | Safe because                                     |
 | ------------ | ------------------------------------------------------------------------- | ------------------------------------------------ |

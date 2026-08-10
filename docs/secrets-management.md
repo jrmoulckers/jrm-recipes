@@ -6,6 +6,12 @@ Provider dashboards and exact buttons change over time, so the steps below descr
 
 ## Storage policy
 
+Secret handling follows
+[`ENG-SEC-001`](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md)
+(secret lifecycle) and
+[`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/integration-boundaries.md)
+(credential proxy isolation). What is specific to Heirloom:
+
 - Store secrets in **Vercel project environment variables** per environment: Production, Preview, and any staging deployment.
 - Never commit real secrets. `.gitignore` excludes `.env`, `.env*.local`, `.vercel`, and `.clerk/`.
 - CI runs Gitleaks through `.github/workflows/ci.yml`. `.gitleaks.toml` keeps the default detector set with a narrow allowlist for test fixtures.
