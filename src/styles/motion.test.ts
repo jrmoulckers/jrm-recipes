@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import defaultTheme from "tailwindcss/defaultTheme";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -20,71 +19,77 @@ const THEMES_CSS = read("src", "styles", "themes.css");
 const TAILWIND = read("tailwind.config.ts");
 
 /**
- * Bans on untokenized motion, written once so the pattern and the sample
- * proving it still fires cannot rot independently (#750).
+ * Bans on untokenized motion (#750, #756, #758).
  *
- * Each of these is the only check that can notice its violation. A hard-coded
- * easing or duration *adds* a declaration or a class; it does not displace the
- * tokens asserted positively alongside it, so those assertions pass with the
- * violation present. A negative over source text passes whenever the literal is
- * absent, and a misspelled literal is always absent.
+ * `duration-*` and the animation easings are asserted by **extracting** what is
+ * actually used and comparing it against the tokenized set, rather than banning
+ * a literal. That matters twice over:
  *
- * Three of these have an upstream referent, so their probe samples are built
- * from Tailwind's default theme rather than typed out here (#756). That matters
- * because these classes are banned precisely *because* Tailwind still ships
- * them: `tailwind.config.ts` uses `extend`, so the untokenized defaults stay
- * reachable beside our tokens. If a key were renamed or dropped upstream the
- * class could no longer be written, the ban would forbid nothing, and a
- * hand-typed sample would keep passing forever. Deriving the sample means that
- * case fails loudly and gets revisited instead of quietly retyped.
+ * - It fails *closed*. `not.toContain(literal)` fails open, because a typo makes
+ *   the literal absent and absence is indistinguishable from passing. A rotted
+ *   extractor here yields `[]`, which is not equal to the expected set.
+ * - It asserts the property rather than one instance of it. The previous version
+ *   checked `button` against `duration-150` and `card` against `duration-200` —
+ *   two of the ten durations Tailwind ships, one per file — so `duration-300`
+ *   added beside `duration-fast` passed, `tabs.tsx` had no ban at all, and a
+ *   newly added animation with a hardcoded easing passed. All three verified
+ *   silent before this change.
  *
- * `transform:` has no referent — it is a CSS property, not an API — so it keeps
- * a hand-written probe. That is the third category from #732, and it is the
- * only tool available for it.
+ * This also retires the probe/anchor apparatus #753 and #756 built around the
+ * two duration literals: with no literal to keep in sync, there is nothing to
+ * anchor and nothing to rot.
+ *
+ * `transform:` keeps a hand-written probe. It names a CSS property rather than a
+ * value that can be extracted and compared, and it has no referent to anchor to.
  */
-const EASE_OUT_KEY = "out";
-const DURATION_150_KEY = "150";
-const DURATION_200_KEY = "200";
-
-const upstreamEasing = (key: string) => {
-  expect(
-    Object.keys(defaultTheme.transitionTimingFunction ?? {}),
-    `Tailwind no longer defines the "${key}" easing, so the ease-${key} ban can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
-  ).toContain(key);
-  return `ease-${key}`;
-};
-
-const upstreamDuration = (key: string) => {
-  expect(
-    Object.keys(defaultTheme.transitionDuration ?? {}),
-    `Tailwind no longer defines the "${key}" duration, so the duration-${key} ban can never fire. If it was renamed or dropped upstream, this ban needs revisiting, not just retyping.`,
-  ).toContain(key);
-  return `duration-${key}`;
-};
-
-const HARDCODED_EASE = `ease-${EASE_OUT_KEY}`;
 const RAW_TRANSFORM = "transform:";
-const DURATION_150 = new RegExp(`duration-${DURATION_150_KEY}\\b`);
-const DURATION_200 = new RegExp(`duration-${DURATION_200_KEY}\\b`);
 
-describe("motion bans (issue #750)", () => {
-  it("still matches hard-coded easing and durations, so the bans can fire", () => {
-    // Samples built from the upstream keys, so they cannot go stale (#756).
-    expect(
-      `animation: "fade-in 0.2s ${upstreamEasing(EASE_OUT_KEY)}"`,
-    ).toContain(HARDCODED_EASE);
-    expect(
-      DURATION_150.test(
-        `transition-colors ${upstreamDuration(DURATION_150_KEY)}`,
-      ),
-    ).toBe(true);
-    expect(
-      DURATION_200.test(
-        `transition-shadow ${upstreamDuration(DURATION_200_KEY)}`,
-      ),
-    ).toBe(true);
-    // No referent: a CSS property, not an API. Hand-written sample is the only
-    // option here.
+/** Every `duration-x` utility in a source file, in order. */
+const durationTokensIn = (source: string) =>
+  [...source.matchAll(/\bduration-([A-Za-z0-9.]+)\b/g)].map((m) => m[1]!);
+
+/** Every animation shorthand declared in the Tailwind `animation` block. */
+const animationValues = (config: string) => {
+  const start = config.indexOf("animation: {");
+  expect(
+    start,
+    "tailwind.config.ts declares an animation block",
+  ).toBeGreaterThan(-1);
+  let depth = 0;
+  let i = config.indexOf("{", start);
+  const from = i;
+  for (; i < config.length; i++) {
+    if (config[i] === "{") depth++;
+    else if (config[i] === "}" && --depth === 0) break;
+  }
+  return [...config.slice(from, i).matchAll(/:\s*"([^"]+)"/g)].map(
+    (m) => m[1]!,
+  );
+};
+
+describe("motion bans (issue #758)", () => {
+  it.each([
+    ["button.tsx", ["fast"]],
+    ["card.tsx", ["base"]],
+    ["tabs.tsx", ["fast"]],
+  ] as const)("%s uses only tokenized durations", (file, expected) => {
+    expect(durationTokensIn(read("src", "components", "ui", file))).toEqual([
+      ...expected,
+    ]);
+  });
+
+  it("every animation is tokenized, including ones added later", () => {
+    const values = animationValues(TAILWIND);
+    // Fails closed: a rotted extractor yields [], which has no length.
+    expect(values.length).toBeGreaterThan(0);
+    for (const value of values) {
+      expect(value, `"${value}" must use a tokenized easing`).toMatch(
+        /var\(--ease-(?:standard|emphasized)\)/,
+      );
+    }
+  });
+
+  it("still matches a raw transform, so that ban can fire", () => {
     expect('"pop-in": { transform: "scale(0.96)" }').toContain(RAW_TRANSFORM);
   });
 });
@@ -113,8 +118,8 @@ describe("motion tokens (issue #95)", () => {
   it("exposes the tokens through Tailwind and tokenizes keyframe easing", () => {
     expect(TAILWIND).toContain('fast: "var(--duration-fast)"');
     expect(TAILWIND).toContain('standard: "var(--ease-standard)"');
-    // The enter animations no longer hard-code ease-out.
-    expect(TAILWIND).not.toContain(HARDCODED_EASE);
+    // Untokenized easings are caught by the extract-and-compare check above,
+    // which covers animations added later too (#758).
     expect(TAILWIND).toContain("fade-in 0.2s var(--ease-standard)");
   });
 
@@ -146,10 +151,10 @@ describe("motion tokens (issue #95)", () => {
     const card = read("src", "components", "ui", "card.tsx");
     const tabs = read("src", "components", "ui", "tabs.tsx");
 
+    // Which token each primitive uses. That no *untokenized* duration appears
+    // is asserted by extract-and-compare above, for all three files (#758).
     expect(button).toContain("duration-fast");
-    expect(button).not.toMatch(DURATION_150);
     expect(card).toContain("duration-base");
-    expect(card).not.toMatch(DURATION_200);
     expect(tabs).toContain("duration-fast");
   });
 });
