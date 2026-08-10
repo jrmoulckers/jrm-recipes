@@ -45,6 +45,8 @@ export function ImageUploadField({
   hint,
   folder = "heirloom",
   size = "default",
+  altText,
+  onAltTextChange,
 }: {
   value: string;
   onChange: (url: string, assetId?: string | null) => void;
@@ -52,10 +54,19 @@ export function ImageUploadField({
   hint?: string;
   folder?: string;
   size?: "default" | "compact";
+  /**
+   * Opt in to caller-owned alt text (issue #659). Callers that store a
+   * description on their own row (the recipe cover, a step photo) pass both, and
+   * the picker's description box then edits that value. Callers that don't pass
+   * them keep the asset-only behavior and cost nothing extra.
+   */
+  altText?: string;
+  onAltTextChange?: (altText: string) => void;
 }) {
   const t = useTranslations("imageUpload");
   const compact = size === "compact";
   const [pickerOpen, setPickerOpen] = React.useState(false);
+  const altId = React.useId();
 
   // A pasted URL can be a typo, a hotlink-blocked host, or a since-deleted
   // image. Track load failures so we can swap the browser's broken-image glyph
@@ -153,6 +164,22 @@ export function ImageUploadField({
         />
       )}
 
+      {/* Without Cloudinary there is no picker to open, so the description box
+          it normally hosts has to sit inline next to the URL, or a link-only
+          deployment could never describe an image at all. */}
+      {onAltTextChange && !cloudinaryConfigured && value ? (
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={altId}>{t("altLabel")}</Label>
+          <Input
+            id={altId}
+            value={altText ?? ""}
+            maxLength={300}
+            onChange={(e) => onAltTextChange(e.target.value)}
+            placeholder={t("altPlaceholder")}
+          />
+        </div>
+      ) : null}
+
       {/* A chosen photo can still be swapped for another from the library. */}
       {cloudinaryConfigured && value ? (
         <button
@@ -175,6 +202,8 @@ export function ImageUploadField({
           value={value}
           onChange={onPicked}
           folder={folder}
+          altText={altText}
+          onAltTextChange={onAltTextChange}
         />
       ) : null}
     </div>

@@ -31,6 +31,8 @@ export type PrintRecipe = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  /** Author-written alt for the cover, or null to keep the current alt (#125). */
+  coverImageAlt: string | null;
   visibility: string;
   servings: number | null;
   servingsNoun: string | null;

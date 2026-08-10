@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { env } from "~/env";
 import { db, isDbConfigured } from "~/server/db";
@@ -253,6 +253,13 @@ export type ClerkUserProfile = {
  * ({@link findUserByIdentifier}), so a stale address could route an invite to
  * the wrong account. No-op when the DB is unconfigured or the Clerk user has no
  * local row yet (it'll be created lazily on their next authenticated read).
+ *
+ * The avatar is the one field Clerk does **not** always win (issue #659). Once
+ * a user picks a photo inside Heirloom, `users.avatarUserManaged` is true and
+ * this sync must leave `avatarUrl` alone — otherwise the very next Clerk
+ * `user.updated` (a name change, an email verification, anything) would silently
+ * revert their choice. The decision is made in SQL, inside the same UPDATE, so
+ * there is no read-then-write window for a concurrent in-app upload to lose.
  */
 export async function applyClerkUserUpdate(
   clerkId: string,
@@ -265,7 +272,7 @@ export async function applyClerkUserUpdate(
       email: profile.email,
       name: profile.name && profile.name.length > 0 ? profile.name : "Cook",
       handle: profile.handle,
-      avatarUrl: profile.avatarUrl,
+      avatarUrl: sql`case when ${users.avatarUserManaged} then ${users.avatarUrl} else ${profile.avatarUrl} end`,
     })
     .where(and(eq(users.clerkId, clerkId), isNull(users.deletedAt)));
 }

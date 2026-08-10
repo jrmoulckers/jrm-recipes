@@ -103,6 +103,7 @@ describe("RecipeEditor native selects (iOS zoom guard)", () => {
         title: "",
         description: "",
         coverImageUrl: "",
+        coverImageAlt: "",
         servings: "4",
         servingsNoun: "servings",
         prepMinutes: "",

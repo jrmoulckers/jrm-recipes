@@ -132,6 +132,7 @@ type StepRow = {
   title: string;
   instruction: string;
   imageUrl: string;
+  imageAlt: string;
   videoUrl: string;
   timerMinutes: string;
   targetTempC: string;
@@ -143,6 +144,7 @@ export type RecipeEditorValue = {
   title: string;
   description: string;
   coverImageUrl: string;
+  coverImageAlt: string;
   servings: string;
   servingsNoun: string;
   prepMinutes: string;
@@ -200,6 +202,7 @@ const EMPTY_STEP: Omit<StepRow, "key"> = {
   title: "",
   instruction: "",
   imageUrl: "",
+  imageAlt: "",
   videoUrl: "",
   timerMinutes: "",
   targetTempC: "",
@@ -658,6 +661,7 @@ export function RecipeEditor({
     title: initial?.title ?? initialTitle ?? "",
     description: initial?.description ?? "",
     coverImageUrl: initial?.coverImageUrl ?? initialCoverImageUrl ?? "",
+    coverImageAlt: initial?.coverImageAlt ?? "",
     servings: initial?.servings ?? "4",
     servingsNoun: initial?.servingsNoun ?? "servings",
     prepMinutes: initial?.prepMinutes ?? "",
@@ -1264,6 +1268,7 @@ export function RecipeEditor({
       title: form.title.trim(),
       description: form.description.trim() || undefined,
       coverImageUrl: form.coverImageUrl.trim() || undefined,
+      coverImageAlt: form.coverImageAlt.trim() || undefined,
       servings: numOrUndef(form.servings),
       servingsNoun: form.servingsNoun.trim() || undefined,
       prepMinutes: numOrUndef(form.prepMinutes),
@@ -1320,6 +1325,7 @@ export function RecipeEditor({
           title: r.title.trim() || undefined,
           instruction: r.instruction.trim(),
           imageUrl: r.imageUrl.trim() || undefined,
+          imageAlt: r.imageAlt.trim() || undefined,
           videoUrl: r.videoUrl.trim() || undefined,
           timerSeconds: r.timerMinutes.trim()
             ? Math.round(Number(r.timerMinutes) * 60)
@@ -2329,6 +2335,16 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
+                                altText={row.imageAlt}
+                                onAltTextChange={(alt) =>
+                                  setSteps((l) =>
+                                    l.map((r) =>
+                                      r.key === row.key
+                                        ? { ...r, imageAlt: alt }
+                                        : r,
+                                    ),
+                                  )
+                                }
                               />
                             </div>
                           </div>
@@ -2778,6 +2794,8 @@ export function RecipeEditor({
               hint={t("hints.coverImage")}
               value={form.coverImageUrl}
               onChange={(url) => set("coverImageUrl", url)}
+              altText={form.coverImageAlt}
+              onAltTextChange={(alt) => set("coverImageAlt", alt)}
             />
 
             <div className="h-px bg-border" />

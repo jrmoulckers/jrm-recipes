@@ -34,6 +34,14 @@ export const users = pgTable(
     // user-changeable; `userSlugAliases` keeps old values resolving.
     slug: varchar({ length: 60 }).notNull().unique(),
     avatarUrl: varchar({ length: 2048 }),
+    // Who owns `avatarUrl` (issue #659). Clerk is the default source: every
+    // `user.updated` webhook mirrors `image_url` onto the local row, which is
+    // right until the user picks a photo *in Heirloom*. Without this signal the
+    // next Clerk sync would silently overwrite their choice, so an in-app upload
+    // flips this to true and `applyClerkUserUpdate` then leaves the column
+    // alone. Clearing the in-app avatar flips it back to false, which is how a
+    // user says "go back to my Clerk photo".
+    avatarUserManaged: boolean().notNull().default(false),
     // Opt-in (default off) for the weekly family recipe digest email (#354).
     // Off by default so we never email anyone who hasn't asked for it.
     weeklyDigestOptIn: boolean().notNull().default(false),

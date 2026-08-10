@@ -85,6 +85,14 @@
         "position": "{label} auf Position {position} von {total} verschoben.",
         "reset": "Tabs auf Standard zurückgesetzt."
       }
+    },
+    "avatar": {
+      "title": "Profilfoto",
+      "description": "Wähle das Foto, das neben deinem Namen erscheint.",
+      "label": "Dein Foto",
+      "hint": "Ersetzt das Foto deines Anmeldedienstes, bis du es entfernst.",
+      "saved": "Foto aktualisiert",
+      "cleared": "Foto entfernt"
     }
   },
   "search": {
@@ -1330,10 +1338,11 @@
       },
       "edit": {
         "title": "Sammlung bearbeiten",
-        "description": "Benenne diese Sammlung um oder ändere ihre Beschreibung.",
+        "description": "Benenne diese Sammlung um, aktualisiere ihre Beschreibung oder ändere ihr Titelfoto.",
         "fields": {
           "name": "Bezeichnung",
-          "description": "Beschreibung"
+          "description": "Beschreibung",
+          "coverImage": "Titelfoto"
         },
         "actions": {
           "cancel": "Abbrechen",
@@ -3231,7 +3240,9 @@
     "urlPlaceholder": "Füge eine Bild-URL ein",
     "urlLabel": "Bild-URL",
     "urlLabelFor": "URL für {label}",
-    "change": "Foto ändern"
+    "change": "Foto ändern",
+    "altLabel": "Beschreibe dieses Foto",
+    "altPlaceholder": "z. B. Ein goldener Kuchen kühlt auf der Fensterbank"
   },
   "mediaPicker": {
     "title": "Foto auswählen",

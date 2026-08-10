@@ -9,6 +9,7 @@ import { friendlyError } from "~/lib/error-copy";
 import { updateGroupAction } from "~/server/groups/actions";
 import { type GroupInput } from "~/server/groups/validation";
 import { Button } from "~/components/ui/button";
+import { ImageUploadField } from "~/components/ui/image-upload";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -28,7 +29,6 @@ export function GroupSettingsForm({
   const t = useTranslations("groups.settings");
   const nameId = React.useId();
   const descriptionId = React.useId();
-  const avatarId = React.useId();
   const [name, setName] = React.useState(group.name);
   const [description, setDescription] = React.useState(group.description ?? "");
   const [avatarUrl, setAvatarUrl] = React.useState(group.avatarUrl ?? "");
@@ -96,21 +96,18 @@ export function GroupSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={avatarId}>{t("fields.avatarUrl")}</Label>
-        <Input
-          id={avatarId}
+        {/* Owner/admin only. The gate is server-side in `updateGroup`
+            (`requireManager`); this form is simply not reachable for anyone
+            else, and rendering the picker changes nothing about that. */}
+        <ImageUploadField
+          label={t("fields.avatarUrl")}
           value={avatarUrl}
-          onChange={(event) => setAvatarUrl(event.target.value)}
-          placeholder="https://…"
-          aria-invalid={Boolean(fieldErrors.avatarUrl)}
-          aria-describedby={
-            fieldErrors.avatarUrl ? `${avatarId}-error` : undefined
-          }
+          onChange={(url) => setAvatarUrl(url)}
+          folder="heirloom/groups"
+          size="compact"
         />
         {fieldErrors.avatarUrl?.[0] ? (
-          <p id={`${avatarId}-error`} className="text-sm text-destructive">
-            {fieldErrors.avatarUrl[0]}
-          </p>
+          <p className="text-sm text-destructive">{fieldErrors.avatarUrl[0]}</p>
         ) : null}
       </div>
 

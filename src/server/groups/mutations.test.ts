@@ -18,6 +18,7 @@ import {
   addMember,
   deleteGroup,
   transferOwnership,
+  updateGroup,
   updateMemberRole,
 } from "./mutations";
 
@@ -372,6 +373,72 @@ describe("group authz regression guards (i220)", () => {
     const stranger = { id: "stranger_1" } as unknown as User;
     await expect(
       updateMemberRole(group.slug, stranger, "target_1", "admin"),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The group avatar became an in-app upload in #659 (epic #655). Uploading is a
+ * management action, not a membership one, so it stays behind `requireManager`:
+ * a plain member with a valid image URL must still be refused.
+ */
+describe("updateGroup avatar authorization (#659)", () => {
+  const AVATAR = "https://res.cloudinary.com/demo/image/upload/g.jpg";
+
+  it("lets an ADMIN change the group avatar", async () => {
+    const tx = fakeTx({
+      memberships: [
+        { id: "gm_actor", role: "admin", userId: admin.id, groupId: group.id },
+      ],
+    });
+    runWith(tx);
+
+    await expect(
+      updateGroup(
+        group.slug,
+        { name: "Family", description: undefined, avatarUrl: AVATAR },
+        admin,
+      ),
+    ).resolves.toMatchObject({ slug: group.slug });
+    expect(tx.update).toHaveBeenCalled();
+  });
+
+  it("forbids a plain MEMBER from changing the group avatar", async () => {
+    const tx = fakeTx({
+      memberships: [
+        {
+          id: "gm_actor",
+          role: "member",
+          userId: "member_1",
+          groupId: group.id,
+        },
+      ],
+    });
+    runWith(tx);
+
+    const member = { id: "member_1" } as unknown as User;
+    await expect(
+      updateGroup(
+        group.slug,
+        { name: "Family", description: undefined, avatarUrl: AVATAR },
+        member,
+      ),
+    ).rejects.toThrow("FORBIDDEN");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("forbids a NON-MEMBER from changing the group avatar", async () => {
+    const tx = fakeTx({ memberships: [null] });
+    runWith(tx);
+
+    const stranger = { id: "stranger_1" } as unknown as User;
+    await expect(
+      updateGroup(
+        group.slug,
+        { name: "Family", description: undefined, avatarUrl: AVATAR },
+        stranger,
+      ),
     ).rejects.toThrow("FORBIDDEN");
     expect(tx.update).not.toHaveBeenCalled();
   });

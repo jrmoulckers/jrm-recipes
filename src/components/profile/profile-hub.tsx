@@ -33,6 +33,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { BottomNavCustomizer } from "~/components/profile/bottom-nav-customizer";
+import { ProfileAvatarField } from "~/components/profile/profile-avatar-field";
 import { ProfilePreferences } from "~/components/profile/profile-preferences";
 
 export type ProfileUser = {
@@ -153,6 +154,16 @@ export function ProfileHub({
             </SignInButton>
           </div>
         </SignedOut>
+      ) : null}
+
+      {/* Profile photo. Signed-in only: there is no row to write to otherwise. */}
+      {user ? (
+        <Section
+          title={t("avatar.title")}
+          description={t("avatar.description")}
+        >
+          <ProfileAvatarField avatarUrl={user.avatarUrl} />
+        </Section>
       ) : null}
 
       {/* Customizable bottom bar. */}

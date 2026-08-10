@@ -142,10 +142,11 @@ export function RecipePreview({
         {t("notice")}
       </p>
 
-      {/* Hero */}
+      {/* Hero. Decorative unless the author described it: the cover sits
+          directly above the recipe title. */}
       <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
         <RecipeImage
-          alt=""
+          alt={recipe.coverImageAlt ?? ""}
           src={recipe.coverImageUrl}
           fallbackKey={fallbackKey}
           fallbackContext={{
@@ -345,10 +346,13 @@ export function RecipePreview({
                           src={step.imageUrl}
                           fallbackKey={`${fallbackKey}-step-${i + 1}`}
                           fallbackMode="hide"
-                          alt={td("method.stepImageAlt", {
-                            title: recipe.title || t("titlePlaceholder"),
-                            position: i + 1,
-                          })}
+                          alt={
+                            step.imageAlt ??
+                            td("method.stepImageAlt", {
+                              title: recipe.title || t("titlePlaceholder"),
+                              position: i + 1,
+                            })
+                          }
                           fill
                           sizes="(max-width: 768px) 100vw, 28rem"
                           className="object-cover"

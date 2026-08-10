@@ -1,8 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { eraseUserAccount } from "~/server/users/erasure";
+import { avatarInput, updateAvatar } from "~/server/users/mutations";
 import {
   DELETION_CONFIRM_PHRASE,
   DELETION_NOTICE_VERSION,
@@ -10,6 +13,9 @@ import {
 
 export type DeleteAccountResult =
   { ok: true } | { ok: false; error: string; code?: string };
+
+export type UpdateAvatarResult =
+  { ok: true; avatarUrl: string | null } | { ok: false; error: string };
 
 const NO_DB =
   "Account deletion needs a database. Set DATABASE_URL (see .env.example).";
@@ -118,4 +124,36 @@ export async function deleteAccountAction(
   }
 
   return { ok: true };
+}
+
+/**
+ * Set or clear the signed-in user's profile photo (issue #659).
+ *
+ * A thin wrapper by design: validation bounds the URL to `ALLOWED_MEDIA_HOSTS`
+ * (#216) and `updateAvatar` scopes the write to the caller's own row, so this
+ * function holds no authorization of its own.
+ */
+export async function updateAvatarAction(
+  url: string,
+): Promise<UpdateAvatarResult> {
+  if (!isDbConfigured()) {
+    return { ok: false, error: "Saving a photo needs a database." };
+  }
+
+  const parsed = avatarInput.safeParse({ url });
+  if (!parsed.success) {
+    return { ok: false, error: "That image host isn't supported." };
+  }
+
+  try {
+    const user = await requireUser();
+    const result = await updateAvatar(parsed.data, user);
+    revalidatePath("/profile");
+    return { ok: true, avatarUrl: result.avatarUrl };
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
+      return { ok: false, error: "Sign in to change your photo." };
+    }
+    return { ok: false, error: "We couldn't save that photo." };
+  }
 }

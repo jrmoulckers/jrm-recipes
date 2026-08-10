@@ -49,6 +49,7 @@ export default async function EditRecipePage({
     title: recipe.title,
     description: recipe.description ?? "",
     coverImageUrl: recipe.coverImageUrl ?? "",
+    coverImageAlt: recipe.coverImageAlt ?? "",
     servings: recipe.servings != null ? String(recipe.servings) : "",
     servingsNoun: recipe.servingsNoun ?? "servings",
     prepMinutes: recipe.prepMinutes != null ? String(recipe.prepMinutes) : "",
@@ -101,6 +102,7 @@ export default async function EditRecipePage({
       title: step.title ?? "",
       instruction: step.instruction,
       imageUrl: step.imageUrl ?? "",
+      imageAlt: step.imageAlt ?? "",
       videoUrl: step.videoUrl ?? "",
       timerMinutes:
         step.timerSeconds != null

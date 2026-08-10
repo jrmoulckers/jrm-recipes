@@ -85,6 +85,14 @@
         "position": "{label} movida a la posición {position} de {total}.",
         "reset": "Pestañas restablecidas a los valores predeterminados."
       }
+    },
+    "avatar": {
+      "title": "Foto de perfil",
+      "description": "Elige la foto que aparece junto a tu nombre.",
+      "label": "Tu foto",
+      "hint": "Sustituye a la foto de tu proveedor de inicio de sesión hasta que la quites.",
+      "saved": "Foto actualizada",
+      "cleared": "Foto eliminada"
     }
   },
   "search": {
@@ -1330,10 +1338,11 @@
       },
       "edit": {
         "title": "Editar colección",
-        "description": "Cambia el nombre de esta colección o actualiza su descripción.",
+        "description": "Cambia el nombre de esta colección, actualiza su descripción o cambia su foto de portada.",
         "fields": {
           "name": "Nombre",
-          "description": "Descripción"
+          "description": "Descripción",
+          "coverImage": "Foto de portada"
         },
         "actions": {
           "cancel": "Cancelar",
@@ -3231,7 +3240,9 @@
     "urlPlaceholder": "Pega la URL de una imagen",
     "urlLabel": "URL de la imagen",
     "urlLabelFor": "URL de {label}",
-    "change": "Cambiar foto"
+    "change": "Cambiar foto",
+    "altLabel": "Describe esta foto",
+    "altPlaceholder": "p. ej. Una tarta dorada enfriándose en la ventana"
   },
   "mediaPicker": {
     "title": "Elige una foto",

@@ -63,6 +63,13 @@ export const recipes = pgTable(
     title: varchar({ length: 200 }).notNull(),
     description: text(),
     coverImageUrl: varchar({ length: 2048 }),
+    /**
+     * Author-written description of the cover photo, read aloud in place of the
+     * generated alt (#125, epic #655). Nullable on purpose: every recipe that
+     * predates this column keeps rendering exactly as it did, because each
+     * surface falls back to the alt it generated before.
+     */
+    coverImageAlt: varchar({ length: 300 }),
 
     // `restrict`, not `cascade` (issue #678). Account erasure has to destroy the
     // Cloudinary bytes and reassign or delete co-created recipes *before* any
@@ -314,6 +321,8 @@ export const recipeSteps = pgTable(
     title: varchar({ length: 200 }),
     instruction: text().notNull(),
     imageUrl: varchar({ length: 2048 }),
+    /** Author-written description of the step photo (#125). See `coverImageAlt`. */
+    imageAlt: varchar({ length: 300 }),
     videoUrl: varchar({ length: 2048 }),
     timerSeconds: integer(),
     // Target internal / doneness temperature in Celsius (#417). The truth a

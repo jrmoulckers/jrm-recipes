@@ -70,6 +70,12 @@ const mediaUrl = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+/**
+ * Author-written alt text (#125). Bounded to the column width; blank collapses
+ * to undefined, which stores NULL and returns the surface to its generated alt.
+ */
+const imageAlt = optionalString(300);
+
 /** A nullable, coercible non-negative number from a possibly-empty form field. */
 const optionalNumber = z
   .union([z.string(), z.number()])
@@ -109,6 +115,7 @@ export const stepInput = z.object({
     .min(1, "Add step text")
     .max(5000, "Keep each step under 5,000 characters"),
   imageUrl: mediaUrl,
+  imageAlt,
   videoUrl: mediaUrl,
   timerSeconds: optionalNumber.pipe(
     z.number().int().min(0).max(86400).optional(),
@@ -146,6 +153,7 @@ export const recipeInput = z
       "Keep the description under 2,000 characters",
     ),
     coverImageUrl: mediaUrl,
+    coverImageAlt: imageAlt,
     servings: optionalNumber.pipe(z.number().int().min(1).max(1000).optional()),
     servingsNoun: optionalString(40),
     prepMinutes: optionalNumber.pipe(
