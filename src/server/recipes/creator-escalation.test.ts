@@ -120,6 +120,13 @@ describe("co-creator write escalation", () => {
     const binding =
       /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|const|let|var|class)\b/;
 
+    // Both model checks iterate `spans`, so an empty map passes them by doing
+    // nothing — and an empty map is exactly what a dead model produces. The
+    // rest of the file fails loudly in that case because it routes through
+    // `spanOf`, which means these two are non-vacuous only by neighbour, on a
+    // dependency nothing marks or preserves (#746).
+    expect(spans.size).toBeGreaterThan(0);
+
     for (const [name, span] of spans) {
       const [, ...rest] = mutations.slice(span.start + 1, span.end).split("\n");
       const absorbed = rest.filter((line) => binding.test(line));
@@ -158,6 +165,10 @@ describe("co-creator write escalation", () => {
    * arrow syntax.
    */
   it("has no span that was cut short by a spurious boundary", () => {
+    // Non-vacuity, as above (#746): a dead model yields no spans, and a loop
+    // over no spans asserts nothing.
+    expect(spans.size).toBeGreaterThan(0);
+
     for (const [name, span] of spans) {
       const lines = mutations.slice(span.start, span.end).split("\n");
 
