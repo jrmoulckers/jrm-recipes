@@ -42,7 +42,28 @@ const SONNER = readCode("src/components/ui/sonner.tsx");
  * meaningless and should be revisited rather than quietly kept.
  */
 const RICH_COLORS = "richColors";
-const HAND_ROLLED_CARD = "bg-card/95";
+
+/**
+ * The hand-rolled card class the shared surface replaced (#750).
+ *
+ * Additive: the class can be re-added beside the shared-surface calls asserted
+ * positively below, so those pass with the violation present and this ban is
+ * the only check that can notice it.
+ *
+ * The colour it names is its referent, so that part of the probe's sample is
+ * built from the `card` colour rather than typed out (#756). Rename that colour
+ * and the class can no longer be written, the ban forbids nothing, and a
+ * hand-typed sample would keep passing — so this fails instead, and gets
+ * revisited.
+ *
+ * The `/95` alpha is deliberately *not* derived. It was the deleted component's
+ * arbitrary choice and anchors to nothing, so deriving it would make the sample
+ * and the pattern move together and the probe tautological: verified, a rot of
+ * the alpha was silently green until it was written out here independently.
+ * Derivation is safe exactly for the part that has a referent.
+ */
+const CARD_COLOR = "card";
+const HAND_ROLLED_CARD = `bg-${CARD_COLOR}/95`;
 
 describe("toast surface", () => {
   it("bans a prop Sonner really has, so the ban cannot rot", () => {
@@ -100,12 +121,14 @@ describe("toast surface", () => {
 
 describe("notification banners", () => {
   it("still matches the hand-rolled card class, so the ban can fire (#750)", () => {
-    // The ban below is the only check that can notice its violation: the class
-    // is *added* to a className and does not displace the shared-surface calls
-    // asserted positively beside it. A negative over source text passes
-    // whenever the literal is absent, and a misspelled literal is always absent.
+    // The sample is built from the `card` colour that makes the class
+    // writable, so it cannot go stale if that colour is renamed (#756).
     expect(
-      '<div className="rounded-lg border bg-card/95 p-4 shadow-lg">',
+      readFileSync(join(root, "tailwind.config.ts"), "utf8"),
+      `tailwind.config.ts defines no "${CARD_COLOR}" colour, so the ban below can never fire. If it was renamed, this ban needs revisiting, not just retyping.`,
+    ).toMatch(new RegExp(`\\b${CARD_COLOR}:\\s*\\{`));
+    expect(
+      `<div className="rounded-lg border bg-${CARD_COLOR}/95 p-4 shadow-lg">`,
     ).toContain(HAND_ROLLED_CARD);
   });
 
