@@ -56,10 +56,37 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
  * stay that way**: it makes two unrelated users' allocations serialize against
  * each other, which costs a little throughput and nothing else. The failure
  * direction matters — collisions can only ever over-serialize, never
- * under-lock, so they cannot produce a duplicate slug. Do not "fix" this by
- * reaching for an unhashed or wider-typed owner id: the two-argument form takes
- * two int4s, and anything that silently truncates a value into that space
- * *would* turn false sharing into missed locks, which is a correctness bug.
+ * under-lock, so they cannot produce a duplicate slug. That rests on `hashtext`
+ * being IMMUTABLE (`hashtext(text) -> integer`, so it also fills the int4 slot
+ * exactly): the same owner always maps to the same key, so a lock can be shared
+ * but never missed.
+ *
+ * ## Do not widen this key (issue #712)
+ *
+ * The tempting "fix" for collisions is a wider key, via the one-argument
+ * `pg_advisory_xact_lock(bigint)` form. **That is not a wider version of this
+ * lock, it is a different lock.** The one- and two-argument forms occupy
+ * separate key spaces, even for identical bits:
+ *
+ *     select pg_advisory_lock(668, 1);                    -- objsubid 2
+ *     select pg_advisory_lock((668::bigint << 32) | 1);   -- objsubid 1
+ *
+ * Both are granted in the same session and appear in `pg_locks` with the same
+ * `classid`/`objid` and different `objsubid`, so they do not exclude each other.
+ * Switching forms therefore fails *silently*: across a rolling deploy, an
+ * instance on each form would both believe they hold the namespace, `slugTaken`
+ * would race between the three tables again, and — since no constraint spans
+ * them — nothing would raise and {@link withSlugConflictRetry} would never fire.
+ * That is the exact duplicate-slug bug this lock exists to prevent.
+ *
+ * Narrowing, by contrast, is safe to attempt: Postgres never truncates into
+ * int4 silently. Overload resolution, an explicit `::int`, and
+ * `hashtextextended(...)::int` all raise instead.
+ *
+ * `hashtext` itself is not part of the documented PostgreSQL API and carries no
+ * cross-version compatibility guarantee. That is harmless here only because a
+ * lock key is never persisted or compared across servers — it is computed, used
+ * within one transaction, and discarded. Do not store one.
  */
 const SLUG_NAMESPACE_LOCK_CLASS = 668;
 
