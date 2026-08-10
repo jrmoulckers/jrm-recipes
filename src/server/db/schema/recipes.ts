@@ -352,6 +352,10 @@ export const recipeSteps = pgTable(
  * still report success while leaving a departed user's text on the site. If
  * versions must be capped, the erasure story has to be settled first, not
  * afterwards.
+ *
+ * `versions.test.ts` enforces this at source level (#699): the only sanctioned
+ * deletes are the erasure path and the dev-only seed, so a pruning sweep fails
+ * a test rather than passing review on the strength of nobody reading this.
  */
 export const recipeVersions = pgTable(
   "recipe_versions",
