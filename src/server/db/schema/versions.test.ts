@@ -63,20 +63,74 @@ describe("recipe_versions version-number uniqueness (issue #151)", () => {
  * while a departed user's text stays on the site. So the constraint is
  * asserted, not just written down.
  *
- * The check is source-level because the property is an *absence* — "no other
- * module deletes version rows" — and an absence can only be checked by reading
- * the tree rather than by exercising any one call.
+ * The check is source-level because the property is an *absence* — "nothing
+ * outside these files destroys the diff basis" — and an absence can only be
+ * checked by reading the tree rather than by exercising any one call.
+ *
+ * Issue #711 widened it from one mechanism to three. Deleting version rows is
+ * only the most obvious way to lose the diff basis; two foreign keys declared
+ * in `./recipes.ts` destroy it without the phrase `.delete(recipeVersions)`
+ * appearing anywhere:
+ *
+ * - `recipeId` is `ON DELETE cascade`, so a hard delete of a *recipe* takes its
+ *   whole version history with it. This is the likely one: `deleteRecipe` is a
+ *   soft delete, which invites a future "empty the trash after N days" job —
+ *   written while reasoning about table growth, reviewing perfectly clean.
+ * - `authorId` is `ON DELETE set null`, so a hard delete of a *user* severs
+ *   attribution on every surviving row. It deletes nothing and leaves the
+ *   snapshot text intact; it destroys only the record of who wrote it, which is
+ *   precisely what derived provenance needs, and it leaves a table that still
+ *   looks fully populated.
+ *
+ * A source-level guard cannot follow a cascade. But the foreign keys are
+ * declared in the same file this guard already exists to protect, so the
+ * *mechanisms* are enumerable even though the cascade itself is not traceable.
  */
 describe("recipe_versions retention (issue #699)", () => {
   const srcRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-  /** Files permitted to delete version rows, relative to `src/`. */
-  const SANCTIONED = [
-    // Account erasure, scoped to the departing user's own rows.
-    join("server", "users", "erasure.ts"),
-    // Dev-only reseed of an existing recipe.
-    join("server", "db", "seed.ts"),
+  const ERASURE = join("server", "users", "erasure.ts");
+
+  /**
+   * Every way the version-history diff basis can be destroyed, with the files
+   * allowed to do it. `harm` completes the sentence "doing this outside the
+   * sanctioned files ..." in the failure message.
+   */
+  const MECHANISMS = [
+    {
+      what: "deleting recipe_versions rows",
+      // Matches `.delete(recipeVersions)` through any builder receiver (db, tx,
+      // sp, t), which is how every existing delete in the codebase is written.
+      pattern: /\.delete\(\s*recipeVersions\s*\)/,
+      harm: "destroys the snapshots outright",
+      sanctioned: [
+        // Account erasure, scoped to the departing user's own rows.
+        ERASURE,
+        // Dev-only reseed of an existing recipe.
+        join("server", "db", "seed.ts"),
+      ],
+    },
+    {
+      what: "hard-deleting recipes",
+      pattern: /\.delete\(\s*recipes\s*\)/,
+      harm:
+        "cascades to recipe_versions via `recipeId ON DELETE cascade` and takes the " +
+        "whole history with it. `deleteRecipe` is a soft delete, so if this is a " +
+        "trash-purge job, it is exactly the change #699 exists to catch",
+      sanctioned: [ERASURE],
+    },
+    {
+      what: "hard-deleting users",
+      pattern: /\.delete\(\s*users\s*\)/,
+      harm:
+        "nulls recipe_versions.author_id via `authorId ON DELETE set null`, which " +
+        "deletes no row and no text but severs the attribution that derived " +
+        "provenance (#686) needs, leaving a table that still looks fully populated",
+      sanctioned: [ERASURE],
+    },
   ];
+
+  const toPosix = (file: string) => file.split(sep).join("/");
 
   function walk(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -89,37 +143,36 @@ describe("recipe_versions retention (issue #699)", () => {
     });
   }
 
-  it("is deleted from only the sanctioned call sites", () => {
-    // Matches `.delete(recipeVersions)` through any builder receiver (db, tx,
-    // sp, t), which is how every existing delete in the codebase is written.
-    const deletion = /\.delete\(\s*recipeVersions\s*\)/;
+  it.each(MECHANISMS)(
+    "$what happens only at the sanctioned call sites",
+    ({ pattern, harm, sanctioned }) => {
+      const allowed = sanctioned.map(toPosix);
 
-    const offenders = walk(srcRoot)
-      .filter((file) => deletion.test(readFileSync(file, "utf8")))
-      .map((file) => relative(srcRoot, file))
-      // Normalize so the expectation reads the same on Windows and Linux CI.
-      .map((file) => file.split(sep).join("/"))
-      .filter(
-        (file) => !SANCTIONED.map((s) => s.split(sep).join("/")).includes(file),
-      )
-      .sort();
+      const offenders = walk(srcRoot)
+        .filter((file) => pattern.test(readFileSync(file, "utf8")))
+        .map((file) => toPosix(relative(srcRoot, file)))
+        .filter((file) => !allowed.includes(file))
+        .sort();
 
-    expect(
-      offenders,
-      "recipe_versions rows are the only provenance record for text a user wrote into someone else's recipe (#699). A new delete site destroys the diff basis that #678's erasure remedy depends on, and does it silently. If this delete is legitimate, add it to SANCTIONED with the reason.",
-    ).toEqual([]);
-  });
-
-  it("still finds the sanctioned deletes, so the guard cannot pass vacuously", () => {
-    // Without this, deleting or renaming both call sites would leave the guard
-    // above green while asserting nothing at all.
-    const deletion = /\.delete\(\s*recipeVersions\s*\)/;
-    for (const relPath of SANCTIONED) {
-      const source = readFileSync(join(srcRoot, relPath), "utf8");
       expect(
-        deletion.test(source),
-        `expected ${relPath.split(sep).join("/")} to still delete recipe_versions`,
-      ).toBe(true);
-    }
-  });
+        offenders,
+        `recipe_versions rows are the only provenance record for text a user wrote into someone else's recipe (#699). Doing this outside ${allowed.join(", ")} ${harm}, and does it silently — the erasure remedy #678 depends on the diff basis being intact. If this is legitimate, add it to MECHANISMS[].sanctioned with the reason.`,
+      ).toEqual([]);
+    },
+  );
+
+  it.each(MECHANISMS)(
+    "$what still occurs at every sanctioned site, so the guard cannot pass vacuously",
+    ({ pattern, sanctioned }) => {
+      // Without this, deleting or renaming the sanctioned call sites would leave
+      // the check above green while asserting nothing at all.
+      for (const relPath of sanctioned) {
+        const source = readFileSync(join(srcRoot, relPath), "utf8");
+        expect(
+          pattern.test(source),
+          `expected ${toPosix(relPath)} to still match ${String(pattern)}`,
+        ).toBe(true);
+      }
+    },
+  );
 });
