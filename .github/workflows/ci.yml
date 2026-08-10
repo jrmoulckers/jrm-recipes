@@ -299,6 +299,13 @@ jobs:
       # changes behaviour without changing any call site.
       - name: Assert deployed foreign keys match the schema
         run: pnpm db:check-fks
+      # Referential actions are not the only thing that decides what a delete
+      # does. A BEFORE DELETE trigger reaches the same state without being a
+      # foreign key, so it passes the step above, both migration passes, drift
+      # and the schema unit tests alike (measured on #761). Nothing else we run
+      # looks at triggers.
+      - name: Assert the database installs no unexpected triggers or rules
+        run: pnpm db:check-triggers
 
   # End-to-end tests, including offline PWA coverage (issue #171). Playwright
   # starts the app in production mode (see playwright.config.ts) so the Serwist

@@ -34,6 +34,7 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:check-fks": "tsx scripts/check-fk-actions.ts",
+    "db:check-triggers": "tsx scripts/check-db-triggers.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
