@@ -32,22 +32,33 @@ export type OembedRich = {
 
 /** The public recipe fields the oEmbed payload is built from. */
 export type OembedRecipe = {
+  id: string;
   slug: string;
   title: string;
   coverImageUrl: string | null;
   author: { name: string | null; handle: string | null } | null;
 };
 
+/** A recipe reference parsed out of a canonical (or legacy) recipe URL. */
+export type OembedRecipeRef = {
+  /** The cook namespace, or `null` for a legacy flat `/recipes/<slug>` URL. */
+  cook: string | null;
+  /** The recipe segment: a slug inside `cook`, a retained alias, or an id. */
+  recipe: string;
+};
+
 /**
- * Extract a recipe slug/id from a canonical recipe URL, but only when it points
- * at *this* app's `/recipes/{slug}` path. Foreign origins, other paths, and
- * malformed input all return `null` so the endpoint can't be pointed at
+ * Extract a recipe reference from a recipe URL, but only when it points at
+ * *this* app. Both the canonical `/recipes/{cook}/{slug}` shape and the legacy
+ * flat `/recipes/{slug}` shape are accepted, because consumers have the old
+ * form cached and it stays valid forever (#666). Foreign origins, other paths,
+ * and malformed input all return `null` so the endpoint can't be pointed at
  * arbitrary URLs (SSRF/abuse guard). `baseUrl` defaults to the app's own origin.
  */
-export function recipeSlugFromUrl(
+export function recipeRefFromUrl(
   rawUrl: string,
   baseUrl: string = absoluteUrl("/"),
-): string | null {
+): OembedRecipeRef | null {
   let url: URL;
   let base: URL;
   try {
@@ -57,10 +68,16 @@ export function recipeSlugFromUrl(
     return null;
   }
   if (url.host !== base.host) return null;
-  const match = /^\/recipes\/([^/]+)\/?$/.exec(url.pathname);
+  const match = /^\/recipes\/([^/]+)(?:\/([^/]+))?\/?$/.exec(url.pathname);
   if (!match) return null;
-  const slug = decodeURIComponent(match[1]!).trim();
-  return slug.length > 0 ? slug : null;
+  const first = decodeURIComponent(match[1]!).trim();
+  const second = match[2] ? decodeURIComponent(match[2]).trim() : null;
+  if (second) {
+    return first.length > 0 && second.length > 0
+      ? { cook: first, recipe: second }
+      : null;
+  }
+  return first.length > 0 ? { cook: null, recipe: first } : null;
 }
 
 /** Clamp a requested dimension into `[min, fallback]` (oEmbed maxwidth/height). */
@@ -92,7 +109,9 @@ export function buildRecipeOembed(
     OEMBED_DEFAULT_HEIGHT,
     OEMBED_MIN_HEIGHT,
   );
-  const src = absoluteUrl(`/embed/recipes/${recipe.slug}`);
+  // Keyed by id, not slug: recipe slugs are only unique inside a cook's
+  // namespace, so the id is the one segment that can't become ambiguous (#666).
+  const src = absoluteUrl(`/embed/recipes/${recipe.id}`);
   const html =
     `<iframe src="${src}" width="${width}" height="${height}" ` +
     `style="border:0;border-radius:16px;max-width:100%;" ` +

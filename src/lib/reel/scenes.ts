@@ -7,7 +7,7 @@
  * layout decisions itself.
  *
  * Visual language mirrors the share-card system in
- * `src/app/(main)/recipes/[id]/_assets/card.tsx` (same brand palette + fonts).
+ * `src/app/(main)/recipes/_assets/card.tsx` (same brand palette + fonts).
  */
 
 /** Output frame. Vertical 1080x1920 (9:16), the Reels/TikTok/Stories standard. */

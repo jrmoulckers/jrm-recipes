@@ -21,9 +21,9 @@ describe("robots", () => {
   it("disallows app-only, immersive, editor and private routes", () => {
     expect(disallow).toContain("/api/");
     expect(disallow).toContain("/recipes/new");
-    expect(disallow).toContain("/recipes/*/edit");
-    expect(disallow).toContain("/recipes/*/cook");
-    expect(disallow).toContain("/recipes/*/print");
+    expect(disallow).toContain("/recipes/*/*/edit");
+    expect(disallow).toContain("/recipes/*/*/cook");
+    expect(disallow).toContain("/recipes/*/*/print");
   });
 
   it("does not disallow the public recipe or discover surfaces", () => {

@@ -12,7 +12,7 @@
  * Routes:
  *   /                              landing page
  *   /recipes                       discover feed
- *   /recipes/nonnas-sunday-gravy   a seeded, public recipe detail page
+ *   /recipes/home-cook/nonnas-sunday-gravy   a seeded, public recipe detail page
  *
  * Budgets (lab, warn-level): LCP <= 2.5s, CLS <= 0.1, TBT <= 200ms, perf >= 0.8.
  * The desktop preset (1x CPU, no mobile throttling) keeps the lab metrics
@@ -32,7 +32,10 @@ module.exports = {
       url: [
         "http://localhost:3000/",
         "http://localhost:3000/recipes",
-        "http://localhost:3000/recipes/nonnas-sunday-gravy",
+        // The canonical namespaced URL (#666). `home-cook` is the seed's dev
+        // user slug; the flat legacy path would only redirect here, and the
+        // extra hop would distort the lab metrics.
+        "http://localhost:3000/recipes/home-cook/nonnas-sunday-gravy",
       ],
       settings: {
         preset: "desktop",

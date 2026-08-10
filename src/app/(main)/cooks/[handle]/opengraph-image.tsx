@@ -2,8 +2,8 @@ import { ImageResponse } from "next/og";
 
 import { getPublicProfileByHandle } from "~/server/users/queries";
 import { displayNameFrom } from "~/lib/utils";
-import { loadFonts, fetchCoverDataUri } from "../../recipes/[id]/_assets/og";
-import { SIZE } from "../../recipes/[id]/_assets/card";
+import { loadFonts, fetchCoverDataUri } from "../../recipes/_assets/og";
+import { SIZE } from "../../recipes/_assets/card";
 import { ProfileCard, type ProfileCardData } from "../../_og/social-card";
 
 // Node runtime so it can reuse the pooled Postgres query and embed the avatar

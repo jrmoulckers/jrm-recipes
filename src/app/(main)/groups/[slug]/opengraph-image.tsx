@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
 
 import { getGroupBySlug } from "~/server/groups/queries";
-import { loadFonts, fetchCoverDataUri } from "../../recipes/[id]/_assets/og";
-import { SIZE } from "../../recipes/[id]/_assets/card";
+import { loadFonts, fetchCoverDataUri } from "../../recipes/_assets/og";
+import { SIZE } from "../../recipes/_assets/card";
 import { GroupCard, type GroupCardData } from "../../_og/social-card";
 
 // Node runtime so it can reuse the pooled Postgres query and embed the avatar

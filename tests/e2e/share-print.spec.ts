@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { gotoSeededRecipe } from "./recipe-paths";
+
 /**
  * Share + print journeys (issue #241). The Share control is a client dropdown
  * exposing a "Copy link" affordance, and the print route renders a
@@ -10,18 +12,17 @@ import { expect, test, type Page } from "@playwright/test";
  * Depends on the seeded public recipe; skips gracefully when no database is
  * wired, mirroring tests/e2e/offline.spec.ts.
  */
-const RECIPE_SLUG = "nonnas-sunday-gravy";
-const RECIPE_PATH = `/recipes/${RECIPE_SLUG}`;
-const PRINT_PATH = `${RECIPE_PATH}/print`;
-
 async function gotoSeeded(page: Page, path: string): Promise<boolean> {
   const res = await page.goto(path);
   return res?.status() === 200;
 }
 
 test("the Share menu exposes a Copy link action", async ({ page }) => {
-  const ok = await gotoSeeded(page, RECIPE_PATH);
-  test.skip(!ok, "No seeded database: recipe detail route is unavailable.");
+  const recipePath = await gotoSeededRecipe(page);
+  test.skip(
+    recipePath == null,
+    "No seeded database: recipe detail route is unavailable.",
+  );
 
   const shareTrigger = page.getByRole("button", { name: /share/i }).first();
   if ((await shareTrigger.count()) === 0) {
@@ -35,7 +36,12 @@ test("the Share menu exposes a Copy link action", async ({ page }) => {
 });
 
 test("the print route renders a print-ready layout", async ({ page }) => {
-  const ok = await gotoSeeded(page, PRINT_PATH);
+  // The print route hangs off the canonical namespaced path, so resolve that
+  // first rather than hard-coding the seed's user slug (#666).
+  const recipePath = await gotoSeededRecipe(page);
+  test.skip(recipePath == null, "No seeded database: print route unavailable.");
+
+  const ok = await gotoSeeded(page, `${recipePath!}/print`);
   test.skip(!ok, "No seeded database: print route is unavailable.");
 
   // Section headings the printable layout always renders.

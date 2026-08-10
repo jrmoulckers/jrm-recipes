@@ -10,7 +10,7 @@ import {
   TERRACOTTA_DEEP,
   Wordmark,
   clampText,
-} from "../recipes/[id]/_assets/card";
+} from "../recipes/_assets/card";
 
 /**
  * Shared, satori-safe Open Graph cards for public *social* surfaces. Creator

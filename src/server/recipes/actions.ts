@@ -13,7 +13,23 @@ import {
   ok,
 } from "~/server/action-result";
 import { authedAction, NEEDS_DATABASE } from "~/server/action";
-import { recipeDetailPath } from "~/lib/recipe-path";
+import { recipeRevalidationPaths } from "~/lib/recipe-path";
+
+/**
+ * Bust every cached path a recipe answers on (#666).
+ *
+ * A recipe is served both at its canonical `/recipes/<cook>/<slug>` URL and at
+ * the flat legacy `/recipes/<slug>` one, and the App Router caches those
+ * independently — so revalidating only the canonical path leaves everyone
+ * arriving from an older shared link on stale content.
+ */
+function revalidateRecipePaths(recipe: {
+  id: string;
+  slug: string | null;
+  cook?: string | null;
+}): void {
+  for (const path of recipeRevalidationPaths(recipe)) revalidatePath(path);
+}
 import { absoluteUrl } from "~/lib/utils";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -123,7 +139,7 @@ const runCreateRecipe = authedAction({
       }
       revalidatePath("/recipes");
       revalidatePath("/");
-      revalidatePath(recipeDetailPath(recipe));
+      revalidateRecipePaths({ ...recipe, cook: user.slug });
       revalidateRecipeTags(recipe.id);
       return ok({ id: recipe.id, slug: recipe.slug });
     } catch (error) {
@@ -154,7 +170,7 @@ const runUpdateRecipe = authedAction({
         visibility: data.visibility,
       });
       revalidatePath("/recipes");
-      revalidatePath(recipeDetailPath(recipe));
+      revalidateRecipePaths({ id, slug: recipe.slug, cook: user.slug });
       revalidateRecipeTags(id);
       return ok({ id, slug: recipe.slug });
     } catch (error) {
@@ -186,7 +202,7 @@ export async function forkRecipeAction(
       sourceId,
     });
     revalidatePath("/recipes");
-    revalidatePath(recipeDetailPath(recipe.source));
+    revalidateRecipePaths(recipe.source);
     revalidateRecipeTags(recipe.id);
     revalidateTag(recipeTag(sourceId));
     return ok({ id: recipe.id, slug: recipe.slug });
@@ -218,7 +234,7 @@ export async function revertRecipeAction(
       recipeId: recipe.id,
       versionNumber,
     });
-    revalidatePath(recipeDetailPath(recipe));
+    revalidateRecipePaths({ ...recipe, cook: user.slug });
     revalidatePath("/recipes");
     revalidateRecipeTags(recipe.id);
     return ok({ id: recipe.id, slug: recipe.slug });
@@ -341,7 +357,7 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
     return false;
   }
   revalidatePath("/recipes");
-  revalidatePath(recipeDetailPath(restored));
+  revalidateRecipePaths({ ...restored, cook: user.slug });
   revalidateRecipeTags(restored.id);
   return true;
 }

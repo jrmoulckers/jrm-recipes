@@ -7,7 +7,7 @@ import {
   OEMBED_MIN_WIDTH,
   buildRecipeOembed,
   clampDimension,
-  recipeSlugFromUrl,
+  recipeRefFromUrl,
   type OembedRecipe,
 } from "./oembed";
 
@@ -15,6 +15,7 @@ const BASE = "https://heirloom.example.com/";
 
 function makeRecipe(overrides: Partial<OembedRecipe> = {}): OembedRecipe {
   return {
+    id: "rec_apple",
     slug: "grandmas-apple-pie",
     title: "Grandma's Apple Pie",
     coverImageUrl: "https://img.example.com/pie.jpg",
@@ -23,46 +24,55 @@ function makeRecipe(overrides: Partial<OembedRecipe> = {}): OembedRecipe {
   };
 }
 
-describe("recipeSlugFromUrl", () => {
-  it("extracts the slug from a same-origin recipe URL", () => {
+describe("recipeRefFromUrl", () => {
+  it("extracts the cook + recipe from a canonical namespaced URL", () => {
     expect(
-      recipeSlugFromUrl("https://heirloom.example.com/recipes/apple-pie", BASE),
-    ).toBe("apple-pie");
+      recipeRefFromUrl(
+        "https://heirloom.example.com/recipes/ada/apple-pie",
+        BASE,
+      ),
+    ).toEqual({ cook: "ada", recipe: "apple-pie" });
+  });
+
+  it("still accepts the legacy flat URL, which never stops working", () => {
+    expect(
+      recipeRefFromUrl("https://heirloom.example.com/recipes/apple-pie", BASE),
+    ).toEqual({ cook: null, recipe: "apple-pie" });
   });
 
   it("tolerates a trailing slash", () => {
     expect(
-      recipeSlugFromUrl(
-        "https://heirloom.example.com/recipes/apple-pie/",
+      recipeRefFromUrl(
+        "https://heirloom.example.com/recipes/ada/apple-pie/",
         BASE,
       ),
-    ).toBe("apple-pie");
+    ).toEqual({ cook: "ada", recipe: "apple-pie" });
   });
 
   it("rejects foreign origins (SSRF/abuse guard)", () => {
     expect(
-      recipeSlugFromUrl("https://evil.example.com/recipes/apple-pie", BASE),
+      recipeRefFromUrl("https://evil.example.com/recipes/ada/apple-pie", BASE),
     ).toBeNull();
   });
 
   it("rejects non-recipe paths", () => {
     expect(
-      recipeSlugFromUrl("https://heirloom.example.com/cooks/ada", BASE),
+      recipeRefFromUrl("https://heirloom.example.com/cooks/ada", BASE),
     ).toBeNull();
     expect(
-      recipeSlugFromUrl("https://heirloom.example.com/recipes", BASE),
+      recipeRefFromUrl("https://heirloom.example.com/recipes", BASE),
     ).toBeNull();
     expect(
-      recipeSlugFromUrl(
-        "https://heirloom.example.com/recipes/apple-pie/edit",
+      recipeRefFromUrl(
+        "https://heirloom.example.com/recipes/ada/apple-pie/edit",
         BASE,
       ),
     ).toBeNull();
   });
 
   it("returns null for malformed input", () => {
-    expect(recipeSlugFromUrl("not a url", BASE)).toBeNull();
-    expect(recipeSlugFromUrl("", BASE)).toBeNull();
+    expect(recipeRefFromUrl("not a url", BASE)).toBeNull();
+    expect(recipeRefFromUrl("", BASE)).toBeNull();
   });
 });
 
@@ -91,7 +101,7 @@ describe("buildRecipeOembed", () => {
     expect(payload.width).toBe(OEMBED_DEFAULT_WIDTH);
     expect(payload.height).toBe(OEMBED_DEFAULT_HEIGHT);
     expect(payload.html).toContain("<iframe");
-    expect(payload.html).toContain("/embed/recipes/grandmas-apple-pie");
+    expect(payload.html).toContain("/embed/recipes/rec_apple");
     expect(payload.html).toContain(`width="${OEMBED_DEFAULT_WIDTH}"`);
   });
 

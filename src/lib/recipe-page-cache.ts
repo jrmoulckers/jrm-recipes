@@ -50,19 +50,27 @@ export interface RecipePageRequest {
   rscHeader: boolean;
 }
 
+/** Recipe sub-routes that are never cached as recipe pages. */
+const EXCLUDED_SUB_ROUTES = new Set(["edit", "print", "keepsake"]);
+
 /** Whether a same-origin pathname is a recipe detail or cook-mode page. */
 function isRecipePagePath(pathname: string): boolean {
   const segments = pathname.split("/").filter(Boolean);
-  // Expect ["recipes", "<id>"] or ["recipes", "<id>", "cook"].
   if (segments[0] !== "recipes") return false;
-  if (segments.length !== 2 && segments.length !== 3) return false;
 
-  const id = segments[1];
-  if (!id || isReservedRecipeSlug(id)) return false;
+  // Canonical recipe URLs are `/recipes/<cook>/<slug>` with an optional `/cook`
+  // sub-route (#666), and the pre-namespacing flat `/recipes/<slug>` shape still
+  // resolves, so depths 2 through 4 all reach a recipe document.
+  if (segments.length < 2 || segments.length > 4) return false;
 
-  // Only the detail document itself, or its Cook Mode sub-route. Anything else
-  // under the id (e.g. `/edit`) is deliberately excluded.
-  if (segments.length === 3 && segments[2] !== "cook") return false;
+  const first = segments[1];
+  if (!first || isReservedRecipeSlug(first)) return false;
+
+  // Only the detail document itself, or its Cook Mode sub-route. The editor and
+  // the print/keepsake views are deliberately excluded.
+  const tail = segments[segments.length - 1]!;
+  if (segments.length === 4) return tail === "cook";
+  if (segments.length === 3) return !EXCLUDED_SUB_ROUTES.has(tail);
 
   return true;
 }

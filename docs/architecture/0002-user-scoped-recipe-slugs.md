@@ -88,6 +88,52 @@ even after later recipes claim the same slug in other namespaces. Bare id-or-slu
 the transition (`getRecipe`, `getOwnedRecipe`, `getPublicRecipeCard`, `forkRecipe`) order
 deterministically — exact id first, then oldest holder — so no existing link changes meaning.
 
+### The flat legacy route is a resolver, not a rewrite
+
+`/recipes/<segment>` is kept as a real route (`src/app/(main)/recipes/[cook]/page.tsx`) that resolves
+the segment and issues a 308 to the canonical namespaced URL, rather than a `next.config.js` rewrite
+or middleware redirect. A rewrite cannot work here: the mapping is a database lookup (id → recipe,
+then the `legacy` alias, then the oldest live holder), and — decisively — the redirect must be
+withheld until the viewer has passed `canView`, which is server-component territory. Middleware runs
+before auth context is fully available and would have to duplicate the access check.
+
+The route also cannot shadow the static siblings `/recipes/new`, `/recipes/tags`, and
+`/recipes/cook-with`: Next.js resolves static segments ahead of dynamic ones, so those pages continue
+to win. That is why `RESERVED_RECIPE_SLUGS` is retained — it now constrains user slugs, and the
+reservation for recipe slugs remains only so pre-existing flat links stay resolvable.
+
+### Resolution is one function per URL shape
+
+`src/server/recipes/resolve.ts` exposes exactly two entry points, both `cache()`-wrapped so a page and
+its `generateMetadata` share a single query pass:
+
+- `resolveNamespacedRecipe(cook, recipe)` — live slug, then retired recipe slug, then a bare id inside
+  that namespace. A live slug always beats an alias, so a slug retired by one recipe and later
+  re-issued never silently redirects to the earlier content.
+- `resolveFlatRecipe(segment)` — id, then the seeded `legacy` alias, then the oldest live holder.
+
+Both return `{ recipeId, canonical }`. Routes translate `canonical: false` into a
+`permanentRedirect`, and only ever after the recipe has loaded for the viewer.
+
+### Every recipe URL is built by `recipe-path.ts`
+
+`recipeDetailPath` degrades in two steps — canonical `/recipes/<cook>/<slug>`, then flat
+`/recipes/<slug>`, then `/recipes/<id>` — so a call site holding only a recipe row still emits a
+working link that redirects, rather than a dead one. `recipeEditPath`, `recipeCookPath`,
+`recipePrintPath`, and `recipeKeepsakePath` all compose on top of it, which is what keeps the
+sub-routes correct now that they sit one segment deeper.
+
+`recipeRevalidationPaths` is the fan-out counterpart: it returns the canonical path _and_ the flat
+legacy path, because the App Router caches those as independent documents and inbound traffic to an
+established recipe is mostly old links. Retired aliases are deliberately excluded — they are
+redirects, not cached documents, and their target is already busted.
+
+### The embed iframe is keyed by id
+
+`/embed/recipes/<id>` replaces the previous slug-keyed embed URL. Embeds are pasted into third-party
+pages and never revisited, so keying them by a mutable slug would break silently on the first rename.
+Ids are already exposed by the oEmbed payload and carry no additional information.
+
 ## Consequences
 
 Reserved slugs move up a level. `new`, `tags`, and `cook-with` are static siblings under `/recipes/*`,
