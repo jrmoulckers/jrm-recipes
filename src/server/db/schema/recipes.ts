@@ -64,9 +64,15 @@ export const recipes = pgTable(
     description: text(),
     coverImageUrl: varchar({ length: 2048 }),
 
+    // `restrict`, not `cascade` (issue #678). Account erasure has to destroy the
+    // Cloudinary bytes and reassign or delete co-created recipes *before* any
+    // row disappears; a cascade would silently pull the recipes out from under
+    // that logic. Restricting makes an unhandled dependency a loud failure
+    // instead of irreversible data loss, and `deleteUserAccount` is responsible
+    // for deleting these rows in the right order.
     authorId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "restrict" }),
     groupId: fk().references(() => groups.id, { onDelete: "set null" }),
 
     visibility: recipeVisibility().notNull().default("private"),

@@ -214,25 +214,14 @@ export async function changeUserSlug(
 }
 
 /**
- * Anonymize a deleted account's namespace (issue #666).
+ * Slug rotation on deletion was removed in issue #678.
  *
- * A user-chosen public slug is personal data, so account deletion rotates it to
- * an opaque `cook-…` and drops every retained alias. Link retention loses to
- * privacy here on purpose: keeping `heirloom/nonna` resolving after Nonna asked
- * to be deleted would defeat the deletion. Recipes stay reachable under the
- * rotated namespace, so nothing 404s that the viewer could still see.
- *
- * Idempotent: a repeat deletion simply rotates to a fresh opaque slug.
+ * `anonymizeUserSlug` used to rotate a deleted account's slug to an opaque
+ * `cook-…` and keep the recipes reachable under it. That approach was rejected:
+ * account deletion is now full erasure, so the `users` row, its slug and all its
+ * aliases are deleted outright and those URLs 404. Nothing is left to rotate.
+ * See `~/server/users/erasure`.
  */
-export async function anonymizeUserSlug(tx: Db, userId: string): Promise<void> {
-  await tx.delete(userSlugAliases).where(eq(userSlugAliases.userId, userId));
-  const slug = await uniqueUserSlug(
-    tx,
-    opaqueUserSlug(createId().slice(0, 8)),
-    userId,
-  );
-  await tx.update(users).set({ slug }).where(eq(users.id, userId));
-}
 
 /**
  * Resolve a URL segment to a user: the live slug first, then the retained

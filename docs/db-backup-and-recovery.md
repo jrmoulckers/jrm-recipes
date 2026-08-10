@@ -127,7 +127,46 @@ select count(*) from users;
 select count(*) from audit_log;
 ```
 
-### 5. Repoint the application
+### 5. Re-apply erasures (mandatory gate)
+
+**A restored instance must not be promoted until this step passes.** A backup taken before an
+account erasure still contains that account. Restoring it resurrects a user who exercised their
+right to erasure, silently reinstating personal data that was lawfully deleted — a fresh breach
+committed by the recovery itself. See [ADR 0003](./architecture/0003-account-erasure.md) and #678.
+
+`deletion_records` exists precisely so this is answerable after the identifying rows are gone. It
+stores a salted SHA-256 of each erased `users.id`, so a restored row can be hashed and matched.
+
+1. Confirm the restored database still carries the tombstones. They are only lost if the restore
+   point predates the erasure _and_ the table itself — if `deletion_records` is missing or shorter
+   than production's, stop and take the list from production before proceeding.
+
+   ```sql
+   select count(*) from deletion_records where completed_at is not null;
+   ```
+
+2. Find resurrected subjects. Run this against the restored instance with the **same**
+   `DELETION_HASH_SALT` the erasures used; a different salt produces no matches and a false all-clear.
+
+   ```sql
+   select u.id
+   from users u
+   join deletion_records d
+     on d.subject_hash = encode(sha256((:salt || ':' || u.id)::bytea), 'hex')
+   where d.completed_at is not null;
+   ```
+
+3. Re-run the erasure for every id returned, using the normal path
+   (`eraseUserAccount(id, { trigger: "admin" })`) so media, cascades and verification all apply.
+   Do not hand-delete rows: the ordering is load-bearing.
+4. Re-run the query and confirm it returns zero rows. Record the count re-applied in the incident
+   notes.
+5. Check whether any Cloudinary assets were also restored from a provider-side backup. If so, re-run
+   the media purge for those subjects.
+
+Only once this returns clean may the restored instance serve production traffic.
+
+### 6. Repoint the application
 
 1. Schedule a maintenance window if user-visible downtime or lost writes are possible.
 2. Put the app into a safe state if the platform supports it, or pause writes at the application/provider layer.
@@ -136,7 +175,7 @@ select count(*) from audit_log;
 5. Redeploy production.
 6. Confirm `/api/health` reports database health.
 
-### 6. Apply pending migrations if needed
+### 7. Apply pending migrations if needed
 
 If the restore point predates migrations that are still present on `main`:
 
@@ -146,7 +185,7 @@ If the restore point predates migrations that are still present on `main`:
 4. Prefer forward-fix migrations for partial or bad migrations. Do not edit already-committed migration files.
 5. If a pending migration is destructive, take another provider snapshot first.
 
-### 7. Smoke test
+### 8. Smoke test
 
 After repointing:
 
@@ -158,7 +197,7 @@ After repointing:
 6. Confirm Stripe billing pages and webhooks if billing data was involved.
 7. Confirm PostHog analytics does not block core flows when configured or unconfigured.
 
-### 8. Close out
+### 9. Close out
 
 1. Keep the old production instance read-only until the incident lead confirms no data needs to be copied forward.
 2. Document the final recovery timestamp, data-loss window, validation evidence, and user impact.
@@ -188,7 +227,29 @@ Drill checklist:
 1. Restore the latest backup/PITR point to a non-production instance.
 2. Connect a disposable local or preview deployment to the restored database.
 3. Verify migrations, row counts, auth-dependent reads, and representative recipe flows.
-4. Measure actual restore time and compare it with the RTO target.
-5. Record gaps and update this runbook.
+4. **Exercise the erasure gate.** Erase a disposable test account in a pre-production environment,
+   restore a backup taken _before_ that erasure, and confirm step 5 of the runbook detects the
+   resurrected subject and re-erases it. A gate nobody has ever seen fire is not a control.
+5. Measure actual restore time and compare it with the RTO target.
+6. Record gaps and update this runbook.
 
-_Related issue: #257._
+## Erasure and backups
+
+Deleting an account removes it from the live database immediately, but backups taken beforehand
+still contain it until they expire. Between those two moments the data is _beyond use_ — retained
+only in an immutable backup, restorable only through the runbook above, and re-erased by its
+mandatory gate before that instance can ever serve traffic — rather than truly gone.
+
+That window is the **erasure horizon** disclosed to the user, and it is bounded by the longest
+retention period in the table above. It is recorded per-deletion in
+`deletion_records.backup_horizon_at`.
+
+Two consequences:
+
+- The retention numbers above must be **pinned to actual values**, not left as ranges. An honest
+  erasure horizon cannot be stated to a user while the longest backup lifetime is unknown.
+- Backups are deliberately not selectively edited. Surgically removing a user from an immutable
+  backup would compromise its integrity as a recovery artifact, which is why re-application on
+  restore is the control instead.
+
+_Related issues: #257, #678._

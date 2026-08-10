@@ -95,6 +95,13 @@ export const env = createEnv({
     // unset the endpoint is disabled (503) so it can never be triggered
     // anonymously. Vercel Cron sends it as `Authorization: Bearer <secret>`.
     CRON_SECRET: z.string().optional(),
+    // Salt for the one-way subject hashes in `deletion_records` (#678). The
+    // tombstone must outlive the erased `users` row without storing anything
+    // that identifies its subject, so ids are stored only as salted SHA-256.
+    // Without the salt, a hash of a known cuid2 would be trivially confirmable
+    // by anyone who obtained the table. When unset, erasure still runs but the
+    // tombstone is skipped rather than written with a guessable digest.
+    DELETION_HASH_SALT: z.string().min(16).optional(),
     // Transactional email (Resend), optional. With `RESEND_API_KEY` unset the
     // email layer degrades to a log/no-op provider (see ~/server/digest/email
     // `getEmailProvider`), so the digest cron builds + "sends" with zero config
@@ -154,6 +161,7 @@ export const env = createEnv({
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
+    DELETION_HASH_SALT: process.env.DELETION_HASH_SALT,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

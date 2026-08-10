@@ -41,9 +41,14 @@ export const mediaAssets = pgTable(
   "media_assets",
   {
     id: pk(),
+    // `restrict`, not `cascade` (issue #678). This row is the only record that a
+    // Cloudinary asset exists: cascading it away on account deletion would drop
+    // the bookkeeping without ever calling `uploader.destroy`, stranding the
+    // image on the CDN forever with nothing left pointing at it. Erasure must
+    // destroy the remote bytes first and then delete these rows explicitly.
     userId: fk()
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "restrict" }),
     provider: mediaProvider().notNull().default("cloudinary"),
     /**
      * Cloudinary public id, required to call `uploader.destroy`. Null for

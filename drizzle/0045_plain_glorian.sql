@@ -1,0 +1,1 @@
+CREATE INDEX "deletion_records_clerk_id_hash_idx" ON "deletion_records" USING btree ("clerk_id_hash");
