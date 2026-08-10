@@ -40,6 +40,7 @@ import { hasAllergenConflict } from "~/lib/dietary-match";
 import {
   groupMembers,
   memberDietaryProfiles,
+  recipeCreators,
   recipeEvents,
   recipeIngredients,
   recipeSteps,
@@ -551,15 +552,65 @@ export async function attachCardAllergens<T extends { id: string }>(
 }
 
 /**
+ * The users who co-create `recipeId` and have accepted (issue #668).
+ *
+ * `pending` invitations are excluded, and that exclusion is the whole point:
+ * being invited must grant nothing at all until the invitee accepts, so a
+ * pending row can never widen visibility.
+ */
+export async function recipeCreatorIds(recipeId: string): Promise<string[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await db.query.recipeCreators.findMany({
+    where: and(
+      eq(recipeCreators.recipeId, recipeId),
+      eq(recipeCreators.status, "accepted"),
+    ),
+    columns: { userId: true },
+  });
+  return rows.map((r) => r.userId);
+}
+
+/**
+ * Whether `userId` is an accepted co-creator of `recipeId` (issue #668).
+ *
+ * Deliberately a targeted existence check rather than a fetch-then-scan: the
+ * access paths only ever ask about the current viewer, and this keeps the extra
+ * round trip to a single indexed lookup that is skipped entirely whenever the
+ * viewer already passes on another ground.
+ */
+export async function isRecipeCreator(
+  recipeId: string,
+  userId: string,
+): Promise<boolean> {
+  if (!isDbConfigured()) return false;
+  const row = await db.query.recipeCreators.findFirst({
+    where: and(
+      eq(recipeCreators.recipeId, recipeId),
+      eq(recipeCreators.userId, userId),
+      eq(recipeCreators.status, "accepted"),
+    ),
+    columns: { id: true },
+  });
+  return Boolean(row);
+}
+
+/**
  * Pure visibility predicate shared by every read/write access check. A recipe
- * is viewable when it's public/unlisted, authored by the viewer, or a group
- * recipe the viewer belongs to. Exported so the rule can be unit-tested and
- * reused without re-deriving it.
+ * is viewable when it's public/unlisted, authored by the viewer, co-created by
+ * the viewer, or a group recipe the viewer belongs to. Exported so the rule can
+ * be unit-tested and reused without re-deriving it.
+ *
+ * `creatorIds` is the accepted co-creator list (issue #668) and defaults to
+ * empty. Omitting it is *fail-closed*: a caller that can't cheaply resolve
+ * co-creators denies a creator who would otherwise be allowed, rather than
+ * allowing someone who should be denied. The async wrappers below resolve it
+ * lazily, only for a viewer the cheaper grounds have already rejected.
  */
 export function canView(
   recipe: { authorId: string; visibility: string; groupId: string | null },
   viewer: User | null,
   groupIds: string[],
+  creatorIds: string[] = [],
 ) {
   // NOTE: `unlisted` is intentionally NOT public here (issue #204). An unlisted
   // recipe is reachable by a non-owner only through its unguessable share token
@@ -567,6 +618,7 @@ export function canView(
   // this slug/id-scoped predicate must not grant anonymous access to it.
   if (recipe.visibility === "public") return true;
   if (recipe.authorId === viewer?.id) return true;
+  if (viewer && creatorIds.includes(viewer.id)) return true;
   if (
     recipe.visibility === "group" &&
     recipe.groupId &&
@@ -580,13 +632,25 @@ export function canView(
  * Whether `viewer` may see `recipe`, using the same visibility rule as
  * {@link getRecipe}. Exposed so write paths (rating, commenting) can gate on
  * *view* access without re-fetching the whole recipe graph.
+ *
+ * The co-creator check (issue #668) runs only after the synchronous grounds
+ * have failed, so the common allow cases cost no extra query. `id` is optional
+ * so existing callers holding a narrowed recipe shape still compile; without it
+ * the co-creator ground is skipped, which is fail-closed.
  */
 export async function canViewRecipe(
-  recipe: { authorId: string; visibility: string; groupId: string | null },
+  recipe: {
+    id?: string;
+    authorId: string;
+    visibility: string;
+    groupId: string | null;
+  },
   viewer: User | null,
 ): Promise<boolean> {
   const groupIds = await viewerGroupIds(viewer);
-  return canView(recipe, viewer, groupIds);
+  if (canView(recipe, viewer, groupIds)) return true;
+  if (!viewer || !recipe.id) return false;
+  return isRecipeCreator(recipe.id, viewer.id);
 }
 
 /**
@@ -622,8 +686,14 @@ export async function getRecipe(
   if (canView(recipe, viewer, groupIds)) return recipe;
   // An unlisted recipe is otherwise invisible by slug/id, but a caller that
   // presents the matching, still-enabled share token (the `/r/<token>` route)
-  // is granted access here (issues #204/#207).
+  // is granted access here (issues #204/#207). Checked before the co-creator
+  // ground because it is synchronous, so the share-link path costs no query.
   if (viewerHoldsShareLink(recipe, shareToken)) return recipe;
+  // A co-creator sees the recipe under their own namespace too (issue #668).
+  // Last, so it only costs a round trip for a signed-in viewer every cheaper
+  // ground has already rejected, and only `accepted` rows count — a pending
+  // invitation grants nothing.
+  if (viewer && (await isRecipeCreator(recipe.id, viewer.id))) return recipe;
   return null;
 }
 

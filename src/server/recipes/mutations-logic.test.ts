@@ -99,6 +99,7 @@ function recordingTx() {
       groupMembers: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
       tags: {
         findMany: vi.fn(() =>
           Promise.resolve(
@@ -109,6 +110,8 @@ function recordingTx() {
         ),
       },
     },
+    // Slug allocation serializes on the namespace before probing (issue #668).
+    execute: vi.fn().mockResolvedValue(undefined),
     insert,
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({

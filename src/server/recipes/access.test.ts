@@ -6,6 +6,7 @@ import { canView } from "./queries";
 const author = { id: "author_1" } as User;
 const stranger = { id: "stranger_1" } as User;
 const member = { id: "member_1" } as User;
+const creator = { id: "creator_1" } as User;
 
 describe("canView", () => {
   it("allows anyone to view public recipes", () => {
@@ -62,5 +63,39 @@ describe("canView", () => {
   it("rejects a group recipe with no group assigned", () => {
     const orphan = { authorId: author.id, visibility: "group", groupId: null };
     expect(canView(orphan, member, ["group_1"])).toBe(false);
+  });
+});
+
+describe("canView co-creators (issue #668)", () => {
+  const priv = { authorId: author.id, visibility: "private", groupId: null };
+
+  it("lets an accepted co-creator view a private recipe", () => {
+    expect(canView(priv, creator, [], [creator.id])).toBe(true);
+  });
+
+  it("still rejects someone who is not on the creator list", () => {
+    expect(canView(priv, stranger, [], [creator.id])).toBe(false);
+  });
+
+  it("never grants access to a signed-out viewer", () => {
+    // Guards against a null viewer matching an unexpected entry in the list.
+    expect(canView(priv, null, [], [creator.id])).toBe(false);
+  });
+
+  it("defaults to no creators, i.e. fail-closed", () => {
+    // A call site that can't cheaply resolve co-creators must deny a creator who
+    // would otherwise be allowed, never allow someone who should be denied.
+    expect(canView(priv, creator, [])).toBe(false);
+  });
+
+  it("does not widen an unlisted recipe beyond its creator list", () => {
+    const unlisted = {
+      authorId: author.id,
+      visibility: "unlisted",
+      groupId: null,
+    };
+    expect(canView(unlisted, creator, [], [creator.id])).toBe(true);
+    expect(canView(unlisted, stranger, [], [creator.id])).toBe(false);
+    expect(canView(unlisted, null, [], [creator.id])).toBe(false);
   });
 });

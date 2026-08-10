@@ -6,6 +6,7 @@ import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
 import {
   groupMembers,
+  recipeCreators,
   recipeEvents,
   recipeIngredients,
   recipeSlugAliases,
@@ -41,6 +42,18 @@ const PG_UNIQUE_VIOLATION = "23505";
  */
 const RECIPES_SLUG_CONSTRAINT = "recipes_author_slug_uq";
 const RECIPE_SLUG_ALIAS_CONSTRAINT = "recipe_slug_aliases_owner_slug_uq";
+const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
+
+/**
+ * Advisory-lock class for per-namespace slug allocation (issue #668).
+ *
+ * Postgres advisory locks share one global space, so the two-argument form is
+ * used with this constant as the class id to keep these locks from colliding
+ * with any other advisory lock the app might take later. The object id is
+ * `hashtext(ownerId)`; a hash collision between two different namespaces costs
+ * nothing but a little extra serialization.
+ */
+const SLUG_NAMESPACE_LOCK_CLASS = 668;
 
 /** DB-level unique constraint on `recipe_versions (recipe_id, version_number)`. */
 const RECIPE_VERSIONS_VERSION_CONSTRAINT = "recipe_versions_recipe_version_uq";
@@ -79,16 +92,17 @@ function matchesUniqueViolation(err: unknown, constraint: string): boolean {
 }
 
 /**
- * True when `err` is a Postgres unique-violation on either structure that makes
- * a recipe slug unique in its namespace. {@link uniqueSlug} pre-checks for a
- * free slug, but two concurrent transactions can both pass that check and only
- * collide at COMMIT-time on the DB constraint. That lost race surfaces here so
- * callers can retry.
+ * True when `err` is a Postgres unique-violation on any of the three structures
+ * that make a recipe slug unique in its namespace. {@link uniqueSlug} pre-checks
+ * for a free slug, but two concurrent transactions can both pass that check and
+ * only collide at COMMIT-time on the DB constraint. That lost race surfaces here
+ * so callers can retry.
  */
 export function isSlugConflict(err: unknown): boolean {
   return (
     matchesUniqueViolation(err, RECIPES_SLUG_CONSTRAINT) ||
-    matchesUniqueViolation(err, RECIPE_SLUG_ALIAS_CONSTRAINT)
+    matchesUniqueViolation(err, RECIPE_SLUG_ALIAS_CONSTRAINT) ||
+    matchesUniqueViolation(err, RECIPE_CREATOR_SLUG_CONSTRAINT)
   );
 }
 
@@ -140,8 +154,8 @@ async function recordEvent(
 
 /**
  * Whether `candidate` is already spoken for in `ownerId`'s namespace: held by
- * one of their live recipes, retained as one of their aliases, or reserved for
- * a static route.
+ * one of their live recipes, retained as one of their aliases, allocated to a
+ * recipe they co-create, or reserved for a static route.
  *
  * Aliases count as taken (issue #666). That is the rule that keeps redirects
  * honest: if a released slug could be re-claimed by a different recipe, every
@@ -152,6 +166,33 @@ async function recordEvent(
  * `tags`, `cook-with`) collide with static sibling routes under `/recipes/*`,
  * so a recipe assigned one would be unreachable at its legacy flat URL. We
  * perturb past them exactly like a taken slug, yielding e.g. `new-2ab`.
+ *
+ * ## Why this takes a lock (issue #668)
+ *
+ * A namespace is now shared by three kinds of occupant — live recipes, retained
+ * aliases, and accepted co-creator entries — each protected by its *own* unique
+ * constraint (`recipes_author_slug_uq`, `recipe_slug_aliases_owner_slug_uq`,
+ * `recipe_creators_user_slug_uq`). Postgres has no cross-table unique, so no
+ * constraint spans them: a transaction accepting a creator invitation and a
+ * transaction creating a recipe can both probe a candidate as free and both
+ * commit it, in different tables. Neither violates its own constraint, so
+ * nothing raises and {@link withSlugConflictRetry} never fires — the namespace
+ * silently ends up with a duplicate the URL resolver cannot disambiguate.
+ *
+ * A transaction-scoped advisory lock on the namespace closes that window by
+ * serializing allocations within a single user's namespace, which is the only
+ * scope where the race exists. It is taken *here*, rather than at each call
+ * site, deliberately: allocating a slug means asking this function whether a
+ * candidate is free, so there is no way to allocate without passing through the
+ * lock. A caller cannot forget it.
+ *
+ * The lock supplements the constraints, it does not replace them. They remain
+ * the source of truth for anything that writes a slug without probing, and the
+ * retry loop still recovers from those.
+ *
+ * Lock ordering: every allocating transaction locks at most **one** namespace,
+ * so no deadlock cycle is reachable. If that ever stops being true, acquisition
+ * must be ordered by `ownerId`.
  */
 async function slugTaken(
   tx: Tx,
@@ -160,6 +201,13 @@ async function slugTaken(
   ignoreRecipeId?: string,
 ): Promise<boolean> {
   if (isReservedRecipeSlug(candidate)) return true;
+
+  // Held until this transaction commits or rolls back, so the probe below and
+  // the insert the caller performs afterwards are atomic against any other
+  // writer allocating in the same namespace.
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(${SLUG_NAMESPACE_LOCK_CLASS}, hashtext(${ownerId}))`,
+  );
 
   const live = await tx.query.recipes.findFirst({
     where: and(
@@ -181,7 +229,21 @@ async function slugTaken(
     ),
     columns: { id: true },
   });
-  return Boolean(alias);
+  if (alias) return true;
+
+  // Recipes this user co-creates occupy their namespace too (issue #668). Only
+  // `accepted` rows count: a pending invitation holds no slug at all, so it can
+  // never block one.
+  const coCreated = await tx.query.recipeCreators.findFirst({
+    where: and(
+      eq(recipeCreators.userId, ownerId),
+      eq(recipeCreators.slug, candidate),
+      eq(recipeCreators.status, "accepted"),
+      ignoreRecipeId ? ne(recipeCreators.recipeId, ignoreRecipeId) : undefined,
+    ),
+    columns: { id: true },
+  });
+  return Boolean(coCreated);
 }
 
 /**
