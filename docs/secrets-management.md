@@ -1,11 +1,8 @@
 # Secrets management
 
-This runbook covers the secrets and sensitive configuration used by Heirloom. It is grounded in
-`.env.example`, `src/env.js`, deployment docs, and the code paths that read these variables.
+This runbook covers the secrets and sensitive configuration used by Heirloom. It is grounded in `.env.example`, `src/env.js`, deployment docs, and the code paths that read these variables.
 
-Provider dashboards and exact buttons change over time, so the steps below describe the required
-control objective and mark provider-specific details as deployment-dependent when they are not
-evidenced in the repo.
+Provider dashboards and exact buttons change over time, so the steps below describe the required control objective and mark provider-specific details as deployment-dependent when they are not evidenced in the repo.
 
 ## Storage policy
 
@@ -15,21 +12,14 @@ Secret handling follows
 [`ENG-INT-005`](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/integration-boundaries.md)
 (credential proxy isolation). What is specific to Heirloom:
 
-- Store secrets in **Vercel project environment variables** per environment: Production,
-  Preview, and any staging deployment.
-- Never commit real secrets. `.gitignore` excludes `.env`, `.env*.local`, `.vercel`, and
-  `.clerk/`.
-- CI runs Gitleaks through `.github/workflows/ci.yml`. `.gitleaks.toml` keeps the default
-  detector set with a narrow allowlist for test fixtures.
-- Keep Preview and staging isolated. Do not point Preview at the production `DATABASE_URL`.
-  `scripts/migrate.mjs` skips preview migrations unless `ALLOW_PREVIEW_MIGRATIONS=1` is
-  deliberately set for an isolated database branch.
+- Store secrets in **Vercel project environment variables** per environment: Production, Preview, and any staging deployment.
+- Never commit real secrets. `.gitignore` excludes `.env`, `.env*.local`, `.vercel`, and `.clerk/`.
+- CI runs Gitleaks through `.github/workflows/ci.yml`. `.gitleaks.toml` keeps the default detector set with a narrow allowlist for test fixtures.
+- Keep Preview and staging isolated. Do not point Preview at the production `DATABASE_URL`. `scripts/migrate.mjs` skips preview migrations unless `ALLOW_PREVIEW_MIGRATIONS=1` is deliberately set for an isolated database branch.
 
 ## Environment-variable inventory
 
-Owners below are a template to fill in for the team. Cadence is a recommended default. Always
-rotate immediately on suspected exposure, vendor compromise, contractor offboarding, or role
-change.
+Owners below are a template to fill in for the team. Cadence is a recommended default. Always rotate immediately on suspected exposure, vendor compromise, contractor offboarding, or role change.
 
 | Category                           | Variables                                                                                                                             | Secret?                                                                                      | Store                                                           | Template owner              | Recommended rotation                                                 |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------- |
@@ -50,9 +40,7 @@ change.
 
 ## Stripe Price ID convention
 
-`src/config/plans.ts` stores only the environment-variable **names** in `stripePriceEnvKey`,
-such as `STRIPE_PRICE_FAMILY` and `STRIPE_PRICE_GIFT_FAMILY`. The actual Stripe Price IDs live
-in environment variables and are resolved in `src/server/billing/actions.ts`.
+`src/config/plans.ts` stores only the environment-variable **names** in `stripePriceEnvKey`, such as `STRIPE_PRICE_FAMILY` and `STRIPE_PRICE_GIFT_FAMILY`. The actual Stripe Price IDs live in environment variables and are resolved in `src/server/billing/actions.ts`.
 
 This means no Stripe billing ID or secret needs to be committed to source.
 
@@ -61,10 +49,8 @@ This means no Stripe billing ID or secret needs to be committed to source.
 ### Rotate Clerk keys and webhook secret
 
 1. Open the Clerk application for the target environment.
-2. Create or reveal the replacement publishable and secret keys according to Clerk's current
-   key-rotation flow.
-3. If the Clerk webhook endpoint is enabled, create or rotate the endpoint signing secret for
-   `/api/webhooks/clerk`.
+2. Create or reveal the replacement publishable and secret keys according to Clerk's current key-rotation flow.
+3. If the Clerk webhook endpoint is enabled, create or rotate the endpoint signing secret for `/api/webhooks/clerk`.
 4. Update Vercel environment variables:
    - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
    - `CLERK_SECRET_KEY`
@@ -75,8 +61,7 @@ This means no Stripe billing ID or secret needs to be committed to source.
    - an authenticated page resolves the current user.
    - Clerk webhook delivery succeeds with signature verification.
 7. Revoke the old Clerk secret and old webhook signing secret after the new deploy is healthy.
-8. If the old key may have been exposed, invalidate affected sessions in Clerk and review app
-   audit logs.
+8. If the old key may have been exposed, invalidate affected sessions in Clerk and review app audit logs.
 
 ### Rotate Stripe keys, webhook secret, and Price IDs
 
@@ -84,8 +69,7 @@ This means no Stripe billing ID or secret needs to be committed to source.
 2. Update Vercel:
    - `STRIPE_SECRET_KEY`
    - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-3. For webhooks, create a new signing secret for `https://<your-domain>/api/stripe/webhook` and
-   update:
+3. For webhooks, create a new signing secret for `https://<your-domain>/api/stripe/webhook` and update:
    - `STRIPE_WEBHOOK_SECRET`
 4. If pricing changed, create new Stripe Prices and update:
    - `STRIPE_PRICE_FAMILY`
@@ -115,12 +99,10 @@ This means no Stripe billing ID or secret needs to be committed to source.
 
 The exact flow is managed-Postgres-host dependent, for example Neon, Supabase, or RDS.
 
-1. Create a new database role/password or rotate the existing password using the provider's
-   supported process.
+1. Create a new database role/password or rotate the existing password using the provider's supported process.
 2. Generate a new connection string for each environment:
    - runtime `DATABASE_URL`.
-   - direct migration URL such as `DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING`, if the
-     host provides one.
+   - direct migration URL such as `DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING`, if the host provides one.
 3. Update Vercel environment variables for the target environment only.
 4. Redeploy.
 5. Verify:
@@ -138,16 +120,14 @@ The exact flow is managed-Postgres-host dependent, for example Neon, Supabase, o
    - `NEXT_PUBLIC_POSTHOG_HOST` if changing region or self-hosted endpoint.
 3. Confirm `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` matches the intended consent model.
 4. Redeploy.
-5. Verify that browser capture is routed through the first-party `/ingest` proxy and that
-   DNT/GPC and in-app opt-out behavior still work.
+5. Verify that browser capture is routed through the first-party `/ingest` proxy and that DNT/GPC and in-app opt-out behavior still work.
 6. Disable the old project key or project if it should no longer receive events.
 
 ### Rotate `CRON_SECRET`
 
 1. Generate a new high-entropy random value.
 2. Update `CRON_SECRET` in Vercel for the environment.
-3. Update the scheduled trigger configuration to send an `Authorization` bearer header
-   containing the new secret.
+3. Update the scheduled trigger configuration to send an `Authorization` bearer header containing the new secret.
 4. Redeploy if required by the platform.
 5. Verify `/api/cron/digest` returns 401 without the bearer and succeeds with the new bearer.
 6. Delete the old secret from any scheduler, runbook, or password manager entry.
@@ -162,8 +142,7 @@ Use this checklist for any suspected committed, logged, or exposed secret:
 2. **Revoke and rotate**
    - Rotate the provider secret using the runbook above.
    - Update Vercel env vars for every affected environment.
-   - Redeploy and verify health before revoking any credential still needed by a live
-     deployment.
+   - Redeploy and verify health before revoking any credential still needed by a live deployment.
 3. **Invalidate sessions or derived access**
    - For Clerk exposure, invalidate affected sessions and review user/account events.
    - For Stripe exposure, review API events and webhook deliveries.
@@ -176,7 +155,6 @@ Use this checklist for any suspected committed, logged, or exposed secret:
    - Remove the secret from source, logs, issue comments, screenshots, and documentation.
    - Add tests or secret-scan allowlist tightening only when the gap was in detection.
 6. **Document**
-   - Record timeline, impact, rotated keys, affected environments, and follow-up actions in the
-     private incident tracker.
+   - Record timeline, impact, rotated keys, affected environments, and follow-up actions in the private incident tracker.
 
 _Related issue: #267._

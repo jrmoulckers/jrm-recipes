@@ -1,34 +1,36 @@
 # North-star metric and KPI dashboard
 
-Heirloom's core loop is documented in `docs/analytics/activation.md` as _write a recipe → cook
-it → keep it in the family_. The retained action in `docs/analytics/retention.md` is cooking,
-measured with `cook_started` and `cook_completed`, and the durable unit is the household
-(`householdId`).
+Heirloom's core loop is documented in `docs/analytics/activation.md` as
+_write a recipe → cook it → keep it in the family_. The retained action in
+`docs/analytics/retention.md` is cooking, measured with `cook_started` and
+`cook_completed`, and the durable unit is the household (`householdId`).
 
 ## North-star metric
 
-**Weekly active cooking households (WACH):** the count of distinct non-null `householdId` values
-with at least one `cook_started` event in a calendar week.
+**Weekly active cooking households (WACH):** the count of distinct non-null
+`householdId` values with at least one `cook_started` event in a calendar week.
 
 Source:
 
 - Event: `cook_started`
-- Properties: `householdId: string | null`, `recipeId: string`, `totalSteps: number`
+- Properties: `householdId: string | null`, `recipeId: string`,
+  `totalSteps: number`
 - Taxonomy: `src/lib/analytics/events.ts`
 - Call site: `src/components/cook/use-cook-session.ts`
 
-Use `cook_started` because it is the retained action: a family came back to cook from Heirloom.
-Use households because the product is about preserving and using recipes together, and
-`docs/analytics/retention.md` explicitly defines household roll-ups. `cook_completed` is a
-deeper-engagement quality check, not the primary reach metric.
+Use `cook_started` because it is the retained action: a family came back to cook
+from Heirloom. Use households because the product is about preserving and using
+recipes together, and `docs/analytics/retention.md` explicitly defines household
+roll-ups. `cook_completed` is a deeper-engagement quality check, not the primary
+reach metric.
 
-WACH beats vanity metrics such as pageviews, signups, or recipe count because it measures
-repeated family value. A recipe that never gets cooked is content inventory. A household that
-cooks weekly is an active family habit.
+WACH beats vanity metrics such as pageviews, signups, or recipe count because it
+measures repeated family value. A recipe that never gets cooked is content
+inventory. A household that cooks weekly is an active family habit.
 
 Personal cooks have `householdId: null`. Track them as a companion segment or
-singleton-household view, but keep the headline WACH focused on real group households so the
-metric matches the family-retention definition.
+singleton-household view, but keep the headline WACH focused on real group
+households so the metric matches the family-retention definition.
 
 ## KPI dashboard
 
@@ -59,18 +61,19 @@ metric matches the family-retention definition.
 
 ## Building the dashboard in PostHog
 
-- **North star:** create a weekly trends insight on `cook_started`, aggregate by unique
-  `householdId`, and filter out `householdId is null` for headline WACH.
+- **North star:** create a weekly trends insight on `cook_started`, aggregate by
+  unique `householdId`, and filter out `householdId is null` for headline WACH.
 - **Activation:** build the ordered funnel from
-  `landing_viewed → signup_started → signup_completed → first_recipe_created → first_cook_started`
-  with a 7-day conversion window, matching `docs/analytics/activation.md`.
-- **Retention:** use `signup_completed` as the performed event and `cook_started` as the
-  returning event, unbounded, weekly, then duplicate the view by `householdId`, matching
-  `docs/analytics/retention.md`.
-- **Invite and signup funnels:** use PostHog funnel insights on the event sequences in the KPI
-  table.
-- **Guardrails:** add trend cards for ratios such as `cook_completed / cook_started` and
-  `editor_save_failed / editor_opened`, plus a billing query or warehouse table for subscription
-  status.
+  `landing_viewed → signup_started → signup_completed → first_recipe_created →
+first_cook_started` with a 7-day conversion window, matching
+  `docs/analytics/activation.md`.
+- **Retention:** use `signup_completed` as the performed event and
+  `cook_started` as the returning event, unbounded, weekly, then duplicate the
+  view by `householdId`, matching `docs/analytics/retention.md`.
+- **Invite and signup funnels:** use PostHog funnel insights on the event
+  sequences in the KPI table.
+- **Guardrails:** add trend cards for ratios such as
+  `cook_completed / cook_started` and `editor_save_failed / editor_opened`, plus
+  a billing query or warehouse table for subscription status.
 
 _Related issue: #329._

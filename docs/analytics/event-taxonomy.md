@@ -1,57 +1,64 @@
 # Event taxonomy
 
-Heirloom's product analytics taxonomy lives in `src/lib/analytics/events.ts`. That file is the
-single source of truth for every event name and its property shape. The browser `track()` API in
-`src/lib/analytics/index.ts` and the server `captureServer()` API in
-`src/lib/analytics/server.ts` are typed against `EventProperties`, so a misnamed event or wrong
-property fails at compile time. This prevents drift such as `recipe_created` vs.
-`create_recipe`.
+Heirloom's product analytics taxonomy lives in `src/lib/analytics/events.ts`.
+That file is the single source of truth for every event name and its property
+shape. The browser `track()` API in `src/lib/analytics/index.ts` and the server
+`captureServer()` API in `src/lib/analytics/server.ts` are typed against
+`EventProperties`, so a misnamed event or wrong property fails at compile time.
+This prevents drift such as `recipe_created` vs. `create_recipe`.
 
 ## Naming and property conventions
 
 - Event names are `snake_case`.
-- Product events use object-verb names, usually past tense: `recipe_created`, `invite_sent`,
-  `cook_completed`.
-- PostHog-reserved events/properties keep the `$` prefix: `$pageview`, `$feature_flag_called`,
-  `$current_url`, `$feature_flag`, `$feature_flag_response`.
-- No PII in event properties: no emails, names, handles, phone numbers, or raw person
-  identifiers. Recipe and group ids are opaque cuids and are allowed.
-- User identity is attached only through server-side identify work (#321), using non-PII traits
-  from `src/lib/analytics/identity.ts`: `group_count`, `has_recipes`, `is_dev`, `created_at`,
-  and `household_active`.
-- Prefer low-cardinality enums, counts, booleans, and coarse buckets. The `GroupSizeBucket` type
-  (`"1" | "2-5" | "6-10" | "11+"`) is the pattern for measuring family size without making it
-  identifying.
-- `householdId` follows the nullable household pattern from `docs/analytics/retention.md`: the
-  recipe's owning group id, or `null` for a personal recipe.
+- Product events use object-verb names, usually past tense:
+  `recipe_created`, `invite_sent`, `cook_completed`.
+- PostHog-reserved events/properties keep the `$` prefix:
+  `$pageview`, `$feature_flag_called`, `$current_url`,
+  `$feature_flag`, `$feature_flag_response`.
+- No PII in event properties: no emails, names, handles, phone numbers, or raw
+  person identifiers. Recipe and group ids are opaque cuids and are allowed.
+- User identity is attached only through server-side identify work (#321), using
+  non-PII traits from `src/lib/analytics/identity.ts`: `group_count`,
+  `has_recipes`, `is_dev`, `created_at`, and `household_active`.
+- Prefer low-cardinality enums, counts, booleans, and coarse buckets. The
+  `GroupSizeBucket` type (`"1" | "2-5" | "6-10" | "11+"`) is the pattern for
+  measuring family size without making it identifying.
+- `householdId` follows the nullable household pattern from
+  `docs/analytics/retention.md`: the recipe's owning group id, or `null` for a
+  personal recipe.
 
 ## Capture, consent, and scrubbing
 
-Browser capture flows through `track()` in `src/lib/analytics/index.ts`. Server capture flows
-through `captureServer()` in `src/lib/analytics/server.ts`. Both paths scrub properties with
-`src/lib/analytics/scrub.ts` before dispatch. Scrubbing drops keys that look identifying, except
-allowlisted PostHog fields, and redacts email- or phone-like string values.
+Browser capture flows through `track()` in `src/lib/analytics/index.ts`. Server
+capture flows through `captureServer()` in `src/lib/analytics/server.ts`. Both
+paths scrub properties with `src/lib/analytics/scrub.ts` before dispatch.
+Scrubbing drops keys that look identifying, except allowlisted PostHog fields,
+and redacts email- or phone-like string values.
 
-That coverage depends on those two functions being the only capture paths. Events the PostHog
-SDK generates by itself do not pass through either, so they are not scrubbed. Autocapture is
-therefore disabled explicitly in `src/lib/analytics/posthog-client.ts` (#703): it would
-otherwise send `$el_text` for clicked elements, which here means recipe titles, cook names, and
-group names. Session recording is disabled for the same reason. Turning on any SDK-internal
-capture path puts data outside the scrubber and needs its own review.
+That coverage depends on those two functions being the only capture paths.
+Events the PostHog SDK generates by itself do not pass through either, so they
+are not scrubbed. Autocapture is therefore disabled explicitly in
+`src/lib/analytics/posthog-client.ts` (#703): it would otherwise send `$el_text`
+for clicked elements, which here means recipe titles, cook names, and group
+names. Session recording is disabled for the same reason. Turning on any
+SDK-internal capture path puts data outside the scrubber and needs its own
+review.
 
-Capture is gated by consent before data leaves the app. The browser gate is `isCaptureAllowed()`
-in `src/lib/analytics/consent.ts`: DNT/GPC always blocks, explicit denial blocks, opt-in mode
-requires explicit grant, and opt-out mode allows capture unless denied. Server capture uses the
-server consent gate called from `src/lib/analytics/server.ts`. If analytics is not configured,
-`src/lib/analytics/config.ts` and `src/lib/analytics/backend.ts` make all capture a safe no-op.
+Capture is gated by consent before data leaves the app. The browser gate is
+`isCaptureAllowed()` in `src/lib/analytics/consent.ts`: DNT/GPC always blocks,
+explicit denial blocks, opt-in mode requires explicit grant, and opt-out mode
+allows capture unless denied. Server capture uses the server consent gate called
+from `src/lib/analytics/server.ts`. If analytics is not configured,
+`src/lib/analytics/config.ts` and `src/lib/analytics/backend.ts` make all capture
+a safe no-op.
 
 For metric context, see `docs/analytics/activation.md` for activation and
 `docs/analytics/retention.md` for returning-cook retention.
 
 ## Complete event reference
 
-Types below are copied from `EventProperties` in `src/lib/analytics/events.ts`. Current call
-sites are in the paths named in the "When it fires" column.
+Types below are copied from `EventProperties` in `src/lib/analytics/events.ts`.
+Current call sites are in the paths named in the "When it fires" column.
 
 ### Pageviews and navigation
 
@@ -154,13 +161,14 @@ sites are in the paths named in the "When it fires" column.
 ## Adding a new event
 
 1. Add a new key to `EventProperties` in `src/lib/analytics/events.ts`.
-2. Define the property shape with safe, low-cardinality values. Use `Record<string, never>` when
-   the event has no properties.
+2. Define the property shape with safe, low-cardinality values. Use
+   `Record<string, never>` when the event has no properties.
 3. Emit it with `track("event_name", { ... })` from browser code or
    `captureServer(distinctId, "event_name", { ... })` from server code.
-4. Let TypeScript validate the event name and property shape. Runtime capture still passes
-   through consent gating and `scrubProperties()`.
-5. Update this reference and any related metric docs, especially `docs/analytics/activation.md`
-   or `docs/analytics/retention.md` if the event changes those definitions.
+4. Let TypeScript validate the event name and property shape. Runtime capture
+   still passes through consent gating and `scrubProperties()`.
+5. Update this reference and any related metric docs, especially
+   `docs/analytics/activation.md` or `docs/analytics/retention.md` if the event
+   changes those definitions.
 
 _Related issue: #309._
