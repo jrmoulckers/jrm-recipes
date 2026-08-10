@@ -39,17 +39,56 @@ const src = readFileSync(
   "utf8",
 );
 
+/**
+ * The picker export, its module, and the Cloudinary package — named once each
+ * so the negative assertions below can be anchored to something real (#729).
+ *
+ * `PICKER_MODULE` is a `~/`-prefixed alias, so the anchor rewrites it to a path
+ * under `src/`; that keeps the alias itself load-bearing rather than letting a
+ * stale one pass unnoticed.
+ */
+const PICKER_EXPORT = "MediaPicker";
+const PICKER_MODULE = "~/components/ui/media-picker";
+const CLOUDINARY_PKG = "next-cloudinary";
+
 describe("image-upload lazy picker (#201, #656)", () => {
+  it("names a picker export and package that exist, so the bans below cannot rot", () => {
+    // Anchors for the two negative assertions in the next test. A static import
+    // of the picker or of Cloudinary coexists with the dynamic import — that
+    // coexistence is exactly the regression — so the positive there anchors
+    // nothing, and a typo in either forbidden literal would pass forever.
+    const pickerSrc = readFileSync(
+      resolve(process.cwd(), `src/${PICKER_MODULE.slice(2)}.tsx`),
+      "utf8",
+    );
+    expect(
+      pickerSrc,
+      `"${PICKER_MODULE}" does not export ${PICKER_EXPORT}, so the check banning a static import of it can never fire. If it was renamed, update these constants; if misspelled, fix them.`,
+    ).toContain(`export function ${PICKER_EXPORT}(`);
+
+    const pkg = JSON.parse(
+      readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
+    ) as { dependencies?: Record<string, string> };
+    expect(
+      Object.keys(pkg.dependencies ?? {}),
+      `"${CLOUDINARY_PKG}" is not a dependency, so the check banning an import of it can never fire.`,
+    ).toContain(CLOUDINARY_PKG);
+  });
+
   it("imports the picker dialog as a dynamic (code-split) chunk", () => {
     expect(src).toMatch(
-      /dynamic\(\s*\(\)\s*=>\s*\n?\s*import\("~\/components\/ui\/media-picker"\)/,
+      new RegExp(
+        `dynamic\\(\\s*\\(\\)\\s*=>\\s*\\n?\\s*import\\("${PICKER_MODULE}"\\)`,
+      ),
     );
     // No eager top-level value import of the dialog (which in turn owns the
     // heavy Cloudinary widget), so neither reaches first-load JS.
     expect(src).not.toMatch(
-      /import\s*\{[^}]*MediaPicker[^}]*\}\s*from\s*"~\/components\/ui\/media-picker"/,
+      new RegExp(
+        `import\\s*\\{[^}]*${PICKER_EXPORT}[^}]*\\}\\s*from\\s*"${PICKER_MODULE}"`,
+      ),
     );
-    expect(src).not.toMatch(/from\s*"next-cloudinary"/);
+    expect(src).not.toMatch(new RegExp(`from\\s*"${CLOUDINARY_PKG}"`));
   });
 
   it("degrades to a plain URL input without mounting the widget when Cloudinary is unconfigured", () => {
