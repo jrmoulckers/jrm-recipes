@@ -138,16 +138,18 @@ describe("motion bans (issue #758)", () => {
 
 describe("motion tokens (issue #95)", () => {
   it("defines duration tokens scaled by --motion-scale", () => {
-    for (const name of [
-      "--duration-fast",
-      "--duration-base",
-      "--duration-slow",
-    ]) {
-      const decl = new RegExp(
-        `${name}:\\s*calc\\([^;]*var\\(--motion-scale\\)`,
-      );
-      expect(decl.test(THEMES_CSS), `${name} scaled by --motion-scale`).toBe(
-        true,
+    // Derived from the referent rather than listed, so a token added later is
+    // covered too (#757, #780). A hardcoded list silently stops checking when
+    // emptied: unlike `it.each([])`, a plain `for` loop keeps the registered
+    // test count identical, so there is no signal at all.
+    const declared = [
+      ...THEMES_CSS.matchAll(/(--duration-[\w-]+):\s*([^;]+);/g),
+    ];
+    // Fails closed: a rotted extractor yields [], which has no length.
+    expect(declared.length, "duration tokens were found").toBeGreaterThan(0);
+    for (const [, name, value] of declared) {
+      expect(value, `${name} scaled by --motion-scale`).toMatch(
+        /calc\([^;]*var\(--motion-scale\)/,
       );
     }
   });
