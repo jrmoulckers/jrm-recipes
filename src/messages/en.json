@@ -2883,7 +2883,7 @@
           "recipes": "{count, plural, =0 {You have no recipes of your own to delete.} one {Your # recipe is permanently deleted, along with its story, notes, and photos.} other {All # of your recipes are permanently deleted, along with their stories, notes, and photos.}}",
           "cooking": "Your cooking history goes too: {cookLogs, plural, one {# cook log entry} other {# cook log entries}}, {reviews, plural, one {# review} other {# reviews}}, and {collections, plural, one {# collection} other {# collections}}.",
           "photos": "Every photo you uploaded is deleted from our image storage, not just unlinked.",
-          "coCreated": "{count, plural, one {# recipe you help look after belongs to someone else. It stays with them, and your name comes off it.} other {# recipes you help look after belong to other people. They stay with their owners, and your name comes off them.}}",
+          "coCreated": "{count, plural, one {# recipe you help look after belongs to someone else. It stays with them and your name comes off it. Anything you wrote in it stays too, because we can't reliably tell your edits apart from theirs.} other {# recipes you help look after belong to other people. They stay with their owners and your name comes off them. Anything you wrote in them stays too, because we can't reliably tell your edits apart from theirs.}}",
           "pendingInvites": "{count, plural, one {# invitation to co-create a recipe is withdrawn.} other {# invitations to co-create recipes are withdrawn.}}",
           "subscription": "Your subscription is cancelled. We can't refund the current period once the account is gone.",
           "links": "Any recipe links you've shared stop working. Your cook name becomes available for someone else to use.",
