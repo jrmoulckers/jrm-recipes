@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { gotoSeededRecipe } from "./recipe-paths";
+
 /**
  * Cook Mode step-through journey (issue #240). Cook Mode is a client component,
  * so once the recipe document is served its Previous/Next navigation and
@@ -10,13 +12,14 @@ import { expect, test, type Page } from "@playwright/test";
  * database the immersive route 404s (no step heading), so the spec skips rather
  * than fail. Mirrors tests/e2e/offline.spec.ts.
  */
-const RECIPE_SLUG = "nonnas-sunday-gravy";
-const COOK_PATH = `/recipes/${RECIPE_SLUG}/cook`;
-
 const STEP_TITLE = "#current-step-title";
 
 async function openCookMode(page: Page): Promise<boolean> {
-  await page.goto(COOK_PATH);
+  // Cook Mode hangs off the canonical namespaced path, so resolve that from the
+  // recipe itself rather than hard-coding the seed's user slug (#666).
+  const recipePath = await gotoSeededRecipe(page);
+  if (recipePath == null) return false;
+  await page.goto(`${recipePath}/cook`);
   // A seeded recipe lists ingredients, so Cook Mode opens on the mise en place
   // pre-cook screen (#402), step through it to reach step 1.
   const startCooking = page.getByTestId("cook-mode-start");

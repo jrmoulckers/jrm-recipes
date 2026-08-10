@@ -1,12 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { gotoSeededRecipe } from "./recipe-paths";
+
 // A public, published recipe from the seed (src/server/db/seed.ts) whose first
 // step carries a timer, so the offline Cook Mode assertions have a "Start"
 // button to exercise. The e2e CI job seeds Postgres so this route has content.
 // Without a database the recipe/Cook Mode routes 404, so those steps are guarded.
-const RECIPE_SLUG = "nonnas-sunday-gravy";
-const RECIPE_PATH = `/recipes/${RECIPE_SLUG}`;
-const COOK_PATH = `${RECIPE_PATH}/cook`;
 
 /**
  * Load the app and wait until the Serwist service worker is active AND controls
@@ -68,8 +67,17 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   await bootServiceWorker(page);
 
   // Warm the recipe + Cook Mode documents into the runtime cache while online.
-  await page.goto(RECIPE_PATH);
-  const cookLink = page.locator(`a[href="${COOK_PATH}"]`).first();
+  // Offline navigation then targets the *canonical* paths: the flat legacy URL
+  // only works via a server redirect, which by definition needs the network.
+  const recipePath = await gotoSeededRecipe(page);
+  if (recipePath == null) {
+    test.skip(
+      true,
+      "No seeded database: recipe route 404s, so offline recipe/Cook Mode can't be exercised.",
+    );
+  }
+  const cookPath = `${recipePath!}/cook`;
+  const cookLink = page.locator(`a[href="${cookPath}"]`).first();
   if ((await cookLink.count()) === 0) {
     test.skip(
       true,
@@ -78,7 +86,7 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   }
   await expect(cookLink).toBeVisible();
 
-  await page.goto(COOK_PATH);
+  await page.goto(cookPath);
   await startCooking(page);
   await expect(page.locator("#current-step-title")).toBeVisible();
 
@@ -86,10 +94,10 @@ test("a previously opened recipe and Cook Mode work offline", async ({
   // network.
   await context.setOffline(true);
 
-  await page.goto(RECIPE_PATH);
-  await expect(page.locator(`a[href="${COOK_PATH}"]`).first()).toBeVisible();
+  await page.goto(recipePath!);
+  await expect(page.locator(`a[href="${cookPath}"]`).first()).toBeVisible();
 
-  await page.goto(COOK_PATH);
+  await page.goto(cookPath);
   await startCooking(page);
   await expect(page.locator("#current-step-title")).toBeVisible();
   // The seeded recipe's real first-step content proves Cook Mode rendered from
