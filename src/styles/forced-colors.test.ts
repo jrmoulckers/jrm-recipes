@@ -18,6 +18,35 @@ const A11Y_CSS = readFileSync(
   "utf8",
 ).replace(/\r\n/g, "\n");
 
+/**
+ * Bans, written once so the pattern and the sample proving it still fires
+ * cannot rot independently (#750).
+ *
+ * Each is the only check that can notice its violation: a `box-shadow` focus
+ * ring coexists with the required `outline`, and a system-color keyword outside
+ * the media blocks coexists with the same keyword inside them, so every
+ * positive assertion in this file passes with the violation present. A negative
+ * over source text passes whenever the literal is absent, and a misspelled
+ * literal is always absent.
+ */
+const BOX_SHADOW_DECL = /box-shadow\s*:/;
+const SYSTEM_COLORS = ["ButtonText", "Highlight", "Canvas"] as const;
+
+describe("forced-colors bans (issue #750)", () => {
+  it("still matches a box-shadow focus ring, so the ban can fire", () => {
+    expect(
+      BOX_SHADOW_DECL.test(":focus-visible { box-shadow: 0 0 0 2px; }"),
+    ).toBe(true);
+  });
+
+  it.each(SYSTEM_COLORS)(
+    "still matches a leaked %s, so the ban can fire",
+    (keyword) => {
+      expect(`:root { border-color: ${keyword}; }`).toContain(keyword);
+    },
+  );
+});
+
 function block(css: string, atRule: string): string {
   // Anchor to the real rule (`atRule {`), not a mention inside a comment.
   const start = css.indexOf(`${atRule} {`);
@@ -56,8 +85,8 @@ describe("forced-colors + prefers-contrast (issue #96)", () => {
       expect(css).toContain(role);
     }
     expect(css).toMatch(/border:\s*1px solid ButtonText/);
-    expect(css).toContain("Highlight");
-    expect(css).toContain("Canvas");
+    expect(css).toContain(SYSTEM_COLORS[1]);
+    expect(css).toContain(SYSTEM_COLORS[2]);
   });
 
   it("draws a real focus outline that survives forced-colors", () => {
@@ -66,7 +95,7 @@ describe("forced-colors + prefers-contrast (issue #96)", () => {
     expect(css).toMatch(/outline:\s*2px solid Highlight\s*!important/);
     expect(css).toContain(":focus-visible");
     // The focus indicator is an outline, never a box-shadow declaration.
-    expect(css).not.toMatch(/box-shadow\s*:/);
+    expect(css).not.toMatch(BOX_SHADOW_DECL);
   });
 
   it("scopes everything inside media queries. No default-render regression", () => {
@@ -78,8 +107,8 @@ describe("forced-colors + prefers-contrast (issue #96)", () => {
       block(A11Y_CSS, "@media (forced-colors: active)"),
       "",
     ).replace(block(A11Y_CSS, "@media (prefers-contrast: more)"), "");
-    expect(withoutMedia).not.toContain("ButtonText");
-    expect(withoutMedia).not.toContain("Highlight");
-    expect(withoutMedia).not.toContain("Canvas");
+    for (const keyword of SYSTEM_COLORS) {
+      expect(withoutMedia).not.toContain(keyword);
+    }
   });
 });

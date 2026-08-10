@@ -18,6 +18,30 @@ const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
 const THEMES_CSS = read("src", "styles", "themes.css");
 const TAILWIND = read("tailwind.config.ts");
 
+/**
+ * Bans on untokenized motion, written once so the pattern and the sample
+ * proving it still fires cannot rot independently (#750).
+ *
+ * Each of these is the only check that can notice its violation. A hard-coded
+ * easing or duration *adds* a declaration or a class; it does not displace the
+ * tokens asserted positively alongside it, so those assertions pass with the
+ * violation present. A negative over source text passes whenever the literal is
+ * absent, and a misspelled literal is always absent.
+ */
+const HARDCODED_EASE = "ease-out";
+const RAW_TRANSFORM = "transform:";
+const DURATION_150 = /duration-150\b/;
+const DURATION_200 = /duration-200\b/;
+
+describe("motion bans (issue #750)", () => {
+  it("still matches hard-coded easing and durations, so the bans can fire", () => {
+    expect('animation: "fade-in 0.2s ease-out"').toContain(HARDCODED_EASE);
+    expect('"pop-in": { transform: "scale(0.96)" }').toContain(RAW_TRANSFORM);
+    expect(DURATION_150.test("transition-colors duration-150")).toBe(true);
+    expect(DURATION_200.test("transition-shadow duration-200")).toBe(true);
+  });
+});
+
 describe("motion tokens (issue #95)", () => {
   it("defines duration tokens scaled by --motion-scale", () => {
     for (const name of [
@@ -43,7 +67,7 @@ describe("motion tokens (issue #95)", () => {
     expect(TAILWIND).toContain('fast: "var(--duration-fast)"');
     expect(TAILWIND).toContain('standard: "var(--ease-standard)"');
     // The enter animations no longer hard-code ease-out.
-    expect(TAILWIND).not.toContain("ease-out");
+    expect(TAILWIND).not.toContain(HARDCODED_EASE);
     expect(TAILWIND).toContain("fade-in 0.2s var(--ease-standard)");
   });
 
@@ -67,7 +91,7 @@ describe("motion tokens (issue #95)", () => {
 
     expect(popKeyframes).toContain('scale: "0.96"');
     expect(popKeyframes).toContain('scale: "1"');
-    expect(popKeyframes).not.toContain("transform:");
+    expect(popKeyframes).not.toContain(RAW_TRANSFORM);
   });
 
   it("adopts the tokens in the primitives instead of literal durations", () => {
@@ -76,9 +100,9 @@ describe("motion tokens (issue #95)", () => {
     const tabs = read("src", "components", "ui", "tabs.tsx");
 
     expect(button).toContain("duration-fast");
-    expect(button).not.toMatch(/duration-150\b/);
+    expect(button).not.toMatch(DURATION_150);
     expect(card).toContain("duration-base");
-    expect(card).not.toMatch(/duration-200\b/);
+    expect(card).not.toMatch(DURATION_200);
     expect(tabs).toContain("duration-fast");
   });
 });

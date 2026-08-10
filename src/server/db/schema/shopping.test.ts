@@ -18,6 +18,79 @@ import { recipeIngredients } from "./recipes";
 const indexColumns = (index: { config: { columns: unknown[] } }): string[] =>
   index.config.columns.map((column) => (column as { name: string }).name);
 
+/**
+ * Bans over migration text, written once so the pattern and the sample proving
+ * it still fires cannot rot independently (#750).
+ *
+ * These are the only checks that can notice their violation. Destructive DDL, a
+ * bound parameter and a `real` column all *add* to a migration; none of them
+ * displaces anything asserted positively, so every `toContain` below passes
+ * with the violation present. A negative over source text passes whenever the
+ * literal is absent, and a misspelled literal is always absent — proven by
+ * appending `DROP TABLE` to the restore-point migration and changing `DROP` to
+ * `DROPP`, which took this file from 1 failed to 11 passed with the drop still
+ * in place.
+ */
+const DESTRUCTIVE_DDL = /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i;
+const BOUND_PARAMETER = /\$\d+/;
+const REAL_PRECISION_COLUMN =
+  /"(?:required_base_quantity(?:_max)?|purchase_quantity|package_amount)" real/;
+
+const BANS: { what: string; pattern: RegExp; probe: string }[] = [
+  {
+    what: "destructive DDL",
+    pattern: DESTRUCTIVE_DDL,
+    probe: 'DROP TABLE IF EXISTS "shopping_lists";',
+  },
+  {
+    what: "a truncation",
+    pattern: DESTRUCTIVE_DDL,
+    probe: 'TRUNCATE "shopping_lists";',
+  },
+  {
+    what: "a row deletion",
+    pattern: DESTRUCTIVE_DDL,
+    probe: 'DELETE FROM "shopping_lists" WHERE "id" IS NOT NULL;',
+  },
+  {
+    what: "a bound parameter",
+    pattern: BOUND_PARAMETER,
+    probe: 'UPDATE "shopping_lists" SET "name" = $1',
+  },
+  {
+    what: "a single-precision base-quantity column",
+    pattern: REAL_PRECISION_COLUMN,
+    probe:
+      'ALTER TABLE "shopping_list_items" ADD COLUMN "required_base_quantity" real',
+  },
+  {
+    what: "a single-precision base-quantity-max column",
+    pattern: REAL_PRECISION_COLUMN,
+    probe:
+      'ALTER TABLE "shopping_list_items" ADD COLUMN "required_base_quantity_max" real',
+  },
+  {
+    what: "a single-precision purchase-quantity column",
+    pattern: REAL_PRECISION_COLUMN,
+    probe:
+      'ALTER TABLE "shopping_list_items" ADD COLUMN "purchase_quantity" real',
+  },
+  {
+    what: "a single-precision package-amount column",
+    pattern: REAL_PRECISION_COLUMN,
+    probe: 'ALTER TABLE "shopping_list_items" ADD COLUMN "package_amount" real',
+  },
+];
+
+describe("migration bans (issue #750)", () => {
+  it.each(BANS)(
+    "still matches $what, so the ban can fire",
+    ({ pattern, probe }) => {
+      expect(pattern.test(probe)).toBe(true);
+    },
+  );
+});
+
 const drizzleDir = join(process.cwd(), "drizzle");
 const routingMigration = readdirSync(drizzleDir)
   .filter((file) => file.endsWith(".sql"))
@@ -109,10 +182,8 @@ describe("shopping routing schema (issue #630)", () => {
         expect(restorePointMigration).toContain(
           "'remove_completed', 'clear_all', 'bulk_move_source'",
         );
-        expect(restorePointMigration).not.toMatch(/\$\d+/);
-        expect(restorePointMigration).not.toMatch(
-          /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i,
-        );
+        expect(restorePointMigration).not.toMatch(BOUND_PARAMETER);
+        expect(restorePointMigration).not.toMatch(DESTRUCTIVE_DDL);
       });
     });
 
@@ -335,9 +406,7 @@ describe("shopping routing schema (issue #630)", () => {
       expect(packageMigration).toContain(
         'ALTER TABLE IF EXISTS "shopping_list_items" ADD COLUMN IF NOT EXISTS "package_amount" double precision',
       );
-      expect(packageMigration).not.toMatch(
-        /"(?:required_base_quantity(?:_max)?|purchase_quantity|package_amount)" real/,
-      );
+      expect(packageMigration).not.toMatch(REAL_PRECISION_COLUMN);
       expect(packageMigration).toContain("NOT VALID");
       expect(packageMigration).toContain(
         'VALIDATE CONSTRAINT "shopping_list_items_package_result_check"',
@@ -356,9 +425,7 @@ describe("shopping routing schema (issue #630)", () => {
         packageMigration?.match(/EXCEPTION WHEN duplicate_object/g),
       ).toHaveLength(16);
       expect(packageMigration?.match(/VALIDATE CONSTRAINT/g)).toHaveLength(16);
-      expect(packageMigration).not.toMatch(
-        /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i,
-      );
+      expect(packageMigration).not.toMatch(DESTRUCTIVE_DDL);
     });
   });
 
@@ -415,8 +482,6 @@ describe("shopping routing migration (issue #630)", () => {
     expect(routingMigration).toContain(
       'ALTER TABLE IF EXISTS "shopping_lists" ADD COLUMN IF NOT EXISTS "is_default"',
     );
-    expect(routingMigration).not.toMatch(
-      /\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b/i,
-    );
+    expect(routingMigration).not.toMatch(DESTRUCTIVE_DDL);
   });
 });
