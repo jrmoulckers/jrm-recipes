@@ -1,0 +1,10 @@
+# Normalize line endings to LF in the index and the working tree.
+#
+# The Prettier configuration sets `endOfLine: "lf"`. Without this file, a
+# Windows checkout under `core.autocrlf=true` gets CRLF in the working tree
+# while the index stays LF, so `pnpm format:check` passes in CI and fails on
+# every Windows machine. That reads as a broken developer setup rather than a
+# missing file, so it tends to get silenced instead of fixed.
+#
+# `text=auto` still lets Git detect binary files and leave them untouched.
+* text=auto eol=lf
