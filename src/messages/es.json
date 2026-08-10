@@ -1484,7 +1484,7 @@
     "export": {
       "trigger": "Exportar",
       "menuLabel": "Exportar esta lista",
-      "storeLabel": "Tienda",
+      "storeLabel": "{count, plural, one {Tienda} other {Tiendas}}",
       "completed": "completado",
       "includeCompleted": "Incluir artículos completados",
       "includeCompletedHint": "{count, plural, one {# artículo completado} other {# artículos completados}}",
@@ -1549,20 +1549,40 @@
       "new": "Nueva lista",
       "manage": "Administrar",
       "defaultBadge": "Predeterminada",
-      "storeListOption": "{name} en {store}",
-      "storeCaption": "Tienda: {store}",
+      "storeCaption": "Tiendas: {stores}",
+      "storeOverflow": "+{count} más",
       "create": {
         "title": "Crear una lista de compras",
-        "description": "Ponle un nombre a la lista y, si quieres, asígnala a una tienda.",
+        "description": "Ponle un nombre a la lista y, si quieres, elige las tiendas donde la compras.",
         "confirm": "Crear lista"
       },
       "manageTitle": "Administrar {name}",
-      "manageDescription": "Cambia el nombre o la tienda de esta lista, o actualiza su estado.",
+      "manageDescription": "Cambia el nombre o las tiendas de esta lista, o actualiza su estado.",
       "fields": {
         "name": "Nombre de la lista",
-        "store": "Tienda (opcional)",
+        "stores": "Tiendas (opcional)",
         "storePlaceholder": "p. ej., mercado del barrio",
-        "storeHint": "Se usa para dirigir los ingredientes a la lista de compras correcta."
+        "storeHint": "Elige las tiendas donde compras esta lista o déjala sin tiendas.",
+        "addStore": "Agregar tienda",
+        "removeStore": "Quitar {store}"
+      },
+      "stores": {
+        "heading": "Tus tiendas",
+        "hint": "Cambia el nombre o elimina una tienda en todos los lugares donde se usa.",
+        "renameNamed": "Cambiar el nombre de {store}",
+        "saveNamed": "Guardar {store}",
+        "deleteNamed": "Eliminar {store}",
+        "delete": "Eliminar tienda",
+        "toasts": {
+          "renamed": "La tienda ahora se llama {name}.",
+          "deleted": "Tienda {name} eliminada."
+        },
+        "confirm": {
+          "delete": {
+            "title": "¿Eliminar {name}?",
+            "description": "La tienda se quitará de todas las listas que la usan. Tus listas y artículos se conservan."
+          }
+        }
       },
       "makeDefault": "Establecer como predeterminada",
       "archive": "Archivar",

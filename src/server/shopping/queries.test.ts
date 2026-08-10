@@ -6,6 +6,7 @@ const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     query: {
       shoppingLists: { findFirst: vi.fn(), findMany: vi.fn() },
+      shoppingStores: { findMany: vi.fn() },
       shoppingListRestorePoints: { findMany: vi.fn() },
       shoppingIngredientRoutes: { findMany: vi.fn() },
       shoppingIngredientRouteAlternatives: { findMany: vi.fn() },
@@ -32,6 +33,7 @@ const user = { id: "user_1" } as User;
 beforeEach(() => {
   vi.clearAllMocks();
   dbMock.query.shoppingIngredientRoutes.findMany.mockResolvedValue([]);
+  dbMock.query.shoppingStores.findMany.mockResolvedValue([]);
   dbMock.query.userUnitPreferences.findFirst.mockResolvedValue(null);
   dbMock.query.customUnits.findMany.mockResolvedValue([]);
 });
@@ -126,6 +128,7 @@ describe("getShoppingWorkspace list selection", () => {
         isDefault: true,
         archivedAt: null,
         items: [],
+        stores: [],
       },
       {
         id: "viewed",
@@ -134,6 +137,7 @@ describe("getShoppingWorkspace list selection", () => {
         isDefault: false,
         archivedAt: null,
         items: [],
+        stores: [],
       },
     ]);
 
@@ -141,6 +145,31 @@ describe("getShoppingWorkspace list selection", () => {
 
     expect(workspace?.selectedListId).toBe("viewed");
     expect(workspace?.defaultListId).toBe("default");
+  });
+
+  it("exposes owned stores and drops links to stores the user lost", async () => {
+    dbMock.query.shoppingStores.findMany.mockResolvedValue([
+      { id: "s-qfc", name: "QFC" },
+    ]);
+    dbMock.query.shoppingLists.findMany.mockResolvedValue([
+      {
+        id: "default",
+        userId: user.id,
+        name: "Default",
+        isDefault: true,
+        archivedAt: null,
+        items: [],
+        stores: [
+          { listId: "default", storeId: "s-qfc", position: 0 },
+          { listId: "default", storeId: "s-gone", position: 1 },
+        ],
+      },
+    ]);
+
+    const workspace = await getShoppingWorkspace(user);
+
+    expect(workspace?.stores).toEqual([{ id: "s-qfc", name: "QFC" }]);
+    expect(workspace?.lists[0]?.storeIds).toEqual(["s-qfc"]);
   });
 
   it("exposes package routes and the authenticated user's aggregation settings", async () => {
@@ -159,6 +188,7 @@ describe("getShoppingWorkspace list selection", () => {
             packageCount: 2,
           },
         ],
+        stores: [],
       },
     ]);
     dbMock.query.shoppingIngredientRoutes.findMany.mockResolvedValue([

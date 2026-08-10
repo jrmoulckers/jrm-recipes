@@ -73,12 +73,29 @@ export const setItemCheckedInput = itemIdInput.extend({
 
 export const createShoppingListInput = z.object({
   name: z.string().trim().min(1).max(120),
-  storeName: optionalString(120),
+  /** Optional: a list may span zero, one, or many stores (#664). */
+  storeIds: z.array(entityId).max(20).optional().default([]),
+  /** Stores typed inline while creating the list; deduped against the library. */
+  newStoreNames: z
+    .array(z.string().trim().min(1).max(120))
+    .max(20)
+    .optional()
+    .default([]),
 });
 
 export const renameShoppingListInput = createShoppingListInput.extend({
   listId: entityId,
 });
+
+export const createShoppingStoreInput = z.object({
+  name: z.string().trim().min(1).max(120),
+});
+
+export const renameShoppingStoreInput = createShoppingStoreInput.extend({
+  storeId: entityId,
+});
+
+export const shoppingStoreIdInput = z.object({ storeId: entityId });
 
 export const moveShoppingItemInput = z
   .object({
@@ -216,6 +233,9 @@ export type ListIdInput = z.infer<typeof listIdInput>;
 export type SetItemCheckedInput = z.infer<typeof setItemCheckedInput>;
 export type CreateShoppingListInput = z.infer<typeof createShoppingListInput>;
 export type RenameShoppingListInput = z.infer<typeof renameShoppingListInput>;
+export type CreateShoppingStoreInput = z.infer<typeof createShoppingStoreInput>;
+export type RenameShoppingStoreInput = z.infer<typeof renameShoppingStoreInput>;
+export type ShoppingStoreIdInput = z.infer<typeof shoppingStoreIdInput>;
 export type MoveShoppingItemInput = z.infer<typeof moveShoppingItemInput>;
 export type BulkMoveShoppingItemsInput = z.infer<
   typeof bulkMoveShoppingItemsInput

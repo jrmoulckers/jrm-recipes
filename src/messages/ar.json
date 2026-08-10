@@ -1484,7 +1484,7 @@
     "export": {
       "trigger": "تصدير",
       "menuLabel": "تصدير هذه القائمة",
-      "storeLabel": "المتجر",
+      "storeLabel": "{count, plural, zero {المتاجر} one {المتجر} two {المتجران} few {المتاجر} many {المتاجر} other {المتاجر}}",
       "completed": "مكتمل",
       "includeCompleted": "تضمين العناصر المكتملة",
       "includeCompletedHint": "{count, plural, zero {لا عناصر مكتملة} one {عنصر مكتمل واحد} two {عنصران مكتملان} few {# عناصر مكتملة} many {# عنصرًا مكتملًا} other {# عنصر مكتمل}}",
@@ -1549,20 +1549,40 @@
       "new": "قائمة جديدة",
       "manage": "إدارة",
       "defaultBadge": "افتراضية",
-      "storeListOption": "{name} في {store}",
-      "storeCaption": "المتجر: {store}",
+      "storeCaption": "المتاجر: {stores}",
+      "storeOverflow": "+{count} إضافية",
       "create": {
         "title": "إنشاء قائمة تسوق",
-        "description": "سمِّ القائمة واربطها بمتجر إن أردت.",
+        "description": "سمِّ القائمة واختر المتاجر التي تتسوق منها إن أردت.",
         "confirm": "إنشاء القائمة"
       },
       "manageTitle": "إدارة {name}",
-      "manageDescription": "غيّر اسم هذه القائمة أو متجرها أو حالتها.",
+      "manageDescription": "غيّر اسم هذه القائمة أو متاجرها أو حالتها.",
       "fields": {
         "name": "اسم القائمة",
-        "store": "المتجر (اختياري)",
+        "stores": "المتاجر (اختياري)",
         "storePlaceholder": "مثال: متجر الحي",
-        "storeHint": "يُستخدم لتوجيه المكونات إلى قائمة التسوق المناسبة."
+        "storeHint": "اختر المتاجر التي تتسوق منها لهذه القائمة أو اتركها بلا متاجر.",
+        "addStore": "إضافة متجر",
+        "removeStore": "إزالة {store}"
+      },
+      "stores": {
+        "heading": "متاجرك",
+        "hint": "غيّر اسم متجر أو احذفه من كل مكان يُستخدم فيه.",
+        "renameNamed": "إعادة تسمية {store}",
+        "saveNamed": "حفظ {store}",
+        "deleteNamed": "حذف {store}",
+        "delete": "حذف المتجر",
+        "toasts": {
+          "renamed": "أصبح اسم المتجر {name}.",
+          "deleted": "تم حذف المتجر {name}."
+        },
+        "confirm": {
+          "delete": {
+            "title": "حذف {name}؟",
+            "description": "سيُزال المتجر من كل قائمة تستخدمه. تبقى قوائمك وعناصرها كما هي."
+          }
+        }
       },
       "makeDefault": "تعيين كافتراضية",
       "archive": "أرشفة",

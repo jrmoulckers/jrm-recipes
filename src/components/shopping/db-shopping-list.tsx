@@ -17,10 +17,12 @@ import {
   clearShoppingListAction,
   createShoppingListAction,
   deleteShoppingListAction,
+  deleteShoppingStoreAction,
   makeShoppingListDefaultAction,
   moveShoppingItemAction,
   removeShoppingItemAction,
   renameShoppingListAction,
+  renameShoppingStoreAction,
   restoreShoppingListAction,
   restoreShoppingListPointAction,
   restoreShoppingListPointsAction,
@@ -34,6 +36,8 @@ import { useConfirm } from "~/components/ui/confirm-dialog";
 import {
   ShoppingListNavigation,
   type ShoppingListSummary,
+  type ShoppingStoreSummary,
+  type StoreSelection,
 } from "./shopping-list-navigation";
 import {
   ShoppingListView,
@@ -51,6 +55,7 @@ type ServerActionResult =
 export function DbShoppingList({
   items,
   lists,
+  stores,
   selectedListId,
   defaultListId,
   historyEntries,
@@ -58,6 +63,7 @@ export function DbShoppingList({
 }: {
   items: ShoppingViewItem[];
   lists: ShoppingListSummary[];
+  stores: ShoppingStoreSummary[];
   selectedListId: string;
   defaultListId: string;
   historyEntries: ShoppingHistoryEntry[];
@@ -77,10 +83,15 @@ export function DbShoppingList({
   React.useEffect(() => setOptimistic(items), [items]);
 
   const activeLists = lists.filter((list) => !list.archived);
+  const storeNamesById = new Map(
+    stores.map((store) => [store.id, store.name] as const),
+  );
   const listOptions = activeLists.map((list) => ({
     id: list.id,
     name: list.name,
-    storeName: list.storeName,
+    storeNames: list.storeIds
+      .map((storeId) => storeNamesById.get(storeId))
+      .filter((name): name is string => name != null),
     isDefault: list.id === defaultListId,
   }));
 
@@ -134,10 +145,14 @@ export function DbShoppingList({
     );
   }
 
-  function onCreate(name: string, storeName: string | null) {
+  function onCreate(name: string, selection: StoreSelection) {
     run(
       () =>
-        createShoppingListAction({ name, storeName: storeName ?? undefined }),
+        createShoppingListAction({
+          name,
+          storeIds: selection.storeIds,
+          newStoreNames: selection.newStoreNames,
+        }),
       (result) => {
         toast.success(t("lists.toasts.created", { name }));
         navigateToList(result.listId);
@@ -145,16 +160,41 @@ export function DbShoppingList({
     );
   }
 
-  function onRename(listId: string, name: string, storeName: string | null) {
+  function onRename(listId: string, name: string, selection: StoreSelection) {
     run(
       () =>
         renameShoppingListAction({
           listId,
           name,
-          storeName: storeName ?? undefined,
+          storeIds: selection.storeIds,
+          newStoreNames: selection.newStoreNames,
         }),
       () => toast.success(t("lists.toasts.renamed", { name })),
     );
+  }
+
+  function onRenameStore(storeId: string, name: string) {
+    run(
+      () => renameShoppingStoreAction({ storeId, name }),
+      () => toast.success(t("lists.stores.toasts.renamed", { name })),
+    );
+  }
+
+  async function onDeleteStore(storeId: string) {
+    const store = stores.find((candidate) => candidate.id === storeId);
+    if (!store) return false;
+    const accepted = await confirm({
+      title: t("lists.stores.confirm.delete.title", { name: store.name }),
+      description: t("lists.stores.confirm.delete.description"),
+      confirmLabel: t("lists.stores.delete"),
+    });
+    if (!accepted) return false;
+    run(
+      () => deleteShoppingStoreAction({ storeId }),
+      () =>
+        toast.success(t("lists.stores.toasts.deleted", { name: store.name })),
+    );
+    return true;
   }
 
   function onMakeDefault(listId: string) {
@@ -245,7 +285,7 @@ export function DbShoppingList({
               : "routing.toasts.moved",
             {
               item: item.item,
-              list: target.storeName ?? target.name,
+              list: target.name,
             },
           ),
         ),
@@ -265,7 +305,7 @@ export function DbShoppingList({
         toast.success(
           t("routing.bulk.toasts.moved", {
             count: itemIds.length,
-            list: target.storeName ?? target.name,
+            list: target.name,
           }),
           result.undoToken
             ? {
@@ -434,11 +474,14 @@ export function DbShoppingList({
     <div className="flex flex-col gap-6">
       <ShoppingListNavigation
         lists={lists}
+        stores={stores}
         selectedListId={selectedListId}
         disabled={pending}
         onSelect={navigateToList}
         onCreate={onCreate}
         onRename={onRename}
+        onRenameStore={onRenameStore}
+        onDeleteStore={onDeleteStore}
         onMakeDefault={onMakeDefault}
         onArchive={onArchive}
         onRestore={onRestore}

@@ -74,7 +74,8 @@ export type ShoppingViewItem = {
 export type ShoppingListOption = {
   id: string;
   name: string;
-  storeName: string | null;
+  /** Store names for export headers; empty when the list has no stores. */
+  storeNames: string[];
   isDefault: boolean;
 };
 
@@ -249,9 +250,7 @@ function ItemRow({
                 stores: formatList(
                   item.routeAlternativeListIds!.map(
                     (id) =>
-                      listOptions.find((list) => list.id === id)?.storeName ??
-                      listOptions.find((list) => list.id === id)?.name ??
-                      id,
+                      listOptions.find((list) => list.id === id)?.name ?? id,
                   ),
                   locale,
                 ),
@@ -523,7 +522,7 @@ function PackagePreferenceDialog({
             >
               {listOptions.map((list) => (
                 <option key={list.id} value={list.id}>
-                  {list.storeName ?? list.name}
+                  {list.name}
                 </option>
               ))}
             </NativeSelect>
@@ -647,7 +646,7 @@ function MoveRouteDialog({
           >
             {listOptions.map((list) => (
               <option key={list.id} value={list.id}>
-                {list.storeName ?? list.name}
+                {list.name}
               </option>
             ))}
           </NativeSelect>
@@ -684,7 +683,7 @@ function MoveRouteDialog({
                     )
                   }
                 />
-                {list.storeName ?? list.name}
+                {list.name}
               </label>
             ))}
           </fieldset>
@@ -766,7 +765,7 @@ function BulkMoveDialog({
           >
             {destinations.map((list) => (
               <option key={list.id} value={list.id}>
-                {list.storeName ?? list.name}
+                {list.name}
               </option>
             ))}
           </NativeSelect>
@@ -864,7 +863,7 @@ export function ShoppingListView({
     ({
       id: currentListId ?? "current",
       name: t("page.title"),
-      storeName: null,
+      storeNames: [],
       isDefault: true,
     } satisfies ShoppingListOption);
 

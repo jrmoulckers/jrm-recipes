@@ -44,6 +44,8 @@ import {
   clearList,
   moveShoppingItem,
   renameShoppingList,
+  renameShoppingStore,
+  deleteShoppingStore,
   restoreShoppingListPoint,
   restoreShoppingListPoints,
   setItemChecked,
@@ -131,6 +133,10 @@ function fakeTx() {
         findFirst: vi.fn(),
         findMany: vi.fn(),
       },
+      shoppingStores: {
+        findFirst: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       shoppingListItems: {
         findFirst: vi.fn(),
         findMany: vi.fn().mockResolvedValue([]),
@@ -192,9 +198,56 @@ describe("shopping list ownership", () => {
       renameShoppingList(user, {
         listId: "foreign",
         name: "Not mine",
+        storeIds: [],
+        newStoreNames: [],
       }),
     ).rejects.toThrow("NOT_FOUND");
     expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses to link a store the user does not own", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingLists.findFirst.mockResolvedValue(list("mine"));
+    tx.query.shoppingStores.findMany.mockResolvedValue([]);
+    runWith(tx);
+
+    await expect(
+      renameShoppingList(user, {
+        listId: "mine",
+        name: "Weekly",
+        storeIds: ["foreign_store"],
+        newStoreNames: [],
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("returns NOT_FOUND before renaming another user's store", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingStores.findFirst.mockResolvedValue({
+      id: "foreign",
+      userId: "user_2",
+    });
+    runWith(tx);
+
+    await expect(
+      renameShoppingStore(user, { storeId: "foreign", name: "Not mine" }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(tx.update).not.toHaveBeenCalled();
+  });
+
+  it("returns NOT_FOUND before deleting another user's store", async () => {
+    const tx = fakeTx();
+    tx.query.shoppingStores.findFirst.mockResolvedValue({
+      id: "foreign",
+      userId: "user_2",
+    });
+    runWith(tx);
+
+    await expect(deleteShoppingStore(user, "foreign")).rejects.toThrow(
+      "NOT_FOUND",
+    );
+    expect(tx.delete).not.toHaveBeenCalled();
   });
 
   it("rejects foreign move targets and alternatives as NOT_FOUND", async () => {

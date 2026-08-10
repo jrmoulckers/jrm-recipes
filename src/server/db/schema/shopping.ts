@@ -18,6 +18,26 @@ import { foodItems } from "./ingredients";
 import { recipes } from "./recipes";
 import { users } from "./users";
 
+/**
+ * A store a shopper buys from, owned by a user and reusable across lists.
+ * Stores are entirely optional: a list may reference none, one, or many.
+ */
+export const shoppingStores = pgTable(
+  "shopping_stores",
+  {
+    id: pk(),
+    userId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar({ length: 120 }).notNull(),
+    ...timestamps(),
+  },
+  (t) => [
+    index("shopping_stores_user_idx").on(t.userId, t.name),
+    uniqueIndex("shopping_stores_user_name_uq").on(t.userId, t.name),
+  ],
+);
+
 /** A shopper's grocery list, owned by a user. */
 export const shoppingLists = pgTable(
   "shopping_lists",
@@ -27,6 +47,11 @@ export const shoppingLists = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: varchar({ length: 120 }).notNull().default("Shopping list"),
+    /**
+     * Superseded by `shoppingListStores`. Retained and dual-written with the
+     * first linked store for the expand/contract deploy window (see
+     * `docs/migrations.md`); a follow-up contract migration drops it.
+     */
     storeName: varchar({ length: 120 }),
     isDefault: boolean().notNull().default(false),
     archivedAt: timestamp({ withTimezone: true }),
@@ -40,6 +65,29 @@ export const shoppingLists = pgTable(
     index("shopping_lists_user_active_idx")
       .on(t.userId, t.updatedAt)
       .where(sql`${t.archivedAt} is null`),
+  ],
+);
+
+/**
+ * Ordered link between a list and the stores it spans. Position drives display
+ * order so the shopper controls which store reads first.
+ */
+export const shoppingListStores = pgTable(
+  "shopping_list_stores",
+  {
+    listId: fk()
+      .notNull()
+      .references(() => shoppingLists.id, { onDelete: "cascade" }),
+    storeId: fk()
+      .notNull()
+      .references(() => shoppingStores.id, { onDelete: "cascade" }),
+    position: integer().notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.listId, t.storeId] }),
+    index("shopping_list_stores_list_position_idx").on(t.listId, t.position),
+    index("shopping_list_stores_store_idx").on(t.storeId),
+    check("shopping_list_stores_position_check", sql`${t.position} >= 0`),
   ],
 );
 
@@ -341,9 +389,35 @@ export const shoppingListsRelations = relations(
       references: [users.id],
     }),
     items: many(shoppingListItems),
+    stores: many(shoppingListStores),
     restorePoints: many(shoppingListRestorePoints),
     preferredRoutes: many(shoppingIngredientRoutes),
     routeAlternatives: many(shoppingIngredientRouteAlternatives),
+  }),
+);
+
+export const shoppingStoresRelations = relations(
+  shoppingStores,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [shoppingStores.userId],
+      references: [users.id],
+    }),
+    lists: many(shoppingListStores),
+  }),
+);
+
+export const shoppingListStoresRelations = relations(
+  shoppingListStores,
+  ({ one }) => ({
+    list: one(shoppingLists, {
+      fields: [shoppingListStores.listId],
+      references: [shoppingLists.id],
+    }),
+    store: one(shoppingStores, {
+      fields: [shoppingListStores.storeId],
+      references: [shoppingStores.id],
+    }),
   }),
 );
 
@@ -433,6 +507,10 @@ export const shoppingIngredientRouteAlternativesRelations = relations(
 
 export type ShoppingList = typeof shoppingLists.$inferSelect;
 export type NewShoppingList = typeof shoppingLists.$inferInsert;
+export type ShoppingStore = typeof shoppingStores.$inferSelect;
+export type NewShoppingStore = typeof shoppingStores.$inferInsert;
+export type ShoppingListStore = typeof shoppingListStores.$inferSelect;
+export type NewShoppingListStore = typeof shoppingListStores.$inferInsert;
 export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
 export type NewShoppingListItem = typeof shoppingListItems.$inferInsert;
 export type ShoppingListRestorePoint =

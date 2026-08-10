@@ -1484,7 +1484,7 @@
     "export": {
       "trigger": "Exportieren",
       "menuLabel": "Diese Liste exportieren",
-      "storeLabel": "Geschäft",
+      "storeLabel": "{count, plural, one {Geschäft} other {Geschäfte}}",
       "completed": "erledigt",
       "includeCompleted": "Erledigte Artikel einschließen",
       "includeCompletedHint": "{count, plural, one {# erledigter Artikel} other {# erledigte Artikel}}",
@@ -1549,20 +1549,40 @@
       "new": "Neue Liste",
       "manage": "Verwalten",
       "defaultBadge": "Standard",
-      "storeListOption": "{name} bei {store}",
-      "storeCaption": "Geschäft: {store}",
+      "storeCaption": "Geschäfte: {stores}",
+      "storeOverflow": "+{count} weitere",
       "create": {
         "title": "Einkaufsliste erstellen",
-        "description": "Benenne die Liste und ordne sie optional einem Geschäft zu.",
+        "description": "Benenne die Liste und wähle optional die Geschäfte, in denen du sie einkaufst.",
         "confirm": "Liste erstellen"
       },
       "manageTitle": "{name} verwalten",
-      "manageDescription": "Benenne diese Liste um, ändere ihr Geschäft oder aktualisiere ihren Status.",
+      "manageDescription": "Benenne diese Liste um, ändere ihre Geschäfte oder aktualisiere ihren Status.",
       "fields": {
         "name": "Name der Liste",
-        "store": "Geschäft (optional)",
+        "stores": "Geschäfte (optional)",
         "storePlaceholder": "z. B. Supermarkt um die Ecke",
-        "storeHint": "Damit werden Zutaten der richtigen Einkaufsliste zugeordnet."
+        "storeHint": "Wähle die Geschäfte für diese Liste oder lass sie ohne Geschäft.",
+        "addStore": "Geschäft hinzufügen",
+        "removeStore": "{store} entfernen"
+      },
+      "stores": {
+        "heading": "Deine Geschäfte",
+        "hint": "Benenne ein Geschäft überall um oder entferne es überall.",
+        "renameNamed": "{store} umbenennen",
+        "saveNamed": "{store} speichern",
+        "deleteNamed": "{store} löschen",
+        "delete": "Geschäft löschen",
+        "toasts": {
+          "renamed": "Geschäft heißt jetzt {name}.",
+          "deleted": "Geschäft {name} gelöscht."
+        },
+        "confirm": {
+          "delete": {
+            "title": "{name} löschen?",
+            "description": "Das Geschäft wird aus allen Listen entfernt, die es verwenden. Deine Listen und Artikel bleiben erhalten."
+          }
+        }
       },
       "makeDefault": "Als Standard festlegen",
       "archive": "Archivieren",

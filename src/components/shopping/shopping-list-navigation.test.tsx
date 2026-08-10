@@ -11,13 +11,20 @@ import { IntlWrapper } from "~/test/intl";
 import {
   ShoppingListNavigation,
   type ShoppingListSummary,
+  type ShoppingStoreSummary,
 } from "./shopping-list-navigation";
+
+const stores: ShoppingStoreSummary[] = [
+  { id: "s-qfc", name: "QFC" },
+  { id: "s-costco", name: "Costco" },
+  { id: "s-market", name: "Neighborhood market" },
+];
 
 const lists: ShoppingListSummary[] = [
   {
     id: "qfc",
     name: "Weekly groceries",
-    storeName: "QFC",
+    storeIds: ["s-qfc", "s-costco"],
     isDefault: true,
     archived: false,
     itemCount: 2,
@@ -25,7 +32,7 @@ const lists: ShoppingListSummary[] = [
   {
     id: "costco",
     name: "Bulk run",
-    storeName: "Costco",
+    storeIds: [],
     isDefault: false,
     archived: false,
     itemCount: 0,
@@ -33,7 +40,7 @@ const lists: ShoppingListSummary[] = [
   {
     id: "old",
     name: "Old market",
-    storeName: null,
+    storeIds: [],
     isDefault: false,
     archived: true,
     itemCount: 1,
@@ -49,10 +56,13 @@ function renderNavigation(selectedListId = "qfc") {
     onArchive: vi.fn(),
     onRestore: vi.fn(),
     onDelete: vi.fn(),
+    onRenameStore: vi.fn(),
+    onDeleteStore: vi.fn(),
   };
   render(
     <ShoppingListNavigation
       lists={lists}
+      stores={stores}
       selectedListId={selectedListId}
       {...actions}
     />,
@@ -87,24 +97,66 @@ describe("ShoppingListNavigation", () => {
     expect(actions.onMakeDefault).toHaveBeenCalledWith("costco");
   });
 
-  it("creates a named store list with labeled fields", () => {
+  it("creates a list spanning existing and newly typed stores", () => {
     const actions = renderNavigation();
     fireEvent.click(screen.getByRole("button", { name: "New list" }));
     const dialog = screen.getByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("List name"), {
       target: { value: "Farmers market" },
     });
-    fireEvent.change(within(dialog).getByLabelText("Store (optional)"), {
-      target: { value: "Saturday market" },
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "Costco" }));
+    fireEvent.change(within(dialog).getByLabelText("Add store"), {
+      target: { value: "  Saturday market  " },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add store" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Create list" }),
+    );
+
+    expect(actions.onCreate).toHaveBeenCalledWith("Farmers market", {
+      storeIds: ["s-costco"],
+      newStoreNames: ["Saturday market"],
+    });
+  });
+
+  it("creates a store-free list when no store is chosen", () => {
+    const actions = renderNavigation();
+    fireEvent.click(screen.getByRole("button", { name: "New list" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("List name"), {
+      target: { value: "Pantry restock" },
     });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Create list" }),
     );
 
-    expect(actions.onCreate).toHaveBeenCalledWith(
-      "Farmers market",
-      "Saturday market",
+    expect(actions.onCreate).toHaveBeenCalledWith("Pantry restock", {
+      storeIds: [],
+      newStoreNames: [],
+    });
+  });
+
+  it("titles the list by name and announces its stores separately", () => {
+    renderNavigation();
+
+    expect(
+      within(screen.getByLabelText("Current list")).getByRole("option", {
+        name: "Weekly groceries",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Stores: QFC and Costco")).toBeInTheDocument();
+  });
+
+  it("removes a store everywhere from the manage dialog", async () => {
+    const actions = renderNavigation();
+    fireEvent.click(screen.getByRole("button", { name: "Manage" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Delete QFC",
+      }),
     );
+
+    expect(actions.onDeleteStore).toHaveBeenCalledWith("s-qfc");
   });
 
   it("keeps archived lists restorable from the manage dialog", () => {

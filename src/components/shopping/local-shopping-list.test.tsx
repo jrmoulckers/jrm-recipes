@@ -45,7 +45,7 @@ const lists: LocalList[] = [
   {
     id: "default",
     name: "Neighborhood market",
-    storeName: "QFC",
+    storeIds: [],
     isDefault: true,
     archived: false,
     items: [],
@@ -53,7 +53,7 @@ const lists: LocalList[] = [
   {
     id: "warehouse",
     name: "Bulk run",
-    storeName: "Costco",
+    storeIds: [],
     isDefault: false,
     archived: false,
     items: [],
@@ -61,7 +61,7 @@ const lists: LocalList[] = [
   {
     id: "archived",
     name: "Old market",
-    storeName: null,
+    storeIds: [],
     isDefault: false,
     archived: true,
     items: [],

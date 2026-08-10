@@ -25,6 +25,8 @@ import {
   shoppingListRestorePointItems,
   shoppingListRestorePoints,
   shoppingLists,
+  shoppingListStores,
+  shoppingStores,
   type ShoppingListRestorePoint,
   userUnitPreferences,
   type User,
@@ -48,10 +50,12 @@ import {
 import { toCustomUnitDefs, toUnitPrefs } from "~/lib/unit-prefs";
 import type {
   CreateShoppingListInput,
+  CreateShoppingStoreInput,
   BulkMoveShoppingItemsInput,
   ManualItemInput,
   MoveShoppingItemInput,
   RenameShoppingListInput,
+  RenameShoppingStoreInput,
   RestoreShoppingListPointsInput,
   SaveIngredientPackageInput,
 } from "./validation";
@@ -789,11 +793,190 @@ export async function addManualItem(
   });
 }
 
+/**
+ * Resolve a list's store selection into owned store ids, creating any stores
+ * typed inline. Names are matched case-insensitively so the library never grows
+ * a near-duplicate of a store the shopper already has.
+ */
+async function resolveStoreIds(
+  tx: Tx,
+  userId: string,
+  storeIds: string[],
+  newStoreNames: string[],
+): Promise<string[]> {
+  const resolved: string[] = [];
+  const seen = new Set<string>();
+
+  if (storeIds.length > 0) {
+    const owned = await tx.query.shoppingStores.findMany({
+      where: and(
+        eq(shoppingStores.userId, userId),
+        inArray(shoppingStores.id, storeIds),
+      ),
+      columns: { id: true },
+    });
+    const ownedIds = new Set(owned.map((store) => store.id));
+    for (const storeId of storeIds) {
+      if (!ownedIds.has(storeId)) throw new Error("NOT_FOUND");
+      if (seen.has(storeId)) continue;
+      seen.add(storeId);
+      resolved.push(storeId);
+    }
+  }
+
+  for (const rawName of newStoreNames) {
+    const name = rawName.trim();
+    if (name.length === 0) continue;
+    const storeId = await upsertStore(tx, userId, name);
+    if (seen.has(storeId)) continue;
+    seen.add(storeId);
+    resolved.push(storeId);
+  }
+
+  return resolved;
+}
+
+/** Find (case-insensitively) or create one store in the user's library. */
+async function upsertStore(
+  tx: Tx,
+  userId: string,
+  name: string,
+): Promise<string> {
+  const [existing] = await tx
+    .select({ id: shoppingStores.id })
+    .from(shoppingStores)
+    .where(
+      and(
+        eq(shoppingStores.userId, userId),
+        sql`lower(${shoppingStores.name}) = lower(${name})`,
+      ),
+    )
+    .limit(1);
+  if (existing) return existing.id;
+  const [created] = await tx
+    .insert(shoppingStores)
+    .values({ userId, name })
+    .returning({ id: shoppingStores.id });
+  if (!created) throw new Error("NOT_FOUND");
+  return created.id;
+}
+
+/**
+ * Replace a list's store links. `shopping_lists.store_name` is dual-written
+ * with the first store for the expand/contract window (see docs/migrations.md).
+ */
+async function setListStores(
+  tx: Tx,
+  listId: string,
+  storeIds: string[],
+): Promise<void> {
+  await tx
+    .delete(shoppingListStores)
+    .where(eq(shoppingListStores.listId, listId));
+  if (storeIds.length > 0) {
+    await tx.insert(shoppingListStores).values(
+      storeIds.map((storeId, position) => ({
+        listId,
+        storeId,
+        position,
+      })),
+    );
+  }
+  const [primary] = storeIds.length
+    ? await tx
+        .select({ name: shoppingStores.name })
+        .from(shoppingStores)
+        .where(eq(shoppingStores.id, storeIds[0]!))
+        .limit(1)
+    : [];
+  await tx
+    .update(shoppingLists)
+    .set({ storeName: primary?.name ?? null })
+    .where(eq(shoppingLists.id, listId));
+}
+
+export async function createShoppingStore(
+  user: User,
+  input: CreateShoppingStoreInput,
+): Promise<{ storeId: string }> {
+  return db.transaction(async (tx) => ({
+    storeId: await upsertStore(tx, user.id, input.name),
+  }));
+}
+
+export async function renameShoppingStore(
+  user: User,
+  input: RenameShoppingStoreInput,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const store = await tx.query.shoppingStores.findFirst({
+      where: eq(shoppingStores.id, input.storeId),
+      columns: { id: true, userId: true },
+    });
+    if (store?.userId !== user.id) throw new Error("NOT_FOUND");
+    const [clash] = await tx
+      .select({ id: shoppingStores.id })
+      .from(shoppingStores)
+      .where(
+        and(
+          eq(shoppingStores.userId, user.id),
+          sql`lower(${shoppingStores.name}) = lower(${input.name})`,
+        ),
+      )
+      .limit(1);
+    if (clash && clash.id !== store.id) throw new Error("CONFLICT");
+    await tx
+      .update(shoppingStores)
+      .set({ name: input.name, updatedAt: new Date() })
+      .where(eq(shoppingStores.id, store.id));
+    await syncStoreNameMirror(tx, user.id);
+  });
+}
+
+/** Deleting a store unlinks it everywhere; lists and their items are kept. */
+export async function deleteShoppingStore(
+  user: User,
+  storeId: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const store = await tx.query.shoppingStores.findFirst({
+      where: eq(shoppingStores.id, storeId),
+      columns: { id: true, userId: true },
+    });
+    if (store?.userId !== user.id) throw new Error("NOT_FOUND");
+    await tx.delete(shoppingStores).where(eq(shoppingStores.id, store.id));
+    await syncStoreNameMirror(tx, user.id);
+  });
+}
+
+/** Re-derive the legacy `store_name` mirror for every list the user owns. */
+async function syncStoreNameMirror(tx: Tx, userId: string): Promise<void> {
+  await tx
+    .update(shoppingLists)
+    .set({
+      storeName: sql`(
+        select ${shoppingStores.name}
+        from ${shoppingListStores}
+        join ${shoppingStores} on ${shoppingStores.id} = ${shoppingListStores.storeId}
+        where ${shoppingListStores.listId} = ${shoppingLists.id}
+        order by ${shoppingListStores.position} asc
+        limit 1
+      )`,
+    })
+    .where(eq(shoppingLists.userId, userId));
+}
+
 export async function createShoppingList(
   user: User,
   input: CreateShoppingListInput,
 ) {
   return db.transaction(async (tx) => {
+    const storeIds = await resolveStoreIds(
+      tx,
+      user.id,
+      input.storeIds,
+      input.newStoreNames,
+    );
     const active = await tx.query.shoppingLists.findMany({
       where: and(
         eq(shoppingLists.userId, user.id),
@@ -813,11 +996,11 @@ export async function createShoppingList(
       .values({
         userId: user.id,
         name: input.name,
-        storeName: input.storeName ?? null,
         isDefault,
       })
       .returning({ id: shoppingLists.id });
     if (!created) throw new Error("NOT_FOUND");
+    await setListStores(tx, created.id, storeIds);
     return created;
   });
 }
@@ -828,14 +1011,20 @@ export async function renameShoppingList(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     await ownedList(tx, input.listId, user.id);
+    const storeIds = await resolveStoreIds(
+      tx,
+      user.id,
+      input.storeIds,
+      input.newStoreNames,
+    );
     await tx
       .update(shoppingLists)
       .set({
         name: input.name,
-        storeName: input.storeName ?? null,
         updatedAt: new Date(),
       })
       .where(eq(shoppingLists.id, input.listId));
+    await setListStores(tx, input.listId, storeIds);
   });
 }
 

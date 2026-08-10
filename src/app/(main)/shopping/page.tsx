@@ -85,7 +85,7 @@ export default async function ShoppingPage({
   const lists: ShoppingListSummary[] = (workspace?.lists ?? []).map((list) => ({
     id: list.id,
     name: list.name,
-    storeName: list.storeName,
+    storeIds: list.storeIds,
     isDefault: list.isDefault,
     archived: list.archivedAt != null,
     itemCount: list.items.length,
@@ -138,6 +138,7 @@ export default async function ShoppingPage({
         <DbShoppingList
           items={items}
           lists={lists}
+          stores={workspace?.stores ?? []}
           selectedListId={workspace?.selectedListId ?? ""}
           defaultListId={workspace?.defaultListId ?? ""}
           historyEntries={historyEntries}

@@ -26,8 +26,8 @@ const categoryLabels: Record<ShoppingCategory, string> = {
 function exportDocument(includeChecked = false) {
   return createShoppingExportDocument({
     listName: "Compra semanal",
-    storeName: "Mercado Central",
-    storeLabel: "Tienda",
+    storeNames: ["Mercado Central", "Mercado Central", "Panadería"],
+    storeLabel: "Tiendas",
     locale: "es",
     categoryLabels,
     includeChecked,
@@ -66,7 +66,7 @@ describe("shopping export adapters", () => {
     const text = serializeShoppingExportText(exportDocument());
 
     expect(text).toContain("Compra semanal");
-    expect(text).toContain("Tienda: Mercado Central");
+    expect(text).toContain("Tiendas: Mercado Central y Panadería");
     expect(text).toContain("Frutas y verduras:");
     expect(text).toContain("4 Tomates, maduros");
     expect(text).toContain("1,2 ml Aceite");

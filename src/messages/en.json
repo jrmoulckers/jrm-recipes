@@ -1484,7 +1484,7 @@
     "export": {
       "trigger": "Export",
       "menuLabel": "Export this list",
-      "storeLabel": "Store",
+      "storeLabel": "{count, plural, one {Store} other {Stores}}",
       "completed": "completed",
       "includeCompleted": "Include completed items",
       "includeCompletedHint": "{count, plural, one {# completed item} other {# completed items}}",
@@ -1549,20 +1549,40 @@
       "new": "New list",
       "manage": "Manage",
       "defaultBadge": "Default",
-      "storeListOption": "{name} at {store}",
-      "storeCaption": "Store: {store}",
+      "storeCaption": "Stores: {stores}",
+      "storeOverflow": "+{count} more",
       "create": {
         "title": "Create a shopping list",
-        "description": "Name the list and optionally match it to a store.",
+        "description": "Name the list and optionally pick the stores you shop it at.",
         "confirm": "Create list"
       },
       "manageTitle": "Manage {name}",
-      "manageDescription": "Rename this list, change its store, or update its status.",
+      "manageDescription": "Rename this list, change its stores, or update its status.",
       "fields": {
         "name": "List name",
-        "store": "Store (optional)",
+        "stores": "Stores (optional)",
         "storePlaceholder": "e.g. Neighborhood market",
-        "storeHint": "Used to route ingredients to the right shopping list."
+        "storeHint": "Pick any stores you shop this list at, or leave it store-free.",
+        "addStore": "Add store",
+        "removeStore": "Remove {store}"
+      },
+      "stores": {
+        "heading": "Your stores",
+        "hint": "Rename or remove a store everywhere it's used.",
+        "renameNamed": "Rename {store}",
+        "saveNamed": "Save {store}",
+        "deleteNamed": "Delete {store}",
+        "delete": "Delete store",
+        "toasts": {
+          "renamed": "Store renamed to {name}.",
+          "deleted": "Store {name} deleted."
+        },
+        "confirm": {
+          "delete": {
+            "title": "Delete {name}?",
+            "description": "The store is removed from every list that uses it. Your lists and items stay put."
+          }
+        }
       },
       "makeDefault": "Make default",
       "archive": "Archive",

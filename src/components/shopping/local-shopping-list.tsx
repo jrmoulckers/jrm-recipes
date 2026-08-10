@@ -15,6 +15,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import {
   ShoppingListNavigation,
   type ShoppingListSummary,
+  type StoreSelection,
 } from "./shopping-list-navigation";
 import {
   ShoppingListView,
@@ -33,12 +34,16 @@ export function LocalShoppingList({
 }) {
   const router = useRouter();
   const lists = useShoppingStore((s) => s.lists);
+  const stores = useShoppingStore((s) => s.stores);
   const defaultListId = useShoppingStore((s) => s.defaultListId);
   const routes = useShoppingStore((s) => s.routes);
   const restorePoints = useShoppingStore((s) => s.restorePoints);
   const addManual = useShoppingStore((s) => s.addManual);
   const createList = useShoppingStore((s) => s.createList);
   const renameList = useShoppingStore((s) => s.renameList);
+  const createStore = useShoppingStore((s) => s.createStore);
+  const renameStore = useShoppingStore((s) => s.renameStore);
+  const deleteStore = useShoppingStore((s) => s.deleteStore);
   const setCurrentList = useShoppingStore((s) => s.setCurrentList);
   const makeDefault = useShoppingStore((s) => s.makeDefault);
   const archiveList = useShoppingStore((s) => s.archiveList);
@@ -106,16 +111,21 @@ export function LocalShoppingList({
   if (!current) return null;
   const currentList = current;
 
+  const storeNamesById = new Map(
+    stores.map((store) => [store.id, store.name] as const),
+  );
   const listOptions = activeLists.map((list) => ({
     id: list.id,
     name: displayListName(list),
-    storeName: list.storeName,
+    storeNames: list.storeIds
+      .map((storeId) => storeNamesById.get(storeId))
+      .filter((name): name is string => name != null),
     isDefault: list.isDefault,
   }));
   const summaries: ShoppingListSummary[] = lists.map((list) => ({
     id: list.id,
     name: displayListName(list),
-    storeName: list.storeName,
+    storeIds: list.storeIds,
     isDefault: list.isDefault,
     archived: list.archived,
     itemCount: list.items.length,
@@ -178,8 +188,16 @@ export function LocalShoppingList({
     addManual(currentList.id, entry);
   }
 
-  function onCreate(name: string, storeName: string | null) {
-    navigateToList(createList(name, storeName));
+  /** Resolves a selection into library ids, creating any inline store names. */
+  function resolveSelection(selection: StoreSelection): string[] {
+    const created = selection.newStoreNames
+      .map((name) => createStore(name))
+      .filter((id) => id !== "");
+    return [...selection.storeIds, ...created];
+  }
+
+  function onCreate(name: string, selection: StoreSelection) {
+    navigateToList(createList(name, resolveSelection(selection)));
     toast.success(t("lists.toasts.created", { name }));
   }
 
@@ -190,9 +208,28 @@ export function LocalShoppingList({
     });
   }
 
-  function onRename(listId: string, name: string, storeName: string | null) {
-    renameList(listId, name, storeName);
+  function onRename(listId: string, name: string, selection: StoreSelection) {
+    renameList(listId, name, resolveSelection(selection));
     toast.success(t("lists.toasts.renamed", { name }));
+  }
+
+  function onRenameStore(storeId: string, name: string) {
+    renameStore(storeId, name);
+    toast.success(t("lists.stores.toasts.renamed", { name }));
+  }
+
+  async function onDeleteStore(storeId: string) {
+    const store = stores.find((candidate) => candidate.id === storeId);
+    if (!store) return false;
+    const accepted = await confirm({
+      title: t("lists.stores.confirm.delete.title", { name: store.name }),
+      description: t("lists.stores.confirm.delete.description"),
+      confirmLabel: t("lists.stores.delete"),
+    });
+    if (!accepted) return false;
+    deleteStore(storeId);
+    toast.success(t("lists.stores.toasts.deleted", { name: store.name }));
+    return true;
   }
 
   function onMakeDefault(listId: string) {
@@ -230,7 +267,7 @@ export function LocalShoppingList({
     toast.success(
       t(rememberRoute ? "routing.toasts.routeSaved" : "routing.toasts.moved", {
         item: item.item,
-        list: target.storeName ?? displayListName(target),
+        list: displayListName(target),
       }),
     );
   }
@@ -242,7 +279,7 @@ export function LocalShoppingList({
     toast.success(
       t("routing.bulk.toasts.moved", {
         count: itemIds.length,
-        list: target.storeName ?? displayListName(target),
+        list: displayListName(target),
       }),
       {
         duration: Infinity,
@@ -382,10 +419,13 @@ export function LocalShoppingList({
     <div className="flex flex-col gap-6">
       <ShoppingListNavigation
         lists={summaries}
+        stores={stores}
         selectedListId={currentList.id}
         onSelect={navigateToList}
         onCreate={onCreate}
         onRename={onRename}
+        onRenameStore={onRenameStore}
+        onDeleteStore={onDeleteStore}
         onMakeDefault={onMakeDefault}
         onArchive={onArchive}
         onRestore={onRestore}
