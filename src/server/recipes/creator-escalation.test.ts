@@ -78,6 +78,21 @@ function bodyOf(name: string): string {
   return mutations.slice(span.start, span.end);
 }
 
+/**
+ * The owner-only SQL predicate, named once because two checks disagree about it
+ * on purpose: the owner-only mutations must contain it, and `updateRecipe` must
+ * not (#724).
+ *
+ * Sharing the literal is what keeps the negative check honest. A negative
+ * assertion over source text passes whenever the string is absent, and a
+ * misspelled string is always absent — so on its own it can be rotted by a typo
+ * into a check that never fires and is never noticed. Written once, the four
+ * owner-only assertions below require this exact text to appear, so a typo is
+ * loud there and the negative check inherits their anchor rather than needing a
+ * probe of its own.
+ */
+const OWNER_PREDICATE = "eq(recipes.authorId,";
+
 describe("co-creator write escalation", () => {
   /**
    * The span model is faithful: no span has absorbed a declaration (#720).
@@ -142,7 +157,7 @@ describe("co-creator write escalation", () => {
     // The gate is a lookup rather than a filter, so `updateRecipe` no longer
     // carries an `authorId` predicate. Dropping the gate must not silently
     // leave the row unguarded, so assert the two together.
-    expect(body).not.toContain("eq(recipes.authorId,");
+    expect(body).not.toContain(OWNER_PREDICATE);
   });
 
   it("requires an accepted creator row, never a pending invitation", () => {
@@ -159,6 +174,6 @@ describe("co-creator write escalation", () => {
     ["restoreRecipe", "restore"],
     ["setShareLinkState", "share-link rotation"],
   ])("still scopes %s (%s) to the owner", (fn) => {
-    expect(bodyOf(fn)).toContain("eq(recipes.authorId,");
+    expect(bodyOf(fn)).toContain(OWNER_PREDICATE);
   });
 });
