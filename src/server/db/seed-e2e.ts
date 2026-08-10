@@ -49,7 +49,11 @@ async function main() {
   }
 
   const client = postgres(connectionString!, { max: 1 });
-  const db = drizzle(client, { schema });
+  // `casing: "snake_case"` is not optional: the schema declares columns in
+  // camelCase and relies on this to map them to their snake_case database
+  // names. Omitting it produces `column "clerkId" does not exist` at runtime,
+  // which no unit test can reach because none of them touch a database.
+  const db = drizzle(client, { schema, casing: "snake_case" });
 
   try {
     await db
