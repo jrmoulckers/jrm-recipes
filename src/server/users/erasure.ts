@@ -87,7 +87,7 @@ import {
  * basis on its own — and an entangled request is recorded in `erasure_holds`
  * instead of executed. That is a decision about *when* erasure runs, not about
  * what it means: no retention is added, and the request stays durable,
- * countable and replayable. See ADR 0003.
+ * countable and replayable. See ADR 0004.
  *
  * **Pending creators are not creators.** A `pending` invitation grants nothing
  * and has no slug, so it never makes a recipe "co-created" for survival

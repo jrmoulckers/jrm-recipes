@@ -142,7 +142,7 @@ before the erasure path can destroy the associated Cloudinary bytes. `restrict` 
 dependency into a loud FK violation instead of irreversible data loss, and makes
 `~/server/users/erasure.ts` — which reassigns or deletes each owned recipe in the right order —
 the single place that decides a recipe's fate. See
-[ADR 0003 (account erasure)](./0003-account-erasure.md).
+[ADR 0004 (account erasure)](./0004-account-erasure.md).
 
 Path revalidation now fans out across N namespaces instead of one.
 `revalidateRecipePaths` discovers the current creators itself rather than trusting callers to pass

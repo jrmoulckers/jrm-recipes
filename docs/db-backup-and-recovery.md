@@ -149,7 +149,7 @@ select count(*) from audit_log;
 **A restored instance must not be promoted until this step passes.** A backup taken before an
 account erasure still contains that account. Restoring it resurrects a user who exercised their
 right to erasure, silently reinstating personal data that was lawfully deleted — a fresh breach
-committed by the recovery itself. See [ADR 0003](./architecture/0003-account-erasure.md) and #678.
+committed by the recovery itself. See [ADR 0004](./architecture/0004-account-erasure.md) and #678.
 
 `deletion_records` exists precisely so this is answerable after the identifying rows are gone. It
 stores a salted SHA-256 of each erased `users.id`, so a restored row can be hashed and matched.

@@ -1,4 +1,4 @@
-# ADR 0003: Account Deletion Is Full Erasure
+# ADR 0004: Account Deletion Is Full Erasure
 
 - **Status:** Accepted
 - **Date:** 2026-08-16
