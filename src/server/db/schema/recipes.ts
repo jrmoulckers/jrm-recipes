@@ -357,14 +357,18 @@ export const recipeSteps = pgTable(
  * deletes are the erasure path and the dev-only seed, so a pruning sweep fails
  * a test rather than passing review on the strength of nobody reading this.
  *
- * Pruning is not the only way to lose the evidence, and the other two ways do
- * not mention this table at all (#711). `recipeId` is `ON DELETE cascade`, so
+ * Pruning is not the only way to lose the evidence, and the other ways do not
+ * mention this table at all (#711, #715). `recipeId` is `ON DELETE cascade`, so
  * hard-deleting a *recipe* takes its whole history with it — note that
  * `deleteRecipe` is a soft delete, which makes a future "empty the trash"
  * job the likeliest form this arrives in. `authorId` is `ON DELETE set null`,
  * so hard-deleting a *user* severs attribution on every surviving row: no row
  * and no text is lost, only the record of who wrote it, leaving a table that
- * still looks fully populated. The guard covers all three.
+ * still looks fully populated. And an `update` rewrites history in place, which
+ * is worse than a delete because a missing row shows as a gap in
+ * `version_number` while a mutated row still looks entirely valid — so the
+ * "immutable" in the first line above is now enforced, not just asserted. The
+ * guard covers all four.
  */
 export const recipeVersions = pgTable(
   "recipe_versions",

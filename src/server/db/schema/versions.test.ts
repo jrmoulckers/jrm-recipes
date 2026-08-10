@@ -85,6 +85,14 @@ describe("recipe_versions version-number uniqueness (issue #151)", () => {
  * A source-level guard cannot follow a cascade. But the foreign keys are
  * declared in the same file this guard already exists to protect, so the
  * *mechanisms* are enumerable even though the cascade itself is not traceable.
+ *
+ * Known limit: raw SQL naming `recipe_versions` inside a `sql` template would
+ * evade all of these. That is detectable in principle, but the table name
+ * appears throughout comments, docs and this guard's own prose, so the check
+ * would be noisy enough that someone eventually disables it — which is worse
+ * than a limit written down. There is no raw DML in `src` today; the only
+ * `.execute` calls are a healthcheck select, the slug advisory lock and one
+ * read query.
  */
 describe("recipe_versions retention (issue #699)", () => {
   const srcRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -96,7 +104,17 @@ describe("recipe_versions retention (issue #699)", () => {
    * allowed to do it. `harm` completes the sentence "doing this outside the
    * sanctioned files ..." in the failure message.
    */
-  const MECHANISMS = [
+  const MECHANISMS: {
+    what: string;
+    pattern: RegExp;
+    harm: string;
+    /** Files allowed to do this, relative to `src/`. Empty means never. */
+    sanctioned: string[];
+    /** A literal the pattern must match, so a typo can't silence the check. */
+    probe: string;
+    /** A literal the pattern must *not* match, where confusion is possible. */
+    rejects?: string;
+  }[] = [
     {
       what: "deleting recipe_versions rows",
       // Matches `.delete(recipeVersions)` through any builder receiver (db, tx,
@@ -109,6 +127,7 @@ describe("recipe_versions retention (issue #699)", () => {
         // Dev-only reseed of an existing recipe.
         join("server", "db", "seed.ts"),
       ],
+      probe: "await tx.delete(recipeVersions).where(eq(x, y))",
     },
     {
       what: "hard-deleting recipes",
@@ -118,6 +137,10 @@ describe("recipe_versions retention (issue #699)", () => {
         "whole history with it. `deleteRecipe` is a soft delete, so if this is a " +
         "trash-purge job, it is exactly the change #699 exists to catch",
       sanctioned: [ERASURE],
+      probe: "await db.delete(recipes).where(eq(x, y))",
+      // `recipes` must not swallow `recipeVersions`, or the seed -- sanctioned
+      // for versions but not for recipes -- would be reported as an offender.
+      rejects: "await tx.delete(recipeVersions)",
     },
     {
       what: "hard-deleting users",
@@ -127,6 +150,23 @@ describe("recipe_versions retention (issue #699)", () => {
         "deletes no row and no text but severs the attribution that derived " +
         "provenance (#686) needs, leaving a table that still looks fully populated",
       sanctioned: [ERASURE],
+      probe: "t.delete(users).where(eq(users.id, userId))",
+    },
+    {
+      // #715. The schema calls these "immutable snapshots" and nothing enforced
+      // it. An update destroys the diff basis as effectively as a delete while
+      // matching none of the mechanisms above, which read deletes only.
+      what: "updating recipe_versions rows",
+      pattern: /\.update\(\s*recipeVersions\s*\)/,
+      harm:
+        "rewrites history in place, which the schema forbids by calling these " +
+        "snapshots immutable: a `snapshot` edit corrupts the diff basis and an " +
+        "`authorId` edit severs attribution. It is worse than a delete, because a " +
+        "missing row shows up as a gap in version_number while a mutated row still " +
+        "looks entirely valid",
+      // Empty: never permitted anywhere. See the vacuity note below.
+      sanctioned: [],
+      probe: "await db.update(recipeVersions).set({ snapshot })",
     },
   ];
 
@@ -154,18 +194,30 @@ describe("recipe_versions retention (issue #699)", () => {
         .filter((file) => !allowed.includes(file))
         .sort();
 
+      const where = allowed.length
+        ? `outside ${allowed.join(", ")}`
+        : "anywhere (this one is never permitted)";
+
       expect(
         offenders,
-        `recipe_versions rows are the only provenance record for text a user wrote into someone else's recipe (#699). Doing this outside ${allowed.join(", ")} ${harm}, and does it silently — the erasure remedy #678 depends on the diff basis being intact. If this is legitimate, add it to MECHANISMS[].sanctioned with the reason.`,
+        `recipe_versions rows are the only provenance record for text a user wrote into someone else's recipe (#699). Doing this ${where} ${harm}, and does it silently — the erasure remedy #678 depends on the diff basis being intact. If this is legitimate, add it to MECHANISMS[].sanctioned with the reason.`,
       ).toEqual([]);
     },
   );
 
-  it.each(MECHANISMS)(
+  /**
+   * Anti-vacuity, part one (#683): a mechanism that permits call sites must
+   * still find them, or renaming those sites away leaves the check above green
+   * while asserting nothing.
+   *
+   * Mechanisms with an empty `sanctioned` list are excluded, because "the
+   * pattern still matches somewhere" is the wrong question for one that is
+   * supposed to match nowhere. They are covered by part two instead — which is
+   * the whole reason part two exists.
+   */
+  it.each(MECHANISMS.filter((m) => m.sanctioned.length > 0))(
     "$what still occurs at every sanctioned site, so the guard cannot pass vacuously",
     ({ pattern, sanctioned }) => {
-      // Without this, deleting or renaming the sanctioned call sites would leave
-      // the check above green while asserting nothing at all.
       for (const relPath of sanctioned) {
         const source = readFileSync(join(srcRoot, relPath), "utf8");
         expect(
@@ -175,4 +227,29 @@ describe("recipe_versions retention (issue #699)", () => {
       }
     },
   );
+
+  /**
+   * Anti-vacuity, part two (#715): every pattern is tested against a literal it
+   * must match, and where ambiguity is possible, one it must not.
+   *
+   * Part one anchors a pattern to real call sites, but a never-permitted
+   * mechanism has none, so a typo in its regex would produce a check that can
+   * never fire and can never be noticed — a guard that is green because it is
+   * broken. This applies to all four rather than only the new one: the same
+   * typo in any of them fails the same silent way, and part one would only
+   * catch it for those with sanctioned sites.
+   */
+  it.each(MECHANISMS)("$what has a pattern that actually matches", (m) => {
+    expect(
+      m.pattern.test(m.probe),
+      `${String(m.pattern)} failed to match its own probe: ${m.probe}`,
+    ).toBe(true);
+
+    if (m.rejects !== undefined) {
+      expect(
+        m.pattern.test(m.rejects),
+        `${String(m.pattern)} wrongly matched: ${m.rejects}`,
+      ).toBe(false);
+    }
+  });
 });
