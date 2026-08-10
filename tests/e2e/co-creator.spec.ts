@@ -65,10 +65,19 @@ import { SEEDED_RECIPE_SLUG } from "./recipe-paths";
  * and look like a product bug.
  */
 
-/** Must match `DEV_CO_COOK` / `DEV_IDENTITY_COOKIE` in `~/server/auth/dev-user`. */
+/**
+ * Must match `DEV_CO_COOK` / `DEV_IDENTITY_COOKIE` in `~/server/auth/dev-user`.
+ *
+ * Restated rather than imported because this file is transformed by Playwright,
+ * not by Next, and dragging the server module in would pull the schema barrel
+ * into the test process. Restating is only safe if something notices when it
+ * drifts, so `e2e-containment.test.ts` reads these literals back out of this
+ * file and asserts they equal the real constants (issue #783).
+ */
 const DEV_IDENTITY_COOKIE = "heirloom_dev_identity";
-const CO_COOK_ID = "seed_usr_rosa";
-const CO_COOK_NAME = "Aunt Rosa";
+const CO_COOK_ID = "e2e_usr_cocook_000000";
+const CO_COOK_NAME = "E2E Co-Cook";
+const CO_COOK_SLUG = "e2e-co-cook";
 /** Must match `playwright.config.ts`, which is also the server's own port. */
 const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? "3000"}`;
 
@@ -207,21 +216,21 @@ test.describe.serial("co-creation across two identities (#698)", () => {
   });
 
   test("the recipe does not answer in the invitee's namespace yet", async () => {
-    await cook.goto(`/recipes/aunt-rosa/nonnas-sunday-gravy`);
+    await cook.goto(`/recipes/${CO_COOK_SLUG}/nonnas-sunday-gravy`);
     await expectRevoked(cook);
   });
 
   test("a pending invitation grants nothing", async () => {
     await owner.goto(ownerPath);
     const panel = creatorPanel(owner);
-    await panel.getByLabel(/invite a cook/i).fill("aunt-rosa");
+    await panel.getByLabel(/invite a cook/i).fill(CO_COOK_SLUG);
     await panel.getByRole("button", { name: /^Invite$/ }).click();
 
     // The owner sees them as invited, explicitly not yet a co-creator.
     await expect(panel.getByText(/^Invited$/)).toBeVisible({ timeout: 15_000 });
 
     // And nothing is published in their namespace until they accept.
-    await cook.goto(`/recipes/aunt-rosa/nonnas-sunday-gravy`);
+    await cook.goto(`/recipes/${CO_COOK_SLUG}/nonnas-sunday-gravy`);
     await expectRevoked(cook);
   });
 
@@ -243,7 +252,7 @@ test.describe.serial("co-creation across two identities (#698)", () => {
       name: /^\/recipes\//,
     });
     mirrorPath = (await link.first().getAttribute("href"))!;
-    expect(mirrorPath).toMatch(/^\/recipes\/aunt-rosa\//);
+    expect(mirrorPath).toMatch(/^\/recipes\/e2e-co-cook\//);
     expect(mirrorPath).not.toBe(ownerPath);
   });
 
@@ -305,7 +314,7 @@ test.describe.serial("co-creation across two identities (#698)", () => {
   test("leaving revokes exactly as removal does", async () => {
     await owner.goto(ownerPath);
     const panel = creatorPanel(owner);
-    await panel.getByLabel(/invite a cook/i).fill("aunt-rosa");
+    await panel.getByLabel(/invite a cook/i).fill(CO_COOK_SLUG);
     await panel.getByRole("button", { name: /^Invite$/ }).click();
     await expect(panel.getByText(/^Invited$/)).toBeVisible({ timeout: 15_000 });
 

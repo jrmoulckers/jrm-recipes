@@ -9,6 +9,7 @@ import { groupMembers, recipes, users, type User } from "~/server/db/schema";
 import {
   DEV_USER,
   DEV_IDENTITY_COOKIE,
+  isIdentitySelectorEnabled,
   resolveDevIdentity,
 } from "~/server/auth/dev-user";
 import { getEntitlements } from "~/server/billing/entitlements";
@@ -46,6 +47,17 @@ export { DEV_USER };
  * is. It cannot widen access, only choose among identities the bypass was
  * already willing to serve unconditionally.
  *
+ * On top of that, the selector is **off unless `E2E_IDENTITY_SELECTOR=1`**
+ * (issue #783). Deliberately not `NEXT_PUBLIC_`, so it cannot be set from a
+ * client bundle and is never present on Vercel; CI sets it in the E2E job
+ * alone. Read from `process.env` rather than `~/env.js` for the same reason
+ * `assertDevBypassAllowed` reads `SKIP_ENV_VALIDATION` that way — it is a
+ * test-harness switch, not product configuration, and adding it to the schema
+ * would make it a documented deployment knob.
+ *
+ * Without the flag this returns {@link DEV_USER} *without reading the cookie
+ * at all*, so the second identity is not merely unselected but unreachable.
+ *
  * Reading a cookie costs nothing in render semantics here — the root layout
  * already calls `cookies()` for the theme and CSP nonce, so every route is
  * dynamic regardless (issue #193).
@@ -54,6 +66,7 @@ export { DEV_USER };
  * or a non-request caller behaves exactly as it did before this existed.
  */
 async function selectDevIdentity(): Promise<User> {
+  if (!isIdentitySelectorEnabled()) return DEV_USER;
   try {
     const { cookies } = await import("next/headers");
     const requested = (await cookies()).get(DEV_IDENTITY_COOKIE)?.value;
