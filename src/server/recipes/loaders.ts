@@ -44,14 +44,44 @@ export type RecipeForViewer = Awaited<ReturnType<typeof getRecipeForViewer>>;
  * requester is not allowed to see. An unauthorized viewer gets the same
  * `notFound()` they would get for a slug that never existed.
  */
+/**
+ * Sub-routes that used to hang off the flat `/recipes/<slug>` URL and now sit a
+ * segment deeper under the cook's namespace (#666).
+ *
+ * A link shared before the cutover — `/recipes/apple-pie/cook` — now arrives at
+ * the two-segment route as `cook="apple-pie", recipe="cook"`, which resolves to
+ * nothing. Recognising these names lets the route redirect such links to the
+ * canonical URL instead of 404ing. This is only consulted *after* the namespaced
+ * lookup fails, so a cook who genuinely has a recipe slugged `cook` still wins.
+ */
+const LEGACY_RECIPE_SUB_ROUTES = new Set(["cook", "print", "keepsake", "edit"]);
+
 export const getNamespacedRecipeForViewer = cache(
   async (cook: string, recipe: string, shareToken?: string | null) => {
     const resolved = await resolveNamespacedRecipe(cook, recipe);
-    if (!resolved) {
-      return { user: await getCurrentUser(), recipe: null, canonical: true };
+    if (resolved) {
+      const loaded = await getRecipeForViewer(resolved.recipeId, shareToken);
+      return {
+        ...loaded,
+        canonical: resolved.canonical,
+        legacySubRoute: null as string | null,
+      };
     }
-    const loaded = await getRecipeForViewer(resolved.recipeId, shareToken);
-    return { ...loaded, canonical: resolved.canonical };
+
+    if (LEGACY_RECIPE_SUB_ROUTES.has(recipe)) {
+      const flat = await resolveFlatRecipe(cook);
+      if (flat) {
+        const loaded = await getRecipeForViewer(flat.recipeId, shareToken);
+        return { ...loaded, canonical: false, legacySubRoute: recipe };
+      }
+    }
+
+    return {
+      user: await getCurrentUser(),
+      recipe: null,
+      canonical: true,
+      legacySubRoute: null as string | null,
+    };
   },
 );
 

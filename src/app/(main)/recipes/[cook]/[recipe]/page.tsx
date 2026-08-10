@@ -95,8 +95,10 @@ import {
   recipeCookPath,
   recipeDetailPath,
   recipeEditPath,
+  recipeKeepsakePath,
   recipePrintPath,
 } from "~/lib/recipe-path";
+import type { Route } from "next";
 
 export async function generateMetadata({
   params,
@@ -162,32 +164,52 @@ function formatTimer(seconds: number): string {
 
 export default async function RecipePage({
   params,
+  searchParams,
   shareToken,
 }: {
   params: Promise<RecipeRouteParams>;
+  // Present on a real route render; omitted when the share route renders this
+  // component directly. Only used to carry a legacy sub-route link's query
+  // (a keepsake's `?from`/`?note`/`?t`) across the redirect (#666).
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
   // Set only when this render is reached through the `/r/<token>` share route
   // (issue #204). It both grants access to the unlisted recipe and is echoed
   // back to the share UI so "Copy link" hands out the token URL, not the slug.
   shareToken?: string;
 }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
-  const { user, recipe, canonical } = await getNamespacedRecipeForViewer(
-    cook,
-    recipeSegment,
-    shareToken,
-  );
+  const { user, recipe, canonical, legacySubRoute } =
+    await getNamespacedRecipeForViewer(cook, recipeSegment, shareToken);
   if (!recipe) notFound();
   // Only redirect once the viewer has passed `canView` above, so an alias can
   // never confirm that a recipe exists to somebody who may not see it (#666).
   // Skipped for share-token renders, which are served under `/r/<token>`.
   if (!canonical && !shareToken) {
-    permanentRedirect(
-      recipeDetailPath({
-        id: recipe.id,
-        slug: recipe.slug,
-        cook: recipe.author.slug,
-      }),
-    );
+    const ref = {
+      id: recipe.id,
+      slug: recipe.slug,
+      cook: recipe.author.slug,
+    };
+    // A pre-cutover sub-route link (`/recipes/<slug>/cook`) keeps its sub-route
+    // and its query, so a shared keepsake link still arrives with its note.
+    const target =
+      legacySubRoute === "cook"
+        ? recipeCookPath(ref)
+        : legacySubRoute === "print"
+          ? recipePrintPath(ref)
+          : legacySubRoute === "keepsake"
+            ? recipeKeepsakePath(ref)
+            : legacySubRoute === "edit"
+              ? recipeEditPath(ref)
+              : recipeDetailPath(ref);
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries((await searchParams) ?? {})) {
+      if (typeof value === "string") query.set(key, value);
+      else if (Array.isArray(value) && value[0] != null)
+        query.set(key, value[0]);
+    }
+    const suffix = query.toString();
+    permanentRedirect(suffix ? (`${target}?${suffix}` as Route) : target);
   }
 
   const t = await getTranslations("recipeDetail");
@@ -489,7 +511,7 @@ export default async function RecipePage({
           <div className="flex flex-wrap gap-2 pt-1">
             {/* Best-effort: warm the offline Cook Mode bundle for this recipe. */}
             <CookBundleWarmer
-              slug={recipe.slug}
+              recipePath={recipeDetailPath(pathRef)}
               imageSrcs={[
                 recipe.coverImageUrl,
                 ...recipe.steps.map((step) => step.imageUrl),
@@ -510,7 +532,7 @@ export default async function RecipePage({
                 <ShareButton
                   title={recipe.title}
                   author={recipe.author?.name}
-                  slug={recipe.slug}
+                  recipePath={recipeDetailPath(pathRef)}
                   shareUrl={shareUrl}
                   recipeId={recipe.id}
                   manageable={isOwner && recipe.visibility === "unlisted"}

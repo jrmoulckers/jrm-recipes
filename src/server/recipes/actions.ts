@@ -13,23 +13,7 @@ import {
   ok,
 } from "~/server/action-result";
 import { authedAction, NEEDS_DATABASE } from "~/server/action";
-import { recipeRevalidationPaths } from "~/lib/recipe-path";
-
-/**
- * Bust every cached path a recipe answers on (#666).
- *
- * A recipe is served both at its canonical `/recipes/<cook>/<slug>` URL and at
- * the flat legacy `/recipes/<slug>` one, and the App Router caches those
- * independently — so revalidating only the canonical path leaves everyone
- * arriving from an older shared link on stale content.
- */
-function revalidateRecipePaths(recipe: {
-  id: string;
-  slug: string | null;
-  cook?: string | null;
-}): void {
-  for (const path of recipeRevalidationPaths(recipe)) revalidatePath(path);
-}
+import { revalidateRecipePaths } from "./revalidate";
 import { absoluteUrl } from "~/lib/utils";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -58,6 +42,8 @@ import {
 export type ActionResult = BaseActionResult<{
   id: string;
   slug: string | null;
+  /** The author's user slug, so the caller can build the canonical URL (#666). */
+  cook?: string | null;
 }>;
 
 /**
@@ -141,7 +127,7 @@ const runCreateRecipe = authedAction({
       revalidatePath("/");
       revalidateRecipePaths({ ...recipe, cook: user.slug });
       revalidateRecipeTags(recipe.id);
-      return ok({ id: recipe.id, slug: recipe.slug });
+      return ok({ id: recipe.id, slug: recipe.slug, cook: user.slug });
     } catch (error) {
       if (isForbidden(error)) return groupForbiddenResult();
       throw error;

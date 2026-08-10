@@ -43,6 +43,29 @@ A pure add (new table/column/index) is a single expand-only step and needs no
 contract. A pure drop is only ever a _contract_ step. It must follow a deploy
 that already stopped using the thing being dropped.
 
+### Worked example: the user-scoped slug migrations (issue #666)
+
+`drizzle/0041_fuzzy_iron_man.sql` and `drizzle/0042_legal_mantis.sql` are the
+reference implementation of this convention against real user-facing data, so
+read them before writing anything similar:
+
+1. `0041` adds `users.slug` and `user_slug_aliases`. The column is added
+   nullable, backfilled in the same script from `handle` → slugified `name` →
+   `cook-<short id>` with collisions perturbed, and only then set `NOT NULL` and
+   given its unique index. Splitting those steps is what keeps the migration
+   runnable against a populated table.
+2. `0042` drops the global `recipes_slug_uq`, adds the composite
+   `recipes_author_slug_uq`, and creates `recipe_slug_aliases` **seeded from
+   every existing recipe slug** with `legacy = true`. That seed is the reason no
+   production URL broke at the cutover: the flat `/recipes/<slug>` route resolves
+   through those rows.
+
+Both are idempotent (`IF NOT EXISTS`, `WHERE … IS NULL`, `ON CONFLICT DO
+NOTHING`), which CI verifies by applying them twice to a fresh Postgres. Neither
+has a contract phase to follow: the constraint swap in `0042` is atomic within
+its transaction, and the alias tables are retained forever by design — see
+[ADR 0002](./architecture/0002-user-scoped-recipe-slugs.md).
+
 ## Idempotency (required)
 
 Migrations may re-run against a shared preview/branch database, so every

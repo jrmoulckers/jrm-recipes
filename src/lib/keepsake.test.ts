@@ -7,19 +7,21 @@ import {
 } from "./keepsake";
 
 describe("buildKeepsakePath", () => {
+  const RECIPE_PATH = "/recipes/nonna/banana-bread";
+
   it("builds a bare keepsake path when there is no message", () => {
-    expect(buildKeepsakePath("banana-bread", {})).toBe(
-      "/recipes/banana-bread/keepsake",
+    expect(buildKeepsakePath(RECIPE_PATH, {})).toBe(
+      "/recipes/nonna/banana-bread/keepsake",
     );
   });
 
   it("encodes the sender, note, and share token", () => {
-    const path = buildKeepsakePath("banana-bread", {
+    const path = buildKeepsakePath(RECIPE_PATH, {
       from: "Nonna",
       note: "The one you loved as a girl. Love, Nonna.",
       token: "abc123",
     });
-    expect(path.startsWith("/recipes/banana-bread/keepsake?")).toBe(true);
+    expect(path.startsWith(`${RECIPE_PATH}/keepsake?`)).toBe(true);
     const query = new URLSearchParams(path.split("?")[1]);
     expect(query.get("from")).toBe("Nonna");
     expect(query.get("note")).toBe("The one you loved as a girl. Love, Nonna.");
@@ -27,12 +29,19 @@ describe("buildKeepsakePath", () => {
   });
 
   it("omits empty/whitespace fields", () => {
-    const path = buildKeepsakePath("x", { from: "  ", note: "", token: null });
-    expect(path).toBe("/recipes/x/keepsake");
+    const path = buildKeepsakePath(RECIPE_PATH, {
+      from: "  ",
+      note: "",
+      token: null,
+    });
+    expect(path).toBe(`${RECIPE_PATH}/keepsake`);
   });
 
   it("round-trips through parseKeepsakeMessage", () => {
-    const path = buildKeepsakePath("x", { from: "Papa", note: "Enjoy!" });
+    const path = buildKeepsakePath(RECIPE_PATH, {
+      from: "Papa",
+      note: "Enjoy!",
+    });
     const parsed = parseKeepsakeMessage(
       Object.fromEntries(new URLSearchParams(path.split("?")[1])),
     );

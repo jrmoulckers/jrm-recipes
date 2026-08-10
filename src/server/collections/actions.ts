@@ -15,6 +15,7 @@ import {
   toggleFavorite,
   unshareCollectionWithGroup,
 } from "./mutations";
+import { revalidateRecipeSlugPaths } from "~/server/recipes/revalidate";
 import {
   collectionGroupShareInput,
   collectionInput,
@@ -71,7 +72,7 @@ export async function toggleFavoriteAction(
     const { favorited } = await toggleFavorite(parsed.data.recipeId, user);
     revalidatePath("/collections");
     if (parsed.data.recipeSlug) {
-      revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+      await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     }
     return { ok: true, favorited };
   } catch (error) {

@@ -761,6 +761,8 @@ export async function listLibraryRecipeIds(
 export type DinnerCandidate = {
   id: string;
   slug: string;
+  /** The author's user slug — the namespace segment of the canonical URL (#666). */
+  cook: string | null;
   title: string;
   coverImageUrl: string | null;
   cuisine: string | null;
@@ -802,6 +804,7 @@ export async function listDinnerCandidates(
       },
       with: {
         tags: { with: { tag: { columns: { name: true } } } },
+        author: { columns: { slug: true } },
       },
     }),
     db.query.mealPlanEntries.findMany({
@@ -828,8 +831,9 @@ export async function listDinnerCandidates(
       recipe.difficulty !== "hard",
   );
   const pool = preferred.length > 0 ? preferred : available;
-  return pool.slice(0, limit).map(({ tags, ...recipe }) => ({
+  return pool.slice(0, limit).map(({ tags, author, ...recipe }) => ({
     ...recipe,
+    cook: author?.slug ?? null,
     tags: tags.map(({ tag }) => tag.name),
   }));
 }

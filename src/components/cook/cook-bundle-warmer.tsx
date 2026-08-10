@@ -20,8 +20,8 @@ import {
  * `cookPagePath` in `cook-warm`, which builds the same path for the service
  * worker.
  */
-function cookRoute(slug: string): Route {
-  return `/recipes/${slug}/cook` as Route;
+function cookRoute(recipePath: string): Route {
+  return `${recipePath}/cook` as Route;
 }
 
 /**
@@ -38,23 +38,24 @@ function cookRoute(slug: string): Route {
  * (offline, no service worker, or an unsupported API).
  */
 export function CookBundleWarmer({
-  slug,
+  recipePath,
   imageSrcs,
 }: {
-  slug: string;
+  /** The recipe's canonical detail path; Cook Mode hangs off it (#666). */
+  recipePath: string;
   imageSrcs: string[];
 }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!slug) return;
+    if (!recipePath) return;
     let cancelled = false;
 
     const run = () => {
       if (cancelled) return;
 
       try {
-        router.prefetch(cookRoute(slug));
+        router.prefetch(cookRoute(recipePath));
       } catch {
         // Prefetch is a bonus. Ignore failures.
       }
@@ -68,7 +69,9 @@ export function CookBundleWarmer({
           window.devicePixelRatio,
           (src, width) => cloudinaryLoader({ src, width }),
         );
-        controller.postMessage(buildWarmCookBundleMessage({ slug, imageUrls }));
+        controller.postMessage(
+          buildWarmCookBundleMessage({ recipePath, imageUrls }),
+        );
       } catch {
         // Warming is best-effort. Never surface an error to the cook.
       }
@@ -91,7 +94,7 @@ export function CookBundleWarmer({
       }
       if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     };
-  }, [router, slug, imageSrcs]);
+  }, [router, recipePath, imageSrcs]);
 
   return null;
 }

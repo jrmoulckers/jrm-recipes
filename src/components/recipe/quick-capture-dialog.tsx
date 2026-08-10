@@ -22,8 +22,9 @@ import { ImageUploadField } from "~/components/ui/image-upload";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { recipeEditPath } from "~/lib/recipe-path";
 
-type SavedDraft = { id: string; slug: string | null };
+type SavedDraft = { id: string; slug: string | null; cook?: string | null };
 
 /**
  * Quick-capture flow (#389): title + optional photo + one freeform box, saved
@@ -83,7 +84,7 @@ export function QuickCaptureDialog() {
     startTransition(async () => {
       const result = await createRecipeAction(input);
       if (result.ok) {
-        setSaved({ id: result.id, slug: result.slug });
+        setSaved({ id: result.id, slug: result.slug, cook: result.cook });
         toast.success(t("quickCapture.toast.saved"));
         router.refresh();
       } else {
@@ -111,7 +112,7 @@ export function QuickCaptureDialog() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button asChild className="sm:flex-1">
-                <Link href={`/recipes/${saved.slug ?? saved.id}/edit`}>
+                <Link href={recipeEditPath(saved)}>
                   <PencilLine /> {t("quickCapture.finish")}
                 </Link>
               </Button>

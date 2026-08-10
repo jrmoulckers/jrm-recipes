@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { PUBLIC_RECIPES_TAG } from "~/server/recipes/cache";
+import { revalidateRecipeSlugPaths } from "~/server/recipes/revalidate";
 import {
   type ActionResult as BaseActionResult,
   fail,
@@ -60,7 +61,7 @@ export async function addCommentAction(
     return fail(RATE_LIMITED_MESSAGE);
   try {
     await createComment(parsed.data, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -88,7 +89,7 @@ export async function deleteCommentAction(
   const user = await requireUser();
   try {
     await deleteComment(parsed.data.commentId, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -116,7 +117,7 @@ export async function resolveCommentAction(
   const user = await requireUser();
   try {
     await resolveComment(parsed.data.commentId, user, parsed.data.resolved);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -152,7 +153,7 @@ export async function applySuggestionAction(
       },
       user,
     );
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -183,7 +184,7 @@ export async function setRatingAction(
     return fail(RATE_LIMITED_MESSAGE);
   try {
     await setRating(parsed.data, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     // The cached public "top-rated" feed ranks by live rating score, so a
     // rating change must invalidate the feed tag, not just the detail path.
     revalidateTag(PUBLIC_RECIPES_TAG);
@@ -215,7 +216,7 @@ export async function removeRatingAction(
   const user = await requireUser();
   try {
     await removeRating(parsed.data.recipeId, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     // Removing a rating likewise re-ranks the cached public feed.
     revalidateTag(PUBLIC_RECIPES_TAG);
     return { ok: true };
@@ -242,7 +243,7 @@ export async function upsertReviewAction(
   const user = await requireUser();
   try {
     await upsertReview(parsed.data, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -270,7 +271,7 @@ export async function deleteReviewAction(
   const user = await requireUser();
   try {
     await deleteReview(parsed.data.reviewId, user);
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     return fail(
@@ -305,7 +306,7 @@ export async function toggleReactionAction(
       },
       user,
     );
-    revalidatePath(`/recipes/${parsed.data.recipeSlug}`);
+    await revalidateRecipeSlugPaths(parsed.data.recipeSlug);
     return ok({ reacted });
   } catch (error) {
     return fail(

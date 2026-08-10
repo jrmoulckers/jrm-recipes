@@ -22,9 +22,15 @@ export interface WarmCookBundleMessage {
   imageUrls: string[];
 }
 
-/** Path Cook Mode is served from for a given recipe id/slug. */
-export function cookPagePath(slug: string): string {
-  return `/recipes/${slug}/cook`;
+/**
+ * Path Cook Mode is served from, given a recipe's canonical detail path.
+ *
+ * Takes the built path rather than a slug because Cook Mode now sits one
+ * segment below the recipe inside its cook's namespace (#666); a slug-only path
+ * would address a different recipe entirely.
+ */
+export function cookPagePath(recipePath: string): string {
+  return `${recipePath}/cook`;
 }
 
 /**
@@ -83,12 +89,12 @@ export function cookImageUrlsToWarm(
 
 /** Build the warm message for a recipe's Cook bundle. */
 export function buildWarmCookBundleMessage(input: {
-  slug: string;
+  recipePath: string;
   imageUrls: string[];
 }): WarmCookBundleMessage {
   return {
     type: WARM_COOK_BUNDLE_MESSAGE_TYPE,
-    pageUrls: [cookPagePath(input.slug)],
+    pageUrls: [cookPagePath(input.recipePath)],
     imageUrls: input.imageUrls,
   };
 }

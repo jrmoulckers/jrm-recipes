@@ -68,7 +68,7 @@ function cardImageUrl(): string {
 export function ShareButton({
   title,
   author,
-  slug,
+  recipePath,
   shareUrl,
   recipeId,
   manageable = false,
@@ -78,8 +78,9 @@ export function ShareButton({
 }: {
   title: string;
   author?: string | null;
-  // Recipe slug, used to build the personalized "keepsake" link.
-  slug: string;
+  // The recipe's canonical detail path, used to build the personalized
+  // "keepsake" link, which hangs off it (#666).
+  recipePath: string;
   // Absolute URL to hand out when sharing. For unlisted recipes this is the
   // unguessable `/r/<token>` link (issue #204). When omitted, we fall back to the
   // current page URL (public/group recipes, where the address is shareable).
@@ -220,7 +221,11 @@ export function ShareButton({
 
   /** Absolute personalized keepsake URL carrying the current name + note. */
   function keepsakeUrl(): string {
-    const path = buildKeepsakePath(slug, { from, note, token: keepsakeToken });
+    const path = buildKeepsakePath(recipePath, {
+      from,
+      note,
+      token: keepsakeToken,
+    });
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     return `${origin}${path}`;
   }

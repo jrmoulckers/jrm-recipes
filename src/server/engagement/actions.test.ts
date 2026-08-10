@@ -13,12 +13,14 @@ const {
   requireUserMock,
   setRatingMock,
   removeRatingMock,
+  findManyMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   revalidateTagMock: vi.fn(),
   requireUserMock: vi.fn(),
   setRatingMock: vi.fn(),
   removeRatingMock: vi.fn(),
+  findManyMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -30,7 +32,10 @@ vi.mock("next/cache", () => ({
       fn(...args),
 }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
-vi.mock("~/server/db", () => ({ isDbConfigured: () => true }));
+vi.mock("~/server/db", () => ({
+  isDbConfigured: () => true,
+  db: { query: { recipes: { findMany: findManyMock } } },
+}));
 vi.mock("./mutations", () => ({
   createComment: vi.fn(),
   deleteComment: vi.fn(),
@@ -48,6 +53,9 @@ beforeEach(() => {
   requireUserMock.mockResolvedValue({ id: "user_1" });
   setRatingMock.mockResolvedValue(undefined);
   removeRatingMock.mockResolvedValue(undefined);
+  findManyMock.mockResolvedValue([
+    { id: "rec_1", slug: "apple-pie", author: { slug: "ada" } },
+  ]);
 });
 
 describe("setRatingAction revalidation", () => {
@@ -60,6 +68,9 @@ describe("setRatingAction revalidation", () => {
 
     expect(res).toEqual({ ok: true });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+    // A recipe also answers on its canonical namespaced URL, cached
+    // independently by the App Router, so both have to be busted (#666).
+    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/ada/apple-pie");
     expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
@@ -86,6 +97,7 @@ describe("removeRatingAction revalidation", () => {
 
     expect(res).toEqual({ ok: true });
     expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/apple-pie");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/recipes/ada/apple-pie");
     expect(revalidateTagMock).toHaveBeenCalledWith(PUBLIC_RECIPES_TAG);
   });
 
