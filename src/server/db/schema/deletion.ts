@@ -68,7 +68,14 @@ export const deletionRecords = pgTable(
      * erasure actually reached each store.
      */
     deletedCounts: jsonb().$type<Record<string, number>>(),
-    /** Recipes that survived because the departing user was a non-owner creator. */
+    /**
+     * Recipes that survived because the departing user was a non-owner creator.
+     *
+     * Accurate as retention evidence. But this column is also the only
+     * retrospective estimate of the #694 remediation population, and for that
+     * purpose it is an **upper bound** — it counts recipes the user could have
+     * edited, not ones they did (#728).
+     */
     retainedRecipeCount: integer().notNull().default(0),
     /** Cloudinary assets successfully destroyed before the DB delete. */
     purgedAssetCount: integer().notNull().default(0),
