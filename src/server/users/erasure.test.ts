@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -166,6 +169,55 @@ describe("eraseUserAccount", () => {
     // A retryable partial failure, not a half-erased account.
     expect(state.calls).not.toContain("delete users");
     expect(state.calls).not.toContain("BEGIN");
+  });
+
+  /**
+   * The `ON DELETE` action `retainedRecipeCount`'s measurement note is premised
+   * on (#736).
+   *
+   * `erasure.ts` documents two bases for tightening the bound from "recipes the
+   * user could have edited" to "recipes they did", and says they need different
+   * treatment: `recipe_versions` is preserved by ordering alone, while
+   * `recipe_events` is not, because `actorId` is `set null` and the `users`
+   * delete detaches it regardless of where a capture step sits.
+   *
+   * That asymmetry is the entire content of the note, and it lives in a foreign
+   * key rather than a call site. Flipping `actorId` to `cascade` would make the
+   * two bases behave alike and the note actively wrong — while every ordering
+   * assertion in this file stays green, because no call site changes. Most
+   * sibling FKs on `recipes.ts` are `cascade`, so the flip reads as a
+   * consistency cleanup, which is the direction #716 records as dangerous.
+   */
+  it("keeps recipe_events.actorId set-null, which the measurement note assumes", () => {
+    const schema = readFileSync(
+      join(
+        resolve(dirname(fileURLToPath(import.meta.url)), "../db/schema"),
+        "recipes.ts",
+      ),
+      "utf8",
+    );
+
+    // The `recipeEvents` table body, from its declaration to the next export.
+    const start = schema.indexOf("export const recipeEvents");
+    expect(
+      start,
+      "recipeEvents declaration not found — has it been renamed?",
+    ).toBeGreaterThanOrEqual(0);
+    const next = schema.indexOf("\nexport const ", start + 1);
+    const body = schema.slice(start, next === -1 ? undefined : next);
+
+    const actorId = /actorId:\s*fk\(\)[\s\S]*?onDelete:\s*"([\w ]+)"/.exec(
+      body,
+    );
+
+    expect(
+      actorId?.[1],
+      "recipe_events.actorId is no longer `set null`. The measurement note in " +
+        "erasure.ts says the users delete detaches these rows regardless of " +
+        "where a capture step sits, and that the basis therefore differs from " +
+        "recipe_versions. Changing this does not trip the ordering checks " +
+        "above — it changes what they are guarding.",
+    ).toBe("set null");
   });
 
   it("counts every accepted non-owned creator row, edited or not (upper bound)", async () => {

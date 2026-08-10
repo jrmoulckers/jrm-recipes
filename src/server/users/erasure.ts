@@ -210,11 +210,30 @@ export async function eraseUserAccount(
     //      is the expected gap, not evidence of a missed recipe.
     //   2. The ordering hazard applies to *measuring* the problem, not only to
     //      fixing it. Tightening this bound — working out which of these
-    //      recipes the user actually edited — needs `recipe_versions` rows
-    //      keyed to them, and those are what the delete below removes. So every
-    //      erasure narrows both the remedy and the estimate of how much remedy
-    //      was needed. The bound survives on the tombstone; the ability to
-    //      tighten it does not.
+    //      recipes the user actually edited — needs rows keyed to them that
+    //      this function destroys. So every erasure narrows both the remedy and
+    //      the estimate of how much remedy was needed. The bound survives on
+    //      the tombstone; the ability to tighten it does not.
+    //
+    //      There are TWO such bases and they need DIFFERENT treatment (#736):
+    //
+    //      `recipe_versions.authorId` gives the diff, and is destroyed by the
+    //      explicit delete below. Ordering is sufficient: compute above that
+    //      line and the rows are intact.
+    //
+    //      `recipe_events.actorId` gives which recipes were edited at all —
+    //      `updateRecipe` writes an "updated" event per edit, and since #685
+    //      that actor can be a co-creator on a recipe they do not own. Ordering
+    //      is NOT sufficient here. That column is `ON DELETE set null`, so the
+    //      `users` delete at the end of this transaction severs it even if the
+    //      explicit delete below were removed. The rows survive with the actor
+    //      detached — pseudonymized, not retained, the same distinction drawn
+    //      above. Preserving this basis takes an affirmative capture step, not
+    //      merely a later delete.
+    //
+    //      A remedy that treats "compute above the delete" as the whole
+    //      constraint gets the first right and the second wrong, and fails
+    //      silently: the query still returns rows, they are just all detached.
     const owned = await t
       .select({ id: recipes.id })
       .from(recipes)
@@ -311,6 +330,15 @@ export async function eraseUserAccount(
         .where(eq(recipeVersions.authorId, userId))
         .returning({ id: recipeVersions.id }),
     );
+    // Timeline events this user caused. `updateRecipe` writes an "updated"
+    // event per edit, so these rows are the second measurement basis described
+    // at the top of this function (#736): which recipes a co-creator edited,
+    // as distinct from which words they wrote.
+    //
+    // Unlike the statement above, removing THIS delete would not preserve that
+    // basis. `recipeEvents.actorId` is `ON DELETE set null`, so the `users`
+    // delete at the end of this transaction detaches the rows anyway. Retaining
+    // the linkage takes an affirmative capture step before that point.
     counts.recipe_events = await deleteCounted(t, () =>
       t
         .delete(recipeEvents)
