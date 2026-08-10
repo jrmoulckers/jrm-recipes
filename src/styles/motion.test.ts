@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -19,7 +19,7 @@ const THEMES_CSS = read("src", "styles", "themes.css");
 const TAILWIND = read("tailwind.config.ts");
 
 /**
- * Bans on untokenized motion (#750, #756, #758).
+ * Bans on untokenized motion (#750, #756, #758, #759).
  *
  * `duration-*` and the animation easings are asserted by **extracting** what is
  * actually used and comparing it against the tokenized set, rather than banning
@@ -28,12 +28,16 @@ const TAILWIND = read("tailwind.config.ts");
  * - It fails *closed*. `not.toContain(literal)` fails open, because a typo makes
  *   the literal absent and absence is indistinguishable from passing. A rotted
  *   extractor here yields `[]`, which is not equal to the expected set.
- * - It asserts the property rather than one instance of it. The previous version
+ * - It covers every duration rather than one per file. The version before #758
  *   checked `button` against `duration-150` and `card` against `duration-200` —
- *   two of the ten durations Tailwind ships, one per file — so `duration-300`
- *   added beside `duration-fast` passed, `tabs.tsx` had no ban at all, and a
- *   newly added animation with a hardcoded easing passed. All three verified
- *   silent before this change.
+ *   two of the ten durations Tailwind ships — so `duration-300` added beside
+ *   `duration-fast` passed, and a newly added animation with a hardcoded easing
+ *   passed. Both verified silent before that change.
+ *
+ * #759 covers the other axis. #758 still iterated three hand-written filenames,
+ * and `src/components/ui` has five files using `duration-*`, so `duration-500`
+ * in `dialog.tsx` and `duration-1000` in `close-button.tsx` were both silent on
+ * `079b55f`. Enumerating the directory covers new primitives on arrival.
  *
  * This also retires the probe/anchor apparatus #753 and #756 built around the
  * two duration literals: with no literal to keep in sync, there is nothing to
@@ -48,13 +52,10 @@ const RAW_TRANSFORM = "transform:";
 const durationTokensIn = (source: string) =>
   [...source.matchAll(/\bduration-([A-Za-z0-9.]+)\b/g)].map((m) => m[1]!);
 
-/** Every animation shorthand declared in the Tailwind `animation` block. */
-const animationValues = (config: string) => {
-  const start = config.indexOf("animation: {");
-  expect(
-    start,
-    "tailwind.config.ts declares an animation block",
-  ).toBeGreaterThan(-1);
+/** The body of a named object literal in the Tailwind config. */
+const blockOf = (config: string, header: string) => {
+  const start = config.indexOf(header);
+  expect(start, `tailwind.config.ts declares ${header}`).toBeGreaterThan(-1);
   let depth = 0;
   let i = config.indexOf("{", start);
   const from = i;
@@ -62,20 +63,61 @@ const animationValues = (config: string) => {
     if (config[i] === "{") depth++;
     else if (config[i] === "}" && --depth === 0) break;
   }
-  return [...config.slice(from, i).matchAll(/:\s*"([^"]+)"/g)].map(
-    (m) => m[1]!,
-  );
+  return config.slice(from, i);
 };
 
+/** Every animation shorthand declared in the Tailwind `animation` block. */
+const animationValues = (config: string) =>
+  [...blockOf(config, "animation: {").matchAll(/:\s*"([^"]+)"/g)].map(
+    (m) => m[1]!,
+  );
+
+/**
+ * The duration token names Tailwind exposes, e.g. fast / base / slow.
+ *
+ * Extracted rather than restated, so the expected side comes from the config
+ * that declares the tokens and the actual side from the components that use
+ * them. Two independent sources, so this is not a self-supplied comparison.
+ */
+const tokenizedDurations = (config: string) =>
+  [
+    ...blockOf(config, "transitionDuration: {").matchAll(
+      /(\w+):\s*"var\(--duration-[\w-]+\)"/g,
+    ),
+  ].map((m) => m[1]!);
+
+/** Every UI primitive, enumerated rather than listed (#759). */
+const PRIMITIVES = readdirSync(join(ROOT, "src", "components", "ui")).filter(
+  (file) => file.endsWith(".tsx") && !file.includes(".test."),
+);
+
 describe("motion bans (issue #758)", () => {
-  it.each([
-    ["button.tsx", ["fast"]],
-    ["card.tsx", ["base"]],
-    ["tabs.tsx", ["fast"]],
-  ] as const)("%s uses only tokenized durations", (file, expected) => {
-    expect(durationTokensIn(read("src", "components", "ui", file))).toEqual([
-      ...expected,
-    ]);
+  it("every UI primitive uses only tokenized durations", () => {
+    const tokenized = tokenizedDurations(TAILWIND);
+    expect(
+      tokenized.length,
+      "Tailwind exposes duration tokens",
+    ).toBeGreaterThan(0);
+    expect(PRIMITIVES.length, "UI primitives were found").toBeGreaterThan(0);
+
+    let checked = 0;
+    for (const file of PRIMITIVES) {
+      for (const used of durationTokensIn(
+        read("src", "components", "ui", file),
+      )) {
+        checked++;
+        expect(
+          tokenized,
+          `${file} uses an untokenized duration-${used}`,
+        ).toContain(used);
+      }
+    }
+    // A per-file `toEqual([...])` is non-vacuous by construction, because a
+    // non-empty expected value cannot be satisfied by extracting nothing.
+    // "Every extracted token is tokenized" is vacuously true over zero tokens,
+    // so restating it as a sweep reintroduces the vacuity of #751/#754. Count
+    // the assertions actually made.
+    expect(checked, "durations were actually extracted").toBeGreaterThan(0);
   });
 
   it("every animation is tokenized, including ones added later", () => {
