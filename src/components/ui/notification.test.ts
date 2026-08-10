@@ -42,6 +42,7 @@ const SONNER = readCode("src/components/ui/sonner.tsx");
  * meaningless and should be revisited rather than quietly kept.
  */
 const RICH_COLORS = "richColors";
+const HAND_ROLLED_CARD = "bg-card/95";
 
 describe("toast surface", () => {
   it("bans a prop Sonner really has, so the ban cannot rot", () => {
@@ -98,6 +99,16 @@ describe("toast surface", () => {
 });
 
 describe("notification banners", () => {
+  it("still matches the hand-rolled card class, so the ban can fire (#750)", () => {
+    // The ban below is the only check that can notice its violation: the class
+    // is *added* to a className and does not displace the shared-surface calls
+    // asserted positively beside it. A negative over source text passes
+    // whenever the literal is absent, and a misspelled literal is always absent.
+    expect(
+      '<div className="rounded-lg border bg-card/95 p-4 shadow-lg">',
+    ).toContain(HAND_ROLLED_CARD);
+  });
+
   it.each([
     "src/components/pwa/install-prompt.tsx",
     "src/components/pwa/update-prompt.tsx",
@@ -108,6 +119,6 @@ describe("notification banners", () => {
     expect(source).toContain("notificationTitle");
     expect(source).toContain("notificationDescription");
     // The hand-rolled card these replaced.
-    expect(source).not.toContain("bg-card/95");
+    expect(source).not.toContain(HAND_ROLLED_CARD);
   });
 });

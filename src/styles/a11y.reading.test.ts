@@ -34,6 +34,8 @@ const LAYOUT = readFileSync(join(ROOT, "src", "app", "layout.tsx"), "utf8");
 
 const FONT_DIR = join(ROOT, "src", "fonts", "atkinson-hyperlegible");
 
+const BARE_FAMILY = '"Atkinson Hyperlegible"';
+
 const FONT_FILES = [
   "AtkinsonHyperlegible-Regular.woff2",
   "AtkinsonHyperlegible-Italic.woff2",
@@ -51,6 +53,17 @@ function ruleBody(css: string, selector: string): string | null {
 }
 
 describe("easy-reading dyslexia font (issue #129)", () => {
+  it("still matches a bare local family name, so the ban can fire (#750)", () => {
+    // The ban below is the only check that can notice its violation: a bare
+    // family name is *added* to a font stack beside `var(--font-atkinson)`, so
+    // the positive assertions pass with it present. A negative over source text
+    // passes whenever the literal is absent, and a misspelled literal is always
+    // absent.
+    expect(
+      '--font-body: "Atkinson Hyperlegible", var(--font-atkinson);',
+    ).toContain(BARE_FAMILY);
+  });
+
   it("maps body + display type onto the self-hosted --font-atkinson variable", () => {
     const body = ruleBody(A11Y_CSS, '[data-reading="readable"]');
     expect(body, "[data-reading=readable] rule should exist").not.toBeNull();
@@ -62,7 +75,7 @@ describe("easy-reading dyslexia font (issue #129)", () => {
     const body = ruleBody(A11Y_CSS, '[data-reading="readable"]') ?? "";
     // The bare family name assumes the reader already has the font. The fix
     // loads it via the CSS variable instead.
-    expect(body).not.toMatch(/"Atkinson Hyperlegible"/);
+    expect(body).not.toContain(BARE_FAMILY);
   });
 
   it("ships the self-hosted woff2 assets (offline-capable PWA)", () => {
