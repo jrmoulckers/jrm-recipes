@@ -121,7 +121,9 @@ export function isVersionConflict(err: unknown): boolean {
  * transaction, the retry re-runs {@link uniqueSlug} against newly-committed
  * rows, so the DB constraint, not the app-side loop, is the source of truth.
  */
-async function withSlugConflictRetry<T>(op: () => Promise<T>): Promise<T> {
+export async function withSlugConflictRetry<T>(
+  op: () => Promise<T>,
+): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await op();

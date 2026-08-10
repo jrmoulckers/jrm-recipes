@@ -13,7 +13,7 @@ import {
   ok,
 } from "~/server/action-result";
 import { authedAction, NEEDS_DATABASE } from "~/server/action";
-import { revalidateRecipePaths } from "./revalidate";
+import { revalidateRecipePaths, revalidateRecipeTags } from "./revalidate";
 import { absoluteUrl } from "~/lib/utils";
 import { domainCodeOf, messageForError } from "~/server/errors";
 import { isAnalyticsConfigured } from "~/lib/analytics/config";
@@ -23,7 +23,7 @@ import { checkRateLimit, RATE_LIMITED_MESSAGE } from "~/server/rate-limit";
 import { importRecipeFromUrl, type ImportResult } from "./import";
 import { parseRecipeText } from "./import-text";
 import { recipeInput, type RecipeInput } from "./validation";
-import { recipeMutationTags, recipeTag } from "./cache-tags";
+import { recipeTag } from "./cache-tags";
 import { diffRecipeSnapshots, type RecipeDiff } from "~/lib/recipe-diff";
 import { recipeToInput } from "./timeline";
 import { getRecipeForViewer } from "./loaders";
@@ -61,15 +61,6 @@ function isForbidden(error: unknown): boolean {
 
 function groupForbiddenResult(): ActionResult {
   return fail(GROUP_FORBIDDEN, { groupId: [GROUP_FORBIDDEN] });
-}
-
-/**
- * Invalidate the Next data-cache tags for a recipe write: the recipe entity
- * plus the public list feed that may include it (#160). Replaces the bare
- * `revalidateTag(PUBLIC_RECIPES_TAG)` so a write busts its entity tag too.
- */
-function revalidateRecipeTags(id: string) {
-  for (const tag of recipeMutationTags(id)) revalidateTag(tag);
 }
 
 const runCreateRecipe = authedAction({
@@ -125,7 +116,7 @@ const runCreateRecipe = authedAction({
       }
       revalidatePath("/recipes");
       revalidatePath("/");
-      revalidateRecipePaths({ ...recipe, cook: user.slug });
+      await revalidateRecipePaths({ ...recipe, cook: user.slug });
       revalidateRecipeTags(recipe.id);
       return ok({ id: recipe.id, slug: recipe.slug, cook: user.slug });
     } catch (error) {
@@ -156,7 +147,7 @@ const runUpdateRecipe = authedAction({
         visibility: data.visibility,
       });
       revalidatePath("/recipes");
-      revalidateRecipePaths({ id, slug: recipe.slug, cook: user.slug });
+      await revalidateRecipePaths({ id, slug: recipe.slug, cook: user.slug });
       revalidateRecipeTags(id);
       return ok({ id, slug: recipe.slug });
     } catch (error) {
@@ -188,7 +179,7 @@ export async function forkRecipeAction(
       sourceId,
     });
     revalidatePath("/recipes");
-    revalidateRecipePaths(recipe.source);
+    await revalidateRecipePaths(recipe.source);
     revalidateRecipeTags(recipe.id);
     revalidateTag(recipeTag(sourceId));
     return ok({ id: recipe.id, slug: recipe.slug });
@@ -220,7 +211,7 @@ export async function revertRecipeAction(
       recipeId: recipe.id,
       versionNumber,
     });
-    revalidateRecipePaths({ ...recipe, cook: user.slug });
+    await revalidateRecipePaths({ ...recipe, cook: user.slug });
     revalidatePath("/recipes");
     revalidateRecipeTags(recipe.id);
     return ok({ id: recipe.id, slug: recipe.slug });
@@ -343,7 +334,7 @@ export async function restoreRecipeAction(id: string): Promise<boolean> {
     return false;
   }
   revalidatePath("/recipes");
-  revalidateRecipePaths({ ...restored, cook: user.slug });
+  await revalidateRecipePaths({ ...restored, cook: user.slug });
   revalidateRecipeTags(restored.id);
   return true;
 }
