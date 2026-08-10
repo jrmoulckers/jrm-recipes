@@ -42,6 +42,13 @@ const mutations = readFileSync(
  * The check is deliberately source-level: the property is "no *other* write path
  * consults `recipeCreators`", and the only way to assert an absence across every
  * mutation is to read the module rather than one call.
+ *
+ * #720: spans are contiguous, so a top-level declaration this model does not
+ * recognise is absorbed into the preceding span and inherits its sanction. An
+ * arrow-declared write path next to `assertRecipeEditAccess` therefore read as
+ * being *inside* it, and its private creator lookup passed. The fix is not to
+ * enumerate more function shapes — that repeats the same under-reach one shape
+ * later — but to detect the absorption itself, below.
  */
 
 /** Top-level function spans in `mutations.ts`, keyed by name. */
@@ -72,6 +79,43 @@ function bodyOf(name: string): string {
 }
 
 describe("co-creator write escalation", () => {
+  /**
+   * The span model is faithful: no span has absorbed a declaration (#720).
+   *
+   * Every check in this file sanctions or inspects code *by span*, and spans run
+   * from one recognised declaration to the next, so they tile the module to EOF.
+   * A declaration the `declaration` regex does not match is not a boundary — it
+   * is swallowed by the span above it. Next to a sanctioned function that grants
+   * a rogue write path the sanction; next to an owner-only one it lets a
+   * neighbour's `authorId` predicate satisfy an assertion about a body that no
+   * longer has one.
+   *
+   * This asserts the cause rather than either symptom, and does it without
+   * enumerating function shapes — extending the regex to arrows would just move
+   * the hole to `class`, `let` or `export default`. Inside a real function body
+   * every line is indented, so a binding keyword in column zero means the span
+   * covers something the model never saw.
+   *
+   * It is also self-testing: if the declaration regex rots, spans collapse into
+   * each other, swallow many column-zero bindings and this fires. A guard that
+   * cannot silently stop working is worth more than one that needs a second
+   * guard to watch it.
+   */
+  it("has no span that swallowed an unrecognised declaration", () => {
+    const binding =
+      /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|const|let|var|class)\b/;
+
+    for (const [name, span] of spans) {
+      const [, ...rest] = mutations.slice(span.start + 1, span.end).split("\n");
+      const absorbed = rest.filter((line) => binding.test(line));
+
+      expect(
+        absorbed,
+        `the span for ${name} contains a top-level declaration, so the span model did not recognise it and ${name}'s span has swallowed it. Anything asserted about ${name} — including any sanction — now silently covers that code too. Teach \`declaration\` to recognise the form rather than widening the sanction.`,
+      ).toEqual([]);
+    }
+  });
+
   it("confines every recipeCreators reference to the two sanctioned gates", () => {
     // `slugTaken` (#679) must see a creator's slug because it occupies that
     // creator's namespace, and `assertRecipeEditAccess` (#685) is the single
