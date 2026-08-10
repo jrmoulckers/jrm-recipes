@@ -105,6 +105,38 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
  * int4 silently. Overload resolution, an explicit `::int`, and
  * `hashtextextended(...)::int` all raise instead.
  *
+ * ## Do not drop `xact` from the function name (issue #740)
+ *
+ * Widening and NULL are both about *which key* is taken. There is a third axis,
+ * *how long it is held*, and it fails in the opposite direction: not "no lock
+ * taken", but **a lock taken and never given back, which degrades to no lock at
+ * all on the connection that matters.**
+ *
+ * `pg_advisory_xact_lock` -> `pg_advisory_lock` is a five-character edit. Both
+ * overloads exist, both take `(int, int)`, and the session-scoped form is the
+ * one most examples show. It type-checks and every behavioural test passes.
+ *
+ * It locks correctly. It never releases: session-scoped locks outlive `COMMIT`
+ * and are freed only by explicit unlock or disconnect. `server/db/index.ts`
+ * reuses connections (`max: 1` in production, cached across HMR in dev, for
+ * Neon/PgBouncer transaction pooling), so the leak lands on a long-lived
+ * connection — and because advisory locks are re-entrant, *that same connection
+ * re-acquires the key successfully every time*. The lock keeps reporting
+ * success while providing no mutual exclusion at all, and `slugTaken` probes
+ * the three tables unserialized. Every other connection, meanwhile, blocks on a
+ * lock whose transaction committed long ago.
+ *
+ * Measured on `postgres:16` (issue #740), one connection, sequential
+ * transactions:
+ *
+ *     begin; select pg_advisory_lock(668,1); commit;
+ *     select count(*) from pg_locks where locktype='advisory';  -> 1  (survived)
+ *     begin; select pg_try_advisory_lock(668,1); commit;        -> t  (silent)
+ *
+ * and from a second connection while that holder sits idle post-`COMMIT`:
+ * `pg_try_advisory_lock(668,1)` -> `f`, against a control on an unrelated key
+ * -> `t`. With the `xact` form, `pg_locks` is empty after `COMMIT` instead.
+ *
  * `hashtext` itself is not part of the documented PostgreSQL API and carries no
  * cross-version compatibility guarantee. That is harmless here only because a
  * lock key is never persisted or compared across servers — it is computed, used
