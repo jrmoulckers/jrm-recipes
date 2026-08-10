@@ -5,13 +5,32 @@
 name: CI
 
 on:
-  # Run the full gate on pushes to main and to the long-lived staging branch
-  # (#266), on every PR targeting main, and when Release Please explicitly
-  # dispatches CI for its GITHUB_TOKEN-created release PR.
+  # Run on pushes to main and to the long-lived staging branch (#266), on
+  # *every* pull request whatever its base branch, and when Release Please
+  # explicitly dispatches CI for its GITHUB_TOKEN-created release PR.
+  #
+  # What runs on a stacked PR (#672). The `pull_request` trigger deliberately
+  # carries no `branches:` filter. It used to be `branches: [main]`, which meant
+  # a PR based on any other branch ran *none* of this gate while Vercel's
+  # non-Actions checks still reported green — the absence of checks presented as
+  # success rather than as "not run". A first-load JS budget regression stayed
+  # invisible that way for as long as PR #670 was stacked.
+  #
+  # So every PR now runs the full gate except the two heaviest jobs. `e2e` and
+  # `lighthouse` each budget 45 minutes and each stand up a Postgres service,
+  # so they are gated on a main-based PR (see their `if:` conditions) to keep
+  # the runner-minute cost of stacking bounded. Everything else — Quality,
+  # Security, Copy and i18n guards, Web (typecheck + unit + build + per-route
+  # budgets), Performance, Migrations and Migration drift — runs on every PR
+  # regardless of base, which is precisely the coverage whose absence caused the
+  # incident above.
+  #
+  # If you are stacking: your PR is validated, but not *fully*. Retargeting it
+  # to main with `gh pr edit <n> --base main` is what turns E2E and Lighthouse
+  # on, and that must happen before merge.
   push:
     branches: [main, staging]
   pull_request:
-    branches: [main]
   # No user-supplied ref input: callers select a repository ref, and the
   # dispatch-guard job below accepts only the verified Release Please PR branch.
   workflow_dispatch:
@@ -316,9 +335,15 @@ jobs:
   # NOT a repo secret, mirroring the lighthouse job) is migrated + seeded so the
   # offline spec can open a real recipe and enter Cook Mode. The smoke spec is
   # database-agnostic.
+  #
+  # Cost gate (#672): every other job runs on every PR whatever its base, but
+  # this one budgets 45 minutes and stands up Postgres, so on a pull request it
+  # runs only for a main-based PR. Stacked PRs get the rest of the gate;
+  # retarget to main to turn this on before merge.
   e2e:
     name: E2E
     needs: web
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -414,9 +439,16 @@ jobs:
   # consumes the canonical production build, migrates + seeds, starts the app in
   # dev-bypass mode, and runs Lighthouse against the key routes with the Core
   # Web Vitals budgets in lighthouserc.cjs. Reports stay in private artifacts.
+  #
+  # Cost gate (#672): like `e2e`, this budgets 45 minutes and stands up
+  # Postgres, so on a pull request it runs only for a main-based PR. The
+  # per-route first-load budgets enforced inside `pnpm ci:build` (the `web` job)
+  # and the aggregate budget in `performance` still run on every PR, so a
+  # stacked PR is not blind to bundle regressions.
   lighthouse:
     name: Lighthouse
     needs: web
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

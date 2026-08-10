@@ -344,6 +344,28 @@ Wire an external uptime monitor against `https://<your-domain>/api/health`:
 > (Settings → Branches) requiring the **CI** status checks. Then nothing reaches
 > the site until lint, tests, and the build pass.
 
+### What runs on a stacked PR
+
+CI triggers on **every** pull request, whatever branch it is based on. That was
+not always true: the trigger used to be `pull_request: branches: [main]`, so a
+PR stacked on another branch ran none of the gate — and because Vercel's checks
+are not GitHub Actions and report regardless, the _absence_ of checks presented
+as green rather than as "not run" (#672). A first-load JS budget regression
+stayed invisible that way until the PR was retargeted to `main`.
+
+Two jobs are still restricted, on cost rather than principle. **E2E** and
+**Lighthouse** each budget 45 minutes and each stand up a Postgres service, so
+on a pull request they run only when the base branch is `main`. Everything else
+— Quality, Security, Copy and i18n guards, Web (typecheck, unit tests, the
+production build and its per-route first-load budgets), Performance, Migrations
+and Migration drift — runs on every PR regardless of base.
+
+So a stacked PR is validated, but not _fully_. Retargeting it with
+`gh pr edit <n> --base main` is what turns E2E and Lighthouse on, and that must
+happen before merge. The shape of this arrangement is asserted by
+`scripts/workflow-policy.test.mjs`, so narrowing the trigger again fails the
+unit suite rather than quietly reopening the hole.
+
 ## Troubleshooting
 
 - **Build fails in migrations**: double-check `DATABASE_URL` is the Neon

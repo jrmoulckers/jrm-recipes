@@ -136,4 +136,45 @@ describe("workflow integrity policy", () => {
     expect(deploy).toContain("This automation-generated PR is the sole");
     expect(deploy).toContain("`chore(main): release ...`");
   });
+
+  // #672: `pull_request: branches: [main]` meant a PR based on any other branch
+  // ran none of this gate while Vercel's non-Actions checks still reported
+  // green, so the absence of checks presented as success. Narrowing the trigger
+  // again would silently restore that, and nothing else in the repo would
+  // notice, so assert the shape here.
+  describe("stacked-PR gate (#672)", () => {
+    const heavyJobs = ["e2e", "lighthouse"];
+    const baseRefCondition =
+      "if: github.event_name != 'pull_request' || github.base_ref == 'main'";
+
+    it("runs pull_request CI for every base branch", () => {
+      expect(ci).toMatch(/^\s{2}pull_request:\s*$/m);
+      expect(ci).not.toMatch(/pull_request:\s*\n\s+branches:/);
+      expect(ci).not.toMatch(/pull_request:\s*\n\s+branches-ignore:/);
+    });
+
+    it("gates only the two heaviest jobs on a main-based PR", () => {
+      const gated = jobBlocks(ci)
+        .filter(({ body }) => body.includes("github.base_ref"))
+        .map(({ name }) => name);
+
+      expect(gated.sort()).toEqual([...heavyJobs].sort());
+    });
+
+    it("uses the same condition for each gated job", () => {
+      for (const { name, body } of jobBlocks(ci).filter(({ name }) =>
+        heavyJobs.includes(name),
+      )) {
+        expect(body, `${name} needs the main-based PR condition`).toContain(
+          baseRefCondition,
+        );
+      }
+    });
+
+    it("explains to the next person stacking a PR what runs", () => {
+      expect(ci).toContain("What runs on a stacked PR (#672)");
+      expect(ci).toContain("gh pr edit <n> --base main");
+      expect(deploy).toContain("What runs on a stacked PR");
+    });
+  });
 });
