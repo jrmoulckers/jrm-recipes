@@ -99,19 +99,53 @@ change needs two, they must be acquired in sorted owner-id order.
 
 ## Consequences
 
-Co-creators can **read** a recipe and it answers at their address, but they still cannot write to
-it. That gap is deliberate. Today's one-author invariant is what makes "delete the recipes where
-`author_id = U`" a provable erasure of U's free text, which [#678](https://github.com/jrmoulckers/jrm-recipes/issues/678)
-depends on. The moment a creator can edit a recipe they do not own, their prose lands in someone
-else's `recipes.story`/`notes` and, invisibly, in every `recipe_versions.snapshot` — where no
-column-level scrub can reach it. Widening writes therefore has to land together with contribution
-provenance, not before it. A source-level guard test fails if a write path starts consulting
-`recipe_creators`, as a prompt to revisit that decision rather than a bar on making it.
+Co-creators can **read** a recipe, it answers at their address, and — since #685 — an accepted
+co-creator can rewrite its body. Delete, restore, visibility, share-token rotation, version reverts
+and creator management stay owner-only: a rewritten step is recoverable through `recipe_versions`,
+a deleted or re-shared recipe is not.
 
-One consequence is already visible in the write path: `reslug` allocates against `author.id`, so if
-a non-owner could edit, the new slug would be minted in the _editor's_ namespace and the old one
-retired there. That has to be fixed as part of widening writes.
+That widening has a cost this ADR should name rather than bury. The write path no longer makes
+"delete the recipes where `author_id = U`" a provable erasure of U's free text: a co-creator's prose
+now lands in someone else's `recipes.story`/`notes` and, invisibly, in every
+`recipe_versions.snapshot`, where no column-level scrub can reach it. `recipe_versions.authorId`
+gives per-save attribution and is partial coverage only — it says who saved a revision, not which
+sentences within it are theirs. That residue is the outstanding half of
+[#678](https://github.com/jrmoulckers/jrm-recipes/issues/678), which shipped account erasure but
+cannot yet reach contributions inside recipes the departing user does not own.
+
+A source-level guard in `creator-escalation.test.ts` pins the boundary: `recipeCreators` may be
+consulted only by the namespace-occupancy probe and `assertRecipeEditAccess` (the edit gate), and
+the destructive mutations must stay `authorId`-scoped. Its earlier, absolute form — no write path
+may consult `recipeCreators` at all — was written to fail at exactly the change that widened
+writes, which is what it did.
+
+One consequence lands directly in the write path: `updateRecipe` authorizes on the **actor** but
+allocates against `current.authorId`. Those are two different users once a non-owner can edit, and
+conflating them would mint the renamed slug in the _editor's_ namespace and retire the old one
+there — silently occupying a slug the editor never asked for, while leaving the owner's canonical
+path pointing at nothing. The editor's own `recipe_creators.slug` is a stable mirror address and
+never moves on a rename.
+
+### Erasure: this table is the survival predicate
+
+`recipe_creators` is what account erasure asks "does this recipe outlive its owner?" — the answer
+is simply whether an **accepted** creator remains, one indexed query. That is deliberate: the
+survival rule and the co-creator relationship are the same fact, so erasure reads it directly
+rather than maintaining a parallel notion of who a recipe belongs to. `recipe_creators.userId` is
+`onDelete: cascade`, so a departing user's creator rows and mirror URLs disappear with them, and
+because removal writes **no** alias row they leave no residual entry in any namespace either.
+
+`recipes.authorId` is deliberately **`restrict`**, not `cascade` (changed by #678/#684). A cascade
+would have been actively wrong here: it deletes every recipe the departing user owns, _including_
+the ones with surviving co-creators that the retention exception says must live on, and it does so
+before the erasure path can destroy the associated Cloudinary bytes. `restrict` turns an unhandled
+dependency into a loud FK violation instead of irreversible data loss, and makes
+`~/server/users/erasure.ts` — which reassigns or deletes each owned recipe in the right order —
+the single place that decides a recipe's fate. See
+[ADR 0003 (account erasure)](./0003-account-erasure.md).
 
 Path revalidation now fans out across N namespaces instead of one.
 `revalidateRecipePaths` discovers the current creators itself rather than trusting callers to pass
-them, so no caller can forget half the fan-out.
+them, so no caller can forget half the fan-out. Accepting an invitation busts the **owner's**
+canonical path as well as the new creator path, because the owner's byline gains a name at that
+moment.

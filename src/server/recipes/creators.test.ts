@@ -223,6 +223,25 @@ describe("acceptRecipeCreatorInvite (invitee consent)", () => {
     expect(updated[0]!.acceptedAt).toBeInstanceOf(Date);
   });
 
+  it("returns the owner's namespace so the caller can bust the canonical path", async () => {
+    // The owner's page gains a co-creator in its byline on accept, so the
+    // caller needs the owner's cook/slug pair. Returning a slug-less stub would
+    // silently degrade the fan-out to `/recipes/<id>`, which nothing links to.
+    const { tx } = txDouble();
+    tx.query.recipeCreators.findFirst.mockResolvedValue({
+      id: "rc_1",
+      status: "pending",
+    });
+
+    const result = await acceptRecipeCreatorInvite(RECIPE.id, INVITEE);
+
+    expect(result.recipe).toEqual({
+      id: RECIPE.id,
+      slug: RECIPE.slug,
+      cook: "ada",
+    });
+  });
+
   it("bases the slug on the title, not the owner's perturbed slug", async () => {
     const { tx } = txDouble();
     tx.query.recipeCreators.findFirst.mockResolvedValue({

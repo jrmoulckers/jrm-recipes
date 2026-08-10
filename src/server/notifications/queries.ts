@@ -52,11 +52,18 @@ export async function getUnreadCount(userId: string | null): Promise<number> {
  * Resolve a deep link for a notification from whichever target it carries. A
  * recipe target wins over a group target. System events with neither resolve to
  * null and render as a non-clickable row.
+ *
+ * A co-creator invitation is the one type that must *not* deep-link to its
+ * recipe (#668): a `pending` invitee has no access at all, so the recipe link
+ * would 404 on the very notification asking them to accept. It points at the
+ * notifications page instead, which is where the invitation can be answered.
  */
 function hrefFor(row: {
+  type: string;
   recipe: { slug: string } | null;
   group: { slug: string } | null;
 }): Route | null {
+  if (row.type === "recipe_creator_invite") return "/notifications";
   if (row.recipe) return `/recipes/${row.recipe.slug}` as Route;
   if (row.group) return `/groups/${row.group.slug}` as Route;
   return null;
