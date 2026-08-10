@@ -33,8 +33,16 @@ export async function createPostHogBackend(): Promise<AnalyticsBackend | null> {
       // Cookieless: keep persistence in memory so no analytics cookies are set.
       persistence: "memory",
       // Pageviews are emitted manually by <PageviewTracker> (#322) to catch
-      // App Router client navigations. Disable autocapture to avoid double counts.
+      // App Router client navigations, so the SDK's own pageview would double-count.
       capture_pageview: false,
+      // Autocapture is a *separate* option from `capture_pageview` and defaults to
+      // `true`, so it has to be turned off explicitly (#703). Do not remove this:
+      // autocapture events are built inside the SDK and handed straight to the
+      // transport, so they never pass through `track()` and therefore never reach
+      // `scrubProperties()` (./scrub) — the PII net covers only what this module
+      // dispatches. Autocapture also sends `$el_text`, which on Heirloom is recipe
+      // titles, cook names and group names, and `mask_all_text` defaults to `false`.
+      autocapture: false,
       capture_pageleave: true,
       // Only create person profiles once a user is identified (#321).
       person_profiles: "identified_only",
