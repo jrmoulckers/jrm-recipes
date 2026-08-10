@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import { DomainError } from "~/server/errors";
@@ -8,6 +8,7 @@ import {
   groupMembers,
   recipeEvents,
   recipeIngredients,
+  recipeSlugAliases,
   recipeSteps,
   recipeTags,
   recipeVersions,
@@ -32,8 +33,13 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 /** Postgres `unique_violation` SQLSTATE. */
 const PG_UNIQUE_VIOLATION = "23505";
 
-/** DB-level unique constraint guarding `recipes.slug` (see schema/recipes.ts). */
-const RECIPES_SLUG_CONSTRAINT = "recipes_slug_uq";
+/**
+ * DB-level unique constraints that make a recipe slug unique within its author's
+ * namespace (see schema/recipes.ts). Both matter, because an alias counts as
+ * occupied.
+ */
+const RECIPES_SLUG_CONSTRAINT = "recipes_author_slug_uq";
+const RECIPE_SLUG_ALIAS_CONSTRAINT = "recipe_slug_aliases_owner_slug_uq";
 
 /** DB-level unique constraint on `recipe_versions (recipe_id, version_number)`. */
 const RECIPE_VERSIONS_VERSION_CONSTRAINT = "recipe_versions_recipe_version_uq";
@@ -72,13 +78,17 @@ function matchesUniqueViolation(err: unknown, constraint: string): boolean {
 }
 
 /**
- * True when `err` is a Postgres unique-violation on the `recipes.slug`
- * constraint. {@link uniqueSlug} pre-checks for a free slug, but two concurrent
- * transactions can both pass that check and only collide at COMMIT-time on the
- * DB constraint. That lost race surfaces here so callers can retry.
+ * True when `err` is a Postgres unique-violation on either structure that makes
+ * a recipe slug unique in its namespace. {@link uniqueSlug} pre-checks for a
+ * free slug, but two concurrent transactions can both pass that check and only
+ * collide at COMMIT-time on the DB constraint. That lost race surfaces here so
+ * callers can retry.
  */
 export function isSlugConflict(err: unknown): boolean {
-  return matchesUniqueViolation(err, RECIPES_SLUG_CONSTRAINT);
+  return (
+    matchesUniqueViolation(err, RECIPES_SLUG_CONSTRAINT) ||
+    matchesUniqueViolation(err, RECIPE_SLUG_ALIAS_CONSTRAINT)
+  );
 }
 
 /**
@@ -91,7 +101,7 @@ export function isVersionConflict(err: unknown): boolean {
 }
 
 /**
- * Run a write that may collide on the unique `recipes.slug` constraint,
+ * Run a write that may collide on the per-author recipe slug constraints,
  * retrying the whole operation on conflict. Because each attempt is a fresh
  * transaction, the retry re-runs {@link uniqueSlug} against newly-committed
  * rows, so the DB constraint, not the app-side loop, is the source of truth.
@@ -128,41 +138,98 @@ async function recordEvent(
 }
 
 /**
- * Best-effort in-transaction search for a free slug derived from `base`. This
- * narrows the collision window, but is *not* authoritative: the DB unique
- * constraint is, and {@link withSlugConflictRetry} recovers from any race the
- * check-then-insert here can still lose.
+ * Whether `candidate` is already spoken for in `ownerId`'s namespace: held by
+ * one of their live recipes, retained as one of their aliases, or reserved for
+ * a static route.
+ *
+ * Aliases count as taken (issue #666). That is the rule that keeps redirects
+ * honest: if a released slug could be re-claimed by a different recipe, every
+ * old link bearing it would start resolving to unrelated content.
  *
  * A candidate that {@link isReservedRecipeSlug reserved-slugs.ts} flags is
  * treated as unavailable, even when no row holds it: those bases (`new`,
  * `tags`, `cook-with`) collide with static sibling routes under `/recipes/*`,
- * so a recipe assigned one would be unreachable at its own canonical URL. We
+ * so a recipe assigned one would be unreachable at its legacy flat URL. We
  * perturb past them exactly like a taken slug, yielding e.g. `new-2ab`.
+ */
+async function slugTaken(
+  tx: Tx,
+  ownerId: string,
+  candidate: string,
+  ignoreRecipeId?: string,
+): Promise<boolean> {
+  if (isReservedRecipeSlug(candidate)) return true;
+
+  const live = await tx.query.recipes.findFirst({
+    where: and(
+      eq(recipes.authorId, ownerId),
+      eq(recipes.slug, candidate),
+      ignoreRecipeId ? ne(recipes.id, ignoreRecipeId) : undefined,
+    ),
+    columns: { id: true },
+  });
+  if (live) return true;
+
+  const alias = await tx.query.recipeSlugAliases.findFirst({
+    where: and(
+      eq(recipeSlugAliases.ownerId, ownerId),
+      eq(recipeSlugAliases.slug, candidate),
+      ignoreRecipeId
+        ? ne(recipeSlugAliases.recipeId, ignoreRecipeId)
+        : undefined,
+    ),
+    columns: { id: true },
+  });
+  return Boolean(alias);
+}
+
+/**
+ * Best-effort in-transaction search for a slug derived from `base` that is free
+ * inside `ownerId`'s namespace. This narrows the collision window, but is *not*
+ * authoritative: the DB unique constraints are, and
+ * {@link withSlugConflictRetry} recovers from any race the check-then-insert
+ * here can still lose.
+ *
+ * `ignoreRecipeId` lets a recipe keep, or re-claim, a slug it already holds (or
+ * once held), so re-saving an unchanged title is a no-op rather than a
+ * collision.
  */
 export async function uniqueSlug(
   tx: Tx,
+  ownerId: string,
   base: string,
-  ignoreId?: string,
+  ignoreRecipeId?: string,
 ): Promise<string> {
   let candidate = base;
   for (let i = 0; i < 50; i++) {
-    const taken = isReservedRecipeSlug(candidate)
-      ? true
-      : Boolean(
-          await tx.query.recipes.findFirst({
-            where: ignoreId
-              ? and(
-                  eq(recipes.slug, candidate),
-                  sql`${recipes.id} <> ${ignoreId}`,
-                )
-              : eq(recipes.slug, candidate),
-            columns: { id: true },
-          }),
-        );
-    if (!taken) return candidate;
+    if (!(await slugTaken(tx, ownerId, candidate, ignoreRecipeId)))
+      return candidate;
     candidate = `${base}-${(i + 2).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   }
   return `${base}-${Date.now().toString(36)}`;
+}
+
+/**
+ * Retain `slug` as a permanent alias of `recipeId` in `ownerId`'s namespace, so
+ * links shared before a rename keep resolving (issue #666).
+ *
+ * `onConflictDoNothing` covers the recipe re-taking a slug it previously
+ * released: the alias row already points at it, so there is nothing to add. An
+ * alias that happens to equal its own recipe's current live slug is harmless —
+ * resolution checks live slugs first, so it never produces a redirect loop.
+ */
+async function retireSlug(
+  tx: Tx,
+  ownerId: string,
+  recipeId: string,
+  slug: string,
+): Promise<void> {
+  await tx
+    .insert(recipeSlugAliases)
+    .values({ ownerId, recipeId, slug })
+    .onConflictDoNothing({
+      target: [recipeSlugAliases.ownerId, recipeSlugAliases.slug],
+    });
 }
 
 /**
@@ -439,16 +506,17 @@ async function applyRecipeInput(
   input: RecipeInput,
   author: User,
   label: string,
-  current: { slug: string; publishedAt: Date | null },
+  current: { slug: string; title: string; publishedAt: Date | null },
 ) {
   const groupId = await resolveGroupId(tx, input, author);
   const nowPublished = input.status === "published";
   const publishedAt =
     nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
+  const slug = await reslug(tx, id, input.title, author, current);
 
   await tx
     .update(recipes)
-    .set({ ...scalarFields(input, groupId), publishedAt })
+    .set({ ...scalarFields(input, groupId), slug, publishedAt })
     .where(eq(recipes.id, id));
 
   await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));
@@ -465,14 +533,42 @@ async function applyRecipeInput(
       .set({ shareToken: generateShareToken() })
       .where(and(eq(recipes.id, id), isNull(recipes.shareToken)));
   }
-  return { id, slug: current.slug };
+  return { id, slug };
+}
+
+/**
+ * The slug a recipe should carry after an edit (issue #666).
+ *
+ * Slugs used to be immutable, so renaming "Nonna's Ragu" to "Sunday Ragu" left
+ * the URL saying `nonnas-ragu` forever. Now a rename regenerates the slug and
+ * the outgoing one is retained as a permanent alias, so the URL tells the truth
+ * *and* every link ever shared keeps working.
+ *
+ * Keyed off the title, not the derived slug: a recipe whose slug was perturbed
+ * (`apple-pie-2ab`, because the cook already had an `apple-pie`) must not churn
+ * to a fresh random suffix on every unrelated save.
+ */
+async function reslug(
+  tx: Tx,
+  id: string,
+  title: string,
+  author: User,
+  current: { slug: string; title: string },
+): Promise<string> {
+  if (title === current.title) return current.slug;
+
+  const slug = await uniqueSlug(tx, author.id, recipeSlug(title), id);
+  if (slug === current.slug) return slug;
+
+  await retireSlug(tx, author.id, id, current.slug);
+  return slug;
 }
 
 export async function createRecipe(input: RecipeInput, author: User) {
   const recipe = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
       const groupId = await resolveGroupId(tx, input, author);
-      const slug = await uniqueSlug(tx, recipeSlug(input.title));
+      const slug = await uniqueSlug(tx, author.id, recipeSlug(input.title));
       const [row] = await tx
         .insert(recipes)
         .values({
@@ -513,45 +609,48 @@ export async function updateRecipe(
   input: RecipeInput,
   author: User,
 ) {
-  const result = await db.transaction(async (tx) => {
-    const current = await tx.query.recipes.findFirst({
-      where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
-      columns: {
-        id: true,
-        slug: true,
-        publishedAt: true,
-        status: true,
-        visibility: true,
-      },
-    });
-    if (!current) throw new DomainError("NOT_FOUND");
-
-    const result = await applyRecipeInput(
-      tx,
-      id,
-      input,
-      author,
-      "Edited",
-      current,
-    );
-    const newlyPublished =
-      input.status === "published" && current.status !== "published";
-    await recordEvent(tx, {
-      recipeId: id,
-      actorId: author.id,
-      type: newlyPublished ? "published" : "updated",
-    });
-    if (input.visibility !== current.visibility) {
-      await recordAudit(tx, {
-        actorId: author.id,
-        action: AuditAction.RecipeVisibilityChanged,
-        targetType: "recipe",
-        targetId: id,
-        metadata: { from: current.visibility, to: input.visibility },
+  const result = await withSlugConflictRetry(() =>
+    db.transaction(async (tx) => {
+      const current = await tx.query.recipes.findFirst({
+        where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
+        columns: {
+          id: true,
+          slug: true,
+          title: true,
+          publishedAt: true,
+          status: true,
+          visibility: true,
+        },
       });
-    }
-    return result;
-  });
+      if (!current) throw new DomainError("NOT_FOUND");
+
+      const result = await applyRecipeInput(
+        tx,
+        id,
+        input,
+        author,
+        "Edited",
+        current,
+      );
+      const newlyPublished =
+        input.status === "published" && current.status !== "published";
+      await recordEvent(tx, {
+        recipeId: id,
+        actorId: author.id,
+        type: newlyPublished ? "published" : "updated",
+      });
+      if (input.visibility !== current.visibility) {
+        await recordAudit(tx, {
+          actorId: author.id,
+          action: AuditAction.RecipeVisibilityChanged,
+          targetType: "recipe",
+          targetId: id,
+          metadata: { from: current.visibility, to: input.visibility },
+        });
+      }
+      return result;
+    }),
+  );
   return result;
 }
 
@@ -567,6 +666,14 @@ export async function forkRecipe(
           eq(recipes.id, sourceIdOrSlug),
           eq(recipes.slug, sourceIdOrSlug),
         ),
+        // Recipe slugs are only unique per author now (issue #666), so a bare
+        // slug can match more than one row. Resolve deterministically: an exact
+        // id always wins, then the oldest holder of that slug — which is the
+        // recipe the pre-namespacing global slug pointed at.
+        orderBy: [
+          sql`case when ${recipes.id} = ${sourceIdOrSlug} then 0 else 1 end`,
+          recipes.createdAt,
+        ],
         with: {
           ingredients: { orderBy: [recipeIngredients.position] },
           steps: { orderBy: [recipeSteps.position] },
@@ -585,7 +692,7 @@ export async function forkRecipe(
 
       const input = buildAdaptationInput(source);
 
-      const slug = await uniqueSlug(tx, recipeSlug(input.title));
+      const slug = await uniqueSlug(tx, author.id, recipeSlug(input.title));
       const note = forkNote?.trim();
       const trimmedNote = note ? note.slice(0, 300) : null;
       const [row] = await tx
@@ -642,41 +749,49 @@ export async function revertRecipe(
   versionNumber: number,
   author: User,
 ) {
-  const result = await db.transaction(async (tx) => {
-    const current = await tx.query.recipes.findFirst({
-      where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
-      columns: { id: true, slug: true, publishedAt: true, status: true },
-    });
-    if (!current) throw new DomainError("NOT_FOUND");
+  const result = await withSlugConflictRetry(() =>
+    db.transaction(async (tx) => {
+      const current = await tx.query.recipes.findFirst({
+        where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
+        columns: {
+          id: true,
+          slug: true,
+          title: true,
+          publishedAt: true,
+          status: true,
+        },
+      });
+      if (!current) throw new DomainError("NOT_FOUND");
 
-    const version = await tx.query.recipeVersions.findFirst({
-      where: and(
-        eq(recipeVersions.recipeId, id),
-        eq(recipeVersions.versionNumber, versionNumber),
-      ),
-      columns: { snapshot: true },
-    });
-    if (!version) throw new DomainError("NOT_FOUND");
+      const version = await tx.query.recipeVersions.findFirst({
+        where: and(
+          eq(recipeVersions.recipeId, id),
+          eq(recipeVersions.versionNumber, versionNumber),
+        ),
+        columns: { snapshot: true },
+      });
+      if (!version) throw new DomainError("NOT_FOUND");
 
-    const input = parseSnapshot(version.snapshot);
-    if (!input) throw new DomainError("BAD_SNAPSHOT");
+      const input = parseSnapshot(version.snapshot);
+      if (!input) throw new DomainError("BAD_SNAPSHOT");
 
-    const result = await applyRecipeInput(
-      tx,
-      id,
-      input,
-      author,
-      `Reverted to v${versionNumber}`,
-      current,
-    );
-    await recordEvent(tx, {
-      recipeId: id,
-      actorId: author.id,
-      type: "updated",
-      note: `Reverted to v${versionNumber}`,
-    });
-    return result;
-  });
+      const result = await applyRecipeInput(
+        tx,
+        id,
+        input,
+        author,
+        `Reverted to v${versionNumber}`,
+        current,
+      );
+      await recordEvent(tx, {
+        recipeId: id,
+        actorId: author.id,
+        type: "updated",
+        note: `Reverted to v${versionNumber}`,
+      });
+      return result;
+    }),
+  );
   return result;
 }
 

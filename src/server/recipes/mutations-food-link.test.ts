@@ -94,6 +94,7 @@ function recordingTx(existing?: Record<string, unknown>) {
     query: {
       groupMembers: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipes: { findFirst: vi.fn().mockResolvedValue(existing) },
+      recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       tags: { findMany: vi.fn(() => Promise.resolve([])) },
     },
     insert,

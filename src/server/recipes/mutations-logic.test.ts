@@ -98,6 +98,7 @@ function recordingTx() {
     query: {
       groupMembers: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
       tags: {
         findMany: vi.fn(() =>
           Promise.resolve(
