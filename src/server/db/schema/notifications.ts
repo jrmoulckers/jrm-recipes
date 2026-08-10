@@ -31,6 +31,10 @@ export const notificationType = pgEnum("notification_type", [
   "cook_along_reminder",
   "report",
   "follow",
+  // Multi-creator recipes (issue #668). The invite is the *only* signal a
+  // pending invitation produces — the row itself grants nothing.
+  "recipe_creator_invite",
+  "recipe_creator_accepted",
 ]);
 
 /**

@@ -34,7 +34,13 @@ vi.mock("next/cache", () => ({
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
 vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
-  db: { query: { recipes: { findMany: findManyMock } } },
+  db: {
+    query: {
+      recipes: { findMany: findManyMock },
+      // Path fan-out now discovers co-creator namespaces too (issue #668).
+      recipeCreators: { findMany: vi.fn().mockResolvedValue([]) },
+    },
+  },
 }));
 vi.mock("./mutations", () => ({
   createComment: vi.fn(),

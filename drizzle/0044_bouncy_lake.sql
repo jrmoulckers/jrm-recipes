@@ -1,0 +1,2 @@
+ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'recipe_creator_invite';--> statement-breakpoint
+ALTER TYPE "public"."notification_type" ADD VALUE IF NOT EXISTS 'recipe_creator_accepted';

@@ -40,10 +40,21 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("~/server/auth", () => ({ requireUser: requireUserMock }));
 vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
-  db: { $count: dbCountMock },
+  db: {
+    $count: dbCountMock,
+    // Path fan-out now discovers co-creator namespaces too (issue #668).
+    query: { recipeCreators: { findMany: vi.fn().mockResolvedValue([]) } },
+  },
 }));
-vi.mock("~/server/db/schema", () => ({ recipes: { authorId: {} } }));
-vi.mock("drizzle-orm", () => ({ eq: vi.fn(() => ({})) }));
+vi.mock("~/server/db/schema", () => ({
+  recipes: { authorId: {} },
+  recipeCreators: { recipeId: {}, status: {}, slug: {} },
+}));
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn(() => ({})),
+  and: vi.fn(() => ({})),
+  isNull: vi.fn(() => ({})),
+}));
 vi.mock("~/lib/analytics/config", () => ({
   isAnalyticsConfigured: isAnalyticsConfiguredMock,
 }));

@@ -51,6 +51,14 @@ export function notificationSentence(
         : "New content report to review";
     case "follow":
       return `${who} started following you`;
+    case "recipe_creator_invite":
+      return on
+        ? `${who} invited you to co-create ${on}`
+        : `${who} invited you to co-create a recipe`;
+    case "recipe_creator_accepted":
+      return on
+        ? `${who} is now a co-creator of ${on}`
+        : `${who} accepted your co-creator invite`;
     default:
       return on ? `${who}: ${on}` : who;
   }

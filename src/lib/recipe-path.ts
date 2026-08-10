@@ -60,20 +60,46 @@ export function recipeKeepsakePath(recipe: RecipeDetailRef): Route {
 }
 
 /**
+ * A namespace a recipe *additionally* answers in because of a co-creator
+ * (#668): the creator's user slug plus the slug allocated inside their
+ * namespace. Both are required — a pending invitation has no slug and therefore
+ * no path, which is the whole point of the pending state.
+ */
+export type RecipeCreatorRef = { cook: string; slug: string };
+
+/**
  * Every path that serves this recipe's detail document and therefore has to be
- * revalidated together after a write (#666).
+ * revalidated together after a write (#666, #668).
  *
- * A recipe now answers on its canonical namespaced path *and* on the flat
- * legacy path, and both are cached independently by the App Router. Busting
- * only the canonical one leaves anybody arriving from an old shared link — the
- * majority of inbound traffic for an established recipe — looking at stale
+ * A recipe now answers on its canonical namespaced path, on the flat legacy
+ * path, and on one path per accepted co-creator — and the App Router caches all
+ * of them independently, so busting only the canonical one leaves anybody
+ * arriving from an old shared link (the majority of inbound traffic for an
+ * established recipe) or from a co-creator's namespace looking at stale
  * content. Retired aliases are deliberately not included: they are redirects,
  * not cached documents, and their target is the canonical path we already bust.
+ *
+ * Creator paths are folded in here rather than into a parallel helper so there
+ * stays exactly one answer to "where does this recipe live", and adding a
+ * caller can't accidentally opt out of half of it. Purging them is not a
+ * nicety: it is the cache half of revocation, and without it a removed
+ * creator's page keeps being served from the cache after the row is gone.
  */
-export function recipeRevalidationPaths(recipe: RecipeDetailRef): Route[] {
+export function recipeRevalidationPaths(
+  recipe: RecipeDetailRef,
+  creators: RecipeCreatorRef[] = [],
+): Route[] {
   const canonical = recipeDetailPath(recipe);
   const paths: Route[] = [canonical];
   const flat = `/recipes/${recipe.slug ?? recipe.id}` as Route;
   if (flat !== canonical) paths.push(flat);
+  for (const creator of creators) {
+    const path = recipeDetailPath({
+      id: recipe.id,
+      slug: creator.slug,
+      cook: creator.cook,
+    });
+    if (!paths.includes(path)) paths.push(path);
+  }
   return paths;
 }
