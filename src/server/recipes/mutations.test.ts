@@ -598,8 +598,20 @@ describe("createRecipe group-membership enforcement", () => {
   });
 });
 
-/** Fake tx that drives a full `updateRecipe` transaction without a database. */
-function updateTx(opts: { member: boolean }) {
+/**
+ * Fake tx that drives a full `updateRecipe` transaction without a database.
+ *
+ * `ownerId` and `creator` exist so the same harness can drive a co-creator's
+ * edit (#668): the recipe is owned by someone else and `recipe_creators` is
+ * asked whether the actor is an accepted creator of it.
+ */
+function updateTx(opts: {
+  member: boolean;
+  ownerId?: string;
+  creator?: boolean;
+  visibility?: string;
+  groupId?: string | null;
+}) {
   const setValues = vi.fn();
   const update = vi.fn(() => ({
     set: (vals: unknown) => {
@@ -607,6 +619,7 @@ function updateTx(opts: { member: boolean }) {
       return { where: vi.fn(() => Promise.resolve(undefined)) };
     },
   }));
+  const aliasValues = vi.fn();
   const tx: Record<string, unknown> = {
     query: {
       groupMembers: {
@@ -615,18 +628,44 @@ function updateTx(opts: { member: boolean }) {
           .mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
       },
       recipes: {
-        findFirst: vi.fn().mockResolvedValue({
-          id: "r1",
-          slug: "apple-pie",
-          title: "Apple Pie",
-          publishedAt: null,
-          status: "draft",
-        }),
+        // First call is `updateRecipe`'s own lookup; later calls are
+        // `slugTaken`'s occupancy probe, which the real query excludes this
+        // recipe from via `ne(recipes.id, ignoreRecipeId)`. The fake can't
+        // express that predicate, so it answers "free" after the first call.
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            id: "r1",
+            slug: "apple-pie",
+            title: "Apple Pie",
+            publishedAt: null,
+            status: "draft",
+            visibility: opts.visibility ?? "private",
+            groupId: opts.groupId ?? null,
+            authorId: opts.ownerId ?? author.id,
+            author: { slug: "owner-cook" },
+          })
+          .mockResolvedValue(undefined),
       },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeCreators: {
+        // First call is the edit-access check; later calls are `slugTaken`'s
+        // co-creator occupancy probe, which likewise excludes this recipe.
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce(opts.creator ? { id: "rc_1" } : undefined)
+          .mockResolvedValue(undefined),
+      },
     },
+    // Slug allocation serializes on the namespace before probing (issue #668).
+    execute: vi.fn().mockResolvedValue(undefined),
     update,
-    insert: vi.fn(() => ({ values: () => chainable(undefined) })),
+    insert: vi.fn((table: unknown) => ({
+      values: (vals: unknown) => {
+        if (table === recipeSlugAliases) aliasValues(vals);
+        return chainable(undefined);
+      },
+    })),
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
@@ -637,7 +676,7 @@ function updateTx(opts: { member: boolean }) {
   // journal() allocates the version number inside a SAVEPOINT (tx.transaction).
   // run the callback against the same fake surface so an update writes one version.
   tx.transaction = (cb: (t: unknown) => unknown) => cb(tx);
-  return { tx, update, setValues };
+  return { tx, update, setValues, aliasValues };
 }
 
 describe("updateRecipe group-membership enforcement", () => {
@@ -654,7 +693,7 @@ describe("updateRecipe group-membership enforcement", () => {
 
     const result = await updateRecipe("r1", parsed, author);
 
-    expect(result).toEqual({ id: "r1", slug: "apple-pie" });
+    expect(result).toEqual({ id: "r1", slug: "apple-pie", cook: "owner-cook" });
     expect(setValues).toHaveBeenCalledWith(
       expect.objectContaining({ groupId: "grp_1" }),
     );
@@ -711,9 +750,14 @@ function versionRaceTx() {
           title: "Apple Pie",
           publishedAt: null,
           status: "draft",
+          visibility: "private",
+          groupId: null,
+          authorId: "user_1",
+          author: { slug: "owner-cook" },
         }),
       },
       recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     update: vi.fn(() => ({
       set: () => ({ where: vi.fn(() => Promise.resolve(undefined)) }),
@@ -755,10 +799,11 @@ describe("journal version-number allocation (issue #151)", () => {
 // --- Cross-tenant ownership regression guards (issue #220) --------------------
 
 /**
- * Negative-authorization guards: `updateRecipe`/`revertRecipe`/`deleteRecipe`
- * scope every write by `authorId`, so another user's recipe is invisible to the
- * mutation and resolves to `NOT_FOUND` rather than being edited. These fail if
- * the `eq(recipes.authorId, author.id)` predicate is dropped.
+ * Negative-authorization guards: `revertRecipe`/`deleteRecipe` scope every write
+ * by `authorId`, so another user's recipe is invisible to the mutation and
+ * resolves to `NOT_FOUND` rather than being edited. `updateRecipe` now admits
+ * accepted co-creators too (#668), so it is guarded one layer in — the recipe is
+ * found, but a caller who is neither owner nor accepted creator is rejected.
  */
 const stranger = { id: "stranger_9" } as User;
 
@@ -771,6 +816,7 @@ function notOwnedTx() {
     query: {
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
       recipeVersions: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeCreators: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     update,
     insert: vi.fn(() => ({ values: () => chainable(undefined) })),
@@ -780,7 +826,25 @@ function notOwnedTx() {
 }
 
 describe("recipe ownership authz guards (i220)", () => {
-  it("updateRecipe on another user's recipe throws NOT_FOUND and writes nothing", async () => {
+  it("updateRecipe by a stranger who holds no creator row throws NOT_FOUND and writes nothing", async () => {
+    // The recipe is found — the ownership check is no longer in the WHERE
+    // clause — so this asserts the `assertRecipeEditAccess` gate itself (#668).
+    const { tx, update } = updateTx({
+      member: true,
+      ownerId: "user_1",
+      creator: false,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await expect(
+      updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), stranger),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("updateRecipe on a missing recipe throws NOT_FOUND and writes nothing", async () => {
     const { tx, update } = notOwnedTx();
     dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
       cb(tx),
@@ -815,5 +879,173 @@ describe("recipe ownership authz guards (i220)", () => {
     (dbMock as Record<string, unknown>).update = vi.fn(() => ({ set }));
 
     await expect(deleteRecipe("r1", stranger)).rejects.toThrow("NOT_FOUND");
+  });
+});
+
+// --- Co-creator edit rights (issue #668) -------------------------------------
+
+/**
+ * An accepted co-creator may rewrite a recipe's body, but the recipe stays the
+ * owner's: their namespace allocates the slug, and the distribution fields
+ * (visibility, publication state, group) are pinned to what the owner set.
+ *
+ * These are the tests that fail if the actor is ever conflated with the
+ * namespace owner again, which would move a URL out from under its cook.
+ */
+const coCreator = { id: "creator_2" } as User;
+
+describe("co-creator edit rights (i668)", () => {
+  it("lets an accepted co-creator save a body edit", async () => {
+    const { tx, setValues } = updateTx({
+      member: false,
+      ownerId: "user_1",
+      creator: true,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    const result = await updateRecipe(
+      "r1",
+      recipeInput.parse({ title: "Apple Pie", notes: "Chill the dough." }),
+      coCreator,
+    );
+
+    expect(result).toEqual({ id: "r1", slug: "apple-pie", cook: "owner-cook" });
+    expect(setValues).toHaveBeenCalledWith(
+      expect.objectContaining({ notes: "Chill the dough." }),
+    );
+  });
+
+  it("journals the version against the co-creator, not the owner", async () => {
+    const { tx } = updateTx({
+      member: false,
+      ownerId: "user_1",
+      creator: true,
+    });
+    const versionRows: Array<{ authorId: string }> = [];
+    tx.insert = vi.fn((table: unknown) => ({
+      values: (vals: unknown) => {
+        if (table === recipeVersions)
+          versionRows.push(vals as { authorId: string });
+        return chainable(undefined);
+      },
+    }));
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await updateRecipe(
+      "r1",
+      recipeInput.parse({ title: "Apple Pie" }),
+      coCreator,
+    );
+
+    expect(versionRows.map((r) => r.authorId)).toEqual(["creator_2"]);
+  });
+
+  it("pins visibility and status to the owner's values on a co-creator save", async () => {
+    const { tx, setValues } = updateTx({
+      member: true,
+      ownerId: "user_1",
+      creator: true,
+      visibility: "private",
+      groupId: "grp_owner",
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await updateRecipe(
+      "r1",
+      recipeInput.parse({
+        title: "Apple Pie",
+        // A co-creator attempting to publish someone's private recipe to the
+        // open web. Escalating an edit grant into an access-control change.
+        visibility: "public",
+        status: "published",
+        groupId: "grp_attacker",
+      }),
+      coCreator,
+    );
+
+    expect(setValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        visibility: "private",
+        status: "draft",
+        groupId: "grp_owner",
+      }),
+    );
+  });
+
+  it("re-slugs a co-creator's rename inside the OWNER's namespace", async () => {
+    const { tx, setValues, aliasValues } = updateTx({
+      member: false,
+      ownerId: "user_1",
+      creator: true,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await updateRecipe(
+      "r1",
+      recipeInput.parse({ title: "Sunday Pie" }),
+      coCreator,
+    );
+
+    expect(setValues).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "sunday-pie" }),
+    );
+    // The retired slug is retained in the owner's namespace. Never the editor's,
+    // which would plant an alias for someone else's recipe under their cook URL.
+    expect(aliasValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerId: "user_1",
+        recipeId: "r1",
+        slug: "apple-pie",
+      }),
+    );
+  });
+
+  it("refuses a save from a pending (not yet accepted) invitee", async () => {
+    // `updateTx({ creator: false })` models the `status = 'accepted'` filter
+    // finding nothing, which is exactly what a pending row looks like to it.
+    const { tx, update } = updateTx({
+      member: false,
+      ownerId: "user_1",
+      creator: false,
+    });
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await expect(
+      updateRecipe("r1", recipeInput.parse({ title: "Apple Pie" }), coCreator),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("keeps revertRecipe owner-only even for an accepted co-creator", async () => {
+    // `revertRecipe` still scopes its lookup by `authorId`, so a co-creator's
+    // call finds no row at all and never reaches a creator check.
+    const { tx, update } = notOwnedTx();
+    dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
+      cb(tx),
+    );
+
+    await expect(revertRecipe("r1", 1, coCreator)).rejects.toThrow("NOT_FOUND");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("keeps deleteRecipe owner-only even for an accepted co-creator", async () => {
+    (dbMock as Record<string, unknown>).query = {
+      recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+    };
+    const where = vi.fn(() => ({ returning: vi.fn().mockResolvedValue([]) }));
+    const set = vi.fn(() => ({ where }));
+    (dbMock as Record<string, unknown>).update = vi.fn(() => ({ set }));
+
+    await expect(deleteRecipe("r1", coCreator)).rejects.toThrow("NOT_FOUND");
   });
 });

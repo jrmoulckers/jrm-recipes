@@ -164,6 +164,7 @@ describe("insertChildren wires foodId onto ingredient rows", () => {
       publishedAt: null,
       status: "draft",
       visibility: "private",
+      authorId: author.id,
     });
     dbMock.transaction.mockImplementation((cb: (t: unknown) => unknown) =>
       cb(tx),

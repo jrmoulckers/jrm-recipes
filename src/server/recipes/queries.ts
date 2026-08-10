@@ -769,6 +769,39 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
 }
 
 /**
+ * Load a recipe for the **editor**: the owner, or an accepted co-creator
+ * (issue #668).
+ *
+ * Separate from {@link getOwnedRecipe} rather than a flag on it, because the
+ * two answer different questions. Ownership still gates deleting, reverting,
+ * visibility and co-creator management, and folding the wider rule into the
+ * existing helper would silently widen all of those the moment someone reused
+ * it.
+ *
+ * The ownership branch is tried first so the common case costs no extra query,
+ * and the co-creator probe filters `status = 'accepted'` — a pending invitation
+ * opens no editor.
+ */
+export async function getEditableRecipe(recipeId: string, userId: string) {
+  if (!isDbConfigured()) return null;
+  const owned = await getOwnedRecipe(recipeId, userId);
+  if (owned) return owned;
+  if (!(await isRecipeCreator(recipeId, userId))) return null;
+  const recipe = await db.query.recipes.findFirst({
+    where: and(notDeleted, eq(recipes.id, recipeId)),
+    with: {
+      author: true,
+      group: true,
+      ingredients: { orderBy: [recipeIngredients.position] },
+      steps: { orderBy: [recipeSteps.position] },
+      tags: { with: { tag: true } },
+      ratings: true,
+    },
+  });
+  return recipe ?? null;
+}
+
+/**
  * One page of the recipes visible on a viewer's home/library: their own + their
  * groups' (issue #57). Paginated in SQL with `limit`/`offset` so the cookbook no
  * longer loads (and eager-hydrates tags/ratings for) every recipe at once. For
