@@ -51,12 +51,95 @@ const mutations = readFileSync(
  * later — but to detect the absorption itself, below.
  */
 
+/**
+ * `mutations.ts` with string literals, template literals and comments blanked
+ * out, for locating declaration boundaries only (#747).
+ *
+ * Boundaries are found by matching a column-zero binding, and raw source cannot
+ * tell code from the inside of a string. A template literal holding formatted
+ * text — a snippet, a fixture, an email body — can contain a column-zero
+ * `function name(`, which then splits the enclosing function's span in two and
+ * hides everything past it from every check in this file.
+ *
+ * #743 asserts the consequence: a span must end at a column-zero `}`. That
+ * catches the general case but is satisfied by the same string content that
+ * caused the split whenever the spurious boundary follows a column-zero `}`
+ * inside the literal — demonstrated on #747, where an owner predicate lived in
+ * the escaped tail of `updateRecipe` at 9/9 green, and the identical injection
+ * with one character changed failed loudly. Any assertion about where a span
+ * ends can be satisfied by string content, because string content is what moved
+ * the end. So this is fixed upstream of the boundary instead, as #743's own
+ * failure message instructs.
+ *
+ * Every masked character is replaced one-for-one with a space, and newlines are
+ * kept, so offsets and line numbers are identical to the original. Spans index
+ * into this text; bodies are still sliced from the real source, so the checks
+ * below read genuine code.
+ *
+ * If this masked too much it would blank a real declaration, the spans on
+ * either side would merge, and the #720 absorption check would fail naming a
+ * column-zero binding inside a span — so the two guards anchor each other and
+ * neither can rot quietly.
+ */
+const maskedMutations = (() => {
+  const source = mutations;
+  let out = "";
+  let i = 0;
+
+  const blank = (text: string) => text.replace(/[^\n]/g, " ");
+
+  while (i < source.length) {
+    const char = source[i]!;
+    const next = source[i + 1];
+
+    if (char === "/" && next === "/") {
+      const end = source.indexOf("\n", i);
+      const stop = end === -1 ? source.length : end;
+      out += blank(source.slice(i, stop));
+      i = stop;
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      const end = source.indexOf("*/", i + 2);
+      const stop = end === -1 ? source.length : end + 2;
+      out += blank(source.slice(i, stop));
+      i = stop;
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === "`") {
+      let j = i + 1;
+      while (j < source.length) {
+        if (source[j] === "\\") {
+          j += 2;
+          continue;
+        }
+        if (source[j] === char) break;
+        j++;
+      }
+      const stop = Math.min(j + 1, source.length);
+      // Keep the delimiters; blank only the contents, so the masked text stays
+      // the same length and still reads as a string to anything downstream.
+      out +=
+        char + blank(source.slice(i + 1, stop - 1)) + (source[stop - 1] ?? "");
+      i = stop;
+      continue;
+    }
+
+    out += char;
+    i++;
+  }
+
+  return out;
+})();
+
 /** Top-level function spans in `mutations.ts`, keyed by name. */
 const spans = (() => {
   const declaration = /\n(?:export )?(?:async )?function (\w+)/g;
   const found: { name: string; at: number }[] = [];
   let match: RegExpExecArray | null;
-  while ((match = declaration.exec(mutations)) !== null) {
+  while ((match = declaration.exec(maskedMutations)) !== null) {
     found.push({ name: match[1]!, at: match.index });
   }
   return new Map(
@@ -95,6 +178,33 @@ const OWNER_PREDICATE = "eq(recipes.authorId,";
 
 describe("co-creator write escalation", () => {
   /**
+   * The masking that boundaries are located in (#747) must not move anything.
+   * Spans index into the masked text while every body is sliced from the real
+   * source, so a single character of drift would shift every span silently and
+   * leave each check reading the wrong function — passing, but about something
+   * else. Asserted directly rather than trusted.
+   */
+  it("masks strings and comments without moving any offset", () => {
+    expect(maskedMutations).toHaveLength(mutations.length);
+    expect(maskedMutations.split("\n")).toHaveLength(
+      mutations.split("\n").length,
+    );
+
+    // Non-vacuity: mutations.ts does contain strings and comments, so a masker
+    // that returned its input unchanged would satisfy the lengths above.
+    expect(maskedMutations).not.toBe(mutations);
+
+    // Alignment: every boundary found in the masked text must land on the real
+    // declaration of that name in the original.
+    for (const [name, span] of spans) {
+      expect(
+        mutations.slice(span.start + 1, span.start + 1 + 80),
+        `the span for ${name} does not start at its declaration in the real source, so masking moved an offset`,
+      ).toContain(`function ${name}`);
+    }
+  });
+
+  /**
    * The span model is faithful: no span has absorbed a declaration (#720).
    *
    * Every check in this file sanctions or inspects code *by span*, and spans run
@@ -128,7 +238,9 @@ describe("co-creator write escalation", () => {
     expect(spans.size).toBeGreaterThan(0);
 
     for (const [name, span] of spans) {
-      const [, ...rest] = mutations.slice(span.start + 1, span.end).split("\n");
+      const [, ...rest] = maskedMutations
+        .slice(span.start + 1, span.end)
+        .split("\n");
       const absorbed = rest.filter((line) => binding.test(line));
 
       expect(
@@ -163,6 +275,14 @@ describe("co-creator write escalation", () => {
    * rather than by enumerating the causes (templates, strings, comments), for
    * the same reason the check above prefers column-zero bindings to matching
    * arrow syntax.
+   *
+   * Reads the masked text (#747). On raw source this assertion is satisfied by
+   * the same string content that caused the split, whenever the spurious
+   * boundary follows a column-zero `}` inside the literal. Masking removes that
+   * cause upstream, and reading masked text here means a brace inside a string
+   * can no longer stand in for the real closing brace either — so this stays a
+   * genuine backstop rather than a second reading of the text that misled the
+   * boundary.
    */
   it("has no span that was cut short by a spurious boundary", () => {
     // Non-vacuity, as above (#746): a dead model yields no spans, and a loop
@@ -170,7 +290,7 @@ describe("co-creator write escalation", () => {
     expect(spans.size).toBeGreaterThan(0);
 
     for (const [name, span] of spans) {
-      const lines = mutations.slice(span.start, span.end).split("\n");
+      const lines = maskedMutations.slice(span.start, span.end).split("\n");
 
       // Trailing blank lines and the next declaration's comment block belong to
       // this span but sit after the closing brace.
