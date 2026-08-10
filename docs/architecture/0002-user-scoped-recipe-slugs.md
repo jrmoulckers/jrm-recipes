@@ -68,6 +68,26 @@ This is the one place where link retention loses: keeping the old namespace reso
 deletion request. Recipes remain reachable under the rotated namespace, so nothing that a viewer
 could still legitimately see disappears.
 
+### Renaming a recipe re-slugs it
+
+Slugs used to be immutable: `applyRecipeInput` returned the existing slug, so renaming "Nonna's Ragu"
+to "Sunday Ragu" left the URL saying `nonnas-ragu` forever. A rename now regenerates the slug and
+retains the outgoing one, so the URL tells the truth _and_ every link ever shared keeps working.
+
+Re-slugging is keyed off the **title**, not the derived slug. A recipe whose slug was perturbed
+(`apple-pie-2ab`, because that cook already had an `apple-pie`) would otherwise churn to a fresh
+random suffix on every unrelated save. Because an edit can now lose the same check-then-write race a
+create can, `updateRecipe` and `revertRecipe` are wrapped in `withSlugConflictRetry` too.
+
+### Legacy flat URLs resolve through a marked alias row
+
+`recipe_slug_aliases.legacy` marks the rows seeded by the migration from the pre-namespacing global
+slugs, with a partial unique index over just those rows. Since the source column was globally unique,
+that index can never fail on seeding, and it keeps a flat `/recipes/<slug>` lookup unambiguous forever
+even after later recipes claim the same slug in other namespaces. Bare id-or-slug reads that survive
+the transition (`getRecipe`, `getOwnedRecipe`, `getPublicRecipeCard`, `forkRecipe`) order
+deterministically — exact id first, then oldest holder — so no existing link changes meaning.
+
 ## Consequences
 
 Reserved slugs move up a level. `new`, `tags`, and `cook-with` are static siblings under `/recipes/*`,

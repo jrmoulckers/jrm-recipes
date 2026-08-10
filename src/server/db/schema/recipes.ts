@@ -12,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   varchar,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
@@ -181,11 +182,14 @@ export const recipes = pgTable(
     index("recipes_visibility_idx")
       .on(t.visibility)
       .where(sql`${t.deletedAt} is null`),
-    // Slugs are public lookup keys (getRecipe resolves by slug), so they must be
-    // globally unique. Matching groups.slug / tags.slug. The unique constraint
-    // also provides the btree index that backs slug lookups, so no separate
-    // non-unique index is needed.
-    unique("recipes_slug_uq").on(t.slug),
+    // Slugs are public lookup keys, but they are namespaced by their author
+    // (issue #666): the canonical URL is /recipes/<user slug>/<recipe slug>, so
+    // two cooks can each hold `blueberry-muffins`. Uniqueness is therefore
+    // per-author, not global. The constraint's btree also backs the namespaced
+    // lookup, so no separate non-unique index is needed. Legacy flat
+    // /recipes/<slug> links keep resolving through `recipe_slug_aliases`, whose
+    // migration-seeded rows preserve every pre-namespacing global slug.
+    unique("recipes_author_slug_uq").on(t.authorId, t.slug),
     // Share tokens are the confidentiality secret for unlisted recipes
     // (issues #204/#207), so they must be globally unique. The constraint's
     // btree also backs the /r/<token> lookup. Multiple NULLs are allowed
@@ -387,6 +391,67 @@ export const recipeEvents = pgTable(
   ],
 );
 
+/**
+ * Permanent history of every recipe slug ever published in a namespace
+ * (issue #666).
+ *
+ * Two jobs, both about links outliving edits:
+ *
+ *   1. **Rename retention.** Renaming a recipe now regenerates its slug, so the
+ *      outgoing slug is retained here and 308-redirects to the new canonical
+ *      URL. Nothing a family member ever shared dead-ends.
+ *   2. **Legacy flat URLs.** `legacy` rows are seeded by the namespacing
+ *      migration from the pre-namespacing globally-unique `recipes.slug`, so
+ *      `/recipes/blueberry-muffins` keeps resolving after the canonical URL
+ *      becomes `/recipes/<cook>/blueberry-muffins`. Because the source column
+ *      was globally unique, a partial unique index over `legacy` rows keeps that
+ *      flat lookup unambiguous forever.
+ *
+ * An alias counts as *occupied* when allocating a new slug (see `uniqueSlug`),
+ * which is the rule that keeps redirects honest: a released slug can never be
+ * re-claimed by a different recipe, so an old link can never silently start
+ * resolving to someone else's content. Redirects are still issued only after the
+ * viewer passes `canView`, so an alias never reveals a recipe they can't see.
+ */
+export const recipeSlugAliases = pgTable(
+  "recipe_slug_aliases",
+  {
+    id: pk(),
+    // The namespace the alias lives in. Denormalized from the recipe's author so
+    // uniqueness is enforceable per-namespace by the DB.
+    ownerId: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    slug: varchar({ length: 96 }).notNull(),
+    recipeId: fk()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    legacy: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    unique("recipe_slug_aliases_owner_slug_uq").on(t.ownerId, t.slug),
+    uniqueIndex("recipe_slug_aliases_legacy_slug_uq")
+      .on(t.slug)
+      .where(sql`${t.legacy}`),
+    index("recipe_slug_aliases_recipe_idx").on(t.recipeId),
+  ],
+);
+
+export const recipeSlugAliasesRelations = relations(
+  recipeSlugAliases,
+  ({ one }) => ({
+    recipe: one(recipes, {
+      fields: [recipeSlugAliases.recipeId],
+      references: [recipes.id],
+    }),
+    owner: one(users, {
+      fields: [recipeSlugAliases.ownerId],
+      references: [users.id],
+    }),
+  }),
+);
+
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(users, {
     fields: [recipes.authorId],
@@ -411,6 +476,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   ratings: many(ratings),
   comments: many(comments),
   reviews: many(reviews),
+  slugAliases: many(recipeSlugAliases),
 }));
 
 export const recipeIngredientsRelations = relations(
@@ -466,6 +532,8 @@ export type RecipeStep = typeof recipeSteps.$inferSelect;
 export type NewRecipeStep = typeof recipeSteps.$inferInsert;
 export type RecipeEvent = typeof recipeEvents.$inferSelect;
 export type NewRecipeEvent = typeof recipeEvents.$inferInsert;
+export type RecipeSlugAlias = typeof recipeSlugAliases.$inferSelect;
+export type NewRecipeSlugAlias = typeof recipeSlugAliases.$inferInsert;
 export type RecipeEventType = (typeof recipeEventType.enumValues)[number];
 export type RecipeVisibility = (typeof recipeVisibility.enumValues)[number];
 export type RecipeStatus = (typeof recipeStatus.enumValues)[number];

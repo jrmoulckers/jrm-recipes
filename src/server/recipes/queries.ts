@@ -95,6 +95,22 @@ const notDeleted = isNull(recipes.deletedAt);
  */
 const qb = new QueryBuilder();
 
+/**
+ * Deterministic ordering for a bare "id or slug" lookup.
+ *
+ * Recipe slugs are only unique within their author's namespace (issue #666), so
+ * a flat `/recipes/<slug>` lookup can match more than one row. Resolve it the
+ * same way everywhere: an exact id always wins, then the oldest holder of the
+ * slug — which is the recipe the pre-namespacing global slug pointed at, so no
+ * previously-shared link ever changes what it resolves to.
+ */
+function idOrSlugOrder(idOrSlug: string): SQL[] {
+  return [
+    sql`case when ${recipes.id} = ${idOrSlug} then 0 else 1 end`,
+    sql`${recipes.createdAt} asc`,
+  ];
+}
+
 /** Recipe with everything needed to render a detail page. */
 export type FullRecipe = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
 export type RecipeListItem = Awaited<ReturnType<typeof listMyRecipes>>[number];
@@ -400,6 +416,7 @@ export async function getPublicRecipeCard(idOrSlug: string) {
       eq(recipes.visibility, "public"),
       eq(recipes.status, "published"),
     ),
+    orderBy: idOrSlugOrder(idOrSlug),
     columns: {
       id: true,
       slug: true,
@@ -582,6 +599,7 @@ export async function getRecipe(
       notDeleted,
       or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
     ),
+    orderBy: idOrSlugOrder(idOrSlug),
     with: {
       author: true,
       group: true,
@@ -659,6 +677,7 @@ export async function getOwnedRecipe(idOrSlug: string, userId: string) {
       or(eq(recipes.id, idOrSlug), eq(recipes.slug, idOrSlug)),
       eq(recipes.authorId, userId),
     ),
+    orderBy: idOrSlugOrder(idOrSlug),
     with: {
       author: true,
       group: true,

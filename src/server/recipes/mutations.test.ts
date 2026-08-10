@@ -15,7 +15,12 @@ vi.mock("~/server/db", () => ({
   isDbConfigured: () => true,
 }));
 
-import { recipes, recipeVersions, type User } from "~/server/db/schema";
+import {
+  recipes,
+  recipeSlugAliases,
+  recipeVersions,
+  type User,
+} from "~/server/db/schema";
 import { isReservedRecipeSlug } from "~/lib/recipe-reserved-slugs";
 import { recipeInput } from "./validation";
 import {
@@ -33,13 +38,23 @@ import {
 const author = { id: "user_1" } as User;
 const input = recipeInput.parse({ title: "Apple Pie" });
 
-/** A Postgres unique-violation on the recipes.slug constraint. */
+/** A Postgres unique-violation on the recipes per-author slug constraint. */
 function slugConflict(): Error {
   return Object.assign(
     new Error(
-      'duplicate key value violates unique constraint "recipes_slug_uq"',
+      'duplicate key value violates unique constraint "recipes_author_slug_uq"',
     ),
-    { code: "23505", constraint: "recipes_slug_uq" },
+    { code: "23505", constraint: "recipes_author_slug_uq" },
+  );
+}
+
+/** A Postgres unique-violation on the recipe_slug_aliases (owner_id, slug) constraint. */
+function aliasConflict(): Error {
+  return Object.assign(
+    new Error(
+      'duplicate key value violates unique constraint "recipe_slug_aliases_owner_slug_uq"',
+    ),
+    { code: "23505", constraint: "recipe_slug_aliases_owner_slug_uq" },
   );
 }
 
@@ -53,38 +68,76 @@ function versionConflict(): Error {
   );
 }
 
-/** Minimal transaction stand-in exposing just the surface `uniqueSlug` reads. */
-function fakeTx(findFirst: ReturnType<typeof vi.fn>) {
-  return { query: { recipes: { findFirst } } } as unknown as Parameters<
-    typeof uniqueSlug
-  >[0];
+/**
+ * Minimal transaction stand-in exposing just the surface `uniqueSlug` reads: the
+ * caller's live recipes and their retained slug aliases.
+ */
+function fakeTx(
+  findFirst: ReturnType<typeof vi.fn>,
+  findAlias: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined),
+) {
+  return {
+    query: {
+      recipes: { findFirst },
+      recipeSlugAliases: { findFirst: findAlias },
+    },
+  } as unknown as Parameters<typeof uniqueSlug>[0];
 }
+
+const OWNER = "user_1";
 
 beforeEach(() => {
   dbMock.transaction.mockReset();
 });
 
-describe("recipes.slug unique constraint (schema)", () => {
-  it("is enforced at the database level, not just in app code", () => {
+describe("recipes slug uniqueness (schema)", () => {
+  it("is enforced per author at the database level, not just in app code", () => {
     const { uniqueConstraints, indexes } = getTableConfig(recipes);
 
-    const slugUq = uniqueConstraints.find((u) => u.name === "recipes_slug_uq");
+    // Namespaced URLs (issue #666): two cooks may each hold `apple-pie`, so the
+    // constraint is (author_id, slug), never slug alone.
+    const slugUq = uniqueConstraints.find(
+      (u) => u.name === "recipes_author_slug_uq",
+    );
     expect(slugUq).toBeDefined();
-    expect(slugUq?.columns.map((c) => c.name)).toEqual(["slug"]);
+    expect(slugUq?.columns.map((c) => c.name)).toEqual(["authorId", "slug"]);
+    expect(uniqueConstraints.some((u) => u.name === "recipes_slug_uq")).toBe(
+      false,
+    );
 
     // The old non-unique index was replaced by the unique constraint (whose
     // btree index still backs slug lookups), so getRecipe-by-slug resolves at
-    // most one row.
+    // most one row per namespace.
     expect(indexes.some((i) => i.config.name === "recipes_slug_idx")).toBe(
       false,
     );
+  });
+
+  it("keeps every retired slug unique inside its namespace", () => {
+    const { uniqueConstraints, indexes } = getTableConfig(recipeSlugAliases);
+
+    const ownerSlugUq = uniqueConstraints.find(
+      (u) => u.name === "recipe_slug_aliases_owner_slug_uq",
+    );
+    expect(ownerSlugUq?.columns.map((c) => c.name)).toEqual([
+      "ownerId",
+      "slug",
+    ]);
+
+    // The migration-seeded `legacy` rows carry the old globally-unique slugs, so
+    // a flat /recipes/<slug> link resolves to exactly one recipe forever.
+    const legacyUq = indexes.find(
+      (i) => i.config.name === "recipe_slug_aliases_legacy_slug_uq",
+    );
+    expect(legacyUq?.config.unique).toBe(true);
+    expect(legacyUq?.config.where).toBeDefined();
   });
 });
 
 describe("uniqueSlug", () => {
   it("returns the base slug when it is free", async () => {
     const findFirst = vi.fn().mockResolvedValue(undefined);
-    const slug = await uniqueSlug(fakeTx(findFirst), "apple-pie");
+    const slug = await uniqueSlug(fakeTx(findFirst), OWNER, "apple-pie");
     expect(slug).toBe("apple-pie");
     expect(findFirst).toHaveBeenCalledTimes(1);
   });
@@ -94,24 +147,47 @@ describe("uniqueSlug", () => {
       .fn()
       .mockResolvedValueOnce({ id: "existing" }) // base taken
       .mockResolvedValueOnce(undefined); // perturbed candidate is free
-    const slug = await uniqueSlug(fakeTx(findFirst), "apple-pie");
+    const slug = await uniqueSlug(fakeTx(findFirst), OWNER, "apple-pie");
     expect(slug).not.toBe("apple-pie");
     expect(slug.startsWith("apple-pie-")).toBe(true);
     expect(findFirst).toHaveBeenCalledTimes(2);
   });
 
+  it("treats a retained alias as occupied", async () => {
+    // No live recipe holds it, but an old link points at it. Handing the slug to
+    // a different recipe would silently redirect that link to other content.
+    const findFirst = vi.fn().mockResolvedValue(undefined);
+    const findAlias = vi
+      .fn()
+      .mockResolvedValueOnce({ id: "alias_1" })
+      .mockResolvedValueOnce(undefined);
+    const slug = await uniqueSlug(
+      fakeTx(findFirst, findAlias),
+      OWNER,
+      "apple-pie",
+    );
+    expect(slug).not.toBe("apple-pie");
+    expect(slug.startsWith("apple-pie-")).toBe(true);
+  });
+
   it("excludes the given id so a recipe never collides with itself", async () => {
     const findFirst = vi.fn().mockResolvedValue(undefined);
-    const slug = await uniqueSlug(fakeTx(findFirst), "apple-pie", "self_id");
+    const slug = await uniqueSlug(
+      fakeTx(findFirst),
+      OWNER,
+      "apple-pie",
+      "self_id",
+    );
     expect(slug).toBe("apple-pie");
   });
 
   it("perturbs a reserved base so it can't shadow a sibling route", async () => {
     // "new" is free in the DB, but `/recipes/new` is the editor route. A recipe
-    // slugged "new" would be unreachable at its own URL, so uniqueSlug must
-    // never return it (regression: recipes "failing to resolve" after create).
+    // slugged "new" would be unreachable at its legacy flat URL, so uniqueSlug
+    // must never return it (regression: recipes "failing to resolve" after
+    // create).
     const findFirst = vi.fn().mockResolvedValue(undefined);
-    const slug = await uniqueSlug(fakeTx(findFirst), "new");
+    const slug = await uniqueSlug(fakeTx(findFirst), OWNER, "new");
     expect(slug).not.toBe("new");
     expect(slug.startsWith("new-")).toBe(true);
     expect(isReservedRecipeSlug(slug)).toBe(false);
@@ -130,7 +206,20 @@ describe("isSlugConflict", () => {
     expect(
       isSlugConflict({
         code: "23505",
-        message: 'violates unique constraint "recipes_slug_uq"',
+        message: 'violates unique constraint "recipes_author_slug_uq"',
+      }),
+    ).toBe(true);
+  });
+
+  it("matches a collision on the alias table", () => {
+    // Retiring a slug races the same way claiming one does, and an alias counts
+    // as occupied, so both constraints must trigger the retry.
+    expect(isSlugConflict(aliasConflict())).toBe(true);
+    expect(
+      isSlugConflict({
+        code: "23505",
+        message:
+          'violates unique constraint "recipe_slug_aliases_owner_slug_uq"',
       }),
     ).toBe(true);
   });
@@ -193,6 +282,45 @@ describe("forkRecipe slug-conflict resilience", () => {
     const result = await forkRecipe("apple-pie", author);
 
     expect(result).toEqual(created);
+    expect(dbMock.transaction).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("updateRecipe slug-conflict resilience", () => {
+  it("retries the whole transaction on a slug collision, then succeeds", async () => {
+    // A rename now re-slugs (issue #666), so an edit can lose the same
+    // check-then-write race a create can. It must retry rather than surface a
+    // raw Postgres error to someone who just renamed their recipe.
+    const updated = { id: "r1", slug: "sunday-ragu" };
+    dbMock.transaction
+      .mockRejectedValueOnce(slugConflict())
+      .mockResolvedValueOnce(updated);
+
+    const result = await updateRecipe("r1", input, author);
+
+    expect(result).toEqual(updated);
+    expect(dbMock.transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry on an unrelated error", async () => {
+    dbMock.transaction.mockRejectedValueOnce(new Error("boom"));
+
+    await expect(updateRecipe("r1", input, author)).rejects.toThrow("boom");
+    expect(dbMock.transaction).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("revertRecipe slug-conflict resilience", () => {
+  it("retries the whole transaction on a slug collision, then succeeds", async () => {
+    // A revert restores the snapshot's title, which re-slugs just like a rename.
+    const reverted = { id: "r1", slug: "nonnas-ragu" };
+    dbMock.transaction
+      .mockRejectedValueOnce(slugConflict())
+      .mockResolvedValueOnce(reverted);
+
+    const result = await revertRecipe("r1", 2, author);
+
+    expect(result).toEqual(reverted);
     expect(dbMock.transaction).toHaveBeenCalledTimes(2);
   });
 });
@@ -312,6 +440,7 @@ function createTx(opts: { member: boolean }) {
           .mockResolvedValue(opts.member ? { id: "gm_1" } : undefined),
       },
       recipes: { findFirst: vi.fn().mockResolvedValue(undefined) },
+      recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     insert,
     delete: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(undefined)) })),
@@ -401,10 +530,12 @@ function updateTx(opts: { member: boolean }) {
         findFirst: vi.fn().mockResolvedValue({
           id: "r1",
           slug: "apple-pie",
+          title: "Apple Pie",
           publishedAt: null,
           status: "draft",
         }),
       },
+      recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     update,
     insert: vi.fn(() => ({ values: () => chainable(undefined) })),
@@ -489,10 +620,12 @@ function versionRaceTx() {
         findFirst: vi.fn().mockResolvedValue({
           id: "r1",
           slug: "apple-pie",
+          title: "Apple Pie",
           publishedAt: null,
           status: "draft",
         }),
       },
+      recipeSlugAliases: { findFirst: vi.fn().mockResolvedValue(undefined) },
     },
     update: vi.fn(() => ({
       set: () => ({ where: vi.fn(() => Promise.resolve(undefined)) }),
