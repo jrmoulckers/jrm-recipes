@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableConfig } from "drizzle-orm/pg-core";
 
@@ -104,6 +107,79 @@ const OWNER = "user_1";
 
 beforeEach(() => {
   dbMock.transaction.mockReset();
+});
+
+/**
+ * The namespace lock must stay transaction-scoped (issue #740).
+ *
+ * `pg_advisory_xact_lock` -> `pg_advisory_lock` is a five-character edit that
+ * type-checks, lints, and passes every behavioural test in this file, because
+ * it still *takes* the lock. It just never releases it: session-scoped locks
+ * outlive `COMMIT`. On the pooled, long-lived connection this app uses
+ * (`server/db/index.ts`, `max: 1` in production), re-entrancy then lets that
+ * same connection re-acquire the key forever, so the lock reports success while
+ * serializing nothing — the exact duplicate-slug race it exists to prevent.
+ *
+ * A behavioural test cannot see this: the mocked transaction has no lock
+ * manager, and the real failure needs a second connection. So it is asserted
+ * against the source.
+ *
+ * Both literals are pinned, because a negative assertion rots open (#724/#732):
+ * a misspelled ban is always absent, which is what passing looks like. The
+ * sanctioned form is pinned by having to appear in the code; the banned form is
+ * pinned to the sanctioned one by construction — it is the same name without
+ * `xact_`. Rotting either breaks the derivation, so neither can silently become
+ * a no-op. (Verified: pinning only the sanctioned literal was not enough, and a
+ * rotted ban passed 49/49.)
+ */
+describe("slug namespace lock scope (issue #740)", () => {
+  const TXN_SCOPED = "pg_advisory_xact_lock(";
+  const SESSION_SCOPED = "pg_advisory_lock(";
+
+  const source = readFileSync(
+    resolve(dirname(fileURLToPath(import.meta.url)), "mutations.ts"),
+    "utf8",
+  );
+
+  // Doc comments name the session-scoped form deliberately, to warn against it.
+  // Both checks read code only: anchoring against the full source would let the
+  // warning satisfy the anchor, so deleting the lock call outright would leave
+  // this guard green. (Verified: it did.)
+  const code = source.replace(/\/\*\*[\s\S]*?\*\//g, "");
+
+  it("pins both literals, so neither ban nor anchor can rot into a no-op", () => {
+    // The banned form is the sanctioned form minus `xact_`. Stating that as a
+    // derivation means a typo in *either* constant fails here.
+    expect(
+      TXN_SCOPED,
+      "the two lock literals are no longer the same Postgres function name " +
+        "with and without `xact_`. One of them is misspelled, and a " +
+        "misspelled ban can never fire.",
+    ).toBe(SESSION_SCOPED.replace("advisory_", "advisory_xact_"));
+
+    // The anchor must not be satisfied by the thing it is anchoring.
+    expect(TXN_SCOPED.includes(SESSION_SCOPED)).toBe(false);
+  });
+
+  it("still takes a transaction-scoped lock, which anchors the ban below", () => {
+    expect(
+      code.includes(TXN_SCOPED),
+      `${TXN_SCOPED} no longer appears in mutations.ts code — the namespace ` +
+        "lock has been removed or renamed.",
+    ).toBe(true);
+  });
+
+  it("never uses the session-scoped form, which outlives the transaction", () => {
+    expect(
+      code.includes(SESSION_SCOPED),
+      "mutations.ts uses the session-scoped `pg_advisory_lock(`. That lock " +
+        "survives COMMIT and is released only on disconnect. On the pooled " +
+        "connection (server/db/index.ts, `max: 1`) it leaks, and advisory " +
+        "locks are re-entrant, so the same connection keeps re-acquiring it " +
+        "and the lock silently stops excluding anything. Use " +
+        "`pg_advisory_xact_lock(`.",
+    ).toBe(false);
+  });
 });
 
 describe("recipes slug uniqueness (schema)", () => {
