@@ -239,6 +239,8 @@ jobs:
   # actually run. Uses a throwaway Postgres service (hard-coded local credentials
   # NOT a repo secret, mirroring the e2e/lighthouse jobs) and runs the migrator
   # twice to confirm it is idempotent (the second run must be a clean no-op).
+  # Finally it compares the resulting database back to the schema (#738), which
+  # neither of the other two does.
   migrations:
     name: Migrations
     needs: dispatch-guard
@@ -289,6 +291,14 @@ jobs:
         run: node scripts/migrate.mjs
       - name: Re-run migrations (must be a no-op)
         run: node scripts/migrate.mjs
+      # Drift (#242) proves the migrations match the schema *as drizzle-kit
+      # generates them*, and the step above proves they apply. Neither compares
+      # the resulting database to the schema, so a hand-written migration that
+      # alters a constraint passes both while the deployed action diverges
+      # (#738). Referential actions decide what an existing delete does, so that
+      # changes behaviour without changing any call site.
+      - name: Assert deployed foreign keys match the schema
+        run: pnpm db:check-fks
 
   # End-to-end tests, including offline PWA coverage (issue #171). Playwright
   # starts the app in production mode (see playwright.config.ts) so the Serwist
