@@ -39,6 +39,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/server/db/seed.ts",
+    "db:seed:e2e": "tsx src/server/db/seed-e2e.ts",
     "db:seed-food-graph": "tsx scripts/seed-food-graph.ts",
     "db:backfill-tags": "tsx scripts/backfill-tag-taxonomy.ts",
     "db:backfill-dietary": "tsx scripts/backfill-dietary-tags.ts",

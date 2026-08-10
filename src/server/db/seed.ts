@@ -59,7 +59,7 @@ import {
   users,
   type User,
 } from "~/server/db/schema";
-import { DEV_USER, DEV_CO_COOK } from "~/server/auth/dev-user";
+import { DEV_USER, isE2eIdentity } from "~/server/auth/dev-user";
 import type { RecipeInput } from "~/server/recipes/validation";
 import {
   buildCollectionRecipeRows,
@@ -152,13 +152,11 @@ const DEMO_USERS = [
     email: "lucia@heirloom.local",
   },
   {
-    // The dev-bypass co-cook identity (#698). Imported rather than restated so
-    // the harness and the seed cannot drift into being two different people.
-    id: DEV_CO_COOK.id,
-    name: DEV_CO_COOK.name!,
-    handle: DEV_CO_COOK.handle!,
-    slug: DEV_CO_COOK.slug,
-    email: DEV_CO_COOK.email!,
+    id: "seed_usr_rosa",
+    name: "Aunt Rosa",
+    handle: "aunt-rosa",
+    slug: "aunt-rosa",
+    email: "rosa@heirloom.local",
   },
   {
     id: "seed_usr_mateo",
@@ -168,6 +166,24 @@ const DEMO_USERS = [
     email: "mateo@heirloom.local",
   },
 ] as const;
+
+/**
+ * The shared seed must never create an E2E-only fixture (issue #783).
+ *
+ * #698 put the harness's second identity in `DEMO_USERS`, and nothing noticed
+ * because a seed that creates one extra user still succeeds. This makes the
+ * absence structural: adding an `e2e_` identity here now fails `pnpm db:seed`
+ * loudly instead of quietly shipping a test account to every preview database.
+ */
+{
+  const leaked = DEMO_USERS.filter(isE2eIdentity).map((u) => u.id);
+  if (leaked.length > 0) {
+    throw new Error(
+      `Refusing to seed E2E-only identities from the shared seed: ${leaked.join(", ")}. ` +
+        "Fixtures belong in src/server/db/seed-e2e.ts (issue #783).",
+    );
+  }
+}
 
 type SeedIngredient = {
   quantity?: number;

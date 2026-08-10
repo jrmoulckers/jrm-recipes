@@ -345,6 +345,11 @@ jobs:
       SKIP_ENV_VALIDATION: "1"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+      # Enables the dev identity selector so the co-creation specs can be two
+      # different people (#698). Server-only - deliberately not NEXT_PUBLIC_ -
+      # and set in this job alone, so the second identity is unreachable
+      # everywhere else, including every Vercel deployment (#783).
+      E2E_IDENTITY_SELECTOR: "1"
 
     steps:
       - name: Checkout
@@ -390,6 +395,11 @@ jobs:
 
       - name: Seed demo data
         run: pnpm db:seed
+
+      # E2E-only fixture identity, kept out of the shared seed so it exists in
+      # no dev, demo or preview database (#783).
+      - name: Seed E2E fixtures
+        run: pnpm db:seed:e2e
 
       # Cache the downloaded Playwright browser binaries (#243). Keyed on the
       # lockfile so a Playwright version bump re-downloads them.
