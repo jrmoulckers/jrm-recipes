@@ -8,7 +8,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { pk } from "./_shared";
+import { fk, pk } from "./_shared";
+import { users } from "./users";
 
 /** How an erasure was initiated. */
 export const deletionTrigger = pgEnum("deletion_trigger", [
@@ -109,3 +110,76 @@ export const deletionRecords = pgTable(
 export type DeletionRecord = typeof deletionRecords.$inferSelect;
 export type NewDeletionRecord = typeof deletionRecords.$inferInsert;
 export type DeletionTrigger = (typeof deletionTrigger.enumValues)[number];
+
+/** Why an erasure request could not be executed when it arrived. */
+export const erasureHoldReason = pgEnum("erasure_hold_reason", [
+  "co_created_entanglement",
+]);
+
+/**
+ * An erasure request that arrived, was accepted, and has **not** been executed
+ * because executing it would destroy the only evidence needed to remedy it
+ * (issue #694).
+ *
+ * The hazard is documented in `eraseUserAccount`: since #685 an accepted
+ * co-creator can edit a recipe they do not own, so a departing user's prose can
+ * survive inside someone else's recipe, and the departing user's own
+ * `recipe_versions` rows are the sole record of which words were theirs.
+ * Erasure deletes those rows — and `recipe_versions.authorId` is `set null`, so
+ * deleting the `users` row severs the attribution even if that delete were
+ * removed. Both paths destroy the diff basis irreversibly, so the erasure is
+ * halted before the first destructive step for entangled accounts.
+ *
+ * This table is what makes that halt defensible rather than a dropped request.
+ * A webhook that neither completes nor records anything is itself a compliance
+ * failure: the request must stay durable, replayable once a remedy lands, and
+ * countable so an operator can answer "how many erasures are we holding?".
+ *
+ * **Not a tombstone.** Unlike `deletion_records`, the subject still exists, so
+ * a hash would be pointless — replay needs the real id. `userId` therefore
+ * cascades: once the erasure finally runs, the hold disappears with the account
+ * and leaves no residue about a user who has been erased.
+ *
+ * One row per subject. Clerk retries `user.deleted`, and a retry must update
+ * the existing hold rather than accumulate duplicates that would inflate the
+ * backlog count.
+ */
+export const erasureHolds = pgTable(
+  "erasure_holds",
+  {
+    id: pk(),
+    userId: fk()
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    trigger: deletionTrigger().notNull(),
+    reason: erasureHoldReason().notNull(),
+    /**
+     * Recipes whose text the erasure cannot separate: ones the user co-creates
+     * but does not own, and ones they own that carry other accepted creators.
+     * Ids, not content — this is the replay worklist for the eventual remedy.
+     */
+    entangledRecipeIds: jsonb().$type<string[]>().notNull(),
+    /** How many times the request has been received. Retries land here. */
+    requestCount: integer().notNull().default(1),
+    firstRequestedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    lastRequestedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    /** Which confirmation copy the user was shown, when ours showed it. */
+    noticeVersion: varchar({ length: 40 }),
+    /**
+     * Set when the hold is lifted — by a remedy, or by the entanglement going
+     * away. Open holds are the backlog; released ones are the audit trail of
+     * how long each request waited.
+     */
+    releasedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    // The backlog query is "open holds, oldest first", so it filters on
+    // `releasedAt IS NULL` and orders by first request.
+    index("erasure_holds_released_at_idx").on(t.releasedAt, t.firstRequestedAt),
+  ],
+);
+
+export type ErasureHold = typeof erasureHolds.$inferSelect;
+export type NewErasureHold = typeof erasureHolds.$inferInsert;
+export type ErasureHoldReason = (typeof erasureHoldReason.enumValues)[number];

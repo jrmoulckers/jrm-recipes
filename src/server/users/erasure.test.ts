@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * deletion, and a tombstone that carries no identifier.
  */
 
-const { state, db, purge, envMock } = vi.hoisted(() => {
+const { state, db, purge, envMock, holds } = vi.hoisted(() => {
   const state = {
     configured: true,
     user: undefined as
@@ -23,6 +23,8 @@ const { state, db, purge, envMock } = vi.hoisted(() => {
     inserted: null as Record<string, unknown> | null,
     purgeFailed: [] as string[],
     userSurvives: false,
+    /** What `findEntanglement` reports. Empty is the common, unentangled case. */
+    entangled: [] as string[],
   };
 
   const table = (t: unknown) =>
@@ -91,12 +93,23 @@ const { state, db, purge, envMock } = vi.hoisted(() => {
 
   const envMock = { env: { DELETION_HASH_SALT: "a-sufficiently-long-salt" } };
 
-  return { state, db, purge, envMock };
+  const holds = {
+    findEntanglement: vi.fn(async () => ({
+      reason: "co_created_entanglement" as const,
+      recipeIds: state.entangled,
+    })),
+    recordErasureHold: vi.fn(async () => {
+      state.calls.push("record erasure_hold");
+    }),
+  };
+
+  return { state, db, purge, envMock, holds };
 });
 
 vi.mock("~/server/db", () => ({ db, isDbConfigured: () => state.configured }));
 vi.mock("~/server/media/purge", () => purge);
 vi.mock("~/env", () => envMock);
+vi.mock("~/server/users/erasure-holds", () => holds);
 
 import { eraseUserAccount, hashDeletionSubject } from "./erasure";
 
@@ -108,6 +121,7 @@ beforeEach(() => {
   state.inserted = null;
   state.purgeFailed = [];
   state.userSurvives = false;
+  state.entangled = [];
   vi.clearAllMocks();
 });
 
@@ -233,6 +247,94 @@ describe("eraseUserAccount", () => {
     // an upper bound on the #694 remediation population rather than a count of
     // recipes carrying their prose (#728).
     expect(result.retainedRecipeCount).toBe(1);
+  });
+
+  /**
+   * Containment for #694. The erasure of an entangled account destroys the only
+   * evidence of which words in a co-created recipe were the departing user's:
+   * their `recipe_versions` rows are deleted outright, and `authorId` is
+   * `set null`, so the `users` delete severs the attribution independently.
+   * Both are irreversible, so the halt has to precede every destructive step —
+   * including the media purge, which is equally final.
+   */
+  describe("co-creator containment (#694)", () => {
+    it("deletes nothing at all when the user is entangled", async () => {
+      state.entangled = ["r9"];
+      queueSelects({ owned: [{ id: "r1" }] });
+
+      const result = await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+
+      expect(result.status).toBe("held");
+      expect(result.entangledRecipeIds).toEqual(["r9"]);
+      expect(result.counts).toEqual({});
+
+      // Not "deleted less". Nothing ran: no transaction, no media bytes, no
+      // version rows, and no `users` delete — the second destruction path,
+      // which ordering alone would not have contained.
+      expect(state.calls).not.toContain("BEGIN");
+      expect(state.calls).not.toContain("purge cloudinary");
+      expect(state.calls).not.toContain("delete recipe_versions");
+      expect(state.calls).not.toContain("delete recipes");
+      expect(state.calls).not.toContain("delete users");
+      expect(state.calls).not.toContain("delete media_assets");
+    });
+
+    it("records the held request durably before returning", async () => {
+      state.entangled = ["r9", "r12"];
+      queueSelects();
+
+      await eraseUserAccount("u1", {
+        trigger: "in_app",
+        noticeVersion: "delete-account-v1",
+      });
+
+      // A dropped request that leaves no trace is itself a compliance failure:
+      // the subject asked, and nothing recorded that they did.
+      expect(holds.recordErasureHold).toHaveBeenCalledWith(
+        "u1",
+        { reason: "co_created_entanglement", recipeIds: ["r9", "r12"] },
+        { trigger: "in_app", noticeVersion: "delete-account-v1" },
+      );
+    });
+
+    it("writes no tombstone for a held request", async () => {
+      state.entangled = ["r9"];
+      queueSelects();
+
+      await eraseUserAccount("u1", { trigger: "clerk_webhook" });
+
+      // `deletion_records.completedAt` is the completion proof. Writing one here
+      // would evidence an erasure that did not happen.
+      expect(state.inserted).toBeNull();
+    });
+
+    it("leaves the unentangled common case exactly as it was", async () => {
+      state.entangled = [];
+      queueSelects({ owned: [{ id: "r1" }], coCreated: [{ recipeId: "r1" }] });
+
+      const result = await eraseUserAccount("u1", { trigger: "in_app" });
+
+      // The guard is narrow by construction. Most accounts share nothing, and
+      // for them the erasure must still run start to finish, today, unchanged.
+      expect(result.status).toBe("erased");
+      expect(holds.recordErasureHold).not.toHaveBeenCalled();
+      expect(state.calls).toContain("purge cloudinary");
+      expect(state.calls).toContain("delete recipe_versions");
+      expect(state.calls).toContain("delete users");
+      expect(state.inserted?.completedAt).toBeInstanceOf(Date);
+    });
+
+    it("checks entanglement before the media purge, not after", async () => {
+      state.entangled = ["r9"];
+      queueSelects();
+
+      await eraseUserAccount("u1", { trigger: "admin" });
+
+      // Cloudinary bytes are destroyed remotely and are unrecoverable. A guard
+      // placed after the purge would contain the database and still have
+      // deleted the photographs.
+      expect(state.calls).toEqual(["record erasure_hold"]);
+    });
   });
 
   it("is a no-op for an already-erased subject", async () => {

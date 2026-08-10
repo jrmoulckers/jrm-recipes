@@ -15,12 +15,19 @@ const { state, eraseUserAccount, requireUser, deleteUser } = vi.hoisted(() => {
     configured: true,
     eraseError: null as Error | null,
     clerkError: null as Error | null,
+    /** What the erasure reports. `held` is the #694 containment outcome. */
+    eraseStatus: "erased" as "erased" | "held",
   };
   return {
     state,
     eraseUserAccount: vi.fn(async () => {
       if (state.eraseError) throw state.eraseError;
-      return { counts: {}, retainedRecipeCount: 0, purgedAssetCount: 0 };
+      return {
+        status: state.eraseStatus,
+        counts: {},
+        retainedRecipeCount: 0,
+        purgedAssetCount: 0,
+      };
     }),
     requireUser: vi.fn(async () => ({ id: "u1", clerkId: "clerk_1" })),
     deleteUser: vi.fn(async () => {
@@ -43,6 +50,7 @@ beforeEach(() => {
   state.configured = true;
   state.eraseError = null;
   state.clerkError = null;
+  state.eraseStatus = "erased";
   vi.clearAllMocks();
 });
 
@@ -82,7 +90,12 @@ describe("deleteAccountAction", () => {
     const order: string[] = [];
     eraseUserAccount.mockImplementationOnce(async () => {
       order.push("erase");
-      return { counts: {}, retainedRecipeCount: 0, purgedAssetCount: 0 };
+      return {
+        status: "erased" as const,
+        counts: {},
+        retainedRecipeCount: 0,
+        purgedAssetCount: 0,
+      };
     });
     deleteUser.mockImplementationOnce(async () => {
       order.push("clerk");
@@ -115,5 +128,20 @@ describe("deleteAccountAction", () => {
     const result = await deleteAccountAction("DELETE");
     expect(result.ok).toBe(false);
     expect(eraseUserAccount).not.toHaveBeenCalled();
+  });
+
+  /**
+   * A held erasure (#694) deleted nothing, so the Clerk identity has to stay
+   * too. Removing it would leave a person unable to sign in to an account whose
+   * data is still there — the half-erased state the whole ordering exists to
+   * avoid — and it is not reported as success, because nothing was deleted.
+   */
+  it("reports a held erasure honestly and leaves the Clerk identity alone", async () => {
+    state.eraseStatus = "held";
+
+    const result = await deleteAccountAction("DELETE");
+
+    expect(result).toMatchObject({ ok: false, code: "ERASURE_HELD" });
+    expect(deleteUser).not.toHaveBeenCalled();
   });
 });

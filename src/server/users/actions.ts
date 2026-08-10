@@ -81,10 +81,23 @@ export async function deleteAccountAction(
     const user = await requireUser();
     clerkId = user.clerkId ?? null;
 
-    await eraseUserAccount(user.id, {
+    const result = await eraseUserAccount(user.id, {
       trigger: "in_app",
       noticeVersion: DELETION_NOTICE_VERSION,
     });
+
+    // Held, not failed, and not done (#694). Nothing was deleted, so the Clerk
+    // identity must stay too: removing it here would strand a sign-in for an
+    // account whose data is still present. Say so plainly rather than reporting
+    // an erasure that has not happened.
+    if (result.status === "held") {
+      return {
+        ok: false,
+        code: "ERASURE_HELD",
+        error:
+          "Your request is recorded, and nothing has been deleted yet. Some of your writing is part of a recipe you share with someone else, and we can't separate it safely today. We'll finish your deletion as soon as we can, and we'll be in touch.",
+      };
+    }
   } catch (error) {
     return { ok: false, ...messageFor(error) };
   }

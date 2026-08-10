@@ -89,11 +89,30 @@ describe("handleClerkEvent", () => {
     expect(applyClerkUserDeletion).not.toHaveBeenCalled();
   });
 
-  it("anonymizes on user.deleted", async () => {
-    await handleClerkEvent({ type: "user.deleted", data: { id: "clerk_2" } });
+  it("erases on user.deleted", async () => {
+    applyClerkUserDeletion.mockResolvedValue("erased");
+    const outcome = await handleClerkEvent({
+      type: "user.deleted",
+      data: { id: "clerk_2" },
+    });
 
     expect(applyClerkUserDeletion).toHaveBeenCalledWith("clerk_2");
     expect(applyClerkUserUpdate).not.toHaveBeenCalled();
+    expect(outcome).toBe("applied");
+  });
+
+  /**
+   * A held erasure (#694) is neither done nor failed. Reporting it as `applied`
+   * would tell the route to answer 200 for a deletion that has not happened;
+   * throwing would make Clerk redeliver an event that cannot succeed until a
+   * remedy ships, which is a retry loop rather than a queue.
+   */
+  it("surfaces a held erasure as its own outcome on user.deleted", async () => {
+    applyClerkUserDeletion.mockResolvedValue("held");
+
+    expect(
+      await handleClerkEvent({ type: "user.deleted", data: { id: "clerk_9" } }),
+    ).toBe("held");
   });
 
   it("ignores unknown event types", async () => {

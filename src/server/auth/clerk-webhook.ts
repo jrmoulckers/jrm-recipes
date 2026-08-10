@@ -44,24 +44,33 @@ export function extractProfile(data: ClerkUserData): ClerkUserProfile {
 }
 
 /**
+ * What a webhook event actually did, so the route can answer honestly.
+ *
+ * `held` exists because an erasure can now be recorded without being executed
+ * (#694). It is neither success nor failure and must not be reported as either.
+ */
+export type ClerkEventOutcome = "ignored" | "applied" | "held";
+
+/**
  * Route a verified Clerk webhook event to the matching sync side effect
  * (issue #217): `user.updated` refreshes the local profile, `user.deleted`
- * soft-deletes + anonymizes it. Unknown event types are ignored so Clerk can
+ * erases the account. Unknown event types are ignored so Clerk can
  * fan out additional events without this endpoint erroring.
  */
 export async function handleClerkEvent(
   event: ClerkWebhookEvent,
-): Promise<void> {
+): Promise<ClerkEventOutcome> {
   const clerkId = event.data?.id;
-  if (!clerkId) return;
+  if (!clerkId) return "ignored";
   switch (event.type) {
     case "user.updated":
       await applyClerkUserUpdate(clerkId, extractProfile(event.data));
-      return;
-    case "user.deleted":
-      await applyClerkUserDeletion(clerkId);
-      return;
+      return "applied";
+    case "user.deleted": {
+      const status = await applyClerkUserDeletion(clerkId);
+      return status === "held" ? "held" : "applied";
+    }
     default:
-      return;
+      return "ignored";
   }
 }

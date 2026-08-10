@@ -13,7 +13,7 @@ import { isAnalyticsConfigured } from "~/lib/analytics/config";
 import { buildIdentityTraits } from "~/lib/analytics/identity";
 import { captureServer, identifyServer } from "~/lib/analytics/server";
 import { allocateUserSlug } from "~/server/users/slug";
-import { eraseUserAccount } from "~/server/users/erasure";
+import { eraseUserAccount, type ErasureResult } from "~/server/users/erasure";
 
 /**
  * Heirloom auth module.
@@ -282,15 +282,25 @@ export async function applyClerkUserUpdate(
  * Idempotent in both directions: an event for an unknown `clerkId` is a no-op,
  * and a repeat event after a successful erasure is recognised via the hashed
  * tombstone, so Clerk's retries converge instead of redelivering forever.
+ *
+ * Returns the outcome rather than swallowing it, because since #694 an erasure
+ * can be *held* instead of executed. A held request must not be reported as a
+ * completed deletion, and must not be reported as a failure either: a 5xx would
+ * make Clerk redeliver an event that can never succeed until a remedy ships.
  */
-export async function applyClerkUserDeletion(clerkId: string): Promise<void> {
-  if (!isDbConfigured() || !clerkId) return;
+export async function applyClerkUserDeletion(
+  clerkId: string,
+): Promise<ErasureResult["status"] | "unknown_subject"> {
+  if (!isDbConfigured() || !clerkId) return "unknown_subject";
 
   const existing = await db.query.users.findFirst({
     where: eq(users.clerkId, clerkId),
     columns: { id: true },
   });
-  if (!existing) return;
+  if (!existing) return "unknown_subject";
 
-  await eraseUserAccount(existing.id, { trigger: "clerk_webhook" });
+  const result = await eraseUserAccount(existing.id, {
+    trigger: "clerk_webhook",
+  });
+  return result.status;
 }
