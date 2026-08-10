@@ -565,19 +565,34 @@ function canForkSource(
   );
 }
 
+/**
+ * Apply an edit to an existing recipe.
+ *
+ * `actor` is who is writing; `ownerId` is whose namespace the recipe lives in.
+ * They are the same person for the owner's own edits and differ when an
+ * accepted co-creator edits (issue #668), which is why they are separate
+ * parameters rather than one `author`. Conflating them would allocate the
+ * recipe's slug — and retire its outgoing one — inside the *editor's*
+ * namespace, quietly moving a URL that belongs to the owner.
+ *
+ * `groupId` is resolved by the caller for the same reason: group placement is
+ * the owner's decision, and vetting it against a co-creator's memberships would
+ * either reject their edit or silently strand the recipe out of its group.
+ */
 async function applyRecipeInput(
   tx: Tx,
   id: string,
   input: RecipeInput,
-  author: User,
+  actor: User,
   label: string,
   current: { slug: string; title: string; publishedAt: Date | null },
+  ownerId: string,
+  groupId: string | null,
 ) {
-  const groupId = await resolveGroupId(tx, input, author);
   const nowPublished = input.status === "published";
   const publishedAt =
     nowPublished && !current.publishedAt ? new Date() : current.publishedAt;
-  const slug = await reslug(tx, id, input.title, author, current);
+  const slug = await reslug(tx, id, input.title, ownerId, current);
 
   await tx
     .update(recipes)
@@ -588,7 +603,9 @@ async function applyRecipeInput(
   await tx.delete(recipeSteps).where(eq(recipeSteps.recipeId, id));
   await insertChildren(tx, id, input);
   await syncTags(tx, id, input);
-  await journal(tx, id, author.id, input, label);
+  // Journalled against the *actor*, so `recipe_versions.authorId` records which
+  // creator made each save rather than always naming the owner (#668).
+  await journal(tx, id, actor.id, input, label);
   // Mint a share token the first time a recipe becomes unlisted (issue #204).
   // Guarded by `share_token IS NULL` so an existing token (and its enabled /
   // rotated state, #207) is preserved across edits and never regenerated here.
@@ -617,15 +634,15 @@ async function reslug(
   tx: Tx,
   id: string,
   title: string,
-  author: User,
+  ownerId: string,
   current: { slug: string; title: string },
 ): Promise<string> {
   if (title === current.title) return current.slug;
 
-  const slug = await uniqueSlug(tx, author.id, recipeSlug(title), id);
+  const slug = await uniqueSlug(tx, ownerId, recipeSlug(title), id);
   if (slug === current.slug) return slug;
 
-  await retireSlug(tx, author.id, id, current.slug);
+  await retireSlug(tx, ownerId, id, current.slug);
   return slug;
 }
 
@@ -669,15 +686,80 @@ export async function createRecipe(input: RecipeInput, author: User) {
   return recipe;
 }
 
+/**
+ * The fields on a recipe only its **owner** may change (issue #668).
+ *
+ * A co-creator may rewrite the recipe — its steps, ingredients and narrative —
+ * but not who can see it. Visibility, group placement and publication state are
+ * distribution decisions that belong to the owner: letting a co-creator flip a
+ * private family recipe to `public`, or move it out of the group that gates it,
+ * would turn an editing grant into an access-control one.
+ *
+ * Enforced by *pinning* rather than rejecting, so a co-creator's editor — which
+ * legitimately round-trips the whole recipe, including these fields — saves
+ * successfully instead of failing on values it never intended to change.
+ */
+function pinOwnerOnlyFields(
+  input: RecipeInput,
+  current: {
+    visibility: RecipeInput["visibility"];
+    status: RecipeInput["status"];
+  },
+): RecipeInput {
+  return {
+    ...input,
+    visibility: current.visibility,
+    status: current.status,
+  };
+}
+
+/**
+ * Assert `actor` may edit `recipeId`'s body, and report whose namespace it
+ * lives in (issue #668).
+ *
+ * Write access is the owner **or** an accepted co-creator. `pending` rows grant
+ * nothing, matching every other access path — an invitation that has not been
+ * taken up must not confer editing any more than it confers viewing.
+ *
+ * A caller with no access gets `NOT_FOUND`, not `FORBIDDEN`, so the failure
+ * cannot be used to probe which recipe ids exist.
+ */
+async function assertRecipeEditAccess(
+  tx: Tx,
+  recipeId: string,
+  actorId: string,
+  ownerId: string,
+): Promise<void> {
+  if (ownerId === actorId) return;
+  const creator = await tx.query.recipeCreators.findFirst({
+    where: and(
+      eq(recipeCreators.recipeId, recipeId),
+      eq(recipeCreators.userId, actorId),
+      eq(recipeCreators.status, "accepted"),
+    ),
+    columns: { id: true },
+  });
+  if (!creator) throw new DomainError("NOT_FOUND");
+}
+
+/**
+ * Save an edit to a recipe. Owner or accepted co-creator (issue #668).
+ *
+ * Returns the owner's user slug alongside the recipe, because the caller has to
+ * revalidate the canonical `/recipes/<cook>/<slug>` path and the editor is not
+ * necessarily the cook that path names.
+ */
 export async function updateRecipe(
   id: string,
   input: RecipeInput,
-  author: User,
+  actor: User,
 ) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      // Deliberately *not* filtered by `authorId`: the owner check moved into
+      // `assertRecipeEditAccess`, which also admits accepted co-creators.
       const current = await tx.query.recipes.findFirst({
-        where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
+        where: eq(recipes.id, id),
         columns: {
           id: true,
           slug: true,
@@ -685,35 +767,50 @@ export async function updateRecipe(
           publishedAt: true,
           status: true,
           visibility: true,
+          groupId: true,
+          authorId: true,
         },
+        with: { author: { columns: { slug: true } } },
       });
       if (!current) throw new DomainError("NOT_FOUND");
+      await assertRecipeEditAccess(tx, id, actor.id, current.authorId);
+
+      const isOwner = current.authorId === actor.id;
+      const effective = isOwner ? input : pinOwnerOnlyFields(input, current);
+      // Only the owner can move a recipe between groups, so only their input is
+      // vetted for membership. A co-creator's save keeps the stored placement,
+      // which the owner's own membership already justified.
+      const groupId = isOwner
+        ? await resolveGroupId(tx, effective, actor)
+        : current.groupId;
 
       const result = await applyRecipeInput(
         tx,
         id,
-        input,
-        author,
+        effective,
+        actor,
         "Edited",
         current,
+        current.authorId,
+        groupId,
       );
       const newlyPublished =
-        input.status === "published" && current.status !== "published";
+        effective.status === "published" && current.status !== "published";
       await recordEvent(tx, {
         recipeId: id,
-        actorId: author.id,
+        actorId: actor.id,
         type: newlyPublished ? "published" : "updated",
       });
-      if (input.visibility !== current.visibility) {
+      if (effective.visibility !== current.visibility) {
         await recordAudit(tx, {
-          actorId: author.id,
+          actorId: actor.id,
           action: AuditAction.RecipeVisibilityChanged,
           targetType: "recipe",
           targetId: id,
-          metadata: { from: current.visibility, to: input.visibility },
+          metadata: { from: current.visibility, to: effective.visibility },
         });
       }
-      return result;
+      return { ...result, cook: current.author?.slug ?? null };
     }),
   );
   return result;
@@ -828,6 +925,8 @@ export async function revertRecipe(
 ) {
   const result = await withSlugConflictRetry(() =>
     db.transaction(async (tx) => {
+      // Owner-only, unlike {@link updateRecipe}: reverting rewrites history for
+      // everyone on the recipe, so it stays with the person who owns it (#668).
       const current = await tx.query.recipes.findFirst({
         where: and(eq(recipes.id, id), eq(recipes.authorId, author.id)),
         columns: {
@@ -836,6 +935,7 @@ export async function revertRecipe(
           title: true,
           publishedAt: true,
           status: true,
+          groupId: true,
         },
       });
       if (!current) throw new DomainError("NOT_FOUND");
@@ -859,6 +959,8 @@ export async function revertRecipe(
         author,
         `Reverted to v${versionNumber}`,
         current,
+        author.id,
+        await resolveGroupId(tx, input, author),
       );
       await recordEvent(tx, {
         recipeId: id,

@@ -30,6 +30,7 @@ import {
   listSimilarRecipes,
   recordRecipeView,
   excludeOwnerRatings,
+  isRecipeCreator,
   ratingSummary,
 } from "~/server/recipes/queries";
 import { getRecipeIngredientAllergens } from "~/server/recipes/allergens";
@@ -243,6 +244,10 @@ export default async function RecipePage({
       : undefined;
 
   const isOwner = Boolean(user?.id === recipe.authorId);
+  // An accepted co-creator may rewrite the recipe body, but not delete it or
+  // change who can see it (#668), so edit and owner affordances are separate.
+  const canEdit =
+    isOwner || Boolean(user && (await isRecipeCreator(recipe.id, user.id)));
   // Kid-safe UI (issue #367): a kid-role member of the recipe's group must never
   // see the Delete control. The server rejects the delete regardless (see
   // `deleteRecipe`), but hiding it here keeps a child from hitting a dead button.
@@ -593,14 +598,14 @@ export default async function RecipePage({
                 collections={savedCollections}
                 canSave={Boolean(user)}
               />
-              {isOwner && (
+              {canEdit && (
                 <GrownUpControls>
                   <Button asChild size="lg" variant="outline">
                     <Link href={recipeEditPath(pathRef)}>
                       <Pencil /> {t("actions.edit")}
                     </Link>
                   </Button>
-                  {viewerIsKid ? (
+                  {!isOwner ? null : viewerIsKid ? (
                     <p className="px-3 py-2 text-sm text-muted-foreground">
                       {t("kidSafe.deleteHidden")}
                     </p>
@@ -835,11 +840,11 @@ export default async function RecipePage({
                   <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
                     <p className="font-medium">{t("method.emptyTitle")}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {isOwner
+                      {canEdit
                         ? t("method.emptyOwner")
                         : t("method.emptyViewer")}
                     </p>
-                    {isOwner && (
+                    {canEdit && (
                       <Button
                         asChild
                         variant="outline"

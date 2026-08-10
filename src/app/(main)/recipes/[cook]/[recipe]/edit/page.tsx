@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 
 import { getCurrentUser } from "~/server/auth";
-import { getOwnedRecipe, listUserGroups } from "~/server/recipes/queries";
+import { getEditableRecipe, listUserGroups } from "~/server/recipes/queries";
 import {
   RecipeEditor,
   type RecipeEditorValue,
@@ -31,7 +31,9 @@ export default async function EditRecipePage({
   const resolved = await resolveNamespacedRecipe(cook, recipeSegment);
   if (!resolved) notFound();
 
-  const recipe = await getOwnedRecipe(resolved.recipeId, user.id);
+  // The owner, or an accepted co-creator editing under their own namespace
+  // (#668). A pending invitee resolves to nothing and gets a 404.
+  const recipe = await getEditableRecipe(resolved.recipeId, user.id);
   if (!recipe) notFound();
 
   const groups = await listUserGroups(user.id);
