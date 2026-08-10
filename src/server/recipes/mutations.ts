@@ -61,18 +61,40 @@ const RECIPE_CREATOR_SLUG_CONSTRAINT = "recipe_creators_user_slug_uq";
  * exactly): the same owner always maps to the same key, so a lock can be shared
  * but never missed.
  *
+ * That reasoning covers collisions only. There is one way to under-lock here,
+ * and it is total rather than partial: **a NULL `ownerId` takes no lock at all.**
+ * `hashtext` and every `pg_advisory_xact_lock` overload are STRICT, so the call
+ * collapses to a NULL result, holds zero locks, and raises nothing — leaving the
+ * three probes below completely unserialized. Not reachable today, because
+ * `recipes.authorId` is `notNull` (see schema/recipes.ts) and every caller passes
+ * a `string`; recorded because TypeScript is erased before this query runs, and
+ * the identically named `recipe_versions.authorId` *is* nullable, so a future
+ * author can have a nullable `authorId` in view while reading this comment. If
+ * this ever takes an owner id that TypeScript cannot prove non-null, assert it
+ * here rather than trusting the signature.
+ *
  * ## Do not widen this key (issue #712)
  *
  * The tempting "fix" for collisions is a wider key, via the one-argument
  * `pg_advisory_xact_lock(bigint)` form. **That is not a wider version of this
  * lock, it is a different lock.** The one- and two-argument forms occupy
- * separate key spaces, even for identical bits:
+ * separate key spaces, even for identical bits: in `pg_locks` the one-argument
+ * form lands at `objsubid = 1` and the two-argument form at `objsubid = 2`, with
+ * the same `classid`/`objid`.
  *
- *     select pg_advisory_lock(668, 1);                    -- objsubid 2
- *     select pg_advisory_lock((668::bigint << 32) | 1);   -- objsubid 1
+ * Verified across two sessions, in both directions, each with a control (issue
+ * #734). With one session holding the two-argument lock on `(668, 1)`, another
+ * session sees:
  *
- * Both are granted in the same session and appear in `pg_locks` with the same
- * `classid`/`objid` and different `objsubid`, so they do not exclude each other.
+ *     pg_try_advisory_xact_lock(668, 1)                  -> f   (control)
+ *     pg_try_advisory_xact_lock((668::bigint << 32) | 1) -> t   (not excluded)
+ *
+ * and with the one-argument lock held, the two results swap. Test it this way if
+ * you revisit it: acquiring both forms in a *single* session proves nothing,
+ * because advisory locks are re-entrant and the same key taken twice also
+ * returns `t, t`. Only a second session can observe exclusion, and only the
+ * control shows that a failing result was reachable.
+ *
  * Switching forms therefore fails *silently*: across a rolling deploy, an
  * instance on each form would both believe they hold the namespace, `slugTaken`
  * would race between the three tables again, and — since no constraint spans
