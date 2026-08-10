@@ -10,6 +10,7 @@ import {
   summaryFromAggregates,
 } from "~/lib/ratings";
 import { type Allergen } from "~/lib/allergens";
+import { recipeCookPath, recipeDetailPath } from "~/lib/recipe-path";
 import {
   matchFieldLabel,
   splitHighlight,
@@ -48,7 +49,7 @@ export type CardRecipe = {
   servings: number | null;
   difficulty: "easy" | "medium" | "hard" | null;
   visibility: string;
-  author?: { name: string | null } | null;
+  author?: { name: string | null; slug?: string | null } | null;
   tags?: {
     tag: {
       name: string;
@@ -151,7 +152,11 @@ export function RecipeCard({
           gate. Always visible on touch, hover/focus-revealed on desktop. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 aspect-[16/10]">
         <Link
-          href={`/recipes/${recipe.slug}/cook`}
+          href={recipeCookPath({
+            id: recipe.id,
+            slug: recipe.slug,
+            cook: recipe.author?.slug,
+          })}
           aria-label={t("recipeCard.cookAria", { title: recipe.title })}
           className="pointer-events-auto absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-token backdrop-blur transition-[opacity,transform,background-color] duration-200 hover:bg-background hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100"
         >
@@ -160,7 +165,11 @@ export function RecipeCard({
         </Link>
       </div>
       <Link
-        href={`/recipes/${recipe.slug}`}
+        href={recipeDetailPath({
+          id: recipe.id,
+          slug: recipe.slug,
+          cook: recipe.author?.slug,
+        })}
         className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-token transition-[transform,box-shadow,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-token-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted/40 active:shadow-token"
       >
         <div className="relative aspect-[16/10] overflow-hidden">

@@ -9,9 +9,15 @@
 export const COOK_NOTIFICATION_TAG_PREFIX = "heirloom-cook-timer";
 export const COOK_NOTIFICATION_TYPE = "cook-timer";
 
-/** Cook Mode route for a recipe, used as the notification's focus target. */
-export function cookTimerNotificationUrl(recipeSlug: string): string {
-  return `/recipes/${recipeSlug}/cook`;
+/**
+ * Cook Mode route for a recipe, used as the notification's focus target.
+ *
+ * Takes the recipe's canonical detail path (from `recipeDetailPath`) rather
+ * than a bare slug: Cook Mode now sits one segment deeper under the cook's
+ * namespace, so a slug-only path would resolve as a different recipe (#666).
+ */
+export function cookTimerNotificationUrl(recipePath: string): string {
+  return `${recipePath}/cook`;
 }
 
 export type CookTimerNotification = {
@@ -34,9 +40,11 @@ export function buildCookTimerNotification(input: {
   section: string | null;
   recipeTitle: string;
   recipeSlug: string;
+  /** The recipe's canonical detail path; Cook Mode hangs off it (#666). */
+  recipePath: string;
   stepId: string;
 }): CookTimerNotification {
-  const url = cookTimerNotificationUrl(input.recipeSlug);
+  const url = cookTimerNotificationUrl(input.recipePath);
   const body = input.section
     ? `${input.recipeTitle} · ${input.section}`
     : input.recipeTitle;

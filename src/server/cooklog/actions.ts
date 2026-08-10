@@ -11,6 +11,7 @@ import {
   type LogCookFormInput,
 } from "./validation";
 import { createCookLog, deleteCookLog } from "./mutations";
+import { revalidateRecipeSlugPaths } from "~/server/recipes/revalidate";
 
 export type ActionResult =
   | { ok: true }
@@ -23,8 +24,8 @@ function errorCode(error: unknown) {
   return error instanceof Error ? error.message : "";
 }
 
-function revalidateCookViews(recipeSlug: string) {
-  revalidatePath(`/recipes/${recipeSlug}`);
+async function revalidateCookViews(recipeSlug: string) {
+  await revalidateRecipeSlugPaths(recipeSlug);
   revalidatePath("/journal");
 }
 
@@ -44,7 +45,7 @@ export async function logCookAction(
   const user = await requireUser();
   try {
     await createCookLog(parsed.data, user);
-    revalidateCookViews(parsed.data.recipeSlug);
+    await revalidateCookViews(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     if (errorCode(error) === "NOT_FOUND") {
@@ -70,7 +71,7 @@ export async function deleteCookLogAction(
   const user = await requireUser();
   try {
     await deleteCookLog(parsed.data.entryId, user);
-    revalidateCookViews(parsed.data.recipeSlug);
+    await revalidateCookViews(parsed.data.recipeSlug);
     return { ok: true };
   } catch (error) {
     if (errorCode(error) === "NOT_FOUND") {

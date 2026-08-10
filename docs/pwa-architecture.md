@@ -58,7 +58,7 @@ The cache uses `CacheFirst` because recipe photos are effectively immutable and 
 
 ### Recipe pages
 
-[`src/lib/recipe-page-cache.ts`](../src/lib/recipe-page-cache.ts) matches only same-origin recipe detail pages (`/recipes/:id`) and Cook Mode pages (`/recipes/:id/cook`), including hard document navigations and RSC soft-navigation payloads. It intentionally excludes sibling routes such as `/recipes/new`, `/recipes/cook-with`, `/recipes/tags`, and `/recipes/:id/edit`.
+[`src/lib/recipe-page-cache.ts`](../src/lib/recipe-page-cache.ts) matches only same-origin recipe detail pages and Cook Mode pages, including hard document navigations and RSC soft-navigation payloads. Since the user-namespacing cutover (issue #666) those are `/recipes/:cook/:recipe` and `/recipes/:cook/:recipe/cook`; the matcher still accepts the flat legacy `/recipes/:id` and `/recipes/:id/cook` shapes, which 308 to canonical. It intentionally excludes sibling routes such as `/recipes/new`, `/recipes/cook-with`, `/recipes/tags`, and the `/edit`, `/print`, and `/keepsake` sub-routes.
 
 The service worker uses `NetworkFirst`, deliberately not stale-while-revalidate. The reason is security: recipe pages are server-rendered per viewer and access-controlled. The HTML includes personalized state and owner-only controls, and the cache key is only the URL. On a shared family tablet, serving a cached recipe page before the network could reveal one viewer's authorized private/group render to another viewer. `NetworkFirst` fetches fresh authorized content whenever possible and falls back to the cache only offline or after the 3-second timeout.
 
@@ -95,6 +95,8 @@ The client side is in [`src/components/pwa/update-prompt.tsx`](../src/components
 The service worker handles that message with `warmCookBundle()` in [`src/app/sw.ts`](../src/app/sw.ts). It adds Cook page URLs to `heirloom-recipes` and exact Cloudinary image URLs to `heirloom-recipe-images`, reusing the existing bounded caches instead of creating separate warm caches. Failures are swallowed because warming is best-effort.
 
 Cook timer notification payloads are built in [`src/lib/cook-notify.ts`](../src/lib/cook-notify.ts). The service worker handles `notificationclick` for `type: "cook-timer"` only: it closes the notification, looks for an existing window whose pathname matches the Cook Mode URL, focuses it if found, or opens a new window otherwise.
+
+Both helpers take an already-built canonical recipe **path** rather than a bare slug (issue #666), because a Cook Mode URL is now `/recipes/<cook>/<slug>/cook` and cannot be reassembled from a slug alone. Callers pass `recipeDetailPath(recipe)` from [`src/lib/recipe-path.ts`](../src/lib/recipe-path.ts). The notification `tag` still keys off the recipe slug, so repeat timers for one recipe keep collapsing into a single notification.
 
 ## Request flow
 

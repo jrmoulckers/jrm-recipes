@@ -22,6 +22,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { RecipeImage } from "~/components/recipe/recipe-image";
+import { recipeCookPath, recipeDetailPath } from "~/lib/recipe-path";
 
 /** Fisher–Yates shuffle of a fresh index array, so consecutive picks differ. */
 function shuffledIndices(length: number): number[] {
@@ -129,7 +130,7 @@ export function DinnerSuggestion({
         <Card className="overflow-hidden">
           <div className="flex flex-col sm:flex-row">
             <Link
-              href={`/recipes/${current.slug}`}
+              href={recipeDetailPath(current)}
               className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden sm:w-56"
               // This link holds only the cover image, so it has no accessible
               // name of its own and would announce as an empty link. It points
@@ -156,7 +157,7 @@ export function DinnerSuggestion({
             <CardContent className="flex flex-1 flex-col gap-3 p-5">
               <div className="flex flex-col gap-1">
                 <Link
-                  href={`/recipes/${current.slug}`}
+                  href={recipeDetailPath(current)}
                   className="font-display text-lg font-semibold leading-tight hover:text-primary"
                 >
                   {current.title}
@@ -177,7 +178,7 @@ export function DinnerSuggestion({
               </div>
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button asChild>
-                  <Link href={`/recipes/${current.slug}/cook`}>
+                  <Link href={recipeCookPath(current)}>
                     <ChefHat /> {t("common.cook")}
                   </Link>
                 </Button>

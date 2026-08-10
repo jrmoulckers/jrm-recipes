@@ -34,6 +34,12 @@ export type CookStep = {
 export type CookRecipe = {
   id: string;
   slug: string;
+  /**
+   * The author's user slug — the namespace the recipe's URLs live in (#666).
+   * Nullable so a caller without the author loaded still renders; links then
+   * fall back to the flat legacy path, which redirects.
+   */
+  cook?: string | null;
   title: string;
   description: string | null;
   coverImageUrl: string | null;

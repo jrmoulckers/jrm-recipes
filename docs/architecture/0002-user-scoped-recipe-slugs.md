@@ -128,6 +128,32 @@ legacy path, because the App Router caches those as independent documents and in
 established recipe is mostly old links. Retired aliases are deliberately excluded — they are
 redirects, not cached documents, and their target is already busted.
 
+### Pre-cutover sub-route links are recovered by the two-segment route
+
+A shared link like `/recipes/apple-pie/cook` has two segments after `/recipes`, so after the cutover it
+matches `[cook]/[recipe]` as `cook="apple-pie", recipe="cook"` and resolves to nothing. Flat _detail_
+links still worked (the one-segment resolver handles them), but every flat _sub-route_ link — the ones
+people bookmark while cooking — 404ed.
+
+`getNamespacedRecipeForViewer` therefore falls back: when the namespaced lookup misses and the second
+segment is one of `cook`, `print`, `keepsake`, or `edit`, it re-resolves the first segment as a flat
+recipe reference and the route 308s to `<canonical>/<sub-route>`, preserving the query string so a
+shared keepsake link still arrives with its note. The fallback is only consulted _after_ the namespaced
+lookup fails, so a cook who genuinely owns a recipe slugged `cook` still wins. It reuses the same
+post-`canView` redirect discipline as every other alias, so it leaks nothing.
+
+The alternative — registering explicit legacy routes — is impossible: Next.js will not accept
+`/recipes/[slug]/cook` alongside `/recipes/[cook]/[recipe]`.
+
+### Slug-only callers fan out across every namespace
+
+Most engagement writes (comments, ratings, reviews, reactions, favorites, cook logs) receive only a
+recipe _slug_ from the client. Slugs are no longer globally unique, so that slug cannot identify one
+recipe. `revalidateRecipeSlugPaths` in `src/server/recipes/revalidate.ts` resolves every non-deleted
+recipe holding the slug and busts each one's canonical path plus the shared flat path. Over-revalidating
+is harmless — it only drops cache entries and returns nothing to the caller — whereas guessing an owner
+and getting it wrong leaves the real canonical page stale, which is the actual user-visible bug.
+
 ### The embed iframe is keyed by id
 
 `/embed/recipes/<id>` replaces the previous slug-keyed embed URL. Embeds are pasted into third-party

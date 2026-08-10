@@ -8,6 +8,7 @@ import {
   type QuickPlanContext,
 } from "~/components/recipe/recipe-card";
 import { QuickPlanButton } from "~/components/recipe/quick-plan-button";
+import { recipeCookPath } from "~/lib/recipe-path";
 import { Button } from "~/components/ui/button";
 
 /**
@@ -48,7 +49,13 @@ export function RotationRail({
             <RecipeCard recipe={recipe} />
             <div className="flex gap-2">
               <Button asChild size="sm" variant="outline" className="flex-1">
-                <Link href={`/recipes/${recipe.slug}/cook`}>
+                <Link
+                  href={recipeCookPath({
+                    id: recipe.id,
+                    slug: recipe.slug,
+                    cook: recipe.author?.slug,
+                  })}
+                >
                   <ChefHat /> {t("common.cook")}
                 </Link>
               </Button>

@@ -14,8 +14,10 @@ const fakeTransform = (src: string, width: number): string =>
   `${src}@w${width}`;
 
 describe("cookPagePath", () => {
-  it("builds the Cook Mode route for a slug or id", () => {
-    expect(cookPagePath("apple-pie")).toBe("/recipes/apple-pie/cook");
+  it("hangs Cook Mode off the recipe's canonical namespaced path", () => {
+    expect(cookPagePath("/recipes/ada/apple-pie")).toBe(
+      "/recipes/ada/apple-pie/cook",
+    );
   });
 });
 
@@ -65,11 +67,11 @@ describe("cookImageUrlsToWarm", () => {
 describe("buildWarmCookBundleMessage / isWarmCookBundleMessage", () => {
   it("round-trips a well-formed message", () => {
     const message = buildWarmCookBundleMessage({
-      slug: "apple-pie",
+      recipePath: "/recipes/ada/apple-pie",
       imageUrls: ["https://res.cloudinary.com/x/a.jpg@w1200"],
     });
     expect(message.type).toBe(WARM_COOK_BUNDLE_MESSAGE_TYPE);
-    expect(message.pageUrls).toEqual(["/recipes/apple-pie/cook"]);
+    expect(message.pageUrls).toEqual(["/recipes/ada/apple-pie/cook"]);
     expect(isWarmCookBundleMessage(message)).toBe(true);
   });
 

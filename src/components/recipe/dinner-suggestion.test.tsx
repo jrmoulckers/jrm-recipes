@@ -50,6 +50,7 @@ afterEach(() => {
 const candidate = (id: string, title: string): DinnerCandidate => ({
   id,
   slug: id,
+  cook: "nonna",
   title,
   coverImageUrl: null,
   cuisine: null,
@@ -86,7 +87,7 @@ describe("DinnerSuggestion (#375)", () => {
 
     const cook = screen.getByRole("link", { name: /^cook$/i });
     expect(cook.getAttribute("href")).toMatch(
-      /\/recipes\/(tacos|pasta)\/cook$/,
+      /\/recipes\/nonna\/(tacos|pasta)\/cook$/,
     );
 
     await user.click(

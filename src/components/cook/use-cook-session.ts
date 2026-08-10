@@ -28,6 +28,7 @@ import {
   shouldSendTimerNotification,
 } from "~/lib/cook-notify";
 import { defaultSystemForLocale } from "~/lib/units";
+import { recipeDetailPath } from "~/lib/recipe-path";
 import { track } from "~/lib/analytics";
 import { HAPTICS, vibrate } from "~/lib/haptics";
 import {
@@ -110,6 +111,7 @@ function notifyTimerComplete(input: {
   section: string | null;
   recipeTitle: string;
   recipeSlug: string;
+  recipePath: string;
   stepId: string;
 }): void {
   if (typeof window === "undefined" || typeof navigator === "undefined") return;
@@ -157,6 +159,7 @@ function notifyCustomTimerComplete(input: {
   title: string;
   recipeTitle: string;
   recipeSlug: string;
+  recipePath: string;
   timerId: string;
 }): void {
   if (typeof window === "undefined" || typeof navigator === "undefined") return;
@@ -170,7 +173,7 @@ function notifyCustomTimerComplete(input: {
     return;
   }
 
-  const url = cookTimerNotificationUrl(input.recipeSlug);
+  const url = cookTimerNotificationUrl(input.recipePath);
   void navigator.serviceWorker.ready
     .then((registration) =>
       registration.showNotification(input.title, {
@@ -387,6 +390,7 @@ export function useCookSession(
         section: step.section,
         recipeTitle: recipe.title,
         recipeSlug: recipe.slug,
+        recipePath: recipeDetailPath(recipe),
         stepId: step.id,
       });
     });
@@ -397,6 +401,7 @@ export function useCookSession(
     recipe.title,
     state.timers,
     tTimer,
+    recipe,
   ]);
 
   // Announce completion once per custom timer (#392), keyed by the timer's own
@@ -420,10 +425,18 @@ export function useCookSession(
         title: tTimer("customDone", { label }),
         recipeTitle: recipe.title,
         recipeSlug: recipe.slug,
+        recipePath: recipeDetailPath(recipe),
         timerId: timer.id,
       });
     });
-  }, [recipe.id, recipe.slug, recipe.title, state.customTimers, tTimer]);
+  }, [
+    recipe.id,
+    recipe.slug,
+    recipe.title,
+    state.customTimers,
+    tTimer,
+    recipe,
+  ]);
 
   const goToStep = React.useCallback(
     (index: number) => {

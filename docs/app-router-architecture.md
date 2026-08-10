@@ -17,6 +17,14 @@ Routes live under [`src/app`](../src/app):
 - [`src/app/manifest.ts`](../src/app/manifest.ts), [`src/app/robots.ts`](../src/app/robots.ts), and [`src/app/sitemap.ts`](../src/app/sitemap.ts) provide the PWA manifest, robots policy, and dynamic sitemap.
 - [`src/app/error.tsx`](../src/app/error.tsx), [`src/app/global-error.tsx`](../src/app/global-error.tsx), [`src/app/(main)/error.tsx`](<../src/app/(main)/error.tsx>), and [`src/app/not-found.tsx`](../src/app/not-found.tsx) provide route/global error and 404 surfaces.
 
+### Recipe URLs
+
+A recipe's canonical URL is `/recipes/<cook>/<recipe>`, where `<cook>` is the author's `users.slug` (issue #666, [ADR 0002](./architecture/0002-user-scoped-recipe-slugs.md)). The detail page lives at `src/app/(main)/recipes/[cook]/[recipe]/page.tsx`, with `edit` beneath it and `cook`/`print`/`keepsake` under the same segments in `(immersive)`. Because Next.js forbids two dynamic segment names at one position, both route groups must keep using `[cook]`/`[recipe]`.
+
+- Never build a recipe URL by hand. [`src/lib/recipe-path.ts`](../src/lib/recipe-path.ts) is the single source of truth: `recipeDetailPath()` plus the `recipeEditPath()`/`recipeCookPath()`/`recipePrintPath()`/`recipeKeepsakePath()` builders that compose on it. Each degrades canonical → flat legacy → id, so a caller that cannot reach the author still emits a working link.
+- The one-segment route `src/app/(main)/recipes/[cook]/page.tsx` resolves legacy flat `/recipes/<idOrSlug>` links and 308s to canonical. Pre-cutover _sub-route_ links (`/recipes/<slug>/cook`) arrive at the two-segment route instead; `getNamespacedRecipeForViewer()` in [`src/server/recipes/loaders.ts`](../src/server/recipes/loaders.ts) recognizes those second segments and redirects, preserving the query string. That fallback is only consulted after the namespaced lookup misses, so a cook who really has a recipe slugged `cook` still wins.
+- Every redirect is issued _after_ the viewer passes the normal visibility check, so an alias can never confirm that a recipe exists to somebody who may not see it. `/r/<token>` skips redirects entirely so unlisted recipes stay on the token URL.
+
 ## Server and client boundaries
 
 The default is Server Components. Page and layout files that do not start with `"use client"` fetch data and render on the server, including root layout, main layout, immersive layout, sitemap, robots, manifest, offline page, and most route pages.
@@ -66,6 +74,7 @@ The code distinguishes public cacheable reads from personalized reads:
 - [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) wraps the public recipe feed in `unstable_cache`, using `PUBLIC_RECIPES_REVALIDATE_SECONDS` and `PUBLIC_RECIPES_TAG` from [`src/server/recipes/cache.ts`](../src/server/recipes/cache.ts).
 - [`src/server/recipes/cache-tags.ts`](../src/server/recipes/cache-tags.ts) centralizes tag strings with `PUBLIC_RECIPES_TAG`, `recipeTag(id)`, and `recipeMutationTags(id)`.
 - Recipe actions call `revalidatePath()` for affected route surfaces and `revalidateTag()` through `recipeMutationTags()` after creates, updates, deletes, restores, forks, share-link changes, and version reverts.
+- Recipe path revalidation must **fan out**, because a recipe is served both at its canonical `/recipes/<cook>/<slug>` URL and at the flat legacy one, and the App Router caches those independently. [`src/server/recipes/revalidate.ts`](../src/server/recipes/revalidate.ts) owns that: `revalidateRecipePaths()` when the caller holds the cook slug, and `revalidateRecipeSlugPaths()` for the engagement/collection/cook-log actions whose client only holds a recipe slug. Since slugs are unique per cook rather than globally, the latter busts the canonical path of _every_ namespace holding that slug — over-revalidating is harmless, whereas missing the right owner leaves a stale page.
 - Group actions in [`src/server/groups/actions.ts`](../src/server/groups/actions.ts) use `revalidatePath("/groups")` plus the affected `/groups/[slug]` and settings paths.
 - Personalized or access-controlled recipe reads stay dynamic. [`src/server/recipes/queries.ts`](../src/server/recipes/queries.ts) documents that the recipe detail query is intentionally not wrapped in `unstable_cache`.
 - Auth resolution is request-memoized with React `cache()` in [`src/server/auth/index.ts`](../src/server/auth/index.ts), so multiple server reads in one render share one `auth()`/user lookup without leaking across requests.

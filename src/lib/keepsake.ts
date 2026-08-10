@@ -53,9 +53,13 @@ export function parseKeepsakeMessage(input: {
  * Build the relative keepsake path for a recipe. Empty note/name/token are
  * omitted so the link stays as short as possible. Values are length-bounded
  * before encoding.
+ *
+ * Takes the recipe's canonical detail path (from `recipeDetailPath`) rather
+ * than a bare slug: the keepsake view sits one segment below the recipe inside
+ * its cook's namespace (#666).
  */
 export function buildKeepsakePath(
-  idOrSlug: string,
+  recipePath: string,
   message: {
     from?: string | null;
     note?: string | null;
@@ -69,6 +73,6 @@ export function buildKeepsakePath(
   if (note) params.set("note", note);
   if (message.token) params.set("t", message.token);
   const query = params.toString();
-  const base = `/recipes/${encodeURIComponent(idOrSlug)}/keepsake`;
+  const base = `${recipePath}/keepsake`;
   return query ? `${base}?${query}` : base;
 }

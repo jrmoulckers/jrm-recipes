@@ -9,9 +9,9 @@ import {
 } from "./cook-notify";
 
 describe("cookTimerNotificationUrl", () => {
-  it("points at the recipe's Cook Mode route", () => {
-    expect(cookTimerNotificationUrl("apple-pie")).toBe(
-      "/recipes/apple-pie/cook",
+  it("hangs Cook Mode off the recipe's canonical namespaced path", () => {
+    expect(cookTimerNotificationUrl("/recipes/ada/apple-pie")).toBe(
+      "/recipes/ada/apple-pie/cook",
     );
   });
 });
@@ -23,12 +23,13 @@ describe("buildCookTimerNotification", () => {
       section: "Sauce",
       recipeTitle: "Grandma's Ragu",
       recipeSlug: "grandmas-ragu",
+      recipePath: "/recipes/nonna/grandmas-ragu",
       stepId: "step-3",
     });
     expect(title).toBe("Step 3 timer is done");
     expect(options.body).toBe("Grandma's Ragu · Sauce");
     expect(options.data).toEqual({
-      url: "/recipes/grandmas-ragu/cook",
+      url: "/recipes/nonna/grandmas-ragu/cook",
       type: "cook-timer",
     });
   });
@@ -39,6 +40,7 @@ describe("buildCookTimerNotification", () => {
       section: null,
       recipeTitle: "Focaccia",
       recipeSlug: "focaccia",
+      recipePath: "/recipes/nonna/focaccia",
       stepId: "step-1",
     });
     expect(options.body).toBe("Focaccia");
@@ -50,6 +52,7 @@ describe("buildCookTimerNotification", () => {
       section: null,
       recipeTitle: "Focaccia",
       recipeSlug: "focaccia",
+      recipePath: "/recipes/nonna/focaccia",
       stepId: "step-1",
     });
     const second = buildCookTimerNotification({
@@ -57,6 +60,7 @@ describe("buildCookTimerNotification", () => {
       section: null,
       recipeTitle: "Focaccia",
       recipeSlug: "focaccia",
+      recipePath: "/recipes/nonna/focaccia",
       stepId: "step-2",
     });
     expect(first.options.tag).not.toBe(second.options.tag);
