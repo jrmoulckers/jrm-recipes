@@ -31,6 +31,7 @@ function makeRecipe(items: string[]): CookRecipe {
     title: "Test",
     description: null,
     coverImageUrl: null,
+    coverImageAlt: null,
     servings: null,
     servingsNoun: null,
     prepMinutes: null,

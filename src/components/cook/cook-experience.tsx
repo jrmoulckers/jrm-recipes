@@ -995,7 +995,10 @@ function StepMedia({
             src={step.imageUrl}
             fallbackKey={`${recipeTitle}-step-${stepNumber}`}
             fallbackMode="hide"
-            alt={tS("imageAlt", { number: stepNumber, title: recipeTitle })}
+            alt={
+              step.imageAlt ??
+              tS("imageAlt", { number: stepNumber, title: recipeTitle })
+            }
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 70vw"

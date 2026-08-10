@@ -142,4 +142,28 @@ describe("auditFile", () => {
     const results = auditFile("f.tsx", '<img alt={t("photoAlt")} />');
     expect(results[0].kind).toBe("dynamic");
   });
+
+  it("counts author-written alt separately from catalog copy", () => {
+    const results = auditFile(
+      "f.tsx",
+      '<img alt={step.imageAlt ?? t("stepImageAlt")} />',
+    );
+    expect(results[0].kind).toBe("stored");
+  });
+
+  it("flags author-written alt that falls back to decorative with no reason", () => {
+    const results = auditFile(
+      "f.tsx",
+      '<img alt={recipe.coverImageAlt ?? ""} />',
+    );
+    expect(results[0].kind).toBe("bare");
+  });
+
+  it("accepts a decorative fallback justified by a nearby comment", () => {
+    const source = [
+      "{/* Decorative: the title sits right beside it. */}",
+      '<img alt={recipe.coverImageAlt ?? ""} />',
+    ].join("\n");
+    expect(auditFile("f.tsx", source)[0].kind).toBe("stored");
+  });
 });

@@ -22,6 +22,8 @@ export type CookStep = {
   section: string | null;
   instruction: string;
   imageUrl: string | null;
+  /** Author-written alt for the step photo, or null to use the generated one (#125). */
+  imageAlt: string | null;
   videoUrl: string | null;
   timerSeconds: number | null;
   /** Target internal/oven temperature in °C, or null (#417). */
@@ -43,6 +45,8 @@ export type CookRecipe = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  /** Author-written alt for the cover, or null to keep the current alt (#125). */
+  coverImageAlt: string | null;
   servings: number | null;
   servingsNoun: string | null;
   prepMinutes: number | null;

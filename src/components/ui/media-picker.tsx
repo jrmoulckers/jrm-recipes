@@ -60,12 +60,23 @@ export function MediaPicker({
   value,
   onChange,
   folder = "heirloom",
+  altText: controlledAlt,
+  onAltTextChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (selection: MediaSelection) => void;
   folder?: string;
+  /**
+   * Alt text owned by the caller (issue #659). When `onAltTextChange` is given
+   * the field becomes controlled and the description is stored on the caller's
+   * own row (`recipes.coverImageAlt`, `recipe_steps.imageAlt`) as well as on the
+   * library asset, so a pasted link — which has no asset — can still be
+   * described. Omit both to keep the asset-only behavior from #656.
+   */
+  altText?: string;
+  onAltTextChange?: (altText: string) => void;
 }) {
   const t = useTranslations("mediaPicker");
 
@@ -73,14 +84,29 @@ export function MediaPicker({
     cloudinaryConfigured ? "upload" : "link",
   );
   const [assetId, setAssetId] = React.useState<string | null>(null);
-  const [altText, setAltText] = React.useState("");
+  const [ownAltText, setOwnAltText] = React.useState("");
   const [altSaved, setAltSaved] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const callerManagesAlt = onAltTextChange != null;
+  const altText = callerManagesAlt ? (controlledAlt ?? "") : ownAltText;
+  // Describable as soon as there is a photo when the caller stores the text
+  // itself; otherwise only a library asset has somewhere to put it.
+  const canDescribe = callerManagesAlt ? value.length > 0 : assetId != null;
+
+  function setAltText(next: string) {
+    if (onAltTextChange) onAltTextChange(next);
+    else setOwnAltText(next);
+    setAltSaved(false);
+  }
+
   function select(next: MediaSelection, nextAlt: string) {
     setAssetId(next.assetId);
-    setAltText(nextAlt);
     setAltSaved(false);
+    // A photo that already carries a description hands it over. An empty one
+    // never clears what the caller has typed (the Link tab reports "" on every
+    // keystroke, which would otherwise wipe the field as the URL is entered).
+    if (nextAlt.length > 0 || !callerManagesAlt) setAltText(nextAlt);
     onChange(next);
   }
 
@@ -144,14 +170,15 @@ export function MediaPicker({
             <Input
               id="media-picker-alt"
               value={altText}
-              disabled={!assetId}
-              onChange={(event) => {
-                setAltText(event.target.value);
-                setAltSaved(false);
-              }}
+              disabled={!canDescribe}
+              onChange={(event) => setAltText(event.target.value)}
+              maxLength={300}
               className="flex-1"
               placeholder={t("altPlaceholder")}
             />
+            {/* Saving to the library asset is only possible for a photo that has
+                one. When the caller stores the text itself it is already held in
+                the surrounding form and saves with it. */}
             <Button
               type="button"
               variant="secondary"
@@ -162,7 +189,7 @@ export function MediaPicker({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {assetId ? t("altHint") : t("altUnavailable")}
+            {canDescribe ? t("altHint") : t("altUnavailable")}
           </p>
           {/* Politely announced so the save is perceivable without sight. */}
           <p aria-live="polite" className="text-xs text-muted-foreground">

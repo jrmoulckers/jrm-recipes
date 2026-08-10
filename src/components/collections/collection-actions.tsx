@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
+import { ImageUploadField } from "~/components/ui/image-upload";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useConfirm } from "~/components/ui/confirm-dialog";
@@ -52,6 +53,9 @@ export function CollectionActions({
   const [description, setDescription] = React.useState(
     collection.description ?? "",
   );
+  const [coverImageUrl, setCoverImageUrl] = React.useState(
+    collection.coverImageUrl ?? "",
+  );
   const [fieldErrors, setFieldErrors] = React.useState<
     Record<string, string[]>
   >({});
@@ -63,7 +67,7 @@ export function CollectionActions({
     const input: CollectionInput = {
       name,
       description,
-      coverImageUrl: collection.coverImageUrl ?? undefined,
+      coverImageUrl: coverImageUrl.trim() || undefined,
     };
     setFieldErrors({});
 
@@ -121,6 +125,7 @@ export function CollectionActions({
               event.preventDefault();
               setName(collection.name);
               setDescription(collection.description ?? "");
+              setCoverImageUrl(collection.coverImageUrl ?? "");
               setRenameOpen(true);
             }}
           >
@@ -187,6 +192,21 @@ export function CollectionActions({
                   className="text-sm text-destructive"
                 >
                   {fieldErrors.description[0]}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-2">
+              <ImageUploadField
+                label={t("edit.fields.coverImage")}
+                value={coverImageUrl}
+                onChange={(url) => setCoverImageUrl(url)}
+                folder="heirloom/collections"
+                size="compact"
+              />
+              {fieldErrors.coverImageUrl?.[0] ? (
+                <p className="text-sm text-destructive">
+                  {fieldErrors.coverImageUrl[0]}
                 </p>
               ) : null}
             </div>

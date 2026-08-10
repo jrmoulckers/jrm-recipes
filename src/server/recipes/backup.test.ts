@@ -11,6 +11,7 @@ function recipe(overrides: Partial<PrintRecipe> = {}): PrintRecipe {
     title: "Banana Bread",
     description: "Grandma's loaf.",
     coverImageUrl: null,
+    coverImageAlt: null,
     visibility: "private",
     servings: 8,
     servingsNoun: "slices",

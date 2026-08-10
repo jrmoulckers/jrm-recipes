@@ -85,6 +85,14 @@
         "position": "{label} moved to position {position} of {total}.",
         "reset": "Tabs reset to defaults."
       }
+    },
+    "avatar": {
+      "title": "Profile photo",
+      "description": "Choose the photo that appears next to your name.",
+      "label": "Your photo",
+      "hint": "Replaces the photo from your sign-in provider until you remove it.",
+      "saved": "Photo updated",
+      "cleared": "Photo removed"
     }
   },
   "search": {
@@ -1330,10 +1338,11 @@
       },
       "edit": {
         "title": "Edit collection",
-        "description": "Rename this collection or update its description.",
+        "description": "Rename this collection, update its description, or change its cover photo.",
         "fields": {
           "name": "Name",
-          "description": "Description"
+          "description": "Description",
+          "coverImage": "Cover photo"
         },
         "actions": {
           "cancel": "Cancel",
@@ -3231,7 +3240,9 @@
     "urlPlaceholder": "Paste an image URL",
     "urlLabel": "Image URL",
     "urlLabelFor": "{label} URL",
-    "change": "Change photo"
+    "change": "Change photo",
+    "altLabel": "Describe this photo",
+    "altPlaceholder": "e.g. A golden pie cooling on a windowsill"
   },
   "mediaPicker": {
     "title": "Choose a photo",

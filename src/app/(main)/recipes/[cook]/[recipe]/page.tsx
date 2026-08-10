@@ -423,10 +423,12 @@ export default async function RecipePage({
       )}
       {/* Hero */}
       <div className="relative">
-        {/* Decorative: the hero cover sits directly above the recipe title. */}
+        {/* Decorative unless the author described it: the hero cover sits
+            directly above the recipe title, so an empty alt stays correct when
+            there is nothing extra to say about the photo itself. */}
         <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
           <RecipeImage
-            alt=""
+            alt={recipe.coverImageAlt ?? ""}
             src={recipe.coverImageUrl}
             fallbackKey={recipe.id}
             fallbackContext={{
@@ -832,10 +834,13 @@ export default async function RecipePage({
                                   src={step.imageUrl}
                                   fallbackKey={`${recipe.id}-step-${step.id}`}
                                   fallbackMode="hide"
-                                  alt={t("method.stepImageAlt", {
-                                    title: recipe.title,
-                                    position: i + 1,
-                                  })}
+                                  alt={
+                                    step.imageAlt ??
+                                    t("method.stepImageAlt", {
+                                      title: recipe.title,
+                                      position: i + 1,
+                                    })
+                                  }
                                   fill
                                   sizes="(max-width: 768px) 100vw, 28rem"
                                   className="object-cover"
