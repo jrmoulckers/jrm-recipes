@@ -2874,6 +2874,39 @@
       "signIn": {
         "title": "Sign in to download your recipes",
         "body": "Your cookbook backup includes every recipe on your account, so we need to know it's you."
+      },
+      "delete": {
+        "title": "Delete my account",
+        "description": "This removes your account and everything in it. We don't hide your recipes or keep a copy. They're deleted for good.",
+        "consequences": {
+          "title": "Here's exactly what happens",
+          "recipes": "{count, plural, =0 {You have no recipes of your own to delete.} one {Your # recipe is permanently deleted, along with its story, notes, and photos.} other {All # of your recipes are permanently deleted, along with their stories, notes, and photos.}}",
+          "cooking": "Your cooking history goes too: {cookLogs, plural, one {# cook log entry} other {# cook log entries}}, {reviews, plural, one {# review} other {# reviews}}, and {collections, plural, one {# collection} other {# collections}}.",
+          "photos": "Every photo you uploaded is deleted from our image storage, not just unlinked.",
+          "coCreated": "{count, plural, one {# recipe you help look after belongs to someone else. It stays with them, and your name comes off it.} other {# recipes you help look after belong to other people. They stay with their owners, and your name comes off them.}}",
+          "pendingInvites": "{count, plural, one {# invitation to co-create a recipe is withdrawn.} other {# invitations to co-create recipes are withdrawn.}}",
+          "subscription": "Your subscription is cancelled. We can't refund the current period once the account is gone.",
+          "links": "Any recipe links you've shared stop working. Your cook name becomes available for someone else to use.",
+          "irreversible": "There is no undo, no grace period, and no way for us to bring any of it back."
+        },
+        "groups": {
+          "title": "You're the only owner of a family group",
+          "body": "{groups} would be left without an owner. Please make someone else an owner first, or the people in it won't be able to manage it."
+        },
+        "export": {
+          "body": "Take your cookbook with you first. The download is the same complete backup, and it keeps working offline forever.",
+          "cta": "Download my cookbook first"
+        },
+        "start": "Delete my account",
+        "confirm": {
+          "label": "Type {phrase} to confirm",
+          "help": "Once you press the button, everything above is deleted immediately.",
+          "cta": "Permanently delete everything",
+          "cancel": "Keep my account"
+        },
+        "toasts": {
+          "deleted": "Your account and everything in it has been deleted. Take care."
+        }
       }
     }
   },

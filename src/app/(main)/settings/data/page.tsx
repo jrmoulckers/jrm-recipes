@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
+import { getDeletionPreview } from "~/server/users/deletion-preview";
+import { DeleteAccountPanel } from "~/components/settings/delete-account-panel";
 import { buttonVariants } from "~/components/ui/button";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,6 +28,10 @@ export default async function DataSettingsPage() {
   const t = await getTranslations("settings.dataPage");
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
+
+  // Erasure is irreversible, so the notice must describe *this* account. Only
+  // fetched when there is a signed-in user to describe.
+  const preview = user ? await getDeletionPreview(user.id) : null;
 
   return (
     <div className="container flex flex-col gap-8 py-10">
@@ -71,6 +77,8 @@ export default async function DataSettingsPage() {
           </p>
         </div>
       </section>
+
+      {preview ? <DeleteAccountPanel preview={preview} /> : null}
     </div>
   );
 }

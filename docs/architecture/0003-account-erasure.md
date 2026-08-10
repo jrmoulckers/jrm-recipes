@@ -120,6 +120,44 @@ It is contained, not eliminated:
 
 The residual — a reclaimed slug serving the new holder's same-named recipe — is the accepted part.
 
+## The pre-confirmation notice
+
+Erasure is instantaneous and irreversible, so consent has to be informed _before_ the button, not
+explained after it. Three properties, implemented in `src/components/settings/delete-account-panel.tsx`:
+
+- **The notice quotes this account's numbers, not the feature's.** `getDeletionPreview` counts the
+  user's recipes, cook log entries, reviews, collections, co-created recipes, pending invitations
+  and live subscription. "Delete 214 recipes" is a decision the reader can check against their own
+  cookbook; "delete your data" is not.
+- **The consequences render above the control that performs them**, and the control is disabled
+  until the confirmation phrase matches. There is no path to the button that skips the notice.
+- **The export offer lives inside the notice.** The moment someone decides to leave is the only
+  moment `/api/backup` is useful to them, so it is placed there rather than elsewhere in settings.
+
+The co-creator sentence is shown **only when the user actually has co-created recipes**. Describing
+behaviour that does not apply to the reader is its own transparency problem, and the count comes
+from the same `accepted`-only query that decides survival, so the notice cannot promise something
+the erasure will not do.
+
+Sole ownership of a family group is called out by name, because deleting the account cascades the
+membership away and leaves a group other people still use without an owner.
+
+`DELETION_NOTICE_VERSION` is recorded on the tombstone. A later dispute can then be answered with
+_which_ notice was shown, not merely that one was. Bump it whenever the substance changes — what
+survives, what is deleted, what is irreversible — not for a wording tidy.
+
+### Two deletions, in order
+
+The in-app path deletes app data first and the Clerk identity second. Both are required:
+`syncClerkUser` lazily re-creates an app user the next time a known Clerk id signs in, so skipping
+the identity delete would silently resurrect the account as an empty shell and read as a bug rather
+than a deletion.
+
+A Clerk failure _after_ the data is gone is deliberately **not** reported as a failed deletion. The
+data is already erased, so calling it a failure would invite the user to retry a deletion that
+already succeeded. The webhook path converges on the same state and `hasBeenErased` makes the repeat
+a no-op.
+
 ## Consequences
 
 - Deletion is irreversible. There is no undo, and the pre-deletion export
