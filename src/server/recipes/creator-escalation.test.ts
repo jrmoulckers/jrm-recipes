@@ -196,6 +196,16 @@ describe("co-creator write escalation", () => {
 
     // Alignment: every boundary found in the masked text must land on the real
     // declaration of that name in the original.
+    //
+    // Non-vacuity first, in the idiom #748 established at the two checks below
+    // (#751): this loop is the load-bearing half — spans index the masked text
+    // while every body is sliced from the real source, so alignment is what
+    // makes `bodyOf` read the function it names — and a dead model yields no
+    // spans, so the loop would assert nothing while the masker assertions above
+    // still passed. That is exactly the state #746 closed, reintroduced here by
+    // the check added to prove the model faithful.
+    expect(spans.size).toBeGreaterThan(0);
+
     for (const [name, span] of spans) {
       expect(
         mutations.slice(span.start + 1, span.start + 1 + 80),
