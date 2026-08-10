@@ -168,7 +168,7 @@ describe("eraseUserAccount", () => {
     expect(state.calls).not.toContain("BEGIN");
   });
 
-  it("counts co-created recipes the user does not own as retained", async () => {
+  it("counts every accepted non-owned creator row, edited or not (upper bound)", async () => {
     queueSelects({
       owned: [{ id: "r1" }],
       // `r1` is their own; only `r9` is somebody else's recipe they co-create.
@@ -176,6 +176,10 @@ describe("eraseUserAccount", () => {
     });
 
     const result = await eraseUserAccount("u1", { trigger: "in_app" });
+    // Note what is absent from the fixture: nothing describes whether the user
+    // ever edited `r9`. The count is derived from creator rows alone, so it is
+    // an upper bound on the #694 remediation population rather than a count of
+    // recipes carrying their prose (#728).
     expect(result.retainedRecipeCount).toBe(1);
   });
 

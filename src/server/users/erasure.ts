@@ -98,7 +98,13 @@ export type ErasureCounts = Record<string, number>;
 
 export type ErasureResult = {
   counts: ErasureCounts;
-  /** Recipes kept because the user was a non-owner creator on them. */
+  /**
+   * Recipes kept because the user was a non-owner creator on them.
+   *
+   * As a remediation estimate this is an **upper bound**, not a count of
+   * recipes carrying the user's residue (#728): it counts recipes they could
+   * have edited, not ones they did. See the derivation in `eraseUserAccount`.
+   */
   retainedRecipeCount: number;
   purgedAssetCount: number;
 };
@@ -191,9 +197,24 @@ export async function eraseUserAccount(
     // own, so what survives here is their prose in someone else's `story`,
     // `notes` and step text with their name detached from it — pseudonymized,
     // which is the same failure this file rejects a few statements below when a
-    // cascade would do it to `recipe_versions`. `retainedRecipeCount` counts the
-    // recipes this applies to and is persisted on the tombstone, so the scale is
-    // recorded even though the residue is not addressed. See #694 and #678.
+    // cascade would do it to `recipe_versions`. `retainedRecipeCount` records
+    // the scale of this on the tombstone, even though the residue is not
+    // addressed. See #694 and #678.
+    //
+    // Read that number as an UPPER BOUND, not a count of affected recipes
+    // (#728). It is accepted creator rows minus owned ones, so it counts the
+    // recipes the user *could* have edited, not the ones they did — accepting
+    // an invite and editing prose are different acts. Two things follow:
+    //
+    //   1. When remediation eventually runs, a remediated count lower than this
+    //      is the expected gap, not evidence of a missed recipe.
+    //   2. The ordering hazard applies to *measuring* the problem, not only to
+    //      fixing it. Tightening this bound — working out which of these
+    //      recipes the user actually edited — needs `recipe_versions` rows
+    //      keyed to them, and those are what the delete below removes. So every
+    //      erasure narrows both the remedy and the estimate of how much remedy
+    //      was needed. The bound survives on the tombstone; the ability to
+    //      tighten it does not.
     const owned = await t
       .select({ id: recipes.id })
       .from(recipes)
