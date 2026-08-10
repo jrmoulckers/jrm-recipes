@@ -46,7 +46,7 @@ const recipeCreatorInput = z.object({
 /** The owner types a handle or email, never an opaque user id. */
 const inviteInput = z.object({
   recipeId: z.string().min(1),
-  identifier: z.string().trim().min(1, "Enter a handle or email"),
+  identifier: z.string().trim().min(1, 'Enter a handle or email'),
 });
 
 const recipeOnlyInput = z.object({ recipeId: z.string().min(1) });

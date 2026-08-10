@@ -20,7 +20,9 @@ import { UI_THEME_IDS } from '~/config/themes';
 const STYLES_DIR = join(process.cwd(), 'src', 'styles');
 const UI_DIR = join(process.cwd(), 'src', 'components', 'ui');
 
-const THEMES_CSS = readFileSync(join(STYLES_DIR, 'themes.css'), 'utf8');
+// Quote style is a formatter choice, not a CSS semantic, so normalize it here and
+// keep the selector assertions below written with double quotes.
+const THEMES_CSS = readFileSync(join(STYLES_DIR, 'themes.css'), 'utf8').replace(/'/g, '"');
 
 describe('elevation tokens (issue #86)', () => {
   it('defines --shadow-sm for the light default and dark scheme', () => {
@@ -36,6 +38,8 @@ describe('elevation tokens (issue #86)', () => {
     for (const theme of UI_THEME_IDS) {
       const block = new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]*)\\}`);
       const match = block.exec(THEMES_CSS);
+      // A null match would silently skip this mode instead of guarding it.
+      expect(match, `no [data-theme="${theme}"] block found in themes.css`).not.toBeNull();
       if (match?.[1]?.includes('--shadow:')) {
         expect(
           match[1].includes('--shadow-sm:'),

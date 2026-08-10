@@ -24,10 +24,11 @@ type Hsl = { h: number; s: number; l: number };
 type Scheme = 'light' | 'dark';
 type Rule = { selectors: string[]; vars: Record<string, string> };
 
-const CSS = readFileSync(join(process.cwd(), 'src', 'styles', 'themes.css'), 'utf8').replace(
-  /\/\*[\s\S]*?\*\//g,
-  '',
-);
+// Quote style is a formatter choice, not a CSS semantic, so normalize it here and
+// keep the selector assertions below written with double quotes.
+const CSS = readFileSync(join(process.cwd(), 'src', 'styles', 'themes.css'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/'/g, '"');
 
 /** Split the stylesheet into { selectors, custom-properties } rules. */
 function parseRules(source: string): Rule[] {
