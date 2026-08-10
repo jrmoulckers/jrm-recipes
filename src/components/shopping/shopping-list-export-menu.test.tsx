@@ -33,7 +33,7 @@ const items: ShoppingViewItem[] = [
 const list = {
   id: "weekly",
   name: "Weekly",
-  storeName: "Neighborhood Market",
+  storeNames: ["Neighborhood Market"],
   isDefault: true,
 };
 

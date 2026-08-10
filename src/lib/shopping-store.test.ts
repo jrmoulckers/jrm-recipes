@@ -17,7 +17,7 @@ import { DEFAULT_UNIT_PREFS } from "./units";
 const defaultList = (): LocalShoppingList => ({
   id: "default",
   name: "Neighborhood market",
-  storeName: "QFC",
+  storeIds: [],
   isDefault: true,
   archived: false,
   items: [],
@@ -26,6 +26,7 @@ const defaultList = (): LocalShoppingList => ({
 function reset() {
   useShoppingStore.setState({
     lists: [defaultList()],
+    stores: [],
     defaultListId: "default",
     currentListId: "default",
     routes: [],
@@ -115,6 +116,30 @@ describe("persisted migration", () => {
     expect(migrated.lists?.[0]?.items).toEqual([]);
   });
 
+  it("lifts legacy per-list store names into a shared store library", () => {
+    const migrated = migrateShoppingState(
+      {
+        lists: [
+          { ...defaultList(), id: "a", storeIds: undefined, storeName: "QFC" },
+          { ...defaultList(), id: "b", storeIds: undefined, storeName: "qfc " },
+          { ...defaultList(), id: "c", storeIds: undefined, storeName: null },
+        ],
+        defaultListId: "a",
+        currentListId: "a",
+      },
+      4,
+    );
+
+    expect(migrated.stores).toHaveLength(1);
+    const storeId = migrated.stores![0]!.id;
+    expect(migrated.stores![0]!.name).toBe("QFC");
+    expect(migrated.lists?.map((entry) => entry.storeIds)).toEqual([
+      [storeId],
+      [storeId],
+      [],
+    ]);
+  });
+
   it("stops localizing a generated name after the user renames it", () => {
     useShoppingStore.setState({
       lists: [
@@ -122,7 +147,7 @@ describe("persisted migration", () => {
           id: LOCAL_DEFAULT_LIST_ID,
           name: LOCAL_DEFAULT_LIST_NAME,
           generatedName: true,
-          storeName: null,
+          storeIds: [],
           isDefault: true,
           archived: false,
           items: [],
@@ -132,7 +157,7 @@ describe("persisted migration", () => {
       currentListId: LOCAL_DEFAULT_LIST_ID,
     });
 
-    store().renameList(LOCAL_DEFAULT_LIST_ID, "My market", null);
+    store().renameList(LOCAL_DEFAULT_LIST_ID, "My market");
 
     expect(store().lists[0]).toMatchObject({
       name: "My market",
@@ -235,7 +260,7 @@ describe("persisted migration", () => {
 
 describe("independent current and default lists", () => {
   it("viewing another list does not change fallback routing", () => {
-    const viewed = store().createList("Warehouse", "Costco");
+    const viewed = store().createList("Warehouse");
     store().setCurrentList(viewed);
     store().addRecipe(recipe([{ item: "Milk", quantity: 1 }]));
 
@@ -246,7 +271,7 @@ describe("independent current and default lists", () => {
   });
 
   it("changes the fallback only through makeDefault", () => {
-    const warehouse = store().createList("Warehouse", "Costco");
+    const warehouse = store().createList("Warehouse");
     store().makeDefault(warehouse);
     store().addRecipe(recipe([{ item: "Milk", quantity: 1 }]));
 
@@ -269,7 +294,7 @@ describe("routing and list lifecycle", () => {
   });
 
   it("routes an ingredient to one preferred list and not its alternatives", () => {
-    const costco = store().createList("Warehouse", "Costco");
+    const costco = store().createList("Warehouse");
     store().addManual("default", { item: "Onion", foodId: "food-onion" });
     const onion = list("default").items[0]!;
     store().moveItem("default", onion.id, costco, true, ["default"]);
@@ -283,7 +308,7 @@ describe("routing and list lifecycle", () => {
   });
 
   it("promotes an active alternative when a preferred list is archived", () => {
-    const costco = store().createList("Warehouse", "Costco");
+    const costco = store().createList("Warehouse");
     store().addManual("default", { item: "Onion" });
     store().moveItem("default", list("default").items[0]!.id, costco, true, [
       "default",
@@ -297,8 +322,8 @@ describe("routing and list lifecycle", () => {
   });
 
   it("preserves a non-preferred alternative across archive and restore", () => {
-    const costco = store().createList("Warehouse", "Costco");
-    const source = store().createList("Temporary", null);
+    const costco = store().createList("Warehouse");
+    const source = store().createList("Temporary");
     store().addManual(source, { item: "Onion" });
     store().moveItem(source, list(source).items[0]!.id, "default", true, [
       costco,
@@ -312,7 +337,7 @@ describe("routing and list lifecycle", () => {
   });
 
   it("promotes a new default only when the default is archived", () => {
-    const costco = store().createList("Warehouse", "Costco");
+    const costco = store().createList("Warehouse");
     store().setCurrentList(costco);
     store().archiveList("default");
 
@@ -324,9 +349,9 @@ describe("routing and list lifecycle", () => {
   it.each(["archiveList", "deleteList"] as const)(
     "falls back to the explicit default when the viewed list is removed by %s",
     (operation) => {
-      const costco = store().createList("Warehouse", "Costco");
+      const costco = store().createList("Warehouse");
       store().makeDefault(costco);
-      const temporary = store().createList("Temporary", null);
+      const temporary = store().createList("Temporary");
 
       store()[operation](temporary);
 
@@ -352,7 +377,7 @@ describe("per-list item mutations", () => {
   });
 
   it("clears only the requested list", () => {
-    const costco = store().createList("Warehouse", "Costco");
+    const costco = store().createList("Warehouse");
     store().addManual("default", { item: "Eggs" });
     store().addManual(costco, { item: "Butter" });
     store().clearAll(costco);
@@ -542,7 +567,7 @@ describe("offline quantity and package preferences", () => {
   });
 
   it("saves package metadata on the existing preferred-store route", () => {
-    const warehouse = store().createList("Warehouse", "Costco");
+    const warehouse = store().createList("Warehouse");
     store().addManual("default", { item: "Rice", foodId: "food-rice" });
     const rice = list("default").items[0]!;
 
@@ -566,7 +591,7 @@ describe("offline quantity and package preferences", () => {
   });
 
   it("scopes a package edit by list even if legacy entity ids collide", () => {
-    const warehouse = store().createList("Warehouse", "Costco");
+    const warehouse = store().createList("Warehouse");
     store().addManual("default", {
       item: "Milk",
       foodId: "food-milk",
@@ -946,7 +971,7 @@ describe("bounded per-list recovery history", () => {
   it("cannot restore a point into a different list", () => {
     store().addManual("default", { item: "Milk" });
     const pointId = store().clearAll("default")!;
-    const other = store().createList("Warehouse", "Costco");
+    const other = store().createList("Warehouse");
 
     expect(store().restoreFromHistory(other, pointId)).toBeNull();
     expect(list(other).items).toEqual([]);
@@ -968,7 +993,7 @@ describe("bounded per-list recovery history", () => {
   });
 
   it("captures both lists before a bulk move", () => {
-    const warehouse = store().createList("Warehouse", "Costco");
+    const warehouse = store().createList("Warehouse");
     store().addManual("default", { item: "Milk" });
     store().addManual("default", { item: "Eggs" });
     store().addManual(warehouse, { item: "Butter" });
@@ -1040,5 +1065,67 @@ describe("bounded per-list recovery history", () => {
       operation: "list-rebuild",
       items: [{ item: "Old item", checked: true }],
     });
+  });
+});
+
+describe("store library", () => {
+  it("reuses an existing store instead of creating a near-duplicate", () => {
+    const first = store().createStore("Costco");
+    const second = store().createStore("  costco ");
+
+    expect(second).toBe(first);
+    expect(store().stores).toHaveLength(1);
+  });
+
+  it("ignores a blank store name", () => {
+    expect(store().createStore("   ")).toBe("");
+    expect(store().stores).toEqual([]);
+  });
+
+  it("links several stores to one list and dedupes unknown ids", () => {
+    const costco = store().createStore("Costco");
+    const market = store().createStore("Neighborhood market");
+
+    const listId = store().createList("Weekly run", [
+      costco,
+      market,
+      costco,
+      "missing",
+    ]);
+
+    expect(list(listId).storeIds).toEqual([costco, market]);
+  });
+
+  it("renames a store everywhere it is used", () => {
+    const costco = store().createStore("Costco");
+    const listId = store().createList("Weekly run", [costco]);
+
+    store().renameStore(costco, "Costco Wholesale");
+
+    expect(store().stores[0]!.name).toBe("Costco Wholesale");
+    expect(list(listId).storeIds).toEqual([costco]);
+  });
+
+  it("refuses a rename that collides with another store", () => {
+    const costco = store().createStore("Costco");
+    store().createStore("Market");
+
+    store().renameStore(costco, "market");
+
+    expect(store().stores.map((entry) => entry.name)).toEqual([
+      "Costco",
+      "Market",
+    ]);
+  });
+
+  it("unlinks a deleted store but keeps the lists that used it", () => {
+    const costco = store().createStore("Costco");
+    const market = store().createStore("Market");
+    const listId = store().createList("Weekly run", [costco, market]);
+
+    store().deleteStore(costco);
+
+    expect(store().stores.map((entry) => entry.id)).toEqual([market]);
+    expect(list(listId).storeIds).toEqual([market]);
   });
 });

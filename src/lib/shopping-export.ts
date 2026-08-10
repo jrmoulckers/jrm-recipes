@@ -1,5 +1,6 @@
 import { brand } from "~/config/brand";
 import { localeDirection, type Direction } from "~/config/i18n";
+import { formatList } from "~/lib/i18n-format";
 import {
   formatShoppingListItemLine,
   formatShoppingListText,
@@ -12,7 +13,8 @@ export const MAX_MAILTO_LENGTH = 1_900;
 
 export type ShoppingExportDocument = {
   listName: string;
-  storeName: string | null;
+  /** Every store the list spans, in display order; empty when unspecified. */
+  storeNames: string[];
   storeLabel: string;
   locale: string;
   direction: Direction;
@@ -55,17 +57,23 @@ export class ShoppingExportError extends Error {
 
 export function createShoppingExportDocument({
   listName,
-  storeName,
+  storeNames,
   storeLabel,
   locale,
   categoryLabels,
   items,
   includeChecked,
 }: Omit<ShoppingExportDocument, "direction">): ShoppingExportDocument {
-  const normalizedStoreName = storeName?.trim();
+  const seen = new Set<string>();
   return {
     listName: listName.trim(),
-    storeName: normalizedStoreName?.length ? normalizedStoreName : null,
+    storeNames: storeNames
+      .map((name) => name.trim())
+      .filter((name) => {
+        if (!name.length || seen.has(name.toLowerCase())) return false;
+        seen.add(name.toLowerCase());
+        return true;
+      }),
     storeLabel,
     locale,
     direction: localeDirection(locale),
@@ -73,6 +81,20 @@ export function createShoppingExportDocument({
     items,
     includeChecked,
   };
+}
+
+/**
+ * The `Stores: A, B and C` line shared by every export format, or `null` when
+ * the list has no stores.
+ */
+export function shoppingExportStoreLine(
+  document: Pick<
+    ShoppingExportDocument,
+    "storeNames" | "storeLabel" | "locale"
+  >,
+): string | null {
+  if (document.storeNames.length === 0) return null;
+  return `${document.storeLabel}: ${formatList(document.storeNames, document.locale)}`;
 }
 
 export function visibleShoppingExportItems(
@@ -101,9 +123,7 @@ export function serializeShoppingExportText(
   return formatShoppingListText(document.items, {
     includeChecked: document.includeChecked,
     title: document.listName,
-    subtitle: document.storeName
-      ? `${document.storeLabel}: ${document.storeName}`
-      : undefined,
+    subtitle: shoppingExportStoreLine(document) ?? undefined,
     categoryLabels: document.categoryLabels,
     locale: document.locale,
   });
@@ -238,8 +258,9 @@ export function buildShoppingListPrintHtml(
   labels: { print: string; close: string; completed: string },
 ): string {
   const groups = groupShoppingExportItems(document);
-  const store = document.storeName
-    ? `<p class="store">${escapeHtml(document.storeLabel)}: ${escapeHtml(document.storeName)}</p>`
+  const storeLine = shoppingExportStoreLine(document);
+  const store = storeLine
+    ? `<p class="store">${escapeHtml(storeLine)}</p>`
     : "";
   const sections = groups
     .map(
@@ -411,12 +432,9 @@ export async function renderShoppingListImage(
     contentWidth,
   );
   context.font = '500 28px system-ui, -apple-system, "Segoe UI", sans-serif';
-  const storeLines = exportDocument.storeName
-    ? wrapCanvasText(
-        context,
-        `${exportDocument.storeLabel}: ${exportDocument.storeName}`,
-        contentWidth,
-      )
+  const storeSubtitle = shoppingExportStoreLine(exportDocument);
+  const storeLines = storeSubtitle
+    ? wrapCanvasText(context, storeSubtitle, contentWidth)
     : [];
 
   for (const group of groupShoppingExportItems(exportDocument)) {

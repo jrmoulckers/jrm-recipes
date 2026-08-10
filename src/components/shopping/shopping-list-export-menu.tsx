@@ -110,8 +110,8 @@ export function ShoppingListExportMenu({
   });
   const exportDocument = createShoppingExportDocument({
     listName: list.name,
-    storeName: list.storeName,
-    storeLabel: t("export.storeLabel"),
+    storeNames: list.storeNames,
+    storeLabel: t("export.storeLabel", { count: list.storeNames.length }),
     locale,
     categoryLabels,
     items: exportItems,

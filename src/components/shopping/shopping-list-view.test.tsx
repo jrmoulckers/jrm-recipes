@@ -178,13 +178,13 @@ describe("ShoppingListView routing controls", () => {
           {
             id: "qfc",
             name: "Weekly",
-            storeName: "QFC",
+            storeNames: ["QFC"],
             isDefault: true,
           },
           {
             id: "costco",
             name: "Bulk",
-            storeName: "Costco",
+            storeNames: ["Costco"],
             isDefault: false,
           },
         ]}
@@ -202,7 +202,7 @@ describe("ShoppingListView routing controls", () => {
     );
 
     expect(screen.getAllByText("Milk")).toHaveLength(1);
-    expect(screen.getByText("Also at Costco")).toBeInTheDocument();
+    expect(screen.getByText("Also at Bulk")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Move Milk to another list" }),
     );
@@ -290,13 +290,13 @@ describe("ShoppingListView routing controls", () => {
           {
             id: "qfc",
             name: "Weekly",
-            storeName: "QFC",
+            storeNames: ["QFC"],
             isDefault: true,
           },
           {
             id: "costco",
             name: "Bulk",
-            storeName: "Costco",
+            storeNames: ["Costco"],
             isDefault: false,
           },
         ]}
@@ -368,13 +368,13 @@ describe("ShoppingListView package guidance", () => {
     {
       id: "qfc",
       name: "Weekly",
-      storeName: "QFC",
+      storeNames: ["QFC"],
       isDefault: true,
     },
     {
       id: "costco",
       name: "Bulk",
-      storeName: "Costco",
+      storeNames: ["Costco"],
       isDefault: false,
     },
   ];

@@ -20,13 +20,13 @@ describe("shopping list validation", () => {
     ).toBe(true);
   });
 
-  it("trims list and optional store names", () => {
+  it("trims the list name and normalizes optional stores", () => {
     expect(
       createShoppingListInput.parse({
         name: "  Warehouse  ",
-        storeName: "  Costco  ",
+        newStoreNames: ["  Costco  "],
       }),
-    ).toEqual({ name: "Warehouse", storeName: "Costco" });
+    ).toEqual({ name: "Warehouse", storeIds: [], newStoreNames: ["Costco"] });
   });
 
   it("rejects duplicate alternatives and the preferred list as an alternative", () => {

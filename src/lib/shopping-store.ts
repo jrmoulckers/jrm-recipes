@@ -62,10 +62,17 @@ export type LocalShoppingList = {
   name: string;
   /** Product-generated names are localized only when rendered, never persisted. */
   generatedName?: boolean;
-  storeName: string | null;
+  /** Ordered ids into `stores`. Empty means the list isn't tied to a store. */
+  storeIds: string[];
   isDefault: boolean;
   archived: boolean;
   items: LocalShoppingItem[];
+};
+
+/** One reusable store in the shopper's library (#664). */
+export type LocalShoppingStoreEntry = {
+  id: string;
+  name: string;
 };
 
 export type LocalShoppingRoute = ShoppingIngredientRoute & {
@@ -107,6 +114,7 @@ export type ManualEntry = {
 
 type ShoppingStore = {
   lists: LocalShoppingList[];
+  stores: LocalShoppingStoreEntry[];
   defaultListId: string;
   currentListId: string;
   routes: LocalShoppingRoute[];
@@ -116,8 +124,12 @@ type ShoppingStore = {
   packageRounding: boolean;
   addRecipe: (recipe: ShoppingRecipeInput) => void;
   addManual: (listId: string, entry: ManualEntry) => void;
-  createList: (name: string, storeName?: string | null) => string;
-  renameList: (id: string, name: string, storeName?: string | null) => void;
+  createList: (name: string, storeIds?: readonly string[]) => string;
+  renameList: (id: string, name: string, storeIds?: readonly string[]) => void;
+  /** Find (case-insensitively) or create a store, returning its id. */
+  createStore: (name: string) => string;
+  renameStore: (id: string, name: string) => void;
+  deleteStore: (id: string) => void;
   setCurrentList: (id: string) => void;
   makeDefault: (id: string) => void;
   archiveList: (id: string) => void;
@@ -195,7 +207,7 @@ function defaultList(items: LocalShoppingItem[] = []): LocalShoppingList {
     id: LOCAL_DEFAULT_LIST_ID,
     name: LOCAL_DEFAULT_LIST_NAME,
     generatedName: true,
-    storeName: null,
+    storeIds: [],
     isDefault: true,
     archived: false,
     items,
@@ -280,6 +292,21 @@ function activeLists(lists: LocalShoppingList[]) {
 function optionalStoreName(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed?.length ? trimmed : null;
+}
+
+/** Dedupe an ordered store selection against the library the user actually has. */
+function normalizeStoreIds(
+  storeIds: readonly string[] | undefined,
+  stores: readonly LocalShoppingStoreEntry[],
+): string[] {
+  if (!storeIds?.length) return [];
+  const known = new Set(stores.map((store) => store.id));
+  const seen = new Set<string>();
+  return storeIds.filter((id) => {
+    if (!known.has(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 function cloneItems(items: readonly LocalShoppingItem[]): LocalShoppingItem[] {
@@ -562,10 +589,16 @@ function ensureActiveFallback(
   return { lists: [...lists, created], fallbackListId: created.id };
 }
 
+/** Pre-#664 shape: lists carried a single free-text store name. */
+type PersistedShoppingList = Omit<LocalShoppingList, "storeIds"> & {
+  storeIds?: string[];
+  storeName?: string | null;
+};
+
 type PersistedShoppingState = Partial<
   Pick<
     ShoppingStore,
-    | "lists"
+    | "stores"
     | "defaultListId"
     | "currentListId"
     | "routes"
@@ -576,12 +609,13 @@ type PersistedShoppingState = Partial<
   >
 > & {
   items?: LocalShoppingItem[];
+  lists?: PersistedShoppingList[];
 };
 
 function normalizePersistedLists(
-  lists: LocalShoppingList[],
+  lists: PersistedShoppingList[],
   customUnits: readonly LocalCustomUnit[],
-): LocalShoppingList[] {
+): PersistedShoppingList[] {
   const usedIds = new Set<string>();
   return lists.map((list) => ({
     ...list,
@@ -621,7 +655,7 @@ function isPersistedList(value: unknown): value is LocalShoppingList {
   return (
     typeof list.id === "string" &&
     typeof list.name === "string" &&
-    (typeof list.storeName === "string" || list.storeName === null) &&
+    Array.isArray(list.storeIds) &&
     typeof list.isDefault === "boolean" &&
     typeof list.archived === "boolean" &&
     Array.isArray(list.items)
@@ -670,6 +704,46 @@ function hasOwn(value: object, key: PropertyKey): boolean {
 }
 
 export function migrateShoppingState(
+  persisted: unknown,
+  version: number,
+): PersistedShoppingState {
+  return extractStoreLibrary(migrateShoppingStateShape(persisted, version));
+}
+
+/**
+ * Lift the pre-#664 per-list `storeName` into a deduplicated store library so
+ * an offline shopper keeps their stores and gains multi-store lists.
+ */
+function extractStoreLibrary(
+  state: PersistedShoppingState,
+): PersistedShoppingState {
+  if (!Array.isArray(state.lists)) return state;
+  const stores: LocalShoppingStoreEntry[] = Array.isArray(state.stores)
+    ? [...state.stores]
+    : [];
+  const byName = new Map(
+    stores.map((store) => [store.name.toLowerCase(), store] as const),
+  );
+  const lists = state.lists.map((list) => {
+    if (Array.isArray(list.storeIds)) {
+      const { storeName: _legacy, ...rest } = list;
+      return rest;
+    }
+    const { storeName, ...rest } = list;
+    const name = optionalStoreName(storeName);
+    if (!name) return { ...rest, storeIds: [] };
+    let store = byName.get(name.toLowerCase());
+    if (!store) {
+      store = { id: uid(), name };
+      byName.set(name.toLowerCase(), store);
+      stores.push(store);
+    }
+    return { ...rest, storeIds: [store.id] };
+  });
+  return { ...state, lists, stores };
+}
+
+function migrateShoppingStateShape(
   persisted: unknown,
   version: number,
 ): PersistedShoppingState {
@@ -758,11 +832,21 @@ export function mergeShoppingState(
   const validLists = Array.isArray(saved.lists)
     ? saved.lists.filter(isPersistedList)
     : [];
+  const stores = (
+    Array.isArray(saved.stores) ? saved.stores : current.stores
+  ).filter(
+    (store): store is LocalShoppingStoreEntry =>
+      !!store &&
+      typeof store === "object" &&
+      typeof store.id === "string" &&
+      typeof store.name === "string",
+  );
   const candidates = normalizePersistedLists(
     validLists.length > 0 ? validLists : current.lists,
     Array.isArray(saved.customUnits) ? saved.customUnits : current.customUnits,
   ).map((list) => ({
     ...list,
+    storeIds: normalizeStoreIds(list.storeIds, stores),
     items: list.items.map((item) => ({
       ...item,
       foodId: item.foodId ?? null,
@@ -838,6 +922,7 @@ export function mergeShoppingState(
   return {
     ...current,
     lists: normalizedLists,
+    stores,
     defaultListId: selectedDefault.id,
     currentListId,
     routes,
@@ -852,8 +937,9 @@ export function mergeShoppingState(
 
 export const useShoppingStore = create<ShoppingStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       lists: [defaultList()],
+      stores: [],
       defaultListId: LOCAL_DEFAULT_LIST_ID,
       currentListId: LOCAL_DEFAULT_LIST_ID,
       routes: [],
@@ -942,7 +1028,7 @@ export const useShoppingStore = create<ShoppingStore>()(
             ),
           };
         }),
-      createList: (name, storeName) => {
+      createList: (name, storeIds) => {
         const id = uid();
         set((state) => ({
           lists: [
@@ -950,7 +1036,7 @@ export const useShoppingStore = create<ShoppingStore>()(
             {
               id,
               name: name.trim(),
-              storeName: optionalStoreName(storeName),
+              storeIds: normalizeStoreIds(storeIds, state.stores),
               isDefault: false,
               archived: false,
               items: [],
@@ -960,7 +1046,7 @@ export const useShoppingStore = create<ShoppingStore>()(
         }));
         return id;
       },
-      renameList: (id, name, storeName) =>
+      renameList: (id, name, storeIds) =>
         set((state) => ({
           lists: state.lists.map((list) =>
             list.id === id
@@ -968,7 +1054,46 @@ export const useShoppingStore = create<ShoppingStore>()(
                   ...list,
                   name: name.trim(),
                   generatedName: false,
-                  storeName: optionalStoreName(storeName),
+                  storeIds: normalizeStoreIds(storeIds, state.stores),
+                }
+              : list,
+          ),
+        })),
+      createStore: (name) => {
+        const trimmed = optionalStoreName(name);
+        if (!trimmed) return "";
+        const existing = get().stores.find(
+          (store) => store.name.toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (existing) return existing.id;
+        const id = uid();
+        set((state) => ({ stores: [...state.stores, { id, name: trimmed }] }));
+        return id;
+      },
+      renameStore: (id, name) =>
+        set((state) => {
+          const trimmed = optionalStoreName(name);
+          if (!trimmed) return state;
+          const clash = state.stores.some(
+            (store) =>
+              store.id !== id &&
+              store.name.toLowerCase() === trimmed.toLowerCase(),
+          );
+          if (clash) return state;
+          return {
+            stores: state.stores.map((store) =>
+              store.id === id ? { ...store, name: trimmed } : store,
+            ),
+          };
+        }),
+      deleteStore: (id) =>
+        set((state) => ({
+          stores: state.stores.filter((store) => store.id !== id),
+          lists: state.lists.map((list) =>
+            list.storeIds.includes(id)
+              ? {
+                  ...list,
+                  storeIds: list.storeIds.filter((storeId) => storeId !== id),
                 }
               : list,
           ),
@@ -1522,11 +1647,12 @@ export const useShoppingStore = create<ShoppingStore>()(
     }),
     {
       name: "heirloom-shopping-list",
-      version: 4,
+      version: 5,
       migrate: migrateShoppingState,
       merge: mergeShoppingState,
       partialize: (state) => ({
         lists: state.lists,
+        stores: state.stores,
         defaultListId: state.defaultListId,
         currentListId: state.currentListId,
         routes: state.routes,

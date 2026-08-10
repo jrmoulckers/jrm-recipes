@@ -17,11 +17,14 @@ import {
   clearChecked,
   clearList,
   createShoppingList,
+  createShoppingStore,
   deleteShoppingList,
+  deleteShoppingStore,
   makeShoppingListDefault,
   moveShoppingItem,
   removeItem,
   renameShoppingList,
+  renameShoppingStore,
   restoreShoppingList,
   restoreShoppingListPoint,
   restoreShoppingListPoints,
@@ -41,27 +44,33 @@ import {
   bulkMoveShoppingItemsInput,
   buildFromPlanInput,
   createShoppingListInput,
+  createShoppingStoreInput,
   itemIdInput,
   listIdInput,
   manualItemInput,
   moveShoppingItemInput,
   renameShoppingListInput,
+  renameShoppingStoreInput,
   restoreShoppingListPointInput,
   restoreShoppingListPointsInput,
   saveIngredientPackageInput,
   setItemCategoryInput,
   setItemCheckedInput,
+  shoppingStoreIdInput,
   type AddRecipeToListInput,
   type BuildFromPlanInput,
   type BulkMoveShoppingItemsInput,
   type CreateShoppingListInput,
+  type CreateShoppingStoreInput,
   type ListIdInput,
   type ManualItemInput,
   type MoveShoppingItemInput,
   type RenameShoppingListInput,
+  type RenameShoppingStoreInput,
   type RestoreShoppingListPointInput,
   type RestoreShoppingListPointsInput,
   type SaveIngredientPackageInput,
+  type ShoppingStoreIdInput,
 } from "./validation";
 import { type ShoppingCategory } from "~/lib/shopping-list";
 import {
@@ -113,6 +122,8 @@ function messageFor(error: unknown): string {
       return "We couldn't find that item.";
     case "UNAUTHENTICATED":
       return "Sign in to use a synced shopping list.";
+    case "CONFLICT":
+      return "You already have a store with that name.";
     default:
       return "We couldn't update your shopping list. Please try again.";
   }
@@ -371,6 +382,71 @@ export async function renameShoppingListAction(
   const user = await requireUser();
   try {
     await renameShoppingList(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export type CreateShoppingStoreActionResult =
+  { ok: true; storeId: string } | ActionFailure;
+
+export async function createShoppingStoreAction(
+  input: CreateShoppingStoreInput,
+): Promise<CreateShoppingStoreActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = createShoppingStoreInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    const created = await createShoppingStore(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true, storeId: created.storeId };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function renameShoppingStoreAction(
+  input: RenameShoppingStoreInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = renameShoppingStoreInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const user = await requireUser();
+  try {
+    await renameShoppingStore(user, parsed.data);
+    revalidatePath("/shopping");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+export async function deleteShoppingStoreAction(
+  input: ShoppingStoreIdInput,
+): Promise<ActionResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+  const parsed = shoppingStoreIdInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that item." };
+  }
+  const user = await requireUser();
+  try {
+    await deleteShoppingStore(user, parsed.data.storeId);
     revalidatePath("/shopping");
     return { ok: true };
   } catch (error) {

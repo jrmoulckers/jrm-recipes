@@ -11,6 +11,8 @@ import {
   shoppingListRestorePointItems,
   shoppingListRestorePoints,
   shoppingLists,
+  shoppingListStores,
+  shoppingStores,
   type ShoppingListRestorePoint,
   userUnitPreferences,
   type User,
@@ -62,10 +64,28 @@ export async function getShoppingWorkspace(
       items: {
         orderBy: [asc(shoppingListItems.position), asc(shoppingListItems.item)],
       },
+      stores: {
+        orderBy: [
+          asc(shoppingListStores.position),
+          asc(shoppingListStores.storeId),
+        ],
+      },
     },
   });
+  const stores = await db.query.shoppingStores.findMany({
+    where: eq(shoppingStores.userId, user.id),
+    orderBy: [asc(shoppingStores.name), asc(shoppingStores.id)],
+    columns: { id: true, name: true },
+  });
+  const ownedStoreIds = new Set(stores.map((store) => store.id));
+  const listsWithStores = lists.map((list) => ({
+    ...list,
+    storeIds: list.stores
+      .map((link) => link.storeId)
+      .filter((storeId) => ownedStoreIds.has(storeId)),
+  }));
 
-  const activeLists = lists.filter((list) => list.archivedAt == null);
+  const activeLists = listsWithStores.filter((list) => list.archivedAt == null);
   const defaultList =
     activeLists.find((list) => list.isDefault) ?? activeLists[0] ?? null;
   const selectedList =
@@ -130,7 +150,8 @@ export async function getShoppingWorkspace(
   const customUnitDefinitions = toCustomUnitDefs(customUnitRows);
 
   return {
-    lists,
+    lists: listsWithStores,
+    stores,
     selectedList,
     selectedListId: selectedList?.id ?? null,
     defaultListId: defaultList?.id ?? null,
