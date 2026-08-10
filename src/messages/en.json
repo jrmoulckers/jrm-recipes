@@ -59,6 +59,7 @@
       "units": "Units & measurements",
       "notifications": "Notifications",
       "following": "Following & followers",
+      "photos": "Your photos",
       "blocked": "Blocked users",
       "data": "Your data",
       "billing": "Billing",
@@ -341,6 +342,9 @@
     },
     "dietarySettings": {
       "title": "Dietary profiles"
+    },
+    "photoSettings": {
+      "title": "Your photos"
     },
     "dataSettings": {
       "title": "Your data"
@@ -2871,6 +2875,55 @@
         "body": "Sign in from the header to record who you cook for."
       }
     },
+    "photosPage": {
+      "title": "Your photos",
+      "description": "Every photo you've uploaded, in one place. Describe them for screen readers, see how much storage they use, and remove the ones you no longer want.",
+      "signIn": {
+        "title": "Your photo library is private",
+        "body": "Sign in from the header to see the photos you've uploaded."
+      },
+      "storage": {
+        "title": "Storage",
+        "description": "Only photos you uploaded count toward this. Photos you linked to from elsewhere are stored by whoever hosts them.",
+        "label": "Photo storage",
+        "resource": "photo storage"
+      },
+      "empty": {
+        "title": "No photos yet",
+        "description": "Photos you add to a recipe, a collection, or a family group are collected here so you can reuse and manage them.",
+        "action": "Add your first recipe"
+      },
+      "gridLabel": "Your photos",
+      "detailsLabel": "Selected photo",
+      "untitledPhoto": "Photo without a description",
+      "unavailable": "This photo didn't load",
+      "loadMore": "Load more photos",
+      "uploaded": "Added {date}",
+      "altLabel": "Photo description",
+      "altPlaceholder": "Golden loaf cooling on a wire rack",
+      "altHint": "Describe what's in the photo so it reads well to someone who can't see it. This is used wherever the photo appears.",
+      "altSave": "Save description",
+      "altSaved": "Description saved",
+      "delete": "Delete photo",
+      "usage": {
+        "separator": ", ",
+        "surfaces": {
+          "recipes": "{count, plural, one {# recipe cover} other {# recipe covers}}",
+          "steps": "{count, plural, one {# recipe step} other {# recipe steps}}",
+          "collections": "{count, plural, one {# collection cover} other {# collection covers}}",
+          "groups": "{count, plural, one {# family group} other {# family groups}}",
+          "cookLog": "{count, plural, one {# cook log entry} other {# cook log entries}}",
+          "reviews": "{count, plural, one {# review} other {# reviews}}"
+        }
+      },
+      "deleteConfirm": {
+        "title": "Delete “{name}”?",
+        "unused": "The photo is removed from storage for good. Nothing you've written points at it, so nothing else changes.",
+        "inUse": "This photo is still used in {places}. Those keep showing it until your browser's copy expires, and then fall back to a stand-in image. Deleting it can't be undone.",
+        "confirmLabel": "Delete photo",
+        "deleted": "Photo deleted"
+      }
+    },
     "dataPage": {
       "title": "Your data",
       "description": "Your recipes are yours. Download your whole cookbook whenever you like. No account, app, or internet needed to read it later.",
@@ -3549,6 +3602,7 @@
     "following": "Connect a database to manage your public profile. Set <code>DATABASE_URL</code> or start the local Postgres container.",
     "units": "Connect a database to save your unit preferences. Set <code>DATABASE_URL</code> or start the local Postgres container.",
     "dietary": "Connect a database to save dietary profiles. Set <code>DATABASE_URL</code> or start the local Postgres container.",
+    "photos": "Connect a database to manage your photo library. Set <code>DATABASE_URL</code> or start the local Postgres container.",
     "title": "Connect a database to start",
     "collections": "Connect a database to save favorites and build collections. Set <code>DATABASE_URL</code> or start the local Postgres container.",
     "groups": "Set <code>DATABASE_URL</code> or start the local Postgres container.",

@@ -59,6 +59,7 @@
       "units": "Einheiten & Maße",
       "notifications": "Benachrichtigungen",
       "following": "Folgen & Follower",
+      "photos": "Deine Fotos",
       "blocked": "Blockierte Nutzer",
       "data": "Deine Daten",
       "billing": "Abrechnung",
@@ -341,6 +342,9 @@
     },
     "dietarySettings": {
       "title": "Ernährungsprofile"
+    },
+    "photoSettings": {
+      "title": "Deine Fotos"
     },
     "dataSettings": {
       "title": "Deine Daten"
@@ -2871,6 +2875,55 @@
         "body": "Melde dich oben an, um festzuhalten, für wen du kochst."
       }
     },
+    "photosPage": {
+      "title": "Deine Fotos",
+      "description": "Alle Fotos, die du hochgeladen hast, an einem Ort. Beschreibe sie für Screenreader, sieh, wie viel Speicher sie belegen, und lösche, was du nicht mehr brauchst.",
+      "signIn": {
+        "title": "Deine Fotosammlung ist privat",
+        "body": "Melde dich oben an, um die Fotos zu sehen, die du hochgeladen hast."
+      },
+      "storage": {
+        "title": "Speicher",
+        "description": "Nur selbst hochgeladene Fotos zählen hier mit. Verlinkte Fotos liegen bei dem Dienst, der sie hostet.",
+        "label": "Fotospeicher",
+        "resource": "Fotospeicher"
+      },
+      "empty": {
+        "title": "Noch keine Fotos",
+        "description": "Fotos, die du zu einem Rezept, einer Sammlung oder einer Familiengruppe hinzufügst, sammeln sich hier, damit du sie wiederverwenden und verwalten kannst.",
+        "action": "Erstes Rezept anlegen"
+      },
+      "gridLabel": "Deine Fotos",
+      "detailsLabel": "Ausgewähltes Foto",
+      "untitledPhoto": "Foto ohne Beschreibung",
+      "unavailable": "Dieses Foto wurde nicht geladen",
+      "loadMore": "Mehr Fotos laden",
+      "uploaded": "Hinzugefügt am {date}",
+      "altLabel": "Fotobeschreibung",
+      "altPlaceholder": "Goldenes Brot kühlt auf einem Gitter aus",
+      "altHint": "Beschreibe, was zu sehen ist, damit es auch ohne Bild verständlich bleibt. Die Beschreibung gilt überall, wo das Foto erscheint.",
+      "altSave": "Beschreibung speichern",
+      "altSaved": "Beschreibung gespeichert",
+      "delete": "Foto löschen",
+      "usage": {
+        "separator": ", ",
+        "surfaces": {
+          "recipes": "{count, plural, one {# Rezeptbild} other {# Rezeptbilder}}",
+          "steps": "{count, plural, one {# Rezeptschritt} other {# Rezeptschritte}}",
+          "collections": "{count, plural, one {# Sammlungsbild} other {# Sammlungsbilder}}",
+          "groups": "{count, plural, one {# Familiengruppe} other {# Familiengruppen}}",
+          "cookLog": "{count, plural, one {# Kochtagebuch-Eintrag} other {# Kochtagebuch-Einträge}}",
+          "reviews": "{count, plural, one {# Bewertung} other {# Bewertungen}}"
+        }
+      },
+      "deleteConfirm": {
+        "title": "„{name}“ löschen?",
+        "unused": "Das Foto wird endgültig aus dem Speicher entfernt. Nichts, was du geschrieben hast, verweist darauf, sonst ändert sich also nichts.",
+        "inUse": "Dieses Foto wird noch in {places} verwendet. Dort bleibt es sichtbar, bis die Kopie im Browser abläuft, danach erscheint ein Ersatzbild. Das Löschen lässt sich nicht rückgängig machen.",
+        "confirmLabel": "Foto löschen",
+        "deleted": "Foto gelöscht"
+      }
+    },
     "dataPage": {
       "title": "Deine Daten",
       "description": "Deine Rezepte gehören dir. Lade dein ganzes Kochbuch herunter, wann du willst. Zum Lesen brauchst du später weder Konto noch App noch Internet.",
@@ -3549,6 +3602,7 @@
     "following": "Verbinde eine Datenbank, um dein öffentliches Profil zu verwalten. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
     "units": "Verbinde eine Datenbank, um deine Einheiten zu speichern. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
     "dietary": "Verbinde eine Datenbank, um Ernährungsprofile zu speichern. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
+    "photos": "Verbinde eine Datenbank, um deine Fotosammlung zu verwalten. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
     "title": "Verbinde eine Datenbank zum Loslegen",
     "collections": "Verbinde eine Datenbank, um Favoriten zu speichern und Sammlungen anzulegen. Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",
     "groups": "Setze <code>DATABASE_URL</code> oder starte den lokalen Postgres-Container.",

@@ -59,6 +59,7 @@
       "units": "Unidades y medidas",
       "notifications": "Notificaciones",
       "following": "Siguiendo y seguidores",
+      "photos": "Tus fotos",
       "blocked": "Usuarios bloqueados",
       "data": "Tus datos",
       "billing": "Facturación",
@@ -341,6 +342,9 @@
     },
     "dietarySettings": {
       "title": "Perfiles alimentarios"
+    },
+    "photoSettings": {
+      "title": "Tus fotos"
     },
     "dataSettings": {
       "title": "Tus datos"
@@ -2871,6 +2875,55 @@
         "body": "Inicia sesión desde la cabecera para anotar para quién cocinas."
       }
     },
+    "photosPage": {
+      "title": "Tus fotos",
+      "description": "Todas las fotos que has subido, en un solo sitio. Descríbelas para los lectores de pantalla, mira cuánto espacio ocupan y borra las que ya no quieras.",
+      "signIn": {
+        "title": "Tu fototeca es privada",
+        "body": "Inicia sesión desde la cabecera para ver las fotos que has subido."
+      },
+      "storage": {
+        "title": "Almacenamiento",
+        "description": "Solo cuentan las fotos que has subido tú. Las que enlazaste desde otro sitio las guarda quien las aloja.",
+        "label": "Almacenamiento de fotos",
+        "resource": "almacenamiento de fotos"
+      },
+      "empty": {
+        "title": "Aún no hay fotos",
+        "description": "Las fotos que añadas a una receta, una colección o un grupo familiar se reúnen aquí para que puedas reutilizarlas y gestionarlas.",
+        "action": "Añade tu primera receta"
+      },
+      "gridLabel": "Tus fotos",
+      "detailsLabel": "Foto seleccionada",
+      "untitledPhoto": "Foto sin descripción",
+      "unavailable": "Esta foto no se cargó",
+      "loadMore": "Cargar más fotos",
+      "uploaded": "Añadida el {date}",
+      "altLabel": "Descripción de la foto",
+      "altPlaceholder": "Pan dorado enfriándose sobre una rejilla",
+      "altHint": "Describe lo que se ve para que quien no pueda verla lo entienda igual. Se usa en todos los sitios donde aparece la foto.",
+      "altSave": "Guardar descripción",
+      "altSaved": "Descripción guardada",
+      "delete": "Eliminar foto",
+      "usage": {
+        "separator": ", ",
+        "surfaces": {
+          "recipes": "{count, plural, one {# portada de receta} other {# portadas de receta}}",
+          "steps": "{count, plural, one {# paso de receta} other {# pasos de receta}}",
+          "collections": "{count, plural, one {# portada de colección} other {# portadas de colección}}",
+          "groups": "{count, plural, one {# grupo familiar} other {# grupos familiares}}",
+          "cookLog": "{count, plural, one {# entrada del diario} other {# entradas del diario}}",
+          "reviews": "{count, plural, one {# reseña} other {# reseñas}}"
+        }
+      },
+      "deleteConfirm": {
+        "title": "¿Eliminar «{name}»?",
+        "unused": "La foto se borra del almacenamiento para siempre. Nada de lo que has escrito la usa, así que no cambia nada más.",
+        "inUse": "Esta foto todavía se usa en {places}. Seguirán mostrándola hasta que caduque la copia de tu navegador y después usarán una imagen de repuesto. Eliminarla no se puede deshacer.",
+        "confirmLabel": "Eliminar foto",
+        "deleted": "Foto eliminada"
+      }
+    },
     "dataPage": {
       "title": "Tus datos",
       "description": "Tus recetas son tuyas. Descarga todo tu recetario cuando quieras. Después podrás leerlo sin cuenta, sin aplicación y sin internet.",
@@ -3549,6 +3602,7 @@
     "following": "Conecta una base de datos para gestionar tu perfil público. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
     "units": "Conecta una base de datos para guardar tus preferencias de unidades. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
     "dietary": "Conecta una base de datos para guardar los perfiles alimentarios. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
+    "photos": "Conecta una base de datos para gestionar tu colección de fotos. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
     "title": "Conecta una base de datos para empezar",
     "collections": "Conecta una base de datos para guardar favoritos y crear colecciones. Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",
     "groups": "Define <code>DATABASE_URL</code> o arranca el contenedor local de Postgres.",

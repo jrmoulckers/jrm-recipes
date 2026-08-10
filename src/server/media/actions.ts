@@ -6,7 +6,12 @@ import { requireUser } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { type MediaAsset } from "~/server/db/schema";
 import { deleteAsset, recordUpload, updateAltText } from "./mutations";
-import { listAssets, type MediaPage } from "./queries";
+import {
+  getAssetUsage,
+  listAssets,
+  type AssetUsage,
+  type MediaPage,
+} from "./queries";
 import {
   deleteAssetInput,
   listAssetsInput,
@@ -32,6 +37,9 @@ export type RecordUploadResult =
 
 export type ListAssetsResult =
   { ok: true; page: MediaPage } | { ok: false; error: string };
+
+export type AssetUsageResult =
+  { ok: true; usage: AssetUsage } | { ok: false; error: string };
 
 const NO_DB =
   "Photo library needs a database. Set DATABASE_URL (see .env.example) to start saving photos.";
@@ -136,6 +144,33 @@ export async function listAssetsAction(
     const user = await requireUser();
     const page = await listAssets(user, parsed.data);
     return { ok: true, page };
+  } catch (error) {
+    return { ok: false, error: messageFor(error) };
+  }
+}
+
+/**
+ * Where an asset is still referenced, for the delete confirm dialog (#658).
+ *
+ * Called when the dialog opens, never on grid render: it is six indexed lookups
+ * and would otherwise run once per thumbnail. Ownership and the
+ * caller-visibility scoping of each count both live in `getAssetUsage`, so this
+ * wrapper stays a validate-authenticate-delegate shell like the others.
+ */
+export async function getAssetUsageAction(
+  id: string,
+): Promise<AssetUsageResult> {
+  if (!isDbConfigured()) return { ok: false, error: NO_DB };
+
+  const parsed = deleteAssetInput.safeParse({ id });
+  if (!parsed.success) {
+    return { ok: false, error: "We couldn't find that photo." };
+  }
+
+  try {
+    const user = await requireUser();
+    const usage = await getAssetUsage(parsed.data.id, user);
+    return { ok: true, usage };
   } catch (error) {
     return { ok: false, error: messageFor(error) };
   }

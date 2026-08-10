@@ -209,6 +209,11 @@ export const recipes = pgTable(
     // (Postgres), so recipes without a minted link don't collide.
     unique("recipes_share_token_uq").on(t.shareToken),
     index("recipes_forked_from_idx").on(t.forkedFromId),
+    // "Is this photo still in use?" (issue #658). Partial on the rows that
+    // actually hold a cover, so the index stays a fraction of the table.
+    index("recipes_cover_image_url_idx")
+      .on(t.coverImageUrl)
+      .where(sql`${t.coverImageUrl} is not null`),
     // Non-negative time/serving invariants mirroring Zod (`recipeInput` in
     // src/server/recipes/validation.ts: servings min 1, minutes min 0). These
     // columns are nullable, so a NULL value passes the check by SQL semantics.
@@ -336,6 +341,10 @@ export const recipeSteps = pgTable(
   },
   (t) => [
     index("recipe_steps_recipe_idx").on(t.recipeId, t.position),
+    // Media-library usage lookup (issue #658). Partial: most steps have no photo.
+    index("recipe_steps_image_url_idx")
+      .on(t.imageUrl)
+      .where(sql`${t.imageUrl} is not null`),
     // A step timer can't run negative. Mirrors `stepInput.timerSeconds` (min 0).
     check("recipe_steps_timer_seconds_check", sql`${t.timerSeconds} >= 0`),
   ],

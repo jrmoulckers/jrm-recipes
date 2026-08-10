@@ -31,7 +31,15 @@ export const groups = pgTable(
     createdById: fk().references(() => users.id, { onDelete: "set null" }),
     ...timestamps(),
   },
-  (t) => [index("groups_slug_idx").on(t.slug)],
+  (t) => [
+    index("groups_slug_idx").on(t.slug),
+    // Media-library usage lookup (issue #658). Partial: most groups have no
+    // avatar. The count that uses it is always restricted to the caller's own
+    // memberships — see `getAssetUsage`.
+    index("groups_avatar_url_idx")
+      .on(t.avatarUrl)
+      .where(sql`${t.avatarUrl} is not null`),
+  ],
 );
 
 export const memberRole = pgEnum("member_role", [

@@ -60,6 +60,11 @@ export const reviews = pgTable(
     // issue #153) so "reviews by user" reads and the `ON DELETE cascade` when a
     // user is removed both stay index-fast instead of scanning the table.
     index("reviews_user_idx").on(t.userId),
+    // Media-library usage lookup (issue #658). Partial: most reviews have no
+    // photo.
+    index("reviews_photo_url_idx")
+      .on(t.photoUrl)
+      .where(sql`${t.photoUrl} is not null`),
     // DB backstop for the 1–5 star range enforced in Zod (`reviewInput.rating`),
     // mirroring `ratings_value_range_check` for writes that bypass the action.
     check("reviews_rating_range_check", sql`${t.rating} between 1 and 5`),
