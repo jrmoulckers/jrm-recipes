@@ -40,11 +40,26 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
   const matches =
     phrase.trim().toUpperCase() === DELETION_CONFIRM_PHRASE.toUpperCase();
 
+  // The erasure will be held rather than executed (#787). `heldRecipeCount`
+  // comes from the same `findEntanglement` the erasure path calls, so this is
+  // the actual outcome of pressing the button rather than a second guess at it.
+  const willBeHeld = preview.heldRecipeCount > 0;
+
   function handleDelete() {
     if (!matches || isPending) return;
     startTransition(async () => {
       const result = await deleteAccountAction(phrase);
       if (!result.ok) {
+        // A hold is the expected outcome for an entangled account, not an
+        // error, so it gets the translated explanation rather than the server's
+        // English fallback string and does not read as a failure.
+        if (result.code === "ERASURE_HELD") {
+          toast.info(t("held.toast"));
+          setConfirmOpen(false);
+          setPhrase("");
+          router.refresh();
+          return;
+        }
         toast.error(result.error);
         return;
       }
@@ -123,6 +138,22 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
             </div>
           </div>
         ) : null}
+
+        {willBeHeld ? (
+          <div className="mt-4 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <AlertTriangle
+              className="mt-0.5 size-4 shrink-0 text-warning-foreground"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 text-sm">
+              <p className="font-medium">{t("held.title")}</p>
+              <p className="mt-1 text-muted-foreground">
+                {t("held.body", { count: preview.heldRecipeCount })}
+              </p>
+              <p className="mt-2 text-muted-foreground">{t("held.what")}</p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -164,7 +195,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
             className="max-w-xs"
           />
           <p id="delete-confirm-help" className="text-xs text-muted-foreground">
-            {t("confirm.help")}
+            {willBeHeld ? t("held.confirmHelp") : t("confirm.help")}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -177,7 +208,7 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
               ) : (
                 <Trash2 className="size-4" aria-hidden="true" />
               )}
-              {t("confirm.cta")}
+              {t(willBeHeld ? "held.cta" : "confirm.cta")}
             </Button>
             <Button
               variant="ghost"

@@ -62,3 +62,58 @@ describe("co-created recipe disclosure", () => {
     },
   );
 });
+
+/**
+ * The held-erasure copy has to exist in every locale (#787).
+ *
+ * When the notice discloses a hold it stops being decoration and becomes the
+ * only thing standing between a user and a promise we do not keep. A missing
+ * translation here does not degrade gracefully: next-intl would surface the key
+ * itself, in a warning box, at the moment the user is deciding whether to
+ * delete their account.
+ *
+ * Asserted as *presence and shape*, not wording — a translator may rephrase
+ * freely. The `count` placeholder is pinned because `held.body` is the sentence
+ * that tells the user how many recipes are involved, and a translation that
+ * dropped it would render a quantity-free claim.
+ */
+describe("held-erasure disclosure", () => {
+  const HELD_KEYS = ["title", "body", "what", "confirmHelp", "cta", "toast"];
+
+  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
+    "gives %s readers the whole held-erasure explanation",
+    (locale) => {
+      const held = catalogs[locale].settings.dataPage.delete.held as Record<
+        string,
+        string
+      >;
+
+      // Pins the key list itself. Asserting only over `Object.keys(held)` would
+      // pass an empty block, which is the vacuity this repo keeps rediscovering.
+      for (const key of HELD_KEYS) {
+        expect(held[key], `${locale} is missing held.${key}`).toBeTruthy();
+      }
+      expect(Object.keys(held).sort()).toEqual([...HELD_KEYS].sort());
+    },
+  );
+
+  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
+    "keeps the recipe count in the %s held sentence",
+    (locale) => {
+      const body = catalogs[locale].settings.dataPage.delete.held.body;
+      expect(body).toContain("{count, plural,");
+    },
+  );
+
+  it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
+    "does not promise an immediate deletion in the %s held help text",
+    (locale) => {
+      const del = catalogs[locale].settings.dataPage.delete;
+      // The whole point of the held variant is that it replaces the standard
+      // confirm help, which says everything is deleted immediately. If the two
+      // ever became the same string the disclosure would be silently gone.
+      expect(del.held.confirmHelp).not.toBe(del.confirm.help);
+      expect(del.held.cta).not.toBe(del.confirm.cta);
+    },
+  );
+});
