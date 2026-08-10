@@ -22,11 +22,16 @@ import { SEEDED_RECIPE_SLUG } from "./recipe-paths";
  * - `rel=canonical` on the mirror is a *rendered document* property. The
  *   disposition logic is unit-tested; that the tag reaches the HTML at both
  *   URLs is not.
- * - Revocation is a *cache-invalidation* property. `revalidateRecipePaths` is
- *   unit-tested for what it purges, but "the removed creator's URL stops being
- *   served" is integration behaviour, and a stale entry would defeat it
- *   silently. That is the failure that leaks a recipe to someone whose access
- *   was withdrawn.
+ * - Revocation is asserted end-to-end on the real URL: after removal the mirror
+ *   stops serving and does not redirect. Note what this does *not* prove. The
+ *   header of this file used to claim it covered cache invalidation; it does
+ *   not, and that was measured rather than reasoned. Dropping the removed
+ *   creator's namespace from the revalidation fan-out — the deliberate
+ *   `extraCreators` argument in `creators-actions.ts` — leaves this whole spec
+ *   green, because every route is dynamic today (#193: `cookies()` in the root
+ *   layout), so there is no cached entry to go stale. That wiring is guarded
+ *   instead by `creators-revocation.test.ts`, which is where the property has a
+ *   home that can actually fail.
  * - not-found-rather-than-308 on removal is a deliberate divergence from the
  *   alias-permanence rule (ADR 0003). A regression reintroduces a cross-user
  *   redirect that leaks both the recipe's continued existence and its current
