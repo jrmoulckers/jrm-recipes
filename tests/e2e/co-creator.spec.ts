@@ -6,7 +6,7 @@ import {
   type Page,
 } from "@playwright/test";
 
-import { SEEDED_RECIPE_FLAT_PATH } from "./recipe-paths";
+import { SEEDED_RECIPE_SLUG } from "./recipe-paths";
 
 /**
  * Co-creation journey across two identities (issue #698).
@@ -72,9 +72,17 @@ const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? "3000"}`;
  *
  * `rel=canonical` is the discriminator: every resolving recipe page emits one
  * (owner and mirror alike, per ADR 0003) and the not-found page emits none.
+ *
+ * Presence, not an exact count: after a server action the client router can
+ * briefly hold two canonical elements in the live DOM. The *response* HTML has
+ * exactly one — verified directly, and that is what a crawler consumes — so
+ * pinning the DOM count here would assert a client-side artifact rather than
+ * the SEO property. Which URL is canonical is asserted separately.
  */
 async function expectServesRecipe(page: Page): Promise<void> {
-  await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+  await expect
+    .poll(() => page.locator('link[rel="canonical"]').count())
+    .toBeGreaterThan(0);
 }
 
 async function expectRevoked(page: Page): Promise<void> {
@@ -107,13 +115,25 @@ function creatorPanel(page: Page) {
  * Navigate to the seeded recipe, returning the canonical path it settles on,
  * or null when it did not resolve (no seeded database).
  *
- * Status is not the signal — an unresolvable recipe still answers 200 under a
- * default-locale URL (see the header note), so a status check would report a
- * missing database as a present one and the journey would fail downstream with
- * a misleading error. `rel=canonical` only appears when the recipe resolved.
+ * Deliberately *not* via the flat legacy path (`/recipes/<slug>`): that only
+ * resolves through a `recipe_slug_aliases` row, which a freshly seeded database
+ * does not have, so it answers not-found on a perfectly good database. The
+ * recipes index is the honest entry point, and following a real link also keeps
+ * the spec uncoupled from the seed's user slug.
+ *
+ * Status is not the signal either — an unresolvable recipe still answers 200
+ * under a default-locale URL (see the header note), so a status check would
+ * report a missing database as a present one and the journey would fail
+ * downstream with a misleading error. `rel=canonical` only appears when the
+ * recipe actually resolved.
  */
 async function gotoRecipe(page: Page): Promise<string | null> {
-  await page.goto(SEEDED_RECIPE_FLAT_PATH);
+  await page.goto("/recipes");
+  const link = page.locator(`a[href$="/${SEEDED_RECIPE_SLUG}"]`).first();
+  if ((await link.count()) === 0) return null;
+  const href = await link.getAttribute("href");
+  if (!href) return null;
+  await page.goto(href);
   if ((await page.locator('link[rel="canonical"]').count()) === 0) return null;
   return new URL(page.url()).pathname;
 }
@@ -297,8 +317,14 @@ test.describe.serial("co-creation across two identities (#698)", () => {
       await expectServesRecipe(cook);
     }).toPass({ timeout: 20_000 });
 
-    // The co-creator steps down themselves. Same revocation, different actor.
-    await cook.getByRole("button", { name: /leave this recipe/i }).click();
+    // Leave lives in the recipe actions menu, not the page body: it is the
+    // co-creator's counterpart to the owner's Delete, and both sit behind the
+    // same overflow trigger. It is not in the DOM until the menu is opened.
+    await cook
+      .getByRole("button", { name: /more recipe actions/i })
+      .first()
+      .click();
+    await cook.getByRole("button", { name: /^Leave this recipe$/i }).click();
     await cook.getByRole("button", { name: /^Leave$/ }).click();
 
     await expect(async () => {
