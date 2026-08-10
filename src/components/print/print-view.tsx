@@ -470,7 +470,7 @@ function FullPage({
             {/* Decorative unless the author described it: the cover sits
                 directly above the recipe title in the printed header. */}
             <RecipeImage
-              alt={recipe.coverImageAlt ?? ""}
+              alt={recipe.coverImageAlt ?? ''}
               src={recipe.coverImageUrl}
               fallbackKey={recipe.id}
               fallbackContext={{

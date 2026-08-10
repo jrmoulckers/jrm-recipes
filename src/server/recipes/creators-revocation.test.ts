@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
 
-import { recipeCreators } from "~/server/db/schema/recipes";
+import { recipeCreators } from '~/server/db/schema/recipes';
 
 /**
  * The revocation fan-out must name the namespace it is revoking (#668, #698).
@@ -28,8 +28,8 @@ import { recipeCreators } from "~/server/db/schema/recipes";
  * cannot execute (see `creator-escalation.test.ts`).
  */
 
-const SOURCE_PATH = "src/server/recipes/creators-actions.ts";
-const source = readFileSync(SOURCE_PATH, "utf8");
+const SOURCE_PATH = 'src/server/recipes/creators-actions.ts';
+const source = readFileSync(SOURCE_PATH, 'utf8');
 
 /**
  * Comment-stripped source.
@@ -38,39 +38,32 @@ const source = readFileSync(SOURCE_PATH, "utf8");
  * a check reading raw text would be satisfied by the prose explaining the rule
  * rather than by the code obeying it.
  */
-const code = source
-  .replace(/\/\*[\s\S]*?\*\//g, "")
-  .replace(/(^|[^:])\/\/.*$/gm, "$1");
+const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-describe("revocation fan-out wiring", () => {
+describe('revocation fan-out wiring', () => {
   it("passes the removed creator's namespace to the path revalidation", () => {
     // Not a bare `removal.removed`: the point is that it reaches the
     // revalidation call, not merely that the field is read somewhere.
-    const call = /revalidateRecipePaths\(([\s\S]{0,200}?)\)\s*;/.exec(
-      code,
-    )?.[1];
+    const call = /revalidateRecipePaths\(([\s\S]{0,200}?)\)\s*;/.exec(code)?.[1];
 
-    expect(
-      call,
-      `no revalidateRecipePaths call found in ${SOURCE_PATH}`,
-    ).toBeDefined();
-    expect(call).toContain("removal.removed");
+    expect(call, `no revalidateRecipePaths call found in ${SOURCE_PATH}`).toBeDefined();
+    expect(call).toContain('removal.removed');
   });
 
-  it("fans out on both revocation paths, not just one", () => {
+  it('fans out on both revocation paths, not just one', () => {
     // Removal (owner-initiated) and leave (creator-initiated) revoke exactly the
     // same access, so a fan-out on only one of them revokes only half the time.
-    expect(code).toContain("removeRecipeCreator");
-    expect(code).toContain("leaveRecipeAsCreator");
+    expect(code).toContain('removeRecipeCreator');
+    expect(code).toContain('leaveRecipeAsCreator');
     expect(code.match(/fanOut\(/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
   });
 
-  it("reads a real module, so the checks above cannot pass vacuously", () => {
+  it('reads a real module, so the checks above cannot pass vacuously', () => {
     // Every assertion here is over a string read from disk: an empty or renamed
     // file would make `toContain` fail, but a *silently truncated* read would
     // too, and this states the premise rather than leaving it implied.
     expect(source.length).toBeGreaterThan(500);
-    expect(code).toContain("fanOut");
+    expect(code).toContain('fanOut');
 
     // And the table the whole mechanism exists for is really the one imported
     // here, so a rename upstream surfaces as a failure rather than as a check

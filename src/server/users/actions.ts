@@ -1,50 +1,44 @@
-"use server";
+'use server';
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
 
-import { requireUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { eraseUserAccount } from "~/server/users/erasure";
-import { avatarInput, updateAvatar } from "~/server/users/mutations";
-import {
-  DELETION_CONFIRM_PHRASE,
-  DELETION_NOTICE_VERSION,
-} from "~/server/users/deletion-notice";
+import { requireUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { eraseUserAccount } from '~/server/users/erasure';
+import { avatarInput, updateAvatar } from '~/server/users/mutations';
+import { DELETION_CONFIRM_PHRASE, DELETION_NOTICE_VERSION } from '~/server/users/deletion-notice';
 
-export type DeleteAccountResult =
-  { ok: true } | { ok: false; error: string; code?: string };
+export type DeleteAccountResult = { ok: true } | { ok: false; error: string; code?: string };
 
 export type UpdateAvatarResult =
   { ok: true; avatarUrl: string | null } | { ok: false; error: string };
 
-const NO_DB =
-  "Account deletion needs a database. Set DATABASE_URL (see .env.example).";
+const NO_DB = 'Account deletion needs a database. Set DATABASE_URL (see .env.example).';
 
 function messageFor(error: unknown): { error: string; code?: string } {
-  const code = error instanceof Error ? error.message : "";
-  if (code.startsWith("MEDIA_PURGE_INCOMPLETE")) {
+  const code = error instanceof Error ? error.message : '';
+  if (code.startsWith('MEDIA_PURGE_INCOMPLETE')) {
     return {
-      code: "MEDIA_PURGE_INCOMPLETE",
+      code: 'MEDIA_PURGE_INCOMPLETE',
       error:
         "We couldn't remove all of your photos, so we stopped before deleting anything else. Nothing has been lost. Please try again in a few minutes.",
     };
   }
-  if (code === "MEDIA_PURGE_NOT_CONFIGURED") {
+  if (code === 'MEDIA_PURGE_NOT_CONFIGURED') {
     return {
-      code: "MEDIA_PURGE_NOT_CONFIGURED",
+      code: 'MEDIA_PURGE_NOT_CONFIGURED',
       error:
         "Photo storage isn't configured on this server, so we can't guarantee a complete deletion. Nothing has been deleted.",
     };
   }
-  if (code === "UNAUTHENTICATED") {
+  if (code === 'UNAUTHENTICATED') {
     return {
-      code: "UNAUTHENTICATED",
-      error: "Sign in to delete your account.",
+      code: 'UNAUTHENTICATED',
+      error: 'Sign in to delete your account.',
     };
   }
   return {
-    error:
-      "We couldn't complete the deletion, so nothing has been deleted. Please try again.",
+    error: "We couldn't complete the deletion, so nothing has been deleted. Please try again.",
   };
 }
 
@@ -67,17 +61,13 @@ function messageFor(error: unknown): { error: string; code?: string } {
  * which is true: the `user.deleted` webhook path is idempotent via
  * `hasBeenErased`, so a retry costs nothing.
  */
-export async function deleteAccountAction(
-  confirmation: string,
-): Promise<DeleteAccountResult> {
+export async function deleteAccountAction(confirmation: string): Promise<DeleteAccountResult> {
   if (!isDbConfigured()) return { ok: false, error: NO_DB };
 
-  if (
-    confirmation.trim().toUpperCase() !== DELETION_CONFIRM_PHRASE.toUpperCase()
-  ) {
+  if (confirmation.trim().toUpperCase() !== DELETION_CONFIRM_PHRASE.toUpperCase()) {
     return {
       ok: false,
-      code: "CONFIRMATION_MISMATCH",
+      code: 'CONFIRMATION_MISMATCH',
       error: `Type ${DELETION_CONFIRM_PHRASE} to confirm.`,
     };
   }
@@ -88,7 +78,7 @@ export async function deleteAccountAction(
     clerkId = user.clerkId ?? null;
 
     const result = await eraseUserAccount(user.id, {
-      trigger: "in_app",
+      trigger: 'in_app',
       noticeVersion: DELETION_NOTICE_VERSION,
     });
 
@@ -96,10 +86,10 @@ export async function deleteAccountAction(
     // identity must stay too: removing it here would strand a sign-in for an
     // account whose data is still present. Say so plainly rather than reporting
     // an erasure that has not happened.
-    if (result.status === "held") {
+    if (result.status === 'held') {
       return {
         ok: false,
-        code: "ERASURE_HELD",
+        code: 'ERASURE_HELD',
         error:
           "Your request is recorded, and nothing has been deleted yet. Some of your writing is part of a recipe you share with someone else, and we can't separate it safely today. We'll finish your deletion as soon as we can, and we'll be in touch.",
       };
@@ -113,7 +103,7 @@ export async function deleteAccountAction(
   // invites the user to retry a deletion that already succeeded.
   if (clerkId) {
     try {
-      const { clerkClient } = await import("@clerk/nextjs/server");
+      const { clerkClient } = await import('@clerk/nextjs/server');
       const client = await clerkClient();
       await client.users.deleteUser(clerkId);
     } catch {
@@ -133,11 +123,9 @@ export async function deleteAccountAction(
  * (#216) and `updateAvatar` scopes the write to the caller's own row, so this
  * function holds no authorization of its own.
  */
-export async function updateAvatarAction(
-  url: string,
-): Promise<UpdateAvatarResult> {
+export async function updateAvatarAction(url: string): Promise<UpdateAvatarResult> {
   if (!isDbConfigured()) {
-    return { ok: false, error: "Saving a photo needs a database." };
+    return { ok: false, error: 'Saving a photo needs a database.' };
   }
 
   const parsed = avatarInput.safeParse({ url });
@@ -148,11 +136,11 @@ export async function updateAvatarAction(
   try {
     const user = await requireUser();
     const result = await updateAvatar(parsed.data, user);
-    revalidatePath("/profile");
+    revalidatePath('/profile');
     return { ok: true, avatarUrl: result.avatarUrl };
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHENTICATED") {
-      return { ok: false, error: "Sign in to change your photo." };
+    if (error instanceof Error && error.message === 'UNAUTHENTICATED') {
+      return { ok: false, error: 'Sign in to change your photo.' };
     }
     return { ok: false, error: "We couldn't save that photo." };
   }

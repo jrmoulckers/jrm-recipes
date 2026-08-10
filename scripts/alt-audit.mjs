@@ -15,11 +15,11 @@
  *   node scripts/alt-audit.mjs           # exits 1 on a bare or hardcoded alt
  *   node scripts/alt-audit.mjs --verbose # list every alt found
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import { repoRoot, walkSource } from "./lib/walk-source.mjs";
+import { repoRoot, walkSource } from './lib/walk-source.mjs';
 
 /**
  * How many lines above an `alt=""` may hold its justifying comment.
@@ -78,25 +78,22 @@ export function auditFile(relPath, source) {
     const value = match[1];
     const location = `${relPath}:${index + 1}`;
     const justifiedBy = () =>
-      COMMENT_RE.test(
-        lines.slice(Math.max(0, index - COMMENT_LOOKBACK), index).join(" "),
-      );
+      COMMENT_RE.test(lines.slice(Math.max(0, index - COMMENT_LOOKBACK), index).join(' '));
 
     if (value === '""') {
       results.push({
         location,
-        kind: justifiedBy() ? "justified" : "bare",
+        kind: justifiedBy() ? 'justified' : 'bare',
       });
     } else if (value.startsWith('"')) {
-      results.push({ location, kind: "literal", value });
+      results.push({ location, kind: 'literal', value });
     } else if (STORED_ALT_RE.test(value)) {
       results.push({
         location,
-        kind:
-          EMPTY_FALLBACK_RE.test(value) && !justifiedBy() ? "bare" : "stored",
+        kind: EMPTY_FALLBACK_RE.test(value) && !justifiedBy() ? 'bare' : 'stored',
       });
     } else {
-      results.push({ location, kind: "dynamic" });
+      results.push({ location, kind: 'dynamic' });
     }
   });
 
@@ -104,18 +101,18 @@ export function auditFile(relPath, source) {
 }
 
 function main() {
-  const verbose = process.argv.includes("--verbose");
+  const verbose = process.argv.includes('--verbose');
 
   const all = [];
   for (const rel of walkSource()) {
-    all.push(...auditFile(rel, readFileSync(resolve(repoRoot, rel), "utf8")));
+    all.push(...auditFile(rel, readFileSync(resolve(repoRoot, rel), 'utf8')));
   }
 
-  const bare = all.filter((r) => r.kind === "bare");
-  const literal = all.filter((r) => r.kind === "literal");
-  const justified = all.filter((r) => r.kind === "justified");
-  const stored = all.filter((r) => r.kind === "stored");
-  const dynamic = all.filter((r) => r.kind === "dynamic");
+  const bare = all.filter((r) => r.kind === 'bare');
+  const literal = all.filter((r) => r.kind === 'literal');
+  const justified = all.filter((r) => r.kind === 'justified');
+  const stored = all.filter((r) => r.kind === 'stored');
+  const dynamic = all.filter((r) => r.kind === 'dynamic');
 
   console.log(
     `a11y: ${all.length} alt attribute(s): ${dynamic.length} from the catalog, ` +
@@ -147,12 +144,9 @@ function main() {
   if (bare.length || literal.length) {
     process.exit(1);
   }
-  console.log("a11y: every alt attribute is translated or justified.");
+  console.log('a11y: every alt attribute is translated or justified.');
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

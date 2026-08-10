@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   AlertCircle,
   Carrot,
@@ -32,28 +32,24 @@ import {
   Users,
   Utensils,
   X,
-} from "lucide-react";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
-import { pickKidCopy } from "~/config/kid-copy";
-import { useThemeBehavior } from "~/components/theme/theme-provider";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
+import { pickKidCopy } from '~/config/kid-copy';
+import { useThemeBehavior } from '~/components/theme/theme-provider';
 
-import { cn, formatMinutes } from "~/lib/utils";
-import { recipeDetailPath } from "~/lib/recipe-path";
-import { useAutosaveDraft } from "~/lib/use-autosave-draft";
-import { track } from "~/lib/analytics";
+import { cn, formatMinutes } from '~/lib/utils';
+import { recipeDetailPath } from '~/lib/recipe-path';
+import { useAutosaveDraft } from '~/lib/use-autosave-draft';
+import { track } from '~/lib/analytics';
 import {
   parseClassificationList,
   SUGGESTED_TAGS_BY_CATEGORY,
   type CanonicalTag,
-} from "~/lib/tag-taxonomy";
-import { type RecipeInput } from "~/server/recipes/validation";
-import {
-  DIETARY_TAGS,
-  DIETARY_TAG_LABELS,
-  type DietaryTag,
-} from "~/lib/substitutions";
-import { type ImportedRecipe } from "~/server/recipes/import";
+} from '~/lib/tag-taxonomy';
+import { type RecipeInput } from '~/server/recipes/validation';
+import { DIETARY_TAGS, DIETARY_TAG_LABELS, type DietaryTag } from '~/lib/substitutions';
+import { type ImportedRecipe } from '~/server/recipes/import';
 import {
   convertAmount,
   dimensionOf,
@@ -61,27 +57,20 @@ import {
   listUnits,
   parseAmount,
   type CustomUnitDef,
-} from "~/lib/units";
-import { unitLabel } from "~/lib/unit-labels";
-import { getSuggestedUnitsForFood } from "~/lib/food-units";
-import {
-  createRecipeAction,
-  updateRecipeAction,
-} from "~/server/recipes/actions";
-import { Button } from "~/components/ui/button";
-import { CloseButton } from "~/components/ui/close-button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
-import { NativeSelect } from "~/components/ui/native-select";
-import { Textarea } from "~/components/ui/textarea";
-import { Label } from "~/components/ui/label";
-import { ImageUploadField } from "~/components/ui/image-upload";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+} from '~/lib/units';
+import { unitLabel } from '~/lib/unit-labels';
+import { getSuggestedUnitsForFood } from '~/lib/food-units';
+import { createRecipeAction, updateRecipeAction } from '~/server/recipes/actions';
+import { Button } from '~/components/ui/button';
+import { CloseButton } from '~/components/ui/close-button';
+import { Checkbox } from '~/components/ui/checkbox';
+import { Input } from '~/components/ui/input';
+import { NativeSelect } from '~/components/ui/native-select';
+import { Textarea } from '~/components/ui/textarea';
+import { Label } from '~/components/ui/label';
+import { ImageUploadField } from '~/components/ui/image-upload';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 
 /**
  * The upgrade prompt is only needed when a create hits the plan's recipe cap
@@ -89,14 +78,11 @@ import {
  * the first time it's shown.
  */
 const UpgradeDialog = dynamic(() =>
-  import("~/components/billing/upgrade-dialog").then((m) => m.UpgradeDialog),
+  import('~/components/billing/upgrade-dialog').then((m) => m.UpgradeDialog),
 );
 
 const ImportRecipePanel = dynamic(
-  () =>
-    import("~/components/recipe/import-recipe-panel").then(
-      (m) => m.ImportRecipePanel,
-    ),
+  () => import('~/components/recipe/import-recipe-panel').then((m) => m.ImportRecipePanel),
   { ssr: false },
 );
 
@@ -104,8 +90,7 @@ const ImportRecipePanel = dynamic(
 // mirrors the full recipe detail view, is code-split out of the editor's
 // first-load JS and fetched only when the user first opens Preview.
 const RecipePreview = dynamic(
-  () =>
-    import("~/components/recipe/recipe-preview").then((m) => m.RecipePreview),
+  () => import('~/components/recipe/recipe-preview').then((m) => m.RecipePreview),
   { ssr: false },
 );
 
@@ -160,7 +145,7 @@ export type RecipeEditorValue = {
   sodiumMg: string;
   sugarGrams: string;
   fiberGrams: string;
-  difficulty: "" | "easy" | "medium" | "hard";
+  difficulty: '' | 'easy' | 'medium' | 'hard';
   /** @deprecated Use the comma-separated `cuisines` editor value. */
   cuisine?: string;
   cuisines?: string;
@@ -172,49 +157,49 @@ export type RecipeEditorValue = {
   handedDownFrom?: string;
   originYear?: string;
   originPlace?: string;
-  visibility: "private" | "group" | "unlisted" | "public";
-  status: "draft" | "published";
+  visibility: 'private' | 'group' | 'unlisted' | 'public';
+  status: 'draft' | 'published';
   groupId: string;
   tags: string;
   dietaryFlags: DietaryTag[];
-  ingredients: Omit<IngRow, "key" | "groupId">[];
-  steps: Omit<StepRow, "key" | "groupId">[];
+  ingredients: Omit<IngRow, 'key' | 'groupId'>[];
+  steps: Omit<StepRow, 'key' | 'groupId'>[];
 };
 
 let idCounter = 0;
 const nextKey = () => `row-${idCounter++}`;
 
-const EMPTY_ING: Omit<IngRow, "key"> = {
-  groupId: "",
-  section: "",
-  quantity: "",
-  quantityMax: "",
-  unit: "",
-  item: "",
-  note: "",
-  prep: "",
-  stepPosition: "",
+const EMPTY_ING: Omit<IngRow, 'key'> = {
+  groupId: '',
+  section: '',
+  quantity: '',
+  quantityMax: '',
+  unit: '',
+  item: '',
+  note: '',
+  prep: '',
+  stepPosition: '',
   optional: false,
 };
-const EMPTY_STEP: Omit<StepRow, "key"> = {
-  groupId: "",
-  section: "",
-  title: "",
-  instruction: "",
-  imageUrl: "",
-  imageAlt: "",
-  videoUrl: "",
-  timerMinutes: "",
-  targetTempC: "",
-  doneness: "",
-  techniques: "",
+const EMPTY_STEP: Omit<StepRow, 'key'> = {
+  groupId: '',
+  section: '',
+  title: '',
+  instruction: '',
+  imageUrl: '',
+  imageAlt: '',
+  videoUrl: '',
+  timerMinutes: '',
+  targetTempC: '',
+  doneness: '',
+  techniques: '',
 };
 
 /** Stable empty field-error map. The initial/cleared useActionState value. */
 const NO_ERRORS: Record<string, string[]> = {};
 
-type LoadedIngRow = Omit<IngRow, "groupId"> & { groupId?: string };
-type LoadedStepRow = Omit<StepRow, "groupId"> & { groupId?: string };
+type LoadedIngRow = Omit<IngRow, 'groupId'> & { groupId?: string };
+type LoadedStepRow = Omit<StepRow, 'groupId'> & { groupId?: string };
 
 /**
  * Reorder rows so rows sharing a `groupId` are contiguous, keeping the
@@ -243,7 +228,7 @@ function hydrateIngredientGroups(rows: LoadedIngRow[]): IngRow[] {
   const idBySection = new Map<string, string>();
   const withIds: IngRow[] = rows.map((r) => {
     const section = r.section.trim();
-    if (section === "") return { ...r, section: "", groupId: "" };
+    if (section === '') return { ...r, section: '', groupId: '' };
     let groupId = idBySection.get(section);
     if (!groupId) {
       groupId = nextKey();
@@ -261,7 +246,7 @@ function hydrateStepGroups(rows: LoadedStepRow[]): StepRow[] {
   const idBySection = new Map<string, string>();
   const withIds: StepRow[] = rows.map((r) => {
     const section = r.section.trim();
-    if (section === "") return { ...r, section: "", groupId: "" };
+    if (section === '') return { ...r, section: '', groupId: '' };
     let groupId = idBySection.get(section);
     if (!groupId) {
       groupId = nextKey();
@@ -282,8 +267,7 @@ function blocksByGroup<T extends { groupId: string; section: string }>(
   for (const row of rows) {
     const last = blocks[blocks.length - 1];
     if (last?.groupId === row.groupId) last.rows.push(row);
-    else
-      blocks.push({ groupId: row.groupId, section: row.section, rows: [row] });
+    else blocks.push({ groupId: row.groupId, section: row.section, rows: [row] });
   }
   return blocks;
 }
@@ -293,14 +277,14 @@ function blocksByGroup<T extends { groupId: string; section: string }>(
  * form state, and the payload builder.
  */
 type NutritionKey =
-  | "calories"
-  | "proteinGrams"
-  | "carbsGrams"
-  | "fatGrams"
-  | "saturatedFatGrams"
-  | "sodiumMg"
-  | "sugarGrams"
-  | "fiberGrams";
+  | 'calories'
+  | 'proteinGrams'
+  | 'carbsGrams'
+  | 'fatGrams'
+  | 'saturatedFatGrams'
+  | 'sodiumMg'
+  | 'sugarGrams'
+  | 'fiberGrams';
 
 /**
  * Per-serving nutrition inputs (issue #414). Declared once so the editor state,
@@ -308,14 +292,14 @@ type NutritionKey =
  * cook knows whether a field wants grams or milligrams.
  */
 const NUTRITION_FIELDS = [
-  { key: "calories", unit: "kcal" },
-  { key: "proteinGrams", unit: "g" },
-  { key: "carbsGrams", unit: "g" },
-  { key: "fatGrams", unit: "g" },
-  { key: "saturatedFatGrams", unit: "g" },
-  { key: "sodiumMg", unit: "mg" },
-  { key: "sugarGrams", unit: "g" },
-  { key: "fiberGrams", unit: "g" },
+  { key: 'calories', unit: 'kcal' },
+  { key: 'proteinGrams', unit: 'g' },
+  { key: 'carbsGrams', unit: 'g' },
+  { key: 'fatGrams', unit: 'g' },
+  { key: 'saturatedFatGrams', unit: 'g' },
+  { key: 'sodiumMg', unit: 'mg' },
+  { key: 'sugarGrams', unit: 'g' },
+  { key: 'fiberGrams', unit: 'g' },
 ] as const satisfies readonly {
   key: NutritionKey;
   unit: string;
@@ -323,7 +307,7 @@ const NUTRITION_FIELDS = [
 
 function numOrUndef(s: string): number | undefined {
   const t = s.trim();
-  if (t === "") return undefined;
+  if (t === '') return undefined;
   const n = Number(t);
   return Number.isFinite(n) ? n : undefined;
 }
@@ -334,7 +318,7 @@ function amountOrUndef(s: string): number | undefined {
 }
 
 const selectClass =
-  "h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm";
+  'h-11 w-full rounded-lg border border-input bg-background px-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm';
 
 /** Trigger icon for the consolidated visibility settings popdown. */
 const VISIBILITY_ICON = {
@@ -352,10 +336,10 @@ const VISIBILITY_ICON = {
  * regardless of the canonical badge order.
  */
 const PRIMARY_DIETARY_TAGS: readonly DietaryTag[] = [
-  "vegan",
-  "vegetarian",
-  "gluten-free",
-  "dairy-free",
+  'vegan',
+  'vegetarian',
+  'gluten-free',
+  'dairy-free',
 ];
 
 /**
@@ -375,7 +359,7 @@ function RowField({
   children: React.ReactNode;
 }) {
   return (
-    <label className={cn("flex min-w-0 flex-col gap-1", className)}>
+    <label className={cn('flex min-w-0 flex-col gap-1', className)}>
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
@@ -388,29 +372,20 @@ function RowField({
  * beside a field label so the form stays uncluttered while the guidance stays
  * one tap away. Uses a Popover (not a hover-only Tooltip) so it works on touch.
  */
-function InfoHint({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  const t = useTranslations("recipeEditor");
+function InfoHint({ label, children }: { label: string; children: React.ReactNode }) {
+  const t = useTranslations('recipeEditor');
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={t("about", { label })}
+          aria-label={t('about', { label })}
           className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <Info className="size-4" aria-hidden="true" />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-64 text-sm leading-relaxed text-muted-foreground"
-      >
+      <PopoverContent align="start" className="w-64 text-sm leading-relaxed text-muted-foreground">
         {children}
       </PopoverContent>
     </Popover>
@@ -450,7 +425,7 @@ function EditorSectionNav({
   topOffset: number;
   onJump: (id: string) => void;
 }) {
-  const t = useTranslations("recipeEditor.nav");
+  const t = useTranslations('recipeEditor.nav');
   const done = sections.filter((s) => s.complete).length;
   const total = sections.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -472,19 +447,18 @@ function EditorSectionNav({
     const check = () => {
       raf = 0;
       const isLg =
-        typeof window.matchMedia === "function" &&
-        window.matchMedia("(min-width: 1024px)").matches;
+        typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1024px)').matches;
       setStuck(isLg && el.getBoundingClientRect().top <= topOffset - 0.5);
     };
     const onScroll = () => {
       if (!raf) raf = window.requestAnimationFrame(check);
     };
     check();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
       if (raf) window.cancelAnimationFrame(raf);
     };
   }, [topOffset]);
@@ -498,16 +472,16 @@ function EditorSectionNav({
   return (
     <nav
       ref={navRef}
-      aria-label={t("aria")}
+      aria-label={t('aria')}
       // When pinned, sit flush under the sticky site header sharing its glass
       // finish (the 1px overlap closes the hairline seam). When not pinned it
       // stays a normal rounded card so it never looks like a cut-off panel.
       style={{ top: topOffset - 1 }}
       className={cn(
-        "overflow-hidden rounded-xl border border-border shadow-token-sm lg:sticky lg:z-20",
+        'overflow-hidden rounded-xl border border-border shadow-token-sm lg:sticky lg:z-20',
         stuck
-          ? "bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 lg:rounded-t-none lg:border-t-0"
-          : "bg-card",
+          ? 'bg-card/85 backdrop-blur supports-[backdrop-filter]:bg-card/70 lg:rounded-t-none lg:border-t-0'
+          : 'bg-card',
       )}
     >
       {collapsed ? (
@@ -518,14 +492,11 @@ function EditorSectionNav({
           onClick={toggle}
           aria-expanded={false}
           aria-controls={panelId}
-          aria-label={t("progressAria", { done, total })}
-          title={t("show")}
+          aria-label={t('progressAria', { done, total })}
+          title={t('show')}
           className="group flex min-h-0 w-full items-center px-3 py-[3px] transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:px-4"
         >
-          <span
-            className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
-            aria-hidden="true"
-          >
+          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" aria-hidden="true">
             <span
               className="block h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
               style={{ width: `${pct}%` }}
@@ -541,7 +512,7 @@ function EditorSectionNav({
             aria-valuenow={done}
             aria-valuemin={0}
             aria-valuemax={total}
-            aria-label={t("barAria", { done, total })}
+            aria-label={t('barAria', { done, total })}
           >
             <span
               className="block h-full rounded-full bg-primary transition-[width] duration-500 ease-standard motion-reduce:transition-none"
@@ -561,7 +532,7 @@ function EditorSectionNav({
             aria-controls={panelId}
             className="-me-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <span className="sr-only">{t("hide")}</span>
+            <span className="sr-only">{t('hide')}</span>
             <ChevronUp className="size-4" aria-hidden="true" />
           </button>
         </div>
@@ -572,14 +543,14 @@ function EditorSectionNav({
       <div
         id={panelId}
         className={cn(
-          "grid transition-[grid-template-rows] duration-300 ease-standard motion-reduce:transition-none",
-          collapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+          'grid transition-[grid-template-rows] duration-300 ease-standard motion-reduce:transition-none',
+          collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
         )}
       >
         <div className="overflow-hidden" inert={collapsed}>
           <div className="flex flex-col gap-2 px-3 pb-3 lg:px-4">
             <span className="text-xs font-medium text-muted-foreground">
-              {done === total ? t("allStarted") : t("jump")}
+              {done === total ? t('allStarted') : t('jump')}
             </span>
             <ul className="flex flex-wrap gap-1.5">
               {sections.map((section) => (
@@ -593,10 +564,7 @@ function EditorSectionNav({
                     className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     {section.complete ? (
-                      <CheckCircle2
-                        className="size-4 shrink-0 text-primary"
-                        aria-hidden="true"
-                      />
+                      <CheckCircle2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
                     ) : (
                       <Circle
                         className="size-4 shrink-0 text-muted-foreground/50"
@@ -606,10 +574,10 @@ function EditorSectionNav({
                     {section.label}
                     <span className="sr-only">
                       {section.complete
-                        ? t("srStarted")
+                        ? t('srStarted')
                         : section.optional
-                          ? t("srOptionalNotStarted")
-                          : t("srNotStarted")}
+                          ? t('srOptionalNotStarted')
+                          : t('srNotStarted')}
                     </span>
                   </a>
                 </li>
@@ -632,7 +600,7 @@ export function RecipeEditor({
   groups = [],
   customUnits = [],
 }: {
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   recipeId?: string;
   initial?: RecipeEditorValue;
   /** Pre-filled cover (e.g. a photo shared into the PWA share target). */
@@ -646,7 +614,7 @@ export function RecipeEditor({
   customUnits?: CustomUnitDef[];
 }) {
   const router = useRouter();
-  const t = useTranslations("recipeEditor");
+  const t = useTranslations('recipeEditor');
   const { kidSafe } = useThemeBehavior();
   const [upgrade, setUpgrade] = React.useState<string | null>(null);
   const [previewMode, setPreviewMode] = React.useState(false);
@@ -654,51 +622,52 @@ export function RecipeEditor({
 
   // Editor-open is the top of the creation/edit funnel (#310).
   React.useEffect(() => {
-    track("editor_opened", { mode });
+    track('editor_opened', { mode });
   }, [mode]);
 
   const [form, setForm] = React.useState(() => ({
-    title: initial?.title ?? initialTitle ?? "",
-    description: initial?.description ?? "",
-    coverImageUrl: initial?.coverImageUrl ?? initialCoverImageUrl ?? "",
-    coverImageAlt: initial?.coverImageAlt ?? "",
-    servings: initial?.servings ?? "4",
-    servingsNoun: initial?.servingsNoun ?? "servings",
-    prepMinutes: initial?.prepMinutes ?? "",
-    cookMinutes: initial?.cookMinutes ?? "",
-    restMinutes: initial?.restMinutes ?? "",
-    makeAheadNote: initial?.makeAheadNote ?? "",
-    equipment: initial?.equipment ?? "",
-    calories: initial?.calories ?? "",
-    proteinGrams: initial?.proteinGrams ?? "",
-    carbsGrams: initial?.carbsGrams ?? "",
-    fatGrams: initial?.fatGrams ?? "",
-    saturatedFatGrams: initial?.saturatedFatGrams ?? "",
-    sodiumMg: initial?.sodiumMg ?? "",
-    sugarGrams: initial?.sugarGrams ?? "",
-    fiberGrams: initial?.fiberGrams ?? "",
-    difficulty: initial?.difficulty ?? "",
-    cuisines: initial?.cuisines ?? initial?.cuisine ?? "",
-    mealTypes: initial?.mealTypes ?? "",
-    sourceName: initial?.sourceName ?? "",
-    sourceUrl: initial?.sourceUrl ?? "",
-    notes: initial?.notes ?? "",
-    story: initial?.story ?? "",
-    handedDownFrom: initial?.handedDownFrom ?? "",
-    originYear: initial?.originYear ?? "",
-    originPlace: initial?.originPlace ?? "",
-    visibility: initial?.visibility ?? "private",
-    status: initial?.status ?? "published",
-    groupId: initial?.groupId ?? "",
-    tags: initial?.tags ?? "",
+    title: initial?.title ?? initialTitle ?? '',
+    description: initial?.description ?? '',
+    coverImageUrl: initial?.coverImageUrl ?? initialCoverImageUrl ?? '',
+    coverImageAlt: initial?.coverImageAlt ?? '',
+    servings: initial?.servings ?? '4',
+    servingsNoun: initial?.servingsNoun ?? 'servings',
+    prepMinutes: initial?.prepMinutes ?? '',
+    cookMinutes: initial?.cookMinutes ?? '',
+    restMinutes: initial?.restMinutes ?? '',
+    makeAheadNote: initial?.makeAheadNote ?? '',
+    equipment: initial?.equipment ?? '',
+    calories: initial?.calories ?? '',
+    proteinGrams: initial?.proteinGrams ?? '',
+    carbsGrams: initial?.carbsGrams ?? '',
+    fatGrams: initial?.fatGrams ?? '',
+    saturatedFatGrams: initial?.saturatedFatGrams ?? '',
+    sodiumMg: initial?.sodiumMg ?? '',
+    sugarGrams: initial?.sugarGrams ?? '',
+    fiberGrams: initial?.fiberGrams ?? '',
+    difficulty: initial?.difficulty ?? '',
+    cuisines: initial?.cuisines ?? initial?.cuisine ?? '',
+    mealTypes: initial?.mealTypes ?? '',
+    sourceName: initial?.sourceName ?? '',
+    sourceUrl: initial?.sourceUrl ?? '',
+    notes: initial?.notes ?? '',
+    story: initial?.story ?? '',
+    handedDownFrom: initial?.handedDownFrom ?? '',
+    originYear: initial?.originYear ?? '',
+    originPlace: initial?.originPlace ?? '',
+    visibility: initial?.visibility ?? 'private',
+    status: initial?.status ?? 'published',
+    groupId: initial?.groupId ?? '',
+    tags: initial?.tags ?? '',
     dietaryFlags: initial?.dietaryFlags ?? [],
   }));
 
   const [ingredients, setIngredients] = React.useState<IngRow[]>(() =>
     hydrateIngredientGroups(
-      (initial?.ingredients?.length ? initial.ingredients : [EMPTY_ING]).map(
-        (r) => ({ ...r, key: nextKey() }),
-      ),
+      (initial?.ingredients?.length ? initial.ingredients : [EMPTY_ING]).map((r) => ({
+        ...r,
+        key: nextKey(),
+      })),
     ),
   );
   const [steps, setSteps] = React.useState<StepRow[]>(() =>
@@ -713,16 +682,11 @@ export function RecipeEditor({
   // Row-level UI state for the redesigned lists (#425): step rows can reveal an
   // opt-in group-heading field, and ingredient rows expand advanced options.
   // Keyed by stable row key so reordering and removal never mismatch a row.
-  const [openStepOptions, setOpenStepOptions] = React.useState<Set<string>>(
-    () => new Set(),
-  );
-  const [openIngOptions, setOpenIngOptions] = React.useState<Set<string>>(
-    () => new Set(),
-  );
+  const [openStepOptions, setOpenStepOptions] = React.useState<Set<string>>(() => new Set());
+  const [openIngOptions, setOpenIngOptions] = React.useState<Set<string>>(() => new Set());
 
   const toggleInSet =
-    (setter: React.Dispatch<React.SetStateAction<Set<string>>>) =>
-    (key: string, on?: boolean) =>
+    (setter: React.Dispatch<React.SetStateAction<Set<string>>>) => (key: string, on?: boolean) =>
       setter((prev) => {
         const next = new Set(prev);
         const shouldAdd = on ?? !next.has(key);
@@ -739,10 +703,9 @@ export function RecipeEditor({
   // the header and made section jumps overshoot (user report).
   const [appHeaderH, setAppHeaderH] = React.useState(64);
   React.useEffect(() => {
-    const header = document.querySelector("header");
+    const header = document.querySelector('header');
     if (!header) return;
-    const measure = () =>
-      setAppHeaderH(Math.round(header.getBoundingClientRect().height));
+    const measure = () => setAppHeaderH(Math.round(header.getBoundingClientRect().height));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(header);
@@ -752,34 +715,29 @@ export function RecipeEditor({
   const jumpToSection = React.useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const header = document.querySelector("header");
+    const header = document.querySelector('header');
     const nav = document.querySelector('nav[aria-label="Recipe sections"]');
     const headerH = header?.getBoundingClientRect().height ?? 0;
-    const lg = window.matchMedia("(min-width: 1024px)").matches;
+    const lg = window.matchMedia('(min-width: 1024px)').matches;
     const navH = lg ? (nav?.getBoundingClientRect().height ?? 0) : 0;
     const offset = headerH + navH + 12;
     const top = window.scrollY + el.getBoundingClientRect().top - offset;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }, []);
 
   // Auto-save & draft recovery (#421): mirror the in-progress editor value to
   // localStorage (debounced) so a locked phone or a stray "back" tap never
   // loses a half-typed recipe. Drafts are namespaced so new vs. edit can't mix.
-  const draftKey = mode === "edit" && recipeId ? recipeId : "new";
+  const draftKey = mode === 'edit' && recipeId ? recipeId : 'new';
   const draftSnapshot: RecipeEditorValue = React.useMemo(
     () => ({
       ...form,
-      ingredients: ingredients.map(
-        ({ key: _key, groupId: _groupId, ...rest }) => rest,
-      ),
+      ingredients: ingredients.map(({ key: _key, groupId: _groupId, ...rest }) => rest),
       steps: steps.map(({ key: _key, groupId: _groupId, ...rest }) => rest),
     }),
     [form, ingredients, steps],
   );
-  const draftJson = React.useMemo(
-    () => JSON.stringify(draftSnapshot),
-    [draftSnapshot],
-  );
+  const draftJson = React.useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot]);
   const [initialDraftJson] = React.useState(() => draftJson);
   const draftDirty = draftJson !== initialDraftJson;
   const draft = useAutosaveDraft<RecipeEditorValue>({
@@ -789,11 +747,7 @@ export function RecipeEditor({
   });
 
   function restoreDraft(value: RecipeEditorValue) {
-    const {
-      ingredients: draftIngredients,
-      steps: draftSteps,
-      ...scalars
-    } = value;
+    const { ingredients: draftIngredients, steps: draftSteps, ...scalars } = value;
     setForm((f) => ({ ...f, ...scalars }));
     setIngredients(
       hydrateIngredientGroups(
@@ -814,7 +768,7 @@ export function RecipeEditor({
       ),
     );
     draft.acceptDraft();
-    toast.success(t("toast.draftRestored"));
+    toast.success(t('toast.draftRestored'));
   }
 
   function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
@@ -830,8 +784,7 @@ export function RecipeEditor({
     const servings = parseAmount(form.servings) ?? 1;
     // Dynamically import the curated food dataset so it stays out of the
     // editor's first-load JS bundle. It's only needed on this click.
-    const { estimatePerServingNutrition } =
-      await import("~/lib/food-nutrition");
+    const { estimatePerServingNutrition } = await import('~/lib/food-nutrition');
     const est = estimatePerServingNutrition(
       ingredients.map((r) => ({
         item: r.item,
@@ -841,7 +794,7 @@ export function RecipeEditor({
       servings,
     );
     if (est.sourced === 0) {
-      toast.error(t("toast.estimateError"));
+      toast.error(t('toast.estimateError'));
       return;
     }
     const round = (n: number, decimals = 0) => {
@@ -852,8 +805,7 @@ export function RecipeEditor({
     setForm((f) => ({
       ...f,
       calories: n.calories != null ? round(n.calories) : f.calories,
-      proteinGrams:
-        n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
+      proteinGrams: n.proteinGrams != null ? round(n.proteinGrams, 1) : f.proteinGrams,
       carbsGrams: n.carbsGrams != null ? round(n.carbsGrams, 1) : f.carbsGrams,
       fatGrams: n.fatGrams != null ? round(n.fatGrams, 1) : f.fatGrams,
       sodiumMg: n.sodiumMg != null ? round(n.sodiumMg) : f.sodiumMg,
@@ -863,12 +815,12 @@ export function RecipeEditor({
     const pct = Math.round(est.coverage * 100);
     toast.success(
       est.sourced < est.total
-        ? t("toast.estimatedPartial", {
+        ? t('toast.estimatedPartial', {
             sourced: est.sourced,
             total: est.total,
             percent: pct,
           })
-        : t("toast.estimated"),
+        : t('toast.estimated'),
     );
   }
 
@@ -878,17 +830,15 @@ export function RecipeEditor({
   const mealTypeList = commaList(form.mealTypes);
 
   function toggleClassification(
-    key: "tags" | "cuisines" | "mealTypes",
+    key: 'tags' | 'cuisines' | 'mealTypes',
     values: string[],
     name: string,
   ) {
-    const has = values.some(
-      (value) => value.toLowerCase() === name.toLowerCase(),
-    );
+    const has = values.some((value) => value.toLowerCase() === name.toLowerCase());
     const next = has
       ? values.filter((value) => value.toLowerCase() !== name.toLowerCase())
       : [...values, name];
-    set(key, next.join(", "));
+    set(key, next.join(', '));
   }
 
   function toggleDietaryFlag(tag: DietaryTag) {
@@ -906,15 +856,10 @@ export function RecipeEditor({
   // the rest after the primary four (no reflow). Auto-open when editing a recipe
   // that already declares a non-primary flag so nothing hides.
   const [showMoreDietary, setShowMoreDietary] = React.useState(() =>
-    (initial?.dietaryFlags ?? []).some(
-      (t) => !PRIMARY_DIETARY_TAGS.includes(t),
-    ),
+    (initial?.dietaryFlags ?? []).some((t) => !PRIMARY_DIETARY_TAGS.includes(t)),
   );
   const dietaryTagsShown = showMoreDietary
-    ? [
-        ...PRIMARY_DIETARY_TAGS,
-        ...DIETARY_TAGS.filter((t) => !PRIMARY_DIETARY_TAGS.includes(t)),
-      ]
+    ? [...PRIMARY_DIETARY_TAGS, ...DIETARY_TAGS.filter((t) => !PRIMARY_DIETARY_TAGS.includes(t))]
     : PRIMARY_DIETARY_TAGS;
   const VisibilityIcon = VISIBILITY_ICON[form.visibility];
 
@@ -936,16 +881,10 @@ export function RecipeEditor({
     }));
     if (v.ingredients.length)
       setIngredients(
-        hydrateIngredientGroups(
-          v.ingredients.map((r) => ({ ...EMPTY_ING, ...r, key: nextKey() })),
-        ),
+        hydrateIngredientGroups(v.ingredients.map((r) => ({ ...EMPTY_ING, ...r, key: nextKey() }))),
       );
     if (v.steps.length)
-      setSteps(
-        hydrateStepGroups(
-          v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() })),
-        ),
-      );
+      setSteps(hydrateStepGroups(v.steps.map((r) => ({ ...EMPTY_STEP, ...r, key: nextKey() }))));
   }
 
   // Steps mirror the ingredient grouping handlers below: an explicit per-step
@@ -969,13 +908,9 @@ export function RecipeEditor({
   function assignStepToGroup(rowKey: string, targetGroupId: string) {
     setSteps((l) => {
       const section =
-        targetGroupId === ""
-          ? ""
-          : (l.find((r) => r.groupId === targetGroupId)?.section ?? "");
+        targetGroupId === '' ? '' : (l.find((r) => r.groupId === targetGroupId)?.section ?? '');
       return partitionByGroup(
-        l.map((r) =>
-          r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r,
-        ),
+        l.map((r) => (r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r)),
       );
     });
   }
@@ -983,11 +918,7 @@ export function RecipeEditor({
   function createGroupFromStep(rowKey: string) {
     const gid = nextKey();
     setSteps((l) =>
-      partitionByGroup(
-        l.map((r) =>
-          r.key === rowKey ? { ...r, groupId: gid, section: "" } : r,
-        ),
-      ),
+      partitionByGroup(l.map((r) => (r.key === rowKey ? { ...r, groupId: gid, section: '' } : r))),
     );
     requestAnimationFrame(() => {
       document.getElementById(`step-group-name-${gid}`)?.focus();
@@ -996,10 +927,7 @@ export function RecipeEditor({
 
   function addStep() {
     setSteps((l) =>
-      partitionByGroup([
-        ...l,
-        { ...EMPTY_STEP, key: nextKey(), groupId: "", section: "" },
-      ]),
+      partitionByGroup([...l, { ...EMPTY_STEP, key: nextKey(), groupId: '', section: '' }]),
     );
   }
 
@@ -1007,8 +935,7 @@ export function RecipeEditor({
     setSteps((l) => {
       const row = { ...EMPTY_STEP, key: nextKey(), groupId, section };
       let lastIdx = -1;
-      for (let i = 0; i < l.length; i++)
-        if (l[i]!.groupId === groupId) lastIdx = i;
+      for (let i = 0; i < l.length; i++) if (l[i]!.groupId === groupId) lastIdx = i;
       if (lastIdx === -1) return [...l, row];
       const copy = [...l];
       copy.splice(lastIdx + 1, 0, row);
@@ -1018,27 +945,20 @@ export function RecipeEditor({
 
   function addStepGroup() {
     const gid = nextKey();
-    setSteps((l) => [
-      ...l,
-      { ...EMPTY_STEP, key: nextKey(), groupId: gid, section: "" },
-    ]);
+    setSteps((l) => [...l, { ...EMPTY_STEP, key: nextKey(), groupId: gid, section: '' }]);
     requestAnimationFrame(() => {
       document.getElementById(`step-group-name-${gid}`)?.focus();
     });
   }
 
   function renameStepGroup(groupId: string, name: string) {
-    setSteps((l) =>
-      l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)),
-    );
+    setSteps((l) => l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)));
   }
 
   function dissolveStepGroup(groupId: string) {
     setSteps((l) =>
       partitionByGroup(
-        l.map((r) =>
-          r.groupId === groupId ? { ...r, groupId: "", section: "" } : r,
-        ),
+        l.map((r) => (r.groupId === groupId ? { ...r, groupId: '', section: '' } : r)),
       ),
     );
   }
@@ -1067,13 +987,9 @@ export function RecipeEditor({
   function assignIngredientToGroup(rowKey: string, targetGroupId: string) {
     setIngredients((l) => {
       const section =
-        targetGroupId === ""
-          ? ""
-          : (l.find((r) => r.groupId === targetGroupId)?.section ?? "");
+        targetGroupId === '' ? '' : (l.find((r) => r.groupId === targetGroupId)?.section ?? '');
       return partitionByGroup(
-        l.map((r) =>
-          r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r,
-        ),
+        l.map((r) => (r.key === rowKey ? { ...r, groupId: targetGroupId, section } : r)),
       );
     });
   }
@@ -1083,11 +999,7 @@ export function RecipeEditor({
   function createGroupFromIngredient(rowKey: string) {
     const gid = nextKey();
     setIngredients((l) =>
-      partitionByGroup(
-        l.map((r) =>
-          r.key === rowKey ? { ...r, groupId: gid, section: "" } : r,
-        ),
-      ),
+      partitionByGroup(l.map((r) => (r.key === rowKey ? { ...r, groupId: gid, section: '' } : r))),
     );
     requestAnimationFrame(() => {
       document.getElementById(`ing-group-name-${gid}`)?.focus();
@@ -1144,10 +1056,7 @@ export function RecipeEditor({
   // converted value. The chip clears the moment the amount is edited or the unit
   // changes again, matching the requested "disappears when the amount changes".
   const [convertHints, setConvertHints] = React.useState<
-    Record<
-      string,
-      { fromLabel: string; fromUnit: string; toUnit: string; toLabel: string }
-    >
+    Record<string, { fromLabel: string; fromUnit: string; toUnit: string; toLabel: string }>
   >({});
 
   function clearConvertHint(key: string) {
@@ -1159,14 +1068,12 @@ export function RecipeEditor({
   }
 
   function changeIngredientUnit(row: IngRow, nextUnit: string) {
-    setIngredients((l) =>
-      l.map((r) => (r.key === row.key ? { ...r, unit: nextUnit } : r)),
-    );
+    setIngredients((l) => l.map((r) => (r.key === row.key ? { ...r, unit: nextUnit } : r)));
     const amount = parseAmount(row.quantity);
     const fromUnit = row.unit.trim();
     const toUnit = nextUnit.trim();
     const sameUnit = fromUnit.toLowerCase() === toUnit.toLowerCase();
-    if (amount == null || fromUnit === "" || toUnit === "" || sameUnit) {
+    if (amount == null || fromUnit === '' || toUnit === '' || sameUnit) {
       clearConvertHint(row.key);
       return;
     }
@@ -1189,18 +1096,14 @@ export function RecipeEditor({
   }
 
   function changeIngredientQuantity(row: IngRow, nextQuantity: string) {
-    setIngredients((l) =>
-      l.map((r) => (r.key === row.key ? { ...r, quantity: nextQuantity } : r)),
-    );
+    setIngredients((l) => l.map((r) => (r.key === row.key ? { ...r, quantity: nextQuantity } : r)));
     clearConvertHint(row.key);
   }
 
   function applyConvertHint(rowKey: string) {
     const hint = convertHints[rowKey];
     if (!hint) return;
-    setIngredients((l) =>
-      l.map((r) => (r.key === rowKey ? { ...r, quantity: hint.toLabel } : r)),
-    );
+    setIngredients((l) => l.map((r) => (r.key === rowKey ? { ...r, quantity: hint.toLabel } : r)));
     clearConvertHint(rowKey);
   }
 
@@ -1208,10 +1111,7 @@ export function RecipeEditor({
   // ungrouped block (never spawns a second one) even when a group sits above.
   function addIngredient() {
     setIngredients((l) =>
-      partitionByGroup([
-        ...l,
-        { ...EMPTY_ING, key: nextKey(), groupId: "", section: "" },
-      ]),
+      partitionByGroup([...l, { ...EMPTY_ING, key: nextKey(), groupId: '', section: '' }]),
     );
   }
 
@@ -1221,8 +1121,7 @@ export function RecipeEditor({
     setIngredients((l) => {
       const row = { ...EMPTY_ING, key: nextKey(), groupId, section };
       let lastIdx = -1;
-      for (let i = 0; i < l.length; i++)
-        if (l[i]!.groupId === groupId) lastIdx = i;
+      for (let i = 0; i < l.length; i++) if (l[i]!.groupId === groupId) lastIdx = i;
       if (lastIdx === -1) return [...l, row];
       const copy = [...l];
       copy.splice(lastIdx + 1, 0, row);
@@ -1234,10 +1133,7 @@ export function RecipeEditor({
   // input so the user can title it immediately (fixes the "janky" group naming).
   function addIngredientGroup() {
     const gid = nextKey();
-    setIngredients((l) => [
-      ...l,
-      { ...EMPTY_ING, key: nextKey(), groupId: gid, section: "" },
-    ]);
+    setIngredients((l) => [...l, { ...EMPTY_ING, key: nextKey(), groupId: gid, section: '' }]);
     requestAnimationFrame(() => {
       document.getElementById(`ing-group-name-${gid}`)?.focus();
     });
@@ -1246,9 +1142,7 @@ export function RecipeEditor({
   // Rename a group in place: only the section string changes, never groupId, so
   // the name <input> stays mounted mid-keystroke (no focus loss / remount jank).
   function renameIngredientGroup(groupId: string, name: string) {
-    setIngredients((l) =>
-      l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)),
-    );
+    setIngredients((l) => l.map((r) => (r.groupId === groupId ? { ...r, section: name } : r)));
   }
 
   // Dissolve a group's container without deleting its rows: clear their group id
@@ -1256,9 +1150,7 @@ export function RecipeEditor({
   function dissolveIngredientGroup(groupId: string) {
     setIngredients((l) =>
       partitionByGroup(
-        l.map((r) =>
-          r.groupId === groupId ? { ...r, groupId: "", section: "" } : r,
-        ),
+        l.map((r) => (r.groupId === groupId ? { ...r, groupId: '', section: '' } : r)),
       ),
     );
   }
@@ -1276,7 +1168,7 @@ export function RecipeEditor({
       restMinutes: numOrUndef(form.restMinutes),
       makeAheadNote: form.makeAheadNote.trim() || undefined,
       equipment: form.equipment
-        .split(",")
+        .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
       totalMinutes: undefined,
@@ -1301,12 +1193,11 @@ export function RecipeEditor({
       originPlace: form.originPlace.trim() || undefined,
       visibility: form.visibility,
       status: form.status,
-      groupId:
-        form.visibility === "group" && form.groupId ? form.groupId : undefined,
+      groupId: form.visibility === 'group' && form.groupId ? form.groupId : undefined,
       tags: commaList(form.tags),
       dietaryFlags: form.dietaryFlags,
       ingredients: ingredients
-        .filter((r) => r.item.trim() !== "")
+        .filter((r) => r.item.trim() !== '')
         .map((r) => ({
           section: r.section.trim() || undefined,
           quantity: amountOrUndef(r.quantity),
@@ -1319,7 +1210,7 @@ export function RecipeEditor({
           optional: r.optional,
         })),
       steps: steps
-        .filter((r) => r.instruction.trim() !== "")
+        .filter((r) => r.instruction.trim() !== '')
         .map((r) => ({
           section: r.section.trim() || undefined,
           title: r.title.trim() || undefined,
@@ -1327,13 +1218,11 @@ export function RecipeEditor({
           imageUrl: r.imageUrl.trim() || undefined,
           imageAlt: r.imageAlt.trim() || undefined,
           videoUrl: r.videoUrl.trim() || undefined,
-          timerSeconds: r.timerMinutes.trim()
-            ? Math.round(Number(r.timerMinutes) * 60)
-            : undefined,
+          timerSeconds: r.timerMinutes.trim() ? Math.round(Number(r.timerMinutes) * 60) : undefined,
           targetTempC: numOrUndef(r.targetTempC),
           doneness: r.doneness.trim() || undefined,
           techniques: r.techniques
-            .split(",")
+            .split(',')
             .map((t) => t.trim())
             .filter(Boolean),
         })),
@@ -1356,29 +1245,25 @@ export function RecipeEditor({
     ): Promise<Record<string, string[]>> => {
       const payload = buildPayloadRef.current();
       if (!payload.title) {
-        toast.error(
-          pickKidCopy(kidSafe, "validation.title", t("validation.titleToast")),
-        );
-        return { title: ["Give your recipe a title"] };
+        toast.error(pickKidCopy(kidSafe, 'validation.title', t('validation.titleToast')));
+        return { title: ['Give your recipe a title'] };
       }
-      if (payload.visibility === "group" && !payload.groupId) {
-        toast.error(t("validation.groupToast"));
-        return { groupId: ["Choose a group for this group recipe"] };
+      if (payload.visibility === 'group' && !payload.groupId) {
+        toast.error(t('validation.groupToast'));
+        return { groupId: ['Choose a group for this group recipe'] };
       }
       const res =
-        mode === "edit" && recipeId
+        mode === 'edit' && recipeId
           ? await updateRecipeAction(recipeId, payload)
           : await createRecipeAction(payload);
       if (res.ok) {
         draft.clear();
-        toast.success(
-          mode === "edit" ? t("toast.updated") : t("toast.created"),
-        );
+        toast.success(mode === 'edit' ? t('toast.updated') : t('toast.created'));
         router.push(recipeDetailPath(res));
         router.refresh();
         return NO_ERRORS;
       }
-      track("editor_save_failed", {
+      track('editor_save_failed', {
         mode,
         fieldCount: Object.keys(res.fieldErrors ?? {}).length,
       });
@@ -1400,33 +1285,33 @@ export function RecipeEditor({
   //. No extra state, no interaction with autosave/dictation/paste-import.
   const editorSections: EditorSection[] = [
     {
-      id: "editor-basics",
-      label: t("sections.basics"),
-      complete: form.title.trim() !== "",
+      id: 'editor-basics',
+      label: t('sections.basics'),
+      complete: form.title.trim() !== '',
     },
     {
-      id: "editor-ingredients",
-      label: t("sections.ingredients"),
-      complete: ingredients.some((row) => row.item.trim() !== ""),
+      id: 'editor-ingredients',
+      label: t('sections.ingredients'),
+      complete: ingredients.some((row) => row.item.trim() !== ''),
     },
     {
-      id: "editor-steps",
-      label: t("sections.steps"),
-      complete: steps.some((row) => row.instruction.trim() !== ""),
+      id: 'editor-steps',
+      label: t('sections.steps'),
+      complete: steps.some((row) => row.instruction.trim() !== ''),
     },
     {
-      id: "editor-details",
-      label: t("sections.details"),
+      id: 'editor-details',
+      label: t('sections.details'),
       complete:
-        form.coverImageUrl.trim() !== "" ||
-        form.difficulty !== "" ||
-        form.cuisines.trim() !== "" ||
-        form.mealTypes.trim() !== "",
+        form.coverImageUrl.trim() !== '' ||
+        form.difficulty !== '' ||
+        form.cuisines.trim() !== '' ||
+        form.mealTypes.trim() !== '',
     },
     {
-      id: "editor-story",
-      label: t("sections.story"),
-      complete: form.notes.trim() !== "" || form.story.trim() !== "",
+      id: 'editor-story',
+      label: t('sections.story'),
+      complete: form.notes.trim() !== '' || form.story.trim() !== '',
       optional: true,
     },
   ];
@@ -1435,12 +1320,8 @@ export function RecipeEditor({
   // form). The bar populates as the writer fills the form in and stays visible
   // while scrolling, giving an at-a-glance summary of the recipe's shape.
   // Derived straight from working state. No new sources of truth.
-  const filledIngredientCount = ingredients.filter(
-    (row) => row.item.trim() !== "",
-  ).length;
-  const filledStepCount = steps.filter(
-    (row) => row.instruction.trim() !== "",
-  ).length;
+  const filledIngredientCount = ingredients.filter((row) => row.item.trim() !== '').length;
+  const filledStepCount = steps.filter((row) => row.instruction.trim() !== '').length;
   const parseMinutes = (value: string): number => {
     const n = Number.parseInt(value, 10);
     return Number.isFinite(n) ? n : 0;
@@ -1454,56 +1335,53 @@ export function RecipeEditor({
   const summaryVitals: { key: string; icon: LucideIcon; text: string }[] = [];
   if (filledIngredientCount > 0) {
     summaryVitals.push({
-      key: "ingredients",
+      key: 'ingredients',
       icon: Carrot,
-      text: t("vitals.ingredients", { count: filledIngredientCount }),
+      text: t('vitals.ingredients', { count: filledIngredientCount }),
     });
   }
   if (filledStepCount > 0) {
     summaryVitals.push({
-      key: "steps",
+      key: 'steps',
       icon: ListOrdered,
-      text: t("vitals.steps", { count: filledStepCount }),
+      text: t('vitals.steps', { count: filledStepCount }),
     });
   }
   if (totalMinutes > 0) {
     summaryVitals.push({
-      key: "time",
+      key: 'time',
       icon: Clock,
       text: formatMinutes(totalMinutes),
     });
   }
-  if (trimmedServings !== "") {
+  if (trimmedServings !== '') {
     summaryVitals.push({
-      key: "servings",
+      key: 'servings',
       icon: Users,
       text: `${trimmedServings} ${
-        trimmedServingsNoun === ""
-          ? t("vitals.servingsNoun")
-          : trimmedServingsNoun
+        trimmedServingsNoun === '' ? t('vitals.servingsNoun') : trimmedServingsNoun
       }`,
     });
   }
   const difficulty = form.difficulty;
-  if (difficulty !== "") {
+  if (difficulty !== '') {
     summaryVitals.push({
-      key: "difficulty",
+      key: 'difficulty',
       icon: ChefHat,
       text: t(`difficulty.${difficulty}`),
     });
   }
-  const trimmedCuisine = commaList(form.cuisines)[0] ?? "";
-  if (trimmedCuisine !== "") {
+  const trimmedCuisine = commaList(form.cuisines)[0] ?? '';
+  if (trimmedCuisine !== '') {
     summaryVitals.push({
-      key: "cuisine",
+      key: 'cuisine',
       icon: Utensils,
       text: trimmedCuisine,
     });
   }
   const trimmedTitle = form.title.trim();
-  const barFallbackTitle =
-    mode === "edit" ? t("editingRecipe") : t("newRecipe");
-  const barTitle = trimmedTitle === "" ? barFallbackTitle : trimmedTitle;
+  const barFallbackTitle = mode === 'edit' ? t('editingRecipe') : t('newRecipe');
+  const barTitle = trimmedTitle === '' ? barFallbackTitle : trimmedTitle;
 
   // Move focus to the summary whenever a submit attempt produces errors so
   // screen-reader and keyboard users land on the list of what needs fixing.
@@ -1519,7 +1397,7 @@ export function RecipeEditor({
     const seen = new Set<string>();
     const out: { id: string; name: string }[] = [];
     for (const r of ingredients) {
-      if (r.groupId !== "" && !seen.has(r.groupId)) {
+      if (r.groupId !== '' && !seen.has(r.groupId)) {
         seen.add(r.groupId);
         out.push({ id: r.groupId, name: r.section });
       }
@@ -1527,13 +1405,13 @@ export function RecipeEditor({
     return out;
   }, [ingredients]);
   const hasIngredientGroups = ingredientGroupChoices.length > 0;
-  const hasUngroupedIngredients = ingredients.some((r) => r.groupId === "");
+  const hasUngroupedIngredients = ingredients.some((r) => r.groupId === '');
 
   const stepGroupChoices = React.useMemo(() => {
     const seen = new Set<string>();
     const out: { id: string; name: string }[] = [];
     for (const r of steps) {
-      if (r.groupId !== "" && !seen.has(r.groupId)) {
+      if (r.groupId !== '' && !seen.has(r.groupId)) {
         seen.add(r.groupId);
         out.push({ id: r.groupId, name: r.section });
       }
@@ -1541,7 +1419,7 @@ export function RecipeEditor({
     return out;
   }, [steps]);
   const hasStepGroups = stepGroupChoices.length > 0;
-  const hasUngroupedSteps = steps.some((r) => r.groupId === "");
+  const hasUngroupedSteps = steps.some((r) => r.groupId === '');
   // Global 1..N step numbers keyed by row, so grouped rendering keeps the same
   // continuous numbering the read side and the ingredient "Used in step" use.
   const stepNumberByKey = React.useMemo(
@@ -1558,24 +1436,24 @@ export function RecipeEditor({
           onOpenChange={(next) => {
             if (!next) setUpgrade(null);
           }}
-          title={t("planLimitTitle")}
+          title={t('planLimitTitle')}
           description={upgrade}
         />
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          {mode === "edit" ? t("editRecipe") : t("newRecipe")}
+          {mode === 'edit' ? t('editRecipe') : t('newRecipe')}
         </h1>
         <ToggleGroup
-          aria-label={t("viewAria")}
-          value={previewMode ? "preview" : "edit"}
-          onValueChange={(value) => setPreviewMode(value === "preview")}
+          aria-label={t('viewAria')}
+          value={previewMode ? 'preview' : 'edit'}
+          onValueChange={(value) => setPreviewMode(value === 'preview')}
         >
           <ToggleGroupItem value="edit">
-            <Pencil className="size-4" /> {t("edit")}
+            <Pencil className="size-4" /> {t('edit')}
           </ToggleGroupItem>
           <ToggleGroupItem value="preview">
-            <Eye className="size-4" /> {t("preview")}
+            <Eye className="size-4" /> {t('preview')}
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
@@ -1583,26 +1461,19 @@ export function RecipeEditor({
       {!previewMode && draft.availableDraft ? (
         <div
           role="region"
-          aria-label={t("draft.aria")}
+          aria-label={t('draft.aria')}
           className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-3">
-            <History
-              className="mt-0.5 size-5 shrink-0 text-primary"
-              aria-hidden="true"
-            />
+            <History className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <p className="font-medium">{t("draft.title")}</p>
-              <p className="text-sm text-muted-foreground">{t("draft.body")}</p>
+              <p className="font-medium">{t('draft.title')}</p>
+              <p className="text-sm text-muted-foreground">{t('draft.body')}</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => draft.discardDraft()}
-            >
-              {t("draft.discard")}
+            <Button type="button" variant="outline" onClick={() => draft.discardDraft()}>
+              {t('draft.discard')}
             </Button>
             <Button
               type="button"
@@ -1611,7 +1482,7 @@ export function RecipeEditor({
                 if (pending) restoreDraft(pending);
               }}
             >
-              {t("draft.restore")}
+              {t('draft.restore')}
             </Button>
           </div>
         </div>
@@ -1631,14 +1502,12 @@ export function RecipeEditor({
           >
             <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
             {errorKeys.length === 1
-              ? t("errorSummary.one")
-              : t("errorSummary.many", { count: errorKeys.length })}
+              ? t('errorSummary.one')
+              : t('errorSummary.many', { count: errorKeys.length })}
           </h2>
           <ul className="mt-2 flex list-disc flex-col gap-1 ps-8">
             {errorKeys.map((key) => {
-              const label = LABELLED_FIELDS.has(key)
-                ? t(`fields.${key}`)
-                : prettifyFieldKey(key);
+              const label = LABELLED_FIELDS.has(key) ? t(`fields.${key}`) : prettifyFieldKey(key);
               const message = errors[key]?.[0];
               const targetId = `recipe-field-${key}`;
               return (
@@ -1651,8 +1520,8 @@ export function RecipeEditor({
                         if (el) {
                           e.preventDefault();
                           el.scrollIntoView({
-                            block: "center",
-                            behavior: "smooth",
+                            block: 'center',
+                            behavior: 'smooth',
                           });
                           el.focus();
                         }
@@ -1662,13 +1531,9 @@ export function RecipeEditor({
                       {label}
                     </a>
                   ) : (
-                    <span className="font-medium text-destructive">
-                      {label}
-                    </span>
+                    <span className="font-medium text-destructive">{label}</span>
                   )}
-                  {message ? (
-                    <span className="text-muted-foreground">: {message}</span>
-                  ) : null}
+                  {message ? <span className="text-muted-foreground">: {message}</span> : null}
                 </li>
               );
             })}
@@ -1677,73 +1542,52 @@ export function RecipeEditor({
       )}
 
       {!previewMode && (
-        <EditorSectionNav
-          sections={editorSections}
-          topOffset={appHeaderH}
-          onJump={jumpToSection}
-        />
+        <EditorSectionNav sections={editorSections} topOffset={appHeaderH} onJump={jumpToSection} />
       )}
 
       {previewMode && (
-        <RecipePreview
-          recipe={buildPayload()}
-          mode={mode}
-          fallbackKey={recipeId ?? "new-recipe"}
-        />
+        <RecipePreview recipe={buildPayload()} mode={mode} fallbackKey={recipeId ?? 'new-recipe'} />
       )}
 
       {!previewMode && (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           {/* Main column */}
           <div className="flex flex-col gap-8">
-            {mode === "create" ? (
+            {mode === 'create' ? (
               <ImportRecipePanel
                 onImported={applyImported}
-                urlLabel={t("importUrl")}
+                urlLabel={t('importUrl')}
                 initialUrl={initialImportUrl}
               />
             ) : null}
 
-            <section
-              id="editor-basics"
-              className="flex scroll-mt-28 flex-col gap-4"
-            >
-              <Field
-                label={t("fields.title")}
-                name="title"
-                error={errors.title}
-                required
-              >
+            <section id="editor-basics" className="flex scroll-mt-28 flex-col gap-4">
+              <Field label={t('fields.title')} name="title" error={errors.title} required>
                 <Input
                   value={form.title}
-                  onChange={(e) => set("title", e.target.value)}
-                  placeholder={t("placeholders.title")}
+                  onChange={(e) => set('title', e.target.value)}
+                  placeholder={t('placeholders.title')}
                   autoFocus
                 />
               </Field>
               <Field
-                label={t("fields.description")}
+                label={t('fields.description')}
                 name="description"
-                hint={t("hints.description")}
+                hint={t('hints.description')}
                 error={errors.description}
               >
                 <Textarea
                   value={form.description}
-                  onChange={(e) => set("description", e.target.value)}
-                  placeholder={t("placeholders.description")}
+                  onChange={(e) => set('description', e.target.value)}
+                  placeholder={t('placeholders.description')}
                   rows={2}
                 />
               </Field>
             </section>
 
             {/* Ingredients */}
-            <section
-              id="editor-ingredients"
-              className="flex scroll-mt-28 flex-col gap-3"
-            >
-              <h2 className="font-display text-xl font-semibold">
-                {t("ingredientsHeading")}
-              </h2>
+            <section id="editor-ingredients" className="flex scroll-mt-28 flex-col gap-3">
+              <h2 className="font-display text-xl font-semibold">{t('ingredientsHeading')}</h2>
               <datalist id={unitDatalistId}>
                 {unitOptions.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -1755,18 +1599,11 @@ export function RecipeEditor({
                 {blocksByGroup(ingredients).map((block) => {
                   const rowList = block.rows.map((row, indexInBlock) => {
                     const hasOptionData = Boolean(
-                      row.quantityMax ||
-                      row.prep ||
-                      row.note ||
-                      row.stepPosition ||
-                      row.optional,
+                      row.quantityMax || row.prep || row.note || row.stepPosition || row.optional,
                     );
-                    const optionsOpen =
-                      hasOptionData || openIngOptions.has(row.key);
+                    const optionsOpen = hasOptionData || openIngOptions.has(row.key);
                     const rowUnitOptions =
-                      foodUnitOptionsByItem.get(
-                        row.item.trim().toLowerCase(),
-                      ) ?? null;
+                      foodUnitOptionsByItem.get(row.item.trim().toLowerCase()) ?? null;
                     const rowUnitListId = rowUnitOptions
                       ? `${unitDatalistId}-${row.key}`
                       : unitDatalistId;
@@ -1786,42 +1623,33 @@ export function RecipeEditor({
                         ) : null}
                         <div className="flex items-start gap-2">
                           <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_6rem]">
-                            <RowField
-                              label={t("ingredient")}
-                              className="col-span-2 sm:col-span-1"
-                            >
+                            <RowField label={t('ingredient')} className="col-span-2 sm:col-span-1">
                               <Input
                                 value={row.item}
                                 onChange={(e) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, item: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, item: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.item")}
+                                placeholder={t('placeholders.item')}
                               />
                             </RowField>
-                            <RowField label={t("quantity")}>
+                            <RowField label={t('quantity')}>
                               <Input
                                 value={row.quantity}
-                                onChange={(e) =>
-                                  changeIngredientQuantity(row, e.target.value)
-                                }
-                                placeholder={t("placeholders.quantity")}
+                                onChange={(e) => changeIngredientQuantity(row, e.target.value)}
+                                placeholder={t('placeholders.quantity')}
                                 inputMode="decimal"
                               />
                             </RowField>
-                            <RowField label={t("unit")}>
+                            <RowField label={t('unit')}>
                               <Input
                                 value={row.unit}
                                 list={rowUnitListId}
-                                onChange={(e) =>
-                                  changeIngredientUnit(row, e.target.value)
-                                }
-                                placeholder={t("placeholders.unit")}
+                                onChange={(e) => changeIngredientUnit(row, e.target.value)}
+                                placeholder={t('placeholders.unit')}
                                 autoComplete="off"
                               />
                               {convertHints[row.key] ? (
@@ -1831,13 +1659,9 @@ export function RecipeEditor({
                                     onClick={() => applyConvertHint(row.key)}
                                     className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-medium text-primary transition-colors hover:bg-primary/20"
                                   >
-                                    <Repeat
-                                      className="size-3"
-                                      aria-hidden="true"
-                                    />
-                                    {t("convert", {
-                                      fromLabel:
-                                        convertHints[row.key]!.fromLabel,
+                                    <Repeat className="size-3" aria-hidden="true" />
+                                    {t('convert', {
+                                      fromLabel: convertHints[row.key]!.fromLabel,
                                       fromUnit: convertHints[row.key]!.fromUnit,
                                       toLabel: convertHints[row.key]!.toLabel,
                                       toUnit: convertHints[row.key]!.toUnit,
@@ -1846,14 +1670,14 @@ export function RecipeEditor({
                                   <CloseButton
                                     size="sm"
                                     onClick={() => clearConvertHint(row.key)}
-                                    label={t("dismissConversion")}
+                                    label={t('dismissConversion')}
                                   />
                                 </div>
                               ) : null}
                             </RowField>
                           </div>
                           <RowControls
-                            objectLabel={t("ingredientObject")}
+                            objectLabel={t('ingredientObject')}
                             isFirst={indexInBlock === 0}
                             isLast={indexInBlock === block.rows.length - 1}
                             onUp={() => moveIngredient(row.key, -1)}
@@ -1871,24 +1695,23 @@ export function RecipeEditor({
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
-                            <span className="shrink-0">{t("group")}</span>
+                            <span className="shrink-0">{t('group')}</span>
                             <NativeSelect
                               wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
-                                if (v === "__new__")
-                                  createGroupFromIngredient(row.key);
+                                if (v === '__new__') createGroupFromIngredient(row.key);
                                 else assignIngredientToGroup(row.key, v);
                               }}
                             >
-                              <option value="">{t("noGroup")}</option>
+                              <option value="">{t('noGroup')}</option>
                               {ingredientGroupChoices.map((g) => (
                                 <option key={g.id} value={g.id}>
-                                  {g.name.trim() || t("untitledGroup")}
+                                  {g.name.trim() || t('untitledGroup')}
                                 </option>
                               ))}
-                              <option value="__new__">{t("newGroup")}</option>
+                              <option value="__new__">{t('newGroup')}</option>
                             </NativeSelect>
                           </label>
                           {!hasOptionData && (
@@ -1900,69 +1723,58 @@ export function RecipeEditor({
                             >
                               <ChevronDown
                                 className={cn(
-                                  "size-3.5 transition-transform",
-                                  optionsOpen && "rotate-180",
+                                  'size-3.5 transition-transform',
+                                  optionsOpen && 'rotate-180',
                                 )}
                               />
-                              {optionsOpen
-                                ? t("fewerOptions")
-                                : t("moreOptions")}
+                              {optionsOpen ? t('fewerOptions') : t('moreOptions')}
                             </button>
                           )}
                         </div>
 
                         {optionsOpen && (
                           <div className="grid gap-x-3 gap-y-2 border-t border-border/70 pt-3 sm:grid-cols-2">
-                            <RowField label={t("maxQuantity")}>
+                            <RowField label={t('maxQuantity')}>
                               <Input
                                 value={row.quantityMax}
                                 onChange={(e) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, quantityMax: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, quantityMax: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.quantityMax")}
+                                placeholder={t('placeholders.quantityMax')}
                                 inputMode="decimal"
                               />
                             </RowField>
-                            <RowField label={t("prep")}>
+                            <RowField label={t('prep')}>
                               <Input
                                 value={row.prep}
                                 onChange={(e) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, prep: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, prep: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.prep")}
+                                placeholder={t('placeholders.prep')}
                               />
                             </RowField>
-                            <RowField
-                              label={t("note")}
-                              className="sm:col-span-2"
-                            >
+                            <RowField label={t('note')} className="sm:col-span-2">
                               <Input
                                 value={row.note}
                                 onChange={(e) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, note: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, note: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.note")}
+                                placeholder={t('placeholders.note')}
                               />
                             </RowField>
-                            <RowField label={t("usedInStep")}>
+                            <RowField label={t('usedInStep')}>
                               <NativeSelect
                                 value={row.stepPosition}
                                 onChange={(e) =>
@@ -1975,10 +1787,10 @@ export function RecipeEditor({
                                   )
                                 }
                               >
-                                <option value="">{t("noSpecificStep")}</option>
+                                <option value="">{t('noSpecificStep')}</option>
                                 {steps.map((_, si) => (
                                   <option key={si} value={String(si + 1)}>
-                                    {t("step", { position: si + 1 })}
+                                    {t('step', { position: si + 1 })}
                                   </option>
                                 ))}
                               </NativeSelect>
@@ -1989,14 +1801,12 @@ export function RecipeEditor({
                                 onCheckedChange={(value) =>
                                   setIngredients((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, optional: value === true }
-                                        : r,
+                                      r.key === row.key ? { ...r, optional: value === true } : r,
                                     ),
                                   )
                                 }
                               />
-                              {t("optionalIngredient")}
+                              {t('optionalIngredient')}
                             </label>
                           </div>
                         )}
@@ -2004,11 +1814,11 @@ export function RecipeEditor({
                     );
                   });
 
-                  if (block.groupId === "") {
+                  if (block.groupId === '') {
                     if (!hasIngredientGroups) {
                       return (
                         <div
-                          key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                          key={`ungrouped-${block.rows[0]?.key ?? 'empty'}`}
                           className="flex flex-col gap-3"
                         >
                           {rowList}
@@ -2017,14 +1827,12 @@ export function RecipeEditor({
                     }
                     return (
                       <div
-                        key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                        key={`ungrouped-${block.rows[0]?.key ?? 'empty'}`}
                         className="flex flex-col gap-2.5"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <span>{t("ungrouped")}</span>
-                          <span className="text-muted-foreground/60">
-                            · {block.rows.length}
-                          </span>
+                          <span>{t('ungrouped')}</span>
+                          <span className="text-muted-foreground/60">· {block.rows.length}</span>
                         </div>
                         <div className="flex flex-col gap-3">{rowList}</div>
                         <button
@@ -2032,7 +1840,7 @@ export function RecipeEditor({
                           onClick={addIngredient}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
-                          <Plus className="size-3.5" /> {t("addIngredient")}
+                          <Plus className="size-3.5" /> {t('addIngredient')}
                         </button>
                       </div>
                     );
@@ -2047,27 +1855,22 @@ export function RecipeEditor({
                         <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                           <Layers className="size-5" />
                         </span>
-                        <RowField label={t("groupName")} className="flex-1">
+                        <RowField label={t('groupName')} className="flex-1">
                           <Input
                             id={`ing-group-name-${block.groupId}`}
                             value={block.section}
-                            onChange={(e) =>
-                              renameIngredientGroup(
-                                block.groupId,
-                                e.target.value,
-                              )
-                            }
-                            placeholder={t("placeholders.ingredientGroupName")}
+                            onChange={(e) => renameIngredientGroup(block.groupId, e.target.value)}
+                            placeholder={t('placeholders.ingredientGroupName')}
                           />
                         </RowField>
                         <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          {t("itemCount", { count: block.rows.length })}
+                          {t('itemCount', { count: block.rows.length })}
                         </span>
                         <button
                           type="button"
                           onClick={() => dissolveIngredientGroup(block.groupId)}
-                          aria-label={t("removeGroup")}
-                          title={t("removeGroup")}
+                          aria-label={t('removeGroup')}
+                          title={t('removeGroup')}
                           className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <X className="size-4" />
@@ -2077,12 +1880,10 @@ export function RecipeEditor({
                         <div className="flex flex-col gap-3">{rowList}</div>
                         <button
                           type="button"
-                          onClick={() =>
-                            addIngredientToGroup(block.groupId, block.section)
-                          }
+                          onClick={() => addIngredientToGroup(block.groupId, block.section)}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
-                          <Plus className="size-3.5" /> {t("addIngredient")}
+                          <Plus className="size-3.5" /> {t('addIngredient')}
                         </button>
                       </div>
                     </div>
@@ -2091,13 +1892,8 @@ export function RecipeEditor({
               </div>
               <div className="flex flex-wrap gap-2">
                 {!(hasIngredientGroups && hasUngroupedIngredients) && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={addIngredient}
-                  >
-                    <Plus /> {t("addIngredient")}
+                  <Button type="button" size="sm" variant="outline" onClick={addIngredient}>
+                    <Plus /> {t('addIngredient')}
                   </Button>
                 )}
                 <Button
@@ -2107,19 +1903,14 @@ export function RecipeEditor({
                   className="text-muted-foreground"
                   onClick={addIngredientGroup}
                 >
-                  <Plus /> {t("addGroup")}
+                  <Plus /> {t('addGroup')}
                 </Button>
               </div>
             </section>
 
             {/* Steps */}
-            <section
-              id="editor-steps"
-              className="flex scroll-mt-28 flex-col gap-3"
-            >
-              <h2 className="font-display text-xl font-semibold">
-                {t("stepsHeading")}
-              </h2>
+            <section id="editor-steps" className="flex scroll-mt-28 flex-col gap-3">
+              <h2 className="font-display text-xl font-semibold">{t('stepsHeading')}</h2>
               <div className="flex flex-col gap-4">
                 {blocksByGroup(steps).map((block) => {
                   const rowList = block.rows.map((row, indexInBlock) => {
@@ -2131,8 +1922,7 @@ export function RecipeEditor({
                       row.videoUrl ||
                       row.imageUrl,
                     );
-                    const optionsOpen =
-                      hasOptionData || openStepOptions.has(row.key);
+                    const optionsOpen = hasOptionData || openStepOptions.has(row.key);
                     return (
                       <div
                         key={row.key}
@@ -2141,7 +1931,7 @@ export function RecipeEditor({
                         <div className="flex items-start gap-2">
                           <div className="flex flex-1 flex-col gap-2">
                             <RowField
-                              label={t("step", {
+                              label={t('step', {
                                 position: stepNumberByKey.get(row.key) ?? 0,
                               })}
                             >
@@ -2150,34 +1940,30 @@ export function RecipeEditor({
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, title: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, title: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.stepTitle")}
+                                placeholder={t('placeholders.stepTitle')}
                               />
                             </RowField>
-                            <RowField label={t("instruction")}>
+                            <RowField label={t('instruction')}>
                               <Textarea
                                 value={row.instruction}
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, instruction: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, instruction: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.instruction")}
+                                placeholder={t('placeholders.instruction')}
                                 rows={2}
                               />
                             </RowField>
                           </div>
                           <RowControls
-                            objectLabel={t("stepObject")}
+                            objectLabel={t('stepObject')}
                             isFirst={indexInBlock === 0}
                             isLast={indexInBlock === block.rows.length - 1}
                             onUp={() => moveStep(row.key, -1)}
@@ -2195,24 +1981,23 @@ export function RecipeEditor({
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <Layers className="size-3.5 shrink-0" />
-                            <span className="shrink-0">{t("section")}</span>
+                            <span className="shrink-0">{t('section')}</span>
                             <NativeSelect
                               wrapperClassName="w-auto min-w-[8rem] max-w-[13rem]"
                               value={row.groupId}
                               onChange={(e) => {
                                 const v = e.target.value;
-                                if (v === "__new__")
-                                  createGroupFromStep(row.key);
+                                if (v === '__new__') createGroupFromStep(row.key);
                                 else assignStepToGroup(row.key, v);
                               }}
                             >
-                              <option value="">{t("noSection")}</option>
+                              <option value="">{t('noSection')}</option>
                               {stepGroupChoices.map((g) => (
                                 <option key={g.id} value={g.id}>
-                                  {g.name.trim() || t("untitledSection")}
+                                  {g.name.trim() || t('untitledSection')}
                                 </option>
                               ))}
-                              <option value="__new__">{t("newSection")}</option>
+                              <option value="__new__">{t('newSection')}</option>
                             </NativeSelect>
                           </label>
                           {!hasOptionData && (
@@ -2224,20 +2009,18 @@ export function RecipeEditor({
                             >
                               <ChevronDown
                                 className={cn(
-                                  "size-3.5 transition-transform",
-                                  optionsOpen && "rotate-180",
+                                  'size-3.5 transition-transform',
+                                  optionsOpen && 'rotate-180',
                                 )}
                               />
-                              {optionsOpen
-                                ? t("fewerOptions")
-                                : t("moreOptions")}
+                              {optionsOpen ? t('fewerOptions') : t('moreOptions')}
                             </button>
                           )}
                         </div>
 
                         {optionsOpen && (
                           <div className="grid gap-x-3 gap-y-2 border-t border-border/70 pt-3 sm:grid-cols-2">
-                            <RowField label={t("timerMinutes")}>
+                            <RowField label={t('timerMinutes')}>
                               <Input
                                 value={row.timerMinutes}
                                 onChange={(e) =>
@@ -2249,60 +2032,51 @@ export function RecipeEditor({
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.timerMinutes")}
+                                placeholder={t('placeholders.timerMinutes')}
                                 inputMode="decimal"
                               />
                             </RowField>
-                            <RowField label={t("techniques")}>
+                            <RowField label={t('techniques')}>
                               <Input
                                 value={row.techniques}
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, techniques: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, techniques: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.techniques")}
+                                placeholder={t('placeholders.techniques')}
                               />
                             </RowField>
-                            <RowField label={t("targetTemp")}>
+                            <RowField label={t('targetTemp')}>
                               <Input
                                 value={row.targetTempC}
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, targetTempC: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, targetTempC: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.targetTempC")}
+                                placeholder={t('placeholders.targetTempC')}
                                 inputMode="numeric"
                               />
                             </RowField>
-                            <RowField label={t("doneness")}>
+                            <RowField label={t('doneness')}>
                               <Input
                                 value={row.doneness}
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, doneness: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, doneness: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.doneness")}
+                                placeholder={t('placeholders.doneness')}
                               />
                             </RowField>
-                            <RowField
-                              label={t("videoUrl")}
-                              className="sm:col-span-2"
-                            >
+                            <RowField label={t('videoUrl')} className="sm:col-span-2">
                               <Input
                                 type="url"
                                 inputMode="url"
@@ -2310,39 +2084,29 @@ export function RecipeEditor({
                                 onChange={(e) =>
                                   setSteps((l) =>
                                     l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, videoUrl: e.target.value }
-                                        : r,
+                                      r.key === row.key ? { ...r, videoUrl: e.target.value } : r,
                                     ),
                                   )
                                 }
-                                placeholder={t("placeholders.videoUrl")}
+                                placeholder={t('placeholders.videoUrl')}
                               />
                             </RowField>
                             <div className="flex min-w-0 flex-col gap-1 sm:col-span-2">
                               <span className="text-xs font-medium text-muted-foreground">
-                                {t("photo")}
+                                {t('photo')}
                               </span>
                               <ImageUploadField
                                 size="compact"
                                 value={row.imageUrl}
                                 onChange={(url) =>
                                   setSteps((l) =>
-                                    l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, imageUrl: url }
-                                        : r,
-                                    ),
+                                    l.map((r) => (r.key === row.key ? { ...r, imageUrl: url } : r)),
                                   )
                                 }
                                 altText={row.imageAlt}
                                 onAltTextChange={(alt) =>
                                   setSteps((l) =>
-                                    l.map((r) =>
-                                      r.key === row.key
-                                        ? { ...r, imageAlt: alt }
-                                        : r,
-                                    ),
+                                    l.map((r) => (r.key === row.key ? { ...r, imageAlt: alt } : r)),
                                   )
                                 }
                               />
@@ -2353,11 +2117,11 @@ export function RecipeEditor({
                     );
                   });
 
-                  if (block.groupId === "") {
+                  if (block.groupId === '') {
                     if (!hasStepGroups) {
                       return (
                         <div
-                          key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                          key={`ungrouped-${block.rows[0]?.key ?? 'empty'}`}
                           className="flex flex-col gap-3"
                         >
                           {rowList}
@@ -2366,14 +2130,12 @@ export function RecipeEditor({
                     }
                     return (
                       <div
-                        key={`ungrouped-${block.rows[0]?.key ?? "empty"}`}
+                        key={`ungrouped-${block.rows[0]?.key ?? 'empty'}`}
                         className="flex flex-col gap-2.5"
                       >
                         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <span>{t("ungroupedSteps")}</span>
-                          <span className="text-muted-foreground/60">
-                            · {block.rows.length}
-                          </span>
+                          <span>{t('ungroupedSteps')}</span>
+                          <span className="text-muted-foreground/60">· {block.rows.length}</span>
                         </div>
                         <div className="flex flex-col gap-3">{rowList}</div>
                         <button
@@ -2381,7 +2143,7 @@ export function RecipeEditor({
                           onClick={addStep}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
-                          <Plus className="size-3.5" /> {t("addStep")}
+                          <Plus className="size-3.5" /> {t('addStep')}
                         </button>
                       </div>
                     );
@@ -2396,24 +2158,22 @@ export function RecipeEditor({
                         <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                           <Layers className="size-5" />
                         </span>
-                        <RowField label={t("sectionName")} className="flex-1">
+                        <RowField label={t('sectionName')} className="flex-1">
                           <Input
                             id={`step-group-name-${block.groupId}`}
                             value={block.section}
-                            onChange={(e) =>
-                              renameStepGroup(block.groupId, e.target.value)
-                            }
-                            placeholder={t("placeholders.stepSectionName")}
+                            onChange={(e) => renameStepGroup(block.groupId, e.target.value)}
+                            placeholder={t('placeholders.stepSectionName')}
                           />
                         </RowField>
                         <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          {t("stepCount", { count: block.rows.length })}
+                          {t('stepCount', { count: block.rows.length })}
                         </span>
                         <button
                           type="button"
                           onClick={() => dissolveStepGroup(block.groupId)}
-                          aria-label={t("removeSection")}
-                          title={t("removeSection")}
+                          aria-label={t('removeSection')}
+                          title={t('removeSection')}
                           className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <X className="size-4" />
@@ -2423,12 +2183,10 @@ export function RecipeEditor({
                         <div className="flex flex-col gap-3">{rowList}</div>
                         <button
                           type="button"
-                          onClick={() =>
-                            addStepToGroup(block.groupId, block.section)
-                          }
+                          onClick={() => addStepToGroup(block.groupId, block.section)}
                           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                         >
-                          <Plus className="size-3.5" /> {t("addStep")}
+                          <Plus className="size-3.5" /> {t('addStep')}
                         </button>
                       </div>
                     </div>
@@ -2437,13 +2195,8 @@ export function RecipeEditor({
               </div>
               <div className="flex flex-wrap gap-2">
                 {!(hasStepGroups && hasUngroupedSteps) && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={addStep}
-                  >
-                    <Plus /> {t("addStep")}
+                  <Button type="button" size="sm" variant="outline" onClick={addStep}>
+                    <Plus /> {t('addStep')}
                   </Button>
                 )}
                 <Button
@@ -2453,46 +2206,39 @@ export function RecipeEditor({
                   className="text-muted-foreground"
                   onClick={addStepGroup}
                 >
-                  <Plus /> {t("addSection")}
+                  <Plus /> {t('addSection')}
                 </Button>
               </div>
             </section>
 
-            <section
-              id="editor-story"
-              className="flex scroll-mt-28 flex-col gap-4"
-            >
+            <section id="editor-story" className="flex scroll-mt-28 flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <h2 className="font-display text-xl font-semibold">
-                  {t("notesStoryHeading")}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("notesStoryDescription")}
-                </p>
+                <h2 className="font-display text-xl font-semibold">{t('notesStoryHeading')}</h2>
+                <p className="text-sm text-muted-foreground">{t('notesStoryDescription')}</p>
               </div>
               <Field
-                label={t("fields.notes")}
+                label={t('fields.notes')}
                 name="notes"
-                hint={t("hints.notes")}
+                hint={t('hints.notes')}
                 error={errors.notes}
               >
                 <Textarea
                   value={form.notes}
-                  onChange={(e) => set("notes", e.target.value)}
+                  onChange={(e) => set('notes', e.target.value)}
                   rows={3}
                 />
               </Field>
 
               <Field
-                label={t("fields.story")}
+                label={t('fields.story')}
                 name="story"
-                hint={t("hints.story")}
+                hint={t('hints.story')}
                 error={errors.story}
               >
                 <Textarea
                   value={form.story}
-                  onChange={(e) => set("story", e.target.value)}
-                  placeholder={t("placeholders.story")}
+                  onChange={(e) => set('story', e.target.value)}
+                  placeholder={t('placeholders.story')}
                   rows={4}
                 />
               </Field>
@@ -2500,43 +2246,37 @@ export function RecipeEditor({
 
             <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface/40 p-4">
               <legend className="px-1 text-sm font-medium text-foreground">
-                {t("handedDown.legend")}
+                {t('handedDown.legend')}
               </legend>
-              <p className="text-xs text-muted-foreground">
-                {t("handedDown.description")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('handedDown.description')}</p>
               <Field
-                label={t("handedDown.name")}
+                label={t('handedDown.name')}
                 name="handedDownFrom"
                 error={errors.handedDownFrom}
               >
                 <Input
                   value={form.handedDownFrom}
-                  onChange={(e) => set("handedDownFrom", e.target.value)}
-                  placeholder={t("placeholders.handedDownFrom")}
+                  onChange={(e) => set('handedDownFrom', e.target.value)}
+                  placeholder={t('placeholders.handedDownFrom')}
                 />
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field
-                  label={t("fields.originYear")}
-                  name="originYear"
-                  error={errors.originYear}
-                >
+                <Field label={t('fields.originYear')} name="originYear" error={errors.originYear}>
                   <Input
                     value={form.originYear}
-                    onChange={(e) => set("originYear", e.target.value)}
-                    placeholder={t("placeholders.originYear")}
+                    onChange={(e) => set('originYear', e.target.value)}
+                    placeholder={t('placeholders.originYear')}
                   />
                 </Field>
                 <Field
-                  label={t("fields.originPlace")}
+                  label={t('fields.originPlace')}
                   name="originPlace"
                   error={errors.originPlace}
                 >
                   <Input
                     value={form.originPlace}
-                    onChange={(e) => set("originPlace", e.target.value)}
-                    placeholder={t("placeholders.originPlace")}
+                    onChange={(e) => set('originPlace', e.target.value)}
+                    placeholder={t('placeholders.originPlace')}
                   />
                 </Field>
               </div>
@@ -2550,150 +2290,126 @@ export function RecipeEditor({
             className="flex h-fit scroll-mt-28 flex-col gap-5 rounded-xl border border-border bg-surface/50 p-5 lg:sticky"
           >
             <div className="grid grid-cols-2 gap-3">
-              <Field
-                label={t("fields.servings")}
-                name="servings"
-                error={errors.servings}
-              >
+              <Field label={t('fields.servings')} name="servings" error={errors.servings}>
                 <Input
                   value={form.servings}
-                  onChange={(e) => set("servings", e.target.value)}
+                  onChange={(e) => set('servings', e.target.value)}
                   inputMode="numeric"
                 />
               </Field>
               <Field
-                label={t("fields.servingsNoun")}
+                label={t('fields.servingsNoun')}
                 name="servingsNoun"
                 error={errors.servingsNoun}
               >
                 <Input
                   value={form.servingsNoun}
-                  onChange={(e) => set("servingsNoun", e.target.value)}
+                  onChange={(e) => set('servingsNoun', e.target.value)}
                 />
               </Field>
-              <Field
-                label={t("fields.prepMinutes")}
-                name="prepMinutes"
-                error={errors.prepMinutes}
-              >
+              <Field label={t('fields.prepMinutes')} name="prepMinutes" error={errors.prepMinutes}>
                 <Input
                   value={form.prepMinutes}
-                  onChange={(e) => set("prepMinutes", e.target.value)}
+                  onChange={(e) => set('prepMinutes', e.target.value)}
                   inputMode="numeric"
                 />
               </Field>
-              <Field
-                label={t("fields.cookMinutes")}
-                name="cookMinutes"
-                error={errors.cookMinutes}
-              >
+              <Field label={t('fields.cookMinutes')} name="cookMinutes" error={errors.cookMinutes}>
                 <Input
                   value={form.cookMinutes}
-                  onChange={(e) => set("cookMinutes", e.target.value)}
+                  onChange={(e) => set('cookMinutes', e.target.value)}
                   inputMode="numeric"
                 />
               </Field>
               <Field
-                label={t("fields.restMinutes")}
+                label={t('fields.restMinutes')}
                 name="restMinutes"
-                info={t("info.restMinutes")}
+                info={t('info.restMinutes')}
                 error={errors.restMinutes}
                 className="col-span-2"
               >
                 <Input
                   value={form.restMinutes}
-                  onChange={(e) => set("restMinutes", e.target.value)}
+                  onChange={(e) => set('restMinutes', e.target.value)}
                   inputMode="numeric"
                 />
               </Field>
             </div>
 
             <Field
-              label={t("fields.makeAheadNote")}
+              label={t('fields.makeAheadNote')}
               name="makeAheadNote"
-              info={t("info.makeAhead")}
+              info={t('info.makeAhead')}
               error={errors.makeAheadNote}
             >
               <Textarea
                 value={form.makeAheadNote}
-                onChange={(e) => set("makeAheadNote", e.target.value)}
-                placeholder={t("placeholders.makeAhead")}
+                onChange={(e) => set('makeAheadNote', e.target.value)}
+                placeholder={t('placeholders.makeAhead')}
                 rows={2}
               />
             </Field>
 
             <Field
-              label={t("fields.equipment")}
+              label={t('fields.equipment')}
               name="equipment"
-              hint={t("hints.equipment")}
+              hint={t('hints.equipment')}
               error={errors.equipment}
             >
               <Input
                 value={form.equipment}
-                onChange={(e) => set("equipment", e.target.value)}
-                placeholder={t("placeholders.equipment")}
+                onChange={(e) => set('equipment', e.target.value)}
+                placeholder={t('placeholders.equipment')}
               />
             </Field>
 
-            <Field
-              label={t("fields.difficulty")}
-              name="difficulty"
-              error={errors.difficulty}
-            >
+            <Field label={t('fields.difficulty')} name="difficulty" error={errors.difficulty}>
               <NativeSelect
                 value={form.difficulty}
-                onChange={(e) =>
-                  set("difficulty", e.target.value as typeof form.difficulty)
-                }
+                onChange={(e) => set('difficulty', e.target.value as typeof form.difficulty)}
               >
                 <option value="">—</option>
-                <option value="easy">{t("difficulty.easy")}</option>
-                <option value="medium">{t("difficulty.medium")}</option>
-                <option value="hard">{t("difficulty.hard")}</option>
+                <option value="easy">{t('difficulty.easy')}</option>
+                <option value="medium">{t('difficulty.medium')}</option>
+                <option value="hard">{t('difficulty.hard')}</option>
               </NativeSelect>
             </Field>
 
             <ClassificationField
-              label={t("fields.mealTypes")}
+              label={t('fields.mealTypes')}
               name="mealTypes"
               value={form.mealTypes}
               selected={mealTypeList}
               suggestions={SUGGESTED_TAGS_BY_CATEGORY.meal}
-              hint={t("hints.mealTypes")}
-              placeholder={t("placeholders.mealTypes")}
+              hint={t('hints.mealTypes')}
+              placeholder={t('placeholders.mealTypes')}
               error={errors.mealTypes}
-              onChange={(value) => set("mealTypes", value)}
-              onToggle={(name) =>
-                toggleClassification("mealTypes", mealTypeList, name)
-              }
+              onChange={(value) => set('mealTypes', value)}
+              onToggle={(name) => toggleClassification('mealTypes', mealTypeList, name)}
             />
 
             <ClassificationField
-              label={t("fields.cuisines")}
+              label={t('fields.cuisines')}
               name="cuisines"
               value={form.cuisines}
               selected={cuisineList}
               suggestions={SUGGESTED_TAGS_BY_CATEGORY.cuisine}
-              hint={t("hints.cuisines")}
-              placeholder={t("placeholders.cuisines")}
+              hint={t('hints.cuisines')}
+              placeholder={t('placeholders.cuisines')}
               error={errors.cuisines}
-              onChange={(value) => set("cuisines", value)}
-              onToggle={(name) =>
-                toggleClassification("cuisines", cuisineList, name)
-              }
+              onChange={(value) => set('cuisines', value)}
+              onToggle={(name) => toggleClassification('cuisines', cuisineList, name)}
               collapsible
-              expandLabel={t("moreCuisines")}
-              collapseLabel={t("fewerOptions")}
+              expandLabel={t('moreCuisines')}
+              collapseLabel={t('fewerOptions')}
             />
 
             <div className="h-px bg-border" />
 
             <fieldset className="flex flex-col gap-3">
               <legend className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                {t("dietaryLegend")}
-                <InfoHint label={t("dietaryLegend")}>
-                  {t("dietaryHint")}
-                </InfoHint>
+                {t('dietaryLegend')}
+                <InfoHint label={t('dietaryLegend')}>{t('dietaryHint')}</InfoHint>
               </legend>
               <div className="flex flex-wrap gap-2">
                 {dietaryTagsShown.map((tag) => {
@@ -2702,16 +2418,13 @@ export function RecipeEditor({
                     <label
                       key={tag}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                        'flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors',
                         checked
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted",
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:bg-muted',
                       )}
                     >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={() => toggleDietaryFlag(tag)}
-                      />
+                      <Checkbox checked={checked} onCheckedChange={() => toggleDietaryFlag(tag)} />
                       {DIETARY_TAG_LABELS[tag]}
                     </label>
                   );
@@ -2728,7 +2441,7 @@ export function RecipeEditor({
                 ) : (
                   <ChevronDown className="size-3.5" aria-hidden="true" />
                 )}
-                {showMoreDietary ? t("fewerOptions") : t("moreDietary")}
+                {showMoreDietary ? t('fewerOptions') : t('moreDietary')}
               </button>
             </fieldset>
 
@@ -2736,24 +2449,19 @@ export function RecipeEditor({
 
             <fieldset className="flex flex-col gap-3">
               <legend className="text-sm font-medium text-foreground">
-                {t("nutritionLegend")}
+                {t('nutritionLegend')}
                 <span className="ms-1 font-normal text-muted-foreground">
-                  {t("nutritionPerServing")}
+                  {t('nutritionPerServing')}
                 </span>
               </legend>
-              <p className="text-xs text-muted-foreground">
-                {t("nutritionHint")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('nutritionHint')}</p>
               <button
                 type="button"
                 onClick={estimateNutritionFromIngredients}
                 className="inline-flex items-center gap-1.5 self-start rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
               >
-                <Sparkles
-                  className="size-3.5 text-primary"
-                  aria-hidden="true"
-                />
-                {t("estimateFromIngredients")}
+                <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
+                {t('estimateFromIngredients')}
               </button>
               <div className="grid grid-cols-2 gap-3">
                 {NUTRITION_FIELDS.map((f) => (
@@ -2777,62 +2485,50 @@ export function RecipeEditor({
             <div className="h-px bg-border" />
 
             <ClassificationField
-              label={t("fields.tags")}
+              label={t('fields.tags')}
               name="tags"
               value={form.tags}
               selected={tagList}
               suggestions={SUGGESTED_TAGS_BY_CATEGORY.general}
-              hint={t("hints.tags")}
-              placeholder={t("placeholders.tags")}
+              hint={t('hints.tags')}
+              placeholder={t('placeholders.tags')}
               error={errors.tags}
-              onChange={(value) => set("tags", value)}
-              onToggle={(name) => toggleClassification("tags", tagList, name)}
+              onChange={(value) => set('tags', value)}
+              onToggle={(name) => toggleClassification('tags', tagList, name)}
             />
 
             <ImageUploadField
-              label={t("fields.coverImageUrl")}
-              hint={t("hints.coverImage")}
+              label={t('fields.coverImageUrl')}
+              hint={t('hints.coverImage')}
               value={form.coverImageUrl}
-              onChange={(url) => set("coverImageUrl", url)}
+              onChange={(url) => set('coverImageUrl', url)}
               altText={form.coverImageAlt}
-              onAltTextChange={(alt) => set("coverImageAlt", alt)}
+              onAltTextChange={(alt) => set('coverImageAlt', alt)}
             />
 
             <div className="h-px bg-border" />
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-foreground">
-                {t("visibilityStatus")}
-              </span>
+              <span className="text-sm font-medium text-foreground">{t('visibilityStatus')}</span>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    aria-label={t("visibilityAria", {
+                    aria-label={t('visibilityAria', {
                       visibility: t(`visibility.${form.visibility}`),
                       status:
-                        form.status === "published"
-                          ? t("status.published")
-                          : t("status.draft"),
+                        form.status === 'published' ? t('status.published') : t('status.draft'),
                     })}
-                    className={cn(
-                      selectClass,
-                      "flex items-center justify-between gap-2 text-left",
-                    )}
+                    className={cn(selectClass, 'flex items-center justify-between gap-2 text-left')}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <VisibilityIcon
                         className="size-4 shrink-0 text-muted-foreground"
                         aria-hidden="true"
                       />
-                      <span className="truncate">
-                        {t(`visibility.${form.visibility}`)}
-                      </span>
+                      <span className="truncate">{t(`visibility.${form.visibility}`)}</span>
                       <span className="shrink-0 text-muted-foreground">
-                        ·{" "}
-                        {form.status === "published"
-                          ? t("status.published")
-                          : t("status.draft")}
+                        · {form.status === 'published' ? t('status.published') : t('status.draft')}
                       </span>
                     </span>
                     <ChevronDown
@@ -2842,42 +2538,27 @@ export function RecipeEditor({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80 space-y-4">
-                  <Field
-                    label={t("fields.visibility")}
-                    name="visibility"
-                    error={errors.visibility}
-                  >
+                  <Field label={t('fields.visibility')} name="visibility" error={errors.visibility}>
                     <NativeSelect
                       value={form.visibility}
-                      onChange={(e) =>
-                        set(
-                          "visibility",
-                          e.target.value as typeof form.visibility,
-                        )
-                      }
+                      onChange={(e) => set('visibility', e.target.value as typeof form.visibility)}
                     >
-                      <option value="private">{t("visibility.private")}</option>
+                      <option value="private">{t('visibility.private')}</option>
                       <option value="group" disabled={groups.length === 0}>
-                        {t("visibility.group")}
+                        {t('visibility.group')}
                       </option>
-                      <option value="unlisted">
-                        {t("visibility.unlisted")}
-                      </option>
-                      <option value="public">{t("visibility.public")}</option>
+                      <option value="unlisted">{t('visibility.unlisted')}</option>
+                      <option value="public">{t('visibility.public')}</option>
                     </NativeSelect>
                   </Field>
 
-                  {form.visibility === "group" && groups.length > 0 && (
-                    <Field
-                      label={t("fields.groupId")}
-                      name="groupId"
-                      error={errors.groupId}
-                    >
+                  {form.visibility === 'group' && groups.length > 0 && (
+                    <Field label={t('fields.groupId')} name="groupId" error={errors.groupId}>
                       <NativeSelect
                         value={form.groupId}
-                        onChange={(e) => set("groupId", e.target.value)}
+                        onChange={(e) => set('groupId', e.target.value)}
                       >
-                        <option value="">{t("chooseGroup")}</option>
+                        <option value="">{t('chooseGroup')}</option>
                         {groups.map((g) => (
                           <option key={g.id} value={g.id}>
                             {g.name}
@@ -2887,19 +2568,13 @@ export function RecipeEditor({
                     </Field>
                   )}
 
-                  <Field
-                    label={t("fields.status")}
-                    name="status"
-                    error={errors.status}
-                  >
+                  <Field label={t('fields.status')} name="status" error={errors.status}>
                     <NativeSelect
                       value={form.status}
-                      onChange={(e) =>
-                        set("status", e.target.value as typeof form.status)
-                      }
+                      onChange={(e) => set('status', e.target.value as typeof form.status)}
                     >
-                      <option value="published">{t("status.published")}</option>
-                      <option value="draft">{t("status.draft")}</option>
+                      <option value="published">{t('status.published')}</option>
+                      <option value="draft">{t('status.draft')}</option>
                     </NativeSelect>
                   </Field>
                 </PopoverContent>
@@ -2922,10 +2597,8 @@ export function RecipeEditor({
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span
               className={cn(
-                "truncate text-sm font-semibold leading-tight",
-                trimmedTitle === ""
-                  ? "text-muted-foreground"
-                  : "text-foreground",
+                'truncate text-sm font-semibold leading-tight',
+                trimmedTitle === '' ? 'text-muted-foreground' : 'text-foreground',
               )}
             >
               {barTitle}
@@ -2935,10 +2608,7 @@ export function RecipeEditor({
                 {summaryVitals.map((vital) => {
                   const Icon = vital.icon;
                   return (
-                    <span
-                      key={vital.key}
-                      className="inline-flex items-center gap-1 tabular-nums"
-                    >
+                    <span key={vital.key} className="inline-flex items-center gap-1 tabular-nums">
                       <Icon
                         className="size-3.5 shrink-0 text-muted-foreground/70"
                         aria-hidden="true"
@@ -2957,15 +2627,11 @@ export function RecipeEditor({
               className="flex-1 sm:flex-none"
               onClick={() => router.back()}
             >
-              {t("cancel")}
+              {t('cancel')}
             </Button>
-            <Button
-              type="submit"
-              className="flex-1 sm:flex-none"
-              disabled={pending}
-            >
+            <Button type="submit" className="flex-1 sm:flex-none" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : <Save />}
-              {mode === "edit" ? t("saveChanges") : t("saveRecipe")}
+              {mode === 'edit' ? t('saveChanges') : t('saveRecipe')}
             </Button>
           </div>
         </div>
@@ -2989,7 +2655,7 @@ function RowControls({
   isFirst: boolean;
   isLast: boolean;
 }) {
-  const t = useTranslations("recipeEditor");
+  const t = useTranslations('recipeEditor');
   return (
     <div className="flex shrink-0 items-center">
       <Button
@@ -2998,7 +2664,7 @@ function RowControls({
         variant="ghost"
         className="size-8 text-muted-foreground disabled:opacity-30"
         disabled={isFirst}
-        aria-label={t("moveUpNamed", { object: objectLabel })}
+        aria-label={t('moveUpNamed', { object: objectLabel })}
         onClick={onUp}
       >
         <ChevronUp />
@@ -3009,7 +2675,7 @@ function RowControls({
         variant="ghost"
         className="size-8 text-muted-foreground disabled:opacity-30"
         disabled={isLast}
-        aria-label={t("moveDownNamed", { object: objectLabel })}
+        aria-label={t('moveDownNamed', { object: objectLabel })}
         onClick={onDown}
       >
         <ChevronDown />
@@ -3018,7 +2684,7 @@ function RowControls({
         type="button"
         size="icon"
         variant="ghost"
-        aria-label={t("removeNamed", { object: objectLabel })}
+        aria-label={t('removeNamed', { object: objectLabel })}
         className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
       >
@@ -3033,75 +2699,75 @@ function RowControls({
  * catalogs. Anything outside this set falls back to {@link prettifyFieldKey}.
  */
 const LABELLED_FIELDS = new Set([
-  "title",
-  "description",
-  "servings",
-  "servingsNoun",
-  "prepMinutes",
-  "cookMinutes",
-  "restMinutes",
-  "makeAheadNote",
-  "equipment",
-  "difficulty",
-  "mealTypes",
-  "cuisines",
-  "notes",
-  "story",
-  "handedDownFrom",
-  "originYear",
-  "originPlace",
-  "calories",
-  "proteinGrams",
-  "carbsGrams",
-  "fatGrams",
-  "saturatedFatGrams",
-  "sodiumMg",
-  "sugarGrams",
-  "fiberGrams",
-  "tags",
-  "visibility",
-  "groupId",
-  "status",
-  "ingredients",
-  "steps",
-  "dietaryFlags",
-  "coverImageUrl",
+  'title',
+  'description',
+  'servings',
+  'servingsNoun',
+  'prepMinutes',
+  'cookMinutes',
+  'restMinutes',
+  'makeAheadNote',
+  'equipment',
+  'difficulty',
+  'mealTypes',
+  'cuisines',
+  'notes',
+  'story',
+  'handedDownFrom',
+  'originYear',
+  'originPlace',
+  'calories',
+  'proteinGrams',
+  'carbsGrams',
+  'fatGrams',
+  'saturatedFatGrams',
+  'sodiumMg',
+  'sugarGrams',
+  'fiberGrams',
+  'tags',
+  'visibility',
+  'groupId',
+  'status',
+  'ingredients',
+  'steps',
+  'dietaryFlags',
+  'coverImageUrl',
 ]);
 
 // Fields that render a control with a matching `recipe-field-<key>` id, so the
 // error-summary entry can be an anchor that focuses the offending control.
 const ANCHORABLE_FIELDS = new Set([
-  "title",
-  "description",
-  "servings",
-  "servingsNoun",
-  "prepMinutes",
-  "cookMinutes",
-  "difficulty",
-  "mealTypes",
-  "cuisines",
-  "notes",
-  "story",
-  "handedDownFrom",
-  "originYear",
-  "originPlace",
-  "calories",
-  "proteinGrams",
-  "carbsGrams",
-  "fatGrams",
-  "saturatedFatGrams",
-  "sodiumMg",
-  "sugarGrams",
-  "fiberGrams",
-  "tags",
-  "visibility",
-  "groupId",
-  "status",
+  'title',
+  'description',
+  'servings',
+  'servingsNoun',
+  'prepMinutes',
+  'cookMinutes',
+  'difficulty',
+  'mealTypes',
+  'cuisines',
+  'notes',
+  'story',
+  'handedDownFrom',
+  'originYear',
+  'originPlace',
+  'calories',
+  'proteinGrams',
+  'carbsGrams',
+  'fatGrams',
+  'saturatedFatGrams',
+  'sodiumMg',
+  'sugarGrams',
+  'fiberGrams',
+  'tags',
+  'visibility',
+  'groupId',
+  'status',
 ]);
 
 function prettifyFieldKey(key: string) {
   return key
-    .replace(/([A-Z])/g, " $1")
+    .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (c) => c.toUpperCase())
     .trim();
 }
@@ -3122,7 +2788,7 @@ function ClassificationField({
   collapseLabel,
 }: {
   label: string;
-  name: "mealTypes" | "cuisines" | "tags";
+  name: 'mealTypes' | 'cuisines' | 'tags';
   value: string;
   selected: string[];
   suggestions: CanonicalTag[];
@@ -3135,10 +2801,9 @@ function ClassificationField({
   expandLabel?: string;
   collapseLabel?: string;
 }) {
-  const tNames = useTranslations("classificationNames");
+  const tNames = useTranslations('classificationNames');
   const [expanded, setExpanded] = React.useState(false);
-  const visibleSuggestions =
-    collapsible && !expanded ? suggestions.slice(0, 16) : suggestions;
+  const visibleSuggestions = collapsible && !expanded ? suggestions.slice(0, 16) : suggestions;
   return (
     <div className="flex flex-col gap-2">
       <Field label={label} name={name} hint={hint} error={error}>
@@ -3160,37 +2825,32 @@ function ClassificationField({
               onClick={() => onToggle(suggestion.name)}
               aria-pressed={active}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
                 active
-                  ? "bg-primary/12 border-primary/30 text-[color:var(--badge-ink-primary)]"
-                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? 'bg-primary/12 border-primary/30 text-[color:var(--badge-ink-primary)]'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              {tNames.has(suggestion.slug)
-                ? tNames(suggestion.slug)
-                : suggestion.name}
+              {tNames.has(suggestion.slug) ? tNames(suggestion.slug) : suggestion.name}
             </button>
           );
         })}
       </div>
-      {collapsible &&
-        suggestions.length > 16 &&
-        expandLabel &&
-        collapseLabel && (
-          <button
-            type="button"
-            onClick={() => setExpanded((value) => !value)}
-            aria-expanded={expanded}
-            className="inline-flex items-center gap-1 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {expanded ? (
-              <ChevronUp className="size-3.5" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="size-3.5" aria-hidden="true" />
-            )}
-            {expanded ? collapseLabel : expandLabel}
-          </button>
-        )}
+      {collapsible && suggestions.length > 16 && expandLabel && collapseLabel && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          className="inline-flex items-center gap-1 self-start text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {expanded ? (
+            <ChevronUp className="size-3.5" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="size-3.5" aria-hidden="true" />
+          )}
+          {expanded ? collapseLabel : expandLabel}
+        </button>
+      )}
     </div>
   );
 }
@@ -3218,8 +2878,7 @@ function Field({
   const child = React.isValidElement(children)
     ? (children as React.ReactElement<Record<string, unknown>>)
     : null;
-  const existingId =
-    child && typeof child.props.id === "string" ? child.props.id : undefined;
+  const existingId = child && typeof child.props.id === 'string' ? child.props.id : undefined;
   // Named fields get a deterministic id so the error summary can link to them.
   const controlId = existingId ?? (name ? `recipe-field-${name}` : reactId);
   const hasError = Boolean(error?.length);
@@ -3227,8 +2886,8 @@ function Field({
   const errorId = `${controlId}-error`;
   const describedBy = hasError ? errorId : hint ? hintId : undefined;
   const existingDescribedBy =
-    child && typeof child.props["aria-describedby"] === "string"
-      ? child.props["aria-describedby"]
+    child && typeof child.props['aria-describedby'] === 'string'
+      ? child.props['aria-describedby']
       : undefined;
 
   // Thread the generated id + validation state onto the control so the label
@@ -3236,16 +2895,15 @@ function Field({
   const control = child
     ? React.cloneElement(child, {
         id: controlId,
-        "aria-required": required ? true : undefined,
-        "aria-invalid": hasError ? true : undefined,
-        "aria-describedby":
-          [existingDescribedBy, describedBy].filter(Boolean).join(" ") ||
-          undefined,
+        'aria-required': required ? true : undefined,
+        'aria-invalid': hasError ? true : undefined,
+        'aria-describedby':
+          [existingDescribedBy, describedBy].filter(Boolean).join(' ') || undefined,
       })
     : children;
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <div className="flex items-center gap-1.5">
         <Label htmlFor={controlId} className="flex items-center gap-1">
           {label}
@@ -3264,7 +2922,7 @@ function Field({
         </p>
       )}
       {hasError ? (
-        <p id={errorId} className={cn("text-xs text-destructive")}>
+        <p id={errorId} className={cn('text-xs text-destructive')}>
           {error![0]}
         </p>
       ) : null}

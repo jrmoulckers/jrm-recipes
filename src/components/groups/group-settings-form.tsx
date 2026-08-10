@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { friendlyError } from "~/lib/error-copy";
+import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { friendlyError } from '~/lib/error-copy';
 
-import { updateGroupAction } from "~/server/groups/actions";
-import { type GroupInput } from "~/server/groups/validation";
-import { Button } from "~/components/ui/button";
-import { ImageUploadField } from "~/components/ui/image-upload";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
+import { updateGroupAction } from '~/server/groups/actions';
+import { type GroupInput } from '~/server/groups/validation';
+import { Button } from '~/components/ui/button';
+import { ImageUploadField } from '~/components/ui/image-upload';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
 
 export function GroupSettingsForm({
   slug,
@@ -26,15 +26,13 @@ export function GroupSettingsForm({
   };
 }) {
   const router = useRouter();
-  const t = useTranslations("groups.settings");
+  const t = useTranslations('groups.settings');
   const nameId = React.useId();
   const descriptionId = React.useId();
   const [name, setName] = React.useState(group.name);
-  const [description, setDescription] = React.useState(group.description ?? "");
-  const [avatarUrl, setAvatarUrl] = React.useState(group.avatarUrl ?? "");
-  const [fieldErrors, setFieldErrors] = React.useState<
-    Record<string, string[]>
-  >({});
+  const [description, setDescription] = React.useState(group.description ?? '');
+  const [avatarUrl, setAvatarUrl] = React.useState(group.avatarUrl ?? '');
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isPending, startTransition] = React.useTransition();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -50,7 +48,7 @@ export function GroupSettingsForm({
           return;
         }
 
-        toast.success(t("toast.saved"));
+        toast.success(t('toast.saved'));
         router.refresh();
       });
     });
@@ -62,7 +60,7 @@ export function GroupSettingsForm({
       className="grid gap-5 rounded-2xl border border-border bg-card p-5 shadow-token"
     >
       <div className="grid gap-2">
-        <Label htmlFor={nameId}>{t("fields.name")}</Label>
+        <Label htmlFor={nameId}>{t('fields.name')}</Label>
         <Input
           id={nameId}
           value={name}
@@ -78,15 +76,13 @@ export function GroupSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={descriptionId}>{t("fields.description")}</Label>
+        <Label htmlFor={descriptionId}>{t('fields.description')}</Label>
         <Textarea
           id={descriptionId}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           aria-invalid={Boolean(fieldErrors.description)}
-          aria-describedby={
-            fieldErrors.description ? `${descriptionId}-error` : undefined
-          }
+          aria-describedby={fieldErrors.description ? `${descriptionId}-error` : undefined}
         />
         {fieldErrors.description?.[0] ? (
           <p id={`${descriptionId}-error`} className="text-sm text-destructive">
@@ -100,7 +96,7 @@ export function GroupSettingsForm({
             (`requireManager`); this form is simply not reachable for anyone
             else, and rendering the picker changes nothing about that. */}
         <ImageUploadField
-          label={t("fields.avatarUrl")}
+          label={t('fields.avatarUrl')}
           value={avatarUrl}
           onChange={(url) => setAvatarUrl(url)}
           folder="heirloom/groups"
@@ -113,7 +109,7 @@ export function GroupSettingsForm({
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isPending}>
-          {isPending ? t("actions.saving") : t("actions.save")}
+          {isPending ? t('actions.saving') : t('actions.save')}
         </Button>
       </div>
     </form>

@@ -224,15 +224,14 @@ pnpm check:bundle
 
 ### If `pnpm format:check` reports hundreds of unformatted files
 
-Your working tree predates [`.gitattributes`](.gitattributes) and still has CRLF
-line endings. Prettier expects LF, so it flags nearly every tracked file at once —
-none of which actually have a formatting problem.
+Your working tree predates [`.gitattributes`](.gitattributes) and still has CRLF line endings.
+Prettier expects LF, so it flags nearly every tracked file at once — none of which actually have
+a formatting problem.
 
-Git will not tell you: it converts line endings on read, so `git status` and
-`git diff` stay clean whether your tree is LF or CRLF. Adding `.gitattributes`
-does not rewrite files already on disk, and neither `git add --renormalize .` nor
-`git checkout-index -f -a` repairs it — the first only updates the index (already
-LF), and the second is skipped by git's stat cache.
+Git will not tell you: it converts line endings on read, so `git status` and `git diff` stay
+clean whether your tree is LF or CRLF. Adding `.gitattributes` does not rewrite files already on
+disk, and neither `git add --renormalize .` nor `git checkout-index -f -a` repairs it — the
+first only updates the index (already LF), and the second is skipped by git's stat cache.
 
 With a **clean** tree, force a real re-checkout:
 
@@ -242,8 +241,8 @@ git rm -r --cached . -q
 git reset --hard
 ```
 
-`pnpm format:check` should then pass. Clones created after `.gitattributes` landed
-are unaffected.
+`pnpm format:check` should then pass. Clones created after `.gitattributes` landed are
+unaffected.
 
 On **every** pull request — whatever branch it is based on — and on pushes to
 `main`, GitHub Actions runs:

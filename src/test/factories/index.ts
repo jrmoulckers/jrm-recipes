@@ -15,18 +15,8 @@
  * Call {@link resetFactories} in a `beforeEach` to make sequenced ids stable
  * across tests.
  */
-import type {
-  Recipe,
-  RecipeIngredient,
-  RecipeStep,
-  Tag,
-  User,
-} from "~/server/db/schema";
-import type {
-  IngredientInput,
-  RecipeInput,
-  StepInput,
-} from "~/server/recipes/validation";
+import type { Recipe, RecipeIngredient, RecipeStep, Tag, User } from '~/server/db/schema';
+import type { IngredientInput, RecipeInput, StepInput } from '~/server/recipes/validation';
 
 let counter = 0;
 
@@ -45,17 +35,17 @@ export function resetFactories(): void {
   counter = 0;
 }
 
-const EPOCH = new Date("2024-01-01T00:00:00.000Z");
+const EPOCH = new Date('2024-01-01T00:00:00.000Z');
 
 /** A valid {@link User} row. Defaults to the stable id `user_1`. */
 export function makeUser(overrides: Partial<User> = {}): User {
   return {
-    id: "user_1",
+    id: 'user_1',
     clerkId: null,
-    email: "cook@example.com",
-    name: "Test Cook",
-    handle: "test-cook",
-    slug: "test-cook",
+    email: 'cook@example.com',
+    name: 'Test Cook',
+    handle: 'test-cook',
+    slug: 'test-cook',
     avatarUrl: null,
     avatarUserManaged: false,
     weeklyDigestOptIn: false,
@@ -68,13 +58,11 @@ export function makeUser(overrides: Partial<User> = {}): User {
 }
 
 /** A valid recipe ingredient *input* (parses through `ingredientInput`). */
-export function makeIngredientInput(
-  overrides: Partial<IngredientInput> = {},
-): IngredientInput {
+export function makeIngredientInput(overrides: Partial<IngredientInput> = {}): IngredientInput {
   return {
-    item: "Flour",
+    item: 'Flour',
     quantity: 2,
-    unit: "cups",
+    unit: 'cups',
     optional: false,
     ...overrides,
   } satisfies IngredientInput;
@@ -83,7 +71,7 @@ export function makeIngredientInput(
 /** A valid recipe step *input* (parses through `stepInput`). */
 export function makeStepInput(overrides: Partial<StepInput> = {}): StepInput {
   return {
-    instruction: "Mix the dry ingredients.",
+    instruction: 'Mix the dry ingredients.',
     techniques: [],
     ...overrides,
   } satisfies StepInput;
@@ -94,13 +82,11 @@ export function makeStepInput(overrides: Partial<StepInput> = {}): StepInput {
  * it parses cleanly through `recipeInput`. pass overrides (e.g. `ingredients`,
  * `visibility`) for richer cases.
  */
-export function makeRecipeInput(
-  overrides: Partial<RecipeInput> = {},
-): RecipeInput {
+export function makeRecipeInput(overrides: Partial<RecipeInput> = {}): RecipeInput {
   return {
-    title: "Apple Pie",
-    visibility: "private",
-    status: "draft",
+    title: 'Apple Pie',
+    visibility: 'private',
+    status: 'draft',
     ingredients: [],
     steps: [],
     tags: [],
@@ -115,18 +101,18 @@ export function makeRecipeInput(
 /** A valid persisted {@link Recipe} row. Defaults to the stable id `recipe_1`. */
 export function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
   return {
-    id: "recipe_1",
-    slug: "apple-pie",
-    title: "Apple Pie",
+    id: 'recipe_1',
+    slug: 'apple-pie',
+    title: 'Apple Pie',
     description: null,
     coverImageUrl: null,
     coverImageAlt: null,
-    authorId: "user_1",
+    authorId: 'user_1',
     groupId: null,
-    visibility: "public",
-    status: "published",
+    visibility: 'public',
+    status: 'published',
     servings: 4,
-    servingsNoun: "servings",
+    servingsNoun: 'servings',
     prepMinutes: null,
     cookMinutes: null,
     totalMinutes: null,
@@ -169,18 +155,16 @@ export function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
 }
 
 /** A valid persisted {@link RecipeIngredient} row. */
-export function makeRecipeIngredient(
-  overrides: Partial<RecipeIngredient> = {},
-): RecipeIngredient {
+export function makeRecipeIngredient(overrides: Partial<RecipeIngredient> = {}): RecipeIngredient {
   return {
-    id: "ing_1",
-    recipeId: "recipe_1",
+    id: 'ing_1',
+    recipeId: 'recipe_1',
     position: 0,
     section: null,
     quantity: 2,
     quantityMax: null,
-    unit: "cups",
-    item: "Flour",
+    unit: 'cups',
+    item: 'Flour',
     foodId: null,
     note: null,
     prep: null,
@@ -191,16 +175,14 @@ export function makeRecipeIngredient(
 }
 
 /** A valid persisted {@link RecipeStep} row. */
-export function makeRecipeStep(
-  overrides: Partial<RecipeStep> = {},
-): RecipeStep {
+export function makeRecipeStep(overrides: Partial<RecipeStep> = {}): RecipeStep {
   return {
-    id: "step_1",
-    recipeId: "recipe_1",
+    id: 'step_1',
+    recipeId: 'recipe_1',
     position: 0,
     section: null,
     title: null,
-    instruction: "Mix the dry ingredients.",
+    instruction: 'Mix the dry ingredients.',
     imageUrl: null,
     imageAlt: null,
     videoUrl: null,
@@ -215,10 +197,10 @@ export function makeRecipeStep(
 /** A valid {@link Tag} row. */
 export function makeTag(overrides: Partial<Tag> = {}): Tag {
   return {
-    id: "tag_1",
-    slug: "dessert",
-    name: "Dessert",
-    category: "general",
+    id: 'tag_1',
+    slug: 'dessert',
+    name: 'Dessert',
+    category: 'general',
     ...overrides,
   } satisfies Tag;
 }
@@ -236,25 +218,23 @@ export type FullRecipeFixture = Recipe & {
 };
 
 /** A recipe with children for read-path tests (recipe + ingredients + steps + tags). */
-export function makeFullRecipe(
-  overrides: Partial<FullRecipeFixture> = {},
-): FullRecipeFixture {
+export function makeFullRecipe(overrides: Partial<FullRecipeFixture> = {}): FullRecipeFixture {
   const { ingredients, steps, tags, ...recipe } = overrides;
   return {
     ...makeRecipe(recipe),
     ingredients: ingredients ?? [
-      makeRecipeIngredient({ id: "ing_1", position: 0, item: "Flour" }),
+      makeRecipeIngredient({ id: 'ing_1', position: 0, item: 'Flour' }),
       makeRecipeIngredient({
-        id: "ing_2",
+        id: 'ing_2',
         position: 1,
-        item: "Sugar",
-        unit: "cup",
+        item: 'Sugar',
+        unit: 'cup',
         quantity: 1,
       }),
     ],
     steps: steps ?? [
-      makeRecipeStep({ id: "step_1", position: 0, instruction: "Mix." }),
-      makeRecipeStep({ id: "step_2", position: 1, instruction: "Bake." }),
+      makeRecipeStep({ id: 'step_1', position: 0, instruction: 'Mix.' }),
+      makeRecipeStep({ id: 'step_2', position: 1, instruction: 'Bake.' }),
     ],
     tags: tags ?? [{ tag: makeTag() }],
   } satisfies FullRecipeFixture;

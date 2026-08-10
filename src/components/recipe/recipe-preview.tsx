@@ -8,20 +8,16 @@ import {
   Timer,
   Users,
   Wrench,
-} from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+} from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
-import { formatMinutes } from "~/lib/utils";
-import { formatQuantity } from "~/lib/units";
-import { Badge } from "~/components/ui/badge";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { RecipeClassificationBadges } from "./recipe-classification-badges";
-import { canonicalizeTag } from "~/lib/tag-taxonomy";
-import type {
-  IngredientInput,
-  RecipeInput,
-  StepInput,
-} from "~/server/recipes/validation";
+import { formatMinutes } from '~/lib/utils';
+import { formatQuantity } from '~/lib/units';
+import { Badge } from '~/components/ui/badge';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { RecipeClassificationBadges } from './recipe-classification-badges';
+import { canonicalizeTag } from '~/lib/tag-taxonomy';
+import type { IngredientInput, RecipeInput, StepInput } from '~/server/recipes/validation';
 
 /** Group ingredients under their section, preserving first-appearance order.
  *  mirrors how the live recipe page renders grouped ingredients. */
@@ -29,8 +25,7 @@ function groupBySection(items: IngredientInput[]): {
   section: string | undefined;
   items: IngredientInput[];
 }[] {
-  const groups: { section: string | undefined; items: IngredientInput[] }[] =
-    [];
+  const groups: { section: string | undefined; items: IngredientInput[] }[] = [];
   for (const item of items) {
     const section = item.section?.trim() ? item.section.trim() : undefined;
     const last = groups[groups.length - 1];
@@ -64,12 +59,12 @@ export function RecipePreview({
   fallbackKey,
 }: {
   recipe: RecipeInput;
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   fallbackKey: string;
 }) {
   const locale = useLocale();
-  const t = useTranslations("recipePreview");
-  const td = useTranslations("recipeDetail");
+  const t = useTranslations('recipePreview');
+  const td = useTranslations('recipeDetail');
 
   const prep = recipe.prepMinutes ?? null;
   const cook = recipe.cookMinutes ?? null;
@@ -81,17 +76,17 @@ export function RecipePreview({
   if (prep != null)
     meta.push({
       icon: Timer,
-      label: t("prep", { time: formatMinutes(prep) }),
+      label: t('prep', { time: formatMinutes(prep) }),
     });
   if (rest != null && rest > 0)
     meta.push({
       icon: Hourglass,
-      label: t("rest", { time: formatMinutes(rest) }),
+      label: t('rest', { time: formatMinutes(rest) }),
     });
   if (recipe.servings != null)
     meta.push({
       icon: Users,
-      label: `${recipe.servings} ${recipe.servingsNoun ?? td("servingsNoun")}`,
+      label: `${recipe.servings} ${recipe.servingsNoun ?? td('servingsNoun')}`,
     });
   if (recipe.difficulty)
     meta.push({
@@ -103,23 +98,17 @@ export function RecipePreview({
   const dietary = recipe.dietaryFlags ?? [];
   const tags = recipe.tags ?? [];
   const cuisines =
-    recipe.cuisines.length > 0
-      ? recipe.cuisines
-      : recipe.cuisine
-        ? [recipe.cuisine]
-        : [];
+    recipe.cuisines.length > 0 ? recipe.cuisines : recipe.cuisine ? [recipe.cuisine] : [];
   const classifications = [
-    ...recipe.mealTypes.map((name) => canonicalizeTag(name, "meal")),
-    ...cuisines.map((name) => canonicalizeTag(name, "cuisine")),
-    ...tags.map((name) => canonicalizeTag(name, "general")),
+    ...recipe.mealTypes.map((name) => canonicalizeTag(name, 'meal')),
+    ...cuisines.map((name) => canonicalizeTag(name, 'cuisine')),
+    ...tags.map((name) => canonicalizeTag(name, 'general')),
   ];
   const equipment = recipe.equipment ?? [];
 
   const origin = [
-    recipe.handedDownFrom
-      ? t("handedDownFrom", { name: recipe.handedDownFrom })
-      : null,
-    recipe.originYear ? t("since", { year: recipe.originYear }) : null,
+    recipe.handedDownFrom ? t('handedDownFrom', { name: recipe.handedDownFrom }) : null,
+    recipe.originYear ? t('since', { year: recipe.originYear }) : null,
     recipe.originPlace,
   ].filter(Boolean);
 
@@ -132,21 +121,21 @@ export function RecipePreview({
       parts.push(q);
     }
     if (ing.unit) parts.push(ing.unit);
-    return parts.join(" ");
+    return parts.join(' ');
   }
 
   return (
     <div className="flex flex-col gap-8">
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Sparkles className="size-4 text-primary" aria-hidden="true" />
-        {t("notice")}
+        {t('notice')}
       </p>
 
       {/* Hero. Decorative unless the author described it: the cover sits
           directly above the recipe title. */}
       <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden rounded-2xl border border-border">
         <RecipeImage
-          alt={recipe.coverImageAlt ?? ""}
+          alt={recipe.coverImageAlt ?? ''}
           src={recipe.coverImageUrl}
           fallbackKey={fallbackKey}
           fallbackContext={{
@@ -162,19 +151,15 @@ export function RecipePreview({
       </div>
 
       <header className="flex flex-col gap-4">
-        {(recipe.visibility !== "public" ||
-          classifications.length > 0 ||
-          dietary.length > 0) && (
+        {(recipe.visibility !== 'public' || classifications.length > 0 || dietary.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
-            {recipe.visibility !== "public" && (
+            {recipe.visibility !== 'public' && (
               <Badge variant="muted" className="capitalize">
                 {recipe.visibility}
               </Badge>
             )}
             <RecipeClassificationBadges
-              items={classifications.filter(
-                (item) => item.category !== "general",
-              )}
+              items={classifications.filter((item) => item.category !== 'general')}
               dietary={dietary}
               linked={false}
             />
@@ -184,31 +169,26 @@ export function RecipePreview({
         <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
           {recipe.title || (
             <span className="text-muted-foreground">
-              {mode === "edit" ? t("untitled") : t("titlePlaceholder")}
+              {mode === 'edit' ? t('untitled') : t('titlePlaceholder')}
             </span>
           )}
         </h1>
 
         {recipe.description && (
-          <p className="max-w-2xl text-lg text-muted-foreground">
-            {recipe.description}
-          </p>
+          <p className="max-w-2xl text-lg text-muted-foreground">{recipe.description}</p>
         )}
 
         {origin.length > 0 && (
           <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-secondary-foreground">
             <Sparkles className="size-4 text-secondary" aria-hidden="true" />
-            {origin.join(" \u00b7 ")}
+            {origin.join(' \u00b7 ')}
           </p>
         )}
 
         {meta.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {meta.map((m, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1.5 capitalize"
-              >
+              <span key={i} className="inline-flex items-center gap-1.5 capitalize">
                 <m.icon className="size-4" /> {m.label}
               </span>
             ))}
@@ -216,7 +196,7 @@ export function RecipePreview({
         )}
 
         <RecipeClassificationBadges
-          items={classifications.filter((item) => item.category === "general")}
+          items={classifications.filter((item) => item.category === 'general')}
           linked={false}
         />
       </header>
@@ -225,7 +205,7 @@ export function RecipePreview({
         {/* Ingredients */}
         <div className="flex flex-col gap-4">
           <h2 className="font-display text-2xl font-bold tracking-tight">
-            {td("ingredients.heading")}
+            {td('ingredients.heading')}
           </h2>
           {ingredientGroups.length > 0 ? (
             <div className="flex flex-col gap-5">
@@ -252,16 +232,11 @@ export function RecipePreview({
                           <span className="flex-1">
                             {ing.item}
                             {ing.prep && (
-                              <span className="text-muted-foreground">
-                                , {ing.prep}
-                              </span>
+                              <span className="text-muted-foreground">, {ing.prep}</span>
                             )}
                             {ing.optional && (
-                              <Badge
-                                variant="muted"
-                                className="ml-2 align-middle"
-                              >
-                                {t("optional")}
+                              <Badge variant="muted" className="ml-2 align-middle">
+                                {t('optional')}
                               </Badge>
                             )}
                             {ing.note && (
@@ -278,14 +253,14 @@ export function RecipePreview({
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">{t("noIngredients")}</p>
+            <p className="text-muted-foreground">{t('noIngredients')}</p>
           )}
 
           {recipe.makeAheadNote && (
             <div className="mt-2 rounded-xl border border-border bg-muted/40 p-4">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
                 <Hourglass className="size-4 text-primary" />
-                {td("ingredients.makeAhead")}
+                {td('ingredients.makeAhead')}
               </h3>
               <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                 {recipe.makeAheadNote}
@@ -297,7 +272,7 @@ export function RecipePreview({
             <div className="mt-2">
               <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
                 <Wrench className="size-4 text-primary" />
-                {td("ingredients.equipment")}
+                {td('ingredients.equipment')}
               </h3>
               <ul className="flex flex-col gap-1.5 text-sm">
                 {equipment.map((tool) => (
@@ -316,9 +291,7 @@ export function RecipePreview({
 
         {/* Method */}
         <div className="flex flex-col gap-6">
-          <h2 className="font-display text-2xl font-bold tracking-tight">
-            {td("method.heading")}
-          </h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">{td('method.heading')}</h2>
           {recipe.steps.length > 0 ? (
             <ol className="flex flex-col gap-5">
               {recipe.steps.map((step: StepInput, i) => (
@@ -337,9 +310,7 @@ export function RecipePreview({
                         {step.title}
                       </h3>
                     )}
-                    <p className="text-[1.02rem] leading-relaxed">
-                      {step.instruction}
-                    </p>
+                    <p className="text-[1.02rem] leading-relaxed">{step.instruction}</p>
                     {step.imageUrl && (
                       <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border empty:hidden">
                         <RecipeImage
@@ -348,8 +319,8 @@ export function RecipePreview({
                           fallbackMode="hide"
                           alt={
                             step.imageAlt ??
-                            td("method.stepImageAlt", {
-                              title: recipe.title || t("titlePlaceholder"),
+                            td('method.stepImageAlt', {
+                              title: recipe.title || t('titlePlaceholder'),
                               position: i + 1,
                             })
                           }
@@ -382,11 +353,7 @@ export function RecipePreview({
                           </Badge>
                         )}
                         {step.techniques?.map((technique) => (
-                          <Badge
-                            key={technique}
-                            variant="outline"
-                            className="capitalize"
-                          >
+                          <Badge key={technique} variant="outline" className="capitalize">
                             {technique}
                           </Badge>
                         ))}
@@ -397,17 +364,14 @@ export function RecipePreview({
               ))}
             </ol>
           ) : (
-            <p className="text-muted-foreground">{t("noSteps")}</p>
+            <p className="text-muted-foreground">{t('noSteps')}</p>
           )}
 
           {recipe.story && (
             <div className="flex flex-col gap-2 border-t border-border pt-6">
               <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
-                <Sparkles
-                  className="size-4 text-secondary"
-                  aria-hidden="true"
-                />
-                {t("storyMemories")}
+                <Sparkles className="size-4 text-secondary" aria-hidden="true" />
+                {t('storyMemories')}
               </h3>
               <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                 {recipe.story}
@@ -415,13 +379,9 @@ export function RecipePreview({
             </div>
           )}
 
-          {(Boolean(recipe.notes) ||
-            Boolean(recipe.sourceName) ||
-            Boolean(recipe.sourceUrl)) && (
+          {(Boolean(recipe.notes) || Boolean(recipe.sourceName) || Boolean(recipe.sourceUrl)) && (
             <div className="flex flex-col gap-2 border-t border-border pt-6">
-              <h3 className="font-display text-lg font-semibold">
-                {td("notes")}
-              </h3>
+              <h3 className="font-display text-lg font-semibold">{td('notes')}</h3>
               {recipe.notes && (
                 <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                   {recipe.notes}
@@ -429,7 +389,7 @@ export function RecipePreview({
               )}
               {(Boolean(recipe.sourceName) || Boolean(recipe.sourceUrl)) && (
                 <p className="text-sm text-muted-foreground">
-                  {td("source")}{" "}
+                  {td('source')}{' '}
                   {recipe.sourceUrl ? (
                     <a
                       href={recipe.sourceUrl}
