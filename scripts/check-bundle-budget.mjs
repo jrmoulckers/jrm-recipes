@@ -13,9 +13,10 @@
  *     - without arguments: run `next build` here and parse its output (handy
  *       locally via `pnpm check:bundle`).
  *
- * The pure helpers (parseFirstLoadJs, evaluateBudgets, toKb) are exported and
- * unit-tested in scripts/bundle-budget.test.mjs. The CLI only runs when this
- * file is executed directly.
+ * The pure helpers (parseFirstLoadJs, evaluateBudgets, evaluateBudgetChanges,
+ * readBaseBudgetRoutes, toKb) are exported and unit-tested in
+ * scripts/bundle-budget.test.mjs. The CLI only runs when this file is executed
+ * directly.
  */
 import { spawnSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
@@ -97,6 +98,163 @@ export function evaluateBudgets(measured, budgets, { nearKb = NEAR_KB } = {}) {
     rows.push({ route, actual, budget, headroom, status });
   }
   return { rows, failed };
+}
+
+/**
+ * Margin a *newly set or raised* budget must leave above its measured value
+ * (issue #796).
+ *
+ * Deliberately equal to NEAR_KB rather than coincidentally so: a budget set
+ * with less margin than the warning band would be born NEAR, i.e. the very run
+ * that introduces it would already warn that it is about to go red. Requiring
+ * exactly NEAR_KB makes the two rules coherent — a budget that passes this
+ * check is precisely one the WARN band will stay quiet about.
+ *
+ * Absolute rather than proportional, because both effects it covers are
+ * absolute: `next build` prints whole kB at this magnitude, and Linux CI reads
+ * ~1 kB above a local Windows build.
+ */
+export const REQUIRED_MARGIN_KB = NEAR_KB;
+
+/**
+ * Enforce headroom on budgets this change actually sets — proposal (2) of #778.
+ *
+ * The distinction this function exists to draw:
+ *
+ *   - failing a change that *raises* a budget to zero headroom is correct, because
+ *     that change is choosing the number;
+ *   - failing a change that merely *inherits* an existing zero-headroom budget it
+ *     never touched is the disease itself (#778). Three tracked routes sit at
+ *     exactly zero headroom today and MUST NOT begin failing.
+ *
+ * So the subject set is derived from a diff against the base ref's budgets, not
+ * from the absolute headroom of every route. A route is subject when its budget
+ * is new or strictly larger than at base. Lowering a budget is never subject.
+ *
+ * Renames carry a budget forward rather than setting one, so a new key whose
+ * value matches a budget removed in the same change is exempt (#666 renamed
+ * /recipes/[id] -> /recipes/[cook]/[recipe] at unchanged, already-zero-headroom
+ * values; that must stay green).
+ *
+ * A route already OVER its budget is left alone here: it is failing for the
+ * primary reason and does not need a second, differently-worded report.
+ *
+ * `baseBudgets` of null means the base could not be resolved; the requirement is
+ * skipped rather than enforced, because a gate against spurious red must not
+ * become a new source of it.
+ */
+export function evaluateBudgetChanges(
+  measured,
+  budgets,
+  baseBudgets,
+  { requiredMarginKb = REQUIRED_MARGIN_KB } = {},
+) {
+  if (!baseBudgets) return { checked: false, subjects: [], violations: [] };
+
+  const carriedForward = new Set(
+    Object.entries(baseBudgets)
+      .filter(([route]) => !(route in budgets))
+      .map(([, budget]) => budget),
+  );
+
+  const subjects = [];
+  for (const [route, budget] of Object.entries(budgets)) {
+    const baseBudget = baseBudgets[route];
+    if (baseBudget === undefined) {
+      if (carriedForward.has(budget)) continue; // renamed key, same budget
+      subjects.push({ route, budget, baseBudget: undefined });
+      continue;
+    }
+    if (budget > baseBudget) subjects.push({ route, budget, baseBudget });
+  }
+
+  const violations = [];
+  for (const subject of subjects) {
+    const actual = measured.get(subject.route);
+    if (actual === undefined || actual > subject.budget) continue;
+    const headroom = subject.budget - actual;
+    if (headroom >= requiredMarginKb) continue;
+    violations.push({
+      ...subject,
+      actual,
+      headroom,
+      minimum: Math.ceil(actual + requiredMarginKb),
+    });
+  }
+
+  return { checked: true, subjects, violations };
+}
+
+/**
+ * Read `routes` from the base ref's bundle-budgets.json so evaluateBudgetChanges
+ * can tell a raised budget from an inherited one.
+ *
+ * This makes the check behave differently on a PR than on a local run, and that
+ * is deliberate: only a diff can distinguish "you set this number" from "you
+ * inherited it". On a PR, GITHUB_BASE_REF names the target branch. Locally, a
+ * normal clone already has origin/<default>, so the check works the same way
+ * against uncommitted edits. On a push to main the base resolves to main itself,
+ * nothing reads as raised, and the requirement is effectively a no-op — this is
+ * a pre-merge check by design.
+ *
+ * When no candidate resolves the requirement is SKIPPED, never failed. A shallow
+ * checkout, a detached run, or an offline machine must not turn a PR red.
+ *
+ * `runGit` is injected so this is unit-testable without a repository.
+ */
+export function readBaseBudgetRoutes({
+  runGit = defaultRunGit,
+  env = process.env,
+} = {}) {
+  const show = (ref) => {
+    const res = runGit(["show", `${ref}:bundle-budgets.json`]);
+    if (res.status !== 0 || !res.stdout) return null;
+    try {
+      const routes = JSON.parse(res.stdout).routes;
+      return routes && typeof routes === "object" ? routes : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const branch = env.GITHUB_BASE_REF || "main";
+  const candidates = [
+    env.BUNDLE_BUDGET_BASE_REF,
+    env.GITHUB_BASE_REF && `origin/${env.GITHUB_BASE_REF}`,
+    "origin/main",
+  ].filter(Boolean);
+
+  for (const ref of candidates) {
+    const routes = show(ref);
+    if (routes) return { routes, ref };
+  }
+
+  // CI checks out at depth 1, so origin/<base> often does not exist locally.
+  // One shallow fetch of the base branch is enough, and the repository is
+  // public, so the credential-free CI checkout can still read it.
+  if (env.CI) {
+    const fetched = runGit([
+      "fetch",
+      "--no-tags",
+      "--depth=1",
+      "origin",
+      branch,
+    ]);
+    if (fetched.status === 0) {
+      const routes = show("FETCH_HEAD");
+      if (routes) return { routes, ref: `origin/${branch}` };
+    }
+  }
+
+  return { routes: null, ref: null };
+}
+
+function defaultRunGit(args) {
+  return spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
 }
 
 function getBuildOutput() {
@@ -196,6 +354,48 @@ function main() {
     writeStepSummary(near);
   }
 
+  const base = readBaseBudgetRoutes();
+  const { checked, subjects, violations } = evaluateBudgetChanges(
+    measured,
+    budgets,
+    base.routes,
+  );
+  if (!checked) {
+    console.log(
+      "\nℹ Skipping the raised-budget headroom check (#796): could not read " +
+        "bundle-budgets.json\n  from the base ref. This is a skip, not a " +
+        "failure.",
+    );
+  } else if (violations.length > 0) {
+    console.error(
+      `\n✗ ${violations.length} budget(s) raised without the required ` +
+        `${REQUIRED_MARGIN_KB} kB of headroom (#796), against ${base.ref}:`,
+    );
+    for (const v of violations) {
+      const from =
+        v.baseBudget === undefined ? "new" : `was ${v.baseBudget} kB`;
+      console.error(
+        `    ${v.route}: set to ${v.budget} kB (${from}) but measures ` +
+          `${v.actual.toFixed(1)} kB — only ${v.headroom.toFixed(1)} kB free. ` +
+          `Use at least ${v.minimum} kB.`,
+      );
+    }
+    console.error(
+      "  A budget set to exactly what it measures goes red on the next " +
+        "unrelated PR, which\n  is how every zero-headroom route here was " +
+        "created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB " +
+        "above a local Windows build, and `next build` prints\n  whole kB, so a " +
+        "sub-kB webpack redistribution can move a route a full kB.",
+    );
+  } else if (subjects.length > 0) {
+    // Only on a budget-changing run: confirm the margin was actually checked,
+    // so a bumper can see the number they chose was measured against CI figures.
+    console.log(
+      `\n✓ ${subjects.length} budget(s) set or raised vs ${base.ref}, each with ` +
+        `at least ${REQUIRED_MARGIN_KB} kB of headroom (#796).`,
+    );
+  }
+
   if (failed) {
     console.error(
       "\nBundle budget exceeded (or a tracked route was not found). Reduce " +
@@ -203,6 +403,7 @@ function main() {
     );
     process.exit(1);
   }
+  if (violations.length > 0) process.exit(1);
   console.log("\nAll tracked routes are within budget.");
 }
 
