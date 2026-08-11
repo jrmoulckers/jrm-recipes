@@ -1,5 +1,5 @@
 {
-  "extends": "@jrmoulckers/tsconfig/next.json",
+  "extends": "./config/engineering/tsconfig/next.json",
   "compilerOptions": {
     /* Product-specific: Next transpiles CJS interop for us and the repo has
        type-checked JS config/scripts. */

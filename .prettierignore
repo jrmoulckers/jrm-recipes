@@ -26,3 +26,9 @@ test-results/
 .github/instructions/
 .github/copilot-instructions.md
 AGENTS.md
+# Vendored from jrmoulckers/engineering at a pinned ref (see
+# engineering-configs.lock.json) and verified by SHA-256. Same reasoning as the
+# studio-synced files above: the content is authored upstream and written here
+# byte-identical, so a formatting difference has no legal fix locally — editing
+# the file breaks the hash the lock verifies. Fix formatting upstream.
+config/engineering/

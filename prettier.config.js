@@ -1,4 +1,4 @@
-import base from '@jrmoulckers/prettier-config';
+import base from './config/engineering/prettier/index.js';
 
 /**
  * Shared studio formatting plus the Tailwind class sorter, which is

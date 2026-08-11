@@ -31,6 +31,10 @@ const literalStringOptions = {
 
 export default nextConfig({
   ignores: [
+    // Vendored from jrmoulckers/engineering at a pinned ref and locked by
+    // SHA-256. A lint finding here would have no legal fix: editing the file
+    // breaks the hash, so the fix has to happen upstream.
+    'config/engineering/',
     'public/sw.js',
     'public/swe-worker*.js',
     'src/app/sw.ts',
