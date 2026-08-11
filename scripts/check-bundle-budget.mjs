@@ -252,6 +252,85 @@ function defaultRunGit(args) {
   });
 }
 
+/**
+ * Map a Node `process.platform` value, or a value written in a claim, onto the
+ * names used in bundle-budgets.json. Claims are authored by humans, so both
+ * `windows` and Node's `win32` have to mean the same thing.
+ */
+export function normalizePlatform(value) {
+  if (!value) return null;
+  const v = String(value).toLowerCase();
+  if (v === 'win32' || v === 'windows') return 'windows';
+  if (v === 'darwin' || v === 'macos') return 'macos';
+  return v;
+}
+
+/**
+ * Verify the recorded measurement claims in bundle-budgets.json against the
+ * build this run just measured (issue #858).
+ *
+ * The budget gate compares a measurement to a *budget* and never reads the
+ * notes, so a number written into the file as justification is checked by
+ * nobody. Four such claims have now been corrected — #674/#690, #763, #820 and
+ * #857 — each after it had already misled a reader, and one of them (a stale
+ * "307" for a route that measures 308) was a single digit away from licensing a
+ * red gate on main. Every existing guard misses this by construction: NEAR
+ * cannot fail, and the #796 headroom rule only governs budgets that are new or
+ * raised.
+ *
+ * Rules, each of which is a constraint this repo learned the hard way:
+ *
+ * - A claim is only meaningful about the platform that produced it. Linux CI
+ *   reads about 1 kB above a local Windows build, so an unqualified number is
+ *   not checkable at all. Claims for other platforms SKIP — that is #796's
+ *   precedent, since a guard against spurious red must not become one.
+ * - A claim with no `platform` FAILS everywhere rather than skipping. That is a
+ *   malformed entry in a tracked file, not a limit of the current environment,
+ *   and silently skipping it would recreate exactly the hole this closes.
+ * - A matching claim whose route is absent from the build FAILS: the route was
+ *   renamed or removed and the claim now describes nothing.
+ *
+ * Comparison is on whole kB because that is what `next build` prints and what
+ * every number in the file is quoted in.
+ */
+export function evaluateMeasurementClaims(measured, claims, { platform = process.platform } = {}) {
+  const here = normalizePlatform(platform);
+  const rows = [];
+  let failed = false;
+
+  for (const claim of claims ?? []) {
+    const route = claim?.route;
+    const base = { route, claimed: claim?.kb, runId: claim?.runId, issue: claim?.issue };
+
+    if (!claim?.platform) {
+      rows.push({ ...base, status: 'INVALID' });
+      failed = true;
+      continue;
+    }
+    if (normalizePlatform(claim.platform) !== here) {
+      rows.push({ ...base, status: 'SKIP', platform: normalizePlatform(claim.platform) });
+      continue;
+    }
+
+    const actual = measured.get(route);
+    if (actual === undefined) {
+      rows.push({ ...base, status: 'MISSING' });
+      failed = true;
+      continue;
+    }
+
+    const rounded = Math.round(actual);
+    if (rounded !== claim.kb) {
+      rows.push({ ...base, status: 'STALE', actual: rounded });
+      failed = true;
+      continue;
+    }
+    rows.push({ ...base, status: 'ok', actual: rounded });
+  }
+
+  return { rows, failed };
+}
+
 function getBuildOutput() {
   const logArg = process.argv[2];
   if (logArg) {
@@ -308,7 +387,8 @@ function writeStepSummary(near) {
 }
 
 function main() {
-  const budgets = JSON.parse(readFileSync(resolve(repoRoot, 'bundle-budgets.json'), 'utf8')).routes;
+  const budgetFile = JSON.parse(readFileSync(resolve(repoRoot, 'bundle-budgets.json'), 'utf8'));
+  const budgets = budgetFile.routes;
 
   const measured = parseFirstLoadJs(getBuildOutput());
   const { rows, failed } = evaluateBudgets(measured, budgets);
@@ -381,6 +461,61 @@ function main() {
     );
   }
 
+  const claims = evaluateMeasurementClaims(measured, budgetFile['//measured']?.claims);
+  const stale = claims.rows.filter((r) => r.status !== 'ok' && r.status !== 'SKIP');
+  const skipped = claims.rows.filter((r) => r.status === 'SKIP');
+  if (claims.rows.length > 0) {
+    if (stale.length === 0) {
+      const verified = claims.rows.length - skipped.length;
+      if (verified === 0) {
+        console.log(
+          `\nℹ ${skipped.length} recorded measurement claim(s) skipped (#858): all ` +
+            'were measured on\n  another platform. Linux CI reads ~1 kB above a ' +
+            'local Windows build, so they are\n  checked on CI, not here. This is ' +
+            'a skip, not a failure.',
+        );
+      } else {
+        console.log(
+          `\n✓ ${verified} recorded measurement claim(s) still match this build (#858)` +
+            (skipped.length > 0
+              ? `; ${skipped.length} skipped as measured on another platform.`
+              : '.'),
+        );
+      }
+    } else {
+      console.error(`\n✗ ${stale.length} recorded measurement claim(s) no longer match (#858):`);
+      for (const r of stale) {
+        if (r.status === 'INVALID') {
+          console.error(
+            `    ${r.route ?? '(no route)'}: claim has no "platform". A number ` +
+              'without the platform that produced it is not checkable — Linux ' +
+              'CI reads ~1 kB above a local Windows build.',
+          );
+        } else if (r.status === 'MISSING') {
+          console.error(
+            `    ${r.route}: claimed ${r.claimed} kB but the route is not in ` +
+              'this build. It was renamed or removed, so the claim now ' +
+              'describes nothing.',
+          );
+        } else {
+          const prov = r.runId ? ` recorded from run ${r.runId}` : '';
+          const iss = r.issue ? ` (#${r.issue})` : '';
+          console.error(
+            `    ${r.route}: claims ${r.claimed} kB${prov}${iss}, but this run ` +
+              `measures ${r.actual} kB.`,
+          );
+        }
+      }
+      console.error(
+        '  Update the claim to the value this run measured, and record the run ' +
+          'that produced\n  it. These numbers are quoted as justification in ' +
+          'bundle-budgets.json, so a stale one\n  is read as authoritative: a ' +
+          'stale "307" for a route that measures 308 was one digit\n  from ' +
+          'licensing a red gate on main (#819, #820).',
+      );
+    }
+  }
+
   if (failed) {
     console.error(
       '\nBundle budget exceeded (or a tracked route was not found). Reduce ' +
@@ -389,6 +524,7 @@ function main() {
     process.exit(1);
   }
   if (violations.length > 0) process.exit(1);
+  if (claims.failed) process.exit(1);
   console.log('\nAll tracked routes are within budget.');
 }
 
