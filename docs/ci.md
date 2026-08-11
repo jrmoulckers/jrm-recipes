@@ -195,6 +195,27 @@ rather than counting failures:
 git rev-list --count <last-successful-sha>..origin/main
 ```
 
+**Quote that range in PowerShell**, which is the shell most sessions here run. `..`
+is PowerShell's range operator, so an unquoted `$sha..origin/main` is split into two
+arguments before git sees it:
+
+```powershell
+git rev-list --count $sha..origin/main     # 1   <- wrong
+git rev-list --count "$sha..origin/main"   # 48  <- correct
+```
+
+```
+unquoted -> 5c23673f945a05d3ca89b65736c5d396a8c852df ..origin/main
+quoted   -> 5c23673f945a05d3ca89b65736c5d396a8c852df..origin/main
+```
+
+The unquoted form does not error and does not return zero. It returns a plausible
+small number **in the reassuring direction** — "1 commit behind" reads as basically
+current, when the measured answer was 48, including every privacy-copy correction
+that is the reason anyone watches drift. Like `Select-String -SimpleMatch` and the
+stuck-gate run conclusion, the instrument returns a well-formed value describing
+something other than what you asked.
+
 That same absence sets a subtler trap, and a concurrent session walked into it while
 this was being written. Pull the description off every recent **deployment** and they
 are byte-identical:
