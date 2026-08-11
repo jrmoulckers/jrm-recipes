@@ -1,20 +1,12 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
-import {
-  NextResponse,
-  type NextMiddleware,
-  type NextRequest,
-} from "next/server";
+import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse, type NextMiddleware, type NextRequest } from 'next/server';
 
-import {
-  LOCALE_COOKIE,
-  PATHNAME_HEADER,
-  negotiateAcceptLanguage,
-} from "~/config/i18n";
+import { LOCALE_COOKIE, PATHNAME_HEADER, negotiateAcceptLanguage } from '~/config/i18n';
 import {
   applySecurityHeaders,
   buildContentSecurityPolicy,
   generateNonce,
-} from "~/lib/security/headers";
+} from '~/lib/security/headers';
 
 /** One year, in seconds. Mirrors the locale/theme cookies' persistence. */
 const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -31,14 +23,11 @@ const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
  */
 function securedNext(request: NextRequest): NextResponse {
   const nonce = generateNonce();
-  const csp = buildContentSecurityPolicy(
-    nonce,
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-  );
+  const csp = buildContentSecurityPolicy(nonce, process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("content-security-policy", csp);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', csp);
   // Server Components cannot read the request pathname, and the App Router does
   // not pass it down. The route-scoped message provider needs it to decide which
   // message namespaces to serialize into the flight payload (#674), so forward
@@ -70,11 +59,9 @@ function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
     const response = (await handler(request, event)) ?? NextResponse.next();
 
     if (!request.cookies.has(LOCALE_COOKIE)) {
-      const locale = negotiateAcceptLanguage(
-        request.headers.get("accept-language"),
-      );
+      const locale = negotiateAcceptLanguage(request.headers.get('accept-language'));
       response.headers.append(
-        "set-cookie",
+        'set-cookie',
         `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`,
       );
     }
@@ -94,20 +81,18 @@ function withNegotiatedLocale(handler: NextMiddleware): NextMiddleware {
  * This mirrors the guards in `~/env` and `~/server/auth`.
  */
 const clerkConfigured =
-  Boolean(
-    process.env.CLERK_SECRET_KEY &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-  ) && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== "1";
+  Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) &&
+  process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== '1';
 
 if (
   !clerkConfigured &&
-  process.env.VERCEL_ENV === "production" &&
+  process.env.VERCEL_ENV === 'production' &&
   !process.env.SKIP_ENV_VALIDATION
 ) {
   throw new Error(
-    "Refusing to run without Clerk auth on a production deploy. Configure " +
-      "Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset " +
-      "NEXT_PUBLIC_DEV_AUTH_BYPASS. Dev-bypass is a local/test-only affordance.",
+    'Refusing to run without Clerk auth on a production deploy. Configure ' +
+      'Clerk (CLERK_SECRET_KEY + NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) and unset ' +
+      'NEXT_PUBLIC_DEV_AUTH_BYPASS. Dev-bypass is a local/test-only affordance.',
   );
 }
 
@@ -120,7 +105,7 @@ export default withNegotiatedLocale(authMiddleware);
 export const config = {
   matcher: [
     // Skip Next internals and static files unless found in search params.
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 };

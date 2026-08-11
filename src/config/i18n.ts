@@ -59,7 +59,7 @@ export const LOCALE_COOKIE = 'NEXT_LOCALE';
  * URL on the server, and the route-scoped message provider needs it to decide
  * which namespaces to serialize into the flight payload (#674).
  */
-export const PATHNAME_HEADER = "x-pathname";
+export const PATHNAME_HEADER = 'x-pathname';
 
 /**
  * Native language names (endonyms) for the locale switcher. A language menu

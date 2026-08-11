@@ -11,13 +11,13 @@
  * `./route-namespaces`. Kept framework-free (no `next/*` imports) so it is
  * directly unit-testable.
  */
-import { ROUTE_NAMESPACES, SHELL_NAMESPACES } from "./route-namespaces";
+import { ROUTE_NAMESPACES, SHELL_NAMESPACES } from './route-namespaces';
 
 type Messages = Record<string, unknown>;
 
 /** Split a URL pathname into its segments, tolerating trailing slashes. */
 function segmentsOf(pathname: string): string[] {
-  return pathname.split("/").filter((segment) => segment.length > 0);
+  return pathname.split('/').filter((segment) => segment.length > 0);
 }
 
 const ROUTE_PATTERNS = Object.keys(ROUTE_NAMESPACES).map((pattern) => ({
@@ -43,7 +43,7 @@ export function matchRoutePattern(pathname: string): string | null {
     let score = 0;
     let matched = true;
     for (const [index, expected] of candidate.segments.entries()) {
-      if (expected === ":") continue;
+      if (expected === ':') continue;
       if (expected !== segments[index]) {
         matched = false;
         break;
@@ -53,8 +53,7 @@ export function matchRoutePattern(pathname: string): string | null {
     }
 
     if (!matched) continue;
-    if (!best || score > best.score)
-      best = { pattern: candidate.pattern, score };
+    if (!best || score > best.score) best = { pattern: candidate.pattern, score };
   }
 
   return best?.pattern ?? null;
@@ -70,9 +69,7 @@ export function matchRoutePattern(pathname: string): string | null {
  * route degrades to today's behaviour (bigger payload) rather than to missing
  * copy.
  */
-export function namespacesForPathname(
-  pathname: string | null | undefined,
-): string[] | null {
+export function namespacesForPathname(pathname: string | null | undefined): string[] | null {
   if (!pathname) return null;
   const pattern = matchRoutePattern(pathname);
   if (pattern === null) return null;

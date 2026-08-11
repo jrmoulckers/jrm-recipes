@@ -1,38 +1,31 @@
-import { type Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, SearchX, UtensilsCrossed } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowLeft, SearchX, UtensilsCrossed } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import {
-  searchByIngredients,
-  type CookWithResult,
-} from "~/server/recipes/queries";
-import { parseHaveParam, type RawSearchParams } from "~/server/recipes/search";
-import { getFavoriteRecipeIds } from "~/server/collections/queries";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { RecipeCard } from "~/components/recipe/recipe-card";
-import { CookWithInput } from "~/components/recipe/cook-with-input";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { getCurrentUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { searchByIngredients, type CookWithResult } from '~/server/recipes/queries';
+import { parseHaveParam, type RawSearchParams } from '~/server/recipes/search';
+import { getFavoriteRecipeIds } from '~/server/collections/queries';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
+import { RecipeCard } from '~/components/recipe/recipe-card';
+import { CookWithInput } from '~/components/recipe/cook-with-input';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
+  const t = await getTranslations('metadata');
   return {
-    title: t("cookWith.title"),
-    description: t("cookWith.description"),
+    title: t('cookWith.title'),
+    description: t('cookWith.description'),
   };
 }
 
-async function CookWithPage({
-  searchParams,
-}: {
-  searchParams: Promise<RawSearchParams>;
-}) {
+async function CookWithPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const user = await getCurrentUser();
   const have = parseHaveParam((await searchParams).have);
-  const t = await getTranslations("recipe.cookWith");
+  const t = await getTranslations('recipe.cookWith');
 
   const [results, favoriteIds] = await Promise.all([
     isDbConfigured() && have.length > 0
@@ -45,21 +38,14 @@ async function CookWithPage({
   return (
     <div className="container flex flex-col gap-8 py-10">
       <div className="flex flex-col gap-4">
-        <Button
-          asChild
-          variant="ghost"
-          size="sm"
-          className="-ms-2 w-fit text-muted-foreground"
-        >
+        <Button asChild variant="ghost" size="sm" className="-ms-2 w-fit text-muted-foreground">
           <Link href="/recipes">
-            <ArrowLeft /> {t("backToRecipes")}
+            <ArrowLeft /> {t('backToRecipes')}
           </Link>
         </Button>
         <div className="flex items-center gap-3">
           <UtensilsCrossed className="size-7 text-primary" />
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
         </div>
         <CookWithInput initial={have} />
       </div>
@@ -73,18 +59,14 @@ async function CookWithPage({
           {results.map((recipe) => (
             <div key={recipe.id} className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <Badge
-                  variant={recipe.coverage.missing === 0 ? "default" : "muted"}
-                >
-                  {t("coverage", {
+                <Badge variant={recipe.coverage.missing === 0 ? 'default' : 'muted'}>
+                  {t('coverage', {
                     matched: recipe.coverage.matched,
                     total: recipe.coverage.total,
                   })}
                 </Badge>
                 {recipe.coverage.missing === 0 && (
-                  <span className="text-xs font-medium text-primary">
-                    {t("readyToCook")}
-                  </span>
+                  <span className="text-xs font-medium text-primary">{t('readyToCook')}</span>
                 )}
               </div>
               <RecipeCard
@@ -101,15 +83,13 @@ async function CookWithPage({
 }
 
 async function Prompt() {
-  const t = await getTranslations("recipe.cookWith");
+  const t = await getTranslations('recipe.cookWith');
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <UtensilsCrossed className="size-10 text-muted-foreground" />
       <p className="max-w-md text-muted-foreground">
-        {t.rich("prompt", {
-          example: (chunks) => (
-            <span className="font-medium text-foreground">{chunks}</span>
-          ),
+        {t.rich('prompt', {
+          example: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
         })}
       </p>
     </div>
@@ -117,11 +97,11 @@ async function Prompt() {
 }
 
 async function NoMatches() {
-  const t = await getTranslations("recipe.cookWith");
+  const t = await getTranslations('recipe.cookWith');
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
       <SearchX className="size-10 text-muted-foreground" />
-      <p className="text-muted-foreground">{t("noMatches")}</p>
+      <p className="text-muted-foreground">{t('noMatches')}</p>
     </div>
   );
 }

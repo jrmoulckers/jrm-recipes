@@ -1,9 +1,9 @@
-import { type Metadata } from "next";
-import { getLocale } from "next-intl/server";
+import { type Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
 
-import { getCurrentUser } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { listViewerGroups, listWeekDinners } from "~/server/planner/queries";
+import { getCurrentUser } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { listViewerGroups, listWeekDinners } from '~/server/planner/queries';
 import {
   formatMonthDay,
   formatWeekdayLong,
@@ -12,17 +12,13 @@ import {
   isToday,
   parseDateParam,
   toDateParam,
-} from "~/server/planner/week";
-import {
-  buildWeekMenu,
-  type WeekMenuDayInput,
-  type WeekMenuEntry,
-} from "~/lib/week-menu";
-import { WeekMenuPrintView } from "~/components/print/week-menu-print-view";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+} from '~/server/planner/week';
+import { buildWeekMenu, type WeekMenuDayInput, type WeekMenuEntry } from '~/lib/week-menu';
+import { WeekMenuPrintView } from '~/components/print/week-menu-print-view';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export const metadata: Metadata = {
-  title: "Print · Weekly menu",
+  title: 'Print · Weekly menu',
   robots: { index: false, follow: false },
 };
 
@@ -45,16 +41,9 @@ async function WeekMenuPrintPage({
   if (isDbConfigured() && user) {
     const viewerGroups = scope ? await listViewerGroups(user.id) : [];
     const activeGroup =
-      scope != null
-        ? (viewerGroups.find((group) => group.slug === scope) ?? null)
-        : null;
+      scope != null ? (viewerGroups.find((group) => group.slug === scope) ?? null) : null;
     activeGroupSlug = activeGroup?.slug ?? null;
-    const rows = await listWeekDinners(
-      user.id,
-      startParam,
-      endParam,
-      activeGroup?.id,
-    );
+    const rows = await listWeekDinners(user.id, startParam, endParam, activeGroup?.id);
     entries = rows.map((row) => ({
       dateParam: row.date,
       note: row.note,

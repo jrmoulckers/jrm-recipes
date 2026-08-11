@@ -1,11 +1,11 @@
-import { type Metadata } from "next";
-import { notFound } from "next/navigation";
+import { type Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-import { brand } from "~/config/brand";
-import { getRecipeByShareToken } from "~/server/recipes/queries";
-import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
-import RecipePage from "../../recipes/[cook]/[recipe]/page";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { brand } from '~/config/brand';
+import { getRecipeByShareToken } from '~/server/recipes/queries';
+import { parseTokenParams, type TokenRouteParams } from '~/lib/route-params';
+import RecipePage from '../../recipes/[cook]/[recipe]/page';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 const sharedRecipeRobots = { index: false, follow: false };
 
@@ -20,7 +20,7 @@ export async function generateMetadata({
   const recipe = await getRecipeByShareToken(token);
   if (!recipe) {
     return {
-      title: "Shared recipe not found",
+      title: 'Shared recipe not found',
       description: `This shared recipe link is not available on ${brand.name}.`,
       robots: sharedRecipeRobots,
     };
@@ -29,8 +29,7 @@ export async function generateMetadata({
   return {
     title: `Shared · ${recipe.title}`,
     description:
-      recipe.description ??
-      `Open a private family recipe shared with you on ${brand.name}.`,
+      recipe.description ?? `Open a private family recipe shared with you on ${brand.name}.`,
     robots: sharedRecipeRobots,
   };
 }
@@ -43,11 +42,7 @@ export async function generateMetadata({
  * to the canonical recipe detail view, threading the token through so the loader
  * grants access and the share UI keeps handing out the token URL (not the slug).
  */
-async function SharedRecipePage({
-  params,
-}: {
-  params: Promise<TokenRouteParams>;
-}) {
+async function SharedRecipePage({ params }: { params: Promise<TokenRouteParams> }) {
   const { token } = await parseTokenParams(params);
   const recipe = await getRecipeByShareToken(token);
   if (!recipe) notFound();

@@ -1,27 +1,24 @@
-import { type Metadata } from "next";
-import Link from "next/link";
-import { CalendarX2, Link2Off, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import Link from 'next/link';
+import { CalendarX2, Link2Off, Users } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser, isAuthConfigured } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import {
-  getInviteLinkPreview,
-  type InviteLinkStatus,
-} from "~/server/groups/queries";
-import { JoinGroupPanel } from "~/components/groups/join-group-panel";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
-import { brand } from "~/config/brand";
-import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { getInviteLinkPreview, type InviteLinkStatus } from '~/server/groups/queries';
+import { JoinGroupPanel } from '~/components/groups/join-group-panel';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Button } from '~/components/ui/button';
+import { brand } from '~/config/brand';
+import { parseTokenParams, type TokenRouteParams } from '~/lib/route-params';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 // Invite links are private, single-purpose URLs. Never index them.
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
+  const t = await getTranslations('metadata');
   return {
-    title: t("join.title"),
-    description: t("join.description"),
+    title: t('join.title'),
+    description: t('join.description'),
     robots: { index: false, follow: false },
   };
 }
@@ -33,8 +30,8 @@ function initials(name: string) {
       .filter(Boolean)
       .map((part) => part[0])
       .slice(0, 2)
-      .join("")
-      .toUpperCase() || "?"
+      .join('')
+      .toUpperCase() || '?'
   );
 }
 
@@ -48,13 +45,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-async function StatusCard({
-  status,
-}: {
-  status: Exclude<InviteLinkStatus, "active">;
-}) {
-  const t = await getTranslations("groups.joinPage");
-  const Icon = status === "expired" ? CalendarX2 : Link2Off;
+async function StatusCard({ status }: { status: Exclude<InviteLinkStatus, 'active'> }) {
+  const t = await getTranslations('groups.joinPage');
+  const Icon = status === 'expired' ? CalendarX2 : Link2Off;
   return (
     <Shell>
       <span className="mx-auto inline-flex size-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -65,7 +58,7 @@ async function StatusCard({
       </h1>
       <p className="mt-2 text-muted-foreground">{t(`status.${status}.body`)}</p>
       <Button asChild variant="outline" className="mt-6">
-        <Link href="/">{t("backHome", { brand: brand.name })}</Link>
+        <Link href="/">{t('backHome', { brand: brand.name })}</Link>
       </Button>
     </Shell>
   );
@@ -73,8 +66,8 @@ async function StatusCard({
 
 async function JoinPage({ params }: { params: Promise<TokenRouteParams> }) {
   const { token } = await parseTokenParams(params);
-  const t = await getTranslations("groups.joinPage");
-  const tCard = await getTranslations("groups.card");
+  const t = await getTranslations('groups.joinPage');
+  const tCard = await getTranslations('groups.card');
 
   const preview = isDbConfigured() ? await getInviteLinkPreview(token) : null;
 
@@ -85,17 +78,17 @@ async function JoinPage({ params }: { params: Promise<TokenRouteParams> }) {
           <Link2Off className="size-7" aria-hidden="true" />
         </span>
         <h1 className="mt-4 font-display text-2xl font-bold tracking-tight">
-          {t("invalid.title")}
+          {t('invalid.title')}
         </h1>
-        <p className="mt-2 text-muted-foreground">{t("invalid.body")}</p>
+        <p className="mt-2 text-muted-foreground">{t('invalid.body')}</p>
         <Button asChild variant="outline" className="mt-6">
-          <Link href="/">{t("backHome", { brand: brand.name })}</Link>
+          <Link href="/">{t('backHome', { brand: brand.name })}</Link>
         </Button>
       </Shell>
     );
   }
 
-  if (preview.status !== "active") {
+  if (preview.status !== 'active') {
     return <StatusCard status={preview.status} />;
   }
 
@@ -105,27 +98,21 @@ async function JoinPage({ params }: { params: Promise<TokenRouteParams> }) {
   return (
     <Shell>
       <Avatar className="mx-auto size-20">
-        {group.avatarUrl ? (
-          <AvatarImage src={group.avatarUrl} alt={group.name} />
-        ) : null}
-        <AvatarFallback className="text-xl">
-          {initials(group.name)}
-        </AvatarFallback>
+        {group.avatarUrl ? <AvatarImage src={group.avatarUrl} alt={group.name} /> : null}
+        <AvatarFallback className="text-xl">{initials(group.name)}</AvatarFallback>
       </Avatar>
-      <p className="mt-4 text-sm font-medium text-primary">{t("invitedTo")}</p>
-      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">
-        {group.name}
-      </h1>
+      <p className="mt-4 text-sm font-medium text-primary">{t('invitedTo')}</p>
+      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">{group.name}</h1>
       {group.description ? (
         <p className="mt-2 text-muted-foreground">{group.description}</p>
       ) : (
         <p className="mt-2 text-muted-foreground">
-          {t("defaultDescription", { brand: brand.name })}
+          {t('defaultDescription', { brand: brand.name })}
         </p>
       )}
       <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
         <Users className="size-4" aria-hidden="true" />
-        {tCard("memberCount", { count: memberCount })}
+        {tCard('memberCount', { count: memberCount })}
       </p>
 
       <div className="mt-6">

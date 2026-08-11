@@ -5,8 +5,8 @@ import {
   type BrowserContext,
   type Locator,
   type Page,
-} from "@playwright/test";
-import postgres from "postgres";
+} from '@playwright/test';
+import postgres from 'postgres';
 
 /**
  * Co-creation journey across two identities (issue #698).
@@ -73,14 +73,14 @@ import postgres from "postgres";
  * drifts, so `e2e-containment.test.ts` reads these literals back out of this
  * file and asserts they equal the real constants (issue #783).
  */
-const DEV_IDENTITY_COOKIE = "heirloom_dev_identity";
-const CO_COOK_ID = "e2e_usr_cocook_000000";
-const CO_COOK_NAME = "E2E Co-Cook";
-const CO_COOK_SLUG = "e2e-co-cook";
-const SEEDED_RECIPE_ID = "seed_rcp_gravy";
-const OWNER_RECIPE_PATH = "/recipes/home-cook/nonnas-sunday-gravy";
+const DEV_IDENTITY_COOKIE = 'heirloom_dev_identity';
+const CO_COOK_ID = 'e2e_usr_cocook_000000';
+const CO_COOK_NAME = 'E2E Co-Cook';
+const CO_COOK_SLUG = 'e2e-co-cook';
+const SEEDED_RECIPE_ID = 'seed_rcp_gravy';
+const OWNER_RECIPE_PATH = '/recipes/home-cook/nonnas-sunday-gravy';
 /** Must match `playwright.config.ts`, which is also the server's own port. */
-const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? "3000"}`;
+const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? '3000'}`;
 
 /**
  * Assert the page is serving the recipe, or is not.
@@ -95,43 +95,34 @@ const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? "3000"}`;
  * the SEO property. Which URL is canonical is asserted separately.
  */
 async function expectServesRecipe(page: Page): Promise<void> {
-  await expect
-    .poll(() => page.locator('link[rel="canonical"]').count())
-    .toBeGreaterThan(0);
+  await expect.poll(() => page.locator('link[rel="canonical"]').count()).toBeGreaterThan(0);
 }
 
 async function expectRevoked(page: Page): Promise<void> {
   const response = await page.request.get(page.url(), { maxRedirects: 0 });
   expect([200, 404]).toContain(response.status());
-  expect((await response.text()).toLowerCase()).not.toContain(
-    'rel="canonical"',
-  );
+  expect((await response.text()).toLowerCase()).not.toContain('rel="canonical"');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
 }
 
 /** A browser context authenticated as a specific dev identity. */
-async function contextAs(
-  browser: Browser,
-  identityId?: string,
-): Promise<BrowserContext> {
+async function contextAs(browser: Browser, identityId?: string): Promise<BrowserContext> {
   const context = await browser.newContext();
   if (identityId) {
-    await context.addCookies([
-      { name: DEV_IDENTITY_COOKIE, value: identityId, url: BASE_URL },
-    ]);
+    await context.addCookies([{ name: DEV_IDENTITY_COOKIE, value: identityId, url: BASE_URL }]);
   }
   return context;
 }
 
 /** The owner's co-creator panel, located by its heading's section. */
 function creatorPanel(page: Page) {
-  return page.getByRole("region", { name: /co-creators/i });
+  return page.getByRole('region', { name: /co-creators/i });
 }
 
 async function inviteCook(page: Page): Promise<Locator> {
   const panel = creatorPanel(page);
   const identifier = panel.getByLabel(/invite a cook/i);
-  const invite = panel.getByRole("button", { name: /^Invite$/ });
+  const invite = panel.getByRole('button', { name: /^Invite$/ });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await identifier.fill(CO_COOK_SLUG);
@@ -157,10 +148,8 @@ async function inviteCook(page: Page): Promise<Locator> {
  * click make an absent owner-only action pass vacuously.
  */
 async function openActionsMenu(page: Page): Promise<void> {
-  const trigger = page
-    .getByRole("button", { name: /more recipe actions/i })
-    .first();
-  const print = page.getByRole("link", { name: /^print$/i });
+  const trigger = page.getByRole('button', { name: /more recipe actions/i }).first();
+  const print = page.getByRole('link', { name: /^print$/i });
 
   await expect(trigger).toBeVisible();
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -174,7 +163,7 @@ async function openActionsMenu(page: Page): Promise<void> {
     }
   }
 
-  throw new Error("The recipe actions menu never opened.");
+  throw new Error('The recipe actions menu never opened.');
 }
 
 /**
@@ -185,7 +174,7 @@ async function openActionsMenu(page: Page): Promise<void> {
 async function resetCoCreators(page: Page): Promise<void> {
   const panel = creatorPanel(page);
   for (let i = 0; i < 5; i++) {
-    const remove = panel.getByRole("button", {
+    const remove = panel.getByRole('button', {
       name: /^(Remove|Cancel invite)$/,
     });
     if ((await remove.count()) === 0) return;
@@ -197,12 +186,10 @@ async function resetCoCreators(page: Page): Promise<void> {
   }
 }
 
-async function setFixtureVisibility(
-  visibility: "public" | "unlisted",
-): Promise<void> {
+async function setFixtureVisibility(visibility: 'public' | 'unlisted'): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error("The resolved seed fixture must have a DATABASE_URL.");
+    throw new Error('The resolved seed fixture must have a DATABASE_URL.');
   }
 
   const sql = postgres(databaseUrl, { max: 1 });
@@ -219,9 +206,7 @@ async function setFixtureVisibility(
   }
 }
 
-async function fixtureStepHasInstruction(
-  instruction: string,
-): Promise<boolean> {
+async function fixtureStepHasInstruction(instruction: string): Promise<boolean> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) return false;
 
@@ -240,9 +225,9 @@ async function fixtureStepHasInstruction(
   }
 }
 
-test.describe.configure({ mode: "serial", timeout: 120_000 });
+test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
-test.describe("co-creation across two identities (#698)", () => {
+test.describe('co-creation across two identities (#698)', () => {
   let ownerContext: BrowserContext;
   let cookContext: BrowserContext;
   let owner: Page;
@@ -265,7 +250,7 @@ test.describe("co-creation across two identities (#698)", () => {
     await cookContext?.close();
   });
 
-  test("the two contexts really are two different people", async () => {
+  test('the two contexts really are two different people', async () => {
     await owner.goto(ownerPath);
     await expectServesRecipe(owner);
     const panel = creatorPanel(owner);
@@ -285,7 +270,7 @@ test.describe("co-creation across two identities (#698)", () => {
     await expectRevoked(cook);
   });
 
-  test("a pending invitation grants nothing", async () => {
+  test('a pending invitation grants nothing', async () => {
     const panel = await inviteCook(owner);
 
     // The owner sees them as invited, explicitly not yet a co-creator.
@@ -297,8 +282,8 @@ test.describe("co-creation across two identities (#698)", () => {
   });
 
   test("accepting publishes the recipe in the co-creator's namespace", async () => {
-    await cook.goto("/notifications");
-    const accept = cook.getByRole("button", { name: /^Accept$/ });
+    await cook.goto('/notifications');
+    const accept = cook.getByRole('button', { name: /^Accept$/ });
     await expect(accept.first()).toBeVisible({ timeout: 15_000 });
     await accept.first().click();
     await expect(cook.getByText(/you're now a co-creator/i)).toBeVisible({
@@ -313,33 +298,27 @@ test.describe("co-creation across two identities (#698)", () => {
       await expect(creatorPanel(owner).getByText(/^Co-creator$/)).toBeVisible();
     }).toPass({ timeout: 20_000 });
 
-    const link = creatorPanel(owner).getByRole("link", {
+    const link = creatorPanel(owner).getByRole('link', {
       name: /^\/recipes\//,
     });
-    mirrorPath = (await link.first().getAttribute("href"))!;
+    mirrorPath = (await link.first().getAttribute('href'))!;
     expect(mirrorPath).toMatch(/^\/recipes\/e2e-co-cook\//);
     expect(mirrorPath).not.toBe(ownerPath);
   });
 
-  test("the recipe answers on both paths, and the mirror points home", async () => {
+  test('the recipe answers on both paths, and the mirror points home', async () => {
     for (const [page, label] of [
-      [owner, "owner"],
-      [cook, "co-creator"],
+      [owner, 'owner'],
+      [cook, 'co-creator'],
     ] as const) {
       await page.goto(mirrorPath);
       await expectServesRecipe(page);
-      expect(
-        new URL(page.url()).pathname,
-        `${label} stays on the mirror URL`,
-      ).toBe(mirrorPath);
+      expect(new URL(page.url()).pathname, `${label} stays on the mirror URL`).toBe(mirrorPath);
     }
 
     // SEO: N URLs resolve, exactly one is canonical, and it is the owner's.
-    const canonical = await cook
-      .locator('link[rel="canonical"]')
-      .first()
-      .getAttribute("href");
-    expect(canonical, "mirror declares a canonical").toBeTruthy();
+    const canonical = await cook.locator('link[rel="canonical"]').first().getAttribute('href');
+    expect(canonical, 'mirror declares a canonical').toBeTruthy();
     expect(new URL(canonical!).pathname).toBe(ownerPath);
 
     const ownerRes = await owner.goto(ownerPath);
@@ -347,21 +326,19 @@ test.describe("co-creation across two identities (#698)", () => {
     const ownerCanonical = await owner
       .locator('link[rel="canonical"]')
       .first()
-      .getAttribute("href");
+      .getAttribute('href');
     expect(new URL(ownerCanonical!).pathname).toBe(ownerPath);
   });
 
-  test("a co-creator edit is visible under both namespaces", async () => {
+  test('a co-creator edit is visible under both namespaces', async () => {
     const marker = `Rested overnight ${Date.now()}`;
 
     await cook.goto(`${mirrorPath}/edit`);
-    const firstStep = cook
-      .getByRole("textbox", { name: /instruction/i })
-      .first();
-    await expect(firstStep).not.toHaveValue("");
+    const firstStep = cook.getByRole('textbox', { name: /instruction/i }).first();
+    await expect(firstStep).not.toHaveValue('');
     await firstStep.fill(marker);
 
-    const save = cook.getByRole("button", { name: /save changes/i });
+    const save = cook.getByRole('button', { name: /save changes/i });
     let saved = false;
     for (let attempt = 0; attempt < 3 && !saved; attempt += 1) {
       await save.click();
@@ -378,15 +355,12 @@ test.describe("co-creation across two identities (#698)", () => {
     // This is the end-to-end fan-out property that would have caught #695.
     for (const path of [ownerPath, mirrorPath]) {
       await cook.goto(path);
-      await expect(
-        cook.getByText(marker),
-        `the edit must be visible at ${path}`,
-      ).toBeVisible();
+      await expect(cook.getByText(marker), `the edit must be visible at ${path}`).toBeVisible();
     }
   });
 
-  test("a co-creator is refused delete, share-link, and creator management", async () => {
-    await setFixtureVisibility("unlisted");
+  test('a co-creator is refused delete, share-link, and creator management', async () => {
+    await setFixtureVisibility('unlisted');
     try {
       await cook.goto(mirrorPath);
 
@@ -394,53 +368,39 @@ test.describe("co-creation across two identities (#698)", () => {
       await expect(cook.getByLabel(/invite a cook/i)).toHaveCount(0);
 
       await openActionsMenu(cook);
-      await expect(cook.getByRole("button", { name: /^delete/i })).toHaveCount(
-        0,
-      );
-      await expect(
-        cook.getByRole("button", { name: /^leave this recipe$/i }),
-      ).toBeVisible();
+      await expect(cook.getByRole('button', { name: /^delete/i })).toHaveCount(0);
+      await expect(cook.getByRole('button', { name: /^leave this recipe$/i })).toBeVisible();
 
-      await cook.getByRole("button", { name: /^share$/i }).click();
-      await expect(
-        cook.getByRole("menuitem", { name: /disable link/i }),
-      ).toHaveCount(0);
-      await expect(
-        cook.getByRole("menuitem", { name: /reset link/i }),
-      ).toHaveCount(0);
+      await cook.getByRole('button', { name: /^share$/i }).click();
+      await expect(cook.getByRole('menuitem', { name: /disable link/i })).toHaveCount(0);
+      await expect(cook.getByRole('menuitem', { name: /reset link/i })).toHaveCount(0);
 
       // Anchor the negative assertions: the owner sees all three management
       // surfaces on the same unlisted recipe.
       await owner.goto(ownerPath);
       await expect(creatorPanel(owner)).toBeVisible();
       await openActionsMenu(owner);
-      await expect(
-        owner.getByRole("button", { name: /^delete$/i }),
-      ).toBeVisible();
-      await owner.getByRole("button", { name: /^share$/i }).click();
-      await expect(
-        owner.getByRole("menuitem", { name: /disable link/i }),
-      ).toBeVisible();
-      await expect(
-        owner.getByRole("menuitem", { name: /reset link/i }),
-      ).toBeVisible();
+      await expect(owner.getByRole('button', { name: /^delete$/i })).toBeVisible();
+      await owner.getByRole('button', { name: /^share$/i }).click();
+      await expect(owner.getByRole('menuitem', { name: /disable link/i })).toBeVisible();
+      await expect(owner.getByRole('menuitem', { name: /reset link/i })).toBeVisible();
     } finally {
-      await setFixtureVisibility("public");
+      await setFixtureVisibility('public');
     }
   });
 
-  test("removal revokes the mirror, and never redirects", async () => {
+  test('removal revokes the mirror, and never redirects', async () => {
     await owner.goto(ownerPath);
     await creatorPanel(owner)
-      .getByRole("button", { name: /^Remove$/ })
+      .getByRole('button', { name: /^Remove$/ })
       .first()
       .click();
     await expect(owner.getByText(/co-creator removed/i)).toBeVisible({
       timeout: 30_000,
     });
-    await expect(
-      creatorPanel(owner).getByText(new RegExp(CO_COOK_NAME)),
-    ).toHaveCount(0, { timeout: 20_000 });
+    await expect(creatorPanel(owner).getByText(new RegExp(CO_COOK_NAME))).toHaveCount(0, {
+      timeout: 20_000,
+    });
 
     // The cached page must stop being served, and it must not redirect: a 308
     // to the owner's path would leak both that the recipe still exists and
@@ -457,14 +417,14 @@ test.describe("co-creation across two identities (#698)", () => {
     await expectServesRecipe(owner);
   });
 
-  test("leaving revokes exactly as removal does", async () => {
+  test('leaving revokes exactly as removal does', async () => {
     await owner.goto(ownerPath);
     const panel = await inviteCook(owner);
     await expect(panel.getByText(/^Invited$/)).toBeVisible({ timeout: 15_000 });
 
-    await cook.goto("/notifications");
+    await cook.goto('/notifications');
     await cook
-      .getByRole("button", { name: /^Accept$/ })
+      .getByRole('button', { name: /^Accept$/ })
       .first()
       .click();
     await expect(cook.getByText(/you're now a co-creator/i)).toBeVisible({
@@ -480,11 +440,11 @@ test.describe("co-creation across two identities (#698)", () => {
     // co-creator's counterpart to the owner's Delete, and both sit behind the
     // same overflow trigger. It is not in the DOM until the menu is opened.
     await cook
-      .getByRole("button", { name: /more recipe actions/i })
+      .getByRole('button', { name: /more recipe actions/i })
       .first()
       .click();
-    await cook.getByRole("button", { name: /^Leave this recipe$/i }).click();
-    await cook.getByRole("button", { name: /^Leave$/ }).click();
+    await cook.getByRole('button', { name: /^Leave this recipe$/i }).click();
+    await cook.getByRole('button', { name: /^Leave$/ }).click();
     await expect(cook.getByText(/you've left this recipe/i)).toBeVisible({
       timeout: 30_000,
     });

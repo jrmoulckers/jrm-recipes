@@ -1,35 +1,33 @@
-import { type Metadata } from "next";
-import { Ruler } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { type Metadata } from 'next';
+import { Ruler } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-import { getCurrentUser, isAuthConfigured } from "~/server/auth";
-import { isDbConfigured } from "~/server/db";
-import { getUnitSettings } from "~/server/units/queries";
+import { getCurrentUser, isAuthConfigured } from '~/server/auth';
+import { isDbConfigured } from '~/server/db';
+import { getUnitSettings } from '~/server/units/queries';
 import {
   UnitPreferencesManager,
   type CustomUnitView,
   type UnitPreferencesView,
-} from "~/components/settings/unit-preferences-manager";
-import { type CustomUnitDimension } from "~/server/units/validation";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+} from '~/components/settings/unit-preferences-manager';
+import { type CustomUnitDimension } from '~/server/units/validation';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("metadata");
-  return { title: t("unitSettings.title") };
+  const t = await getTranslations('metadata');
+  return { title: t('unitSettings.title') };
 }
 
 async function UnitsSettingsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
-  const t = await getTranslations("settings.unitsPage");
+  const t = await getTranslations('settings.unitsPage');
 
   if (authConfigured && dbConfigured && !user) return <SignInNudge />;
 
   const settings =
-    user && dbConfigured
-      ? await getUnitSettings(user.id)
-      : { preferences: null, customUnits: [] };
+    user && dbConfigured ? await getUnitSettings(user.id) : { preferences: null, customUnits: [] };
 
   const preferences: UnitPreferencesView | null = settings.preferences
     ? {
@@ -58,10 +56,8 @@ async function UnitsSettingsPage() {
   return (
     <div className="container flex flex-col gap-8 py-10">
       <header className="max-w-2xl">
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          {t("title")}
-        </h1>
-        <p className="mt-1 text-muted-foreground">{t("description")}</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="mt-1 text-muted-foreground">{t('description')}</p>
       </header>
 
       <UnitPreferencesManager
@@ -74,7 +70,7 @@ async function UnitsSettingsPage() {
 }
 
 async function SignInNudge() {
-  const t = await getTranslations("settings.unitsPage.signIn");
+  const t = await getTranslations('settings.unitsPage.signIn');
   return (
     <div className="container py-16">
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-token">
@@ -82,10 +78,8 @@ async function SignInNudge() {
           <Ruler className="size-7" aria-hidden="true" />
         </span>
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="mt-2 text-muted-foreground">{t("body")}</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('body')}</p>
         </div>
       </div>
     </div>

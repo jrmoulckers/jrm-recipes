@@ -1,8 +1,8 @@
-import { Suspense } from "react";
-import { type Metadata } from "next";
-import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
-import { getTranslations, getLocale } from "next-intl/server";
+import { Suspense } from 'react';
+import { type Metadata } from 'next';
+import Link from 'next/link';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getTranslations, getLocale } from 'next-intl/server';
 import {
   BookOpen,
   ChefHat,
@@ -21,9 +21,9 @@ import {
   Timer,
   Users,
   Wrench,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { isDbConfigured } from "~/server/db";
+import { isDbConfigured } from '~/server/db';
 import {
   getRecipeLineage,
   getRecipeFamilyTree,
@@ -31,78 +31,74 @@ import {
   recordRecipeView,
   excludeOwnerRatings,
   ratingSummary,
-} from "~/server/recipes/queries";
-import { getRecipeIngredientAllergens } from "~/server/recipes/allergens";
+} from '~/server/recipes/queries';
+import { getRecipeIngredientAllergens } from '~/server/recipes/allergens';
 import {
   getCollectionsForRecipe,
   getFavoriteRecipeIds,
   isFavorited,
-} from "~/server/collections/queries";
-import { absoluteUrl, formatMinutes } from "~/lib/utils";
-import { brand } from "~/config/brand";
-import { pickNutrition, hasNutrition } from "~/lib/nutrition";
-import { isAllergen, type Allergen } from "~/lib/allergens";
-import { isDietaryTag } from "~/lib/substitutions";
-import { groupRecipeClassifications } from "~/lib/recipe-classifications";
-import { listMemberProfiles } from "~/server/dietary/queries";
-import { getUnitSettings } from "~/server/units/queries";
-import { toUnitPrefs, toCustomUnitDefs } from "~/lib/unit-prefs";
-import {
-  buildRecipeJsonLd,
-  buildBreadcrumbJsonLd,
-  serializeJsonLd,
-} from "~/lib/recipe-seo";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Breadcrumbs } from "~/components/layout/breadcrumbs";
-import { RecipeImage } from "~/components/recipe/recipe-image";
-import { RecipeClassificationBadges } from "~/components/recipe/recipe-classification-badges";
-import { Separator } from "~/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { IngredientsPanel } from "~/components/recipe/ingredients-panel";
-import { AnchoredSuggestions } from "~/components/engagement/anchored-suggestions-lazy";
-import { AllergenSummary } from "~/components/recipe/allergen-summary";
-import { ShareButton } from "~/components/recipe/share-button";
-import { CreateReelButton } from "~/components/recipe/reel-button";
-import { mapRecipeToReel } from "~/lib/reel/scenes";
-import { DeleteRecipeButton } from "~/components/recipe/delete-recipe-button";
-import { RecipeActionsMenu } from "~/components/recipe/recipe-actions-menu";
-import { ReadAloudButton } from "~/components/recipe/read-aloud-button-lazy";
-import { AdaptButton } from "~/components/recipe/adapt-button";
-import { GrownUpControls } from "~/components/recipe/grown-up-controls";
-import { AddToShoppingList } from "~/components/shopping/add-to-shopping-list";
-import { RecipeLineage } from "~/components/recipe/lineage";
-import { RecipeFamilyTree } from "~/components/recipe/family-tree";
-import { TechniqueChips } from "~/components/cook/technique-chips";
-import { CookBundleWarmer } from "~/components/cook/cook-bundle-warmer";
-import { FavoriteButton } from "~/components/collections/favorite-button";
-import { SaveToCollectionButton } from "~/components/collections/save-to-collection-button";
-import { QuickPlanButton } from "~/components/recipe/quick-plan-button";
-import { RecipeCard } from "~/components/recipe/recipe-card";
-import { RecipeTimelineSection } from "~/components/recipe/sections/recipe-timeline-section";
-import { RecipeCookedSection } from "~/components/recipe/sections/recipe-cooked-section";
-import { RecipeDiscussionSection } from "~/components/recipe/sections/recipe-discussion-section";
-import { RecipeReviewsSection } from "~/components/recipe/sections/recipe-reviews-section";
-import { TabSectionSkeleton } from "~/components/recipe/sections/section-skeleton";
-import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
-import { listRecipeCreators } from "~/server/recipes/creators";
-import { RecipeCreatorManager } from "~/components/recipe/creator-manager";
-import { LeaveRecipeButton } from "~/components/recipe/leave-recipe-button";
-import { computeRecipeNutrition } from "~/server/recipes/nutrition";
-import { getMembership } from "~/server/groups/queries";
-import { isKid } from "~/server/groups/kid-safe";
-import { buildTwoWeekPlanContext } from "~/server/planner/quick-plan";
-import { getAnchoredSuggestions } from "~/server/engagement/queries";
-import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+} from '~/server/collections/queries';
+import { absoluteUrl, formatMinutes } from '~/lib/utils';
+import { brand } from '~/config/brand';
+import { pickNutrition, hasNutrition } from '~/lib/nutrition';
+import { isAllergen, type Allergen } from '~/lib/allergens';
+import { isDietaryTag } from '~/lib/substitutions';
+import { groupRecipeClassifications } from '~/lib/recipe-classifications';
+import { listMemberProfiles } from '~/server/dietary/queries';
+import { getUnitSettings } from '~/server/units/queries';
+import { toUnitPrefs, toCustomUnitDefs } from '~/lib/unit-prefs';
+import { buildRecipeJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from '~/lib/recipe-seo';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Breadcrumbs } from '~/components/layout/breadcrumbs';
+import { RecipeImage } from '~/components/recipe/recipe-image';
+import { RecipeClassificationBadges } from '~/components/recipe/recipe-classification-badges';
+import { Separator } from '~/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { IngredientsPanel } from '~/components/recipe/ingredients-panel';
+import { AnchoredSuggestions } from '~/components/engagement/anchored-suggestions-lazy';
+import { AllergenSummary } from '~/components/recipe/allergen-summary';
+import { ShareButton } from '~/components/recipe/share-button';
+import { CreateReelButton } from '~/components/recipe/reel-button';
+import { mapRecipeToReel } from '~/lib/reel/scenes';
+import { DeleteRecipeButton } from '~/components/recipe/delete-recipe-button';
+import { RecipeActionsMenu } from '~/components/recipe/recipe-actions-menu';
+import { ReadAloudButton } from '~/components/recipe/read-aloud-button-lazy';
+import { AdaptButton } from '~/components/recipe/adapt-button';
+import { GrownUpControls } from '~/components/recipe/grown-up-controls';
+import { AddToShoppingList } from '~/components/shopping/add-to-shopping-list';
+import { RecipeLineage } from '~/components/recipe/lineage';
+import { RecipeFamilyTree } from '~/components/recipe/family-tree';
+import { TechniqueChips } from '~/components/cook/technique-chips';
+import { CookBundleWarmer } from '~/components/cook/cook-bundle-warmer';
+import { FavoriteButton } from '~/components/collections/favorite-button';
+import { SaveToCollectionButton } from '~/components/collections/save-to-collection-button';
+import { QuickPlanButton } from '~/components/recipe/quick-plan-button';
+import { RecipeCard } from '~/components/recipe/recipe-card';
+import { RecipeTimelineSection } from '~/components/recipe/sections/recipe-timeline-section';
+import { RecipeCookedSection } from '~/components/recipe/sections/recipe-cooked-section';
+import { RecipeDiscussionSection } from '~/components/recipe/sections/recipe-discussion-section';
+import { RecipeReviewsSection } from '~/components/recipe/sections/recipe-reviews-section';
+import { TabSectionSkeleton } from '~/components/recipe/sections/section-skeleton';
+import { getNamespacedRecipeForViewer } from '~/server/recipes/loaders';
+import { listRecipeCreators } from '~/server/recipes/creators';
+import { RecipeCreatorManager } from '~/components/recipe/creator-manager';
+import { LeaveRecipeButton } from '~/components/recipe/leave-recipe-button';
+import { computeRecipeNutrition } from '~/server/recipes/nutrition';
+import { getMembership } from '~/server/groups/queries';
+import { isKid } from '~/server/groups/kid-safe';
+import { buildTwoWeekPlanContext } from '~/server/planner/quick-plan';
+import { getAnchoredSuggestions } from '~/server/engagement/queries';
+import { parseRecipeParams, type RecipeRouteParams } from '~/lib/route-params';
 import {
   recipeCookPath,
   recipeDetailPath,
   recipeEditPath,
   recipeKeepsakePath,
   recipePrintPath,
-} from "~/lib/recipe-path";
-import type { Route } from "next";
-import { withRouteMessages } from "~/components/i18n/route-messages";
+} from '~/lib/recipe-path';
+import type { Route } from 'next';
+import { withRouteMessages } from '~/components/i18n/route-messages';
 
 export async function generateMetadata({
   params,
@@ -111,7 +107,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
-  if (!recipe) return { title: "Recipe not found" };
+  if (!recipe) return { title: 'Recipe not found' };
   const description = recipe.description ?? `A family recipe on ${brand.name}.`;
   const canonical = absoluteUrl(
     recipeDetailPath({
@@ -120,7 +116,7 @@ export async function generateMetadata({
       cook: recipe.author.slug,
     }),
   );
-  const isPublic = recipe.visibility === "public";
+  const isPublic = recipe.visibility === 'public';
   return {
     title: recipe.title,
     description,
@@ -131,8 +127,8 @@ export async function generateMetadata({
       ...(isPublic
         ? {
             types: {
-              "application/json+oembed": `${absoluteUrl(
-                "/api/oembed",
+              'application/json+oembed': `${absoluteUrl(
+                '/api/oembed',
               )}?url=${encodeURIComponent(canonical)}&format=json`,
             },
           }
@@ -140,18 +136,16 @@ export async function generateMetadata({
     },
     // Keep private/group/unlisted recipes out of search indexes. Only public
     // recipes should be crawlable.
-    ...(recipe.visibility !== "public"
-      ? { robots: { index: false, follow: false } }
-      : {}),
+    ...(recipe.visibility !== 'public' ? { robots: { index: false, follow: false } } : {}),
     // The image itself is supplied automatically from the sibling
     // `opengraph-image` route (Next injects it into og:image + twitter:image).
     openGraph: {
       title: recipe.title,
       description,
-      type: "article",
+      type: 'article',
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       title: recipe.title,
       description,
     },
@@ -182,8 +176,11 @@ async function RecipePage({
   shareToken?: string;
 }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
-  const { user, recipe, disposition, legacySubRoute } =
-    await getNamespacedRecipeForViewer(cook, recipeSegment, shareToken);
+  const { user, recipe, disposition, legacySubRoute } = await getNamespacedRecipeForViewer(
+    cook,
+    recipeSegment,
+    shareToken,
+  );
   if (!recipe) notFound();
   // Only redirect once the viewer has passed `canView` above, so an alias can
   // never confirm that a recipe exists to somebody who may not see it (#666).
@@ -193,7 +190,7 @@ async function RecipePage({
   // It renders here, and `generateMetadata` already points `rel=canonical` at
   // the owner's path, so the creator keeps their own URL while search engines
   // still see one indexable address.
-  if (disposition === "alias" && !shareToken) {
+  if (disposition === 'alias' && !shareToken) {
     const ref = {
       id: recipe.id,
       slug: recipe.slug,
@@ -202,28 +199,27 @@ async function RecipePage({
     // A pre-cutover sub-route link (`/recipes/<slug>/cook`) keeps its sub-route
     // and its query, so a shared keepsake link still arrives with its note.
     const target =
-      legacySubRoute === "cook"
+      legacySubRoute === 'cook'
         ? recipeCookPath(ref)
-        : legacySubRoute === "print"
+        : legacySubRoute === 'print'
           ? recipePrintPath(ref)
-          : legacySubRoute === "keepsake"
+          : legacySubRoute === 'keepsake'
             ? recipeKeepsakePath(ref)
-            : legacySubRoute === "edit"
+            : legacySubRoute === 'edit'
               ? recipeEditPath(ref)
               : recipeDetailPath(ref);
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries((await searchParams) ?? {})) {
-      if (typeof value === "string") query.set(key, value);
-      else if (Array.isArray(value) && value[0] != null)
-        query.set(key, value[0]);
+      if (typeof value === 'string') query.set(key, value);
+      else if (Array.isArray(value) && value[0] != null) query.set(key, value[0]);
     }
     const suffix = query.toString();
     permanentRedirect(suffix ? (`${target}?${suffix}` as Route) : target);
   }
 
-  const t = await getTranslations("recipeDetail");
-  const tCreators = await getTranslations("recipeCreators");
-  const tNav = await getTranslations("nav");
+  const t = await getTranslations('recipeDetail');
+  const tCreators = await getTranslations('recipeCreators');
+  const tNav = await getTranslations('nav');
   // Every in-page link to this recipe's own sub-routes is built from the one
   // canonical reference, so the namespaced segments can't drift apart (#666).
   const pathRef = {
@@ -231,19 +227,14 @@ async function RecipePage({
     slug: recipe.slug,
     cook: recipe.author.slug,
   };
-  const classifications = groupRecipeClassifications(
-    recipe.tags,
-    recipe.cuisine,
-  );
+  const classifications = groupRecipeClassifications(recipe.tags, recipe.cuisine);
   const declaredDietary = (recipe.dietaryFlags ?? []).filter(isDietaryTag);
 
   // Unlisted recipes are shared by token, never by their guessable slug, so the
   // share UI must copy `/r/<token>` (issue #204). Falls back to the page URL for
   // public/group recipes, where the address itself is the shareable link.
   const shareUrl =
-    recipe.visibility === "unlisted" &&
-    recipe.shareToken &&
-    recipe.shareLinkEnabled
+    recipe.visibility === 'unlisted' && recipe.shareToken && recipe.shareLinkEnabled
       ? absoluteUrl(`/r/${recipe.shareToken}`)
       : undefined;
 
@@ -264,9 +255,7 @@ async function RecipePage({
     handle: null,
     cook: entry.user?.slug ?? null,
   }));
-  const acceptedCreators = creatorRows.filter(
-    (entry) => entry.status === "accepted",
-  );
+  const acceptedCreators = creatorRows.filter((entry) => entry.status === 'accepted');
   // An accepted co-creator may rewrite the recipe body, but not delete it or
   // change who can see it (#668), so edit and owner affordances are separate.
   const viewerIsCreator = Boolean(
@@ -287,15 +276,11 @@ async function RecipePage({
   const addToPlanContext = user && dbEnabled ? buildTwoWeekPlanContext() : null;
   // Exclude any owner self-rating so the shown average matches the JSON-LD
   // aggregateRating (authors can't rate their own recipe).
-  const { average, count } = ratingSummary(
-    excludeOwnerRatings(recipe.ratings, recipe.authorId),
-  );
+  const { average, count } = ratingSummary(excludeOwnerRatings(recipe.ratings, recipe.authorId));
 
   // Fire the "recently viewed" write concurrently with the reads below. A
   // signed-out viewer records nothing.
-  const recordView = user
-    ? recordRecipeView(user.id, recipe.id)
-    : Promise.resolve();
+  const recordView = user ? recordRecipeView(user.id, recipe.id) : Promise.resolve();
 
   // Secondary reads that still gate first paint are kept lean: lineage sits
   // above the tabs, favorite / saved / similar power the action bar and the
@@ -329,9 +314,7 @@ async function RecipePage({
     user && dbEnabled ? listMemberProfiles(user.id) : Promise.resolve([]),
     dbEnabled ? getAnchoredSuggestions(recipe.id) : Promise.resolve([]),
     user && dbEnabled ? getUnitSettings(user.id) : Promise.resolve(null),
-    needsNutritionEstimate
-      ? computeRecipeNutrition(recipe.id)
-      : Promise.resolve(null),
+    needsNutritionEstimate ? computeRecipeNutrition(recipe.id) : Promise.resolve(null),
     dbEnabled
       ? getRecipeIngredientAllergens(recipe.id)
       : Promise.resolve(new Map<string, Allergen[]>()),
@@ -370,16 +353,12 @@ async function RecipePage({
   // cook sees amounts in their saved system + per-dimension defaults + custom
   // units. Signed-out viewers get the author's original units untouched.
   const locale = await getLocale();
-  const viewerUnitPrefs = user
-    ? toUnitPrefs(unitSettings?.preferences, locale)
-    : undefined;
-  const viewerCustomUnits = user
-    ? toCustomUnitDefs(unitSettings?.customUnits)
-    : undefined;
+  const viewerUnitPrefs = user ? toUnitPrefs(unitSettings?.preferences, locale) : undefined;
+  const viewerCustomUnits = user ? toCustomUnitDefs(unitSettings?.customUnits) : undefined;
 
   // schema.org structured data. Public recipes only, so we never expose the
   // details of private/group/unlisted recipes to crawlers.
-  const isPublic = recipe.visibility === "public";
+  const isPublic = recipe.visibility === 'public';
   const jsonLd = isPublic ? buildRecipeJsonLd(recipe) : null;
   const breadcrumbJsonLd = isPublic ? buildBreadcrumbJsonLd(recipe) : null;
 
@@ -390,15 +369,15 @@ async function RecipePage({
     },
     recipe.prepMinutes != null && {
       icon: Timer,
-      label: t("meta.prep", { time: formatMinutes(recipe.prepMinutes) }),
+      label: t('meta.prep', { time: formatMinutes(recipe.prepMinutes) }),
     },
     recipe.restMinutes != null && {
       icon: Hourglass,
-      label: t("meta.resting", { time: formatMinutes(recipe.restMinutes) }),
+      label: t('meta.resting', { time: formatMinutes(recipe.restMinutes) }),
     },
     recipe.servings != null && {
       icon: Users,
-      label: `${recipe.servings} ${recipe.servingsNoun ?? t("servingsNoun")}`,
+      label: `${recipe.servings} ${recipe.servingsNoun ?? t('servingsNoun')}`,
     },
     recipe.difficulty && {
       icon: Flame,
@@ -429,7 +408,7 @@ async function RecipePage({
             there is nothing extra to say about the photo itself. */}
         <div className="relative aspect-[21/9] max-h-[420px] w-full overflow-hidden">
           <RecipeImage
-            alt={recipe.coverImageAlt ?? ""}
+            alt={recipe.coverImageAlt ?? ''}
             src={recipe.coverImageUrl}
             fallbackKey={recipe.id}
             fallbackContext={{
@@ -451,15 +430,10 @@ async function RecipePage({
           <div className="flex flex-wrap items-center gap-2">
             <Breadcrumbs
               className="-ms-0.5"
-              items={[
-                { label: tNav("recipes"), href: "/recipes" },
-                { label: recipe.title },
-              ]}
+              items={[{ label: tNav('recipes'), href: '/recipes' }, { label: recipe.title }]}
             />
-            {recipe.visibility !== "public" && (
-              <Badge variant="muted">
-                {t(`visibility.${recipe.visibility}`)}
-              </Badge>
+            {recipe.visibility !== 'public' && (
+              <Badge variant="muted">{t(`visibility.${recipe.visibility}`)}</Badge>
             )}
             <RecipeClassificationBadges
               items={[...classifications.meal, ...classifications.cuisine]}
@@ -479,31 +453,25 @@ async function RecipePage({
             {recipe.title}
           </h1>
           {recipe.description && (
-            <p className="max-w-2xl text-lg text-muted-foreground">
-              {recipe.description}
-            </p>
+            <p className="max-w-2xl text-lg text-muted-foreground">{recipe.description}</p>
           )}
-          {(recipe.handedDownFrom ??
-            recipe.originYear ??
-            recipe.originPlace) && (
+          {(recipe.handedDownFrom ?? recipe.originYear ?? recipe.originPlace) && (
             <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-secondary-foreground">
               <Sparkles className="size-4 text-secondary" aria-hidden="true" />
               {[
-                recipe.handedDownFrom
-                  ? `Handed down from ${recipe.handedDownFrom}`
-                  : null,
+                recipe.handedDownFrom ? `Handed down from ${recipe.handedDownFrom}` : null,
                 recipe.originYear ? `since ${recipe.originYear}` : null,
                 recipe.originPlace,
               ]
                 .filter(Boolean)
-                .join(" · ")}
+                .join(' · ')}
             </p>
           )}
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
             {recipe.author?.name && (
               <span>
-                {t("by")}{" "}
+                {t('by')}{' '}
                 {recipe.author.handle ? (
                   <Link
                     href={`/cooks/${recipe.author.handle}`}
@@ -512,9 +480,7 @@ async function RecipePage({
                     {recipe.author.name}
                   </Link>
                 ) : (
-                  <span className="font-medium text-foreground">
-                    {recipe.author.name}
-                  </span>
+                  <span className="font-medium text-foreground">{recipe.author.name}</span>
                 )}
                 {/* Co-creators are named next to the owner rather than in a
                     separate block (#668): they wrote part of this recipe, and
@@ -522,31 +488,25 @@ async function RecipePage({
                     owner stays first — theirs is the canonical namespace. */}
                 {acceptedCreators.length > 0 && (
                   <>
-                    {" "}
-                    {tCreators("byline.with", {
+                    {' '}
+                    {tCreators('byline.with', {
                       names: acceptedCreators
-                        .map(
-                          (entry) =>
-                            entry.user?.name ?? tCreators("unknownCook"),
-                        )
-                        .join(", "),
+                        .map((entry) => entry.user?.name ?? tCreators('unknownCook'))
+                        .join(', '),
                     })}
                   </>
                 )}
               </span>
             )}
             {meta.map((m, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1.5 capitalize"
-              >
+              <span key={i} className="inline-flex items-center gap-1.5 capitalize">
                 <m.icon className="size-4" /> {m.label}
               </span>
             ))}
             {count > 0 && (
               <span
                 className="inline-flex items-center gap-1.5"
-                aria-label={t("ratingLabel", {
+                aria-label={t('ratingLabel', {
                   average: average.toFixed(1),
                   count,
                 })}
@@ -572,13 +532,13 @@ async function RecipePage({
             />
             <Button asChild size="lg">
               <Link href={recipeCookPath(pathRef)}>
-                <Play /> {t("actions.cook")}
+                <Play /> {t('actions.cook')}
               </Link>
             </Button>
             <RecipeActionsMenu>
               <Button asChild size="lg" variant="outline">
                 <Link href={recipePrintPath(pathRef)}>
-                  <Printer /> {t("actions.print")}
+                  <Printer /> {t('actions.print')}
                 </Link>
               </Button>
               <GrownUpControls>
@@ -588,7 +548,7 @@ async function RecipePage({
                   recipePath={recipeDetailPath(pathRef)}
                   shareUrl={shareUrl}
                   recipeId={recipe.id}
-                  manageable={isOwner && recipe.visibility === "unlisted"}
+                  manageable={isOwner && recipe.visibility === 'unlisted'}
                   shareEnabled={recipe.shareLinkEnabled}
                   defaultFrom={user?.name ?? recipe.author?.name}
                   keepsakeToken={shareUrl ? recipe.shareToken : undefined}
@@ -645,26 +605,20 @@ async function RecipePage({
                 <GrownUpControls>
                   <Button asChild size="lg" variant="outline">
                     <Link href={recipeEditPath(pathRef)}>
-                      <Pencil /> {t("actions.edit")}
+                      <Pencil /> {t('actions.edit')}
                     </Link>
                   </Button>
                   {!isOwner ? null : viewerIsKid ? (
                     <p className="px-3 py-2 text-sm text-muted-foreground">
-                      {t("kidSafe.deleteHidden")}
+                      {t('kidSafe.deleteHidden')}
                     </p>
                   ) : (
-                    <DeleteRecipeButton
-                      id={recipe.id}
-                      slug={recipe.slug}
-                      title={recipe.title}
-                    />
+                    <DeleteRecipeButton id={recipe.id} slug={recipe.slug} title={recipe.title} />
                   )}
                   {/* A co-creator's counterpart to Delete: removal is otherwise
                       entirely the owner's call, so this is their only way to end
                       an attachment that is public under their own name (#668). */}
-                  {viewerIsCreator && (
-                    <LeaveRecipeButton recipeId={recipe.id} />
-                  )}
+                  {viewerIsCreator && <LeaveRecipeButton recipeId={recipe.id} />}
                 </GrownUpControls>
               )}
             </RecipeActionsMenu>
@@ -676,25 +630,22 @@ async function RecipePage({
         {familyTree?.multiGeneration ? (
           <RecipeFamilyTree tree={familyTree} />
         ) : (
-          <RecipeLineage
-            parent={lineage.parent}
-            adaptations={lineage.adaptations}
-          />
+          <RecipeLineage parent={lineage.parent} adaptations={lineage.adaptations} />
         )}
 
         <Tabs defaultValue="recipe" className="flex flex-col gap-2">
           <TabsList className="self-start">
             <TabsTrigger value="recipe">
-              <BookOpen className="size-4" /> {t("tabs.recipe")}
+              <BookOpen className="size-4" /> {t('tabs.recipe')}
             </TabsTrigger>
             <TabsTrigger value="timeline">
-              <History className="size-4" /> {t("tabs.timeline")}
+              <History className="size-4" /> {t('tabs.timeline')}
             </TabsTrigger>
             <TabsTrigger value="cooked">
-              <CookingPot className="size-4" /> {t("tabs.cooked")}
+              <CookingPot className="size-4" /> {t('tabs.cooked')}
             </TabsTrigger>
             <TabsTrigger value="discussion">
-              <MessageCircle className="size-4" /> {t("tabs.discussion")}
+              <MessageCircle className="size-4" /> {t('tabs.discussion')}
             </TabsTrigger>
           </TabsList>
 
@@ -703,7 +654,7 @@ async function RecipePage({
               {/* Ingredients */}
               <div className="lg:sticky lg:top-20 lg:self-start">
                 <h2 className="mb-4 font-display text-2xl font-bold tracking-tight">
-                  {t("ingredients.heading")}
+                  {t('ingredients.heading')}
                 </h2>
                 {recipe.ingredients.length > 0 && (
                   <AllergenSummary
@@ -718,8 +669,7 @@ async function RecipePage({
                     servingsNoun={recipe.servingsNoun}
                     nutrition={manualNutrition}
                     estimatedNutrition={
-                      nutritionEstimate &&
-                      hasNutrition(nutritionEstimate.perServing)
+                      nutritionEstimate && hasNutrition(nutritionEstimate.perServing)
                         ? {
                             perServing: nutritionEstimate.perServing,
                             sourced: nutritionEstimate.sourcedLines,
@@ -743,16 +693,14 @@ async function RecipePage({
                     }}
                   />
                 ) : (
-                  <p className="text-muted-foreground">
-                    {t("ingredients.empty")}
-                  </p>
+                  <p className="text-muted-foreground">{t('ingredients.empty')}</p>
                 )}
 
                 {recipe.makeAheadNote && (
                   <div className="mt-6 rounded-xl border border-border bg-muted/40 p-4">
                     <h3 className="flex items-center gap-2 text-sm font-semibold">
                       <Hourglass className="size-4 text-primary" />
-                      {t("ingredients.makeAhead")}
+                      {t('ingredients.makeAhead')}
                     </h3>
                     <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
                       {recipe.makeAheadNote}
@@ -764,7 +712,7 @@ async function RecipePage({
                   <div className="mt-6">
                     <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
                       <Wrench className="size-4 text-primary" />
-                      {t("ingredients.equipment")}
+                      {t('ingredients.equipment')}
                     </h3>
                     <ul className="flex flex-col gap-1.5 text-sm">
                       {recipe.equipment.map((tool) => (
@@ -785,11 +733,11 @@ async function RecipePage({
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h2 className="font-display text-2xl font-bold tracking-tight">
-                    {t("method.heading")}
+                    {t('method.heading')}
                   </h2>
                   <Button asChild variant="ghost" size="sm">
                     <Link href={recipeCookPath(pathRef)}>
-                      <ChefHat /> {t("actions.cookMode")}
+                      <ChefHat /> {t('actions.cookMode')}
                     </Link>
                   </Button>
                 </div>
@@ -801,17 +749,13 @@ async function RecipePage({
                       steps={recipe.steps.map(
                         (step, i) =>
                           `Step ${i + 1}. ${
-                            step.section ? `${step.section}. ` : ""
+                            step.section ? `${step.section}. ` : ''
                           }${step.instruction}`,
                       )}
                     />
                     <ol className="flex flex-col gap-5">
                       {recipe.steps.map((step, i) => (
-                        <li
-                          key={step.id}
-                          id={`recipe-step-${i}`}
-                          className="flex gap-4"
-                        >
+                        <li key={step.id} id={`recipe-step-${i}`} className="flex gap-4">
                           <span className="bg-primary/12 flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-semibold text-primary">
                             {i + 1}
                           </span>
@@ -826,9 +770,7 @@ async function RecipePage({
                                 {step.title}
                               </h3>
                             )}
-                            <p className="text-[1.02rem] leading-relaxed">
-                              {step.instruction}
-                            </p>
+                            <p className="text-[1.02rem] leading-relaxed">{step.instruction}</p>
                             {step.imageUrl && (
                               <div className="relative mt-1 aspect-video max-w-md overflow-hidden rounded-lg border border-border empty:hidden">
                                 <RecipeImage
@@ -837,7 +779,7 @@ async function RecipePage({
                                   fallbackMode="hide"
                                   alt={
                                     step.imageAlt ??
-                                    t("method.stepImageAlt", {
+                                    t('method.stepImageAlt', {
                                       title: recipe.title,
                                       position: i + 1,
                                     })
@@ -858,7 +800,7 @@ async function RecipePage({
                               {step.targetTempC != null && (
                                 <Badge variant="secondary" className="gap-1">
                                   <Thermometer className="size-3" />
-                                  {t("method.targetTemp", {
+                                  {t('method.targetTemp', {
                                     value: step.targetTempC,
                                   })}
                                 </Badge>
@@ -875,13 +817,11 @@ async function RecipePage({
                               recipeSlug={recipe.slug}
                               anchorType="step"
                               anchorId={step.id}
-                              anchorLabel={t("method.stepLabel", {
+                              anchorLabel={t('method.stepLabel', {
                                 position: i + 1,
                               })}
                               canInteract={canSuggest}
-                              suggestions={
-                                suggestionsByAnchor.get(`step:${step.id}`) ?? []
-                              }
+                              suggestions={suggestionsByAnchor.get(`step:${step.id}`) ?? []}
                             />
                           </div>
                         </li>
@@ -890,21 +830,14 @@ async function RecipePage({
                   </>
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-8 text-center">
-                    <p className="font-medium">{t("method.emptyTitle")}</p>
+                    <p className="font-medium">{t('method.emptyTitle')}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {canEdit
-                        ? t("method.emptyOwner")
-                        : t("method.emptyViewer")}
+                      {canEdit ? t('method.emptyOwner') : t('method.emptyViewer')}
                     </p>
                     {canEdit && (
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="sm"
-                        className="mt-3"
-                      >
+                      <Button asChild variant="outline" size="sm" className="mt-3">
                         <Link href={recipeEditPath(pathRef)}>
-                          <Pencil /> {t("method.editRecipe")}
+                          <Pencil /> {t('method.editRecipe')}
                         </Link>
                       </Button>
                     )}
@@ -916,11 +849,8 @@ async function RecipePage({
                     <Separator />
                     <div className="flex flex-col gap-2">
                       <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
-                        <Sparkles
-                          className="size-4 text-secondary"
-                          aria-hidden="true"
-                        />
-                        {t("storyMemories")}
+                        <Sparkles className="size-4 text-secondary" aria-hidden="true" />
+                        {t('storyMemories')}
                       </h3>
                       <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                         {recipe.story}
@@ -935,9 +865,7 @@ async function RecipePage({
                     <div className="flex flex-col gap-3">
                       {recipe.notes && (
                         <div>
-                          <h3 className="font-display text-lg font-semibold">
-                            {t("notes")}
-                          </h3>
+                          <h3 className="font-display text-lg font-semibold">{t('notes')}</h3>
                           <p className="mt-1 whitespace-pre-line text-muted-foreground">
                             {recipe.notes}
                           </p>
@@ -945,7 +873,7 @@ async function RecipePage({
                       )}
                       {(recipe.sourceName ?? recipe.sourceUrl) && (
                         <p className="text-sm text-muted-foreground">
-                          {t("source")}{" "}
+                          {t('source')}{' '}
                           {recipe.sourceUrl ? (
                             <a
                               href={recipe.sourceUrl}
@@ -954,13 +882,8 @@ async function RecipePage({
                               className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
                             >
                               {recipe.sourceName ?? recipe.sourceUrl}
-                              <ExternalLink
-                                className="size-3.5"
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">
-                                ({t("opensInNewTab")})
-                              </span>
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
+                              <span className="sr-only">({t('opensInNewTab')})</span>
                             </a>
                           ) : (
                             recipe.sourceName
@@ -972,22 +895,14 @@ async function RecipePage({
                 )}
 
                 <RecipeClassificationBadges
-                  items={[
-                    ...classifications.general,
-                    ...classifications.dietary,
-                  ]}
+                  items={[...classifications.general, ...classifications.dietary]}
                   className="pt-2"
                 />
 
                 {/* Co-creator management (#668). Owner-only in the UI, and
                     owner-only again in every action it calls — this render
                     condition is a convenience, never the gate. */}
-                {isOwner && (
-                  <RecipeCreatorManager
-                    recipeId={recipe.id}
-                    creators={creators}
-                  />
-                )}
+                {isOwner && <RecipeCreatorManager recipeId={recipe.id} creators={creators} />}
               </div>
             </div>
           </TabsContent>
@@ -1046,9 +961,7 @@ async function RecipePage({
           <section className="flex flex-col gap-5 border-t border-border pt-8">
             <div className="flex items-center gap-2">
               <CookingPot className="size-5 text-primary" />
-              <h2 className="font-display text-2xl font-bold tracking-tight">
-                {t("similar")}
-              </h2>
+              <h2 className="font-display text-2xl font-bold tracking-tight">{t('similar')}</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {similar.map((related) => (
