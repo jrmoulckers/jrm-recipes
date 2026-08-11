@@ -73,10 +73,16 @@ describe('easy-reading dyslexia font (issue #129)', () => {
   });
 
   it("does not depend on a locally-installed 'Atkinson Hyperlegible' family", () => {
-    const body = ruleBody(A11Y_CSS, '[data-reading="readable"]') ?? '';
+    const body = ruleBody(A11Y_CSS, '[data-reading="readable"]');
+    // Assert the extraction before the ban (#844). This previously read
+    // `?? ''`, which turned a rotted extractor -- renamed selector,
+    // restructured rule -- into a clean pass, because an empty string contains
+    // nothing. The sibling above happens to catch that today, but a ban should
+    // not depend on an unrelated test to mean anything.
+    expect(body, '[data-reading=readable] rule should exist').not.toBeNull();
     // The bare family name assumes the reader already has the font. The fix
     // loads it via the CSS variable instead.
-    expect(body).not.toContain(BARE_FAMILY);
+    expect(body ?? '').not.toContain(BARE_FAMILY);
   });
 
   it('ships the self-hosted woff2 assets (offline-capable PWA)', () => {

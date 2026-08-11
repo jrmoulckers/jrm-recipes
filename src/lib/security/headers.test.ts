@@ -71,8 +71,15 @@ describe('buildContentSecurityPolicy', () => {
   describe("dev-only 'unsafe-eval'", () => {
     afterEach(() => vi.unstubAllEnvs());
 
-    const scriptSrc = (policy: string) =>
-      policy.split(';').find((d) => d.trim().startsWith('script-src')) ?? '';
+    const scriptSrc = (policy: string) => {
+      const directive = policy.split(';').find((d) => d.trim().startsWith('script-src'));
+      // Fail closed (#844). This returned `?? ''`, so a policy that declared no
+      // `script-src` at all passed the production ban below -- and no script-src
+      // is strictly worse than `'unsafe-eval'`, because it restricts nothing.
+      // The ban is a negative assertion, so an empty extraction satisfies it.
+      expect(directive, 'the policy should declare a script-src directive').toBeDefined();
+      return directive ?? '';
+    };
 
     it('allows eval under `next dev` so HMR can hydrate', () => {
       vi.stubEnv('NODE_ENV', 'development');
