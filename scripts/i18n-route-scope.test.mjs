@@ -63,8 +63,11 @@ describe('route-scoped provider coverage', () => {
     expect(pages.length).toBeGreaterThan(0);
     for (const page of pages) {
       const source = readFileSync(page, 'utf8');
-      expect(source, `${page} does not import withRouteMessages`).toContain(
-        'from "~/components/i18n/route-messages"',
+      // Quote-agnostic: the page is read as source text, so matching a
+      // double-quoted specifier would pin this guard to the formatter's
+      // `singleQuote` setting rather than to the import it is checking for.
+      expect(source, `${page} does not import withRouteMessages`).toMatch(
+        /from ['"]~\/components\/i18n\/route-messages['"]/,
       );
       expect(source, `${page} default export is not route-scoped`).toMatch(
         /export default withRouteMessages\(/,
