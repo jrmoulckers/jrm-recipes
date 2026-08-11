@@ -73,6 +73,11 @@ jobs:
   # It also asserts the property actually wanted -- production is serving main --
   # instead of the absence of one known failure, so it needs no knowledge of
   # either mode and will not go blind when a third appears.
+  #
+  # It reads that property from /api/health rather than inferring it from the
+  # deployments API (#871). Production publishes the commit it is serving; the
+  # API only records what Vercel intended, and the two diverge exactly when a
+  # deploy reports success without becoming the live alias.
   production-drift:
     name: Production drift
     # Skip on deployment_status runs: the job above already owns that path.
@@ -93,32 +98,28 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          HEALTH_URL: https://heirloom.jrmoulckers.com/api/health
         run: |
           set -euo pipefail
 
           head_sha="$(git rev-parse HEAD)"
 
-          deployed_sha=""
-          newest=1
-          # Newest first. Walk until a deployment whose latest status is success.
-          for id in $(gh api "repos/${REPO}/deployments?environment=Production&per_page=100" --jq '.[].id'); do
-            state="$(gh api "repos/${REPO}/deployments/${id}/statuses?per_page=1" --jq '.[0].state // "none"')"
-            if [ "${state}" = "success" ]; then
-              deployed_sha="$(gh api "repos/${REPO}/deployments/${id}" --jq '.sha')"
-              break
-            fi
-            # An in-flight deploy is not a failure; do not wake anyone mid-deploy.
-            # Only the newest attempt can be in flight -- an older one stuck in a
-            # non-terminal state must not suppress the whole check.
-            if [ "${newest}" = "1" ] && { [ "${state}" = "pending" ] || [ "${state}" = "in_progress" ] || [ "${state}" = "queued" ]; }; then
-              echo "A production deployment is in flight (${state}). Nothing to report."
-              exit 0
-            fi
-            newest=0
-          done
+          # Ground truth: production self-reports the commit it is serving.
+          # This is strictly better than the deployments API, which records what
+          # Vercel *intended*. A deploy that reports success but never becomes
+          # the live alias is invisible to the API and obvious here.
+          health="$(curl -sS --max-time 30 "${HEALTH_URL}" || echo '')"
+          if [ -z "${health}" ]; then
+            echo "::error title=Production health unreachable::GET ${HEALTH_URL} returned nothing. Production may be down."
+            exit 1
+          fi
 
-          if [ -z "${deployed_sha}" ]; then
-            echo "::error title=No successful production deployment::None of the last 100 production deployments succeeded."
+          deployed_sha="$(printf '%s' "${health}" | jq -r '.sha // ""')"
+          health_status="$(printf '%s' "${health}" | jq -r '.status // "unknown"')"
+          echo "health:   ${health}"
+
+          if [ -z "${deployed_sha}" ] || [ "${deployed_sha}" = "dev" ]; then
+            echo "::error title=Production reports no build sha::sha=${deployed_sha:-empty}. Cannot compute drift."
             exit 1
           fi
 
@@ -129,8 +130,22 @@ jobs:
           echo "drift:    ${drift}"
 
           if [ "${drift}" = "0" ]; then
-            echo "Production is serving main."
+            echo "Production is serving main (status=${health_status})."
             exit 0
+          fi
+
+          # An in-flight deploy is not a failure; do not wake anyone mid-deploy.
+          # Only the newest attempt matters -- an older one stuck in a non-terminal
+          # state must not suppress the whole check.
+          newest_id="$(gh api "repos/${REPO}/deployments?environment=Production&per_page=1" --jq '.[0].id // ""')"
+          if [ -n "${newest_id}" ]; then
+            newest_state="$(gh api "repos/${REPO}/deployments/${newest_id}/statuses?per_page=1" --jq '.[0].state // "none"')"
+            case "${newest_state}" in
+              pending | in_progress | queued)
+                echo "A production deployment is in flight (${newest_state}). Nothing to report."
+                exit 0
+                ;;
+            esac
           fi
 
           # Say which failure mode this is, per docs/ci.md "Which red is this?".
@@ -138,8 +153,8 @@ jobs:
           description="$(gh api "repos/${REPO}/commits/${head_sha}/status" --jq '[.statuses[] | select(.context == "Vercel") | .description] | first // "no Vercel status"')"
           case "${description}" in
             *"rate limited"*) mode="account quota -- the deploy never started, so Deploy watch could not fire" ;;
-            *"has failed"*)   mode="the build ran and failed -- read its log" ;;
-            *)                mode="unrecognised; classify it before assuming" ;;
+            *"has failed"*) mode="the build ran and failed -- read its log" ;;
+            *) mode="unrecognised; classify it before assuming" ;;
           esac
 
           echo
@@ -147,3 +162,61 @@ jobs:
           echo "Mode:        ${mode}"
           echo "::error title=Production is behind main::Production is serving ${deployed_sha}, ${drift} commit(s) behind main. Mode: ${mode}"
           exit 1
+
+  # A deployment_status of "success" says Vercel finished, not that users are
+  # being served the new build. Those differ when a build succeeds but never
+  # becomes the live alias, which no "successful" record can show you (#871).
+  #
+  # Deliberately unauthenticated and therefore shallow: this asserts the deploy
+  # reached users and the database is reachable. It does NOT cover the deletion
+  # panel or any signed-in privacy surface -- those need a session and belong in
+  # E2E. Said plainly so this is not later mistaken for coverage it lacks, which
+  # is how #868 happened.
+  production-serving:
+    name: Verify production is serving the deployed commit
+    if: >-
+      github.event_name == 'deployment_status' &&
+      github.event.deployment.environment == 'Production' &&
+      github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Poll health until it reports the deployed commit
+        env:
+          DEPLOY_SHA: ${{ github.event.deployment.sha }}
+          HEALTH_URL: https://heirloom.jrmoulckers.com/api/health
+        run: |
+          set -euo pipefail
+
+          served=""
+          status=""
+          db=""
+          # Propagation is usually seconds; allow well past that before alarming.
+          for attempt in $(seq 1 20); do
+            health="$(curl -sS --max-time 30 "${HEALTH_URL}" || echo '')"
+            if [ -n "${health}" ]; then
+              served="$(printf '%s' "${health}" | jq -r '.sha // ""')"
+              status="$(printf '%s' "${health}" | jq -r '.status // "unknown"')"
+              db="$(printf '%s' "${health}" | jq -r '.db // "unknown"')"
+              echo "Attempt ${attempt}: sha=${served} status=${status} db=${db}"
+              if [ "${served}" = "${DEPLOY_SHA}" ]; then
+                break
+              fi
+            else
+              echo "Attempt ${attempt}: no response"
+            fi
+            sleep 15
+          done
+
+          if [ "${served}" != "${DEPLOY_SHA}" ]; then
+            echo "::error title=Deploy reported success but is not being served::Vercel reported ${DEPLOY_SHA} deployed, but production is serving ${served:-nothing}."
+            exit 1
+          fi
+
+          if [ "${status}" != "ok" ] || [ "${db}" != "ok" ]; then
+            echo "::error title=Production is serving the new commit but is unhealthy::status=${status} db=${db}"
+            exit 1
+          fi
+
+          echo "Production is serving ${DEPLOY_SHA} and reports healthy."
