@@ -26,11 +26,7 @@ export async function generateMetadata({
   };
 }
 
-async function CookPage({
-  params,
-}: {
-  params: Promise<RecipeRouteParams>;
-}) {
+async function CookPage({ params }: { params: Promise<RecipeRouteParams> }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const { user, recipe } = await getNamespacedRecipeForViewer(
     cook,

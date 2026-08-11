@@ -95,11 +95,7 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-async function GroupPage({
-  params,
-}: {
-  params: Promise<SlugRouteParams>;
-}) {
+async function GroupPage({ params }: { params: Promise<SlugRouteParams> }) {
   const { slug } = await parseSlugParams(params);
   const { viewer, group } = await load(slug);
   if (!group) notFound();

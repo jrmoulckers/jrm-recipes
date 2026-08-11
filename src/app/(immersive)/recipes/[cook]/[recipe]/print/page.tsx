@@ -20,11 +20,7 @@ export async function generateMetadata({
   };
 }
 
-async function PrintPage({
-  params,
-}: {
-  params: Promise<RecipeRouteParams>;
-}) {
+async function PrintPage({ params }: { params: Promise<RecipeRouteParams> }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   if (!recipe) notFound();

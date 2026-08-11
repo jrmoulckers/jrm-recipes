@@ -71,11 +71,7 @@ async function StatusCard({
   );
 }
 
-async function JoinPage({
-  params,
-}: {
-  params: Promise<TokenRouteParams>;
-}) {
+async function JoinPage({ params }: { params: Promise<TokenRouteParams> }) {
   const { token } = await parseTokenParams(params);
   const t = await getTranslations("groups.joinPage");
   const tCard = await getTranslations("groups.card");
