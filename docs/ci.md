@@ -36,7 +36,7 @@ intended trade: a stacked PR is exactly the PR nobody has validated.
 into _its own base_, not into `main`. The `Base freshness` job says so in the run
 summary. Retarget at `main` before merging.
 
-## Four ways a green check list still lies
+## Five ways a green check list still lies
 
 ### 1. Stacked PR — fixed
 
@@ -122,6 +122,57 @@ evidence**, so the census can only find instances nobody fixed, and fixing them 
 the natural response to hitting one. Record the run id and timestamps _before_
 re-running.
 
+### 5. A cancelled run leaves a failure attached to a commit that passed
+
+Observed on PR #896. One commit carried **two `Quality gate` check-runs with
+opposite terminal conclusions**:
+
+```
+8179044a  Quality gate  completed/success   run=31523484411  started 18:44:59Z
+8179044a  Quality gate  completed/failure   run=31522626458  started 18:30:56Z
+```
+
+Both belong to the same head SHA, so nothing distinguishes them by commit. The
+discriminator is one level up, at the run:
+
+```
+run 31523484411  completed/success    head=8179044a  created 18:35:10Z
+run 31522626458  completed/cancelled  head=8179044a  created 18:25:20Z
+```
+
+The `failure` belongs to a run that concluded **`cancelled`**. Cancellation
+records the individual jobs as `failure` while the run itself concludes
+`cancelled`, so anything reading job or check-run conclusions sees a red that the
+run conclusion would have explained away.
+
+How a commit ends up with two: push A, push B on top (B's run cancels A's
+in-flight run under branch concurrency), then force-push back to A. A's second
+run is new; A's first, cancelled run stays attached to A forever. Rebase-heavy
+branches and any `--force-with-lease` reset reach this state routinely.
+
+`gh pr checks` transiently reported `FAILURE Quality gate` for a commit whose
+gate had not failed. **A check-run whose parent run concluded `cancelled` carries
+no information about the code** — it records that a run was interrupted, not that
+anything was measured. It is neither a pass nor a fail; it is unread, exactly like
+the stuck gate in §4.
+
+Read the newest run for the current head SHA, and check the run's own conclusion
+before believing a job-level red:
+
+```bash
+gh run list --branch <branch> --limit 8 \
+  --json databaseId,workflowName,status,conclusion,headSha,createdAt \
+  --jq '.[] | "\(.databaseId) \(.headSha[0:8]) \(.workflowName) \(.status)/\(.conclusion)"'
+```
+
+Note the failure direction. §1–§4 are all ways a **red is hidden**; this one
+manufactures a **spurious red**. That makes it the more dangerous of the two
+shapes in practice, because the standard response to an inexplicable red is to
+re-run — which produces a third check-run, resolves nothing, and trains the habit
+of re-running until green. The evidence that would have identified it as a
+cancellation is one API call away and is not erased by the re-run, so read it
+first.
+
 ## Reading the signal
 
 Never read green as green without confirming a real run exists and is newer than
@@ -135,7 +186,9 @@ gh pr checks <n>
 - No GitHub Actions rows at all → nothing ran. Check for conflicts.
 - `Quality gate` not present or not `pass` → something did not run. If it is stuck
   at `IN_PROGRESS` while the run reports success, see §4 above — re-run the job
-  rather than reading the run conclusion instead.
+  rather than reading the run conclusion instead. If it is red for no reason you
+  can find in the diff, see §5 — check whether its run concluded `cancelled`
+  before re-running.
 - `Base freshness` warning → the results describe an older base.
 - A red **Vercel** check is never a verdict on your diff, and it is **not a
   required check** — `Quality gate` is the name that matters. But it is not
