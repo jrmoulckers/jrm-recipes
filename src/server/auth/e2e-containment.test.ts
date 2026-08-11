@@ -33,9 +33,18 @@ describe('condition 3: the selector is off unless explicitly enabled', () => {
   });
 
   it('is disabled for every value other than exactly "1"', () => {
-    for (const value of ['', '0', 'true', 'yes', '2', ' 1', '1 ', 'TRUE']) {
+    const rejected = ['', '0', 'true', 'yes', '2', ' 1', '1 ', 'TRUE'];
+    let checked = 0;
+
+    for (const value of rejected) {
       expect(isIdentitySelectorEnabled(value)).toBe(false);
+      checked += 1;
     }
+
+    // Hand-written, deliberately not `rejected.length`: comparing the counter to
+    // the array it came from is a tautology that passes on an empty array, which
+    // is the exact defect this guards (#809).
+    expect(checked).toBe(8);
   });
 
   it('is enabled only by "1"', () => {
@@ -123,7 +132,7 @@ describe('the allowlist stays closed', () => {
   });
 
   it('resolves unknown and hostile values to the default, never an error', () => {
-    for (const value of [
+    const hostile = [
       undefined,
       null,
       '',
@@ -131,9 +140,16 @@ describe('the allowlist stays closed', () => {
       'seed_usr_gran',
       "' OR 1=1 --",
       '../../etc/passwd',
-    ]) {
+    ];
+    let checked = 0;
+
+    for (const value of hostile) {
       expect(resolveDevIdentity(value)).toBe(DEV_USER);
+      checked += 1;
     }
+
+    // Hand-written for the same reason as above (#809).
+    expect(checked).toBe(7);
   });
 
   it('still resolves the co-cook by its own id', () => {
