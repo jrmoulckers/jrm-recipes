@@ -216,6 +216,15 @@ export async function eraseUserAccount(
   // when it runs: nothing that would otherwise be kept is deleted, and nothing
   // that would otherwise be deleted is kept. The request is held, recorded and
   // replayable, instead of being executed in the one way that cannot be undone.
+  //
+  // THIS EARLY RETURN IS LOAD-BEARING FOR EVERY DESTRUCTIVE STATEMENT BELOW
+  // (#797). None of them carries a local entanglement check, because a correct
+  // "halt before anything is destroyed" cannot be expressed at any one of them.
+  // Its dependents are the media purge (Step 1), the `recipe_versions` delete
+  // and the `users` delete; each names this block in turn. Removing or narrowing
+  // this return silently re-opens the irreversible window at all three at once,
+  // so `erasure.test.ts` pins it — see "deletes nothing at all when the user is
+  // entangled" and "checks entanglement before the media purge, not after".
   const entanglement = await findEntanglement(userId);
   if (entanglement.recipeIds.length > 0) {
     await recordErasureHold(userId, entanglement, options);
@@ -229,6 +238,10 @@ export async function eraseUserAccount(
   }
 
   // --- Step 1: remote bytes, before any row that names them disappears. ---
+  //
+  // Unguarded here by design (#797): entangled users returned in Step 0, above.
+  // Media deletion is as irreversible as the row deletes, so the halt precedes
+  // it too — a held account keeps its photos, not just its version rows.
   const purge = await purgeUserMedia(userId);
   if (!isPurgeComplete(purge)) {
     throw new Error(
@@ -379,6 +392,14 @@ export async function eraseUserAccount(
     // would diff against rows that no longer exist and silently revert nothing,
     // which reports success while leaving the text in place. Every deletion that
     // runs without such a step forecloses the remedy for that user permanently.
+    //
+    // GUARDED BY STEP 0, NOT BY ANYTHING HERE (#797). There is deliberately no
+    // condition on this statement: entangled users return at the `status: "held"`
+    // early return in Step 0, above the transaction, so this line is unreachable
+    // for exactly the users whose diff basis it would destroy. Do not read the
+    // absence of a local check as an absence of containment, and do not add a
+    // second one here — the halt has to precede the media purge and the `users`
+    // delete too, so it cannot live at any single destructive statement.
     counts.recipe_versions = await deleteCounted(t, () =>
       t
         .delete(recipeVersions)
@@ -470,6 +491,13 @@ export async function eraseUserAccount(
     }
 
     // The row itself. Everything still referencing it cascades from here.
+    //
+    // This is the second evidence-destruction path, and the quiet one (#797):
+    // `recipe_versions.authorId` is `ON DELETE set null`, so deleting this row
+    // severs attribution on every version row that survived the delete above —
+    // no row and no text is lost, only the record of who wrote it. Ordering
+    // alone cannot contain that, which is why Step 0 halts entangled users
+    // ahead of the whole function rather than guarding individual statements.
     counts.users = await deleteCounted(t, () =>
       t.delete(users).where(eq(users.id, userId)).returning({ id: users.id }),
     );
