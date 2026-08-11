@@ -24,6 +24,7 @@ import {
 } from "~/components/ui/card";
 import { UsageMeter } from "~/components/billing/usage-meter";
 import { ManageBillingButton } from "~/components/billing/manage-billing-button";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -63,7 +64,7 @@ function formatMb(mb: number): string {
  * signed-out visitor, or a Free account each render a calm, explanatory state
  * rather than an error. All plan copy comes from `src/config/plans.ts`.
  */
-export default async function BillingSettingsPage({
+async function BillingSettingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ checkout?: string }>;
@@ -251,3 +252,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(BillingSettingsPage);

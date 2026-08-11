@@ -19,6 +19,7 @@ import {
 import { EmptyState } from "~/components/ui/empty-state";
 import { UsageMeter } from "~/components/billing/usage-meter";
 import { UsageLimitNotice } from "~/components/billing/usage-limit-notice";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 import {
   PhotoLibrary,
   type LibraryAsset,
@@ -52,7 +53,7 @@ function formatMb(mb: number): string {
  * subsequent pages come from `listAssetsAction`. Every dependency degrades
  * calmly: no database or no Cloudinary yields an empty library, not an error.
  */
-export default async function PhotoSettingsPage() {
+async function PhotoSettingsPage() {
   const user = await getCurrentUser();
   const dbConfigured = isDbConfigured();
   const t = await getTranslations("settings.photosPage");
@@ -167,3 +168,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(PhotoSettingsPage);

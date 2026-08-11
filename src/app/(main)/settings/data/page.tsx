@@ -8,6 +8,7 @@ import { isDbConfigured } from "~/server/db";
 import { getDeletionPreview } from "~/server/users/deletion-preview";
 import { DeleteAccountPanel } from "~/components/settings/delete-account-panel";
 import { buttonVariants } from "~/components/ui/button";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -21,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * plain authenticated GET to `/api/backup`, so it works even with JavaScript
  * disabled.
  */
-export default async function DataSettingsPage() {
+async function DataSettingsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -99,3 +100,5 @@ async function SignInNudge() {
     </div>
   );
 }
+
+export default withRouteMessages(DataSettingsPage);

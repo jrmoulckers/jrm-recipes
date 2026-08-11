@@ -46,6 +46,7 @@ import { Separator } from "~/components/ui/separator";
 import { brand } from "~/config/brand";
 import { absoluteUrl } from "~/lib/utils";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 const load = cache(async (slug: string) => {
   const viewer = await getCurrentUser();
@@ -94,11 +95,7 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export default async function GroupPage({
-  params,
-}: {
-  params: Promise<SlugRouteParams>;
-}) {
+async function GroupPage({ params }: { params: Promise<SlugRouteParams> }) {
   const { slug } = await parseSlugParams(params);
   const { viewer, group } = await load(slug);
   if (!group) notFound();
@@ -507,3 +504,5 @@ async function EmptyCookbook({ isMember }: { isMember: boolean }) {
     </div>
   );
 }
+
+export default withRouteMessages(GroupPage);

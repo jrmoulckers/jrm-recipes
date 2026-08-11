@@ -44,6 +44,7 @@ import { LandingViewedTracker } from "~/components/analytics/landing-viewed";
 import { WaitlistForm } from "~/components/marketing/waitlist-form";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "~/lib/site-seo";
 import { serializeJsonLd } from "~/lib/recipe-seo";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 /**
  * Landing feature grid. Only the icon and the "coming soon" flag are structural.
@@ -89,7 +90,7 @@ async function loadPersonalizedHome(user: User) {
   };
 }
 
-export default async function HomePage() {
+async function HomePage() {
   const user = await getCurrentUser();
   const [personalized, onboarding] =
     user && isDbConfigured()
@@ -394,3 +395,5 @@ async function FamilyFeedEmptyNudge() {
     </div>
   );
 }
+
+export default withRouteMessages(HomePage);

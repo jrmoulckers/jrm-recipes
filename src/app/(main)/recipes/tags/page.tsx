@@ -18,6 +18,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { TAG_CATEGORIES, type TagCategory } from "~/lib/tag-taxonomy";
 import { recipeClassificationHref } from "~/lib/recipe-classifications";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -37,7 +38,7 @@ type TagCount = {
   count: number;
 };
 
-export default async function TagsDirectoryPage() {
+async function TagsDirectoryPage() {
   const user = await getCurrentUser();
   const tags = isDbConfigured() ? await listTagsWithCounts(user) : [];
   const t = await getTranslations("recipe.tags");
@@ -214,3 +215,5 @@ async function EmptyTags() {
     </div>
   );
 }
+
+export default withRouteMessages(TagsDirectoryPage);

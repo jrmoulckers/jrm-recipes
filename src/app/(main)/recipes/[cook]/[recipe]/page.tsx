@@ -102,6 +102,7 @@ import {
   recipePrintPath,
 } from "~/lib/recipe-path";
 import type { Route } from "next";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata({
   params,
@@ -165,7 +166,7 @@ function formatTimer(seconds: number): string {
   return `${seconds}s`;
 }
 
-export default async function RecipePage({
+async function RecipePage({
   params,
   searchParams,
   shareToken,
@@ -1065,3 +1066,5 @@ export default async function RecipePage({
     </article>
   );
 }
+
+export default withRouteMessages(RecipePage);

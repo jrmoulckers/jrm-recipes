@@ -11,6 +11,7 @@ import { getUnitSettings } from "~/server/units/queries";
 import { isDbConfigured } from "~/server/db";
 import { toUnitPrefs, toCustomUnitDefs } from "~/lib/unit-prefs";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata({
   params,
@@ -25,11 +26,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CookPage({
-  params,
-}: {
-  params: Promise<RecipeRouteParams>;
-}) {
+async function CookPage({ params }: { params: Promise<RecipeRouteParams> }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const { user, recipe } = await getNamespacedRecipeForViewer(
     cook,
@@ -62,3 +59,5 @@ export default async function CookPage({
     </UnitPrefsProvider>
   );
 }
+
+export default withRouteMessages(CookPage);

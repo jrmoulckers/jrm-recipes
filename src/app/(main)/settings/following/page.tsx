@@ -6,13 +6,14 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { PublicActivityOptIn } from "~/components/settings/public-activity-opt-in";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("followingSettings.title") };
 }
 
-export default async function FollowingSettingsPage() {
+async function FollowingSettingsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -77,3 +78,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(FollowingSettingsPage);

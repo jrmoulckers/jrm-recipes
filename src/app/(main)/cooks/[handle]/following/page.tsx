@@ -9,6 +9,7 @@ import { listFollowing } from "~/server/follows/queries";
 import { displayNameFrom } from "~/lib/utils";
 import { FollowPeopleList } from "~/components/follows/follow-people-list";
 import { parseHandleParams, type HandleRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata({
   params,
@@ -28,7 +29,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function FollowingPage({
+async function FollowingPage({
   params,
 }: {
   params: Promise<HandleRouteParams>;
@@ -66,3 +67,5 @@ export default async function FollowingPage({
     </div>
   );
 }
+
+export default withRouteMessages(FollowingPage);

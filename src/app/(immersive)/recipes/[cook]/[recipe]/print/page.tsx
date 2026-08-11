@@ -5,6 +5,7 @@ import { getNamespacedRecipeForViewer } from "~/server/recipes/loaders";
 import { toPrintRecipe } from "~/server/recipes/serialize";
 import { PrintView } from "~/components/print/print-view";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata({
   params,
@@ -19,14 +20,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function PrintPage({
-  params,
-}: {
-  params: Promise<RecipeRouteParams>;
-}) {
+async function PrintPage({ params }: { params: Promise<RecipeRouteParams> }) {
   const { cook, recipe: recipeSegment } = await parseRecipeParams(params);
   const { recipe } = await getNamespacedRecipeForViewer(cook, recipeSegment);
   if (!recipe) notFound();
 
   return <PrintView recipe={toPrintRecipe(recipe)} />;
 }
+
+export default withRouteMessages(PrintPage);

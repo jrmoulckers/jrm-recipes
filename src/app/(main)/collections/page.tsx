@@ -17,6 +17,7 @@ import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CollectionCard } from "~/components/collections/collection-card";
 import { CloudinaryImage } from "~/components/ui/cloudinary-image";
 import { CreateCollectionDialog } from "~/components/collections/create-collection-dialog";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -26,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function CollectionsPage() {
+async function CollectionsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -255,3 +256,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(CollectionsPage);

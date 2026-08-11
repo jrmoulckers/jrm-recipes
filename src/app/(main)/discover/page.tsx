@@ -11,6 +11,7 @@ import { brand } from "~/config/brand";
 import { absoluteUrl } from "~/lib/utils";
 import { DiscoverFeed } from "~/components/recipe/discover-feed";
 import { Button } from "~/components/ui/button";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -39,7 +40,7 @@ const LCP_PRIORITY_COUNT = 3;
  * public recipe list and the "Load more" action both degrade gracefully without
  * a viewer, and no auth-only call sits on the critical path.
  */
-export default async function DiscoverPage() {
+async function DiscoverPage() {
   const dbReady = isDbConfigured();
   const user = await getCurrentUser();
   const [discover, favoriteIds] = await Promise.all([
@@ -95,3 +96,5 @@ export default async function DiscoverPage() {
     </div>
   );
 }
+
+export default withRouteMessages(DiscoverPage);

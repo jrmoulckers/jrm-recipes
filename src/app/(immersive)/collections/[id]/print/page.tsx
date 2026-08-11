@@ -11,6 +11,7 @@ import {
 } from "~/components/print/cookbook-print-view";
 import type { PrintRecipe } from "~/components/print/types";
 import { parseKeepsakeMessage } from "~/lib/keepsake";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 import {
   parseCollectionParams,
   type CollectionRouteParams,
@@ -42,7 +43,7 @@ export async function generateMetadata({
  * leak into a shared cookbook. Rendering + page breaks are pure CSS, so the
  * browser's "Print → Save as PDF" is the only tool needed.
  */
-export default async function CollectionPrintPage({
+async function CollectionPrintPage({
   params,
   searchParams,
 }: {
@@ -81,3 +82,5 @@ export default async function CollectionPrintPage({
 
   return <CookbookPrintView collection={data} dedication={dedication} />;
 }
+
+export default withRouteMessages(CollectionPrintPage);

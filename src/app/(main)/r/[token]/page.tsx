@@ -5,6 +5,7 @@ import { brand } from "~/config/brand";
 import { getRecipeByShareToken } from "~/server/recipes/queries";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
 import RecipePage from "../../recipes/[cook]/[recipe]/page";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 const sharedRecipeRobots = { index: false, follow: false };
 
@@ -42,7 +43,7 @@ export async function generateMetadata({
  * to the canonical recipe detail view, threading the token through so the loader
  * grants access and the share UI keeps handing out the token URL (not the slug).
  */
-export default async function SharedRecipePage({
+async function SharedRecipePage({
   params,
 }: {
   params: Promise<TokenRouteParams>;
@@ -61,3 +62,5 @@ export default async function SharedRecipePage({
     />
   );
 }
+
+export default withRouteMessages(SharedRecipePage);

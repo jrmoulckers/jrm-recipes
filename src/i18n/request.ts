@@ -9,8 +9,14 @@ import ar from "../messages/ar.json";
 
 /**
  * Message catalogs keyed by locale. Imported statically so the active catalog is
- * selected without an untyped dynamic import. they only ever load on the server
- * (this config runs per request in RSC), so no catalog ships to the client.
+ * selected without an untyped dynamic import.
+ *
+ * These imports are server-only (this config runs per request in RSC), so no
+ * catalog is ever bundled into a client chunk. That is *not* the same as saying
+ * nothing reaches the client: `NextIntlClientProvider` takes `messages` as a
+ * prop, so whatever the layout/template hands it is serialized into the RSC
+ * flight payload. What ships is narrowed per route by `~/i18n/messages` (#674) —
+ * this function still resolves the whole catalog for the server to render from.
  */
 const CATALOGS = { en, es, de, ar };
 

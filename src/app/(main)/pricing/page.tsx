@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/card";
 import { CheckoutButton } from "~/components/billing/checkout-button";
 import { GiftButton } from "~/components/billing/gift-button";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -50,7 +51,7 @@ const PLAN_HIGHLIGHTS: Record<Plan["id"], readonly string[]> = {
  * the paid CTA is disabled with a friendly note. Warm, honest tone. No fake
  * scarcity or countdowns.
  */
-export default async function PricingPage() {
+async function PricingPage() {
   const user = await getCurrentUser();
   const currentPlanId = user ? await getEffectivePlanId(user) : null;
   const billingReady = isBillingConfigured();
@@ -259,3 +260,5 @@ async function PlanCta({
 
   return <CheckoutButton planId={plan.id}>{label}</CheckoutButton>;
 }
+
+export default withRouteMessages(PricingPage);
