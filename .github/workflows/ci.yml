@@ -170,10 +170,10 @@ jobs:
       packages: read
       pull-requests: read
     with:
-      node-version: "20"
+      node-version: '20'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
-      registry-scope: "@jrmoulckers"
+      registry-scope: '@jrmoulckers'
       lint-command: pnpm lint
       format-check-command: pnpm format:check
       semantic-pr-title: true
@@ -186,7 +186,7 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: "20"
+      node-version: '20'
       package-manager: pnpm
       audit-command: pnpm audit:ci
       run-package-audit: true
@@ -228,6 +228,15 @@ jobs:
         run: node scripts/i18n-rich-tags.mjs
       - name: Audit alt text
         run: node scripts/alt-audit.mjs
+      # config/engineering/ is vendored from jrmoulckers/engineering at the ref
+      # in engineering-configs.lock.json. --check re-hashes each file and fails
+      # on drift, so a local edit to an upstream-owned file cannot ride in
+      # unnoticed. It also reports a newer upstream release, but only warns:
+      # failing on staleness would make the pin automatic in effect, pressuring
+      # the next person into bumping the ref without deciding to accept it.
+      # Runs here rather than in `web` because it needs no dependency install.
+      - name: Verify vendored engineering configs
+        run: node scripts/vendor-configs.mjs --check
 
   # Typecheck, unit tests, and the single production build share one canonical
   # install. The build command preserves Recipes' route budgets, then packages
@@ -240,10 +249,10 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: "20"
+      node-version: '20'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
-      registry-scope: "@jrmoulckers"
+      registry-scope: '@jrmoulckers'
       typecheck-command: pnpm typecheck
       test-command: pnpm test
       build-command: pnpm ci:build
@@ -264,10 +273,10 @@ jobs:
       contents: read
       packages: read
     with:
-      node-version: "20"
+      node-version: '20'
       package-manager: pnpm
       registry-url: https://npm.pkg.github.com
-      registry-scope: "@jrmoulckers"
+      registry-scope: '@jrmoulckers'
       artifact-name: ${{ needs.web.outputs.artifact-name }}
       output-dir: ci-artifact
       bundle-budget-kb: 32768
@@ -299,7 +308,7 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@jrmoulckers"
+          scope: '@jrmoulckers'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
@@ -345,8 +354,8 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/heirloom"
-      SKIP_ENV_VALIDATION: "1"
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/heirloom'
+      SKIP_ENV_VALIDATION: '1'
 
     steps:
       - name: Checkout
@@ -361,7 +370,7 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@jrmoulckers"
+          scope: '@jrmoulckers'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
@@ -420,15 +429,15 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/heirloom"
-      SKIP_ENV_VALIDATION: "1"
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/heirloom'
+      SKIP_ENV_VALIDATION: '1'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: '1'
       # Enables the dev identity selector so the co-creation specs can be two
       # different people (#698). Server-only - deliberately not NEXT_PUBLIC_ -
       # and set in this job alone, so the second identity is unreachable
       # everywhere else, including every Vercel deployment (#783).
-      E2E_IDENTITY_SELECTOR: "1"
+      E2E_IDENTITY_SELECTOR: '1'
 
     steps:
       - name: Checkout
@@ -445,7 +454,7 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@jrmoulckers"
+          scope: '@jrmoulckers'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -543,10 +552,10 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/heirloom"
-      SKIP_ENV_VALIDATION: "1"
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXT_PUBLIC_DEV_AUTH_BYPASS: "1"
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/heirloom'
+      SKIP_ENV_VALIDATION: '1'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_DEV_AUTH_BYPASS: '1'
 
     steps:
       - name: Checkout
@@ -563,7 +572,7 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://npm.pkg.github.com
-          scope: "@jrmoulckers"
+          scope: '@jrmoulckers'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
