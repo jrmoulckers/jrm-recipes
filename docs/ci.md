@@ -269,6 +269,23 @@ that is the reason anyone watches drift. Like `Select-String -SimpleMatch` and t
 stuck-gate run conclusion, the instrument returns a well-formed value describing
 something other than what you asked.
 
+**Fetch first, for the same reason.** `origin/main` is a local ref that only moves
+when you move it, so in a fleet merging steadily the range silently measures how
+far a stale copy is behind, and reports it as drift:
+
+```bash
+git fetch origin main            # without this the count is against your last fetch
+git rev-list --count "<last-successful-sha>..origin/main"
+```
+
+A session verifying a reported drift of 58 got 36, from correct arithmetic against
+an `origin/main` 22 commits old, and reported it as reproducing the number exactly.
+That is the worse half of this failure: the quoting bug returns `1` and looks
+wrong, while a stale ref returns a number that looks like agreement. Two sessions
+running the same command on the same repository can differ by exactly their fetch
+gap and neither sees an error. If the number matters, fetch immediately before
+measuring, and quote the sha that produced it.
+
 That same absence sets a subtler trap, and a concurrent session walked into it while
 this was being written. Pull the description off every recent **deployment** and they
 are byte-identical:
@@ -682,7 +699,8 @@ Use it when a peer reports a deploy state, before believing either of you:
 
 ```bash
 curl -s https://heirloom.jrmoulckers.com/api/health   # what is served
-git rev-list --count <that sha>..origin/main          # how far behind
+git fetch origin main                                 # or the count is stale
+git rev-list --count "<that sha>..origin/main"        # how far behind
 ```
 
 ### To know what production says, read the deployed tree
