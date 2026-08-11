@@ -124,6 +124,56 @@ gh pr checks <n>
   production deploys are broken at all — see #828, which is the same gap stated
   from the other end.
 
+## Every session is the same GitHub user
+
+Concurrent sessions all authenticate as one account, so the platform cannot tell
+them apart:
+
+```bash
+gh api user --jq .login   # jrmoulckers, from every session
+```
+
+Three things follow, and each one has already cost real rounds of work.
+
+**An approval cannot arrive.** GitHub refuses self-approval — `gh pr review <n>
+--approve` returns `Review Can not approve your own pull request` — so `reviews[]`
+stays empty and `reviewDecision` stays blank however many sessions read the diff:
+
+```bash
+gh pr view <n> --json reviewDecision,reviews --jq '"[\(.reviewDecision)] \(.reviews|length)"'
+# [] 0   — even with four review comments posted
+```
+
+Waiting for an approval before merging is waiting for something structurally
+impossible. **A PR comment is the only available form of second-party review**, so
+read the comments, not `reviewDecision`. Authors self-merge once `Quality gate`
+passes and the PR is `MERGEABLE`; nobody is coming to approve it.
+
+**Authorship is unverifiable.** Every issue, PR, comment and review renders under
+the same login, so no session can confirm which session wrote anything. This has
+misattributed work in both directions. It also means any tally of the form
+"session X did this N times" is unsound — the platform cannot distinguish the
+sessions being counted, so the count is not evidence.
+
+The rule this forces: **provenance must be self-declared in the body, or it does
+not exist.** The `(#819)` / `RECONFIRMED (#819)` markers in `bundle-budgets.json`
+are the pattern. It is the same discipline as recording a run id and platform
+beside a measurement, for the same reason — a claim you cannot re-derive is a
+claim you cannot audit, and that applies to _who said it_ exactly as it applies to
+_what they measured_.
+
+**`AGENTS.md`'s author-based gate is not observable.** It distinguishes actions on
+"your own" PRs from gated ones on "a PR you did not author", but with one identity
+every PR reads as your own; a session can only know the difference from its own
+memory of creating it. That text is canonical (synced `studio:base` block) and is
+not reinterpreted here — the observability gap is tracked in #859 for routing
+upstream. Until then, treat the gate as binding on what you _know_ you authored,
+not on what the platform reports.
+
+Note the shape, because it is the same one this document is otherwise about: an
+empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
+be reviewed_. **The impossible state and the pending state are the same value.**
+
 ## After merge
 
 A PR stops being updated the moment it merges, so the post-merge run on `main` is
