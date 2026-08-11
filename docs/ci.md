@@ -195,6 +195,33 @@ rather than counting failures:
 git rev-list --count <last-successful-sha>..origin/main
 ```
 
+That same absence sets a subtler trap, and a concurrent session walked into it while
+this was being written. Pull the description off every recent **deployment** and they
+are byte-identical:
+
+```
+dpl_B5rFBz…  Deployment has failed — run this Vercel CLI command: npx vercel inspect … --logs
+dpl_2dPR38…  Deployment has failed — run this Vercel CLI command: npx vercel inspect … --logs
+dpl_2XTMUf…  Deployment has failed — run this Vercel CLI command: npx vercel inspect … --logs
+```
+
+The natural reading is that the deployments channel is **lossy** — that it collapses
+both causes into one generic string, and that the fix is to enrich it. That reading
+is wrong, and the right one is stronger. The text is uniform because the
+**population is filtered**: a quota-blocked attempt never creates a deployment
+object, so a list of deployments is already a list of build failures only. Every row
+says `has failed` because every row _is_ one. Nothing was lost in encoding.
+
+So absence is not a gap in the instrument, it **is** the instrument — and the same
+observation supports the opposite conclusion depending on which reading you take.
+
+The practical consequence, for anyone editing `.github/workflows/deploy-watch.yml`:
+**do not classify the failure mode from `deployment_status.description`.** That job
+is only ever reached by one of the two modes, so a classifier built on it would look
+correct, pass every test written against real events, and be structurally incapable
+of seeing the quota case — it would never fire wrongly, it would simply never fire.
+Classify from **commit** statuses, which see both, or from duration.
+
 The reason to write this down is that the previous two entries were correct and
 still left the red unread. Naming a cause lets you _recall_ an explanation; only a
 command lets you _re-derive_ which one is in front of you, and an explanation that
@@ -248,25 +275,33 @@ gh api repos/jrmoulckers/jrm-recipes/commits/<sha>/statuses?per_page=100 \
   --jq '.[] | select(.context|test("vercel";"i")) | "\(.state) \(.created_at) \(.description)"'
 ```
 
-Measured over every commit in `5c23673f..main` plus the four successes before it:
+Measured over every commit in `5c23673f..main` plus the four successes before it.
+Both failure counts keep climbing, so treat them as a snapshot with a vintage, not a
+constant — the command above is the part worth keeping:
 
 | state                     |   n | `pending` → terminal           |
 | ------------------------- | --: | ------------------------------ |
 | success                   |   4 | 155 / 162 / 170 / 201 s        |
-| `Deployment has failed`   |  15 | **11–17 s**                    |
-| `Deployment rate limited` |  25 | **no `pending` status at all** |
+| `Deployment has failed`   |  17 | **11–17 s**                    |
+| `Deployment rate limited` |  29 | **no `pending` status at all** |
 
 The bands do not overlap and are ~9x apart. A build that dies in 11–17 s has not
 finished `pnpm install`, let alone `next build`, so every failure in that census
 died **at or before install**.
+
+The counts moved (15 → 17 and 25 → 29) while the **bands did not**. That is the
+useful part: re-measuring twice, hours apart, changed the population and left the
+signature alone, which is much better evidence that the phase is stable than a
+single census could ever be.
 
 The quota row is a third discriminator, and a structural one: a rate-limited attempt
 emits no `pending` status because no build ever starts. That agrees with the
 deployment-object rule above from a different direction and needs no prose parsing.
 
 **What this establishes:** the failure _phase_ is unchanged. "The 401 was partially
-fixed and it now fails later" predicts a duration change, and across ~10 hours and 15
-attempts there is none.
+fixed and it now fails later" predicts a duration change, and across ~12 hours and 17
+attempts there is none — re-measured at n=15 and again at n=17, min 11 s and max 17 s
+both times.
 
 **What it does not:** duration cannot name the error. A lockfile fault, a missing
 install-time variable, or a registry outage would all produce the same 11–17 s
