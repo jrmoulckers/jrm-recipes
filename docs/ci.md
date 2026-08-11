@@ -162,6 +162,37 @@ still left the red unread. Naming a cause lets you _recall_ an explanation; only
 command lets you _re-derive_ which one is in front of you, and an explanation that
 is never re-derived decays into a guess that happens to be phrased confidently.
 
+### The answer is per-attempt, so do not generalise it
+
+The two modes **interleave commit by commit**. There is no boundary and no window to
+wait out. Classifying the newest twelve commits on `main` gave:
+
+```
+BREAK  3f9fe3cb   QUOTA  cedf27e4   QUOTA  1ceb399b   QUOTA  ebd85b52
+BREAK  88d90018   QUOTA  5dae741a   BREAK  7690a1bc   QUOTA  eb5a7350
+BREAK  adb09543   BREAK  41b6a583   BREAK  48602be3   QUOTA  8ca0b100
+```
+
+The decisive case is a pair with **byte-identical trees** — a PR head and its own
+squash-merge commit:
+
+```bash
+git diff --stat 33e54369 3f9fe3cb   # empty
+# 33e54369 -> Deployment rate limited — retry in 24 hours.
+# 3f9fe3cb -> Deployment has failed — ...
+```
+
+Same bytes, minutes apart, opposite modes. **The mode is a property of the deploy
+attempt — not of the diff, and not of the hour.** One observation therefore licenses
+no claim about any other commit, including a rerun of the same one. Statements like
+"the quota window has passed" or "Vercel red is quota right now" are unsupportable
+from a single read, in either direction, and both have been asserted here.
+
+Re-derive per commit. It is two API calls, and the two discriminators are genuinely
+independent: `rate limited` holds **if and only if** no Production deployment object
+exists, and `has failed` **if and only if** one exists and failed — 14 of 14 commits
+agreed, 0 disagreed. Checking either one confirms the other.
+
 ## Every session is the same GitHub user
 
 Concurrent sessions all authenticate as one account, so the platform cannot tell
