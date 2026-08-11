@@ -59,7 +59,7 @@ backup strategy.
 
 This is the blocking item. It is a hosting and cost decision with a compliance consequence, so it
 needs a human with authority over the Neon plan. It is recorded here rather than left implicit
-because a reader has no other way to tell that the table above is aspirational.
+because a reader has no other way to tell that the table above is aspirational. Tracked in #855.
 
 Production runs on **Neon** (`.env.example`, `DEPLOY.md` step 1). Neon does not expose the two
 mechanisms in the table as separate knobs. It has a single **history retention** window: the
@@ -321,7 +321,9 @@ retention period in the table above.
 > notice version, and the Clerk webhook path (`src/server/auth/index.ts`) passes only the trigger.
 > The column is therefore `NULL` for every erasure performed so far, and it cannot honestly be
 > populated until the retention number above is pinned, since the horizon is computed from it.
-> Do not read a `NULL` there as "no backup exposure". Tracked in #805; the code change is #806.
+> Do not read a `NULL` there as "no backup exposure". The blocking decision is tracked in #855; the
+> code change it unblocks is #806. (#805 documented these blockers and is closed — following a
+> closed issue here is not evidence the number has been pinned.)
 
 Three consequences:
 
@@ -334,4 +336,4 @@ Three consequences:
   backup would compromise its integrity as a recovery artifact, which is why re-application on
   restore is the control instead.
 
-_Related issues: #257, #678, #805._
+_Related issues: #257, #678, #855 (pin the retention number — blocking), #806 (record the horizon)._
