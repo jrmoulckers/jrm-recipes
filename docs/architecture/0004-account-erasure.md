@@ -123,6 +123,16 @@ still present. The webhook route answers **202**, not 200 and not 5xx: the reque
 recorded but not complete, and a 5xx would make Clerk redeliver an event that cannot succeed until a
 remedy ships.
 
+**Nor may the notice promise one (#787).** The pre-confirmation notice is the compliance artefact:
+an erasure the user did not understand before confirming is not a valid confirmation, and that cuts
+both ways — telling someone their account will be "deleted immediately" when it will in fact be held
+is the same defect pointed the other way. `getDeletionPreview` therefore calls `findEntanglement`
+itself rather than counting co-created recipes with a query of its own. That is not redundancy being
+tidied away; the two genuinely disagreed. The notice counted only recipes owned by _someone else_,
+so a user who merely owned a recipe carrying accepted co-creators was invisible to it, was promised
+a permanent irreversible deletion, and got a hold. Any future direction added to the halt is
+disclosed by construction, because there is one predicate and the notice is one of its callers.
+
 The post-hoc `ERASURE_INCOMPLETE` assertions in `assertUserErased` are not containment and are not a
 substitute for it: they run after the deletes, when the evidence is already gone.
 

@@ -2945,7 +2945,7 @@
           "recipes": "{count, plural, =0 {Du hast keine eigenen Rezepte, die gelöscht werden.} one {Dein # Rezept wird endgültig gelöscht, samt Geschichte, Notizen und Fotos.} other {Alle # Rezepte von dir werden endgültig gelöscht, samt Geschichten, Notizen und Fotos.}}",
           "cooking": "Dein Kochverlauf geht ebenfalls: {cookLogs, plural, one {# Eintrag im Kochtagebuch} other {# Einträge im Kochtagebuch}}, {reviews, plural, one {# Bewertung} other {# Bewertungen}} und {collections, plural, one {# Sammlung} other {# Sammlungen}}.",
           "photos": "Jedes Foto, das du hochgeladen hast, wird aus unserem Bildspeicher gelöscht, nicht nur ausgeblendet.",
-          "coCreated": "{count, plural, one {# Rezept, um das du dich mitkümmerst, gehört jemand anderem. Es bleibt dort, und dein Name verschwindet davon. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.} other {# Rezepte, um die du dich mitkümmerst, gehören anderen. Sie bleiben bei ihren Besitzern, und dein Name verschwindet davon. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.}}",
+          "coCreated": "{count, plural, one {# Rezept, um das du dich mitkümmerst, gehört jemand anderem. Es bleibt dort. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.} other {# Rezepte, um die du dich mitkümmerst, gehören anderen. Sie bleiben bei ihren Besitzern. Was du darin geschrieben hast, bleibt ebenfalls, weil wir deine Änderungen nicht zuverlässig von denen der anderen trennen können.}}",
           "pendingInvites": "{count, plural, one {# Einladung, ein Rezept mitzugestalten, wird zurückgezogen.} other {# Einladungen, Rezepte mitzugestalten, werden zurückgezogen.}}",
           "subscription": "Dein Abo wird gekündigt. Den laufenden Zeitraum können wir nach der Löschung nicht mehr erstatten.",
           "links": "Geteilte Rezeptlinks funktionieren nicht mehr. Dein Kochname wird für andere wieder frei.",
@@ -2954,6 +2954,14 @@
         "groups": {
           "title": "Du bist die einzige Inhaberin oder der einzige Inhaber einer Familiengruppe",
           "body": "{groups} bliebe ohne Inhaberschaft zurück. Mach bitte vorher jemand anderen zur Inhaberin oder zum Inhaber, sonst können die Mitglieder die Gruppe nicht mehr verwalten."
+        },
+        "held": {
+          "title": "Wir können diese Löschung noch nicht abschließen",
+          "body": "{count, plural, one {Du teilst # Rezept mit jemand anderem.} other {Du teilst # Rezepte mit anderen Personen.}} Wir können deine Texte noch nicht von ihren trennen, ohne die Aufzeichnung darüber zu zerstören, wer was geschrieben hat, und wir löschen dich nicht zur Hälfte, um dorthin zu kommen.",
+          "what": "Wenn du fortfährst, halten wir deine Anfrage fest und löschen heute nichts. Dein Konto, deine Rezepte und deine Fotos bleiben genau so, wie sie sind, bis wir das sauber erledigen können.",
+          "confirmHelp": "Mit dem Klick wird deine Anfrage festgehalten. Heute wird nichts gelöscht, und wir melden uns, sobald es erledigt ist.",
+          "cta": "Meine Löschanfrage senden",
+          "toast": "Deine Anfrage ist festgehalten, und es wurde nichts gelöscht. Wir melden uns, sobald wir sie abschließen können."
         },
         "export": {
           "body": "Nimm dein Kochbuch vorher mit. Der Download ist dieselbe vollständige Sicherung und funktioniert für immer offline.",

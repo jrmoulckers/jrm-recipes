@@ -14,6 +14,7 @@ import {
   reviews,
   subscriptions,
 } from "~/server/db/schema";
+import { findEntanglement } from "./erasure-holds";
 
 /**
  * What a user is about to lose (issue #678, PR B).
@@ -47,6 +48,23 @@ export type DeletionPreview = {
   coCreatedRecipeCount: number;
   /** Pending creator invitations, which are simply withdrawn. */
   pendingInviteCount: number;
+  /**
+   * How many recipes make this account's erasure *undeliverable today* (#787).
+   *
+   * Not a count of things being deleted — the opposite. If this is above zero
+   * the erasure is **held**: nothing is deleted, the account stays wholly
+   * intact, and the request is recorded for replay (#694).
+   *
+   * Deliberately derived from {@link findEntanglement}, the same function the
+   * erasure path calls to decide whether to halt, rather than from a query of
+   * its own. `coCreatedRecipeCount` above used to be the closest thing the
+   * notice had to this, and it is **not** the same predicate: it covers only
+   * recipes owned by someone else. A user who merely *owns* a recipe carrying
+   * accepted co-creators is halted by the erasure and was invisible here, so
+   * the notice promised them an immediate, permanent, irreversible deletion
+   * and then held it. One predicate, one caller, no drift.
+   */
+  heldRecipeCount: number;
   cookLogEntryCount: number;
   reviewCount: number;
   collectionCount: number;
@@ -64,6 +82,7 @@ const EMPTY: DeletionPreview = {
   ownedRecipeCount: 0,
   coCreatedRecipeCount: 0,
   pendingInviteCount: 0,
+  heldRecipeCount: 0,
   cookLogEntryCount: 0,
   reviewCount: 0,
   collectionCount: 0,
@@ -147,6 +166,7 @@ export async function getDeletionPreview(
     ownedRecipeCount,
     coCreatedRecipeCount,
     pendingInviteCount,
+    entanglement,
     cookLogEntryCount,
     reviewCount,
     collectionCount,
@@ -186,6 +206,11 @@ export async function getDeletionPreview(
           ),
         ),
     ),
+    // The erasure path's own halt predicate (#787). Calling it here rather than
+    // re-deriving it is the point: whatever the erasure would hold on is
+    // exactly what the notice discloses, including the owner-side direction
+    // that `coCreatedRecipeCount` above does not see.
+    findEntanglement(userId),
     countRows(() =>
       db
         .select({ value: count() })
@@ -226,6 +251,7 @@ export async function getDeletionPreview(
     ownedRecipeCount,
     coCreatedRecipeCount,
     pendingInviteCount,
+    heldRecipeCount: entanglement.recipeIds.length,
     cookLogEntryCount,
     reviewCount,
     collectionCount,
