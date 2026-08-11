@@ -76,8 +76,7 @@ Fallback matching is shared by [`src/lib/offline-fallback.ts`](../src/lib/offlin
 ## Update flow
 
 Activation is gated so a new build never swaps assets underneath a running session, per
-[`ENG-WEB-004`](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/browser-frontend.md)
-(session-safe frontend state). The service worker is created with:
+[`ENG-WEB-004` (Session-safe frontend state)](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/browser-frontend.md). The service worker is created with:
 
 - `skipWaiting: false`
 - `clientsClaim: true`
