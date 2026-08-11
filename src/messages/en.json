@@ -2942,6 +2942,7 @@
         "description": "This removes your account and everything in it. We don't hide your recipes or keep a copy. They're deleted for good.",
         "consequences": {
           "title": "Here's exactly what happens",
+          "titleHeld": "Here's exactly what happens once we can finish this",
           "recipes": "{count, plural, =0 {You have no recipes of your own to delete.} one {Your # recipe is permanently deleted, along with its story, notes, and photos.} other {All # of your recipes are permanently deleted, along with their stories, notes, and photos.}}",
           "cooking": "Your cooking history goes too: {cookLogs, plural, one {# cook log entry} other {# cook log entries}}, {reviews, plural, one {# review} other {# reviews}}, and {collections, plural, one {# collection} other {# collections}}.",
           "photos": "Every photo you uploaded is deleted from our image storage, not just unlinked.",
