@@ -1,0 +1,58 @@
+# Fails loudly when a production deployment fails, because nothing else does.
+#
+# Why this exists:
+# Vercel deploys from `main`, but no GitHub Actions check reports on it. A PR
+# stops being updated the moment it merges (see docs/ci.md, "After merge"), so
+# `gh pr checks` shows the head ref's run and never the post-merge one. The only
+# record of a failed production deploy is the deployments API, which nobody
+# queries. Production sat 18 commits behind for hours before anyone noticed
+# (#828), and the deploys had been failing the whole time.
+#
+# This does not check whether the deploy *should* have worked. It reports the
+# outcome Vercel already published, in a place someone will see: a failed run on
+# `main` notifies the repo owner, the same mechanism keep-warm.yml relies on.
+#
+# Deliberately not an auto-filed issue. Three production deploys failed today;
+# an issue per failure would have produced three duplicates, and this repo
+# already carries #826/#832 as a duplicate pair from exactly that reflex.
+name: Deploy watch
+
+on:
+  # Fires for every deployment status Vercel publishes, including Preview builds
+  # for pull requests -- hence the environment filter on the job below.
+  deployment_status:
+
+# The event payload carries the SHA, environment, and log URL, so this workflow
+# needs no repo access at all.
+permissions: {}
+
+jobs:
+  production-deploy-failed:
+    name: Report failed production deployment
+    # Preview deployments are noisy by design: one per push per PR, across a
+    # fleet of concurrent sessions. Only Production is worth waking anyone for.
+    # Vercel labels these deployments "Production".
+    if: >-
+      github.event.deployment.environment == 'Production' &&
+      (github.event.deployment_status.state == 'failure' ||
+       github.event.deployment_status.state == 'error')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail with the deployment details
+        env:
+          DEPLOY_SHA: ${{ github.event.deployment.sha }}
+          DEPLOY_STATE: ${{ github.event.deployment_status.state }}
+          DEPLOY_DESCRIPTION: ${{ github.event.deployment_status.description }}
+          DEPLOY_LOG_URL: ${{ github.event.deployment_status.log_url }}
+        run: |
+          set -euo pipefail
+          echo "Commit:      ${DEPLOY_SHA}"
+          echo "State:       ${DEPLOY_STATE}"
+          echo "Description: ${DEPLOY_DESCRIPTION}"
+          echo "Logs:        ${DEPLOY_LOG_URL}"
+          echo
+          echo "Production is now serving an older commit than main."
+          echo "This run is the notification, not the diagnosis -- read the logs above."
+          echo "::error title=Production deployment failed::${DEPLOY_SHA} did not deploy (${DEPLOY_STATE}). Production is behind main."
+          exit 1
