@@ -4,6 +4,12 @@ This runbook covers the secrets and sensitive configuration used by Heirloom. It
 
 Provider dashboards and exact buttons change over time, so the steps below describe the required control objective and mark provider-specific details as deployment-dependent when they are not evidenced in the repo.
 
+> **Scope.** This document covers _credential handling_: where secrets live, who rotates them, and
+> when. It deliberately does **not** record which third parties receive personal data or on what
+> legal basis, which is a different obligation with a different audience. That is
+> [`docs/privacy/processor-register.md`](./privacy/processor-register.md). A service can appear here
+> with well-managed credentials and still be an undisclosed recipient there, so check both.
+
 ## Storage policy
 
 Secret handling follows
