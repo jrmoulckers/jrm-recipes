@@ -40,12 +40,19 @@ import postgres from 'postgres';
  * ## Why revocation is asserted on the rendered page, not on HTTP 404
  *
  * Measured against a seeded build: an unresolvable recipe under a default-locale
- * URL (`/recipes/...`) answers **200** carrying the not-found UI, while the
- * locale-prefixed form (`/en/recipes/...`) answers a true 404. So the status
+ * URL (`/recipes/...`) answers **200** carrying the not-found UI. So the status
  * code is not a usable signal on exactly the URLs the app publishes, and
  * `expect(status).toBe(404)` here would fail against correct behaviour. That
- * soft-404 is a real but *separate* pre-existing defect (filed on its own); it
- * is not co-creation's to fix, and accommodating it silently would hide it.
+ * soft-404 is a real but *separate* pre-existing defect (#775); it is not
+ * co-creation's to fix, and accommodating it silently would hide it.
+ *
+ * An earlier revision of this comment contrasted the above with the
+ * locale-prefixed form (`/en/recipes/...`), which does answer a true 404, and
+ * read that as locale routing behaving correctly. It is not: this app resolves
+ * locale from a cookie and has no locale segment, so `/en/...` matches no route
+ * at all. Re-measured with a nonsense control, `/en`, `/es` and `/zz` all answer
+ * an identical 404 — the prefix was never a locale, and the contrast said
+ * nothing about the defect.
  *
  * The security property is unaffected and was verified directly: the response
  * for a recipe that exists but is not visible to the viewer is byte-identical
