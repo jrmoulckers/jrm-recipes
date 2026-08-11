@@ -10,6 +10,14 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'dependencies'
+    # Dependabot's default prefix is "build", which the Semantic PR title check
+    # rejects: it is not one of the types AGENTS.md allows. Without this every
+    # Dependabot PR is permanently red on a title check, and Quality gate fails
+    # with it. A red check known to be meaningless trains reviewers to merge
+    # past red, so this is a correctness fix, not cosmetics. See #837.
+    commit-message:
+      prefix: 'chore'
+      prefix-development: 'chore'
     # Batch low-risk bumps into a couple of PRs to cut noise; majors stay solo
     # so breaking changes get their own review.
     groups:
@@ -32,3 +40,6 @@ updates:
     labels:
       - 'dependencies'
       - 'github-actions'
+    # Same reason as the npm ecosystem above: keep titles on an allowed type.
+    commit-message:
+      prefix: 'chore'
