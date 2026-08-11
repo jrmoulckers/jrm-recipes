@@ -100,9 +100,29 @@ gh pr checks <n>
 - No GitHub Actions rows at all → nothing ran. Check for conflicts.
 - `Quality gate` not present or not `pass` → something did not run.
 - `Base freshness` warning → the results describe an older base.
-- A red **Vercel** check carries no information about the diff: it is an
-  account-wide build-rate limit, intermittent rather than a 24-hour lockout. The
-  remedy is a retry, not a wait. It is not a required check.
+- A red **Vercel** check is never a verdict on your diff, and it is **not a
+  required check** — `Quality gate` is the name that matters. But it is not
+  uninformative either, and it currently has two distinct causes that need
+  telling apart, because only one of them ever clears on its own:
+  - **A 401 installing `@jrmoulckers/*`** — deterministic, and the state since
+    #804 added the private presets. Actions authenticates to GitHub Packages;
+    Vercel has no credential. Every build fails identically. Tracked by #826.
+  - **`Deployment rate limited`** — account-wide saturation. The cap is shared
+    across every PR and every session, not per branch.
+
+  In both cases: **merge through it, and do not push to clear it.** A retry
+  cannot fix the 401, and either way a fresh build spends budget belonging to
+  the other open PRs — pushing to clear one red takes it from everyone else.
+
+  Note the asymmetry that let the first cause hide behind the second for so
+  long: `Deployment rate limited` is emitted for deploys that **never started**,
+  so it is structurally incapable of reporting on builds that ran. A saturation
+  error is never a diagnosis.
+
+  "Carries no information about the diff" does not generalise to "carries no
+  information". Right now this check is the only surface reporting that
+  production deploys are broken at all — see #828, which is the same gap stated
+  from the other end.
 
 ## After merge
 
