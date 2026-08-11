@@ -16,6 +16,70 @@ export const SEEDED_RECIPE_SLUG = 'nonnas-sunday-gravy';
 export const SEEDED_RECIPE_FLAT_PATH = `/recipes/${SEEDED_RECIPE_SLUG}`;
 
 /**
+ * How long to keep looking for the seeded recipe before deciding it is absent.
+ *
+ * A single probe made a transient sitemap failure indistinguishable from an
+ * unseeded database, and the spec then skipped itself on an unrelated PR (#870).
+ * Retrying costs nothing on the healthy path, which resolves on attempt one.
+ */
+const RESOLVE_ATTEMPTS = 5;
+const RESOLVE_RETRY_MS = 1_000;
+
+/**
+ * Whether the app reports a database at all.
+ *
+ * `/api/health` answers `db: "not_configured"` in zero-config mode and `"ok"` or
+ * `"degraded"` otherwise, so it distinguishes *no database* from *a database
+ * that is present but did not serve what we expected*. Those are the two things
+ * the old single `null` return conflated (#870).
+ *
+ * A degraded database answers 503, so `ok()` is false while a database plainly
+ * exists — hence the status is not used as the signal. Anything other than an
+ * explicit `not_configured` counts as configured, because failing loudly on an
+ * ambiguous probe is safer than skipping on one.
+ */
+async function databaseIsConfigured(page: Page): Promise<boolean> {
+  const response = await page.request.get('/api/health');
+
+  try {
+    const body: unknown = await response.json();
+    const db = (body as { db?: unknown }).db;
+    return db !== 'not_configured';
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * What an unresolved seeded recipe means, given whether a database exists.
+ *
+ * Split out from the navigation so the decision can be asserted directly. The
+ * bug in #870 was never in the probing; it was here, in treating every failure
+ * to resolve as evidence of a missing database — a cause the helper never
+ * checked. The skip message said "No seeded database" while the database was
+ * seeded and reachable.
+ */
+export function unresolvedSeededRecipe(
+  dbConfigured: boolean,
+  diagnosis: string,
+): { skip: boolean; message: string } {
+  if (!dbConfigured) {
+    return {
+      skip: true,
+      message: `No database configured (/api/health reports db: "not_configured"), so the seeded recipe cannot exist. ${diagnosis}`,
+    };
+  }
+
+  return {
+    skip: false,
+    message:
+      'The seeded recipe did not resolve, but a database IS configured, so this is a real failure ' +
+      'rather than a missing precondition. Run `pnpm db:seed` if this is a local checkout. ' +
+      `Observed: ${diagnosis}`,
+  };
+}
+
+/**
  * Navigate to the seeded recipe and return its canonical path.
  *
  * Resolution goes through `/sitemap.xml` rather than a constructed URL: recipes
@@ -31,22 +95,47 @@ export const SEEDED_RECIPE_FLAT_PATH = `/recipes/${SEEDED_RECIPE_SLUG}`;
  * database that was in fact seeded (#849). Resolution is therefore confirmed by
  * the recipe heading actually being on the page.
  *
- * Returns `null` only when the seeded recipe is genuinely absent, so callers can
- * skip rather than fail.
+ * Returns `null` only when the app reports no database at all, which is the one
+ * condition the callers' "No seeded database" skip actually describes (#870).
+ * When a database *is* configured this throws instead of returning `null`, so an
+ * unmet precondition fails loudly rather than skipping. A skipped test is not a
+ * passing test, and a skip that names a cause nobody checked is worse than a
+ * failure: it reads as housekeeping.
  */
 export async function gotoSeededRecipe(page: Page): Promise<string | null> {
-  const sitemap = await page.request.get('/sitemap.xml');
-  if (!sitemap.ok()) return null;
+  const dbConfigured = await databaseIsConfigured(page);
 
-  const locs = [...(await sitemap.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
-  const match = locs.find((loc) => new URL(loc).pathname.endsWith(`/${SEEDED_RECIPE_SLUG}`));
-  if (match === undefined) return null;
+  let diagnosis = 'the sitemap was never probed';
 
-  await page.goto(new URL(match).pathname);
+  for (let attempt = 1; attempt <= RESOLVE_ATTEMPTS; attempt += 1) {
+    const sitemap = await page.request.get('/sitemap.xml');
 
-  // The status is not an oracle (#775), so confirm the recipe actually rendered
-  // rather than the not-found page that answers 200 in its place.
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    if (sitemap.ok()) {
+      const locs = [...(await sitemap.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
+      const match = locs.find((loc) => new URL(loc).pathname.endsWith(`/${SEEDED_RECIPE_SLUG}`));
 
-  return new URL(page.url()).pathname;
+      if (match !== undefined) {
+        await page.goto(new URL(match).pathname);
+
+        // The status is not an oracle (#775), so confirm the recipe actually
+        // rendered rather than the not-found page that answers 200 in its place.
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+        return new URL(page.url()).pathname;
+      }
+
+      diagnosis = `GET /sitemap.xml listed ${locs.length} URL(s), none ending in "/${SEEDED_RECIPE_SLUG}"`;
+    } else {
+      diagnosis = `GET /sitemap.xml answered ${sitemap.status()}`;
+    }
+
+    if (attempt < RESOLVE_ATTEMPTS) await page.waitForTimeout(RESOLVE_RETRY_MS);
+  }
+
+  const outcome = unresolvedSeededRecipe(
+    dbConfigured,
+    `${diagnosis} (after ${RESOLVE_ATTEMPTS} attempts)`,
+  );
+  if (outcome.skip) return null;
+  throw new Error(outcome.message);
 }
