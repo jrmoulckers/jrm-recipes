@@ -95,7 +95,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@jrmoulckers/eslint-config": "^0.8.0",
+    "@jrmoulckers/eslint-config": "^0.9.0",
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^16.2.10",
     "@next/eslint-plugin-next": "^15.5.21 || ^16.0.0",
