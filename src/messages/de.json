@@ -2942,6 +2942,7 @@
         "description": "Damit werden dein Konto und alles darin entfernt. Wir verstecken deine Rezepte nicht und behalten auch keine Kopie. Sie sind endgültig gelöscht.",
         "consequences": {
           "title": "Das passiert genau",
+          "titleHeld": "Das passiert genau, sobald wir das abschließen können",
           "recipes": "{count, plural, =0 {Du hast keine eigenen Rezepte, die gelöscht werden.} one {Dein # Rezept wird endgültig gelöscht, samt Geschichte, Notizen und Fotos.} other {Alle # Rezepte von dir werden endgültig gelöscht, samt Geschichten, Notizen und Fotos.}}",
           "cooking": "Dein Kochverlauf geht ebenfalls: {cookLogs, plural, one {# Eintrag im Kochtagebuch} other {# Einträge im Kochtagebuch}}, {reviews, plural, one {# Bewertung} other {# Bewertungen}} und {collections, plural, one {# Sammlung} other {# Sammlungen}}.",
           "photos": "Jedes Foto, das du hochgeladen hast, wird aus unserem Bildspeicher gelöscht, nicht nur ausgeblendet.",

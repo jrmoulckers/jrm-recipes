@@ -83,4 +83,48 @@ describe('DeleteAccountPanel held disclosure', () => {
     expect(screen.getByRole('button', { name: /send my deletion request/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /permanently delete everything/i })).toBeNull();
   });
+
+  /**
+   * #830. #792 fixed every element describing the *action* (CTA, confirm help,
+   * toast severity) and none describing the *outcome*, so a held user read "All
+   * 3 of your recipes are permanently deleted" under a heading promising exactly
+   * what happens, then "your recipes and your photos all stay exactly as they
+   * are" below it.
+   *
+   * The list is left untouched deliberately: those sentences are true of the
+   * erasure, just not of today. What makes them true is that the hold notice and
+   * a conditional heading are read *first*, so ordering is the fix and ordering
+   * is what these pin.
+   */
+  it('frames the outcome list as conditional when the erasure will be held', () => {
+    renderPanel({ heldRecipeCount: 2 });
+
+    expect(screen.getByRole('heading', { name: /once we can finish this/i })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /^Here's exactly what happens$/ })).toBeNull();
+  });
+
+  it('puts the hold notice ahead of the outcomes it qualifies', () => {
+    renderPanel({ heldRecipeCount: 2 });
+
+    const heldNotice = screen.getByText(/delete nothing today/i);
+    const heading = screen.getByRole('heading', { name: /once we can finish this/i });
+    const outcome = screen.getByText(/permanently deleted/i);
+
+    // Both of these would pass if the notice merely existed somewhere on the
+    // page, which is exactly the state #792 shipped. Position is the assertion.
+    expect(
+      heldNotice.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      heldNotice.compareDocumentPosition(outcome) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('leaves the plain heading and ordering alone for an ordinary account', () => {
+    renderPanel({ heldRecipeCount: 0 });
+
+    expect(screen.getByRole('heading', { name: /^Here's exactly what happens$/ })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /once we can finish this/i })).toBeNull();
+    expect(screen.getByText(/permanently deleted/i)).toBeTruthy();
+  });
 });

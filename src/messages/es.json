@@ -2942,6 +2942,7 @@
         "description": "Esto elimina tu cuenta y todo lo que hay en ella. No ocultamos tus recetas ni guardamos una copia: se borran para siempre.",
         "consequences": {
           "title": "Esto es exactamente lo que ocurre",
+          "titleHeld": "Esto es exactamente lo que ocurre cuando podamos completarlo",
           "recipes": "{count, plural, =0 {No tienes recetas propias que eliminar.} one {Tu # receta se elimina de forma permanente, junto con su historia, sus notas y sus fotos.} other {Tus # recetas se eliminan de forma permanente, junto con sus historias, sus notas y sus fotos.}}",
           "cooking": "Tu historial de cocina también se va: {cookLogs, plural, one {# entrada del diario} other {# entradas del diario}}, {reviews, plural, one {# reseña} other {# reseñas}} y {collections, plural, one {# colección} other {# colecciones}}.",
           "photos": "Todas las fotos que subiste se eliminan de nuestro almacenamiento de imágenes, no solo se desvinculan.",

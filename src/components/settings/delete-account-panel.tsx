@@ -81,7 +81,34 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface/40 p-5">
-        <h3 className="text-sm font-semibold">{t('consequences.title')}</h3>
+        {/*
+          The hold notice leads, and the heading below it goes conditional (#830). Both are
+          ordering, not decoration: every line in this list states an outcome in the present
+          ("are permanently deleted", "is cancelled", "stop working"), while `held.what` says
+          nothing is deleted today. #792 added this block at the foot of the list, so a held
+          user read "All N of your recipes are permanently deleted" and, further down, "your
+          recipes and your photos all stay exactly as they are" -- a verbatim contradiction
+          under a heading promising exactly what happens. Framing the list once, before it is
+          read, is what makes the seven unchanged strings true again.
+        */}
+        {willBeHeld ? (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <AlertTriangle
+              className="mt-0.5 size-4 shrink-0 text-warning-foreground"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 text-sm">
+              <p className="font-medium">{t('held.title')}</p>
+              <p className="mt-1 text-muted-foreground">
+                {t('held.body', { count: preview.heldRecipeCount })}
+              </p>
+              <p className="mt-2 text-muted-foreground">{t('held.what')}</p>
+            </div>
+          </div>
+        ) : null}
+        <h3 className="text-sm font-semibold">
+          {t(willBeHeld ? 'consequences.titleHeld' : 'consequences.title')}
+        </h3>
         <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
           <li>{t('consequences.recipes', { count: preview.ownedRecipeCount })}</li>
           <li>
@@ -126,22 +153,6 @@ export function DeleteAccountPanel({ preview }: { preview: DeletionPreview }) {
                   groups: preview.soleOwnerGroups.map((group) => group.name).join(', '),
                 })}
               </p>
-            </div>
-          </div>
-        ) : null}
-
-        {willBeHeld ? (
-          <div className="mt-4 flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 p-3">
-            <AlertTriangle
-              className="mt-0.5 size-4 shrink-0 text-warning-foreground"
-              aria-hidden="true"
-            />
-            <div className="min-w-0 text-sm">
-              <p className="font-medium">{t('held.title')}</p>
-              <p className="mt-1 text-muted-foreground">
-                {t('held.body', { count: preview.heldRecipeCount })}
-              </p>
-              <p className="mt-2 text-muted-foreground">{t('held.what')}</p>
             </div>
           </div>
         ) : null}
