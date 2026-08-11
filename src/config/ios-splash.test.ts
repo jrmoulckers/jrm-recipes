@@ -14,6 +14,9 @@ describe('ios splash config', () => {
     expect(images).toHaveLength(IOS_SPLASH_DEVICES.length * 2);
     // Every referenced url is a unique /icons/apple-splash-*.png asset.
     const urls = images.map((i) => i.url);
+    // Hand-written floor: the uniqueness assertion below is 0 === 0 if the
+    // device table empties (#862).
+    expect(urls.length).toBeGreaterThan(10);
     expect(new Set(urls).size).toBe(urls.length);
     for (const { url } of images) {
       expect(url).toMatch(/^\/icons\/apple-splash-[\d-]+x-(portrait|landscape)\.png$/);

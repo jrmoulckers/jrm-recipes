@@ -21,6 +21,9 @@ describe('DIETARY_TAGS (i404 single source of truth)', () => {
   });
 
   it('contains no duplicates', () => {
+    // Hand-written floor: the assertion below is 0 === 0 on an empty
+    // vocabulary, so it cannot detect DIETARY_TAGS emptying (#862).
+    expect(DIETARY_TAGS.length).toBeGreaterThan(5);
     expect(new Set(DIETARY_TAGS).size).toBe(DIETARY_TAGS.length);
   });
 });
@@ -288,6 +291,8 @@ describe('SUBSTITUTIONS data integrity', () => {
 
   it('has unique display names', () => {
     const names = SUBSTITUTIONS.map((e) => e.name);
+    // Hand-written floor: the assertion below is 0 === 0 on an empty table (#862).
+    expect(names.length).toBeGreaterThan(40);
     expect(new Set(names).size).toBe(names.length);
   });
 

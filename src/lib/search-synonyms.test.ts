@@ -50,6 +50,9 @@ describe('expandQueryTerms', () => {
 
   it('never duplicates the original within the synonyms', () => {
     const terms = expandQueryTerms('shrimp');
+    // Hand-written floor: the assertion below is 0 === 0 if expansion returns
+    // nothing, so a total failure of expandQueryTerms would pass here (#862).
+    expect(terms.length).toBeGreaterThan(0);
     expect(new Set(terms).size).toBe(terms.length);
   });
 });

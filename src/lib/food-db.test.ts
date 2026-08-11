@@ -151,6 +151,9 @@ describe('canonical identity', () => {
 
   it('foodNodeId is unique across the curated set', () => {
     const ids = new Set(FOOD_ITEMS.map((f) => foodNodeId(f.name)));
+    // Hand-written floor: the uniqueness assertion below is 0 === 0 on an
+    // empty catalog, so it cannot detect FOOD_ITEMS emptying (#862).
+    expect(FOOD_ITEMS.length).toBeGreaterThan(100);
     expect(ids.size).toBe(FOOD_ITEMS.length);
   });
 
