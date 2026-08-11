@@ -253,6 +253,31 @@ as a partial fix is how a working recipe gets abandoned. For the same reason,
 `git check-attr text eol -- public/favicon.ico` reporting `eol: lf` for a binary is expected
 rather than a latent corruption hazard.
 
+### If a check fails on a file you did not touch
+
+Two different generated artifacts can go stale and blame innocent code. Both present the same way
+— an untouched file breaking your branch — and both have the same free discriminator: **CI is
+green on the commit that fails locally**, because CI builds from scratch.
+
+**`pnpm typecheck` rejects a route that plainly exists:**
+
+```
+Type '"/settings/photos"' is not assignable to type 'Route'
+```
+
+`typedRoutes` generates `.next/types/routes.d.ts` at **build** time, and `tsc --noEmit` reads that
+file rather than the filesystem. After pulling a merge that adds a route, a `.next/` from before
+the merge still describes the old route set. Check whether the route exists on disk first — if
+`src/app/settings/photos/page.tsx` is there, the disagreement is between `tsc` and `.next/`, not
+inside your source. `pnpm build` regenerates it.
+
+**`pnpm lint` or a build fails on a config file you never opened:** `node_modules` predates
+`pnpm-lock.yaml`. Compare `node_modules/.modules.yaml` against the lockfile's mtime;
+`pnpm install --frozen-lockfile` repairs it.
+
+Both are instances of the same rule, which also covers the CRLF case above: **a generated artifact
+is a deployment, and any deployment can be stale relative to its declaration.**
+
 On **every** pull request — whatever branch it is based on — and on pushes to
 `main`, GitHub Actions runs:
 
