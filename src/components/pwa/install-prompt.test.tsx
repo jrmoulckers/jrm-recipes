@@ -209,9 +209,20 @@ describe('InstallPrompt modal dialog semantics', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
+    // Mirror of the poll above, and unbound for the same reason. The `waitFor`
+    // on the line above resolves as soon as the dialog leaves the DOM, but DOM
+    // removal and effect *cleanup* are separate events: React can flush the
+    // cleanup after the commit that unmounts the node. Reading `removeSpy`
+    // synchronously here therefore samples a window where the listener is
+    // genuinely still bound, which reddens whichever unrelated PR happens to be
+    // running on a loaded CI runner (#803). Poll both sides or neither.
+    await waitFor(() =>
+      expect(removeSpy.mock.calls.filter((c) => c[0] === 'keydown')).toHaveLength(1),
+    );
     const removed = removeSpy.mock.calls.filter((c) => c[0] === 'keydown');
-    expect(removed).toHaveLength(1);
-    // The same handler that was added is the one removed.
+    // The same handler that was added is the one removed. This is the assertion
+    // that actually proves no leak, and it is non-vacuous only because the poll
+    // above has already established that `removed` is non-empty (#844).
     expect(removed[0]![1]).toBe(added[0]![1]);
   });
 
