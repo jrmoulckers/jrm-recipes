@@ -151,8 +151,8 @@ importers:
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
     devDependencies:
       '@jrmoulckers/eslint-config':
-        specifier: ^0.4.0
-        version: 0.4.0(@next/eslint-plugin-next@15.5.23)(eslint-plugin-jsx-a11y@6.10.2(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react@7.37.5(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-svelte@2.46.1(eslint@9.39.5(jiti@1.21.7))(svelte@5.56.8(@typescript-eslint/types@8.66.0)))(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
+        specifier: ^0.8.0
+        version: 0.8.0(@next/eslint-plugin-next@15.5.23)(eslint-plugin-jsx-a11y@6.10.2(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react@7.37.5(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-svelte@2.46.1(eslint@9.39.5(jiti@1.21.7))(svelte@5.56.8(@typescript-eslint/types@8.66.0)))(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
       '@jrmoulckers/prettier-config':
         specifier: ^0.2.0
         version: 0.2.0(prettier-plugin-svelte@3.5.2(prettier@3.9.5)(svelte@5.56.8(@typescript-eslint/types@8.66.0)))(prettier@3.9.5)
@@ -1150,8 +1150,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@jrmoulckers/eslint-config@0.4.0':
-    resolution: {integrity: sha512-kqHKHgyevelBna9FXiUZHJXskyp/qr2spPzrOTTdGLfWnx7h+w5TZp39DjlpA18onU2bL4LgIBsQF6DrjNeHLw==, tarball: https://npm.pkg.github.com/download/@jrmoulckers/eslint-config/0.4.0/82cae7ca5ac39d8047dee463489031bbfe9da2bf}
+  '@jrmoulckers/eslint-config@0.8.0':
+    resolution: {integrity: sha512-uCgmT5djCVc3ILmZOJaF0BTqJvALeNXvoTb2QHH2kHiaPocbzmid6w8DMmrwK0YSCMHmIzshgSbGqMM1fEZ8lw==, tarball: https://npm.pkg.github.com/download/@jrmoulckers/eslint-config/0.8.0/9ce07e83524ca7f9baef2a6a1b090d586593655b}
     engines: {node: '>=20'}
     peerDependencies:
       '@next/eslint-plugin-next': ^15.0.0 || ^16.0.0
@@ -6354,7 +6354,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@jrmoulckers/eslint-config@0.4.0(@next/eslint-plugin-next@15.5.23)(eslint-plugin-jsx-a11y@6.10.2(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react@7.37.5(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-svelte@2.46.1(eslint@9.39.5(jiti@1.21.7))(svelte@5.56.8(@typescript-eslint/types@8.66.0)))(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)':
+  '@jrmoulckers/eslint-config@0.8.0(@next/eslint-plugin-next@15.5.23)(eslint-plugin-jsx-a11y@6.10.2(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-react@7.37.5(eslint@9.39.5(jiti@1.21.7)))(eslint-plugin-svelte@2.46.1(eslint@9.39.5(jiti@1.21.7))(svelte@5.56.8(@typescript-eslint/types@8.66.0)))(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)':
     dependencies:
       '@eslint/js': 9.39.5
       '@next/eslint-plugin-next': 15.5.23
