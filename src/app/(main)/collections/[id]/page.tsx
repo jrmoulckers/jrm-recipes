@@ -30,6 +30,7 @@ import {
   type CollectionRouteParams,
 } from "~/lib/route-params";
 import { brand } from "~/config/brand";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 const load = cache(async (id: string) => {
   const user = await getCurrentUser();
@@ -65,7 +66,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CollectionPage({
+async function CollectionPage({
   params,
 }: {
   params: Promise<CollectionRouteParams>;
@@ -206,3 +207,5 @@ export default async function CollectionPage({
     </div>
   );
 }
+
+export default withRouteMessages(CollectionPage);

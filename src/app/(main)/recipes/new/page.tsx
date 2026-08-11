@@ -9,10 +9,11 @@ import { toCustomUnitDefs } from "~/lib/unit-prefs";
 import { isDbConfigured } from "~/server/db";
 import { safeSharedImageUrl } from "~/lib/share-target";
 import { UsageLimitNotice } from "~/components/billing/usage-limit-notice";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export const metadata: Metadata = { title: "New recipe" };
 
-export default async function NewRecipePage({
+async function NewRecipePage({
   searchParams,
 }: {
   searchParams: Promise<{ cover?: string; title?: string; import?: string }>;
@@ -71,3 +72,5 @@ export default async function NewRecipePage({
     </>
   );
 }
+
+export default withRouteMessages(NewRecipePage);

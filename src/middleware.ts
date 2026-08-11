@@ -5,7 +5,11 @@ import {
   type NextRequest,
 } from "next/server";
 
-import { LOCALE_COOKIE, negotiateAcceptLanguage } from "~/config/i18n";
+import {
+  LOCALE_COOKIE,
+  PATHNAME_HEADER,
+  negotiateAcceptLanguage,
+} from "~/config/i18n";
 import {
   applySecurityHeaders,
   buildContentSecurityPolicy,
@@ -35,6 +39,12 @@ function securedNext(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", csp);
+  // Server Components cannot read the request pathname, and the App Router does
+  // not pass it down. The route-scoped message provider needs it to decide which
+  // message namespaces to serialize into the flight payload (#674), so forward
+  // it here. Not a trust boundary: it is only ever used to *narrow* a payload,
+  // and an unrecognized value falls back to the full catalog.
+  requestHeaders.set(PATHNAME_HEADER, request.nextUrl.pathname);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   applySecurityHeaders(response.headers, csp);

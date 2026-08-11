@@ -15,6 +15,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { RecipeCard } from "~/components/recipe/recipe-card";
 import { CookWithInput } from "~/components/recipe/cook-with-input";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -24,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function CookWithPage({
+async function CookWithPage({
   searchParams,
 }: {
   searchParams: Promise<RawSearchParams>;
@@ -124,3 +125,5 @@ async function NoMatches() {
     </div>
   );
 }
+
+export default withRouteMessages(CookWithPage);

@@ -19,13 +19,14 @@ import {
   type WeekMenuEntry,
 } from "~/lib/week-menu";
 import { WeekMenuPrintView } from "~/components/print/week-menu-print-view";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export const metadata: Metadata = {
   title: "Print · Weekly menu",
   robots: { index: false, follow: false },
 };
 
-export default async function WeekMenuPrintPage({
+async function WeekMenuPrintPage({
   searchParams,
 }: {
   searchParams: Promise<{ week?: string; scope?: string }>;
@@ -83,3 +84,5 @@ export default async function WeekMenuPrintPage({
     />
   );
 }
+
+export default withRouteMessages(WeekMenuPrintPage);

@@ -8,6 +8,7 @@ import { brand } from "~/config/brand";
 import { Button } from "~/components/ui/button";
 import { LogoMark } from "~/components/layout/logo";
 import { OfflineReconnect } from "~/components/pwa/offline-reconnect";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("pwa.offline");
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function OfflinePage() {
+async function OfflinePage() {
   const t = await getTranslations("pwa.offline");
 
   const stillWorks = [
@@ -91,3 +92,5 @@ export default async function OfflinePage() {
     </main>
   );
 }
+
+export default withRouteMessages(OfflinePage);

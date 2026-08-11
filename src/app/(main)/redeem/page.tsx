@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { RedeemForm } from "~/components/billing/redeem-form";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -31,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * A `?gift=purchased` return from the gift Checkout shows a warm buyer thank-you.
  * a `?code=` param pre-fills the field for share links.
  */
-export default async function RedeemPage({
+async function RedeemPage({
   searchParams,
 }: {
   searchParams: Promise<{ gift?: string; code?: string }>;
@@ -104,3 +105,5 @@ async function SignInNudge() {
     </div>
   );
 }
+
+export default withRouteMessages(RedeemPage);

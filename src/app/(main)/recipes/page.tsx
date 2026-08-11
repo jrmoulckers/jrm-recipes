@@ -53,6 +53,7 @@ import { WelcomeChecklist } from "~/components/onboarding/welcome-checklist";
 import { RecipeSearchControls } from "~/components/recipe/recipe-search-controls";
 import { QuickCaptureDialog } from "~/components/recipe/quick-capture-dialog";
 import { type SearchParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -70,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 const LCP_PRIORITY_COUNT = 3;
 
-export default async function RecipesPage({
+async function RecipesPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
@@ -404,3 +405,5 @@ async function ConnectDbNotice() {
     />
   );
 }
+
+export default withRouteMessages(RecipesPage);

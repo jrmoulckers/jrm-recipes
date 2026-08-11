@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { CreateGroupDialog } from "~/components/groups/create-group-dialog";
 import { GroupCard } from "~/components/groups/group-card";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -26,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function GroupsPage() {
+async function GroupsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -134,3 +135,5 @@ async function ConnectDbNotice() {
     />
   );
 }
+
+export default withRouteMessages(GroupsPage);

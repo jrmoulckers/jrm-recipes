@@ -25,6 +25,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { JournalFilters } from "~/components/cooklog/journal-filters";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -38,7 +39,7 @@ function normalizeServings(servingsMade?: number | null): number | null {
   return n > 0 ? n : null;
 }
 
-export default async function JournalPage({
+async function JournalPage({
   searchParams,
 }: {
   searchParams: Promise<{ recipe?: string; range?: string }>;
@@ -324,3 +325,5 @@ async function ConnectDbNotice() {
     />
   );
 }
+
+export default withRouteMessages(JournalPage);

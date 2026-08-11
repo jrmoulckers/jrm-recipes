@@ -6,6 +6,7 @@ import {
   type FlatRecipeRouteParams,
 } from "~/lib/route-params";
 import { getFlatRecipeForViewer } from "~/server/recipes/loaders";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 /**
  * Legacy flat recipe URL: `/recipes/<slug>` or `/recipes/<id>` (#666).
@@ -25,7 +26,7 @@ import { getFlatRecipeForViewer } from "~/server/recipes/loaders";
  * recipe-slug allocators reserve those words, so this route can never shadow
  * them.
  */
-export default async function LegacyRecipePage({
+async function LegacyRecipePage({
   params,
 }: {
   params: Promise<FlatRecipeRouteParams>;
@@ -42,3 +43,5 @@ export default async function LegacyRecipePage({
     }),
   );
 }
+
+export default withRouteMessages(LegacyRecipePage);

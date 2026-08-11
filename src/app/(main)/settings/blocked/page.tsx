@@ -7,13 +7,14 @@ import { getCurrentUser, isAuthConfigured } from "~/server/auth";
 import { isDbConfigured } from "~/server/db";
 import { listBlockedPeople } from "~/server/moderation/blocks";
 import { BlockedPeopleList } from "~/components/settings/blocked-people-list";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("blocked.title") };
 }
 
-export default async function BlockedPeoplePage() {
+async function BlockedPeoplePage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -78,3 +79,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(BlockedPeoplePage);

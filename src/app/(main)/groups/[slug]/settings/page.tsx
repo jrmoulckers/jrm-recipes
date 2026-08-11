@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 /**
  * Plain-language capability hints for each group role, surfaced right where a
@@ -49,7 +50,7 @@ export async function generateMetadata({
   return { title: t("groupSettings.named", { name: group.name }) };
 }
 
-export default async function GroupSettingsPage({
+async function GroupSettingsPage({
   params,
 }: {
   params: Promise<SlugRouteParams>;
@@ -114,3 +115,5 @@ export default async function GroupSettingsPage({
     </div>
   );
 }
+
+export default withRouteMessages(GroupSettingsPage);

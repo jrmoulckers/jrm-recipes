@@ -11,13 +11,14 @@ import {
   type UnitPreferencesView,
 } from "~/components/settings/unit-preferences-manager";
 import { type CustomUnitDimension } from "~/server/units/validation";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("unitSettings.title") };
 }
 
-export default async function UnitsSettingsPage() {
+async function UnitsSettingsPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -90,3 +91,5 @@ async function SignInNudge() {
     </div>
   );
 }
+
+export default withRouteMessages(UnitsSettingsPage);

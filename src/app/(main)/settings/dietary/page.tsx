@@ -9,6 +9,7 @@ import { listMemberProfiles } from "~/server/dietary/queries";
 import { listMyGroups } from "~/server/groups/queries";
 import { ALLERGENS, type Allergen } from "~/lib/allergens";
 import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 import {
   DietaryProfilesManager,
   type MemberProfileView,
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const ALLERGEN_SET = new Set<string>(ALLERGENS);
 const DIET_SET = new Set<string>(DIETARY_TAGS);
 
-export default async function DietaryProfilesPage() {
+async function DietaryProfilesPage() {
   const user = await getCurrentUser();
   const authConfigured = isAuthConfigured();
   const dbConfigured = isDbConfigured();
@@ -100,3 +101,5 @@ async function ConnectDbNotice() {
     </div>
   );
 }
+
+export default withRouteMessages(DietaryProfilesPage);

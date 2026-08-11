@@ -12,6 +12,7 @@ import {
   type EmbedRecipeRouteParams,
 } from "~/lib/route-params";
 import { recipeDetailPath } from "~/lib/recipe-path";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 // A recipe can be unpublished/made private at any time, so never cache the
 // public/private decision at build time.
@@ -38,7 +39,7 @@ export async function generateMetadata({
  * `public` + `published` recipes. Anything else 404s, never leaking private
  * data. Every embed carries the brand mark + a "View full recipe" backlink.
  */
-export default async function EmbedRecipePage({
+async function EmbedRecipePage({
   params,
 }: {
   params: Promise<EmbedRecipeRouteParams>;
@@ -141,3 +142,5 @@ export default async function EmbedRecipePage({
     </main>
   );
 }
+
+export default withRouteMessages(EmbedRecipePage);

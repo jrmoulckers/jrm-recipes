@@ -9,13 +9,14 @@ import { listPendingCreatorInvites } from "~/server/recipes/creators";
 import { NotificationInbox } from "~/components/notifications/notification-inbox";
 import { CreatorInviteList } from "~/components/recipe/creator-invite-list";
 import { EmptyState } from "~/components/ui/empty-state";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("notifications.title") };
 }
 
-export default async function NotificationsPage() {
+async function NotificationsPage() {
   const user = await getCurrentUser();
   const t = await getTranslations("notifications.page");
   const tInvites = await getTranslations("recipeCreators.invites");
@@ -82,3 +83,5 @@ export default async function NotificationsPage() {
     </div>
   );
 }
+
+export default withRouteMessages(NotificationsPage);

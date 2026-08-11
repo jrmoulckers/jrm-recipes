@@ -14,10 +14,11 @@ import { DIETARY_TAGS, type DietaryTag } from "~/lib/substitutions";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
 import { groupRecipeClassifications } from "~/lib/recipe-classifications";
 import { resolveNamespacedRecipe } from "~/server/recipes/resolve";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export const metadata = { title: "Edit recipe" };
 
-export default async function EditRecipePage({
+async function EditRecipePage({
   params,
 }: {
   params: Promise<RecipeRouteParams>;
@@ -124,3 +125,5 @@ export default async function EditRecipePage({
     />
   );
 }
+
+export default withRouteMessages(EditRecipePage);

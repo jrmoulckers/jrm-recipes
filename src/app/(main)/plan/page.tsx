@@ -51,6 +51,7 @@ import { Button } from "~/components/ui/button";
 import { PrepAheadNote } from "~/components/planner/prep-ahead-note";
 import { CopyLastWeekButton } from "~/components/planner/copy-last-week-button";
 import { BuildShoppingListButton } from "~/components/planner/build-shopping-list-button";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 import {
   PlannerBoard,
   PlannerEmptyState,
@@ -64,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("plan.title") };
 }
 
-export default async function PlanPage({
+async function PlanPage({
   searchParams,
 }: {
   searchParams: Promise<{ week?: string; scope?: string }>;
@@ -376,3 +377,5 @@ async function SignInNudge() {
     </div>
   );
 }
+
+export default withRouteMessages(PlanPage);

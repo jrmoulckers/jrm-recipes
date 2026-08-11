@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { brand } from "~/config/brand";
 import { parseTokenParams, type TokenRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 // Invite links are private, single-purpose URLs. Never index them.
 export async function generateMetadata(): Promise<Metadata> {
@@ -70,7 +71,7 @@ async function StatusCard({
   );
 }
 
-export default async function JoinPage({
+async function JoinPage({
   params,
 }: {
   params: Promise<TokenRouteParams>;
@@ -142,3 +143,5 @@ export default async function JoinPage({
     </Shell>
   );
 }
+
+export default withRouteMessages(JoinPage);

@@ -6,6 +6,7 @@ import { toPrintRecipe } from "~/server/recipes/serialize";
 import { KeepsakeView } from "~/components/recipe/keepsake-view";
 import { parseKeepsakeMessage } from "~/lib/keepsake";
 import { parseRecipeParams, type RecipeRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 type KeepsakeSearchParams = {
   from?: string | string[];
@@ -45,7 +46,7 @@ export async function generateMetadata({
  * recipe page. A private recipe can never leak through a keepsake link. The
  * personal note + sender are read straight from the URL.
  */
-export default async function KeepsakePage({
+async function KeepsakePage({
   params,
   searchParams,
 }: {
@@ -68,3 +69,5 @@ export default async function KeepsakePage({
     <KeepsakeView recipe={toPrintRecipe(recipe)} from={from} note={note} />
   );
 }
+
+export default withRouteMessages(KeepsakePage);

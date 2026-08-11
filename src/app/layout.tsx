@@ -31,6 +31,9 @@ import { atkinson } from "~/fonts/atkinson";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
+import { SHELL_NAMESPACES } from "~/i18n/route-namespaces";
+import { pickMessages } from "~/i18n/messages";
+
 import { localeDirection, openGraphLocale } from "~/config/i18n";
 import { iosStartupImages } from "~/config/ios-splash";
 import { preconnectOrigins } from "~/config/resource-hints";
@@ -168,7 +171,11 @@ export default async function RootLayout({
     cookieStore.get(ANALYTICS_CONSENT_COOKIE)?.value,
   );
   const locale = await getLocale();
-  const messages = await getMessages();
+  // Only the namespaces the *persistent* shell uses. This provider lives in a
+  // layout, so it is not re-rendered on client-side navigation and its payload
+  // is paid once per document; each route adds its own namespaces through the
+  // `template.tsx` boundary below it (#674).
+  const messages = pickMessages(await getMessages(), SHELL_NAMESPACES);
   const currentUser = await getCurrentUser();
   // SSR-evaluate feature flags for the identified user so client variants don't
   // flicker on load (#335). Returns {} (all control) when analytics is off.

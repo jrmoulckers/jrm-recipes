@@ -14,6 +14,7 @@ import { RecipeCard } from "~/components/recipe/recipe-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { FollowButton } from "~/components/follows/follow-button";
 import { parseHandleParams, type HandleRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 const load = cache((handle: string) => getPublicProfileByHandle(handle));
 
@@ -66,7 +67,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CookProfilePage({
+async function CookProfilePage({
   params,
 }: {
   params: Promise<HandleRouteParams>;
@@ -178,3 +179,5 @@ export default async function CookProfilePage({
     </div>
   );
 }
+
+export default withRouteMessages(CookProfilePage);

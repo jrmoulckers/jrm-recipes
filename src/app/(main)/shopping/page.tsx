@@ -18,13 +18,14 @@ import { LocalShoppingList } from "~/components/shopping/local-shopping-list";
 import { type ShoppingViewItem } from "~/components/shopping/shopping-list-view";
 import { type ShoppingListSummary } from "~/components/shopping/shopping-list-navigation";
 import { type ShoppingHistoryEntry } from "~/components/shopping/shopping-history";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("shopping.title") };
 }
 
-export default async function ShoppingPage({
+async function ShoppingPage({
   searchParams,
 }: {
   searchParams: Promise<{ list?: string | string[] }>;
@@ -150,3 +151,5 @@ export default async function ShoppingPage({
     </div>
   );
 }
+
+export default withRouteMessages(ShoppingPage);

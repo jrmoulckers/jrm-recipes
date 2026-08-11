@@ -10,13 +10,14 @@ import { DomainError } from "~/server/errors";
 import { ModerationQueue } from "~/components/groups/moderation-queue";
 import { Button } from "~/components/ui/button";
 import { parseSlugParams, type SlugRouteParams } from "~/lib/route-params";
+import { withRouteMessages } from "~/components/i18n/route-messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
   return { title: t("moderation.title") };
 }
 
-export default async function GroupModerationPage({
+async function GroupModerationPage({
   params,
 }: {
   params: Promise<SlugRouteParams>;
@@ -56,3 +57,5 @@ export default async function GroupModerationPage({
     </div>
   );
 }
+
+export default withRouteMessages(GroupModerationPage);
