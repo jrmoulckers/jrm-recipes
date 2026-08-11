@@ -78,9 +78,6 @@ const CO_COOK_ID = "e2e_usr_cocook_000000";
 const CO_COOK_NAME = "E2E Co-Cook";
 const CO_COOK_SLUG = "e2e-co-cook";
 const SEEDED_RECIPE_ID = "seed_rcp_gravy";
-const ROLE_RECIPE_ID = "seed_rcp_marinara";
-const ROLE_RECIPE_SLUG = "weeknight-garden-marinara";
-const OWNER_ID = "dev_local_user_00000000";
 const OWNER_RECIPE_PATH = "/recipes/home-cook/nonnas-sunday-gravy";
 /** Must match `playwright.config.ts`, which is also the server's own port. */
 const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? "3000"}`;
@@ -200,7 +197,9 @@ async function resetCoCreators(page: Page): Promise<void> {
   }
 }
 
-async function seedRoleBoundaryFixture(): Promise<void> {
+async function setFixtureVisibility(
+  visibility: "public" | "unlisted",
+): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("The resolved seed fixture must have a DATABASE_URL.");
@@ -210,38 +209,11 @@ async function seedRoleBoundaryFixture(): Promise<void> {
   try {
     const updated = await sql`
       update recipes
-      set visibility = 'unlisted'
-      where id = ${ROLE_RECIPE_ID}
+      set visibility = ${visibility}
+      where id = ${SEEDED_RECIPE_ID}
       returning id
     `;
     expect(updated).toHaveLength(1);
-    await sql`
-      insert into recipe_creators (
-        id,
-        recipe_id,
-        user_id,
-        role,
-        status,
-        slug,
-        invited_by_id,
-        accepted_at
-      )
-      values (
-        'e2e_role_creator_0000000',
-        ${ROLE_RECIPE_ID},
-        ${CO_COOK_ID},
-        'creator',
-        'accepted',
-        ${ROLE_RECIPE_SLUG},
-        ${OWNER_ID},
-        now()
-      )
-      on conflict (recipe_id, user_id) do update
-      set
-        status = 'accepted',
-        slug = excluded.slug,
-        accepted_at = excluded.accepted_at
-    `;
   } finally {
     await sql.end();
   }
@@ -414,43 +386,47 @@ test.describe("co-creation across two identities (#698)", () => {
   });
 
   test("a co-creator is refused delete, share-link, and creator management", async () => {
-    await seedRoleBoundaryFixture();
-    const roleMirrorPath = `/recipes/${CO_COOK_SLUG}/${ROLE_RECIPE_SLUG}`;
-    const roleOwnerPath = `/recipes/home-cook/${ROLE_RECIPE_SLUG}`;
-    await cook.goto(roleMirrorPath);
+    await setFixtureVisibility("unlisted");
+    try {
+      await cook.goto(mirrorPath);
 
-    await expect(creatorPanel(cook)).toHaveCount(0);
-    await expect(cook.getByLabel(/invite a cook/i)).toHaveCount(0);
+      await expect(creatorPanel(cook)).toHaveCount(0);
+      await expect(cook.getByLabel(/invite a cook/i)).toHaveCount(0);
 
-    await openActionsMenu(cook);
-    await expect(cook.getByRole("button", { name: /^delete/i })).toHaveCount(0);
-    await expect(
-      cook.getByRole("button", { name: /^leave this recipe$/i }),
-    ).toBeVisible();
+      await openActionsMenu(cook);
+      await expect(cook.getByRole("button", { name: /^delete/i })).toHaveCount(
+        0,
+      );
+      await expect(
+        cook.getByRole("button", { name: /^leave this recipe$/i }),
+      ).toBeVisible();
 
-    await cook.getByRole("button", { name: /^share$/i }).click();
-    await expect(
-      cook.getByRole("menuitem", { name: /disable link/i }),
-    ).toHaveCount(0);
-    await expect(
-      cook.getByRole("menuitem", { name: /reset link/i }),
-    ).toHaveCount(0);
+      await cook.getByRole("button", { name: /^share$/i }).click();
+      await expect(
+        cook.getByRole("menuitem", { name: /disable link/i }),
+      ).toHaveCount(0);
+      await expect(
+        cook.getByRole("menuitem", { name: /reset link/i }),
+      ).toHaveCount(0);
 
-    // Anchor the negative assertions: the owner sees all three management
-    // surfaces on the same unlisted recipe.
-    await owner.goto(roleOwnerPath);
-    await expect(creatorPanel(owner)).toBeVisible();
-    await openActionsMenu(owner);
-    await expect(
-      owner.getByRole("button", { name: /^delete$/i }),
-    ).toBeVisible();
-    await owner.getByRole("button", { name: /^share$/i }).click();
-    await expect(
-      owner.getByRole("menuitem", { name: /disable link/i }),
-    ).toBeVisible();
-    await expect(
-      owner.getByRole("menuitem", { name: /reset link/i }),
-    ).toBeVisible();
+      // Anchor the negative assertions: the owner sees all three management
+      // surfaces on the same unlisted recipe.
+      await owner.goto(ownerPath);
+      await expect(creatorPanel(owner)).toBeVisible();
+      await openActionsMenu(owner);
+      await expect(
+        owner.getByRole("button", { name: /^delete$/i }),
+      ).toBeVisible();
+      await owner.getByRole("button", { name: /^share$/i }).click();
+      await expect(
+        owner.getByRole("menuitem", { name: /disable link/i }),
+      ).toBeVisible();
+      await expect(
+        owner.getByRole("menuitem", { name: /reset link/i }),
+      ).toBeVisible();
+    } finally {
+      await setFixtureVisibility("public");
+    }
   });
 
   test("removal revokes the mirror, and never redirects", async () => {
