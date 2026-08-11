@@ -390,6 +390,51 @@ Note the shape, because it is the same one this document is otherwise about: an
 empty `reviewDecision` reads as _not yet reviewed_ when it actually means _cannot
 be reviewed_. **The impossible state and the pending state are the same value.**
 
+## A closing keyword cannot be negated
+
+GitHub scans the whole of a commit message or PR body for closing keywords. There
+is no negation handling and no scoping, so there is no way to _mention_ one
+without arming it. Commit `41b6a583` wrote this, and meant it:
+
+```text
+Closes #855 is NOT claimed -- #855 stays open for the human decision.
+
+Refs #855, #806, #805
+```
+
+#855 closed at `09:10:41Z`. It was reopened a minute later. The sentence existed
+only to prevent the close, and typing it caused the close — **the caveat was the
+payload.** Note that the correct `Refs` line was already there, one line below;
+adding the right reference does not disarm the wrong one.
+
+It failed in the direction that hides work. #855 pins the Neon history-retention
+number, an open and human-gated privacy gap, and a closed issue reads as a settled
+matter. That commit's own subject was _"point the erasure horizon's blocker at an
+open tracker"_, and its body warned that a stale pointer resolving to a closed
+issue makes "an open compliance gap look resolved". It then did exactly that, by a
+different mechanism, in the same commit.
+
+**The rule: never type a closing keyword you do not mean.** Not under negation,
+not in quotes, not to explain that you are not using it. Use `Refs #N` and say the
+rest in words — "#N stays open for the human decision" carries the full meaning
+with nothing to parse. When you must show the pattern itself, replace the number
+with a placeholder (`Closes #NNN`). That is the only form proven safe here; do not
+assume a code fence or an indent suppresses the scanner unless you have tested it
+on a throwaway issue.
+
+This is a writing convention rather than a check, and the reason is worth stating.
+Commit messages and PR bodies are not in the tree, so nothing in `pnpm test` can
+see them. The only enforcement point is a `pull_request`-triggered job reading the
+body back through the API — which necessarily runs after the close has already
+fired, making it a report rather than a guard.
+
+It belongs to the family this document is otherwise about: a scanner reads a
+pattern out of surrounding text and cannot see the text that qualifies it. Same
+shape as `Select-String -SimpleMatch` matching nothing and reading as _nothing
+there_, or a ban on `unsafe-eval` passing over a policy with no `script-src` at
+all. This is the sharpest member, because the qualifying text was the entire point
+of the sentence.
+
 ## After merge
 
 A PR stops being updated the moment it merges, so the post-merge run on `main` is
