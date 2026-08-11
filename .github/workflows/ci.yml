@@ -6,12 +6,20 @@ name: CI
 
 on:
   # Run the full gate on pushes to main and to the long-lived staging branch
-  # (#266), on every PR targeting main, and when Release Please explicitly
-  # dispatches CI for its GITHUB_TOKEN-created release PR.
+  # (#266), on *every* pull request whatever its base, and when Release Please
+  # explicitly dispatches CI for its GITHUB_TOKEN-created release PR.
+  #
+  # The `pull_request` trigger deliberately carries no `branches:` filter (#672).
+  # It used to be `branches: [main]`, which meant a PR based on any other branch
+  # ran none of this file. That did not present as "not run": Vercel and its
+  # preview comment are not GitHub Actions, so they reported regardless and a
+  # stacked PR showed a green check list and `MERGEABLE`. Measured on PR #670,
+  # which was green while stacked and failed the first-load JS budget the moment
+  # it was retargeted at main. Silence that reads as success is worse than the
+  # runner minutes a stacked PR now costs, so do not narrow this again.
   push:
     branches: [main, staging]
   pull_request:
-    branches: [main]
   # No user-supplied ref input: callers select a repository ref, and the
   # dispatch-guard job below accepts only the verified Release Please PR branch.
   workflow_dispatch:
@@ -80,6 +88,77 @@ jobs:
             <<<"$prs" >/dev/null; then
             echo "::error::Dispatch ref is not the verified open Release Please PR."
             exit 1
+          fi
+
+  # Variant 3 of #672: a `pull_request` run checks out `refs/pull/N/merge`, a
+  # merge commit computed when the PR last changed. If main has moved since, the
+  # run pairs one side's tests with the other side's source, and *both*
+  # directions mislead. Red looks like a defect in your diff (measured on #690,
+  # where the failure was already fixed on main by #693), and green certifies a
+  # tree that no longer exists (measured on #776, which auto-merged cleanly and
+  # was one spread operator away from red-lining main).
+  #
+  # Rerunning does not fix this: `gh run rerun` replays the original event
+  # payload and checks out the same stale merge commit. Only a rebase does.
+  #
+  # So this job answers, in the run itself, the one question no other signal
+  # answers: how far behind the base branch was the tree we just tested. It is
+  # deliberately non-blocking — a PR going red simply because main moved would
+  # train everyone to ignore it, and the remedy is a rebase the workflow must not
+  # perform. It emits a warning annotation and a job summary instead.
+  base-freshness:
+    name: Base freshness
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Compare the tested base against the current base branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          behind="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/compare/${BASE_SHA}...${BASE_REF}" \
+            --jq '.ahead_by')"
+
+          {
+            echo "### Base freshness"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Base branch | \`${BASE_REF}\` |"
+            echo "| Base commit this run tested | \`${BASE_SHA:0:7}\` |"
+            echo "| Commits added to \`${BASE_REF}\` since | ${behind} |"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          if [[ "$BASE_REF" != "$DEFAULT_BRANCH" ]]; then
+            echo "| Stacked on | \`${BASE_REF}\` (not \`${DEFAULT_BRANCH}\`) |" >>"$GITHUB_STEP_SUMMARY"
+            echo "::notice::This PR is stacked on ${BASE_REF}. The full gate ran, but it validated your branch merged into ${BASE_REF}, not into ${DEFAULT_BRANCH}."
+          fi
+
+          if [[ "$behind" -gt 0 ]]; then
+            {
+              echo
+              echo "These results describe your branch merged into \`${BASE_REF}\` as it stood ${behind} commit(s) ago."
+              echo "Rebase before reading this run as authoritative:"
+              echo
+              echo '```bash'
+              echo "git fetch origin && git rebase origin/${BASE_REF}"
+              echo "git push --force-with-lease"
+              echo '```'
+              echo
+              echo "Re-running this workflow will **not** refresh it: a rerun replays the original event and checks out the same merge commit."
+            } >>"$GITHUB_STEP_SUMMARY"
+            echo "::warning::${BASE_REF} has moved ${behind} commit(s) since this merge ref was built. Rebase (not rerun) before trusting these results."
+          else
+            echo "" >>"$GITHUB_STEP_SUMMARY"
+            echo "This run tested the current tip of \`${BASE_REF}\`." >>"$GITHUB_STEP_SUMMARY"
           fi
 
   quality:
@@ -505,3 +584,55 @@ jobs:
           name: lighthouse-reports
           path: .lighthouseci
           if-no-files-found: ignore
+
+  # One check that summarises every gate above (#672). Two reasons it exists:
+  #
+  # 1. Branch protection can require a single, stable check name instead of a
+  #    list that drifts every time a job is added or renamed. `main` is currently
+  #    unprotected, so this is inert until a human enables it — see the "Needs
+  #    Human Action" note on the PR that added this job.
+  # 2. A skipped job reports neutral, which GitHub counts as success. This asserts
+  #    on the actual result strings, so a job that never ran cannot pass as green.
+  #
+  # `base-freshness` is intentionally absent: it is advisory and only runs for
+  # pull requests.
+  gate:
+    name: Quality gate
+    if: always()
+    needs:
+      - dispatch-guard
+      - quality
+      - security
+      - i18n
+      - web
+      - performance
+      - migration-drift
+      - migrations
+      - e2e
+      - lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Assert every gate succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key)\t\(.value.result)"'
+
+          failed="$(echo "$RESULTS" | jq -r '
+            to_entries
+            | map(select(.value.result != "success"))
+            | map("\(.key) (\(.value.result))")
+            | join(", ")
+          ')"
+
+          if [[ -n "$failed" ]]; then
+            echo "::error::Quality gate failed: ${failed}"
+            exit 1
+          fi
+
+          echo "All gates succeeded."
