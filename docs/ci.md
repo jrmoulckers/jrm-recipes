@@ -124,6 +124,44 @@ gh pr checks <n>
   production deploys are broken at all — see #828, which is the same gap stated
   from the other end.
 
+### Which red is this?
+
+`gh pr checks` prints `Vercel fail` for both causes, so the colour cannot tell you
+them apart and neither can `state`. The discriminator is the `description`, which is
+already recorded and free to read:
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/commits/<sha>/status \
+  --jq '.statuses[] | select(.context == "Vercel") | .description'
+```
+
+- `Deployment rate limited — retry in 24 hours.` → account-wide quota.
+- `Deployment has failed — run this Vercel CLI command: ...` → the build ran and
+  broke. Read the log before assuming it is #826; a third cause would look the same.
+
+A second discriminator needs no prose parsing, because a quota-blocked deploy is
+**never created**:
+
+```bash
+gh api 'repos/jrmoulckers/jrm-recipes/deployments?environment=Production&per_page=40' \
+  --jq '.[] | "\(.id) \(.created_at) \(.sha[0:8])"'
+```
+
+That absence carries a counting hazard worth stating explicitly: enumerating
+_failed_ Production deployments **undercounts** undeployed commits, because
+quota-blocked commits are missing from that list rather than present-and-red. To
+measure real drift, compare `main` against the last **successful** deployment sha
+rather than counting failures:
+
+```bash
+git rev-list --count <last-successful-sha>..origin/main
+```
+
+The reason to write this down is that the previous two entries were correct and
+still left the red unread. Naming a cause lets you _recall_ an explanation; only a
+command lets you _re-derive_ which one is in front of you, and an explanation that
+is never re-derived decays into a guess that happens to be phrased confidently.
+
 ## Every session is the same GitHub user
 
 Concurrent sessions all authenticate as one account, so the platform cannot tell
