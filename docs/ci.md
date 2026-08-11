@@ -624,6 +624,39 @@ The drift job asserts the property actually wanted — production is serving `ma
 of either mode and will not go blind when a third appears. An event-triggered
 check can only ever report things that happened; **absence has to be polled for.**
 
+### Only `main` commits are evidence about production, and absent is not success
+
+Both of those modes make deployment records treacherous to reason from by hand,
+and two sessions have now drawn structural conclusions from them. The two rules
+that would have caught it:
+
+**A non-`main` SHA has no Production deployment by construction.** Production
+deploys attach to `main`, so a feature-branch tip returns nothing — not a preview,
+nothing — and that absence says nothing about deploys. A session tested whether
+failure is a property of the attempt rather than the tree by comparing
+`33e54369` (no deployment object) against `3f9fe3cb` (failure) with an empty
+`git diff` between them. Both facts were structural: `33e54369` is the tip of
+`docs/vercel-red-discriminator-864` and `3f9fe3cb` is that same change
+squash-merged as #865, so identical trees is what a clean squash _is_, and only
+one of the two was ever eligible for a production attempt. Filter to `main` first:
+
+```bash
+git branch -a --contains <sha>    # if it is not on main, it is not evidence
+```
+
+**Absent is not success.** Classifying the last 14 `main` commits gave 6 with a
+Production deployment, all `failure`, and 8 with none. A session checking a single
+recent commit therefore has a better-than-even chance of drawing one that was never
+attempted and reading production as healthy. It is the same shape as a permission
+error that degrades into a skip: the absence of a failure record looks exactly like
+the absence of a failure. Classify a run of commits, or ask the endpoint below,
+which answers the question directly instead.
+
+The conclusion that session drew was correct — the 6/8 split shows both modes
+occurring within the eligible population — which is the reason this is written
+down rather than merely corrected. A right claim resting on a measurement that
+cannot support it survives only until someone re-derives it (#903).
+
 ### Ask production, don't ask the API
 
 `GET /api/health` returns the commit the running build was produced from, plus a
