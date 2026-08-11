@@ -254,20 +254,64 @@ gh api repos/jrmoulckers/jrm-recipes/commits/main/status --jq '.state'
 gh run list --branch main --limit 5
 ```
 
-`deploy-watch.yml` covers the deploy half of this, in two jobs that fail for
+`deploy-watch.yml` covers the deploy half of this, in three jobs that fail for
 different reasons — and the split is the point:
 
 - **Report failed production deployment** fires on `deployment_status`. It sees
   builds that ran and broke.
-- **Production drift** polls hourly and compares `main` against the last
-  **successful** production deployment. It exists because the first job cannot
+- **Production drift** polls hourly and compares `main` against the commit
+  production reports it is serving. It exists because the first job cannot
   see a deploy that never started: a quota-blocked attempt creates no deployment
   object, so no event is published and no run appears at all (#868). Over twelve
   consecutive commits, a Deploy watch run existed if and only if a deployment
   object did — five never reached production and produced no run, no event, and a
   green Actions tab.
+- **Verify production is serving the deployed commit** fires on a _successful_
+  `deployment_status`. It sees deploys that reported success without reaching
+  users.
 
 The drift job asserts the property actually wanted — production is serving `main`
 — rather than the absence of a known failure. That is why it needs no knowledge
 of either mode and will not go blind when a third appears. An event-triggered
 check can only ever report things that happened; **absence has to be polled for.**
+
+### Ask production, don't ask the API
+
+`GET /api/health` returns the commit the running build was produced from, plus a
+live database probe:
+
+```bash
+curl -s https://heirloom.jrmoulckers.com/api/health
+# {"status":"ok","version":"0.2.0","sha":"5c23673f…","db":"ok","time":"…"}
+```
+
+That `sha` is **ground truth and the deployments API is not.** The API records
+what Vercel _intended_; the endpoint records what users are actually being
+served. They agree almost always, and diverge in exactly the case no
+"successful" record can show you — a build that succeeded but never became the
+live alias. So the drift job reads the endpoint and uses the API only to
+tolerate an in-flight deploy and to classify the failure mode (#871).
+
+This also collapses the cost: finding the last successful deploy through the API
+took a walk of up to 100 requests to infer a fact one unauthenticated GET states
+outright.
+
+Use it when a peer reports a deploy state, before believing either of you:
+
+```bash
+curl -s https://heirloom.jrmoulckers.com/api/health   # what is served
+git rev-list --count <that sha>..origin/main          # how far behind
+```
+
+### What the success check does not cover
+
+The post-deploy job is unauthenticated, so it asserts two things only: the sha
+production serves matches the sha Vercel deployed, and `status`/`db` are `ok`.
+It does **not** exercise the deletion panel or any signed-in privacy surface —
+those need a session and belong in E2E.
+
+Worth stating because the failure it guards against is subtle: a check that
+covers part of a surface reads, later and to someone else, as covering the
+surface. That is how #868 happened — a workflow that went red on real deploy
+failures became the evidence people cited that failed deploys were visible,
+while a whole class of them produced no run at all.
