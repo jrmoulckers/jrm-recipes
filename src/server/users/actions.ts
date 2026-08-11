@@ -72,7 +72,7 @@ export async function deleteAccountAction(confirmation: string): Promise<DeleteA
     };
   }
 
-  let clerkId: string | null = null;
+  let clerkId: string | null;
   try {
     const user = await requireUser();
     clerkId = user.clerkId ?? null;

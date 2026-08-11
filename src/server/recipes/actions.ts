@@ -300,7 +300,7 @@ export async function deleteRecipeAction(id: string): Promise<void> {
 export async function restoreRecipeAction(id: string): Promise<boolean> {
   if (!isDbConfigured()) return false;
   const user = await requireUser();
-  let restored: { id: string; slug: string } | null = null;
+  let restored: { id: string; slug: string };
   try {
     restored = await restoreRecipe(id, user);
   } catch {
