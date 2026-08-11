@@ -496,6 +496,21 @@ jobs:
       - name: E2E tests
         run: pnpm test:e2e
 
+      # A skipped test is invisible in the summary line: it does not fail and it
+      # does not inflate a passing count. Name every skip and fail when they
+      # grow (#843). `always()` so a red run still reports its skips.
+      - name: Check E2E skips
+        if: always()
+        run: pnpm check:e2e-skips
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
   # Runtime performance gate (issue #205). Unlike the other jobs, this one needs
   # real content on the recipe detail route, so it seeds an ephemeral, throwaway
   # Postgres whose credentials are hard-coded here (a local service container,
