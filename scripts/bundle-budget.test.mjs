@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   evaluateBudgetChanges,
   evaluateBudgets,
+  evaluateMeasurementClaims,
+  normalizePlatform,
   parseFirstLoadJs,
   readBaseBudgetRoutes,
   REQUIRED_MARGIN_KB,
@@ -397,5 +399,132 @@ describe('readBaseBudgetRoutes (issue #796)', () => {
     const runGit = (args) =>
       args[0] === 'show' ? { status: 0, stdout: JSON.stringify({ '//': 'note only' }) } : fail;
     expect(readBaseBudgetRoutes({ runGit, env: {} }).routes).toBeNull();
+  });
+});
+
+describe('normalizePlatform (#858)', () => {
+  it('treats Node win32 and human-written windows as the same platform', () => {
+    expect(normalizePlatform('win32')).toBe(normalizePlatform('windows'));
+  });
+
+  it('treats darwin and macos as the same platform', () => {
+    expect(normalizePlatform('darwin')).toBe(normalizePlatform('macos'));
+  });
+
+  it('leaves linux alone and returns null for a missing value', () => {
+    expect(normalizePlatform('linux')).toBe('linux');
+    expect(normalizePlatform(undefined)).toBeNull();
+  });
+});
+
+describe('evaluateMeasurementClaims (#858)', () => {
+  const measured = new Map([
+    ['/', 225],
+    ['/recipes', 253],
+    ['/recipes/[cook]/[recipe]', 308],
+  ]);
+  const claim = (over = {}) => ({
+    route: '/recipes/[cook]/[recipe]',
+    kb: 308,
+    platform: 'linux',
+    runId: '31476537117',
+    ...over,
+  });
+
+  it('passes a claim that still matches the build, and says which route it checked', () => {
+    const { rows, failed } = evaluateMeasurementClaims(measured, [claim()], {
+      platform: 'linux',
+    });
+    expect(failed).toBe(false);
+    // Named rather than counted: a check that examined nothing must not pass.
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      route: '/recipes/[cook]/[recipe]',
+      status: 'ok',
+      actual: 308,
+    });
+  });
+
+  it('fails a stale claim and reports both the claimed and the measured value', () => {
+    // The real #820 defect: the note said 307 for a route that measures 308.
+    const { rows, failed } = evaluateMeasurementClaims(measured, [claim({ kb: 307 })], {
+      platform: 'linux',
+    });
+    expect(failed).toBe(true);
+    expect(rows[0]).toMatchObject({ status: 'STALE', claimed: 307, actual: 308 });
+  });
+
+  it('carries provenance into the failure so the number can be re-derived', () => {
+    const { rows } = evaluateMeasurementClaims(
+      measured,
+      [claim({ kb: 307, runId: '31449970781', issue: 819 })],
+      { platform: 'linux' },
+    );
+    expect(rows[0]).toMatchObject({ runId: '31449970781', issue: 819 });
+  });
+
+  it('skips a claim measured on another platform instead of failing', () => {
+    // Linux CI reads ~1 kB above a local Windows build, so enforcing a Linux
+    // claim on Windows would be spurious red — the thing #778 exists to avoid.
+    const { rows, failed } = evaluateMeasurementClaims(measured, [claim()], {
+      platform: 'win32',
+    });
+    expect(failed).toBe(false);
+    expect(rows[0].status).toBe('SKIP');
+  });
+
+  it('skips rather than fails even when the skipped claim is wrong', () => {
+    const { failed } = evaluateMeasurementClaims(measured, [claim({ kb: 999 })], {
+      platform: 'win32',
+    });
+    expect(failed).toBe(false);
+  });
+
+  it('fails a claim with no platform on every platform', () => {
+    // Malformed entry in a tracked file, not a limit of the environment.
+    for (const platform of ['linux', 'win32', 'darwin']) {
+      const { rows, failed } = evaluateMeasurementClaims(
+        measured,
+        [claim({ platform: undefined })],
+        { platform },
+      );
+      expect(failed).toBe(true);
+      expect(rows[0].status).toBe('INVALID');
+    }
+  });
+
+  it('fails when a matching claim names a route that is not in the build', () => {
+    const { rows, failed } = evaluateMeasurementClaims(
+      measured,
+      [claim({ route: '/recipes/[id]' })],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(true);
+    expect(rows[0].status).toBe('MISSING');
+  });
+
+  it('compares on whole kB, because that is what next build prints', () => {
+    const fractional = new Map([['/', 224.6]]);
+    const { failed } = evaluateMeasurementClaims(
+      fractional,
+      [{ route: '/', kb: 225, platform: 'linux' }],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(false);
+  });
+
+  it('treats an absent or empty claims block as nothing to check', () => {
+    expect(evaluateMeasurementClaims(measured, undefined).failed).toBe(false);
+    expect(evaluateMeasurementClaims(measured, []).rows).toHaveLength(0);
+  });
+
+  it('reports every stale claim rather than stopping at the first', () => {
+    const { rows, failed } = evaluateMeasurementClaims(
+      measured,
+      [claim({ kb: 307 }), { route: '/', kb: 224, platform: 'linux' }],
+      { platform: 'linux' },
+    );
+    expect(failed).toBe(true);
+    expect(rows.filter((r) => r.status === 'STALE')).toHaveLength(2);
   });
 });

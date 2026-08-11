@@ -8,6 +8,39 @@
   "//photo-library-route-redistribution": "Issue #658 adds the new /settings/photos route without importing its client code into any tracked recipe route. An exact before/after comparison against the branch base found 14 byte-identical /recipes/[cook]/[recipe]/edit assets and no photo-library or media-usage module in that route. Webpack regrouped existing modules when the new route entered the graph: the edit route's complete uncompressed asset set grew only 145 bytes (736,942 -> 737,087), but Next reports integer kB and displayed 218 instead of 217. The budget moves 217 -> 218 solely to admit that measured sub-kB redistribution; no catalog-growth claim is involved, and the route gained no new feature module.",
   "//food-classifier-correction": "CORRECTION (issue #821). The //-note above justifies the /recipes/[id] 280->290 bump for #558 with the claim that the reader's ingredients panel imports the food classifier (food-units -> food-db curated dataset) and that, because volumeClassForItem is a synchronous render-path helper, 'it can't be code-split and lands in first-load'. The first half is still true as source -- src/components/recipe/ingredients-panel.tsx:26 does statically import it into a 'use client' module -- but the conclusion does NOT hold today: removing the import entirely moves the route by ZERO. Measured on 41b6a583, local Windows build: /recipes/[cook]/[recipe] reads 308.0 kB both with the real import and with volumeClassForItem replaced by an inline constant, with the page's own chunk unchanged at 199 B. The control that makes that a true negative rather than a failed experiment: the string 'volumeClass' appears in 0 of the route's 33 first-load chunks in the stubbed build, so the referent was genuinely gone -- while 'buttermilk' still appears in 6 of them and 'sodiumMg' in 1. The curated food data therefore reaches this route by at least one further path that survives the removal, and no honest headroom can be bought by code-splitting the classifier. That further path is NOT identified here; do not substitute a guess for it (same standing prohibition as //multi-creator). What this does and does not settle: the 280->290 bump itself is NOT reverted -- the route genuinely measured ~286 at the time and measures 308 now, so the limit is sound; only the stated cause is corrected, and only as of this commit. The note may well have been accurate when written and been overtaken by a later import, which is the same 'true when made' decay //multi-creator documents. This is the third diagnosis in this file corrected by measurement (#674 catalogs, #820 stale figure, this one), and all three were reached by reasoning about which module 'must' be responsible rather than by removing it and rebuilding. Prefer that experiment: stub the suspected import, rebuild, and assert the identifier is absent from the route's chunks before believing the delta.",
   "//headroom-requirement": "Issue #796: a budget that is NEW or RAISED must leave at least 2 kB above the value the same run measures, or the gate fails and names the minimum acceptable number. Budgets you do not touch are never subject to this — inheriting an existing tight budget is not a failure, and three routes below sit at zero headroom for exactly that reason. Size a new budget from CI figures, not local ones: Linux reads about 1 kB above a local Windows build, and 'next build' prints whole kB, so a sub-kB webpack redistribution can move a route a full displayed kilobyte with no code change (measured at 145 bytes in #789). The 2 kB is the same band the NEAR warning uses, so a budget that passes this check is one the warning will stay quiet about. The check needs the base ref's copy of this file; when it cannot be read it SKIPS rather than fails.",
+  "//measured": {
+    "//": "Machine-checked measurement claims (#858). check-bundle-budget.mjs verifies each of these against the same build that enforces the budgets below, and FAILS when one no longer matches. The prose notes above explain reasoning; these entries are what CI holds to reality. Four claims in this file have been corrected after the fact -- #674/#690, #763, #820 and #857 -- each found by a person who happened to look, because nothing compared them to a build. A claim is only about the platform that produced it: Linux CI reads ~1 kB above a local Windows build, so entries for other platforms are skipped rather than failed, and an entry with no platform fails as malformed. Update the number and the runId together; a value you cannot re-derive is a value you cannot audit.",
+    "claims": [
+      {
+        "route": "/",
+        "kb": 225,
+        "platform": "linux",
+        "runId": "31476537117",
+        "issue": 858
+      },
+      {
+        "route": "/recipes",
+        "kb": 253,
+        "platform": "linux",
+        "runId": "31476537117",
+        "issue": 858
+      },
+      {
+        "route": "/recipes/[cook]/[recipe]",
+        "kb": 308,
+        "platform": "linux",
+        "runId": "31476537117",
+        "issue": 820
+      },
+      {
+        "route": "/recipes/[cook]/[recipe]/edit",
+        "kb": 218,
+        "platform": "linux",
+        "runId": "31476537117",
+        "issue": 858
+      }
+    ]
+  },
   "routes": {
     "/": 225,
     "/recipes": 255,
