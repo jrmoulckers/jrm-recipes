@@ -693,18 +693,60 @@ one of the two was ever eligible for a production attempt. Filter to `main` firs
 git branch -a --contains <sha>    # if it is not on main, it is not evidence
 ```
 
-**Absent is not success.** Classifying the last 14 `main` commits gave 6 with a
-Production deployment, all `failure`, and 8 with none. A session checking a single
-recent commit therefore has a better-than-even chance of drawing one that was never
-attempted and reading production as healthy. It is the same shape as a permission
-error that degrades into a skip: the absence of a failure record looks exactly like
-the absence of a failure. Classify a run of commits, or ask the endpoint below,
-which answers the question directly instead.
+**Absent is not success — but read it on the right channel, with a full sha.** The
+census behind this rule used the deployments API alone, and that instrument is
+wrong twice.
 
-The conclusion that session drew was correct — the 6/8 split shows both modes
-occurring within the eligible population — which is the reason this is written
-down rather than merely corrected. A right claim resting on a measurement that
-cannot support it survives only until someone re-derives it (#903).
+First, **`deployments?sha=` requires the full 40-character sha.** An abbreviated one
+returns `[]` — HTTP 200, empty array, no error. Every sha in prose, in
+`git log --oneline`, and in `gh pr view` output is abbreviated, so the natural way
+to run this census reports "absent" for every commit, including ones that deployed
+successfully. `5c23673f` abbreviated returns 0 deployment objects; the same commit
+at full length returns 1, and it is the build production is serving right now.
+
+Second, an absent deployment object at full length does not mean "never attempted,
+cause unmeasured". **It means quota**, and Vercel says so on the statuses channel —
+which is posted either way, so the two modes are directly distinguishable:
+
+| mode    | deployment object | `pending` status | terminal status                                            |
+| ------- | ----------------- | ---------------- | ---------------------------------------------------------- |
+| attempt | 1                 | yes              | `success` / `failure`                                      |
+| quota   | 0                 | **none**         | `failure` — "Deployment rate limited — retry in 24 hours." |
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/commits/$(git rev-parse <sha>)/statuses \
+  --jq '[.[]|select(.context|test("[Vv]ercel"))|"\(.state) \(.description)"]'
+```
+
+So the original worry — that a session drawing an unattempted commit would read
+production as healthy — overstates the hazard on the statuses channel and
+understates a different one. **No commit looks healthy:** re-running the census over
+the last 14 `main` commits with full shas gives 5 attempts and 9 quota, and all 14
+carry a Vercel `failure`. What the deployments API alone cannot do is tell quota
+apart from a sha typed at eight characters, because it answers both with `[]`.
+
+Quota is also the larger blocker by count. A correct registry token fixes the 5, and
+leaves the 9 without an attempt.
+
+### The duration band bounds the phase, and that is all it does
+
+Terminal timings across those attempts, taken as `pending` → terminal on the statuses
+channel: failures at 12, 12, 13, 13, 14 and 16 seconds, against the single success at 162. Non-overlapping by an order of magnitude, so a terminal failure inside the band
+died at or before install.
+
+It cannot name the error. A lockfile fault, a missing install-time variable and a
+registry outage all land in the same band. The supportable claim is **"still failing
+at or before install, cause unconfirmed"** — strictly smaller than naming a 401, and
+re-derivable by anyone in one command.
+
+Its real value is as a **falsifiable success criterion**, which nothing else here
+provides: once the registry credential lands, a repaired install phase must move a
+failing deploy's terminal status out of the 12–16 s band. A deploy that still dies at
+~14 s falsifies the credential as the cause, and does so without waiting for a green.
+
+Recorded because a right conclusion resting on a measurement that cannot support it
+survives only until someone re-derives it (#903) — which is what happened to the
+6-and-8 figure this section used to quote.
 
 ### Ask production, don't ask the API
 
