@@ -88,7 +88,10 @@ describe("the E2E spec's restated literals match the real identity", () => {
   const spec = readFileSync(specPath, 'utf8');
 
   const literal = (name: string): string => {
-    const match = new RegExp(`const ${name} = "([^"]*)"`).exec(spec);
+    // Quote-agnostic: the spec is read as source text, so pinning this to `"`
+    // makes the guard a hostage of the formatter's `singleQuote` setting
+    // rather than of the values it is meant to pin.
+    const match = new RegExp(`const ${name} = ['"]([^'"]*)['"]`).exec(spec);
     // Anti-vacuity: a renamed constant must fail loudly rather than compare
     // undefined against undefined and pass.
     expect(match, `${name} not found in ${specPath}`).not.toBeNull();

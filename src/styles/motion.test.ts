@@ -16,7 +16,11 @@ const ROOT = process.cwd();
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), 'utf8');
 
 const THEMES_CSS = read('src', 'styles', 'themes.css');
-const TAILWIND = read('tailwind.config.ts');
+// Read as *source text*, so the assertions below would otherwise be pinned to
+// whichever quote style the formatter happens to be configured for. Normalize
+// at the read boundary: what these guards care about is the token values, not
+// how the file quotes them.
+const TAILWIND = read('tailwind.config.ts').replace(/'/g, '"');
 
 /**
  * Bans on untokenized motion (#750, #756, #758, #759).
@@ -164,10 +168,11 @@ describe('motion tokens (issue #95)', () => {
   });
 
   it('keeps translated overlays positioned while they pop (issue #620)', () => {
-    const popKeyframes = TAILWIND.slice(
-      TAILWIND.indexOf('"pop-in": {'),
-      TAILWIND.indexOf('"slide-in-from-right": {'),
-    );
+    // Via `blockOf` rather than a bare slice between two markers: a raw slice
+    // whose markers stop matching yields "", and `expect("").toContain(...)`
+    // reports a mismatch that reads like the config changed. `blockOf` asserts
+    // the header is present first, so a rotted marker fails as a rotted marker.
+    const popKeyframes = blockOf(TAILWIND, '"pop-in": {');
 
     expect(popKeyframes).toContain('scale: "0.96"');
     expect(popKeyframes).toContain('scale: "1"');
