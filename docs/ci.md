@@ -766,6 +766,39 @@ Corollary, and it has now bitten in both directions: **merged is not live.** A f
 on `main` is not a fix a user has. Before describing production behaviour — especially
 privacy copy — resolve the deployed sha first.
 
+### That answers what a user sees, not what happens when they act
+
+Component × catalogue × condition at one tree tells you which string renders. For a
+_safety_ claim it is still not enough, because the condition that picks the copy is
+client-side, and the server may or may not re-derive it. The two cases fail in opposite
+directions:
+
+- **Server re-derives.** The client condition is presentational. A stale or wrong preview
+  can only mislabel; it cannot change what happens. Failures are safe-direction only.
+- **Server trusts the client.** The client condition is load-bearing, and a stale preview
+  is a security bug rather than a cosmetic one.
+
+Which case you are in is invisible from the component — it looks identical either way — so
+read the server path too:
+
+```bash
+grep -n "willBeHeld\|heldRecipeCount" src/server/users/erasure.ts   # no hits = re-derived
+```
+
+The worked example is the panel from #873. `delete-account-panel.tsx` computes
+`willBeHeld = preview.heldRecipeCount > 0` to choose `held.cta` over `confirm.cta`, but
+`eraseUserAccount` calls `findEntanglement(userId)` itself and records the hold from its
+own result; neither name appears anywhere in `erasure.ts`. The client's condition never
+reaches the decision. So a stale preview can show "everything is deleted immediately" to a
+user the server will hold, and cannot show "nothing is deleted today" to a user the server
+will erase.
+
+That bound is what retires the question, and note what supplies it: not the copy, which is
+where the whole investigation was looking. The unconditional consequences list above the
+button still says "permanently deleted" and "no undo" to a held user who will lose nothing
+today — a real contradiction, and reading further copy would never have settled whether it
+was dangerous. Only the server path does.
+
 ### What the success check does not cover
 
 The post-deploy job is unauthenticated, so it asserts two things only: the sha
