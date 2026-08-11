@@ -180,14 +180,40 @@ describe('recipe_versions retention (issue #699)', () => {
     });
   }
 
+  /**
+   * The source tree, read exactly once (#791, #799).
+   *
+   * Every check below asks a different question of the same bytes, so reading
+   * the tree per test multiplied the I/O by the number of mechanisms for no
+   * added assurance. That cost rises with every merge, and it had pushed the
+   * four call-site checks past vitest's 5000ms default under full-suite load —
+   * an intermittently red gate, which is worse than a permanently red one
+   * because it trains re-running over reading, and a real regression here is
+   * then indistinguishable from noise.
+   *
+   * Scope deliberately unchanged. Narrowing the walk to `src/server/**` was the
+   * other candidate and it is not equivalent: 38 files outside `src/server`
+   * import the db or drizzle, including `app/api/cron/erasure-backlog/route.ts`
+   * — a cron route, which is exactly the shape of the "empty the trash after N
+   * days" job these mechanisms exist to catch. That change would have kept the
+   * guard's name while shrinking what it guards, which is the substitution this
+   * file was written to prevent. `SCAN_ANCHORS` below pins the breadth so a
+   * future narrowing has to be deliberate.
+   */
+  const SOURCES: { file: string; source: string }[] = walk(srcRoot)
+    .map((full) => ({
+      file: toPosix(relative(srcRoot, full)),
+      source: readFileSync(full, 'utf8'),
+    }))
+    .sort((a, b) => a.file.localeCompare(b.file));
+
   it.each(MECHANISMS)(
     '$what happens only at the sanctioned call sites',
     ({ pattern, harm, sanctioned }) => {
       const allowed = sanctioned.map(toPosix);
 
-      const offenders = walk(srcRoot)
-        .filter((file) => pattern.test(readFileSync(file, 'utf8')))
-        .map((file) => toPosix(relative(srcRoot, file)))
+      const offenders = SOURCES.filter(({ source }) => pattern.test(source))
+        .map(({ file }) => file)
         .filter((file) => !allowed.includes(file))
         .sort();
 
@@ -216,9 +242,13 @@ describe('recipe_versions retention (issue #699)', () => {
     '$what still occurs at every sanctioned site, so the guard cannot pass vacuously',
     ({ pattern, sanctioned }) => {
       for (const relPath of sanctioned) {
-        const source = readFileSync(join(srcRoot, relPath), 'utf8');
+        // Read through the shared scan rather than the filesystem, so that a
+        // scan which silently came back empty fails here too instead of only
+        // in its own check (#799).
+        const entry = SOURCES.find((s) => s.file === toPosix(relPath));
+        expect(entry, `expected ${toPosix(relPath)} in the scanned source tree`).toBeDefined();
         expect(
-          pattern.test(source),
+          pattern.test(entry?.source ?? ''),
           `expected ${toPosix(relPath)} to still match ${String(pattern)}`,
         ).toBe(true);
       }
@@ -247,6 +277,47 @@ describe('recipe_versions retention (issue #699)', () => {
         false,
       );
     }
+  });
+
+  /**
+   * Anti-vacuity, part three (#799): the shared scan must have actually read a
+   * source tree.
+   *
+   * Parts one and two anchor the *patterns*. Neither anchors the *corpus*, and
+   * sharing one scan across every check moved the risk there: if `SOURCES` ever
+   * came back empty — a changed `walk` filter, a moved file, a wrong `srcRoot`
+   * — then `offenders` is `[]` for every mechanism and all four call-site
+   * checks report the tree as clean because nothing was read. That is the
+   * failure this whole file is built to refuse, so the refactor that introduced
+   * a single point of failure has to assert it.
+   *
+   * `SCAN_ANCHORS` doubles as the record of the scan's breadth. The cron route
+   * is outside `src/server` on purpose: it is the file that makes narrowing the
+   * walk to the server directory a visible change rather than a silent one.
+   */
+  const SCAN_ANCHORS = [
+    ERASURE,
+    join('server', 'db', 'seed.ts'),
+    join('server', 'db', 'schema', 'recipes.ts'),
+    join('app', 'api', 'cron', 'erasure-backlog', 'route.ts'),
+  ].map(toPosix);
+
+  describe('the shared source scan (#791, #799)', () => {
+    it('read a real tree, so no check above can pass by having scanned nothing', () => {
+      // A floor, not the exact count: the tree grows, and a brittle equality
+      // here would be a second maintenance burden. 400 is well under the ~620
+      // files present when this landed and far above any plausible mis-walk.
+      expect(SOURCES.length).toBeGreaterThan(400);
+      expect(SOURCES.every(({ source }) => source.length > 0)).toBe(true);
+    });
+
+    it.each(SCAN_ANCHORS)('includes %s', (anchor) => {
+      expect(SOURCES.map(({ file }) => file)).toContain(anchor);
+    });
+
+    it('still excludes test files, which name the sanctioned call sites in prose', () => {
+      expect(SOURCES.filter(({ file }) => /\.test\.tsx?$/.test(file))).toEqual([]);
+    });
   });
 
   /**
