@@ -57,7 +57,7 @@ export function cloudinaryRefFromUrl(raw: string): CloudinaryRef | null {
   // a different folder. `mediaPublicId` rejects `..` on write for the same
   // reason; these URLs predate that validation, so re-check here. Percent-encoded
   // forms are caught by decoding first.
-  let decoded = raw;
+  let decoded: string;
   try {
     decoded = decodeURIComponent(raw);
   } catch {

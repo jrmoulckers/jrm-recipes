@@ -292,7 +292,7 @@ export async function createCustomUnit(input: CustomUnitInput, user: User) {
       return { id: unit.id };
     });
   } catch (error) {
-    if (isUniqueViolation(error)) throw new Error('DUPLICATE');
+    if (isUniqueViolation(error)) throw new Error('DUPLICATE', { cause: error });
     throw error;
   }
 }
@@ -316,7 +316,7 @@ export async function updateCustomUnit(id: string, input: CustomUnitInput, user:
       return row;
     });
   } catch (error) {
-    if (isUniqueViolation(error)) throw new Error('DUPLICATE');
+    if (isUniqueViolation(error)) throw new Error('DUPLICATE', { cause: error });
     throw error;
   }
 }

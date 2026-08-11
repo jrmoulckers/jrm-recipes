@@ -141,7 +141,7 @@ function main() {
   const generated = JSON.stringify(pseudoCatalog(source), null, 2) + '\n';
 
   if (check) {
-    let current = '';
+    let current;
     try {
       current = readFileSync(outPath, 'utf8');
     } catch {
