@@ -52,6 +52,9 @@ describe('pickNutrition', () => {
       sugarGrams: null,
       fiberGrams: null,
     });
+    // Hand-written floor: the length assertion below is 0 === 0 if NUTRIENTS
+    // empties, since `picked` is derived from it (#862).
+    expect(NUTRIENTS.length).toBeGreaterThan(5);
     expect(Object.keys(picked)).toHaveLength(NUTRIENTS.length);
   });
 });

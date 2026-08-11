@@ -194,7 +194,10 @@ describe('summarizeHiddenAllergens', () => {
   it('de-duplicates and sorts hidden warnings in canonical order', () => {
     const hidden = summarizeHiddenAllergens(['soy sauce', 'teriyaki glaze', 'basil pesto']);
     const allergens = hidden.map((w) => w.allergen);
-    // No duplicates.
+    // No duplicates. Hand-written floor first: the assertion below is 0 === 0
+    // if summarizeHiddenAllergens returns nothing, which is the defect this
+    // test exists to catch (#862).
+    expect(allergens.length).toBeGreaterThan(0);
     expect(new Set(allergens).size).toBe(allergens.length);
     // Canonical (ALLERGENS index) order, not alphabetical.
     const indices = allergens.map((a) => ALLERGENS.indexOf(a));
@@ -240,6 +243,9 @@ describe("summarizeAllergensForSafety. Recipe-level union for 'safe for'", () =>
 
   it('stays canonically sorted and de-duplicated', () => {
     const recipe = summarizeAllergensForSafety(['soy sauce', 'soy sauce']);
+    // Hand-written floor: the assertion below is 0 === 0 if the summary comes
+    // back empty, which would be a safety-relevant failure (#862).
+    expect(recipe.length).toBeGreaterThan(0);
     expect(new Set(recipe).size).toBe(recipe.length);
     const indices = recipe.map((a) => ALLERGENS.indexOf(a));
     expect(indices).toEqual([...indices].sort((x, y) => x - y));

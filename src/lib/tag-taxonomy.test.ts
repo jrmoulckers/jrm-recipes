@@ -90,6 +90,9 @@ describe('canonicalizeTag (#282)', () => {
 describe('SUGGESTED_TAGS (#282)', () => {
   it('exposes a de-duplicated, alphabetized vocabulary', () => {
     const slugs = SUGGESTED_TAGS.map((t) => t.slug);
+    // Hand-written floor: the uniqueness assertion below is 0 === 0 on an
+    // empty vocabulary, so it cannot detect SUGGESTED_TAGS emptying (#862).
+    expect(slugs.length).toBeGreaterThan(50);
     expect(new Set(slugs).size).toBe(slugs.length);
     const names = SUGGESTED_TAGS.map((t) => t.name);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
