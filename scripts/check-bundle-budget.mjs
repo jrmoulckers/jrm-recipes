@@ -355,7 +355,7 @@ function main() {
   }
 
   const base = readBaseBudgetRoutes();
-  const { checked, violations } = evaluateBudgetChanges(
+  const { checked, subjects, violations } = evaluateBudgetChanges(
     measured,
     budgets,
     base.routes,
@@ -386,6 +386,13 @@ function main() {
         "created (#778). Size the margin from CI\n  figures: Linux reads ~1 kB " +
         "above a local Windows build, and `next build` prints\n  whole kB, so a " +
         "sub-kB webpack redistribution can move a route a full kB.",
+    );
+  } else if (subjects.length > 0) {
+    // Only on a budget-changing run: confirm the margin was actually checked,
+    // so a bumper can see the number they chose was measured against CI figures.
+    console.log(
+      `\n✓ ${subjects.length} budget(s) set or raised vs ${base.ref}, each with ` +
+        `at least ${REQUIRED_MARGIN_KB} kB of headroom (#796).`,
     );
   }
 
