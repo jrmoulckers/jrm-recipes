@@ -230,6 +230,10 @@ describe('workflow integrity policy', () => {
     // replaces the default, so dropping the line degrades it to a 404 rather
     // than to an obvious failure.
     expect(i18n.body).toContain('pull-requests: read');
+    // Same argument for issues: without this scope the human-action lookup 404s
+    // and the check reports "skipped", which is indistinguishable from finding
+    // nothing wrong. A guard that can only skip has not been shown to work.
+    expect(i18n.body).toContain('issues: read');
     expect(i18n.body).toContain('PR_BODY: ${{ github.event.pull_request.body }}');
 
     expect(gate.body).toMatch(/^\s+- i18n$/m);

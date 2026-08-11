@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { findViolations } from './check-closing-keywords.mjs';
+import { closingTargets, evaluateHumanAction, findViolations } from './check-closing-keywords.mjs';
 
 // The two incidents this guard exists for, verbatim. Both closed a live issue
 // that the same text said should stay open.
@@ -102,5 +102,98 @@ describe('check-closing-keywords', () => {
   it('leaves a short line intact', () => {
     const [found] = findViolations(PEER_INCIDENT);
     expect(found.text).toBe(PEER_INCIDENT);
+  });
+});
+
+// #859 asked a human to decide whether the AGENTS.md author gate is reworded
+// upstream. PR #860 closed it with `Closes #859`, and the request went with it.
+const NEEDS_HUMAN = [
+  '## Summary',
+  '',
+  'Documents the trap locally.',
+  '',
+  '## Needs Human Action',
+  '',
+  'A human should decide whether it is reworded upstream.',
+].join('\n');
+
+const open = (over = {}) => ({
+  number: 859,
+  state: 'open',
+  title: 'Every agent session is the same GitHub user',
+  body: NEEDS_HUMAN,
+  isPullRequest: false,
+  ...over,
+});
+
+describe('closingTargets', () => {
+  it('collects the issues a body would close', () => {
+    expect(closingTargets('Closes #859\n\nFixes #12')).toEqual([12, 859]);
+  });
+
+  it('ignores a reference that does not close', () => {
+    expect(closingTargets('Refs #859, #821')).toEqual([]);
+  });
+
+  it('takes prose mentions too, because GitHub acts on them', () => {
+    expect(closingTargets('and closed #855 anyway')).toEqual([855]);
+  });
+
+  it('deduplicates', () => {
+    expect(closingTargets('Closes #855\nResolves #855')).toEqual([855]);
+  });
+
+  it('leaves cross-repository URL closes alone', () => {
+    // The number belongs to another repository; looking it up here would read
+    // an unrelated issue and could block on it.
+    expect(closingTargets('Closes https://github.com/jrmoulckers/.github/issues/308')).toEqual([]);
+  });
+});
+
+describe('evaluateHumanAction', () => {
+  it('blocks an open issue that still asks for a human', () => {
+    const { blocked, checked } = evaluateHumanAction([open()]);
+    expect(blocked.map((b) => b.number)).toEqual([859]);
+    expect(checked).toBe(1);
+  });
+
+  it('allows an open issue with no such section', () => {
+    const { blocked, checked } = evaluateHumanAction([open({ body: '## Summary\n\nJust work.' })]);
+    expect(blocked).toEqual([]);
+    expect(checked).toBe(1);
+  });
+
+  it('ignores an already closed issue, which discards nothing new', () => {
+    const { blocked, checked } = evaluateHumanAction([open({ state: 'closed' })]);
+    expect(blocked).toEqual([]);
+    expect(checked).toBe(0);
+  });
+
+  it('ignores a pull request', () => {
+    const { blocked } = evaluateHumanAction([open({ isPullRequest: true })]);
+    expect(blocked).toEqual([]);
+  });
+
+  it('skips an unreadable entry rather than failing on it', () => {
+    // A guard against a silent failure must not become a source of spurious red
+    // (#796). Unknown is not clean, so it is reported as skipped.
+    const { blocked, skipped, checked } = evaluateHumanAction([{ number: 7, error: 'gh: 404' }]);
+    expect(blocked).toEqual([]);
+    expect(skipped.map((s) => s.number)).toEqual([7]);
+    expect(checked).toBe(0);
+  });
+
+  it('matches the heading at any level and ignores case', () => {
+    expect(evaluateHumanAction([open({ body: '### needs human action' })]).blocked).toHaveLength(1);
+  });
+
+  it('does not match a heading that only mentions the phrase', () => {
+    const body = '## Needs Human Action was removed\n\nAll done.';
+    expect(evaluateHumanAction([open({ body })]).blocked).toEqual([]);
+  });
+
+  it('reports every blocked issue, not just the first', () => {
+    const { blocked } = evaluateHumanAction([open(), open({ number: 855 })]);
+    expect(blocked.map((b) => b.number)).toEqual([859, 855]);
   });
 });
