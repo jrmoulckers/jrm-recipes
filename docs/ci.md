@@ -274,6 +274,16 @@ signature. So the honest claim is "still failing in the install phase, cause
 unconfirmed" — not "still the 401". That is a smaller statement, and unlike the
 inherited one, any session can re-derive it in a single command.
 
+**`Deploy watch` now runs that command for you.** The failure report used to end
+with "read the logs above", pointing at a `log_url` that is the deployment's URL
+rather than its build output — an instruction nobody in this repo can follow, which
+is precisely how the 401 came to be inherited. It now reports the measured
+`pending` → terminal delta and classifies it, so the phase arrives _with_ the
+notification. The arm worth knowing about is the second one: a failure that
+survives past ~20 s does **not** match the signature of every failure since #804,
+and the report says so in those words. Treat that as the standing diagnosis having
+expired, not as a slower version of the same fault.
+
 ## Every session is the same GitHub user
 
 Concurrent sessions all authenticate as one account, so the platform cannot tell

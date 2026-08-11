@@ -26,8 +26,9 @@ on:
     - cron: '17 * * * *'
   workflow_dispatch:
 
-# The event payload carries the SHA, environment, and log URL, so this workflow
-# needs no repo access at all.
+# The event payload carries the SHA, environment, and log URL. The failure job
+# additionally reads commit statuses to time the build, because the log URL it is
+# handed is not a log -- see that job for why.
 permissions: {}
 
 jobs:
@@ -42,9 +43,13 @@ jobs:
        github.event.deployment_status.state == 'error')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      statuses: read
     steps:
       - name: Fail with the deployment details
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           DEPLOY_SHA: ${{ github.event.deployment.sha }}
           DEPLOY_STATE: ${{ github.event.deployment_status.state }}
           DEPLOY_DESCRIPTION: ${{ github.event.deployment_status.description }}
@@ -54,11 +59,51 @@ jobs:
           echo "Commit:      ${DEPLOY_SHA}"
           echo "State:       ${DEPLOY_STATE}"
           echo "Description: ${DEPLOY_DESCRIPTION}"
-          echo "Logs:        ${DEPLOY_LOG_URL}"
+          echo "Deployment:  ${DEPLOY_LOG_URL}"
+          echo
+
+          # `log_url` is the deployment's URL, not its build output. The build log
+          # is only reachable via `npx vercel inspect --logs`, which needs a Vercel
+          # token no automated session holds. So this run used to end by telling
+          # every reader to "read the logs above" -- an instruction nobody here can
+          # follow, which is how #826's cause came to be inherited between sessions
+          # instead of re-derived.
+          #
+          # Duration is the diagnosis that IS available. The Vercel commit status
+          # goes pending -> terminal, and that delta bounds where the build died.
+          # Measured over every commit since the last successful deploy (#877):
+          # success 155-201s, failed 11-17s, quota emits no pending status at all.
+          # A build dead inside ~20s cannot have finished `pnpm install`.
+          #
+          # One jq pass, no --arg, so this exact expression is runnable by hand
+          # against the same endpoint when verifying it. If the terminal status is
+          # missing, $t is "" and the pending comparison is false for every row,
+          # so both come back empty rather than mispairing.
+          times="$(gh api "repos/${REPO}/commits/${DEPLOY_SHA}/statuses?per_page=100" \
+            --jq '[.[] | select(.context | test("vercel"; "i"))] | (map(select(.state == "failure" or .state == "error")) | first | .created_at // "") as $t | [(map(select(.state == "pending" and .created_at < $t)) | first | .created_at // ""), $t] | @tsv' \
+            2>/dev/null || printf '\t')"
+          pending_at="$(printf '%s' "${times}" | cut -f1)"
+          terminal_at="$(printf '%s' "${times}" | cut -f2)"
+
+          if [ -n "${pending_at}" ] && [ -n "${terminal_at}" ]; then
+            secs=$(( $(date -d "${terminal_at}" +%s) - $(date -d "${pending_at}" +%s) ))
+            echo "Build ran:   ${pending_at} -> ${terminal_at} (${secs}s)"
+            if [ "${secs}" -le 20 ]; then
+              phase="died at or before \`pnpm install\` (${secs}s). Matches the signature of every failure since #804."
+            else
+              phase="survived ${secs}s, so it got PAST install. This does NOT match the #826 signature -- the cause has changed. Do not inherit that diagnosis; re-derive it."
+            fi
+          else
+            phase="could not be timed (pending=${pending_at:-none} terminal=${terminal_at:-none}). Classify before assuming a cause."
+          fi
+
+          echo "Phase:       ${phase}"
           echo
           echo "Production is now serving an older commit than main."
-          echo "This run is the notification, not the diagnosis -- read the logs above."
-          echo "::error title=Production deployment failed::${DEPLOY_SHA} did not deploy (${DEPLOY_STATE}). Production is behind main."
+          echo "This run is the notification, not the full diagnosis -- duration bounds"
+          echo "the phase, it cannot name the error. See docs/ci.md, 'You cannot read"
+          echo "the log, but you can bound the phase'."
+          echo "::error title=Production deployment failed::${DEPLOY_SHA} did not deploy (${DEPLOY_STATE}). ${phase}"
           exit 1
 
   # The job above can only report deploys that produced a deployment_status
@@ -153,7 +198,7 @@ jobs:
           description="$(gh api "repos/${REPO}/commits/${head_sha}/status" --jq '[.statuses[] | select(.context == "Vercel") | .description] | first // "no Vercel status"')"
           case "${description}" in
             *"rate limited"*) mode="account quota -- the deploy never started, so Deploy watch could not fire" ;;
-            *"has failed"*) mode="the build ran and failed -- read its log" ;;
+            *"has failed"*) mode="the build ran and failed -- see the Deploy watch run for that commit, which reports how long it survived and therefore which phase it died in. Its build log is NOT readable from CI" ;;
             *) mode="unrecognised; classify it before assuming" ;;
           esac
 

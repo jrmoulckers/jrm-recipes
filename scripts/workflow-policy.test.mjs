@@ -6,14 +6,16 @@ import { describe, expect, it } from 'vitest';
 const canonicalWorkflowSha = 'f1457271427fcde18a62b07c53a1ea75e14cd644';
 const postgresDigest = 'sha256:95206741a5b214807675e14165369d05b93a9cf692223b616d07cca227e74b0b';
 
-const [ci, release, keepWarm, rawDeploy, rawLighthouse, rawPackageBuild] = await Promise.all([
-  readFile(resolve('.github/workflows/ci.yml'), 'utf8'),
-  readFile(resolve('.github/workflows/release.yml'), 'utf8'),
-  readFile(resolve('.github/workflows/keep-warm.yml'), 'utf8'),
-  readFile(resolve('DEPLOY.md'), 'utf8'),
-  readFile(resolve('lighthouserc.cjs'), 'utf8'),
-  readFile(resolve('scripts/package-ci-build.mjs'), 'utf8'),
-]);
+const [ci, release, keepWarm, deployWatch, rawDeploy, rawLighthouse, rawPackageBuild] =
+  await Promise.all([
+    readFile(resolve('.github/workflows/ci.yml'), 'utf8'),
+    readFile(resolve('.github/workflows/release.yml'), 'utf8'),
+    readFile(resolve('.github/workflows/keep-warm.yml'), 'utf8'),
+    readFile(resolve('.github/workflows/deploy-watch.yml'), 'utf8'),
+    readFile(resolve('DEPLOY.md'), 'utf8'),
+    readFile(resolve('lighthouserc.cjs'), 'utf8'),
+    readFile(resolve('scripts/package-ci-build.mjs'), 'utf8'),
+  ]);
 
 // These two guards assert against their own source text, which makes them
 // sensitive to formatting rather than to the policy they exist to protect.
@@ -176,5 +178,36 @@ describe('workflow integrity policy', () => {
     expect(deploy.length).toBeGreaterThan(0);
     expect(deploy).toContain('This automation-generated PR is the sole');
     expect(deploy).toContain('`chore(main): release ...`');
+  });
+
+  it('lets the deploy-failure report time the build it cannot read', () => {
+    // The `log_url` Vercel hands this workflow is the deployment's URL, not its
+    // build output; the log needs a Vercel token no CI job holds. So the report
+    // diagnoses by duration instead (#877): the Vercel commit status goes
+    // pending -> terminal, and that delta bounds the phase the build died in.
+    //
+    // That reads the statuses API, so the job needs `statuses: read`. Losing it
+    // degrades silently and in the worst possible direction: `gh` 403s, the
+    // `|| printf` fallback swallows it, and every future failure reports "could
+    // not be timed" — indistinguishable from a deploy that genuinely emitted no
+    // pending status. The instrument would go blind while still running green,
+    // so the permission is asserted rather than assumed.
+    const failureJob = jobBlocks(deployWatch).find(
+      ({ name }) => name === 'production-deploy-failed',
+    );
+
+    expect(failureJob, 'deploy-watch.yml declares no production-deploy-failed job').toBeDefined();
+    // Anchor: proves the body was actually sliced, so the assertions below
+    // cannot pass by matching against an empty string.
+    expect(failureJob.body).toContain('DEPLOY_SHA: ${{ github.event.deployment.sha }}');
+    expect(failureJob.body).toMatch(/^\s{4}permissions:\s*\n\s{6}statuses: read$/m);
+
+    // Both arms, because a one-armed classifier is not a classifier. The second
+    // is the one with no precedent in the data: every failure since #804 died
+    // inside 11-17s, so a build that survives past install means the cause
+    // changed and the standing diagnosis has expired.
+    expect(failureJob.body).toContain('-le 20');
+    expect(failureJob.body).toContain('died at or before');
+    expect(failureJob.body).toContain('got PAST install');
   });
 });
