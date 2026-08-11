@@ -1,3 +1,20 @@
+<!-- studio:health-override file=SECURITY.md refs=#660,#663,#790 -->
+<!--
+  This file is a DELIBERATE override of the org-wide health file inherited from
+  jrmoulckers/.github, not a stale verbatim copy. Do not delete it.
+
+  The backbone rule for health files ends in "if you find one in a member repo, delete it",
+  with one exception: a deliberate override. The marker above is that exception, in
+  exact-match form, so the test for it cannot be a regex over English prose. See #790 --
+  a session testing the exception with `Select-String -SimpleMatch` and a regex alternation
+  got a silent 0 and came within one step of deleting 17 KB of reconciled threat model.
+
+  If a health file in this repository does NOT carry a marker, that is not authority to
+  delete it. Stop and ask. A guard whose action is destructive fails closed toward inaction.
+
+  Enforced by scripts/check-health-overrides.test.mjs.
+-->
+
 # Security Policy
 
 **This policy extends the JRM Studio org-wide security policy at
