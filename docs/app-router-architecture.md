@@ -100,7 +100,7 @@ App code does not generally import Clerk directly. [`src/server/auth/index.ts`](
 - `requireUser()` throws when an action or protected read needs a signed-in user.
 - Clerk profile update/delete webhooks keep the local `users` row in sync and soft-delete/anonymize on deletion.
 
-Because middleware does not call `.protect()` for every route, authorization is enforced at the data/action layer with `getCurrentUser()`, `requireUser()`, membership checks, and feature-specific guards — the server-side, default-deny placement required by [`ENG-API-003`](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/api-backend.md) and [`ENG-SEC-004`](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md).
+Because middleware does not call `.protect()` for every route, authorization is enforced at the data/action layer with `getCurrentUser()`, `requireUser()`, membership checks, and feature-specific guards — the server-side, default-deny placement required by [`ENG-API-003` (Server-enforced authorization)](https://github.com/jrmoulckers/engineering/blob/main/principles/platforms/api-backend.md) and [`ENG-SEC-004` (Least authority)](https://github.com/jrmoulckers/engineering/blob/main/principles/assurance/security-and-privacy.md).
 
 ## Route handlers and runtime notes
 
