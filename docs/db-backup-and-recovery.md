@@ -42,16 +42,48 @@ backup strategy.
 
 ## Retention recommendation
 
-Fill in the final retention policy for the chosen managed Postgres host.
+> **Unpinned. These are recommendations, not the deployed policy.** The ranges below were written
+> before a host was chosen and no one has replaced them with the values actually in force. Until
+> that happens, no honest erasure horizon can be stated to a user. See
+> [Pinning the retention numbers](#pinning-the-retention-numbers) directly below for who decides
+> and how to read the current setting.
 
 | Backup type                        | Recommended retention                                                       | Notes                                                                 |
 | ---------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Automated daily snapshots          | 14-30 days                                                                  | Enough to catch most accidental deletion/corruption reports.          |
-| PITR/WAL window                    | 7-14 days minimum                                                           | Larger windows improve recovery from slow-discovered corruption.      |
+| Automated daily snapshots          | 14-30 days _(unpinned)_                                                     | Enough to catch most accidental deletion/corruption reports.          |
+| PITR/WAL window                    | 7-14 days minimum _(unpinned)_                                              | Larger windows improve recovery from slow-discovered corruption.      |
 | Pre-destructive-migration snapshot | Keep until the migration has been healthy through one normal business cycle | Required before risky schema/data changes.                            |
 | Restore-drill artifacts            | Keep latest drill notes and verification evidence                           | Do not keep exported production data outside approved secure storage. |
 
-### `recipe_versions` is not eligible for a retention sweep
+### Pinning the retention numbers
+
+This is the blocking item. It is a hosting and cost decision with a compliance consequence, so it
+needs a human with authority over the Neon plan. It is recorded here rather than left implicit
+because a reader has no other way to tell that the table above is aspirational.
+
+Production runs on **Neon** (`.env.example`, `DEPLOY.md` step 1). Neon does not expose the two
+mechanisms in the table as separate knobs. It has a single **history retention** window: the
+project retains WAL history for that period and any restore, whether to a named point or an
+implicit daily boundary, is served from it. So one number governs both rows, and the longest
+backup lifetime is exactly that window.
+
+To pin it:
+
+1. Read the current value in the Neon console under the production project, **Settings then Storage
+   and history** (also returned by `GET /projects/{id}` as `history_retention_seconds`). The ceiling
+   is capped by the plan, so raising it may require a plan change.
+2. Decide the value against the RPO/RTO targets below, not in isolation. A longer window buys
+   recovery from slow-discovered corruption and lengthens the erasure horizon by the same amount.
+   Those pull in opposite directions and the trade-off is the decision.
+3. Replace the ranges in the table with that single number, drop the _(unpinned)_ markers, and
+   remove the warning above it.
+4. Then wire it into erasure so the horizon is actually recorded per deletion (see
+   [Erasure and backups](#erasure-and-backups)), and revisit the deletion notice, which today omits
+   the horizon because there is no honest value to state.
+
+If the two rows are ever backed by genuinely different mechanisms (for example a separate logical
+dump shipped elsewhere for disaster recovery), pin them separately, and note that the erasure
+horizon is bounded by the **longer** of the two.
 
 Backup retention above is about copies of the database. This is about the live table, and it is
 called out here because it is where someone looking to reclaim storage would reasonably start.
@@ -281,15 +313,25 @@ only in an immutable backup, restorable only through the runbook above, and re-e
 mandatory gate before that instance can ever serve traffic — rather than truly gone.
 
 That window is the **erasure horizon** disclosed to the user, and it is bounded by the longest
-retention period in the table above. It is recorded per-deletion in
-`deletion_records.backup_horizon_at`.
+retention period in the table above.
 
-Two consequences:
+> **Not currently recorded.** `deletion_records.backup_horizon_at` exists for this purpose and
+> `eraseUserAccount` persists whatever it is given, but the parameter is optional and **neither
+> caller supplies it**: the in-app path (`src/server/users/actions.ts`) passes only the trigger and
+> notice version, and the Clerk webhook path (`src/server/auth/index.ts`) passes only the trigger.
+> The column is therefore `NULL` for every erasure performed so far, and it cannot honestly be
+> populated until the retention number above is pinned, since the horizon is computed from it.
+> Do not read a `NULL` there as "no backup exposure". Tracked in #805; the code change is #806.
+
+Three consequences:
 
 - The retention numbers above must be **pinned to actual values**, not left as ranges. An honest
   erasure horizon cannot be stated to a user while the longest backup lifetime is unknown.
+- Until they are, the deletion notice deliberately states **no** horizon, and no per-deletion record
+  exists from which one could be reconstructed afterwards. Both follow from the same unpinned
+  number, so pinning it is the single unblocking step.
 - Backups are deliberately not selectively edited. Surgically removing a user from an immutable
   backup would compromise its integrity as a recovery artifact, which is why re-application on
   restore is the control instead.
 
-_Related issues: #257, #678._
+_Related issues: #257, #678, #805._

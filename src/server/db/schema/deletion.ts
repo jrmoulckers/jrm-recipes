@@ -80,8 +80,17 @@ export const deletionRecords = pgTable(
     processorStatus: jsonb().$type<Record<string, unknown>>(),
     /**
      * The date the last backup containing this user expires. Until then the data
-     * is "beyond use" rather than gone, and this is the horizon disclosed to the
-     * user.
+     * is "beyond use" rather than gone, and this is the horizon we intend to
+     * disclose to the user.
+     *
+     * ALWAYS NULL TODAY (#806). The parameter is optional and neither caller of
+     * `eraseUserAccount` supplies it, so nothing has ever been written here. It
+     * cannot be computed until the backup retention window is pinned to a real
+     * number, which `docs/db-backup-and-recovery.md` still leaves as a range.
+     *
+     * A null therefore means "not yet computed", NOT "no backup exposure". Do not
+     * report absence of a horizon to a user or an auditor as absence of retained
+     * data.
      */
     backupHorizonAt: timestamp({ withTimezone: true }),
     /**
