@@ -303,6 +303,34 @@ curl -s https://heirloom.jrmoulckers.com/api/health   # what is served
 git rev-list --count <that sha>..origin/main          # how far behind
 ```
 
+### To know what production says, read the deployed tree
+
+The sha above is not just for drift arithmetic. It tells you which tree to read when the
+question is _what does production actually say right now_ — a question that comes up
+constantly for user-facing copy and that **cannot be answered from `main` or from a diff.**
+
+```bash
+sha=$(curl -s https://heirloom.jrmoulckers.com/api/health | jq -r .sha)
+git show "$sha":src/components/settings/delete-account-panel.tsx
+git show "$sha":src/messages/en.json
+```
+
+Read the _rendered whole_, not the change that produced it. A commit tells you what moved;
+it does not tell you what a given user sees, because what they see is the sum of every
+commit before it plus the conditions around it.
+
+The worked example is #873. A held user's deletion panel was correctly reported as showing
+a contradiction in production. The accompanying claim — that this made production worse than
+the state before it — was false, and it was false because it was read off where the diff
+placed a block. The same commit also swapped the confirmation help and the button label from
+"Permanently delete everything" to "Send my deletion request", so the decision point was
+truthful even while the list above it was not. One `git show` of the deployed tree shows
+both; the diff shows one and reads as complete.
+
+Corollary, and it has now bitten in both directions: **merged is not live.** A fix that is
+on `main` is not a fix a user has. Before describing production behaviour — especially
+privacy copy — resolve the deployed sha first.
+
 ### What the success check does not cover
 
 The post-deploy job is unauthenticated, so it asserts two things only: the sha
