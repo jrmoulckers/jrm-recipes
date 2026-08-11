@@ -1,8 +1,13 @@
 {
   "version": 1,
   "backbone": "jrmoulckers/.github",
-  "generatedAt": "2026-08-09T22:48:43.123Z",
+  "generatedAt": "2026-08-11T04:27:03.888Z",
   "entries": {
+    ".gitattributes": {
+      "sourceSha256": "4be6041de14159436002446da3193a178a4defa235fe71585c04002d070d80c7",
+      "targetSha256": "a591a7816b02daf54849d69af18396ff6175f24de0b06d0a1def97d0b5a9274a",
+      "syncedAt": "2026-08-11T04:27:03.877Z"
+    },
     ".github/agents/accessibility-reviewer.agent.md": {
       "sourceSha256": "f83d90b50ea87be04935ba849c0a93eda729452a2d7eee81e0cb02b4bf04dae5",
       "targetSha256": "f616ea0dbb9d4fc8414ea502196b4b6dd1da7a3e67e0c71b65c0352fabb1d38a",
@@ -114,9 +119,9 @@
       "syncedAt": "2026-08-07T15:34:43.458Z"
     },
     ".github/copilot-instructions.md": {
-      "sourceSha256": "997b381ea68e9e081a6bb47b3f395c26d9a78b565c2c2974263b11b08703d932",
-      "targetSha256": "311544714e626b2377a1025ae1e3994cfaac00adff635ef7c5b9d35e33e360fa",
-      "syncedAt": "2026-08-09T22:48:43.119Z"
+      "sourceSha256": "f8f1ed9ad63ac948bf568540bfd3551d269af4d511112771d0818805f3c7e09d",
+      "targetSha256": "7c8a5883a4b81879ac7f0fafe2aeb40b6627387f5beb7934a1c31f2493ac4dd4",
+      "syncedAt": "2026-08-11T04:27:03.876Z"
     },
     ".github/instructions/agents.instructions.md": {
       "sourceSha256": "70f066ca74342a504f7411fbb21e62012b5b8ce05403ed32e93c3d39d145c8aa",
@@ -134,14 +139,14 @@
       "syncedAt": "2026-08-08T22:40:38.864Z"
     },
     ".github/instructions/tokens.instructions.md": {
-      "sourceSha256": "9f4057f4cb29336105e7fdcd01191302167cff4cc9c43553416b28910772b51a",
-      "targetSha256": "88b251762e6cb19d28ec0e5e672f8caf778ebfe58066558d0bb0507fe56f7dff",
-      "syncedAt": "2026-08-08T22:40:38.866Z"
+      "sourceSha256": "da5d995cceba6a3f72ed47b771b3ba81658132cdfe3f9a83e13fe7cc5635ee1b",
+      "targetSha256": "492b9cc97e2fe3e05b412ccc4bc72796e7a8f713319f49da1920b8db56f5fe71",
+      "syncedAt": "2026-08-11T04:27:03.887Z"
     },
     ".github/instructions/workflow.instructions.md": {
-      "sourceSha256": "b63ec55be43b7ee397910905d076f8d4e3ce5c648cb723a84f33033eac3e7279",
-      "targetSha256": "6dd70bdb2087822aa5f1f7ade4e28714785dc61ce468d4e490d6b57fcdd0da3d",
-      "syncedAt": "2026-08-09T22:48:43.122Z"
+      "sourceSha256": "f832c6dfa49f91055a8f5f4a91d0fccf88481fad9dc09dcde08381c67bed5c7c",
+      "targetSha256": "4206060d01da2c70515289c2750a497eff07c3f33c7a51c074b94234a09f279a",
+      "syncedAt": "2026-08-11T04:27:03.887Z"
     },
     ".github/prompts/backlog.prompt.md": {
       "sourceSha256": "662578e4e512ac591b86127f50c601283a27b6ce96c9e09b022b833f720fe750",
