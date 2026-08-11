@@ -11,6 +11,7 @@
     "build": "next build",
     "analyze": "node scripts/analyze.mjs",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
+    "check:e2e-skips": "node scripts/check-e2e-skips.mjs",
     "ci:build": "pnpm check:bundle && node scripts/package-ci-build.mjs",
     "lhci": "lhci autorun --config=./lighthouserc.cjs",
     "vercel-build": "node scripts/preflight-env.mjs && node scripts/migrate.mjs && next build",

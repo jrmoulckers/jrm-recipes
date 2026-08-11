@@ -17,8 +17,17 @@ export default defineConfig({
   // Keep the HTML report for local triage of a failed run, and emit GitHub
   // annotations in CI. `open: "never"` keeps the run non-interactive so a failed
   // local run doesn't hang waiting to launch a browser (issue #250).
+  //
+  // CI also writes a JSON report, because neither of the other two can answer
+  // "which tests skipped": the GitHub reporter annotates failures only, and the
+  // dot output shows positions without names. scripts/check-e2e-skips.mjs reads
+  // it and fails when skips grow (issue #843).
   reporter: process.env.CI
-    ? [['github'], ['html', { open: 'never' }]]
+    ? [
+        ['github'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'playwright-report/results.json' }],
+      ]
     : [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
