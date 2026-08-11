@@ -93,7 +93,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@jrmoulckers/eslint-config": "^0.4.0",
+    "@jrmoulckers/eslint-config": "^0.8.0",
     "@jrmoulckers/prettier-config": "^0.2.0",
     "@jrmoulckers/tsconfig": "^0.3.0",
     "@lhci/cli": "^0.15.1",
