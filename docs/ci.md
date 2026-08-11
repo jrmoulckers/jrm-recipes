@@ -253,3 +253,21 @@ attached to nothing anyone reads. `gh pr checks` reports the head ref's run, not
 gh api repos/jrmoulckers/jrm-recipes/commits/main/status --jq '.state'
 gh run list --branch main --limit 5
 ```
+
+`deploy-watch.yml` covers the deploy half of this, in two jobs that fail for
+different reasons — and the split is the point:
+
+- **Report failed production deployment** fires on `deployment_status`. It sees
+  builds that ran and broke.
+- **Production drift** polls hourly and compares `main` against the last
+  **successful** production deployment. It exists because the first job cannot
+  see a deploy that never started: a quota-blocked attempt creates no deployment
+  object, so no event is published and no run appears at all (#868). Over twelve
+  consecutive commits, a Deploy watch run existed if and only if a deployment
+  object did — five never reached production and produced no run, no event, and a
+  green Actions tab.
+
+The drift job asserts the property actually wanted — production is serving `main`
+— rather than the absence of a known failure. That is why it needs no knowledge
+of either mode and will not go blind when a third appears. An event-triggered
+check can only ever report things that happened; **absence has to be polled for.**
