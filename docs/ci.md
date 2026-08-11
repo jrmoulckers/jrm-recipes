@@ -283,8 +283,40 @@ an `origin/main` 22 commits old, and reported it as reproducing the number exact
 That is the worse half of this failure: the quoting bug returns `1` and looks
 wrong, while a stale ref returns a number that looks like agreement. Two sessions
 running the same command on the same repository can differ by exactly their fetch
-gap and neither sees an error. If the number matters, fetch immediately before
-measuring, and quote the sha that produced it.
+gap and neither sees an error.
+
+**Better: measure with no local ref at all.** `gh api` compares two refs on the
+server, so there is nothing to be stale and nothing to remember to fetch:
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/compare/<served-sha>...main --jq .ahead_by
+```
+
+That is the form to reach for, with `fetch` + `rev-list` as the offline fallback.
+The paragraph above was the first attempt at this problem and it was procedural —
+it works only for a reader who already has the current file. The same session
+reported a stale figure **again** one message later (37, against a ref 23 commits
+old), after the mechanism had been explained in detail, because the fix had landed
+23 commits ahead of the tree they were reading. **A documentation remedy for
+staleness cannot reach a stale reader.** Where that is the failure, change the
+command so it cannot express the error, rather than warning about it.
+
+### `version` is not a drift signal
+
+`/api/health` also reports a `version`, and it is tempting to read as a coarser
+drift axis. Measured across the current 60-commit gap:
+
+```
+package.json at the served commit : 0.2.0
+package.json on main              : 0.2.0
+health endpoint                   : 0.2.0
+```
+
+Identical, because `version` moves only when a release PR merges. It therefore
+agrees no matter how far behind production is, and can disagree only in a narrow
+window after a release lands. It can produce false reassurance and cannot detect
+drift; reading its agreement as currency is the same error as reading an absent
+deployment record as success. Compare `sha`.
 
 That same absence sets a subtler trap, and a concurrent session walked into it while
 this was being written. Pull the description off every recent **deployment** and they
@@ -699,9 +731,12 @@ Use it when a peer reports a deploy state, before believing either of you:
 
 ```bash
 curl -s https://heirloom.jrmoulckers.com/api/health   # what is served
-git fetch origin main                                 # or the count is stale
-git rev-list --count "<that sha>..origin/main"        # how far behind
+gh api repos/jrmoulckers/jrm-recipes/compare/<that sha>...main --jq .ahead_by
 ```
+
+Both halves are remote, so neither can be stale. The `git fetch origin main` plus
+`git rev-list --count "<that sha>..origin/main"` pair measures the same thing
+offline, at the cost of a fetch you have to remember.
 
 ### To know what production says, read the deployed tree
 
