@@ -210,4 +210,28 @@ describe('workflow integrity policy', () => {
     expect(failureJob.body).toContain('died at or before');
     expect(failureJob.body).toContain('got PAST install');
   });
+
+  it('keeps the closing-keyword guard on a job the gate waits for', () => {
+    // The guard only works because it runs before the merge that performs the
+    // close. Moving it to a job outside `gate.needs` would leave it reporting
+    // a violation the merge then commits anyway -- green check, closed issue.
+    const jobs = jobBlocks(ci);
+    const i18n = jobs.find(({ name }) => name === 'i18n');
+    const gate = jobs.find(({ name }) => name === 'gate');
+
+    expect(i18n, 'ci.yml declares no i18n job').toBeDefined();
+    expect(gate, 'ci.yml declares no gate job').toBeDefined();
+    // Anchor: proves the slice is the real job body, so the checks below
+    // cannot pass against an empty string.
+    expect(i18n.body).toContain('name: Copy and i18n guards');
+
+    expect(i18n.body).toContain('run: node scripts/check-closing-keywords.mjs');
+    // Reading the body needs an explicit scope: this job's permissions block
+    // replaces the default, so dropping the line degrades it to a 404 rather
+    // than to an obvious failure.
+    expect(i18n.body).toContain('pull-requests: read');
+    expect(i18n.body).toContain('PR_BODY: ${{ github.event.pull_request.body }}');
+
+    expect(gate.body).toMatch(/^\s+- i18n$/m);
+  });
 });

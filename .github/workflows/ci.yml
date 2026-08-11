@@ -208,6 +208,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      pull-requests: read
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -228,6 +229,17 @@ jobs:
         run: node scripts/i18n-rich-tags.mjs
       - name: Audit alt text
         run: node scripts/alt-audit.mjs
+      # GitHub parses closing keywords out of prose with no negation handling,
+      # so a sentence saying an issue must stay open closes it (#855, twice).
+      # The close fires on merge, not on push, so a check on the pull request
+      # still lands before the damage.
+      - name: Check closing keywords
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/check-closing-keywords.mjs
       # config/engineering/ is vendored from jrmoulckers/engineering at the ref
       # in engineering-configs.lock.json. --check re-hashes each file and fails
       # on drift, so a local edit to an upstream-owned file cannot ride in

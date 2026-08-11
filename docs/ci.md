@@ -418,22 +418,74 @@ different mechanism, in the same commit.
 not in quotes, not to explain that you are not using it. Use `Refs #N` and say the
 rest in words — "#N stays open for the human decision" carries the full meaning
 with nothing to parse. When you must show the pattern itself, replace the number
-with a placeholder (`Closes #NNN`). That is the only form proven safe here; do not
-assume a code fence or an indent suppresses the scanner unless you have tested it
-on a throwaway issue.
+with a placeholder (`Closes #NNN`). Do not assume a code fence or an indent
+suppresses the scanner; it does not.
 
-This is a writing convention rather than a check, and the reason is worth stating.
-Commit messages and PR bodies are not in the tree, so nothing in `pnpm test` can
-see them. The only enforcement point is a `pull_request`-triggered job reading the
-body back through the API — which necessarily runs after the close has already
-fired, making it a report rather than a guard.
+### Knowing the rule is not enough — the past tense is the trap
+
+The section above shipped in PR #893. Its body and commit message narrated the
+incident with the phrase `closed #855`, and GitHub closed #855 at `17:56:01Z`,
+two seconds after the merge commit. **The pull request documenting the bug
+reproduced the bug, in the sentence describing it**, written by someone who had
+just spent an hour on the mechanism.
+
+That is not carelessness, it is the specific shape of the trap. The keyword set is
+nine words, and every tense counts:
+
+|           |            |            |
+| --------- | ---------- | ---------- |
+| `close`   | `closes`   | `closed`   |
+| `fix`     | `fixes`    | `fixed`    |
+| `resolve` | `resolves` | `resolved` |
+
+The imperative forms _look_ like instructions, so they get caught by eye. **The
+past tense does not.** "…and closed #855 anyway" is narration — a statement about
+something that already happened, in a paragraph about history — and it is
+indistinguishable to the scanner from an order. The same goes for "fixed #N in the
+earlier PR" and "resolved #N last week", which are the most natural way to write a
+changelog, a postmortem, or a reply to another session.
+
+So the rule needs its stronger form: **do not put any of those nine words next to
+an issue number, in any tense, for any reason.** Write "#N was closed by
+`41b6a583`" — passive voice moves the number away from the keyword — or drop the
+number.
+
+### It is guarded, and the reason it can be
+
+PR #893 also claimed this could not be checked, because bodies are not in the tree
+and any check would run after the close had fired. **The second half is wrong, and
+it is the load-bearing half.** The close fires when the pull request _merges_, not
+when it is pushed. A check that runs on the pull request therefore lands squarely
+before the damage, which makes it a guard and not a report.
+
+`scripts/check-closing-keywords.mjs` runs in the `Copy and i18n guards` job, which
+is in the `Quality gate` needs list, so a violation blocks the merge that would
+otherwise perform the close. It reads `github.event.pull_request.body` from the
+workflow context and every commit message on the PR, and enforces the convention
+already written down elsewhere: **a closing reference gets a line of its own.**
+Prose mentions are mid-sentence by construction, so "alone on its line" separates
+intent from narration without the guard having to understand meaning.
+
+It deliberately does not skip fenced code blocks, because GitHub does not skip
+them either — a guard that ignored fences would pass the exact text that closes the
+issue, including PR #893's own quotation of the incident.
+
+It was verified against both real pull requests rather than fixtures alone: it
+fails #893 (two hits — the body and commit `7a0f1df0`) and passes #891. The pair
+matters more than either half; a guard only proven to fire has not been shown to
+be capable of passing.
+
+The residue this cannot reach is a body edited after the last CI run, since the
+merge uses the current body and the check saw an earlier one. Same shelf-life
+problem as `Base freshness`, and worth knowing rather than papering over.
 
 It belongs to the family this document is otherwise about: a scanner reads a
 pattern out of surrounding text and cannot see the text that qualifies it. Same
 shape as `Select-String -SimpleMatch` matching nothing and reading as _nothing
 there_, or a ban on `unsafe-eval` passing over a policy with no `script-src` at
 all. This is the sharpest member, because the qualifying text was the entire point
-of the sentence.
+of the sentence — twice, in consecutive pull requests, the second of which was the
+fix for the first.
 
 ## After merge
 
