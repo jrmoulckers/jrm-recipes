@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { and, count, desc, eq, inArray, isNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lt } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   collections,
   cookLogEntries,
@@ -14,9 +14,9 @@ import {
   reviews,
   type MediaAsset,
   type User,
-} from "~/server/db/schema";
-import { MEDIA_PAGE_SIZE } from "./validation";
-import type { AssetUsage, AssetUsageSurface } from "./usage-surfaces";
+} from '~/server/db/schema';
+import { MEDIA_PAGE_SIZE } from './validation';
+import type { AssetUsage, AssetUsageSurface } from './usage-surfaces';
 
 export type { AssetUsage, AssetUsageSurface };
 
@@ -44,8 +44,7 @@ export async function listAssets(
 
   const pageSize = limit ?? MEDIA_PAGE_SIZE;
   const cursorDate = cursor ? new Date(cursor) : null;
-  const validCursor =
-    cursorDate && !Number.isNaN(cursorDate.getTime()) ? cursorDate : null;
+  const validCursor = cursorDate && !Number.isNaN(cursorDate.getTime()) ? cursorDate : null;
 
   const rows = await db.query.mediaAssets.findMany({
     where: and(
@@ -69,10 +68,7 @@ export async function listAssets(
 }
 
 /** A single asset the caller owns, or null. */
-export async function getAsset(
-  id: string,
-  user: User,
-): Promise<MediaAsset | null> {
+export async function getAsset(id: string, user: User): Promise<MediaAsset | null> {
   if (!isDbConfigured()) return null;
 
   const asset = await db.query.mediaAssets.findFirst({
@@ -106,21 +102,16 @@ export async function getAsset(
  * convention in `mutations.ts` so this can't be used as an existence oracle.
  */
 
-async function countRows(
-  run: () => Promise<{ value: number }[]>,
-): Promise<number> {
+async function countRows(run: () => Promise<{ value: number }[]>): Promise<number> {
   const [row] = await run();
   return row?.value ?? 0;
 }
 
-export async function getAssetUsage(
-  id: string,
-  user: User,
-): Promise<AssetUsage> {
-  if (!isDbConfigured()) throw new Error("NOT_FOUND");
+export async function getAssetUsage(id: string, user: User): Promise<AssetUsage> {
+  if (!isDbConfigured()) throw new Error('NOT_FOUND');
 
   const asset = await getAsset(id, user);
-  if (!asset) throw new Error("NOT_FOUND");
+  if (!asset) throw new Error('NOT_FOUND');
 
   const url = asset.url;
 
@@ -131,77 +122,59 @@ export async function getAssetUsage(
     .from(groupMembers)
     .where(eq(groupMembers.userId, user.id));
 
-  const [
-    recipeCount,
-    stepCount,
-    collectionCount,
-    groupCount,
-    cookLogCount,
-    reviewCount,
-  ] = await Promise.all([
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(recipes)
-        .where(
-          and(
-            eq(recipes.coverImageUrl, url),
-            eq(recipes.authorId, user.id),
-            // A recipe in the trash is not a live use of the photo.
-            isNull(recipes.deletedAt),
+  const [recipeCount, stepCount, collectionCount, groupCount, cookLogCount, reviewCount] =
+    await Promise.all([
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(recipes)
+          .where(
+            and(
+              eq(recipes.coverImageUrl, url),
+              eq(recipes.authorId, user.id),
+              // A recipe in the trash is not a live use of the photo.
+              isNull(recipes.deletedAt),
+            ),
           ),
-        ),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(recipeSteps)
-        .innerJoin(recipes, eq(recipes.id, recipeSteps.recipeId))
-        .where(
-          and(
-            eq(recipeSteps.imageUrl, url),
-            eq(recipes.authorId, user.id),
-            isNull(recipes.deletedAt),
+      ),
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(recipeSteps)
+          .innerJoin(recipes, eq(recipes.id, recipeSteps.recipeId))
+          .where(
+            and(
+              eq(recipeSteps.imageUrl, url),
+              eq(recipes.authorId, user.id),
+              isNull(recipes.deletedAt),
+            ),
           ),
-        ),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(collections)
-        .where(
-          and(
-            eq(collections.coverImageUrl, url),
-            eq(collections.userId, user.id),
-          ),
-        ),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(groups)
-        .where(
-          and(eq(groups.avatarUrl, url), inArray(groups.id, visibleGroups)),
-        ),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(cookLogEntries)
-        .where(
-          and(
-            eq(cookLogEntries.photoUrl, url),
-            eq(cookLogEntries.userId, user.id),
-          ),
-        ),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(reviews)
-        .where(and(eq(reviews.photoUrl, url), eq(reviews.userId, user.id))),
-    ),
-  ]);
+      ),
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(collections)
+          .where(and(eq(collections.coverImageUrl, url), eq(collections.userId, user.id))),
+      ),
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(groups)
+          .where(and(eq(groups.avatarUrl, url), inArray(groups.id, visibleGroups))),
+      ),
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(cookLogEntries)
+          .where(and(eq(cookLogEntries.photoUrl, url), eq(cookLogEntries.userId, user.id))),
+      ),
+      countRows(() =>
+        db
+          .select({ value: count() })
+          .from(reviews)
+          .where(and(eq(reviews.photoUrl, url), eq(reviews.userId, user.id))),
+      ),
+    ]);
 
   const bySurface: Record<AssetUsageSurface, number> = {
     recipes: recipeCount,

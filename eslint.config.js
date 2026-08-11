@@ -124,8 +124,9 @@ export default nextConfig({
       },
     },
     {
-      // `db:seed` is a CLI entry point; its progress output is the interface.
-      files: ['src/server/db/seed.ts'],
+      // The seed scripts are CLI entry points; their progress output is the
+      // interface. `seed-e2e.ts` is the same class of program as `seed.ts`.
+      files: ['src/server/db/seed.ts', 'src/server/db/seed-e2e.ts'],
       rules: { 'no-console': 'off' },
     },
   ],

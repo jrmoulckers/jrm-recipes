@@ -1,16 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignOutButton,
-  SignUpButton,
-} from "@clerk/nextjs";
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { SignedIn, SignedOut, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs';
 import {
   Bell,
   ChefHat,
@@ -23,19 +17,19 @@ import {
   ShieldBan,
   Tag,
   UserPlus,
-} from "lucide-react";
-import type { Route } from "next";
-import type { LucideIcon } from "lucide-react";
+} from 'lucide-react';
+import type { Route } from 'next';
+import type { LucideIcon } from 'lucide-react';
 
-import { navByKey, pinnableNav, type NavKey } from "~/config/nav";
-import { useBottomNavStore } from "~/lib/bottom-nav-store";
-import { track } from "~/lib/analytics";
-import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { BottomNavCustomizer } from "~/components/profile/bottom-nav-customizer";
-import { ProfileAvatarField } from "~/components/profile/profile-avatar-field";
-import { ProfilePreferences } from "~/components/profile/profile-preferences";
+import { navByKey, pinnableNav, type NavKey } from '~/config/nav';
+import { useBottomNavStore } from '~/lib/bottom-nav-store';
+import { track } from '~/lib/analytics';
+import { cn } from '~/lib/utils';
+import { Button } from '~/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { BottomNavCustomizer } from '~/components/profile/bottom-nav-customizer';
+import { ProfileAvatarField } from '~/components/profile/profile-avatar-field';
+import { ProfilePreferences } from '~/components/profile/profile-preferences';
 
 export type ProfileUser = {
   name: string | null;
@@ -46,26 +40,26 @@ export type ProfileUser = {
 type SettingsLink = { href: Route; labelKey: string; icon: LucideIcon };
 
 const SETTINGS_LINKS: SettingsLink[] = [
-  { href: "/settings/dietary", labelKey: "dietary", icon: Salad },
-  { href: "/settings/units", labelKey: "units", icon: Ruler },
-  { href: "/settings/notifications", labelKey: "notifications", icon: Bell },
-  { href: "/settings/following", labelKey: "following", icon: UserPlus },
-  { href: "/settings/photos", labelKey: "photos", icon: Images },
-  { href: "/settings/blocked", labelKey: "blocked", icon: ShieldBan },
-  { href: "/settings/data", labelKey: "data", icon: Database },
-  { href: "/settings/billing", labelKey: "billing", icon: CreditCard },
-  { href: "/pricing", labelKey: "pricing", icon: Tag },
+  { href: '/settings/dietary', labelKey: 'dietary', icon: Salad },
+  { href: '/settings/units', labelKey: 'units', icon: Ruler },
+  { href: '/settings/notifications', labelKey: 'notifications', icon: Bell },
+  { href: '/settings/following', labelKey: 'following', icon: UserPlus },
+  { href: '/settings/photos', labelKey: 'photos', icon: Images },
+  { href: '/settings/blocked', labelKey: 'blocked', icon: ShieldBan },
+  { href: '/settings/data', labelKey: 'data', icon: Database },
+  { href: '/settings/billing', labelKey: 'billing', icon: CreditCard },
+  { href: '/pricing', labelKey: 'pricing', icon: Tag },
 ];
 
 function initialsOf(name: string | null): string {
   return (
     name
-      ?.split(" ")
+      ?.split(' ')
       .map((p) => p[0])
       .filter(Boolean)
       .slice(0, 2)
-      .join("")
-      .toUpperCase() ?? "HC"
+      .join('')
+      .toUpperCase() ?? 'HC'
   );
 }
 
@@ -80,12 +74,8 @@ function Section({
 }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-token">
-      <h2 className="font-display text-lg font-semibold tracking-tight">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-      ) : null}
+      <h2 className="font-display text-lg font-semibold tracking-tight">{title}</h2>
+      {description ? <p className="mt-0.5 text-sm text-muted-foreground">{description}</p> : null}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -104,8 +94,8 @@ export function ProfileHub({
   isConfigured: boolean;
   user: ProfileUser | null;
 }) {
-  const t = useTranslations("profile");
-  const tNav = useTranslations("nav");
+  const t = useTranslations('profile');
+  const tNav = useTranslations('nav');
   const pathname = usePathname();
   const hydrated = useBottomNavStore((s) => s.hydrated);
   const pinned = useBottomNavStore((s) => s.pinned);
@@ -125,14 +115,12 @@ export function ProfileHub({
         </Avatar>
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-display text-2xl font-bold tracking-tight">
-            {user?.name ?? t("guest")}
+            {user?.name ?? t('guest')}
           </h1>
           {user?.email ? (
-            <p className="truncate text-sm text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="truncate text-sm text-muted-foreground">{user.email}</p>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("guestBlurb")}</p>
+            <p className="text-sm text-muted-foreground">{t('guestBlurb')}</p>
           )}
         </div>
       </header>
@@ -142,16 +130,13 @@ export function ProfileHub({
         <SignedOut>
           <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5 shadow-token sm:flex-row">
             <SignUpButton mode="modal">
-              <Button
-                className="flex-1"
-                onClick={() => track("signup_started", {})}
-              >
-                {t("startCookbook")}
+              <Button className="flex-1" onClick={() => track('signup_started', {})}>
+                {t('startCookbook')}
               </Button>
             </SignUpButton>
             <SignInButton mode="modal">
               <Button variant="outline" className="flex-1">
-                {t("signIn")}
+                {t('signIn')}
               </Button>
             </SignInButton>
           </div>
@@ -160,21 +145,15 @@ export function ProfileHub({
 
       {/* Profile photo. Signed-in only: there is no row to write to otherwise. */}
       {user ? (
-        <Section
-          title={t("avatar.title")}
-          description={t("avatar.description")}
-        >
+        <Section title={t('avatar.title')} description={t('avatar.description')}>
           <ProfileAvatarField avatarUrl={user.avatarUrl} />
         </Section>
       ) : null}
 
       {/* Customizable bottom bar. */}
-      <Section title={t("tabs.title")} description={t("tabs.description")}>
+      <Section title={t('tabs.title')} description={t('tabs.description')}>
         {hydrated ? (
-          <ul
-            className="mb-4 flex flex-wrap gap-2"
-            aria-label={t("tabs.current")}
-          >
+          <ul className="mb-4 flex flex-wrap gap-2" aria-label={t('tabs.current')}>
             {pinned.map((key) => {
               const Icon = navByKey[key].icon;
               return (
@@ -182,26 +161,21 @@ export function ProfileHub({
                   key={key}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/50 px-3 py-1 text-sm font-medium"
                 >
-                  <Icon
-                    className="size-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
                   {tNav(navByKey[key].labelKey)}
                 </li>
               );
             })}
             <li className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-              {t("title")}
+              {t('title')}
             </li>
           </ul>
         ) : null}
-        <BottomNavCustomizer
-          trigger={<Button variant="outline">{t("tabs.customize")}</Button>}
-        />
+        <BottomNavCustomizer trigger={<Button variant="outline">{t('tabs.customize')}</Button>} />
       </Section>
 
       {/* Navigate: every destination stays reachable here. */}
-      <Section title={t("navigate.title")}>
+      <Section title={t('navigate.title')}>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {pinnableNav.map((item) => {
             const Icon = item.icon;
@@ -210,10 +184,10 @@ export function ProfileHub({
               <li key={item.id}>
                 <Link
                   href={item.href}
-                  aria-current={active ? "page" : undefined}
+                  aria-current={active ? 'page' : undefined}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
-                    active && "border-primary/40 bg-primary/10 text-primary",
+                    'flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted',
+                    active && 'border-primary/40 bg-primary/10 text-primary',
                   )}
                 >
                   <Icon className="size-4 shrink-0" aria-hidden="true" />
@@ -228,19 +202,19 @@ export function ProfileHub({
               className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
             >
               <ChefHat className="size-4 shrink-0" aria-hidden="true" />
-              <span className="truncate">{tNav("create")}</span>
+              <span className="truncate">{tNav('create')}</span>
             </Link>
           </li>
         </ul>
       </Section>
 
       {/* Device preferences (moved from the header's mobile "More" kebab). */}
-      <Section title={t("preferences.title")}>
+      <Section title={t('preferences.title')}>
         <ProfilePreferences />
       </Section>
 
       {/* Account & settings. */}
-      <Section title={t("settings.title")}>
+      <Section title={t('settings.title')}>
         <ul className="grid gap-1">
           {SETTINGS_LINKS.map((link) => {
             const Icon = link.icon;
@@ -250,13 +224,8 @@ export function ProfileHub({
                   href={link.href}
                   className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
                 >
-                  <Icon
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">
-                    {t(`settings.${link.labelKey}`)}
-                  </span>
+                  <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="truncate">{t(`settings.${link.labelKey}`)}</span>
                 </Link>
               </li>
             );
@@ -268,7 +237,7 @@ export function ProfileHub({
               <SignOutButton>
                 <Button variant="ghost" className="w-full justify-start gap-3">
                   <LogOut className="size-4" aria-hidden="true" />
-                  {t("signOut")}
+                  {t('signOut')}
                 </Button>
               </SignOutButton>
             </div>

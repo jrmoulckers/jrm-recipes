@@ -8,12 +8,12 @@
  * bundle.
  */
 export const ASSET_USAGE_SURFACES = [
-  "recipes",
-  "steps",
-  "collections",
-  "groups",
-  "cookLog",
-  "reviews",
+  'recipes',
+  'steps',
+  'collections',
+  'groups',
+  'cookLog',
+  'reviews',
 ] as const;
 
 export type AssetUsageSurface = (typeof ASSET_USAGE_SURFACES)[number];

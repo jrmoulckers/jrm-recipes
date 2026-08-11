@@ -1,5 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
 
 /**
  * Heirloom env schema.
@@ -24,8 +24,7 @@ import { z } from "zod";
  * validation, so unit tests and the zero-config CI/e2e build flows keep working
  * with dev-bypass.
  */
-const skipValidation =
-  !!process.env.SKIP_ENV_VALIDATION || process.env.NODE_ENV === "test";
+const skipValidation = !!process.env.SKIP_ENV_VALIDATION || process.env.NODE_ENV === 'test';
 
 /**
  * True when running in (or building for) a *real production deployment*, where
@@ -43,7 +42,7 @@ const skipValidation =
  * @returns {boolean}
  */
 export function isProductionDeploy(vars = process.env) {
-  return vars.VERCEL_ENV === "production" && !vars.SKIP_ENV_VALIDATION;
+  return vars.VERCEL_ENV === 'production' && !vars.SKIP_ENV_VALIDATION;
 }
 
 /**
@@ -61,14 +60,14 @@ export function isProductionDeploy(vars = process.env) {
  * @returns {string[]}
  */
 export function findProductionAuthIssues(vars) {
-  if (vars.NODE_ENV !== "production") return [];
+  if (vars.NODE_ENV !== 'production') return [];
 
   /** @type {string[]} */
   const issues = [];
-  if (vars.NEXT_PUBLIC_DEV_AUTH_BYPASS === "1") {
+  if (vars.NEXT_PUBLIC_DEV_AUTH_BYPASS === '1') {
     issues.push(
       'NEXT_PUBLIC_DEV_AUTH_BYPASS must not be "1" in production: dev-bypass ' +
-        "auth is a local/test-only affordance.",
+        'auth is a local/test-only affordance.',
     );
   }
   // The dev-identity selector (#783/#786). Condition 3 is "nothing outside
@@ -79,16 +78,16 @@ export function findProductionAuthIssues(vars) {
   // (the selector is read only inside the dev-bypass branch, which already
   // cannot run here), so this is the outer layer failing loudly rather than
   // the last line of defence.
-  if (vars.E2E_IDENTITY_SELECTOR === "1") {
+  if (vars.E2E_IDENTITY_SELECTOR === '1') {
     issues.push(
       'E2E_IDENTITY_SELECTOR must not be "1" in production: the dev-identity ' +
-        "selector is a CI-only test affordance.",
+        'selector is a CI-only test affordance.',
     );
   }
   if (!vars.CLERK_SECRET_KEY || !vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     issues.push(
-      "CLERK_SECRET_KEY and NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY are required in " +
-        "production (auth must not fall back to dev-bypass).",
+      'CLERK_SECRET_KEY and NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY are required in ' +
+        'production (auth must not fall back to dev-bypass).',
     );
   }
   return issues;
@@ -96,9 +95,7 @@ export function findProductionAuthIssues(vars) {
 
 export const env = createEnv({
   server: {
-    NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     DATABASE_URL: z.string().url().optional(),
     CLERK_SECRET_KEY: z.string().optional(),
     // Svix signing secret (`whsec_…`) for the Clerk webhook (#217). Optional like
@@ -146,7 +143,7 @@ export const env = createEnv({
     // can log without triggering env validation. It is declared here only so it's a
     // documented, validated part of the schema. Unset ⇒ `info` in production,
     // `debug` elsewhere.
-    LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).optional(),
+    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
   },
 
   client: {
@@ -180,25 +177,21 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     NEXT_PUBLIC_CLERK_SIGN_IN_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
     NEXT_PUBLIC_CLERK_SIGN_UP_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL,
     NEXT_PUBLIC_DEV_AUTH_BYPASS: process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS,
-    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:
-      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     NEXT_PUBLIC_CLOUDINARY_API_KEY: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT:
-      process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT,
+    NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT: process.env.NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     STRIPE_PRICE_FAMILY: process.env.STRIPE_PRICE_FAMILY,
     STRIPE_PRICE_GIFT_FAMILY: process.env.STRIPE_PRICE_GIFT_FAMILY,
     LOG_LEVEL: process.env.LOG_LEVEL,
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
 
   skipValidation,
@@ -217,7 +210,7 @@ export const env = createEnv({
  * `~/server/auth` (Vercel sets `NODE_ENV=production` on preview too), so any
  * deployed environment, preview or production, requires real Clerk keys.
  */
-if (isProductionDeploy() && typeof window === "undefined") {
+if (isProductionDeploy() && typeof window === 'undefined') {
   const result = z
     .object({
       NEXT_PUBLIC_DEV_AUTH_BYPASS: z.string().optional(),
@@ -227,7 +220,7 @@ if (isProductionDeploy() && typeof window === "undefined") {
     })
     .superRefine((vars, ctx) => {
       for (const message of findProductionAuthIssues({
-        NODE_ENV: "production",
+        NODE_ENV: 'production',
         ...vars,
       })) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message });
@@ -237,11 +230,11 @@ if (isProductionDeploy() && typeof window === "undefined") {
 
   if (!result.success) {
     const messages = result.error.issues.map((issue) => issue.message);
-    console.error("❌ Invalid environment variables:\n" + messages.join("\n"));
+    console.error('❌ Invalid environment variables:\n' + messages.join('\n'));
     throw new Error(
-      "Invalid environment variables: test-only auth affordances cannot be " +
-        "enabled in production. " +
-        messages.join(" "),
+      'Invalid environment variables: test-only auth affordances cannot be ' +
+        'enabled in production. ' +
+        messages.join(' '),
     );
   }
 }

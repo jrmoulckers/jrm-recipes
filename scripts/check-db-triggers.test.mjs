@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { evaluate } from "./check-db-triggers.ts";
+import { evaluate } from './check-db-triggers.ts';
 
 /**
  * Unit tests for the trigger/rule guard's verdict (issue #764).
@@ -26,8 +26,8 @@ const trigger = (table_name, name) => ({ table_name, name });
 /** A migrated database reports many internal triggers; the real one had 460. */
 const MIGRATED = 460;
 
-describe("check-db-triggers verdict (#764)", () => {
-  it("passes on a clean migrated database", () => {
+describe('check-db-triggers verdict (#764)', () => {
+  it('passes on a clean migrated database', () => {
     const verdict = evaluate({
       triggers: [],
       rules: [],
@@ -37,28 +37,24 @@ describe("check-db-triggers verdict (#764)", () => {
     expect(verdict).toEqual({ vacuous: false, problems: [] });
   });
 
-  it("reports an unexpected trigger", () => {
+  it('reports an unexpected trigger', () => {
     const verdict = evaluate({
-      triggers: [trigger("users", "users_purge_versions")],
+      triggers: [trigger('users', 'users_purge_versions')],
       rules: [],
       internalCount: MIGRATED,
     });
 
-    expect(verdict.problems).toEqual([
-      "unexpected trigger: users.users_purge_versions",
-    ]);
+    expect(verdict.problems).toEqual(['unexpected trigger: users.users_purge_versions']);
   });
 
-  it("reports an unexpected rule", () => {
+  it('reports an unexpected rule', () => {
     const verdict = evaluate({
       triggers: [],
-      rules: [trigger("recipe_versions", "no_delete_versions")],
+      rules: [trigger('recipe_versions', 'no_delete_versions')],
       internalCount: MIGRATED,
     });
 
-    expect(verdict.problems).toEqual([
-      "unexpected rule: recipe_versions.no_delete_versions",
-    ]);
+    expect(verdict.problems).toEqual(['unexpected rule: recipe_versions.no_delete_versions']);
   });
 
   /**
@@ -66,23 +62,23 @@ describe("check-db-triggers verdict (#764)", () => {
    * in the direction that should stay quiet, or the sweep shows three red rows
    * and looks like success.
    */
-  it("passes a trigger that is deployed and allowlisted", () => {
+  it('passes a trigger that is deployed and allowlisted', () => {
     const verdict = evaluate({
-      triggers: [trigger("users", "users_touch")],
+      triggers: [trigger('users', 'users_touch')],
       rules: [],
       internalCount: MIGRATED,
-      allowedTriggers: ["users.users_touch"],
+      allowedTriggers: ['users.users_touch'],
     });
 
     expect(verdict).toEqual({ vacuous: false, problems: [] });
   });
 
-  it("passes a rule that is deployed and allowlisted", () => {
+  it('passes a rule that is deployed and allowlisted', () => {
     const verdict = evaluate({
       triggers: [],
-      rules: [trigger("recipes", "recipes_noop")],
+      rules: [trigger('recipes', 'recipes_noop')],
       internalCount: MIGRATED,
-      allowedRules: ["recipes.recipes_noop"],
+      allowedRules: ['recipes.recipes_noop'],
     });
 
     expect(verdict).toEqual({ vacuous: false, problems: [] });
@@ -93,30 +89,28 @@ describe("check-db-triggers verdict (#764)", () => {
    * object next takes that name, so an allowlist entry with nothing behind it
    * is itself a problem.
    */
-  it("reports an allowlist entry with nothing deployed behind it", () => {
+  it('reports an allowlist entry with nothing deployed behind it', () => {
     const verdict = evaluate({
       triggers: [],
       rules: [],
       internalCount: MIGRATED,
-      allowedTriggers: ["users.users_touch"],
+      allowedTriggers: ['users.users_touch'],
     });
 
-    expect(verdict.problems).toEqual([
-      "allowlisted but not deployed: users.users_touch",
-    ]);
+    expect(verdict.problems).toEqual(['allowlisted but not deployed: users.users_touch']);
   });
 
   it("does not let a rule's name satisfy a trigger's allowlist entry", () => {
     const verdict = evaluate({
       triggers: [],
-      rules: [trigger("users", "users_touch")],
+      rules: [trigger('users', 'users_touch')],
       internalCount: MIGRATED,
-      allowedTriggers: ["users.users_touch"],
+      allowedTriggers: ['users.users_touch'],
     });
 
     expect(verdict.problems).toEqual([
-      "unexpected rule: users.users_touch",
-      "allowlisted but not deployed: users.users_touch",
+      'unexpected rule: users.users_touch',
+      'allowlisted but not deployed: users.users_touch',
     ]);
   });
 
@@ -125,7 +119,7 @@ describe("check-db-triggers verdict (#764)", () => {
    * starting reported zero of everything, and an unguarded check would have
    * called that a clean database.
    */
-  it("refuses to reach a verdict when the scan found no internal triggers", () => {
+  it('refuses to reach a verdict when the scan found no internal triggers', () => {
     const verdict = evaluate({
       triggers: [],
       rules: [],
@@ -135,9 +129,9 @@ describe("check-db-triggers verdict (#764)", () => {
     expect(verdict.vacuous).toBe(true);
   });
 
-  it("stays vacuous even when a trigger is present, since the scan is untrustworthy", () => {
+  it('stays vacuous even when a trigger is present, since the scan is untrustworthy', () => {
     const verdict = evaluate({
-      triggers: [trigger("users", "users_purge_versions")],
+      triggers: [trigger('users', 'users_purge_versions')],
       rules: [],
       internalCount: 0,
     });
