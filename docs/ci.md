@@ -540,6 +540,58 @@ all. This is the sharpest member, because the qualifying text was the entire poi
 of the sentence — twice, in consecutive pull requests, the second of which was the
 fix for the first.
 
+### The other half: a correct close that discards the request
+
+The keyword can also be entirely deliberate and still do damage, because of what
+the issue on the other end contains.
+
+`AGENTS.md` tells an agent that when it cannot finish a human-gated step it should
+leave a section headed `Needs Human Action`. That note is the fleet's only channel
+for routing work back to a person, and nothing stopped a pull request from closing
+the issue carrying it.
+
+#859 recorded that the author-based merge gate is unevaluable here, because every
+session authenticates as the same GitHub user, and asked a human to decide. PR
+#860 documented the trap in this file and closed #859 along with it. The
+documentation shipped; the routing request went into a state nobody triages. A
+peer session found it by reading the closed issue directly — no check saw it. The
+ask was then re-routed by hand to `jrmoulckers/.github#308`, which worked only
+because someone happened to look.
+
+Correct syntax, discarded content — so the same script carries a second check.
+For each issue a pull request would close, if that issue is **open** and its body
+carries that heading, the build fails and names it. The way out is `Refs #N` with
+the issue left open, or removing the section if the PR really does resolve it, or
+routing the ask somewhere that stays visible and saying so first.
+
+It skips rather than fails on anything it cannot read — a missing issue, an API
+error, a pull-request target — because a guard against a silent failure must not
+become a source of spurious red. Only bare `#N` is checked; a cross-repository URL
+close acts on another repository's issue, and resolving the number here would read
+an unrelated one. Already-closed issues are skipped, since merging discards
+nothing new.
+
+That skip-safety is also the thing to watch. The lookup needs an explicit
+`issues: read` scope, because the job's `permissions` block **replaces** the
+default rather than adding to it. Without it every lookup 404s, the check reports
+that it skipped, and "skipped" prints the same green as "found nothing wrong" —
+this document's own subject, aimed at its own guard. `scripts/workflow-policy.test.mjs`
+pins the scope for that reason, and the pin was proved by deleting the line and
+watching it fail.
+
+Verified in both directions against live issues rather than fixtures alone: it
+fails on #855, which is open and carries the section, and passes on #901, which is
+open and does not.
+
+**Quoting the marker re-arms it**, exactly as quoting a closing keyword does. The
+first draft of #901 reproduced the heading verbatim to show what #859 had carried,
+and the finished guard then refused any pull request that would close #901 —
+correctly, by its own rule. Fences do not help, for the reason above and its
+mirror: if a fence suppressed this check, an issue could hide its own request for
+a human inside one. So describe a hazardous marker; do not reproduce it in a
+position where it is live. The same rule applies to issue titles, which is why
+#822 was retitled by describing its old title rather than repeating it.
+
 ## After merge
 
 A PR stops being updated the moment it merges, so the post-merge run on `main` is
