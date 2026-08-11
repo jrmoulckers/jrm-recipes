@@ -26,6 +26,25 @@ const lighthouse = rawLighthouse.replace(/'/g, '"');
 const packageBuild = rawPackageBuild.replace(/'/g, '"');
 const deploy = rawDeploy.replace(/\s+/g, ' ');
 
+// Returns the body of one trigger under `on:`, or null when that trigger is not
+// declared. Returning null rather than '' is deliberate: the caller below bans a
+// substring, and a ban over '' passes, so a deleted trigger would read exactly
+// like a correctly unfiltered one (#844).
+function triggerBody(workflow, trigger) {
+  const source = workflow.replace(/^[^\S\n]*#.*$/gm, '');
+  const start = source.search(/^on:[^\S\n]*$/m);
+  if (start === -1) return null;
+
+  const rest = source.slice(start + 'on:'.length);
+  const end = rest.search(/^[A-Za-z_]/m);
+  const block = end === -1 ? rest : rest.slice(0, end);
+  const keys = [...block.matchAll(/^ {2}([A-Za-z_]+):/gm)];
+  const index = keys.findIndex((key) => key[1] === trigger);
+  if (index === -1) return null;
+
+  return block.slice(keys[index].index, keys[index + 1]?.index ?? block.length);
+}
+
 function jobBlocks(workflow) {
   const jobs = workflow.slice(workflow.indexOf('\njobs:\n') + 7);
   const starts = [...jobs.matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)];
@@ -55,6 +74,26 @@ describe('workflow integrity policy', () => {
     expect(ci).toContain('run-dependency-review: false');
     expect(ci).not.toContain('secrets: inherit');
     expect(ci).not.toContain('gitleaks/gitleaks-action');
+  });
+
+  it('runs the pull request gate on every base branch', () => {
+    // #672: `pull_request` must stay unfiltered. It was once `branches: [main]`,
+    // which meant a PR based on any other branch ran none of this workflow — and
+    // that did not present as "not run", because Vercel reported regardless and
+    // a stacked PR showed a green check list and MERGEABLE. Measured on #670,
+    // green while stacked and over the first-load JS budget the moment it was
+    // retargeted at main. The failure mode is absence presenting as success, so
+    // narrowing the trigger again is invisible unless something asserts it.
+    const pullRequest = triggerBody(ci, 'pull_request');
+    const push = triggerBody(ci, 'push');
+
+    expect(pullRequest, 'ci.yml declares no pull_request trigger').not.toBeNull();
+    expect(push, 'ci.yml declares no push trigger').not.toBeNull();
+
+    // Positive control: `push` is branch-filtered on purpose, so a matcher that
+    // can see its filter is a matcher that would see one on `pull_request`.
+    expect(push).toMatch(/^ {4}branches: \[main, staging]$/m);
+    expect(pullRequest).not.toMatch(/^\s+branches(-ignore)?:/m);
   });
 
   it('reuses the canonical build artifact without exposing Lighthouse reports', () => {
