@@ -68,7 +68,7 @@ Both are idempotent (`IF NOT EXISTS`, `WHERE … IS NULL`, `ON CONFLICT DO
 NOTHING`), which CI verifies by applying them twice to a fresh Postgres. Neither
 has a contract phase to follow: the constraint swap in `0042` is atomic within
 its transaction, and the alias tables are retained forever by design — see
-[ADR 0002](./architecture/0002-user-scoped-recipe-slugs.md).
+[ADR-0002](./architecture/0002-user-scoped-recipe-slugs.md).
 
 ## Idempotency (required)
 

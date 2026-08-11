@@ -1,10 +1,10 @@
-# ADR 0004: Account Deletion Is Full Erasure
+# ADR-0004: Account Deletion Is Full Erasure
 
 - **Status:** Accepted
 - **Date:** 2026-08-16
 - **Issue:** [#678](https://github.com/jrmoulckers/jrm-recipes/issues/678)
 - **Supersedes:** the "Account deletion rotates the namespace" decision in
-  [ADR 0002](./0002-user-scoped-recipe-slugs.md)
+  [ADR-0002](./0002-user-scoped-recipe-slugs.md)
 
 ## Context
 
@@ -166,10 +166,10 @@ The deleted user's slug and all their aliases go with the account, so previously
 `/recipes/<their-slug>/<recipe>` links stop resolving.
 
 **404, not 410.** A 410 asserts that the resource existed and is permanently gone, which confirms a
-recipe once lived at that URL. That breaks the invariant from ADR 0002 that an unauthorized viewer
+recipe once lived at that URL. That breaks the invariant from ADR-0002 that an unauthorized viewer
 is indistinguishable from a nonexistent one, and would turn deletion into an enumeration oracle.
 
-**The slugs become claimable again**, which is consistent with ADR 0002's alias-occupancy rule: that
+**The slugs become claimable again**, which is consistent with ADR-0002's alias-occupancy rule: that
 rule makes an alias _row_ occupy a slug, and here the rows are deleted, so nothing occupies it.
 
 ## Accepted risk: reclaimed namespaces

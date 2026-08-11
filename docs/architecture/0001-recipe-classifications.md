@@ -1,4 +1,4 @@
-# ADR 0001: Typed Recipe Classifications
+# ADR-0001: Typed Recipe Classifications
 
 - **Status:** Accepted
 - **Date:** 2026-04-13

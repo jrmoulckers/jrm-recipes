@@ -80,7 +80,7 @@ import { findEntanglement, recordErasureHold } from '~/server/users/erasure-hold
  * basis on its own — and an entangled request is recorded in `erasure_holds`
  * instead of executed. That is a decision about *when* erasure runs, not about
  * what it means: no retention is added, and the request stays durable,
- * countable and replayable. See ADR 0004.
+ * countable and replayable. See ADR-0004.
  *
  * **Pending creators are not creators.** A `pending` invitation grants nothing
  * and has no slug, so it never makes a recipe "co-created" for survival
@@ -97,7 +97,7 @@ import { findEntanglement, recordErasureHold } from '~/server/users/erasure-hold
  * an old link into a departed user's namespace could later land in a stranger's
  * namespace. It is contained by the resolver being exact-match only — it never
  * soft-matches or falls back to a same-named recipe belonging to the new
- * holder — which is asserted by a dedicated test. See ADR 0002.
+ * holder — which is asserted by a dedicated test. See ADR-0002.
  */
 
 /** Ordered erasure counters, keyed by table, written to the tombstone. */
