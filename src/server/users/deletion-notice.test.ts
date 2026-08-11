@@ -73,16 +73,13 @@ describe('co-created recipe disclosure', () => {
  * that tells the user how many recipes are involved, and a translation that
  * dropped it would render a quantity-free claim.
  */
-describe("held-erasure disclosure", () => {
-  const HELD_KEYS = ["title", "body", "what", "confirmHelp", "cta", "toast"];
+describe('held-erasure disclosure', () => {
+  const HELD_KEYS = ['title', 'body', 'what', 'confirmHelp', 'cta', 'toast'];
 
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    "gives %s readers the whole held-erasure explanation",
+    'gives %s readers the whole held-erasure explanation',
     (locale) => {
-      const held = catalogs[locale].settings.dataPage.delete.held as Record<
-        string,
-        string
-      >;
+      const held = catalogs[locale].settings.dataPage.delete.held as Record<string, string>;
 
       // Pins the key list itself. Asserting only over `Object.keys(held)` would
       // pass an empty block, which is the vacuity this repo keeps rediscovering.
@@ -94,15 +91,15 @@ describe("held-erasure disclosure", () => {
   );
 
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    "keeps the recipe count in the %s held sentence",
+    'keeps the recipe count in the %s held sentence',
     (locale) => {
       const body = catalogs[locale].settings.dataPage.delete.held.body;
-      expect(body).toContain("{count, plural,");
+      expect(body).toContain('{count, plural,');
     },
   );
 
   it.each(Object.keys(catalogs) as (keyof typeof catalogs)[])(
-    "does not promise an immediate deletion in the %s held help text",
+    'does not promise an immediate deletion in the %s held help text',
     (locale) => {
       const del = catalogs[locale].settings.dataPage.delete;
       // The whole point of the held variant is that it replaces the standard

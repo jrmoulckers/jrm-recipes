@@ -1,8 +1,8 @@
-import "server-only";
+import 'server-only';
 
-import { and, count, eq, inArray, ne } from "drizzle-orm";
+import { and, count, eq, inArray, ne } from 'drizzle-orm';
 
-import { db, isDbConfigured } from "~/server/db";
+import { db, isDbConfigured } from '~/server/db';
 import {
   billingCustomers,
   collections,
@@ -13,8 +13,8 @@ import {
   recipes,
   reviews,
   subscriptions,
-} from "~/server/db/schema";
-import { findEntanglement } from "./erasure-holds";
+} from '~/server/db/schema';
+import { findEntanglement } from './erasure-holds';
 
 /**
  * What a user is about to lose (issue #678, PR B).
@@ -90,11 +90,9 @@ const EMPTY: DeletionPreview = {
   hasActiveSubscription: false,
 };
 
-const LIVE_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due"] as const;
+const LIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due'] as const;
 
-async function countRows(
-  run: () => Promise<{ value: number }[]>,
-): Promise<number> {
+async function countRows(run: () => Promise<{ value: number }[]>): Promise<number> {
   const [row] = await run();
   return row?.value ?? 0;
 }
@@ -110,9 +108,7 @@ async function findSoleOwnerGroups(userId: string): Promise<SoleOwnerGroup[]> {
   const owned = await db
     .select({ groupId: groupMembers.groupId })
     .from(groupMembers)
-    .where(
-      and(eq(groupMembers.userId, userId), eq(groupMembers.role, "owner")),
-    );
+    .where(and(eq(groupMembers.userId, userId), eq(groupMembers.role, 'owner')));
 
   const groupIds = owned.map((row) => row.groupId);
   if (groupIds.length === 0) return [];
@@ -123,7 +119,7 @@ async function findSoleOwnerGroups(userId: string): Promise<SoleOwnerGroup[]> {
     .where(
       and(
         inArray(groupMembers.groupId, groupIds),
-        eq(groupMembers.role, "owner"),
+        eq(groupMembers.role, 'owner'),
         ne(groupMembers.userId, userId),
       ),
     );
@@ -157,9 +153,7 @@ async function findSoleOwnerGroups(userId: string): Promise<SoleOwnerGroup[]> {
     }));
 }
 
-export async function getDeletionPreview(
-  userId: string,
-): Promise<DeletionPreview> {
+export async function getDeletionPreview(userId: string): Promise<DeletionPreview> {
   if (!isDbConfigured()) return EMPTY;
 
   const [
@@ -174,10 +168,7 @@ export async function getDeletionPreview(
     liveSubscriptions,
   ] = await Promise.all([
     countRows(() =>
-      db
-        .select({ value: count() })
-        .from(recipes)
-        .where(eq(recipes.authorId, userId)),
+      db.select({ value: count() }).from(recipes).where(eq(recipes.authorId, userId)),
     ),
     countRows(() =>
       db
@@ -187,7 +178,7 @@ export async function getDeletionPreview(
         .where(
           and(
             eq(recipeCreators.userId, userId),
-            eq(recipeCreators.status, "accepted"),
+            eq(recipeCreators.status, 'accepted'),
             // Belt and braces: the owner is never a row in this table, but a
             // future backfill that duplicated `authorId` in must not inflate
             // the "these will survive" number with recipes we are deleting.
@@ -199,12 +190,7 @@ export async function getDeletionPreview(
       db
         .select({ value: count() })
         .from(recipeCreators)
-        .where(
-          and(
-            eq(recipeCreators.userId, userId),
-            eq(recipeCreators.status, "pending"),
-          ),
-        ),
+        .where(and(eq(recipeCreators.userId, userId), eq(recipeCreators.status, 'pending'))),
     ),
     // The erasure path's own halt predicate (#787). Calling it here rather than
     // re-deriving it is the point: whatever the erasure would hold on is
@@ -212,32 +198,18 @@ export async function getDeletionPreview(
     // that `coCreatedRecipeCount` above does not see.
     findEntanglement(userId),
     countRows(() =>
-      db
-        .select({ value: count() })
-        .from(cookLogEntries)
-        .where(eq(cookLogEntries.userId, userId)),
+      db.select({ value: count() }).from(cookLogEntries).where(eq(cookLogEntries.userId, userId)),
     ),
+    countRows(() => db.select({ value: count() }).from(reviews).where(eq(reviews.userId, userId))),
     countRows(() =>
-      db
-        .select({ value: count() })
-        .from(reviews)
-        .where(eq(reviews.userId, userId)),
-    ),
-    countRows(() =>
-      db
-        .select({ value: count() })
-        .from(collections)
-        .where(eq(collections.userId, userId)),
+      db.select({ value: count() }).from(collections).where(eq(collections.userId, userId)),
     ),
     findSoleOwnerGroups(userId),
     countRows(() =>
       db
         .select({ value: count() })
         .from(subscriptions)
-        .innerJoin(
-          billingCustomers,
-          eq(billingCustomers.id, subscriptions.customerId),
-        )
+        .innerJoin(billingCustomers, eq(billingCustomers.id, subscriptions.customerId))
         .where(
           and(
             eq(billingCustomers.userId, userId),
