@@ -36,7 +36,7 @@ intended trade: a stacked PR is exactly the PR nobody has validated.
 into _its own base_, not into `main`. The `Base freshness` job says so in the run
 summary. Retarget at `main` before merging.
 
-## Three ways a green check list still lies
+## Four ways a green check list still lies
 
 ### 1. Stacked PR — fixed
 
@@ -87,6 +87,41 @@ reason that is not the author's diff, and the fix is a rebase the workflow must
 not perform on your branch. Treat the warning as a review-time question — if it
 says the base has moved and the change is not trivial, rebase before merging.
 
+### 4. Run concluded, gate job never did
+
+Observed on PR #878. `Quality gate` sat at `IN_PROGRESS` for 24+ minutes while the
+run containing it reported `completed` / `success`:
+
+```
+run:  created=14:39:38  updated=14:48:38  status=completed  conclusion=success
+job:  Quality gate  started=14:48:35  completed=null  status=in_progress
+```
+
+The run was marked complete **three seconds after the gate job started**. Every
+other job had finished. `gh pr checks` and the `check-runs` API both said
+`in_progress`; only the run conclusion said success — and the run conclusion is the
+one that would have authorised a merge, past a gate that never ran.
+
+So the rule is: **the run conclusion is not a substitute for the gate's own
+verdict.** A stuck gate is _unread_, not green. Get a real verdict by re-running
+that job:
+
+```bash
+gh api repos/jrmoulckers/jrm-recipes/actions/runs/<run-id>/jobs?per_page=50 \
+  --jq '.jobs[] | select(.name=="Quality gate") | .id'
+gh api -X POST repos/jrmoulckers/jrm-recipes/actions/jobs/<job-id>/rerun
+```
+
+That returned `completed/success` in about a minute, and the merge proceeded on a
+verdict rather than an inference.
+
+Two caveats on the frequency. A census of the 40 most recent completed `ci.yml`
+runs found **0** jobs in a non-terminal state, so this is transient rather than
+standing. But that number is weaker than it looks: **re-running the job erases the
+evidence**, so the census can only find instances nobody fixed, and fixing them is
+the natural response to hitting one. Record the run id and timestamps _before_
+re-running.
+
 ## Reading the signal
 
 Never read green as green without confirming a real run exists and is newer than
@@ -98,7 +133,9 @@ gh pr checks <n>
 ```
 
 - No GitHub Actions rows at all → nothing ran. Check for conflicts.
-- `Quality gate` not present or not `pass` → something did not run.
+- `Quality gate` not present or not `pass` → something did not run. If it is stuck
+  at `IN_PROGRESS` while the run reports success, see §4 above — re-run the job
+  rather than reading the run conclusion instead.
 - `Base freshness` warning → the results describe an older base.
 - A red **Vercel** check is never a verdict on your diff, and it is **not a
   required check** — `Quality gate` is the name that matters. But it is not
