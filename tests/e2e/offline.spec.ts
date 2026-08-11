@@ -81,6 +81,13 @@ test('a previously opened recipe and Cook Mode work offline', async ({ page, con
   await page.goto(cookPath);
   await startCooking(page);
   await expect(page.locator('#current-step-title')).toBeVisible();
+  // Capture what the network served so the offline render can be compared
+  // against it. Hard-coding the seed's step text made this assertion depend on
+  // content `co-creator.spec.ts` deliberately overwrites, and the two specs run
+  // in parallel — a race that stayed invisible only because this test skipped
+  // itself before ever reaching the assertion (#849).
+  const onlineStepTitle = (await page.locator('#current-step-title').textContent())?.trim();
+  expect(onlineStepTitle).toBeTruthy();
 
   // Drop the connection and confirm both still load from the SW cache, not the
   // network.
@@ -92,9 +99,11 @@ test('a previously opened recipe and Cook Mode work offline', async ({ page, con
   await page.goto(cookPath);
   await startCooking(page);
   await expect(page.locator('#current-step-title')).toBeVisible();
-  // The seeded recipe's real first-step content proves Cook Mode rendered from
-  // cache, not a generic offline shell.
-  await expect(page.locator('#current-step-title')).toContainText(/brown the pork ribs/i);
+  // The step content the network served proves Cook Mode rendered from cache,
+  // not a generic offline shell. Comparing the two renders is not circular: the
+  // online value came over the network and the offline one comes from the
+  // service-worker cache, which is exactly the property under test.
+  await expect(page.locator('#current-step-title')).toHaveText(onlineStepTitle!);
 
   // Timers are client-side, so Cook Mode stays fully functional offline.
   const startTimer = page.getByRole('button', { name: /^start$/i }).first();
