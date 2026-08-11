@@ -244,6 +244,15 @@ git reset --hard
 `pnpm format:check` should then pass. Clones created after `.gitattributes` landed are
 unaffected.
 
+Verify with `pnpm format:check` and nothing else. Scanning tracked files for a carriage-return
+byte is the obvious check and it is misleading: it reports about 60 files on a fully repaired
+tree — PNG, WebP, WOFF2 and ICO assets whose binary content happens to contain `0x0D`. `*
+text=auto eol=lf` applies `eol` only to files git _detects_ as text, so binaries are deliberately
+left byte-for-byte unchanged. That count is the steady state, not leftover damage, and reading it
+as a partial fix is how a working recipe gets abandoned. For the same reason,
+`git check-attr text eol -- public/favicon.ico` reporting `eol: lf` for a binary is expected
+rather than a latent corruption hazard.
+
 On **every** pull request — whatever branch it is based on — and on pushes to
 `main`, GitHub Actions runs:
 
